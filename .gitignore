@@ -31,3 +31,9 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Android/iOS以外は含めない
+poke_reco/linux/
+poke_reco/windows/
+poke_reco/macos/
+poke_reco/web/
