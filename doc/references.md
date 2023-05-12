@@ -19,6 +19,10 @@
 
    https://zenn.dev/kboy/books/ca6a9c93fd23f3
 
+ * FlutterでBottomNavigationBarを表示したまま下層ページを画面遷移する | Counts the Clouds
+
+   https://countstheclouds.com/posts/flutter-nested-navigation/
+
 ### ポケモンのアプリ作成
  * ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1さらうどん
 

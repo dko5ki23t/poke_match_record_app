@@ -1,7 +1,26 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/register_pokemon.dart';
+import 'package:poke_reco/my_flutter_app_icons.dart';
 import 'package:provider/provider.dart';
+
+enum TabItem {
+  battles,
+  pokemons,
+  parties,
+}
+
+const Map<TabItem, String> tabName = {
+  TabItem.battles: '対戦',
+  TabItem.pokemons: 'ポケモン',
+  TabItem.parties: 'パーティ',
+};
+
+const Map<TabItem, IconData> tabIcon = {
+  TabItem.battles: Icons.list,
+  TabItem.pokemons: Icons.catching_pokemon,
+  TabItem.parties: Icons.groups,
+};
 
 enum Sex {
   male,
@@ -9,55 +28,32 @@ enum Sex {
   none,
 }
 
-class Pokemon {
-  String name = 'アンノーン';       // ポケモン名
-  String nickname = '';            // ニックネーム
-  int level = 50;                  // レベル
-  Sex sex = Sex.none;              // せいべつ
-  int no = 1;                      // 図鑑No.
-  Type type1 = Type.normal;        // タイプ1
-  Type? type2;                     // タイプ2(null OK)
-  Type teraType = Type.normal;     // テラスタルタイプ
-  Temper temper = Temper.ijippari; // せいかく
-  SixParams h = SixParams();       // HP
-  SixParams a = SixParams();       // こうげき
-  SixParams b = SixParams();       // ぼうぎょ
-  SixParams c = SixParams();       // とくこう
-  SixParams d = SixParams();       // とくぼう
-  SixParams s = SixParams();       // すばやさ
-  Ability ability = Ability.ikaku; // とくせい
-  Item? item;                      // もちもの(null OK)
-  Move move1 = Move.meiso;         // わざ1
-  Move? move2;                     // わざ2
-  Move? move3;                     // わざ3
-  Move? move4;                     // わざ4
-}
-
-// 使い方：print(Type.normal.displayName) -> 'ノーマル'
-enum Type {
-  normal('ノーマル'),
-  fire('ほのお'),
-  water('みず'),
-  grass('くさ'),
-  electric('でんき'),
-  ice('こおり'),
-  fighting('かくとう'),
-  poison('どく'),
-  ground('じめん'),
-  flying('ひこう'),
-  psychic('エスパー'),
-  bug('むし'),
-  rock('いわ'),
-  ghost('ゴースト'),
-  dragon('ドラゴン'),
-  dark('あく'),
-  steel('はがね'),
-  fairy('フェアリー'),
+// 使い方：print(PokeType.normal.displayName) -> 'ノーマル'
+enum PokeType {
+  normal('ノーマル', Icons.radio_button_unchecked),
+  fire('ほのお', Icons.whatshot),
+  water('みず', Icons.opacity),
+  grass('くさ', Icons.grass),
+  electric('でんき', Icons.bolt),
+  ice('こおり', Icons.ac_unit),
+  fighting('かくとう', Icons.sports_mma),
+  poison('どく', Icons.coronavirus),
+  ground('じめん', Icons.abc),
+  flying('ひこう', Icons.air),
+  psychic('エスパー', Icons.psychology),
+  bug('むし', Icons.bug_report),
+  rock('いわ', Icons.abc),
+  ghost('ゴースト', Icons.abc),
+  dragon('ドラゴン', MyFlutterApp.dragon),
+  dark('あく', Icons.abc),
+  steel('はがね', Icons.abc),
+  fairy('フェアリー', Icons.abc),
   ;
 
-  const Type(this.displayName);
+  const PokeType(this.displayName, this.displayIcon);
 
   final String displayName;
+  final IconData displayIcon;
 }
 
 // TODO: 全部追加する
@@ -118,6 +114,34 @@ enum Move {
   final String displayName;
 }
 
+class Pokemon {
+  String name = 'アンノーン';       // ポケモン名
+  String nickname = '';            // ニックネーム
+  int level = 50;                  // レベル
+  Sex sex = Sex.none;              // せいべつ
+  int no = 1;                      // 図鑑No.
+  PokeType type1 = PokeType.normal;        // タイプ1
+  PokeType? type2;                     // タイプ2(null OK)
+  PokeType teraType = PokeType.normal;     // テラスタルタイプ
+  Temper temper = Temper.ijippari; // せいかく
+  SixParams h = SixParams();       // HP
+  SixParams a = SixParams();       // こうげき
+  SixParams b = SixParams();       // ぼうぎょ
+  SixParams c = SixParams();       // とくこう
+  SixParams d = SixParams();       // とくぼう
+  SixParams s = SixParams();       // すばやさ
+  Ability ability = Ability.ikaku; // とくせい
+  Item? item;                      // もちもの(null OK)
+  Move move1 = Move.meiso;         // わざ1
+  int pp1 = 5;                     // PP1
+  Move? move2;                     // わざ2
+  int? pp2 = 5;                    // PP2
+  Move? move3;                     // わざ3
+  int? pp3 = 5;                    // PP3
+  Move? move4;                     // わざ4
+  int? pp4 = 5;                    // PP4
+}
+
 void main() {
   runApp(const MyApp());
 }
@@ -151,18 +175,6 @@ class MyAppState extends ChangeNotifier {
   }
 
   var pokemons = <Pokemon>[];
-
-/*
-  void toggleFavorite() {
-    if (favorites.contains(current)) {
-      favorites.remove(current);
-    }
-    else {
-      favorites.add(current);
-    }
-    notifyListeners();
-  }
-*/
 }
 
 class MyHomePage extends StatefulWidget {
@@ -171,64 +183,49 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  var _selectedIndex = 0;
+  var _currentTab = TabItem.battles;
+  final _navigatorKeys = {
+    TabItem.battles: GlobalKey<NavigatorState>(),
+    TabItem.pokemons: GlobalKey<NavigatorState>(),
+    TabItem.parties: GlobalKey<NavigatorState>(),
+  };
 
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+  void _selectTab(TabItem tabItem) {
+    setState(() => _currentTab = tabItem);
   }
 
   @override
   Widget build(BuildContext context) {
     Widget page;
-    switch (_selectedIndex) {
-      case 0:
+    switch (_currentTab) {
+      case TabItem.battles:
         page = BattlesPage();
         break;
-      case 1:
-        page = PokemonsPage();
+      case TabItem.pokemons:
+        page = TabNavigator(
+                navigatorKey: _navigatorKeys[TabItem.battles],
+                tabItem: TabItem.battles
+              );
         break;
-      case 2:
-        page = Placeholder();
-        break;
-      case 3:
+      case TabItem.parties:
         page = Placeholder();
         break;
       default:
-        throw UnimplementedError('no widget for $_selectedIndex');
+        throw UnimplementedError('no widget');
     }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         return Scaffold(
-          appBar: AppBar(
-            title: const Text('Poke Reco')
-          ),
           body: Center(
             child: Container(
               color: Theme.of(context).colorScheme.primaryContainer,
               child: page,
             ),
           ),
-          bottomNavigationBar: BottomNavigationBar(
-            items: const <BottomNavigationBarItem>[
-              BottomNavigationBarItem(
-                icon: Icon(Icons.list),
-                label: '対戦',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.pets),
-                label: 'ポケモン',
-              ),
-              BottomNavigationBarItem(
-                icon: Icon(Icons.groups),
-                label: 'パーティ',
-              ),
-            ],
-            currentIndex: _selectedIndex,
-//            selectedItemColor: Colors.amber[800],
-            onTap: _onItemTapped,
+          bottomNavigationBar: BottomNavigation(
+            currentTab: _currentTab,
+            onSelectTab: _selectTab,
           ),
         );
       }
@@ -272,19 +269,12 @@ class BattlesPage extends StatelessWidget {
   }
 }
 
-class PokemonsPage extends StatefulWidget {
-  @override
-  State<PokemonsPage> createState() => _PokemonsPageState();
-}
-
-class _PokemonsPageState extends State<PokemonsPage> {
-  /*var _
-
-  void _onPushed(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }*/
+class PokemonsPage extends StatelessWidget {
+  const PokemonsPage({
+    Key? key,
+    required this.onPush,
+  }) : super(key: key);
+  final void Function() onPush;
 
   @override
   Widget build(BuildContext context) {
@@ -303,7 +293,7 @@ class _PokemonsPageState extends State<PokemonsPage> {
         children: [
           for (var pokemon in pokemons)
             ListTile(
-              leading: Icon(Icons.pets),
+              leading: Icon(Icons.catching_pokemon),
               title:  Text(pokemon.name),            
             ),
         ],
@@ -325,9 +315,7 @@ class _PokemonsPageState extends State<PokemonsPage> {
             tooltip: 'ポケモン登録',
             shape: CircleBorder(),
             onPressed: (){
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => RegisterPokemonPage())
-              );
+              onPush();
             },
             child: Icon(Icons.add),
           ),
@@ -362,6 +350,80 @@ class BigCard extends StatelessWidget {
           semanticsLabel: "${pair.first} ${pair.second}",
         ),
       ),
+    );
+  }
+}
+
+class TabNavigatorRoutes {
+  static const String root = '/';
+  static const String register = '/register';
+}
+
+class TabNavigator extends StatelessWidget {
+  const TabNavigator({
+    Key? key,
+    required this.navigatorKey,
+    required this.tabItem,
+  }) : super(key: key);
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final TabItem tabItem;
+
+  void _push(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          return RegisterPokemonPage();
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: navigatorKey,
+      initialRoute: TabNavigatorRoutes.root,
+      onGenerateRoute: (routeSettings) {
+        return MaterialPageRoute(
+          builder: (context) {
+            switch (routeSettings.name) {
+              case TabNavigatorRoutes.register:
+                return RegisterPokemonPage();
+              default:
+                return PokemonsPage(
+                  onPush: () => _push(context)
+                );
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class BottomNavigation extends StatelessWidget {
+  const BottomNavigation({
+    Key? key,
+    required this.currentTab,
+    required this.onSelectTab,
+  }) : super(key: key);
+  final TabItem currentTab;
+  final void Function(TabItem) onSelectTab;
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomNavigationBar(
+      type: BottomNavigationBarType.fixed,
+      items: <BottomNavigationBarItem>[
+        for (var tab in TabItem.values)
+          BottomNavigationBarItem(
+            icon: Icon(tabIcon[tab]),
+            label: tabName[tab],
+          ),
+      ],
+      currentIndex: currentTab.index,
+      onTap: (index) => onSelectTab(TabItem.values[index])
     );
   }
 }
