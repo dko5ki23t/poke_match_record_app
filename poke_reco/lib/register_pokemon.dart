@@ -2,17 +2,43 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinbox/material.dart';
 import 'package:poke_reco/main.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/poke_db.dart';
 
 class RegisterPokemonPage extends StatelessWidget {
+  RegisterPokemonPage({
+    Key? key,
+    required this.onFinish,
+  }) : super(key: key);
+  final void Function() onFinish;
+  final Pokemon myPokemon = Pokemon();
+  final nameOptions = [
+    for (var name in PokeName.values)
+      name.displayName
+  ];
+  final TextEditingController pokeNameController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+    var pokemons = appState.pokemons;
 //    final theme = Theme.of(context);
+
+    void onComplete() {
+      // TODO: 入力された値が正しいかチェック
+      pokemons.add(myPokemon);
+      onFinish();
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: Text('ポケモン登録'),
         actions: [
-          Text('完了'),
+          TextButton(
+            child: Text('完了'),
+            onPressed:() => onComplete(),
+          ),
         ]
       ),
       body: ListView(
@@ -22,23 +48,42 @@ class RegisterPokemonPage extends StatelessWidget {
           Row(  // ポケモン名, 図鑑No
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
-                child:TextFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'ポケモン名'
+              Expanded(
+                flex: 7,
+                child: TypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: pokeNameController,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'ポケモン名'
+                    ),
                   ),
+                  suggestionsCallback: (pattern) async {
+                    return nameOptions;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    pokeNameController.text = suggestion;
+                    myPokemon.name = suggestion;
+                  },
                 ),
               ),
               SizedBox(width: 10),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child:TextFormField(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '図鑑No.'
+                    labelText: '図鑑No.',
+                    counterText: '',        // 下に出る文字数制限の表示を消す
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (value) {myPokemon.no = int.parse(value);},
                   maxLength: 5,
                 ),
               ),            
@@ -54,6 +99,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: 'ニックネーム'
                   ),
+                  onChanged: (value) {myPokemon.nickname = value;},
                   maxLength: 6,
                 ),
               ),
@@ -76,7 +122,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Icon(type.displayIcon),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.type1 = value;},
                 ),
               ),
               SizedBox(width: 10),
@@ -93,7 +139,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Icon(type.displayIcon),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.type2 = value;},
                 ),
               ),
               SizedBox(width: 10),
@@ -110,7 +156,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Icon(type.displayIcon),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.teraType = value;},
                 ),
               ),
             ],
@@ -128,6 +174,7 @@ class RegisterPokemonPage extends StatelessWidget {
                   min: 1,
                   max: 100,
                   value: 50,
+                  onChanged: (value) {myPokemon.level = value.toInt();},
                 ),
               ),
               SizedBox(width: 10),
@@ -137,21 +184,15 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: 'せいべつ'
                   ),
-                  items: const[
-                    DropdownMenuItem(
-                      value: 'なし',
-                      child: Icon(Icons.minimize),
-                    ),
-                    DropdownMenuItem(
-                      value: 'オス',
-                      child: Icon(Icons.male),
-                    ),
-                    DropdownMenuItem(
-                      value: 'メス',
-                      child: Icon(Icons.female),
+                  items: <DropdownMenuItem>[
+                    for (var type in Sex.values)
+                      DropdownMenuItem(
+                        value: type.displayName,
+                        child: Icon(type.displayIcon),
                     ),
                   ],
-                  onChanged: (value) {},
+                  value: Sex.none.displayName,
+                  onChanged: (value) {myPokemon.sex = value;},
                 ),
               ),
               SizedBox(width: 10),
@@ -168,7 +209,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Text(type.displayName),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.temper = value;},
                 ),
               ),
             ],
@@ -190,7 +231,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Text(type.displayName),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.ability = value;},
                 ),
               ),
               SizedBox(width: 10),
@@ -207,7 +248,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         child: Text(type.displayName),
                     ),
                   ],
-                  onChanged: (value) {},
+                  onChanged: (value) {myPokemon.item = value;},
                 ),
               ),
             ],
@@ -510,7 +551,8 @@ class RegisterPokemonPage extends StatelessWidget {
           Row(  // わざ1, PP1
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
+              Expanded(
+                flex: 7,
                 child: DropdownButtonFormField(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -527,7 +569,8 @@ class RegisterPokemonPage extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child: SpinBox(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -542,7 +585,8 @@ class RegisterPokemonPage extends StatelessWidget {
           Row(  // わざ2, PP2
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
+              Expanded(
+                flex: 7,
                 child: DropdownButtonFormField(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -559,7 +603,8 @@ class RegisterPokemonPage extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child: SpinBox(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -574,7 +619,8 @@ class RegisterPokemonPage extends StatelessWidget {
           Row(  // わざ3, PP3
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
+              Expanded(
+                flex: 7,
                 child: DropdownButtonFormField(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -591,7 +637,8 @@ class RegisterPokemonPage extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child: SpinBox(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -606,7 +653,8 @@ class RegisterPokemonPage extends StatelessWidget {
           Row(  // わざ4, PP4
             mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
+              Expanded(
+                flex: 7,
                 child: DropdownButtonFormField(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -623,7 +671,8 @@ class RegisterPokemonPage extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 10),
-              Flexible(
+              Expanded(
+                flex: 3,
                 child: SpinBox(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),

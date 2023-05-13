@@ -1,146 +1,9 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/register_pokemon.dart';
-import 'package:poke_reco/my_flutter_app_icons.dart';
+import 'package:poke_reco/pokemons.dart';
+import 'package:poke_reco/poke_db.dart';
 import 'package:provider/provider.dart';
-
-enum TabItem {
-  battles,
-  pokemons,
-  parties,
-}
-
-const Map<TabItem, String> tabName = {
-  TabItem.battles: '対戦',
-  TabItem.pokemons: 'ポケモン',
-  TabItem.parties: 'パーティ',
-};
-
-const Map<TabItem, IconData> tabIcon = {
-  TabItem.battles: Icons.list,
-  TabItem.pokemons: Icons.catching_pokemon,
-  TabItem.parties: Icons.groups,
-};
-
-enum Sex {
-  male,
-  female,
-  none,
-}
-
-// 使い方：print(PokeType.normal.displayName) -> 'ノーマル'
-enum PokeType {
-  normal('ノーマル', Icons.radio_button_unchecked),
-  fire('ほのお', Icons.whatshot),
-  water('みず', Icons.opacity),
-  grass('くさ', Icons.grass),
-  electric('でんき', Icons.bolt),
-  ice('こおり', Icons.ac_unit),
-  fighting('かくとう', Icons.sports_mma),
-  poison('どく', Icons.coronavirus),
-  ground('じめん', Icons.abc),
-  flying('ひこう', Icons.air),
-  psychic('エスパー', Icons.psychology),
-  bug('むし', Icons.bug_report),
-  rock('いわ', Icons.abc),
-  ghost('ゴースト', Icons.abc),
-  dragon('ドラゴン', MyFlutterApp.dragon),
-  dark('あく', Icons.abc),
-  steel('はがね', Icons.abc),
-  fairy('フェアリー', Icons.abc),
-  ;
-
-  const PokeType(this.displayName, this.displayIcon);
-
-  final String displayName;
-  final IconData displayIcon;
-}
-
-// TODO: 全部追加する
-enum Temper {
-  ijippari('いじっぱり'),
-  tereya('てれや'),
-  ;
-
-  const Temper(this.displayName);
-
-  final String displayName;
-}
-
-class SixParams {
-  int race = 0;
-  int indi = 0;
-  int effort = 0;
-  int real = 0;
-
-  set(race, indi, effort, real) {
-    this.race = race;
-    this.indi = indi;
-    this.effort = effort;
-    this.real = real;
-  }
-}
-
-// TODO: 全部追加する
-enum Ability {
-  ikaku('いかく'),
-  bakenokawa('ばけのかわ'),
-  ;
-
-  const Ability(this.displayName);
-
-  final String displayName;
-}
-
-// TODO: 全部追加する
-enum Item {
-  tabenokoshi('たべのこし'),
-  kodawarimegane('こだわりメガネ'),
-  ;
-
-  const Item(this.displayName);
-
-  final String displayName;
-}
-
-// TODO: 全部追加する
-enum Move {
-  jumanboruto('10まんボルト'),
-  meiso('めいそう'),
-  ;
-
-  const Move(this.displayName);
-
-  final String displayName;
-}
-
-class Pokemon {
-  String name = 'アンノーン';       // ポケモン名
-  String nickname = '';            // ニックネーム
-  int level = 50;                  // レベル
-  Sex sex = Sex.none;              // せいべつ
-  int no = 1;                      // 図鑑No.
-  PokeType type1 = PokeType.normal;        // タイプ1
-  PokeType? type2;                     // タイプ2(null OK)
-  PokeType teraType = PokeType.normal;     // テラスタルタイプ
-  Temper temper = Temper.ijippari; // せいかく
-  SixParams h = SixParams();       // HP
-  SixParams a = SixParams();       // こうげき
-  SixParams b = SixParams();       // ぼうぎょ
-  SixParams c = SixParams();       // とくこう
-  SixParams d = SixParams();       // とくぼう
-  SixParams s = SixParams();       // すばやさ
-  Ability ability = Ability.ikaku; // とくせい
-  Item? item;                      // もちもの(null OK)
-  Move move1 = Move.meiso;         // わざ1
-  int pp1 = 5;                     // PP1
-  Move? move2;                     // わざ2
-  int? pp2 = 5;                    // PP2
-  Move? move3;                     // わざ3
-  int? pp3 = 5;                    // PP3
-  Move? move4;                     // わざ4
-  int? pp4 = 5;                    // PP4
-}
 
 void main() {
   runApp(const MyApp());
@@ -269,62 +132,6 @@ class BattlesPage extends StatelessWidget {
   }
 }
 
-class PokemonsPage extends StatelessWidget {
-  const PokemonsPage({
-    Key? key,
-    required this.onPush,
-  }) : super(key: key);
-  final void Function() onPush;
-
-  @override
-  Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
-    var pokemons = appState.pokemons;
-
-    Widget lists;
-
-    if (pokemons.isEmpty) {
-      lists = Center(
-        child: Text('ポケモンが登録されていません。'),
-      );
-    }
-    else {
-      lists = ListView(
-        children: [
-          for (var pokemon in pokemons)
-            ListTile(
-              leading: Icon(Icons.catching_pokemon),
-              title:  Text(pokemon.name),            
-            ),
-        ],
-      );
-    }
-
-    final theme = Theme.of(context);
-    final style = theme.textTheme.displayMedium!.copyWith(
-      color: theme.colorScheme.outline,
-    );
-
-    return Stack(
-      children: [
-        lists,
-        Align(
-          alignment: Alignment.bottomRight,
-          //padding: EdgeInsets.all(30),
-          child: FloatingActionButton(
-            tooltip: 'ポケモン登録',
-            shape: CircleBorder(),
-            onPressed: (){
-              onPush();
-            },
-            child: Icon(Icons.add),
-          ),
-        )
-      ],
-    );
-  }
-}
-
 class BigCard extends StatelessWidget {
   const BigCard({
     super.key,
@@ -359,7 +166,7 @@ class TabNavigatorRoutes {
   static const String register = '/register';
 }
 
-class TabNavigator extends StatelessWidget {
+class TabNavigator extends StatefulWidget {
   const TabNavigator({
     Key? key,
     required this.navigatorKey,
@@ -368,31 +175,46 @@ class TabNavigator extends StatelessWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
   final TabItem tabItem;
 
+  @override
+  State<TabNavigator> createState() => _TabNavigatorState();
+}
+
+class _TabNavigatorState extends State<TabNavigator> {
   void _push(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) {
-          return RegisterPokemonPage();
+          return RegisterPokemonPage(
+            onFinish: () => _pop(context),
+          );
         },
       ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pop(BuildContext context) {
+    Navigator.pop(
+      context,
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Navigator(
-      key: navigatorKey,
+      key: widget.navigatorKey,
       initialRoute: TabNavigatorRoutes.root,
       onGenerateRoute: (routeSettings) {
         return MaterialPageRoute(
           builder: (context) {
             switch (routeSettings.name) {
               case TabNavigatorRoutes.register:
-                return RegisterPokemonPage();
+                return RegisterPokemonPage(
+                  onFinish: () => _pop(context),
+                );
               default:
                 return PokemonsPage(
-                  onPush: () => _push(context)
+                  onAdd: () => _push(context)
                 );
             }
           },

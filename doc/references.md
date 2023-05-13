@@ -23,6 +23,14 @@
 
    https://countstheclouds.com/posts/flutter-nested-navigation/
 
+ * SpinBoxThemeData class - flutter_spinbox library - Dart API
+
+   https://pub.dev/documentation/flutter_spinbox/latest/flutter_spinbox/SpinBoxThemeData-class.html
+
+ * flutter_typeahead | Flutter Package
+
+   https://pub.dev/packages/flutter_typeahead
+
 ### ポケモンのアプリ作成
  * ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1さらうどん
 
