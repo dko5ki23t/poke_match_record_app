@@ -4,6 +4,7 @@ import 'package:poke_reco/register_pokemon.dart';
 import 'package:poke_reco/pokemons.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         ),
         home: MyHomePage(),
+        builder: EasyLoading.init(),
       ),
     );
   }
@@ -31,6 +33,16 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
+  var pokeData = PokeDB();
+
+  MyAppState() {
+    fetchPokeData();
+  }
+
+  Future<void> fetchPokeData() async {
+    await pokeData.initialize();
+    notifyListeners();
+  }
 
   void getNext() {
     current = WordPair.random();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class PokemonsPage extends StatelessWidget {
   const PokemonsPage({
@@ -13,6 +14,17 @@ class PokemonsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
+    var pokeData = appState.pokeData;
+
+    // ポケモンデータ取得で待つ
+    if (!pokeData.isLoaded) {
+      EasyLoading.instance.userInteractions = false;  // 操作禁止にする
+      EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
+      EasyLoading.show(status: 'ポケモンの情報取得中です。しばらくお待ちください...');
+    }
+    else {
+      EasyLoading.dismiss();
+    }
 
     Widget lists;
 

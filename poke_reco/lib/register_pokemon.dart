@@ -1,3 +1,5 @@
+import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_spinbox/material.dart';
@@ -13,16 +15,34 @@ class RegisterPokemonPage extends StatelessWidget {
   }) : super(key: key);
   final void Function() onFinish;
   final Pokemon myPokemon = Pokemon();
-  final nameOptions = [
-    for (var name in PokeName.values)
-      name.displayName
-  ];
-  final TextEditingController pokeNameController = TextEditingController();
+  final TextEditingController pokeNameController = TextEditingController();     // TODO:デストラクタ？で解放しなくていいのか https://codewithandrea.com/articles/flutter-text-field-form-validation/
+  final TextEditingController pokeNoController = TextEditingController();
+  final TextEditingController pokeTemperController = TextEditingController();
+  final TextEditingController pokeAbilityController = TextEditingController();
+  final TextEditingController pokeItemController = TextEditingController();
+  final TextEditingController pokeStatHRaceController = TextEditingController(text: 'H -');
+  final TextEditingController pokeStatARaceController = TextEditingController(text: 'A -');
+  final TextEditingController pokeStatBRaceController = TextEditingController(text: 'B -');
+  final TextEditingController pokeStatCRaceController = TextEditingController(text: 'C -');
+  final TextEditingController pokeStatDRaceController = TextEditingController(text: 'D -');
+  final TextEditingController pokeStatSRaceController = TextEditingController(text: 'S -');
+  final TextEditingController pokeMove1Controller = TextEditingController();
+  final TextEditingController pokeMove2Controller = TextEditingController();
+  final TextEditingController pokeMove3Controller = TextEditingController();
+  final TextEditingController pokeMove4Controller = TextEditingController();
+  final GlobalKey pokeStatHRealKey = GlobalKey();
+
+  // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
+  static toKatakana(String str) {
+    return str.replaceAllMapped(RegExp("[ぁ-ゔ]"),
+      (Match m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) + 0x60));
+  }
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
+    var pokeData = appState.pokeData;
 //    final theme = Theme.of(context);
 
     void onComplete() {
@@ -58,17 +78,42 @@ class RegisterPokemonPage extends StatelessWidget {
                       labelText: 'ポケモン名'
                     ),
                   ),
+                  autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
-                    return nameOptions;
+                    List<PokeBase> matches = [];
+                    matches.addAll(pokeData.pokeBase.values);
+                    matches.retainWhere((s){
+                      return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
+                    return matches;
                   },
                   itemBuilder: (context, suggestion) {
                     return ListTile(
-                      title: Text(suggestion),
+                      title: Text(suggestion.name),
+                      autofocus: true,
                     );
                   },
                   onSuggestionSelected: (suggestion) {
-                    pokeNameController.text = suggestion;
-                    myPokemon.name = suggestion;
+                    pokeNameController.text = suggestion.name;
+                    pokeNoController.text = suggestion.no.toString();
+                    myPokemon.name = suggestion.name;
+                    myPokemon.no = suggestion.no;
+                    myPokemon.type1 = suggestion.type1;
+                    myPokemon.type2 = suggestion.type2;
+                    myPokemon.h.race = suggestion.h;
+                    myPokemon.a.race = suggestion.a;
+                    myPokemon.b.race = suggestion.b;
+                    myPokemon.c.race = suggestion.c;
+                    myPokemon.d.race = suggestion.d;
+                    myPokemon.s.race = suggestion.s;
+                    pokeStatHRaceController.text = 'H ${myPokemon.h.race}';
+                    pokeStatARaceController.text = 'A ${myPokemon.a.race}';
+                    pokeStatBRaceController.text = 'B ${myPokemon.b.race}';
+                    pokeStatCRaceController.text = 'C ${myPokemon.c.race}';
+                    pokeStatDRaceController.text = 'D ${myPokemon.d.race}';
+                    pokeStatSRaceController.text = 'S ${myPokemon.s.race}';
+                    final pokeStatARealControoler = (pokeStatHRealKey.currentState as dynamic).controller as TextEditingController;
+                    pokeStatARealControoler.text = ((myPokemon.h.race * 2 + myPokemon.h.indi + (myPokemon.h.effort ~/ 4)) * myPokemon.level ~/ 100 + myPokemon.level + 10).toString();
                   },
                 ),
               ),
@@ -85,6 +130,7 @@ class RegisterPokemonPage extends StatelessWidget {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: (value) {myPokemon.no = int.parse(value);},
                   maxLength: 5,
+                  controller: pokeNoController,
                 ),
               ),            
             ],
@@ -110,36 +156,46 @@ class RegisterPokemonPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'タイプ1'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in PokeType.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Icon(type.displayIcon),
-                    ),
-                  ],
-                  onChanged: (value) {myPokemon.type1 = value;},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return DropdownButtonFormField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'タイプ1'
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: myPokemon.type1,
+                          child: Icon(myPokemon.type1.displayIcon),
+                        )
+                      ],
+                      onChanged: null,
+                      value: myPokemon.type1,
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
               Flexible(
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'タイプ2'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in PokeType.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Icon(type.displayIcon),
-                    ),
-                  ],
-                  onChanged: (value) {myPokemon.type2 = value;},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return DropdownButtonFormField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'タイプ2'
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: myPokemon.type2,
+                          child: Icon(myPokemon.type2?.displayIcon),
+                        )
+                      ],
+                      onChanged: null,
+                      value: myPokemon.type2,
+                    );
+                  },
                 ),
               ),
               SizedBox(width: 10),
@@ -150,9 +206,9 @@ class RegisterPokemonPage extends StatelessWidget {
                     labelText: 'テラスタイプ'
                   ),
                   items: <DropdownMenuItem>[
-                    for (var type in PokeType.values)
+                    for (var type in pokeData.types)
                       DropdownMenuItem(
-                        value: type.displayName,
+                        value: type,
                         child: Icon(type.displayIcon),
                     ),
                   ],
@@ -187,29 +243,42 @@ class RegisterPokemonPage extends StatelessWidget {
                   items: <DropdownMenuItem>[
                     for (var type in Sex.values)
                       DropdownMenuItem(
-                        value: type.displayName,
+                        value: type,
                         child: Icon(type.displayIcon),
                     ),
                   ],
-                  value: Sex.none.displayName,
+                  value: Sex.none,
                   onChanged: (value) {myPokemon.sex = value;},
                 ),
               ),
               SizedBox(width: 10),
               Flexible(
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'せいかく'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Temper.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
+                child: TypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: pokeTemperController,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'せいかく'
                     ),
-                  ],
-                  onChanged: (value) {myPokemon.temper = value;},
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Temper> matches = [];
+                    matches.addAll(pokeData.tempers);
+                    matches.retainWhere((s){
+                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion.displayName),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    pokeTemperController.text = suggestion.displayName;
+                    myPokemon.temper = suggestion;
+                  },
                 ),
               ),
             ],
@@ -219,36 +288,54 @@ class RegisterPokemonPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'とくせい'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Ability.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
-                    ),
-                  ],
-                  onChanged: (value) {myPokemon.ability = value;},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return DropdownButtonFormField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'とくせい'
+                      ),
+                      items: <DropdownMenuItem>[
+                        for (var ab in pokeData.pokeBase[myPokemon.no]!.ability)
+                          DropdownMenuItem(
+                            value: ab,
+                            child: Text(ab.displayName),
+                          )
+                      ],
+                      onChanged:(value) {myPokemon.ability = value;},
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
               Flexible(
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'もちもの'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Item.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
+                child: TypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: pokeItemController,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'もちもの'
                     ),
-                  ],
-                  onChanged: (value) {myPokemon.item = value;},
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Item> matches = [];
+                    matches.addAll(pokeData.items);
+                    matches.retainWhere((s){
+                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion.displayName),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    pokeItemController.text = suggestion.displayName;
+                    myPokemon.item = suggestion;
+                  },
                 ),
               ),
             ],
@@ -263,8 +350,8 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'H -',
                   enabled: false,
+                  controller: pokeStatHRaceController,
                 ),
               ),
               SizedBox(width: 10),
@@ -272,7 +359,7 @@ class RegisterPokemonPage extends StatelessWidget {
                 child: SpinBox(
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '個体値'
+                    labelText: '個体値',
                   ),
                   min: 0,
                   max: 31,
@@ -298,6 +385,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: 'HP'
                   ),
+                  key: pokeStatHRealKey,
                 ),
               ),
             ],
@@ -312,7 +400,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'A -',
+                  controller: pokeStatARaceController,
                   enabled: false,
                 ),
               ),
@@ -352,7 +440,7 @@ class RegisterPokemonPage extends StatelessWidget {
             ],
           ),
           SizedBox(height: 10),
-          Row(  // とくこう
+          Row(  // ぼうぎょ
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
@@ -361,7 +449,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'B -',
+                  controller: pokeStatBRaceController,
                   enabled: false,
                 ),
               ),
@@ -401,7 +489,7 @@ class RegisterPokemonPage extends StatelessWidget {
             ],
           ),
           SizedBox(height: 10),
-          Row(  // ぼうぎょ
+          Row(  // とくこう
             mainAxisSize: MainAxisSize.min,
             children: [
               Flexible(
@@ -410,7 +498,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'C -',
+                  controller: pokeStatCRaceController,
                   enabled: false,
                 ),
               ),
@@ -459,7 +547,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'D -',
+                  controller: pokeStatDRaceController,
                   enabled: false,
                 ),
               ),
@@ -508,7 +596,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     border: UnderlineInputBorder(),
                     labelText: '種族値'
                   ),
-                  initialValue: 'S -',
+                  controller: pokeStatSRaceController,
                   enabled: false,
                 ),
               ),
@@ -553,19 +641,37 @@ class RegisterPokemonPage extends StatelessWidget {
             children: [
               Expanded(
                 flex: 7,
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'わざ1'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Move.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
-                    ),
-                  ],
-                  onChanged: (value) {},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return TypeAheadField(
+                      textFieldConfiguration: TextFieldConfiguration(
+                        controller: pokeMove1Controller,
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'わざ1'
+                        ),
+                      ),
+                      autoFlipDirection: true,
+                      suggestionsCallback: (pattern) async {
+                        List<Move> matches = [];
+                        matches.addAll(pokeData.pokeBase[myPokemon.no]!.move);
+                        matches.retainWhere((s){
+                          return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                        });
+                        return matches;
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion.displayName),
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) {
+                        pokeMove1Controller.text = suggestion.displayName;
+                        myPokemon.move1 = suggestion;
+                      },
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
@@ -587,19 +693,37 @@ class RegisterPokemonPage extends StatelessWidget {
             children: [
               Expanded(
                 flex: 7,
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'わざ2'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Move.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
-                    ),
-                  ],
-                  onChanged: (value) {},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return TypeAheadField(
+                      textFieldConfiguration: TextFieldConfiguration(
+                        controller: pokeMove2Controller,
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'わざ2'
+                        ),
+                      ),
+                      autoFlipDirection: true,
+                      suggestionsCallback: (pattern) async {
+                        List<Move> matches = [];
+                        matches.addAll(pokeData.pokeBase[myPokemon.no]!.move);
+                        matches.retainWhere((s){
+                          return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                        });
+                        return matches;
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion.displayName),
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) {
+                        pokeMove2Controller.text = suggestion.displayName;
+                        myPokemon.move2 = suggestion;
+                      },
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
@@ -621,19 +745,37 @@ class RegisterPokemonPage extends StatelessWidget {
             children: [
               Expanded(
                 flex: 7,
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'わざ3'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Move.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
-                    ),
-                  ],
-                  onChanged: (value) {},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return TypeAheadField(
+                      textFieldConfiguration: TextFieldConfiguration(
+                        controller: pokeMove3Controller,
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'わざ3'
+                        ),
+                      ),
+                      autoFlipDirection: true,
+                      suggestionsCallback: (pattern) async {
+                        List<Move> matches = [];
+                        matches.addAll(pokeData.pokeBase[myPokemon.no]!.move);
+                        matches.retainWhere((s){
+                          return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                        });
+                        return matches;
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion.displayName),
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) {
+                        pokeMove3Controller.text = suggestion.displayName;
+                        myPokemon.move3 = suggestion;
+                      },
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
@@ -655,19 +797,37 @@ class RegisterPokemonPage extends StatelessWidget {
             children: [
               Expanded(
                 flex: 7,
-                child: DropdownButtonFormField(
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: 'わざ4'
-                  ),
-                  items: <DropdownMenuItem>[
-                    for (var type in Move.values)
-                      DropdownMenuItem(
-                        value: type.displayName,
-                        child: Text(type.displayName),
-                    ),
-                  ],
-                  onChanged: (value) {},
+                child: ValueListenableBuilder(
+                  valueListenable: pokeNameController,
+                  builder: (context, TextEditingValue value, __) {
+                    return TypeAheadField(
+                      textFieldConfiguration: TextFieldConfiguration(
+                        controller: pokeMove4Controller,
+                        decoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: 'わざ4'
+                        ),
+                      ),
+                      autoFlipDirection: true,
+                      suggestionsCallback: (pattern) async {
+                        List<Move> matches = [];
+                        matches.addAll(pokeData.pokeBase[myPokemon.no]!.move);
+                        matches.retainWhere((s){
+                          return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                        });
+                        return matches;
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion.displayName),
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) {
+                        pokeMove4Controller.text = suggestion.displayName;
+                        myPokemon.move4 = suggestion;
+                      },
+                    );
+                  }
                 ),
               ),
               SizedBox(width: 10),
@@ -687,5 +847,4 @@ class RegisterPokemonPage extends StatelessWidget {
       ),
     );
   }
-
 }
