@@ -31,8 +31,38 @@
 
    https://pub.dev/packages/flutter_typeahead
 
+ * SQLiteでのデータ永続化 | Flutter Doc JP
+
+   https://flutter.ctrnost.com/logic/sqlite/
+ 
+ * python + sqlite3でリストを簡単に扱う - Qiita
+
+   https://qiita.com/maueki/items/4aae7b2d9a34758ef465
+
+ * How to Add Autocomplete Suggestions on TextField in Flutter
+
+   候補付きテキストフィールドには下記URLのTypeAheadFieldを採用した。
+
+   https://www.fluttercampus.com/guide/189/how-to-add-autocomplete-suggestions-on-textfield-in-flutter/
+
 ### ポケモンのアプリ作成
  * ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1さらうどん
 
    https://giginet.hateblo.jp/entry/2022/10/17/110000
+
+ * Documentation - PokéAPI
+
+   https://pokeapi.co/docs/v2
+
+ * ステータス - ポケモンWiki
+
+   ポケモンの各ステータスの計算方法
+
+   https://wiki.xn--rckteqa2e.com/wiki/%E3%82%B9%E3%83%86%E3%83%BC%E3%82%BF%E3%82%B9#.E7.AC.AC.E4.B8.89.E4.B8.96.E4.BB.A3.E4.BB.A5.E9.99.8D
+
+ * ステータス計算機（SV） | Pokemonote
+
+   ステータス計算の検算に使用。
+
+   https://pokemonote.com/calc-stats/
 
