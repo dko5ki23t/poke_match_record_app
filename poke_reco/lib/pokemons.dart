@@ -57,18 +57,21 @@ class PokemonsPage extends StatelessWidget {
       body: Stack(
         children: [
           lists,
-          Align(
-            alignment: Alignment.bottomRight,
-            //padding: EdgeInsets.all(30),
-            child: FloatingActionButton(
-              tooltip: 'ポケモン登録',
-              shape: CircleBorder(),
-              onPressed: (){
-                onAdd();
-              },
-              child: Icon(Icons.add),
+          Container(
+            padding: const EdgeInsets.all(20),
+            child: Align(
+              alignment: Alignment.bottomRight,
+              //padding: EdgeInsets.all(30),
+              child: FloatingActionButton(
+                tooltip: 'ポケモン登録',
+                shape: CircleBorder(),
+                onPressed: (){
+                  onAdd();
+                },
+                child: Icon(Icons.add),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

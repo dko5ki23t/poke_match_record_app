@@ -33,14 +33,15 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
-  var pokeData = PokeDB();
+  final pokeData = PokeDB();
+  late List<Pokemon> pokemons;
 
   MyAppState() {
     fetchPokeData();
   }
 
   Future<void> fetchPokeData() async {
-    await pokeData.initialize();
+    pokemons = await pokeData.initialize();
     notifyListeners();
   }
 
@@ -48,8 +49,6 @@ class MyAppState extends ChangeNotifier {
     current = WordPair.random();
     notifyListeners();
   }
-
-  var pokemons = <Pokemon>[];
 }
 
 class MyHomePage extends StatefulWidget {
