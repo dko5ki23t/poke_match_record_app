@@ -88,6 +88,15 @@ const String myPokemonColumnPP3 = 'pp3';
 const String myPokemonColumnMove4 = 'move4';
 const String myPokemonColumnPP4 = 'pp4';
 
+// 今後変更されないとも限らない
+const int pokemonMinLevel = 1;
+const int pokemonMaxLevel = 100;
+const int pokemonMinNo = 1;
+const int pokemonMinIndividual = 0;
+const int pokemonMaxIndividual = 31;
+const int pokemonMinEffort = 0;
+const int pokemonMaxEffort = 252;
+
 /*
 pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
     'hp': 0,
@@ -193,6 +202,27 @@ class Temper {
 
   const Temper(this.id, this.displayName, this.decreasedStat, this.increasedStat);
 
+  static List<double> getTemperBias(Temper temper) {
+    const Map<String, int> statNameToIdx = {
+      'attack' : 0,
+      'defense' : 1,
+      'special-attack' : 2,
+      'special-defense' : 3,
+      'speed' : 4,
+    };
+    var ret = [1.0, 1.0, 1.0, 1.0, 1.0]; // A, B, C, D, S
+    final incIdx = statNameToIdx[temper.increasedStat];
+    if (incIdx != null) {
+      ret[incIdx] = 1.1;
+    }
+    final decIdx = statNameToIdx[temper.decreasedStat];
+    if (decIdx != null) {
+      ret[decIdx] = 0.9;
+    }
+
+    return ret;
+  }
+
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       temperColumnId: id,
@@ -211,6 +241,22 @@ class SixParams {
   int real = 0;
 
   SixParams(this.race, this.indi, this.effort, this.real);
+
+  static int getRealH(int level, int race, int indi, int effort) {
+    return (race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + level + 10;
+  }
+
+  static int getRealABCDS(int level, int race, int indi, int effort, double temperBias) {
+    return (((race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + 5) * temperBias).toInt();
+  }
+
+  factory SixParams.createFromLRIEtoH(int level, int race, int indi, int effort) {
+    return SixParams(race, indi, effort, getRealH(level, race, indi, effort));
+  }
+
+  factory SixParams.createFromLRIEBtoABCDS(int level, int race, int indi, int effort, double temperBias) {
+    return SixParams(race, indi, effort, getRealABCDS(level, race, indi, effort, temperBias));
+  }
 
   set(race, indi, effort, real) {
     this.race = race;
@@ -367,21 +413,22 @@ class PokeBase {    // 各ポケモンの種族ごとの値
 }
 
 class Pokemon {
-  String name = '';       // ポケモン名
+  int id = 0;    // データベースのプライマリーキー
+  String _name = '';       // ポケモン名
   String nickname = '';            // ニックネーム
-  int level = 50;                  // レベル
+  int _level = 50;                  // レベル
   Sex sex = Sex.none;              // せいべつ
-  int no = 1;                      // 図鑑No.
+  int _no = 1;                      // 図鑑No.
   PokeType type1 = PokeType.createFromId(1);        // タイプ1
   PokeType? type2;                     // タイプ2(null OK)
   PokeType teraType = PokeType.createFromId(1);     // テラスタルタイプ
   Temper temper = Temper(0, '', '', ''); // せいかく
-  SixParams h = SixParams(0, 31, 0, 0);       // HP
-  SixParams a = SixParams(0, 31, 0, 0);       // こうげき
-  SixParams b = SixParams(0, 31, 0, 0);       // ぼうぎょ
-  SixParams c = SixParams(0, 31, 0, 0);       // とくこう
-  SixParams d = SixParams(0, 31, 0, 0);       // とくぼう
-  SixParams s = SixParams(0, 31, 0, 0);       // すばやさ
+  SixParams _h = SixParams(0, 31, 0, 0);       // HP
+  SixParams _a = SixParams(0, 31, 0, 0);       // こうげき
+  SixParams _b = SixParams(0, 31, 0, 0);       // ぼうぎょ
+  SixParams _c = SixParams(0, 31, 0, 0);       // とくこう
+  SixParams _d = SixParams(0, 31, 0, 0);       // とくぼう
+  SixParams _s = SixParams(0, 31, 0, 0);       // すばやさ
   Ability ability = Ability(0, '');     // とくせい
   Item? item;                      // もちもの(null OK)
   Move move1 = Move(0, '', 0);     // わざ1
@@ -392,30 +439,81 @@ class Pokemon {
   int? pp3 = 5;                    // PP3
   Move? move4;                     // わざ4
   int? pp4 = 5;                    // PP4
+  bool _isValid = false;            // 必要な情報が入力されているか
 
+  // getter
+  String get name => _name;
+  int get level => _level;
+  int get no => _no;
+  SixParams get h => _h;
+  SixParams get a => _a;
+  SixParams get b => _b;
+  SixParams get c => _c;
+  SixParams get d => _d;
+  SixParams get s => _s;
+  bool get isValid => _isValid;
+
+  // setter
+  set name(String x) {_name = x; updateIsValid();}
+  set level(int x) {_level = x; updateIsValid();}
+  set no(int x) {_no = x; updateIsValid();}
+  set h(SixParams x) {_h = x; updateIsValid();}
+  set a(SixParams x) {_a = x; updateIsValid();}
+  set b(SixParams x) {_b = x; updateIsValid();}
+  set c(SixParams x) {_c = x; updateIsValid();}
+  set d(SixParams x) {_d = x; updateIsValid();}
+  set s(SixParams x) {_s = x; updateIsValid();}
+
+  // 正しく情報が入力されているかどうか
+  void updateIsValid() {
+    if (
+      _name != '' &&
+      (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
+      _no >= pokemonMinNo
+    ) {
+      _isValid = true;
+    }
+    else {
+      _isValid = false;
+    }
+  }
+
+  // レベル、種族値、個体値、努力値、せいかくから実数値を更新
+  // TODO habcdsのsetterで自動的に呼ぶ？
+  void updateRealStats() {
+    final temperBias = Temper.getTemperBias(temper);
+    _h.real = SixParams.getRealH(level, _h.race, _h.indi, _h.effort);
+    _a.real = SixParams.getRealABCDS(level, _a.race, _a.indi, _a.effort, temperBias[0]);
+    _b.real = SixParams.getRealABCDS(level, _b.race, _b.indi, _b.effort, temperBias[1]);
+    _c.real = SixParams.getRealABCDS(level, _c.race, _c.indi, _c.effort, temperBias[2]);
+    _d.real = SixParams.getRealABCDS(level, _d.race, _d.indi, _d.effort, temperBias[3]);
+    _s.real = SixParams.getRealABCDS(level, _s.race, _s.indi, _s.effort, temperBias[4]);
+  }
+
+  // SQLite保存用
   Map<String, dynamic> toMap(int id) {
     return {
       myPokemonColumnId: id,
-      myPokemonColumnNo: no,
+      myPokemonColumnNo: _no,
       myPokemonColumnNickName: nickname,
       myPokemonColumnTeraType: teraType.id,
-      myPokemonColumnLevel: level,
+      myPokemonColumnLevel: _level,
       myPokemonColumnSex: sex.id,
       myPokemonColumnTemper: temper.id,
       myPokemonColumnAbility: ability.id,
       myPokemonColumnItem: item?.id,
-      myPokemonColumnIndividual[0]: h.indi,
-      myPokemonColumnIndividual[1]: a.indi,
-      myPokemonColumnIndividual[2]: b.indi,
-      myPokemonColumnIndividual[3]: c.indi,
-      myPokemonColumnIndividual[4]: d.indi,
-      myPokemonColumnIndividual[5]: s.indi,
-      myPokemonColumnEffort[0]: h.effort,
-      myPokemonColumnEffort[1]: a.effort,
-      myPokemonColumnEffort[2]: b.effort,
-      myPokemonColumnEffort[3]: c.effort,
-      myPokemonColumnEffort[4]: d.effort,
-      myPokemonColumnEffort[5]: s.effort,
+      myPokemonColumnIndividual[0]: _h.indi,
+      myPokemonColumnIndividual[1]: _a.indi,
+      myPokemonColumnIndividual[2]: _b.indi,
+      myPokemonColumnIndividual[3]: _c.indi,
+      myPokemonColumnIndividual[4]: _d.indi,
+      myPokemonColumnIndividual[5]: _s.indi,
+      myPokemonColumnEffort[0]: _h.effort,
+      myPokemonColumnEffort[1]: _a.effort,
+      myPokemonColumnEffort[2]: _b.effort,
+      myPokemonColumnEffort[3]: _c.effort,
+      myPokemonColumnEffort[4]: _d.effort,
+      myPokemonColumnEffort[5]: _s.effort,
       myPokemonColumnMove1: move1.id,
       myPokemonColumnPP1: pp1,
       myPokemonColumnMove2: move2?.id,
@@ -436,7 +534,7 @@ class PokeDB {
   
   Map<int, Ability> abilities = {};
   late Database abilityDb;
-  List<Temper> tempers = [];
+  Map<int, Temper> tempers = {};
   late Database temperDb;
   List<Item> items = [];
   late Database itemDb;
@@ -606,12 +704,12 @@ class PokeDB {
       columns: [temperColumnId, temperColumnName, temperColumnDe, temperColumnIn],
     );
     for (var map in maps) {
-      tempers.add(Temper(
+      tempers[map[temperColumnId]] = Temper(
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnDe],
         map[temperColumnIn],
-      ));
+      );
     }
 
 
@@ -778,6 +876,7 @@ class PokeDB {
       for (var map in maps) {
         int pokeNo = map[myPokemonColumnNo];
         ret.add(Pokemon()
+          ..id = map[myPokemonColumnId]
           ..name = pokeBase[pokeNo]!.name
           ..nickname = map[myPokemonColumnNickName]
           ..level = map[myPokemonColumnLevel]
@@ -786,35 +885,49 @@ class PokeDB {
           ..type1 = pokeBase[pokeNo]!.type1
           ..type2 = pokeBase[pokeNo]!.type2
           ..teraType = PokeType.createFromId(map[myPokemonColumnTeraType])
-          ..temper = Temper(map[myPokemonColumnTemper], '', '', '')
+          ..temper = tempers[map[myPokemonColumnTemper]]!
           ..h = SixParams(
-            0, map[myPokemonColumnIndividual[0]],
-            map[myPokemonColumnEffort[0]], 0)
+            pokeBase[pokeNo]!.h,
+            map[myPokemonColumnIndividual[0]],
+            map[myPokemonColumnEffort[0]],
+            0)
           ..a = SixParams(
-            0, map[myPokemonColumnIndividual[1]],
-            map[myPokemonColumnEffort[1]], 0)
+            pokeBase[pokeNo]!.a,
+            map[myPokemonColumnIndividual[1]],
+            map[myPokemonColumnEffort[1]],
+            0)
           ..b = SixParams(
-            0, map[myPokemonColumnIndividual[2]],
-            map[myPokemonColumnEffort[2]], 0)
+            pokeBase[pokeNo]!.b,
+            map[myPokemonColumnIndividual[2]],
+            map[myPokemonColumnEffort[2]],
+            0)
           ..c = SixParams(
-            0, map[myPokemonColumnIndividual[3]],
-            map[myPokemonColumnEffort[3]], 0)
+            pokeBase[pokeNo]!.c,
+            map[myPokemonColumnIndividual[3]],
+            map[myPokemonColumnEffort[3]],
+            0)
           ..d = SixParams(
-            0, map[myPokemonColumnIndividual[4]],
-            map[myPokemonColumnEffort[4]], 0)
+            pokeBase[pokeNo]!.d,
+            map[myPokemonColumnIndividual[4]],
+            map[myPokemonColumnEffort[4]],
+            0)
           ..s = SixParams(
-            0, map[myPokemonColumnIndividual[5]],
-            map[myPokemonColumnEffort[5]], 0)
+            pokeBase[pokeNo]!.s,
+            map[myPokemonColumnIndividual[5]],
+            map[myPokemonColumnEffort[5]],
+            0)
           ..ability = Ability(map[myPokemonColumnAbility], '')
           ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '') : null
-          ..move1 = Move(map[myPokemonColumnMove1], '', 0)
+          ..move1 = moves[map[myPokemonColumnMove1]]!
           ..pp1 = map[myPokemonColumnPP1]
-          ..move2 = map[myPokemonColumnMove2] != null ? Move(map[myPokemonColumnMove2], '', 0) : null
+          ..move2 = map[myPokemonColumnMove2] != null ? moves[map[myPokemonColumnMove2]]! : null
           ..pp2 = map[myPokemonColumnPP2]
-          ..move3 = map[myPokemonColumnMove3] != null ? Move(map[myPokemonColumnMove3], '', 0) : null
+          ..move3 = map[myPokemonColumnMove3] != null ? moves[map[myPokemonColumnMove3]]! : null
           ..pp3 = map[myPokemonColumnPP3]
-          ..move4 = map[myPokemonColumnMove4] != null ? Move(map[myPokemonColumnMove4], '', 0) : null
+          ..move4 = map[myPokemonColumnMove4] != null ? moves[map[myPokemonColumnMove4]]! : null
           ..pp4 = map[myPokemonColumnPP4]
+          ..updateRealStats()
+          ..updateIsValid()
         );
       }
     }
@@ -869,44 +982,7 @@ class PokeDB {
         await Directory(dirname(myPokemonDBPath)).create(recursive: true);
       } catch (_) {}
 
-      // SQLiteのDB作成
-      myPokemonDb = await openDatabase(
-        myPokemonDBPath,
-        version: 1,
-        onCreate: (db, version) {
-          return db.execute(
-            'CREATE TABLE $myPokemonDBTable('
-            '$myPokemonColumnId INTEGER PRIMARY KEY, '
-            '$myPokemonColumnNo INTEGER, '
-            '$myPokemonColumnNickName TEXT, '
-            '$myPokemonColumnTeraType INTEGER, '
-            '$myPokemonColumnLevel INTEGER, '
-            '$myPokemonColumnSex INTEGER, '
-            '$myPokemonColumnTemper INTEGER, '
-            '$myPokemonColumnAbility INTEGER, '
-            '$myPokemonColumnItem INTEGER, '
-            '${myPokemonColumnIndividual[0]} INTEGER, '
-            '${myPokemonColumnIndividual[1]} INTEGER, '
-            '${myPokemonColumnIndividual[2]} INTEGER, '
-            '${myPokemonColumnIndividual[3]} INTEGER, '
-            '${myPokemonColumnIndividual[4]} INTEGER, '
-            '${myPokemonColumnIndividual[5]} INTEGER, '
-            '${myPokemonColumnEffort[0]} INTEGER, '
-            '${myPokemonColumnEffort[1]} INTEGER, '
-            '${myPokemonColumnEffort[2]} INTEGER, '
-            '${myPokemonColumnEffort[3]} INTEGER, '
-            '${myPokemonColumnEffort[4]} INTEGER, '
-            '${myPokemonColumnEffort[5]} INTEGER, '
-            '$myPokemonColumnMove1 INTEGER, '
-            '$myPokemonColumnPP1 INTEGER, '
-            '$myPokemonColumnMove2 INTEGER, '
-            '$myPokemonColumnPP2 INTEGER, '
-            '$myPokemonColumnMove3 INTEGER, '
-            '$myPokemonColumnPP3 INTEGER, '
-            '$myPokemonColumnMove4 INTEGER, '
-            '$myPokemonColumnPP4 INTEGER)'
-          );
-        });
+      myPokemonDb = await _createMyPokemonDB();
     }
     else {
       print("Opening existing database");
@@ -919,6 +995,101 @@ class PokeDB {
       myPokemonDBTable,
       myPokemon.toMap(id),
       conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteMyPokemon(List<int> ids) async {
+    final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    assert(await databaseExists(myPokemonDBPath));
+    assert(ids.isNotEmpty);
+
+    // SQLiteのDB読み込み
+    myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+
+    String whereStr = '$myPokemonColumnId=?';
+    for (int i = 1; i < ids.length; i++) {
+      whereStr += ' OR $myPokemonColumnId=?';
+    }
+
+    // SQLiteのDBから削除
+    await myPokemonDb.delete(
+      myPokemonDBTable,
+      where: whereStr,
+      whereArgs: ids,
+    );
+  }
+
+  Future<void> recreateMyPokemon(List<Pokemon> pokemons) async {
+    // ID振り直しとかするの面倒だから表を一旦消してしまって整理しなおせばよいという方針
+    // TODO:これでいいのか？
+
+    final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    assert(await databaseExists(myPokemonDBPath));
+
+    // SQLiteのDB読み込み
+    myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+    
+    // SQLiteのDB表ごと削除
+    await myPokemonDb.delete(
+      myPokemonDBTable,
+    );
+
+    // 表再作成
+    myPokemonDb = await _createMyPokemonDB();
+
+    // 登録ポケモンのID振り直し & DBに登録
+    for (int i = 0; i < pokemons.length; i++) {
+      pokemons[i].id = i + 1;
+      await myPokemonDb.insert(
+        myPokemonDBTable,
+        pokemons[i].toMap(i + 1),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  Future<Database> _createMyPokemonDB() async {
+    final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    assert(await databaseExists(myPokemonDBPath));
+
+    // SQLiteのDB作成
+    return openDatabase(
+      myPokemonDBPath,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          'CREATE TABLE $myPokemonDBTable('
+          '$myPokemonColumnId INTEGER PRIMARY KEY, '
+          '$myPokemonColumnNo INTEGER, '
+          '$myPokemonColumnNickName TEXT, '
+          '$myPokemonColumnTeraType INTEGER, '
+          '$myPokemonColumnLevel INTEGER, '
+          '$myPokemonColumnSex INTEGER, '
+          '$myPokemonColumnTemper INTEGER, '
+          '$myPokemonColumnAbility INTEGER, '
+          '$myPokemonColumnItem INTEGER, '
+          '${myPokemonColumnIndividual[0]} INTEGER, '
+          '${myPokemonColumnIndividual[1]} INTEGER, '
+          '${myPokemonColumnIndividual[2]} INTEGER, '
+          '${myPokemonColumnIndividual[3]} INTEGER, '
+          '${myPokemonColumnIndividual[4]} INTEGER, '
+          '${myPokemonColumnIndividual[5]} INTEGER, '
+          '${myPokemonColumnEffort[0]} INTEGER, '
+          '${myPokemonColumnEffort[1]} INTEGER, '
+          '${myPokemonColumnEffort[2]} INTEGER, '
+          '${myPokemonColumnEffort[3]} INTEGER, '
+          '${myPokemonColumnEffort[4]} INTEGER, '
+          '${myPokemonColumnEffort[5]} INTEGER, '
+          '$myPokemonColumnMove1 INTEGER, '
+          '$myPokemonColumnPP1 INTEGER, '
+          '$myPokemonColumnMove2 INTEGER, '
+          '$myPokemonColumnPP2 INTEGER, '
+          '$myPokemonColumnMove3 INTEGER, '
+          '$myPokemonColumnPP3 INTEGER, '
+          '$myPokemonColumnMove4 INTEGER, '
+          '$myPokemonColumnPP4 INTEGER)'
+        );
+      }
     );
   }
 }

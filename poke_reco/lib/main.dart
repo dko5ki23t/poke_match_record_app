@@ -191,13 +191,16 @@ class TabNavigator extends StatefulWidget {
 }
 
 class _TabNavigatorState extends State<TabNavigator> {
-  void _push(BuildContext context) {
+  void _push(BuildContext context, Pokemon myPokemon, bool isNew) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) {
+          // 新規作成
           return RegisterPokemonPage(
             onFinish: () => _pop(context),
+            myPokemon: myPokemon,
+            isNew: isNew,
           );
         },
       ),
@@ -220,12 +223,15 @@ class _TabNavigatorState extends State<TabNavigator> {
           builder: (context) {
             switch (routeSettings.name) {
               case TabNavigatorRoutes.register:
+                // 新規作成
                 return RegisterPokemonPage(
                   onFinish: () => _pop(context),
+                  myPokemon: Pokemon(),
+                  isNew: true,
                 );
               default:
                 return PokemonsPage(
-                  onAdd: () => _push(context)
+                  onAdd: (myPokemon, isNew) => _push(context, myPokemon, isNew)
                 );
             }
           },

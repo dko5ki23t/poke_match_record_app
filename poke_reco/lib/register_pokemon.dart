@@ -13,53 +13,108 @@ class RegisterPokemonPage extends StatelessWidget {
   RegisterPokemonPage({
     Key? key,
     required this.onFinish,
-  }) : super(key: key);
+    required this.myPokemon,
+    required this.isNew,
+  }) : super(key: key) {
+    pokeNameController = TextEditingController(text: myPokemon.name);
+    pokeNickNameController = TextEditingController(text: myPokemon.nickname);
+    pokeNoController = TextEditingController(text: myPokemon.no.toString());
+    pokeLevelController = TextEditingController(text: myPokemon.level.toString());
+    pokeTemperController = TextEditingController(text: myPokemon.temper.displayName);
+    pokeStatHRaceController = TextEditingController(text: isNew ? 'H -' : 'H ${myPokemon.h.race}');
+    pokeStatHController = TextEditingController();
+    pokeStatHIndiController = TextEditingController();
+    pokeStatHEffortController = TextEditingController();
+    pokeStatHRealController = TextEditingController();
+    //pokeStatHRealController = TextEditingController(text: isNew ? '' : '${myPokemon.h.real}');
+    pokeStatARaceController = TextEditingController(text: isNew ? 'A -' : 'A ${myPokemon.a.race}');
+    pokeStatAController = TextEditingController();
+    pokeStatAIndiController = TextEditingController();
+    pokeStatAEffortController = TextEditingController();
+    pokeStatARealController = TextEditingController();
+    //pokeStatARealController = TextEditingController(text: isNew ? '' : '${myPokemon.a.real}');
+    pokeStatBRaceController = TextEditingController(text: isNew ? 'B -' : 'B ${myPokemon.b.race}');
+    pokeStatBController = TextEditingController();
+    pokeStatBIndiController = TextEditingController();
+    pokeStatBEffortController = TextEditingController();
+    pokeStatBRealController = TextEditingController();
+    //pokeStatBRealController = TextEditingController(text: isNew ? '' : '${myPokemon.b.real}');
+    pokeStatCRaceController = TextEditingController(text: isNew ? 'C -' : 'C ${myPokemon.c.race}');
+    pokeStatCController = TextEditingController();
+    pokeStatCIndiController = TextEditingController();
+    pokeStatCEffortController = TextEditingController();
+    pokeStatCRealController = TextEditingController();
+    //pokeStatCRealController = TextEditingController(text: isNew ? '' : '${myPokemon.c.real}');
+    pokeStatDRaceController = TextEditingController(text: isNew ? 'D -' : 'D ${myPokemon.d.race}');
+    pokeStatDController = TextEditingController();
+    pokeStatDIndiController = TextEditingController();
+    pokeStatDEffortController = TextEditingController();
+    pokeStatDRealController = TextEditingController();
+    //pokeStatDRealController = TextEditingController(text: isNew ? '' : '${myPokemon.d.real}');
+    pokeStatSRaceController = TextEditingController(text: isNew ? 'S -' : 'S ${myPokemon.s.race}');
+    pokeStatSController = TextEditingController();
+    pokeStatSIndiController = TextEditingController();
+    pokeStatSEffortController = TextEditingController();
+    pokeStatSRealController = TextEditingController();
+    //pokeStatSRealController = TextEditingController(text: isNew ? '' : '${myPokemon.s.real}');
+    pokeMove1Controller = TextEditingController(text: isNew ? '' : myPokemon.move1.displayName);
+    pokePP1Controller = TextEditingController();
+    pokeMove2Controller = TextEditingController(text: (isNew || myPokemon.move2 == null) ? '' : myPokemon.move2!.displayName);
+    pokePP2Controller = TextEditingController();
+    pokeMove3Controller = TextEditingController(text: (isNew || myPokemon.move3 == null) ? '' : myPokemon.move3!.displayName);
+    pokePP3Controller = TextEditingController();
+    pokeMove4Controller = TextEditingController(text: (isNew || myPokemon.move4 == null) ? '' : myPokemon.move4!.displayName);
+    pokePP4Controller = TextEditingController();
+  }
+
   final void Function() onFinish;
-  final myPokemon = Pokemon();
-  final pokeNameController = TextEditingController();     // TODO:デストラクタ？で解放しなくていいのか https://codewithandrea.com/articles/flutter-text-field-form-validation/
-  final pokeNoController = TextEditingController();
-  final pokeLevelController = TextEditingController(text: '50');
-  final pokeTemperController = TextEditingController(text: 'まじめ');
+  final Pokemon myPokemon;
+  final bool isNew;
+  late final TextEditingController pokeNameController;     // TODO:デストラクタ？で解放しなくていいのか https://codewithandrea.com/articles/flutter-text-field-form-validation/
+  late final TextEditingController pokeNickNameController;
+  late final TextEditingController pokeNoController;
+  late final TextEditingController pokeLevelController;
+  late final TextEditingController pokeTemperController;
   //final pokeAbilityController = TextEditingController();
   final pokeItemController = TextEditingController();
-  final pokeStatHRaceController = TextEditingController(text: 'H -');
-  final pokeStatHController = TextEditingController();
-  final pokeStatHIndiController = TextEditingController(text: '31');
-  final pokeStatHEffortController = TextEditingController();
-  final pokeStatHRealController = TextEditingController();
-  final pokeStatARaceController = TextEditingController(text: 'A -');
-  final pokeStatAController = TextEditingController();          // 計算によりAの実数値が変更されるときに変更。（Formには紐づけないcontroller）
-  final pokeStatAIndiController = TextEditingController(text: '31');
-  final pokeStatAEffortController = TextEditingController();
-  final pokeStatARealController = TextEditingController();
-  final pokeStatBRaceController = TextEditingController(text: 'B -');
-  final pokeStatBController = TextEditingController();
-  final pokeStatBIndiController = TextEditingController(text: '31');
-  final pokeStatBEffortController = TextEditingController();
-  final pokeStatBRealController = TextEditingController();
-  final pokeStatCRaceController = TextEditingController(text: 'C -');
-  final pokeStatCController = TextEditingController();
-  final pokeStatCIndiController = TextEditingController(text: '31');
-  final pokeStatCEffortController = TextEditingController();
-  final pokeStatCRealController = TextEditingController();
-  final pokeStatDRaceController = TextEditingController(text: 'D -');
-  final pokeStatDController = TextEditingController();
-  final pokeStatDIndiController = TextEditingController(text: '31');
-  final pokeStatDEffortController = TextEditingController();
-  final pokeStatDRealController = TextEditingController();
-  final pokeStatSRaceController = TextEditingController(text: 'S -');
-  final pokeStatSController = TextEditingController();
-  final pokeStatSIndiController = TextEditingController(text: '31');
-  final pokeStatSEffortController = TextEditingController();
-  final pokeStatSRealController = TextEditingController();
-  final pokeMove1Controller = TextEditingController();
-  final pokePP1Controller = TextEditingController(text: '5');
-  final pokeMove2Controller = TextEditingController();
-  final pokePP2Controller = TextEditingController(text: '5');
-  final pokeMove3Controller = TextEditingController();
-  final pokePP3Controller = TextEditingController(text: '5');
-  final pokeMove4Controller = TextEditingController();
-  final pokePP4Controller = TextEditingController(text: '5');
+  late final TextEditingController pokeStatHRaceController;
+  late final TextEditingController pokeStatHController;
+  late final TextEditingController pokeStatHIndiController;
+  late final TextEditingController pokeStatHEffortController;
+  late final TextEditingController pokeStatHRealController;
+  late final TextEditingController pokeStatARaceController;
+  late final TextEditingController pokeStatAController;          // 計算によりAの実数値が変更されるときに変更。（Formには紐づけないcontroller）
+  late final TextEditingController pokeStatAIndiController;
+  late final TextEditingController pokeStatAEffortController;
+  late final TextEditingController pokeStatARealController;
+  late final TextEditingController pokeStatBRaceController;
+  late final TextEditingController pokeStatBController;
+  late final TextEditingController pokeStatBIndiController;
+  late final TextEditingController pokeStatBEffortController;
+  late final TextEditingController pokeStatBRealController;
+  late final TextEditingController pokeStatCRaceController;
+  late final TextEditingController pokeStatCController;
+  late final TextEditingController pokeStatCIndiController;
+  late final TextEditingController pokeStatCEffortController;
+  late final TextEditingController pokeStatCRealController;
+  late final TextEditingController pokeStatDRaceController;
+  late final TextEditingController pokeStatDController;
+  late final TextEditingController pokeStatDIndiController;
+  late final TextEditingController pokeStatDEffortController;
+  late final TextEditingController pokeStatDRealController;
+  late final TextEditingController pokeStatSRaceController;
+  late final TextEditingController pokeStatSController;
+  late final TextEditingController pokeStatSIndiController;
+  late final TextEditingController pokeStatSEffortController;
+  late final TextEditingController pokeStatSRealController;
+  late final TextEditingController pokeMove1Controller;
+  late final TextEditingController pokePP1Controller;
+  late final TextEditingController pokeMove2Controller;
+  late final TextEditingController pokePP2Controller;
+  late final TextEditingController pokeMove3Controller;
+  late final TextEditingController pokePP3Controller;
+  late final TextEditingController pokeMove4Controller;
+  late final TextEditingController pokePP4Controller;
 
   // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
   static toKatakana(String str) {
@@ -78,30 +133,7 @@ class RegisterPokemonPage extends StatelessWidget {
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
-    const Map<String, int> statNameToIdx = {
-      'attack' : 0,
-      'defense' : 1,
-      'special-attack' : 2,
-      'special-defense' : 3,
-      'speed' : 4,
-    };
-    var temperBias = [1.0, 1.0, 1.0, 1.0, 1.0];
-
-    final incIdx = statNameToIdx[myPokemon.temper.increasedStat];
-    if (incIdx != null) {
-      temperBias[incIdx] = 1.1;
-    }
-    final decIdx = statNameToIdx[myPokemon.temper.decreasedStat];
-    if (decIdx != null) {
-      temperBias[decIdx] = 0.9;
-    }
-
-    myPokemon.h.real = (myPokemon.h.race * 2 + myPokemon.h.indi + (myPokemon.h.effort ~/ 4)) * myPokemon.level ~/ 100 + myPokemon.level + 10;
-    myPokemon.a.real = (((myPokemon.a.race * 2 + myPokemon.a.indi + (myPokemon.a.effort ~/ 4)) * myPokemon.level ~/ 100 + 5) * temperBias[0]).toInt();
-    myPokemon.b.real = (((myPokemon.b.race * 2 + myPokemon.b.indi + (myPokemon.b.effort ~/ 4)) * myPokemon.level ~/ 100 + 5) * temperBias[1]).toInt();
-    myPokemon.c.real = (((myPokemon.c.race * 2 + myPokemon.c.indi + (myPokemon.c.effort ~/ 4)) * myPokemon.level ~/ 100 + 5) * temperBias[2]).toInt();
-    myPokemon.d.real = (((myPokemon.d.race * 2 + myPokemon.d.indi + (myPokemon.d.effort ~/ 4)) * myPokemon.level ~/ 100 + 5) * temperBias[3]).toInt();
-    myPokemon.s.real = (((myPokemon.s.race * 2 + myPokemon.s.indi + (myPokemon.s.effort ~/ 4)) * myPokemon.level ~/ 100 + 5) * temperBias[4]).toInt();
+    myPokemon.updateRealStats();
 
     pokeStatHRealController.text = myPokemon.h.real.toString();
     pokeStatARealController.text = myPokemon.a.real.toString();
@@ -127,20 +159,23 @@ class RegisterPokemonPage extends StatelessWidget {
 
     void onComplete() {
       // TODO?: 入力された値が正しいかチェック
-      pokemons.add(myPokemon);
+      if (isNew) {
+        pokemons.add(myPokemon);
+      }
       pokeData.addMyPokemon(myPokemon, pokemons.length);
       onFinish();
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('ポケモン登録'),
+        title: isNew ? Text('ポケモン登録') : Text('ポケモン編集'),
         actions: [
           ValueListenableBuilder(
             valueListenable: pokeMove1Controller,
             builder: (context, TextEditingValue value, __) {
               return TextButton(
-                onPressed: (pokeMove1Controller.text == '') ? null : () => onComplete(),
+                onPressed: (myPokemon.isValid) ? () => onComplete() : null,
+                //onPressed: (pokeMove1Controller.text == '') ? null : () => onComplete(),
                 child: Text('完了'),
               );
             },
@@ -256,6 +291,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         ),
                         onChanged: (value) {myPokemon.nickname = value;},
                         maxLength: 6,
+                        controller: pokeNickNameController,
                       ),
                     ),
                   ],
@@ -321,7 +357,8 @@ class RegisterPokemonPage extends StatelessWidget {
                               child: Row(children: [Icon(type.displayIcon), Text(type.displayName)]),
                           ),
                         ],
-                        value: pokeData.types[0],
+                        value: pokeData.types[myPokemon.teraType.id - 1],
+                        //value: myPokemon.teraType,
                         onChanged: (value) {myPokemon.teraType = value;},
                       ),
                     ),
@@ -341,9 +378,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 1,
-                        max: 100,
-                        initialValue: 50,
+                        min: pokemonMinLevel,
+                        max: pokemonMaxLevel,
+                        initialValue: myPokemon.level,
                         onIncrement: (value) {
                           myPokemon.level = value.toInt();
                           updateRealStat();
@@ -372,7 +409,7 @@ class RegisterPokemonPage extends StatelessWidget {
                               child: Icon(type.displayIcon),
                           ),
                         ],
-                        value: Sex.none,
+                        value: myPokemon.sex,
                         onChanged: (value) {myPokemon.sex = value;},
                       ),
                     ),
@@ -394,7 +431,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         autoFlipDirection: true,
                         suggestionsCallback: (pattern) async {
                           List<Temper> matches = [];
-                          matches.addAll(pokeData.tempers);
+                          matches.addAll(pokeData.tempers.values);
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
@@ -429,7 +466,7 @@ class RegisterPokemonPage extends StatelessWidget {
                                   child: Text(ab.displayName),
                                 )
                             ],
-                            value: pokeData.pokeBase[myPokemon.no]!.ability[0],
+                            value: pokeData.abilities[myPokemon.ability.id],
                             onChanged: (myPokemon.name == '') ? null : (dynamic value) {myPokemon.ability = value;},
                           );
                         }
@@ -481,13 +518,14 @@ class RegisterPokemonPage extends StatelessWidget {
                           border: UnderlineInputBorder(),
                           labelText: '種族値'
                         ),
-                        enabled: false,
                         controller: pokeStatHRaceController,
+                        enabled: false,
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
                       child: NumberInputWithIncrementDecrement(
+                        controller: pokeStatHIndiController,
                         numberFieldDecoration: const InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: '個体値',
@@ -495,9 +533,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.h.indi,
                         onIncrement: (value) {
                           myPokemon.h.indi = value.toInt();
                           updateRealStat();
@@ -510,12 +548,12 @@ class RegisterPokemonPage extends StatelessWidget {
                           myPokemon.h.indi = value.toInt();
                           updateRealStat();
                         },                      // TODO: いい方法ありそう
-                        controller: pokeStatHIndiController,
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
                       child: NumberInputWithIncrementDecrement(
+                        controller: pokeStatHEffortController,
                         numberFieldDecoration: const InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: '努力値'
@@ -523,8 +561,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.h.effort,
                         onIncrement: (value) {
                           myPokemon.h.effort = value.toInt();
                           updateRealStat();
@@ -537,7 +576,6 @@ class RegisterPokemonPage extends StatelessWidget {
                           myPokemon.h.effort = value.toInt();
                           updateRealStat();
                         },                      // TODO: いい方法ありそう
-                        controller: pokeStatHEffortController,
                       ),
                     ),
                     SizedBox(width: 10),
@@ -546,6 +584,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         valueListenable: pokeStatHController,
                         builder: (context, TextEditingValue value, __) {    // TODO: 2つの値をlistenするためのワークアラウンド。このネストを解消して新たにクラス作るのもあり https://stackoverflow.com/questions/58030337/valuelistenablebuilder-listen-to-more-than-one-value
                           return NumberInputWithIncrementDecrement(
+                            controller: pokeStatHRealController,
                             numberFieldDecoration: const InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: 'HP'
@@ -553,8 +592,7 @@ class RegisterPokemonPage extends StatelessWidget {
                             widgetContainerDecoration: const BoxDecoration(
                               border: null,
                             ),
-                            //initialValue: myPokemon.h.real,
-                            controller: pokeStatHRealController,
+                            initialValue: myPokemon.h.real,
                           );
                         },
                       ),
@@ -595,9 +633,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.a.indi,
                         onIncrement: (value) {
                           myPokemon.a.indi = value.toInt();
                           updateRealStat();
@@ -623,8 +661,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.a.effort,
                         onIncrement: (value) {
                           myPokemon.a.effort = value.toInt();
                           updateRealStat();
@@ -694,9 +733,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.b.indi,
                         onIncrement: (value) {
                           myPokemon.b.indi = value.toInt();
                           updateRealStat();
@@ -722,8 +761,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.b.effort,
                         onIncrement: (value) {
                           myPokemon.b.effort = value.toInt();
                           updateRealStat();
@@ -793,9 +833,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.c.indi,
                         onIncrement: (value) {
                           myPokemon.c.indi = value.toInt();
                           updateRealStat();
@@ -821,8 +861,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.c.effort,
                         onIncrement: (value) {
                           myPokemon.c.effort = value.toInt();
                           updateRealStat();
@@ -892,9 +933,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.d.indi,
                         onIncrement: (value) {
                           myPokemon.d.indi = value.toInt();
                           updateRealStat();
@@ -920,8 +961,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.d.effort,
                         onIncrement: (value) {
                           myPokemon.d.effort = value.toInt();
                           updateRealStat();
@@ -991,9 +1033,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 31,
-                        initialValue: 31,
+                        min: pokemonMinIndividual,
+                        max: pokemonMaxIndividual,
+                        initialValue: myPokemon.s.indi,
                         onIncrement: (value) {
                           myPokemon.s.indi = value.toInt();
                           updateRealStat();
@@ -1019,8 +1061,9 @@ class RegisterPokemonPage extends StatelessWidget {
                         widgetContainerDecoration: const BoxDecoration(
                           border: null,
                         ),
-                        min: 0,
-                        max: 252,
+                        min: pokemonMinEffort,
+                        max: pokemonMaxEffort,
+                        initialValue: myPokemon.s.effort,
                         onIncrement: (value) {
                           myPokemon.s.effort = value.toInt();
                           updateRealStat();
@@ -1125,6 +1168,7 @@ class RegisterPokemonPage extends StatelessWidget {
                                 onChanged: (value) {
                                   myPokemon.pp1 = value.toInt();
                                 },                      // TODO: いい方法ありそう
+                                initialValue: myPokemon.pp1,
                                 enabled: (myPokemon.name != ''),
                               );
                             },
@@ -1206,6 +1250,7 @@ class RegisterPokemonPage extends StatelessWidget {
                             onChanged: (value) {
                               myPokemon.pp2 = value.toInt();
                             },                      // TODO: いい方法ありそう
+                            initialValue: myPokemon.pp2 == null ? 0 : myPokemon.pp2!,
                             enabled: (pokeMove1Controller.text != ''),
                           );
                         },
@@ -1286,6 +1331,7 @@ class RegisterPokemonPage extends StatelessWidget {
                             onChanged: (value) {
                               myPokemon.pp3 = value.toInt();
                             },                      // TODO: いい方法ありそう
+                            initialValue: myPokemon.pp3 == null ? 0 : myPokemon.pp3!,
                             enabled: (pokeMove2Controller.text != ''),
                           );
                         },
@@ -1367,6 +1413,7 @@ class RegisterPokemonPage extends StatelessWidget {
                             onChanged: (value) {
                               myPokemon.pp4 = value.toInt();
                             },                      // TODO: いい方法ありそう
+                            initialValue: myPokemon.pp4 == null ? 0 : myPokemon.pp4!,
                             enabled: (pokeMove3Controller.text != ''),
                           );
                         },
@@ -1374,6 +1421,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     ),
                   ],
                 ),
+                SizedBox(height: 50),
               ],
             ),
           ),
