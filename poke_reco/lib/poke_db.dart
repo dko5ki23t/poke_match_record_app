@@ -541,7 +541,7 @@ class PokeDB {
   Map<int, Move> moves = {};
   late Database moveDb;
   List<PokeType> types = [
-    for (final i in range(1, 18)) PokeType.createFromId(i.toInt())
+    for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
   ];
   Map<int, PokeBase> pokeBase = {};
   late Database pokeBaseDb;

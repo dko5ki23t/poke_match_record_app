@@ -2,6 +2,7 @@ import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 // import 'package:flutter_spinbox/material.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
@@ -305,6 +306,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         valueListenable: pokeNameController,
                         builder: (context, TextEditingValue value, __) {
                           return DropdownButtonFormField(
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: 'タイプ1'
@@ -312,8 +314,16 @@ class RegisterPokemonPage extends StatelessWidget {
                             items: <DropdownMenuItem>[
                               DropdownMenuItem(
                                 value: myPokemon.type1,
-                                child: Row(children: [Icon(myPokemon.type1.displayIcon), Text(myPokemon.type1.displayName)]),
-                              )
+                                child: FittedBox(
+                                  fit: BoxFit.fitWidth,
+                                  child: Row(
+                                    children: [
+                                      Icon(myPokemon.type1.displayIcon),
+                                      Text(myPokemon.type1.displayName),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                             onChanged: null,
                             value: myPokemon.type1,
@@ -327,6 +337,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         valueListenable: pokeNameController,
                         builder: (context, TextEditingValue value, __) {
                           return DropdownButtonFormField(
+                            isExpanded: true,
                             decoration: const InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: 'タイプ2'
@@ -334,7 +345,19 @@ class RegisterPokemonPage extends StatelessWidget {
                             items: <DropdownMenuItem>[
                               DropdownMenuItem(
                                 value: myPokemon.type2,
-                                child: Row(children: [(myPokemon.type2 != null) ? Text(myPokemon.type2!.displayName) : Text(''),],),
+                                child:
+                                  (myPokemon.type2 != null) ?
+                                  FittedBox(
+                                    fit: BoxFit.fitWidth,
+                                    child: Row(
+                                      children: 
+                                        [
+                                          Icon(myPokemon.type2!.displayIcon),
+                                          Text(myPokemon.type2!.displayName),
+                                        ],
+                                    ),
+                                  ) :
+                                  Text(''),
                               ),
                             ],
                             onChanged: null,
@@ -346,6 +369,7 @@ class RegisterPokemonPage extends StatelessWidget {
                     SizedBox(width: 10),
                     Flexible(
                       child: DropdownButtonFormField(
+                        isExpanded: true,
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: 'テラスタイプ'
@@ -354,7 +378,15 @@ class RegisterPokemonPage extends StatelessWidget {
                           for (var type in pokeData.types)
                             DropdownMenuItem(
                               value: type,
-                              child: Row(children: [Icon(type.displayIcon), Text(type.displayName)]),
+                              child: FittedBox(
+                                fit: BoxFit.fitWidth,
+                                child: Row(
+                                  children: [
+                                    Icon(type.displayIcon),
+                                    Text(type.displayName)
+                                  ],
+                                ),
+                              ),
                           ),
                         ],
                         value: pokeData.types[myPokemon.teraType.id - 1],

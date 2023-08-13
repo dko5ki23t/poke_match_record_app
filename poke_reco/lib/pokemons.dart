@@ -73,7 +73,11 @@ class PokemonsPageState extends State<PokemonsPage> {
                     });
                   },
                 ),
-                title: Text(pokemons[i].nickname),
+                title: Text(
+                  pokemons[i].nickname == '' ?
+                  pokemons[i].name :
+                  pokemons[i].nickname
+                ),
                 subtitle: Text(pokemons[i].name),
                 trailing: TextButton(
                   onPressed: () => widget.onAdd(pokemons[i], false),
@@ -89,7 +93,11 @@ class PokemonsPageState extends State<PokemonsPage> {
             for (var pokemon in pokemons)
               ListTile(
                 leading: Icon(Icons.catching_pokemon),
-                title: Text(pokemon.nickname),
+                title: Text(
+                  pokemon.nickname == '' ?
+                  pokemon.name :
+                  pokemon.nickname
+                ),
                 subtitle: Text(pokemon.name),
                 onLongPress: () => widget.onAdd(pokemon, false),
               ),
