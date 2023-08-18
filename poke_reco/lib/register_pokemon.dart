@@ -151,6 +151,30 @@ class RegisterPokemonPage extends StatelessWidget {
     pingpongTextEditingController(pokeStatSController);
   }
 
+  void updateStatsRefReal() {
+    myPokemon.updateStatsRefReal();
+
+    pokeStatHEffortController.text = myPokemon.h.effort.toString();
+    pokeStatHIndiController.text = myPokemon.h.indi.toString();
+    pokeStatAEffortController.text = myPokemon.a.effort.toString();
+    pokeStatAIndiController.text = myPokemon.a.indi.toString();
+    pokeStatBEffortController.text = myPokemon.b.effort.toString();
+    pokeStatBIndiController.text = myPokemon.b.indi.toString();
+    pokeStatCEffortController.text = myPokemon.c.effort.toString();
+    pokeStatCIndiController.text = myPokemon.c.indi.toString();
+    pokeStatDEffortController.text = myPokemon.d.effort.toString();
+    pokeStatDIndiController.text = myPokemon.d.indi.toString();
+    pokeStatSEffortController.text = myPokemon.s.effort.toString();
+    pokeStatSIndiController.text = myPokemon.s.indi.toString();
+    // notify
+    //pingpongTextEditingController(pokeStatHController);
+    //pingpongTextEditingController(pokeStatAController);
+    //pingpongTextEditingController(pokeStatBController);
+    //pingpongTextEditingController(pokeStatCController);
+    //pingpongTextEditingController(pokeStatDController);
+    //pingpongTextEditingController(pokeStatSController);
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -277,7 +301,7 @@ class RegisterPokemonPage extends StatelessWidget {
                         controller: pokeNoController,
                         enabled: false,   // TODO:余裕があれば図鑑No変更→ポケモン名変更
                       ),
-                    ),            
+                    ),
                   ],
                 ),
                 SizedBox(height: 10),
@@ -318,7 +342,7 @@ class RegisterPokemonPage extends StatelessWidget {
                                   fit: BoxFit.fitWidth,
                                   child: Row(
                                     children: [
-                                      Icon(myPokemon.type1.displayIcon),
+                                      myPokemon.type1.displayIcon,
                                       Text(myPokemon.type1.displayName),
                                     ],
                                   ),
@@ -352,7 +376,7 @@ class RegisterPokemonPage extends StatelessWidget {
                                     child: Row(
                                       children: 
                                         [
-                                          Icon(myPokemon.type2!.displayIcon),
+                                          myPokemon.type2!.displayIcon,
                                           Text(myPokemon.type2!.displayName),
                                         ],
                                     ),
@@ -382,7 +406,7 @@ class RegisterPokemonPage extends StatelessWidget {
                                 fit: BoxFit.fitWidth,
                                 child: Row(
                                   children: [
-                                    Icon(type.displayIcon),
+                                    type.displayIcon,
                                     Text(type.displayName)
                                   ],
                                 ),
@@ -438,7 +462,7 @@ class RegisterPokemonPage extends StatelessWidget {
                           for (var type in Sex.values)
                             DropdownMenuItem(
                               value: type,
-                              child: Icon(type.displayIcon),
+                              child: type.displayIcon,
                           ),
                         ],
                         value: myPokemon.sex,
@@ -504,40 +528,6 @@ class RegisterPokemonPage extends StatelessWidget {
                         }
                       ),
                     ),
-                    /*
-                    SizedBox(width: 10),
-                    Flexible(
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: pokeItemController,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの'
-                          ),
-                          enabled: false,     // TODO:もちものはパーティ画面で設定できるようにする？
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          pokeItemController.text = suggestion.displayName;
-                          myPokemon.item = suggestion;
-                        },
-
-                      ),
-                    ),
-                    */
                   ],
                 ),
                 SizedBox(height: 10),
@@ -625,6 +615,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.h.real,
+                            onIncrement: (value) {
+                              myPokemon.h.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.h.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.h.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),
@@ -725,6 +727,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.a.real,
+                            onIncrement: (value) {
+                              myPokemon.a.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.a.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.a.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),
@@ -825,6 +839,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.b.real,
+                            onIncrement: (value) {
+                              myPokemon.b.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.b.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.b.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),
@@ -925,6 +951,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.c.real,
+                            onIncrement: (value) {
+                              myPokemon.c.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.c.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.c.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),
@@ -1025,6 +1063,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.d.real,
+                            onIncrement: (value) {
+                              myPokemon.d.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.d.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.d.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),
@@ -1125,6 +1175,18 @@ class RegisterPokemonPage extends StatelessWidget {
                               border: null,
                             ),
                             initialValue: myPokemon.s.real,
+                            onIncrement: (value) {
+                              myPokemon.s.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onDecrement: (value) {
+                              myPokemon.s.real = value.toInt();
+                              updateStatsRefReal();
+                            },
+                            onChanged: (value) {
+                              myPokemon.s.real = value.toInt();
+                              updateStatsRefReal();
+                            },
                           );
                         },
                       ),

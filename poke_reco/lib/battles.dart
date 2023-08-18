@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:poke_reco/battle_tile.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/pokemon_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
-class PokemonsPage extends StatefulWidget {
-  const PokemonsPage({
+class BattlesPage extends StatefulWidget {
+  const BattlesPage({
     Key? key,
     required this.onAdd,
   }) : super(key: key);
-  final void Function(Pokemon myPokemon, bool isNew) onAdd;
+  final void Function(Battle myPokemon, bool isNew) onAdd;
 
   @override
-  PokemonsPageState createState() => PokemonsPageState();
+  BattlesPageState createState() => BattlesPageState();
 }
 
-class PokemonsPageState extends State<PokemonsPage> {
+class BattlesPageState extends State<BattlesPage> {
   bool isEditMode = false;
   List<bool>? checkList;
 
@@ -46,29 +47,20 @@ class PokemonsPageState extends State<PokemonsPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var pokemons = appState.pokemons;
+    var battles = appState.battles;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
 
-    // ポケモンデータ取得で待つ
-    if (!pokeData.isLoaded) {
-      EasyLoading.instance.userInteractions = false;  // 操作禁止にする
-      EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
-      EasyLoading.show(status: 'ポケモンの情報取得中です。しばらくお待ちください...');
-    }
-    else {
-      EasyLoading.dismiss();
-    }
-
     Widget lists;
-    checkList ??= List.generate(pokemons.length, (i) => false);
+//    checkList ??= List.generate(battles.length, (i) => false);
 
-    if (pokemons.isEmpty) {
+    if (battles.isEmpty) {
       lists = Center(
-        child: Text('ポケモンが登録されていません。'),
+        child: Text('バトルが登録されていません。'),
       );
     }
     else {
+/*
       if (isEditMode) {
         lists = ListView(
           children: [
@@ -94,25 +86,27 @@ class PokemonsPageState extends State<PokemonsPage> {
         );
       }
       else {
+*/
         lists = ListView(
           children: [
-            for (var pokemon in pokemons)
-            PokemonTile(
-              pokemon,
+            for (var battle in battles)
+            BattleTile(
+              battle,
               theme,
               pokeData,
-              leading: Icon(Icons.catching_pokemon),
-              onLongPress: () => widget.onAdd(pokemon, false),
+              leading: Icon(Icons.list_alt),
+//              onLongPress: () => widget.onAdd(pokemon, false),
             ),
           ],
         );
-      }
+//      }
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('ポケモン一覧'),
+        title: Text('バトル一覧'),
         actions: [
+/*
           isEditMode ?
           TextButton(
             onPressed: () => setState(() => isEditMode = false),
@@ -137,6 +131,7 @@ class PokemonsPageState extends State<PokemonsPage> {
               ],
             ),
           ),
+*/
         ],
       ),
       body: Stack(
@@ -144,6 +139,7 @@ class PokemonsPageState extends State<PokemonsPage> {
         children: [
           Column(
             children:
+/*
               isEditMode ?
                 [
                   Expanded(child: lists),
@@ -189,6 +185,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                   ),),),
                 ]
                 :
+*/
                 [
                   Expanded(child: lists),
                 ],
@@ -199,11 +196,11 @@ class PokemonsPageState extends State<PokemonsPage> {
             child: Align(
               alignment: Alignment.bottomRight,
               child: FloatingActionButton(
-                tooltip: 'ポケモン登録',
+                tooltip: '新規作成',
                 shape: CircleBorder(),
                 onPressed: (){
                   checkList = null;
-                  widget.onAdd(Pokemon(), true);
+                  widget.onAdd(Battle(), true);
                 },
                 child: Icon(Icons.add),
               ),

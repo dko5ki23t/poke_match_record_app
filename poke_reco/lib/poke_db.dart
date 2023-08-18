@@ -88,6 +88,24 @@ const String myPokemonColumnPP3 = 'pp3';
 const String myPokemonColumnMove4 = 'move4';
 const String myPokemonColumnPP4 = 'pp4';
 
+
+const String partyDBFile = 'parties.db';
+const String partyDBTable = 'partyDB';
+const String partyColumnId = 'id';
+const String partyColumnName = 'name';
+const String partyColumnPokemonId1 = 'pokemonID1';
+const String partyColumnPokemonItem1 = 'pokemonItem1';
+const String partyColumnPokemonId2 = 'pokemonID2';
+const String partyColumnPokemonItem2 = 'pokemonItem2';
+const String partyColumnPokemonId3 = 'pokemonID3';
+const String partyColumnPokemonItem3 = 'pokemonItem3';
+const String partyColumnPokemonId4 = 'pokemonID4';
+const String partyColumnPokemonItem4 = 'pokemonItem4';
+const String partyColumnPokemonId5 = 'pokemonID5';
+const String partyColumnPokemonItem5 = 'pokemonItem5';
+const String partyColumnPokemonId6 = 'pokemonID6';
+const String partyColumnPokemonItem6 = 'pokemonItem6';
+
 // 今後変更されないとも限らない
 const int pokemonMinLevel = 1;
 const int pokemonMaxLevel = 100;
@@ -127,9 +145,9 @@ const Map<TabItem, IconData> tabIcon = {
 };
 
 enum Sex {
-  none(0, 'なし', Icons.minimize),
-  male(1, 'オス', Icons.male),
-  female(2, 'メス', Icons.female),
+  none(0, 'なし', Icon(Icons.minimize, color: Colors.grey)),
+  male(1, 'オス', Icon(Icons.male, color: Colors.blue)),
+  female(2, 'メス', Icon(Icons.female, color: Colors.red)),
   ;
 
   const Sex(this.id, this.displayName, this.displayIcon);
@@ -148,7 +166,7 @@ enum Sex {
 
   final int id;
   final String displayName;
-  final IconData displayIcon;
+  final Icon displayIcon;
 }
 
 // 使い方：print(PokeType.normal.displayName) -> 'ノーマル'
@@ -156,27 +174,27 @@ enum Sex {
 class PokeType {
   final int id;
   final String displayName;
-  final IconData displayIcon;
+  final Icon displayIcon;
 
-  static const Map<int, Tuple2<String, IconData>> officialTypes = {
-    1 : Tuple2('ノーマル', Icons.radio_button_unchecked),
-    2 : Tuple2('かくとう', Icons.sports_mma),
-    3 : Tuple2('ひこう', Icons.air),
-    4 : Tuple2('どく', Icons.coronavirus),
-    5 : Tuple2('じめん', Icons.abc),
-    6 : Tuple2('いわ', Icons.abc),
-    7 : Tuple2('むし', Icons.bug_report),
-    8 : Tuple2('ゴースト', Icons.abc),
-    9 : Tuple2('はがね', Icons.abc),
-    10 : Tuple2('ほのお', Icons.whatshot),
-    11 : Tuple2('みず', Icons.opacity),
-    12 : Tuple2('くさ', Icons.grass),
-    13 : Tuple2('でんき', Icons.bolt),
-    14 : Tuple2('エスパー', Icons.psychology),
-    15 : Tuple2('こおり', Icons.ac_unit),
-    16 : Tuple2('ドラゴン', Icons.abc),
-    17 : Tuple2('あく', Icons.abc),  
-    18 : Tuple2('フェアリー', Icons.abc),
+  static const Map<int, Tuple2<String, Icon>> officialTypes = {
+    1 : Tuple2('ノーマル', Icon(Icons.radio_button_unchecked, color: Colors.grey)),
+    2 : Tuple2('かくとう', Icon(Icons.sports_mma, color: Colors.red)),
+    3 : Tuple2('ひこう', Icon(Icons.air, color: Colors.lightBlue)),
+    4 : Tuple2('どく', Icon(Icons.coronavirus, color: Colors.purple)),
+    5 : Tuple2('じめん', Icon(Icons.abc, color: Colors.brown)),
+    6 : Tuple2('いわ', Icon(Icons.abc, color: Colors.brown)),
+    7 : Tuple2('むし', Icon(Icons.bug_report, color: Colors.lightGreen)),
+    8 : Tuple2('ゴースト', Icon(Icons.abc, color: Colors.purple)),
+    9 : Tuple2('はがね', Icon(Icons.abc, color: Colors.blueGrey)),
+    10 : Tuple2('ほのお', Icon(Icons.whatshot, color: Colors.red)),
+    11 : Tuple2('みず', Icon(Icons.opacity, color: Colors.blue)),
+    12 : Tuple2('くさ', Icon(Icons.grass, color: Colors.green)),
+    13 : Tuple2('でんき', Icon(Icons.bolt, color: Colors.yellow)),
+    14 : Tuple2('エスパー', Icon(Icons.psychology, color: Colors.pink)),
+    15 : Tuple2('こおり', Icon(Icons.ac_unit, color: Colors.blueAccent)),
+    16 : Tuple2('ドラゴン', Icon(Icons.abc, color: Colors.blueGrey)),
+    17 : Tuple2('あく', Icon(Icons.abc, color: Colors.black54)),
+    18 : Tuple2('フェアリー', Icon(Icons.abc, color: Colors.pinkAccent)),
   };
 
   const PokeType(this.id, this.displayName, this.displayIcon);
@@ -248,6 +266,26 @@ class SixParams {
 
   static int getRealABCDS(int level, int race, int indi, int effort, double temperBias) {
     return (((race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + 5) * temperBias).toInt();
+  }
+
+  static int getEffortH(int level, int race, int indi, int real) {
+    // TODO ミスってるかも
+    return (((real - level - 10) * 100) ~/ level - race * 2 - indi) * 4;
+  }
+
+  static int getEffortABCDS(int level, int race, int indi, int real, double temperBias) {
+    // TODO ミスってるかも
+    return ((real ~/ temperBias - 5) * 100 ~/ level - race * 2 - indi) * 4;
+  }
+
+  static int getIndiH(int level, int race, int effort, int real) {
+    // TODO ミスってるかも
+    return ((real - level - 10) * 100) ~/ level - race * 2 - (effort ~/ 4);
+  }
+
+  static int getIndiABCDS(int level, int race, int effort, int real, double temperBias) {
+    // TODO ミスってるかも
+    return ((real ~/ temperBias - 5) * 100) ~/ level - race * 2 - (effort ~/ 4); 
   }
 
   factory SixParams.createFromLRIEtoH(int level, int race, int indi, int effort) {
@@ -490,6 +528,108 @@ class Pokemon {
     _s.real = SixParams.getRealABCDS(level, _s.race, _s.indi, _s.effort, temperBias[4]);
   }
 
+  // 実数値から努力値、個体値を更新
+  void updateStatsRefReal() {
+    int effort = SixParams.getEffortH(level, _h.race, _h.indi, _h.real);
+    // 努力値の変化だけでは実数値が出せない場合は個体値を更新
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _h.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiH(level, _h.race, _h.effort, _h.real);
+      // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _h.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _h.real = SixParams.getRealH(level, _h.race, _h.indi, _h.effort);
+      }
+      else {
+        _h.indi = indi;
+      }
+    }
+    else {
+      _h.effort = effort;
+    }
+
+    final temperBias = Temper.getTemperBias(temper);
+    effort = SixParams.getEffortABCDS(level, _a.race, _a.indi, _a.real, temperBias[0]);
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _a.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiABCDS(level, _a.race, _a.effort, _a.real, temperBias[0]);
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _a.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _a.real = SixParams.getRealABCDS(level, _a.race, _a.indi, _a.effort, temperBias[0]);
+      }
+      else {
+        _a.indi = indi;
+      }
+    }
+    else {
+      _a.effort = effort;
+    }
+
+    effort = SixParams.getEffortABCDS(level, _b.race, _b.indi, _b.real, temperBias[1]);
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _b.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiABCDS(level, _b.race, _b.effort, _b.real, temperBias[1]);
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _b.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _b.real = SixParams.getRealABCDS(level, _b.race, _b.indi, _b.effort, temperBias[1]);
+      }
+      else {
+        _b.indi = indi;
+      }
+    }
+    else {
+      _b.effort = effort;
+    }
+
+    effort = SixParams.getEffortABCDS(level, _c.race, _c.indi, _c.real, temperBias[2]);
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _c.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiABCDS(level, _c.race, _c.effort, _c.real, temperBias[2]);
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _c.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _c.real = SixParams.getRealABCDS(level, _c.race, _c.indi, _c.effort, temperBias[2]);
+      }
+      else {
+        _c.indi = indi;
+      }
+    }
+    else {
+      _c.effort = effort;
+    }
+
+    effort = SixParams.getEffortABCDS(level, _d.race, _d.indi, _d.real, temperBias[3]);
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _d.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiABCDS(level, _d.race, _d.effort, _d.real, temperBias[3]);
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _d.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _d.real = SixParams.getRealABCDS(level, _d.race, _d.indi, _d.effort, temperBias[3]);
+      }
+      else {
+        _d.indi = indi;
+      }
+    }
+    else {
+      _d.effort = effort;
+    }
+
+    effort = SixParams.getEffortABCDS(level, _s.race, _s.indi, _s.real, temperBias[4]);
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _s.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiABCDS(level, _s.race, _s.effort, _s.real, temperBias[4]);
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _s.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _s.real = SixParams.getRealABCDS(level, _s.race, _s.indi, _s.effort, temperBias[4]);
+      }
+      else {
+        _s.indi = indi;
+      }
+    }
+    else {
+      _s.effort = effort;
+    }
+  }
+
   // SQLite保存用
   Map<String, dynamic> toMap(int id) {
     return {
@@ -526,6 +666,67 @@ class Pokemon {
   }
 }
 
+class Party {
+  int id = 0;    // データベースのプライマリーキー
+  String name = '';
+  Pokemon pokemon1 = Pokemon();
+  Item? item1;
+  Pokemon? pokemon2;
+  Item? item2;
+  Pokemon? pokemon3;
+  Item? item3;
+  Pokemon? pokemon4;
+  Item? item4;
+  Pokemon? pokemon5;
+  Item? item5;
+  Pokemon? pokemon6;
+  Item? item6;
+  bool isValid = false;
+
+  void updateIsValid() {
+    pokemon1.updateIsValid();
+    isValid =
+      name != '' &&
+      pokemon1.isValid;
+  }
+
+  // SQLite保存用
+  Map<String, dynamic> toMap(int id) {
+    return {
+      partyColumnId: id,
+      partyColumnName: name,
+      partyColumnPokemonId1: pokemon1.id,
+      partyColumnPokemonItem1: item1?.id,
+      partyColumnPokemonId2: pokemon2?.id,
+      partyColumnPokemonItem2: item2?.id,
+      partyColumnPokemonId3: pokemon3?.id,
+      partyColumnPokemonItem3: item3?.id,
+      partyColumnPokemonId4: pokemon4?.id,
+      partyColumnPokemonItem4: item4?.id,
+    };
+  }
+}
+
+enum BattleType {
+  casual,
+  rankmatch,
+}
+
+class Turn {
+
+}
+
+class Battle {
+  String name = '';
+  late BattleType type;
+  late DateTime datatime;
+  late Party ownParty;
+  String opponentName = '';
+  Party opponentParty = Party();
+  final List<Turn> turns = [];
+  bool isValid = false;
+}
+
 // シングルトンクラス
 // TODO: 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
 class PokeDB {
@@ -536,7 +737,7 @@ class PokeDB {
   late Database abilityDb;
   Map<int, Temper> tempers = {};
   late Database temperDb;
-  List<Item> items = [];
+  Map<int, Item> items = {};
   late Database itemDb;
   Map<int, Move> moves = {};
   late Database moveDb;
@@ -545,7 +746,11 @@ class PokeDB {
   ];
   Map<int, PokeBase> pokeBase = {};
   late Database pokeBaseDb;
+  List<Pokemon> pokemons = [];
   late Database myPokemonDb;
+  List<Party> parties = [];
+  late Database partyDb;
+  List<Battle> battles = [];
 
   bool isLoaded = false;
 
@@ -631,9 +836,7 @@ class PokeDB {
     return ret;
   }
 
-  Future<List<Pokemon>> initialize() async {
-    List<Pokemon> ret = [];
-
+  Future<void> initialize() async {
     /////////// とくせい
     final abilityDBPath = join(await getDatabasesPath(), abilityDBFile);
     // TODO:アップデート時とかのみ消せばいい。設定から消せるとか、そういうのにしたい。
@@ -744,10 +947,10 @@ class PokeDB {
       columns: [itemColumnId, itemColumnName],
     );
     for (var map in maps) {
-      items.add(Item(
+      items[map[itemColumnId]] = Item(
         map[itemColumnId],
         map[itemColumnName],
-      ));
+      );
     }
 
 
@@ -850,7 +1053,12 @@ class PokeDB {
     //await deleteDatabase(myPokemonDBPath);
     exists = await databaseExists(myPokemonDBPath);
 
-    if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
+    if (!exists) {
+      try {
+        await Directory(dirname(myPokemonDBPath)).create(recursive: true);
+      } catch (_) {}
+
+      await _createMyPokemonDB();
     }
     else {
       print("Opening existing database");
@@ -875,7 +1083,7 @@ class PokeDB {
 
       for (var map in maps) {
         int pokeNo = map[myPokemonColumnNo];
-        ret.add(Pokemon()
+        pokemons.add(Pokemon()
           ..id = map[myPokemonColumnId]
           ..name = pokeBase[pokeNo]!.name
           ..nickname = map[myPokemonColumnNickName]
@@ -916,7 +1124,7 @@ class PokeDB {
             map[myPokemonColumnIndividual[5]],
             map[myPokemonColumnEffort[5]],
             0)
-          ..ability = Ability(map[myPokemonColumnAbility], '')
+          ..ability = abilities[map[myPokemonColumnAbility]]!
           ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '') : null
           ..move1 = moves[map[myPokemonColumnMove1]]!
           ..pp1 = map[myPokemonColumnPP1]
@@ -932,8 +1140,56 @@ class PokeDB {
       }
     }
 
+    //////////// 登録したパーティ
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    //await deleteDatabase(partyDBPath);
+    exists = await databaseExists(partyDBPath);
+
+    if (!exists) {
+      try {
+        await Directory(dirname(partyDBPath)).create(recursive: true);
+      } catch (_) {}
+
+      await _createPartyDB();
+    }
+    else {
+      print("Opening existing database");
+
+      // SQLiteのDB読み込み
+      partyDb = await openDatabase(partyDBPath, readOnly: false);
+      // 内部データに変換
+      maps = await partyDb.query(partyDBTable,
+        columns: [
+          partyColumnId, partyColumnName,
+          partyColumnPokemonId1, partyColumnPokemonItem1,
+          partyColumnPokemonId2, partyColumnPokemonItem2,
+          partyColumnPokemonId3, partyColumnPokemonItem3,
+          partyColumnPokemonId4, partyColumnPokemonItem4,
+          partyColumnPokemonId5, partyColumnPokemonItem5,
+          partyColumnPokemonId6, partyColumnPokemonItem6,
+        ],
+      );
+
+      for (var map in maps) {
+        parties.add(Party()
+          ..id = map[partyColumnId]
+          ..name = map[partyColumnName]
+          ..pokemon1 = pokemons.where((element) => element.id == map[partyColumnPokemonId1]).first
+          ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
+          ..pokemon2 = map[partyColumnPokemonId2] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId2]).first : null
+          ..item2 = map[partyColumnPokemonItem2] != null ? items[map[partyColumnPokemonItem2]] : null
+          ..pokemon3 = map[partyColumnPokemonId3] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId3]).first : null
+          ..item3 = map[partyColumnPokemonItem3] != null ? items[map[partyColumnPokemonItem3]] : null
+          ..pokemon4 = map[partyColumnPokemonId4] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId4]).first : null
+          ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
+        );
+      }
+    }
+
     isLoaded = true;
-    return ret;
 
 /*  TODO: assetsから読まない場合も検討（下記コードは動作未保障）
     abilityDb = await openDatabase(
@@ -1048,9 +1304,35 @@ class PokeDB {
     }
   }
 
+  Future<void> addParty(Party party, int id) async {
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    var exists = await databaseExists(partyDBPath);
+
+    if (!exists) {    // ファイル作成
+      print('Creating new copy from asset');
+
+      try {
+        await Directory(dirname(partyDBPath)).create(recursive: true);
+      } catch (_) {}
+
+      partyDb = await _createPartyDB();
+    }
+    else {
+      print("Opening existing database");
+      // SQLiteのDB読み込み
+      partyDb = await openDatabase(partyDBPath, readOnly: false);
+    }
+
+    // SQLiteのDBに挿入
+    await partyDb.insert(
+      partyDBTable,
+      party.toMap(id),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
   Future<Database> _createMyPokemonDB() async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
-    assert(await databaseExists(myPokemonDBPath));
 
     // SQLiteのDB作成
     return openDatabase(
@@ -1088,6 +1370,35 @@ class PokeDB {
           '$myPokemonColumnPP3 INTEGER, '
           '$myPokemonColumnMove4 INTEGER, '
           '$myPokemonColumnPP4 INTEGER)'
+        );
+      }
+    );
+  }
+
+  Future<Database> _createPartyDB() async {
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+
+    // SQLiteのDB作成
+    return openDatabase(
+      partyDBPath,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          'CREATE TABLE $partyDBTable('
+          '$partyColumnId INTEGER, '
+          '$partyColumnName TEXT, '
+          '$partyColumnPokemonId1 INTEGER, '
+          '$partyColumnPokemonItem1 INTEGER, '
+          '$partyColumnPokemonId2 INTEGER, '
+          '$partyColumnPokemonItem2 INTEGER, '
+          '$partyColumnPokemonId3 INTEGER, '
+          '$partyColumnPokemonItem3 INTEGER, '
+          '$partyColumnPokemonId4 INTEGER, '
+          '$partyColumnPokemonItem4 INTEGER, '
+          '$partyColumnPokemonId5 INTEGER, '
+          '$partyColumnPokemonItem5 INTEGER, '
+          '$partyColumnPokemonId6 INTEGER, '
+          '$partyColumnPokemonItem6 INTEGER)'
         );
       }
     );

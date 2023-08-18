@@ -1,5 +1,9 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:poke_reco/battles.dart';
+import 'package:poke_reco/parties.dart';
+import 'package:poke_reco/register_battle.dart';
+import 'package:poke_reco/register_party.dart';
 import 'package:poke_reco/register_pokemon.dart';
 import 'package:poke_reco/pokemons.dart';
 import 'package:poke_reco/poke_db.dart';
@@ -35,14 +39,19 @@ class MyApp extends StatelessWidget {
 class MyAppState extends ChangeNotifier {
   var current = WordPair.random();
   final pokeData = PokeDB();
-  late List<Pokemon> pokemons;
+  List<Pokemon> pokemons = [];
+  List<Party> parties = [];
+  List<Battle> battles = [];
 
   MyAppState() {
     fetchPokeData();
   }
 
   Future<void> fetchPokeData() async {
-    pokemons = await pokeData.initialize();
+    await pokeData.initialize();
+    pokemons = pokeData.pokemons;
+    parties = pokeData.parties;
+    battles = pokeData.battles;
     notifyListeners();
   }
 
@@ -74,16 +83,22 @@ class _MyHomePageState extends State<MyHomePage> {
     Widget page;
     switch (_currentTab) {
       case TabItem.battles:
-        page = BattlesPage();
+        page = BattleTabNavigator(
+          navigatorKey: _navigatorKeys[TabItem.battles],
+          tabItem: TabItem.battles,
+        );
         break;
       case TabItem.pokemons:
-        page = TabNavigator(
-                navigatorKey: _navigatorKeys[TabItem.battles],
-                tabItem: TabItem.battles
-              );
+        page = PokemonTabNavigator(
+          navigatorKey: _navigatorKeys[TabItem.pokemons],
+          tabItem: TabItem.pokemons,
+        );
         break;
       case TabItem.parties:
-        page = Placeholder();
+        page = PartyTabNavigator(
+          navigatorKey: _navigatorKeys[TabItem.parties],
+          tabItem: TabItem.parties,
+        );
         break;
       default:
         throw UnimplementedError('no widget');
@@ -108,6 +123,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+/*
 class BattlesPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -143,6 +159,7 @@ class BattlesPage extends StatelessWidget {
     );
   }
 }
+*/
 
 class BigCard extends StatelessWidget {
   const BigCard({
@@ -173,13 +190,13 @@ class BigCard extends StatelessWidget {
   }
 }
 
-class TabNavigatorRoutes {
+class PokemonTabNavigatorRoutes {
   static const String root = '/';
   static const String register = '/register';
 }
 
-class TabNavigator extends StatefulWidget {
-  const TabNavigator({
+class PokemonTabNavigator extends StatefulWidget {
+  const PokemonTabNavigator({
     Key? key,
     required this.navigatorKey,
     required this.tabItem,
@@ -188,10 +205,10 @@ class TabNavigator extends StatefulWidget {
   final TabItem tabItem;
 
   @override
-  State<TabNavigator> createState() => _TabNavigatorState();
+  State<PokemonTabNavigator> createState() => _PokemonTabNavigatorState();
 }
 
-class _TabNavigatorState extends State<TabNavigator> {
+class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
   void _push(BuildContext context, Pokemon myPokemon, bool isNew) {
     Navigator.push(
       context,
@@ -218,12 +235,12 @@ class _TabNavigatorState extends State<TabNavigator> {
   Widget build(BuildContext context) {
     return Navigator(
       key: widget.navigatorKey,
-      initialRoute: TabNavigatorRoutes.root,
+      initialRoute: PokemonTabNavigatorRoutes.root,
       onGenerateRoute: (routeSettings) {
         return MaterialPageRoute(
           builder: (context) {
             switch (routeSettings.name) {
-              case TabNavigatorRoutes.register:
+              case PokemonTabNavigatorRoutes.register:
                 // 新規作成
                 return RegisterPokemonPage(
                   onFinish: () => _pop(context),
@@ -233,6 +250,144 @@ class _TabNavigatorState extends State<TabNavigator> {
               default:
                 return PokemonsPage(
                   onAdd: (myPokemon, isNew) => _push(context, myPokemon, isNew)
+                );
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class PartyTabNavigatorRoutes {
+  static const String root = '/';
+  static const String register = '/register';
+}
+
+class PartyTabNavigator extends StatefulWidget {
+  const PartyTabNavigator({
+    Key? key,
+    required this.navigatorKey,
+    required this.tabItem,
+  }) : super(key: key);
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final TabItem tabItem;
+
+  @override
+  State<PartyTabNavigator> createState() => _PartyTabNavigatorState();
+}
+
+class _PartyTabNavigatorState extends State<PartyTabNavigator> {
+  void _push(BuildContext context, Party party, bool isNew) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // 新規作成
+          return RegisterPartyPage(
+            onFinish: () => _pop(context),
+            party: party,
+            isNew: isNew,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pop(BuildContext context) {
+    Navigator.pop(
+      context,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: widget.navigatorKey,
+      initialRoute: PartyTabNavigatorRoutes.root,
+      onGenerateRoute: (routeSettings) {
+        return MaterialPageRoute(
+          builder: (context) {
+            switch (routeSettings.name) {
+              case PartyTabNavigatorRoutes.register:
+                // 新規作成
+                return RegisterPartyPage(
+                  onFinish: () => _pop(context),
+                  party: Party(),
+                  isNew: true,
+                );
+              default:
+                return PartiesPage(
+                  onAdd: (party, isNew) => _push(context, party, isNew)
+                );
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class BattleTabNavigatorRoutes {
+  static const String root = '/';
+  static const String register = '/register';
+}
+
+class BattleTabNavigator extends StatefulWidget {
+  const BattleTabNavigator({
+    Key? key,
+    required this.navigatorKey,
+    required this.tabItem,
+  }) : super(key: key);
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final TabItem tabItem;
+
+  @override
+  State<BattleTabNavigator> createState() => _BattleTabNavigatorState();
+}
+
+class _BattleTabNavigatorState extends State<BattleTabNavigator> {
+  void _push(BuildContext context, Battle battle, bool isNew) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // 新規作成
+          return RegisterBattlePage(
+            onFinish: () => _pop(context),
+            battle: battle,
+            isNew: isNew,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pop(BuildContext context) {
+    Navigator.pop(
+      context,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: widget.navigatorKey,
+      initialRoute: BattleTabNavigatorRoutes.root,
+      onGenerateRoute: (routeSettings) {
+        return MaterialPageRoute(
+          builder: (context) {
+            switch (routeSettings.name) {
+              case BattleTabNavigatorRoutes.register:
+                // 新規作成
+                return RegisterBattlePage(
+                  onFinish: () => _pop(context),
+                  battle: Battle(),
+                  isNew: true,
+                );
+              default:
+                return BattlesPage(
+                  onAdd: (battle, isNew) => _push(context, battle, isNew)
                 );
             }
           },
