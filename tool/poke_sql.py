@@ -224,7 +224,7 @@ if (len(items_list) == 0):
                     name = f['name']
             is_holdable = False
             for f in item_detail['attributes']:
-                if f['name'] == 'holdable':
+                if f['name'] == 'holdable' or f['name'] == 'holdable-active':
                     is_holdable = True
                     break
             if is_holdable:     # こうしないと、もちもの多すぎ
@@ -237,6 +237,7 @@ if (len(items_list) == 0):
         response = requests.get(items['next'])
         items = response.json()
     pbar.close()
+    print(f'valid item num : {len(items_list)}')
 
     # 作成(存在してたら作らない)
     try:

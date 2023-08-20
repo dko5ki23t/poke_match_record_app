@@ -143,6 +143,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         border: UnderlineInputBorder(),
                         labelText: 'あなたのパーティ'
                       ),
+                      selectedItemBuilder: (context) {
+                        return [
+                          for (final party in parties)
+                            Text(party.name),
+                        ];
+                      },
                       items: <DropdownMenuItem>[
                         for (final party in parties)
                           DropdownMenuItem(

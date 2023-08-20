@@ -15,11 +15,13 @@ class RegisterPartyPage extends StatefulWidget {
   RegisterPartyPage({
     Key? key,
     required this.onFinish,
+    required this.onSelectPokemon,
     required this.party,
     required this.isNew,
   }) : super(key: key);
 
   final void Function() onFinish;
+  final Future<Pokemon?> Function(Party party) onSelectPokemon;
   final Party party;
   final bool isNew;
 
@@ -44,11 +46,17 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
   }
 
   final partyNameController = TextEditingController();
+  final pokemon1Controller = TextEditingController(text: 'ポケモン選択');
   final item1Controller = TextEditingController();
+  final pokemon2Controller = TextEditingController(text: 'ポケモン選択');
   final item2Controller = TextEditingController();
+  final pokemon3Controller = TextEditingController(text: 'ポケモン選択');
   final item3Controller = TextEditingController();
+  final pokemon4Controller = TextEditingController(text: 'ポケモン選択');
   final item4Controller = TextEditingController();
+  final pokemon5Controller = TextEditingController(text: 'ポケモン選択');
   final item5Controller = TextEditingController();
+  final pokemon6Controller = TextEditingController(text: 'ポケモン選択');
   final item6Controller = TextEditingController();
 
   @override
@@ -111,32 +119,32 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン1'
+                          labelText: 'ポケモン1',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon1 = pokemons[value - 1];
-                          widget.party.updateIsValid();
-                          setState(() {});
+                        controller: pokemon1Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon1 = pokemon;
+                            widget.party.updateIsValid();
+                            pokemon1Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item1Controller,
@@ -152,11 +160,16 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item2);
+                          matches.remove(widget.party.item3);
+                          matches.remove(widget.party.item4);
+                          matches.remove(widget.party.item5);
+                          matches.remove(widget.party.item6);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {
                           return ListTile(
-                            title: Text(suggestion.displayName),
+                            title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
                           );
                         },
                         onSuggestionSelected: (suggestion) {
@@ -172,30 +185,31 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン2'
+                          labelText: 'ポケモン2',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon2 = pokemons[value - 1];
+                        controller: pokemon2Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon2 = pokemon;
+                            pokemon2Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item2Controller,
@@ -211,6 +225,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item1);
+                          matches.remove(widget.party.item3);
+                          matches.remove(widget.party.item4);
+                          matches.remove(widget.party.item5);
+                          matches.remove(widget.party.item6);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {
@@ -231,30 +250,31 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン3'
+                          labelText: 'ポケモン3',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon3 = pokemons[value - 1];
+                        controller: pokemon3Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon3 = pokemon;
+                            pokemon3Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item3Controller,
@@ -270,6 +290,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item1);
+                          matches.remove(widget.party.item2);
+                          matches.remove(widget.party.item4);
+                          matches.remove(widget.party.item5);
+                          matches.remove(widget.party.item6);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {
@@ -290,30 +315,31 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン4'
+                          labelText: 'ポケモン4',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon4 = pokemons[value - 1];
+                        controller: pokemon4Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon4 = pokemon;
+                            pokemon4Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item4Controller,
@@ -329,6 +355,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item1);
+                          matches.remove(widget.party.item2);
+                          matches.remove(widget.party.item3);
+                          matches.remove(widget.party.item5);
+                          matches.remove(widget.party.item6);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {
@@ -349,30 +380,31 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン5'
+                          labelText: 'ポケモン5',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon5 = pokemons[value - 1];
+                        controller: pokemon5Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon5 = pokemon;
+                            pokemon5Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item5Controller,
@@ -388,6 +420,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item1);
+                          matches.remove(widget.party.item2);
+                          matches.remove(widget.party.item3);
+                          matches.remove(widget.party.item4);
+                          matches.remove(widget.party.item6);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {
@@ -408,30 +445,31 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
-                      child: DropdownButtonFormField(
-                        isExpanded: true,
+                      flex: 6,
+                      child: TextFormField(
                         decoration: const InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン6'
+                          labelText: 'ポケモン6',
+                          suffixIcon: Icon(Icons.arrow_drop_down),
                         ),
-                        items: <DropdownMenuItem>[
-                          for (final e in pokemons)
-                            DropdownMenuItem(
-                              value: e.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
-                              child: PokemonTile(e, theme, pokeData,),
-                            ),
-                        ],
-                        onChanged: (value) {
-                          widget.party.pokemon6 = pokemons[value - 1];
+                        controller: pokemon6Controller,
+                        onTap: () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon = await widget.onSelectPokemon(widget.party);
+                          if (pokemon != null) {
+                            widget.party.pokemon6 = pokemon;
+                            pokemon6Controller.text =
+                              pokemon.nickname == '' ?
+                                '${pokemon.name}/${pokemon.name}' :
+                                '${pokemon.nickname}/${pokemon.name}';
+                          }
                         },
                       ),
                     ),
                     SizedBox(width: 10),
                     Flexible(
+                      flex: 4,
                       child: TypeAheadField(
                         textFieldConfiguration: TextFieldConfiguration(
                           controller: item6Controller,
@@ -447,6 +485,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
+                          matches.remove(widget.party.item1);
+                          matches.remove(widget.party.item2);
+                          matches.remove(widget.party.item3);
+                          matches.remove(widget.party.item4);
+                          matches.remove(widget.party.item5);
                           return matches;
                         },
                         itemBuilder: (context, suggestion) {

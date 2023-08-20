@@ -14,6 +14,7 @@ class PokemonTile extends ListTile {
     ThemeData theme,
     PokeDB pokeData,
     {
+      enabled,
       leading,
       trailing,
       onTap,
@@ -21,21 +22,23 @@ class PokemonTile extends ListTile {
     }
   ) : 
   super(
+    enabled: enabled,
     isThreeLine: true,
     leading: leading,
     title: Row(
       children: [
-        Text(
-          pokemon.nickname == '' ?
-          '${pokemon.name} /' :
-          '${pokemon.nickname} /',
-          style: theme.textTheme.bodyLarge,
-        ),
-        Text(
-          ' ${pokemon.name}'
+        Expanded(
+          child: Text(
+            pokemon.nickname == '' ?
+            '${pokemon.name}/${pokemon.name}' :
+            '${pokemon.nickname}/${pokemon.name}',
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
         SizedBox(width: 10),
-        Text('Lv.${pokemon.level}'),
+        Text(
+            'Lv.${pokemon.level}', overflow: TextOverflow.ellipsis,
+          ),
         SizedBox(width: 10),
         pokemon.sex.displayIcon,
       ],
@@ -49,74 +52,77 @@ class PokemonTile extends ListTile {
             pokemon.type2 != null ? pokemon.type2!.displayIcon : Opacity(opacity: 0, child: pokeData.types[0].displayIcon),
             SizedBox(width: 10),
             pokemon.teraType.displayIcon,
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  TextSpan(text: '${pokemon.h.real}/'),
-                  TextSpan(
-                    text: '${pokemon.a.real}',
-                    style: pokemon.temper.increasedStat == 'attack' ? increaseStateStyle :
-                      pokemon.temper.decreasedStat == 'attack' ? decreaseStateStyle : null,
-                  ),
-                  TextSpan(text: '/'),
-                  TextSpan(
-                    text: '${pokemon.b.real}',
-                    style: pokemon.temper.increasedStat == 'defense' ? increaseStateStyle :
-                      pokemon.temper.decreasedStat == 'defense' ? decreaseStateStyle : null,
-                  ),
-                  TextSpan(text: '/'),
-                  TextSpan(
-                    text: '${pokemon.c.real}',
-                    style: pokemon.temper.increasedStat == 'special-attack' ? increaseStateStyle :
-                      pokemon.temper.decreasedStat == 'special-attack' ? decreaseStateStyle : null,
-                  ),
-                  TextSpan(text: '/'),
-                  TextSpan(
-                    text: '${pokemon.d.real}',
-                    style: pokemon.temper.increasedStat == 'special-defense' ? increaseStateStyle :
-                      pokemon.temper.decreasedStat == 'special-defense' ? decreaseStateStyle : null,
-                  ),
-                  TextSpan(text: '/'),
-                  TextSpan(
-                    text: '${pokemon.s.real}',
-                    style: pokemon.temper.increasedStat == 'speed' ? increaseStateStyle :
-                      pokemon.temper.decreasedStat == 'speed' ? decreaseStateStyle : null,
-                  ),
-                ],
+            Expanded(
+              child: RichText(
+                overflow: TextOverflow.ellipsis,
+                text: TextSpan(
+                  style: theme.textTheme.bodyMedium,
+                  children: [
+                    TextSpan(text: '${pokemon.h.real}/'),
+                    TextSpan(
+                      text: '${pokemon.a.real}',
+                      style: pokemon.temper.increasedStat == 'attack' ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == 'attack' ? decreaseStateStyle : null,
+                    ),
+                    TextSpan(text: '/'),
+                    TextSpan(
+                      text: '${pokemon.b.real}',
+                      style: pokemon.temper.increasedStat == 'defense' ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == 'defense' ? decreaseStateStyle : null,
+                    ),
+                    TextSpan(text: '/'),
+                    TextSpan(
+                      text: '${pokemon.c.real}',
+                      style: pokemon.temper.increasedStat == 'special-attack' ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == 'special-attack' ? decreaseStateStyle : null,
+                    ),
+                    TextSpan(text: '/'),
+                    TextSpan(
+                      text: '${pokemon.d.real}',
+                      style: pokemon.temper.increasedStat == 'special-defense' ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == 'special-defense' ? decreaseStateStyle : null,
+                    ),
+                    TextSpan(text: '/'),
+                    TextSpan(
+                      text: '${pokemon.s.real}',
+                      style: pokemon.temper.increasedStat == 'speed' ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == 'speed' ? decreaseStateStyle : null,
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-/*
-        Row(
-          children: [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  TextSpan(text: '${pokemon.ability.displayName}    ${pokemon.move1.displayName}'),
-                  pokemon.move2 != null ? TextSpan(text: '/${pokemon.move2!.displayName}') : TextSpan(),
-                  pokemon.move2 != null && pokemon.move3 != null ? TextSpan(text: '/') : TextSpan(),
-                ],
+  /*
+          Row(
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: theme.textTheme.bodyMedium,
+                  children: [
+                    TextSpan(text: '${pokemon.ability.displayName}    ${pokemon.move1.displayName}'),
+                    pokemon.move2 != null ? TextSpan(text: '/${pokemon.move2!.displayName}') : TextSpan(),
+                    pokemon.move2 != null && pokemon.move3 != null ? TextSpan(text: '/') : TextSpan(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  pokemon.move2 != null && pokemon.move3 != null ? TextSpan(text: pokemon.move3!.displayName) : TextSpan(),
-                  pokemon.move2 != null && pokemon.move3 != null && pokemon.move4 != null ? TextSpan(text: '/${pokemon.move4!.displayName}') : TextSpan(),
-                ],
+            ],
+          ),
+          Row(
+            children: [
+              RichText(
+                text: TextSpan(
+                  style: theme.textTheme.bodyMedium,
+                  children: [
+                    pokemon.move2 != null && pokemon.move3 != null ? TextSpan(text: pokemon.move3!.displayName) : TextSpan(),
+                    pokemon.move2 != null && pokemon.move3 != null && pokemon.move4 != null ? TextSpan(text: '/${pokemon.move4!.displayName}') : TextSpan(),
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
-*/
+            ],
+          ),
+  */
       ],
     ),
     onTap: onTap,

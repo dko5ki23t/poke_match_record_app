@@ -249,7 +249,9 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
                 );
               default:
                 return PokemonsPage(
-                  onAdd: (myPokemon, isNew) => _push(context, myPokemon, isNew)
+                  onAdd: (myPokemon, isNew) => _push(context, myPokemon, isNew),
+                  onSelect: null,
+                  selectMode: false,
                 );
             }
           },
@@ -262,6 +264,7 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
 class PartyTabNavigatorRoutes {
   static const String root = '/';
   static const String register = '/register';
+  static const String registerPokemon = '/register/pokemon';
 }
 
 class PartyTabNavigator extends StatefulWidget {
@@ -286,6 +289,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           // 新規作成
           return RegisterPartyPage(
             onFinish: () => _pop(context),
+            onSelectPokemon: (party) => _pushSelectPokemonPage(context, party),
             party: party,
             isNew: isNew,
           );
@@ -294,9 +298,34 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
     ).then((value) {setState(() {});});
   }
 
+  Future<Pokemon?> _pushSelectPokemonPage(BuildContext context, Party party) async {
+    var result =
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            // ポケモン選択
+            return PokemonsPage(
+              onAdd: (pokemon, isNew){},
+              onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
+              selectMode: true,
+              party: party,
+            );
+          },
+        ),
+      );
+    return Future<Pokemon?>.value(result);
+  }
+
   void _pop(BuildContext context) {
     Navigator.pop(
       context,
+    );
+  }
+
+  void _popSelectPokemonPage(BuildContext context, Pokemon pokemon) {
+    Navigator.of(context).pop(
+      pokemon,
     );
   }
 
@@ -313,8 +342,16 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 // 新規作成
                 return RegisterPartyPage(
                   onFinish: () => _pop(context),
+                  onSelectPokemon: (party) => _pushSelectPokemonPage(context, party),
                   party: Party(),
                   isNew: true,
+                );
+              case PartyTabNavigatorRoutes.registerPokemon:
+                // ポケモン選択
+                return PokemonsPage(
+                  onAdd: (pokemon, isNew){},
+                  onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
+                  selectMode: true,
                 );
               default:
                 return PartiesPage(

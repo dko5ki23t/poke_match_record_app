@@ -19,8 +19,8 @@ class PartyTile extends ListTile {
     title: Text(party.name),
     subtitle: Column(
       children: [
-        Row(children:
-          [
+        Row(
+          children:[
             RichText(
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
@@ -31,11 +31,15 @@ class PartyTile extends ListTile {
                 ],
               ),
             ),
+          ],
+        ),
+        Row(
+          children: [
             RichText(
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null ? TextSpan(text: '/${party.pokemon4!.name}') : TextSpan(),
+                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null ? TextSpan(text: party.pokemon4!.name) : TextSpan(),
                   party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null ? TextSpan(text: '/${party.pokemon5!.name}') : TextSpan(),
                   party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null && party.pokemon6 != null ? TextSpan(text: '/${party.pokemon6!.name}') : TextSpan(),
                 ],

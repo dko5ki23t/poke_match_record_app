@@ -10,8 +10,14 @@ class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
     Key? key,
     required this.onAdd,
+    required this.selectMode,
+    required this.onSelect,
+    this.party,
   }) : super(key: key);
   final void Function(Pokemon myPokemon, bool isNew) onAdd;
+  final void Function(Pokemon selectedPokemon)? onSelect;
+  final bool selectMode;
+  final Party? party;
 
   @override
   PokemonsPageState createState() => PokemonsPageState();
@@ -20,6 +26,7 @@ class PokemonsPage extends StatefulWidget {
 class PokemonsPageState extends State<PokemonsPage> {
   bool isEditMode = false;
   List<bool>? checkList;
+  Pokemon? selectedPokemon;
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -62,6 +69,14 @@ class PokemonsPageState extends State<PokemonsPage> {
 
     Widget lists;
     checkList ??= List.generate(pokemons.length, (i) => false);
+    List<int?> partyPokemonsNo = [
+      widget.party?.pokemon1.id,
+      widget.party?.pokemon2?.id,
+      widget.party?.pokemon3?.id,
+      widget.party?.pokemon4?.id,
+      widget.party?.pokemon5?.id,
+      widget.party?.pokemon6?.id,
+    ];
 
     if (pokemons.isEmpty) {
       lists = Center(
@@ -101,117 +116,129 @@ class PokemonsPageState extends State<PokemonsPage> {
               pokemon,
               theme,
               pokeData,
+              enabled: !partyPokemonsNo.contains(pokemon.id),
               leading: Icon(Icons.catching_pokemon),
-              onLongPress: () => widget.onAdd(pokemon, false),
+              onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon, false) : null,
+              onTap: widget.selectMode ? () {
+                selectedPokemon = pokemon;
+                widget.onSelect!(pokemon);} : null,
             ),
           ],
         );
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('ポケモン一覧'),
-        actions: [
-          isEditMode ?
-          TextButton(
-            onPressed: () => setState(() => isEditMode = false),
-            child: Text('完了'),
-          ) :
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              children: [
-                TextButton(
-                  onPressed: null,
-                  child: Icon(Icons.filter_alt),
-                ),
-                TextButton(
-                  onPressed: null,
-                  child: Icon(Icons.sort),
-                ),
-                TextButton(
-                  onPressed: (pokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
-                  child: Icon(Icons.edit),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Column(
-            children:
+    return WillPopScope(
+      onWillPop: () {
+        Navigator.of(context).pop(selectedPokemon);
+        return Future.value(false);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: widget.selectMode ? Text('ポケモン選択') : Text('ポケモン一覧'),
+          actions: [
+            !widget.selectMode ?
               isEditMode ?
-                [
-                  Expanded(child: lists),
-                  Expanded(child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                      TextButton(
-                        child: Row(children: [
-                          Icon(Icons.select_all),
-                          SizedBox(width: 10),
-                          Text('すべて選択')
-                        ]),
-                        onPressed: () => setState(() {
-                          selectAll();
-                        }),
-                      ),
-                      SizedBox(width: 20),
-                      TextButton(
-                        onPressed: (getSelectedNum() > 0) ?
-                          () => setState(() {
-                            //List<int> deleteIDs = [];
-                            for (int i = checkList!.length - 1; i >= 0; i--) {
-                              if (checkList![i]) {
-                                //deleteIDs.add(pokemons[i].id);
-                                checkList!.removeAt(i);
-                                pokemons.removeAt(i);
+              TextButton(
+                onPressed: () => setState(() => isEditMode = false),
+                child: Text('完了'),
+              ) :
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  children: [
+                    TextButton(
+                      onPressed: null,
+                      child: Icon(Icons.filter_alt),
+                    ),
+                    TextButton(
+                      onPressed: null,
+                      child: Icon(Icons.sort),
+                    ),
+                    TextButton(
+                      onPressed: (pokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                      child: Icon(Icons.edit),
+                    ),
+                  ],
+                ),
+              )
+            : Container(),
+          ],
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Column(
+              children:
+                isEditMode ?
+                  [
+                    Expanded(flex: 10, child: lists),
+                    Expanded(child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                        TextButton(
+                          child: Row(children: [
+                            Icon(Icons.select_all),
+                            SizedBox(width: 10),
+                            Text('すべて選択')
+                          ]),
+                          onPressed: () => setState(() {
+                            selectAll();
+                          }),
+                        ),
+                        SizedBox(width: 20),
+                        TextButton(
+                          onPressed: (getSelectedNum() > 0) ?
+                            () => setState(() {
+                              //List<int> deleteIDs = [];
+                              for (int i = checkList!.length - 1; i >= 0; i--) {
+                                if (checkList![i]) {
+                                  //deleteIDs.add(pokemons[i].id);
+                                  checkList!.removeAt(i);
+                                  pokemons.removeAt(i);
+                                }
                               }
-                            }
-                            pokeData.recreateMyPokemon(pokemons);
-                            //pokeData.deleteMyPokemon(deleteIDs);
-                          })
-                          :
-                          null,
-                        child: Row(children: [
-                          Icon(Icons.delete),
-                          SizedBox(width: 10),
-                          Text('削除')
-                        ]),
-                      ),
-                    ],
-                  ),),),
-                ]
-                :
-                [
-                  Expanded(child: lists),
-                ],
-          ),
-          !isEditMode ?
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: FloatingActionButton(
-                tooltip: 'ポケモン登録',
-                shape: CircleBorder(),
-                onPressed: (){
-                  checkList = null;
-                  widget.onAdd(Pokemon(), true);
-                },
-                child: Icon(Icons.add),
-              ),
+                              pokeData.recreateMyPokemon(pokemons);
+                              //pokeData.deleteMyPokemon(deleteIDs);
+                            })
+                            :
+                            null,
+                          child: Row(children: [
+                            Icon(Icons.delete),
+                            SizedBox(width: 10),
+                            Text('削除')
+                          ]),
+                        ),
+                      ],
+                    ),),),
+                  ]
+                  :
+                  [
+                    Expanded(child: lists),
+                  ],
             ),
-          )
-          : Container(),
-        ],
-      ),
+            !isEditMode && !widget.selectMode ?
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: FloatingActionButton(
+                  tooltip: 'ポケモン登録',
+                  shape: CircleBorder(),
+                  onPressed: (){
+                    checkList = null;
+                    widget.onAdd(Pokemon(), true);
+                  },
+                  child: Icon(Icons.add),
+                ),
+              ),
+            )
+            : Container(),
+          ],
+        ),
+      )
     );
   }
 }
