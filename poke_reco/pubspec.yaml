@@ -43,6 +43,8 @@ dependencies:
   quiver: ^3.2.1
   number_inc_dec: ^0.8.0
   flutter_datetime_picker: ^1.5.1
+  intl: ^0.18.1
+  expandable: ^5.0.1
 
 
   # The following adds the Cupertino Icons font to your application.

@@ -177,24 +177,24 @@ class PokeType {
   final Icon displayIcon;
 
   static const Map<int, Tuple2<String, Icon>> officialTypes = {
-    1 : Tuple2('ノーマル', Icon(Icons.radio_button_unchecked, color: Colors.grey)),
-    2 : Tuple2('かくとう', Icon(Icons.sports_mma, color: Colors.red)),
-    3 : Tuple2('ひこう', Icon(Icons.air, color: Colors.lightBlue)),
-    4 : Tuple2('どく', Icon(Icons.coronavirus, color: Colors.purple)),
-    5 : Tuple2('じめん', Icon(Icons.abc, color: Colors.brown)),
-    6 : Tuple2('いわ', Icon(Icons.abc, color: Colors.brown)),
-    7 : Tuple2('むし', Icon(Icons.bug_report, color: Colors.lightGreen)),
-    8 : Tuple2('ゴースト', Icon(Icons.abc, color: Colors.purple)),
-    9 : Tuple2('はがね', Icon(Icons.abc, color: Colors.blueGrey)),
-    10 : Tuple2('ほのお', Icon(Icons.whatshot, color: Colors.red)),
-    11 : Tuple2('みず', Icon(Icons.opacity, color: Colors.blue)),
-    12 : Tuple2('くさ', Icon(Icons.grass, color: Colors.green)),
-    13 : Tuple2('でんき', Icon(Icons.bolt, color: Colors.yellow)),
-    14 : Tuple2('エスパー', Icon(Icons.psychology, color: Colors.pink)),
-    15 : Tuple2('こおり', Icon(Icons.ac_unit, color: Colors.blueAccent)),
-    16 : Tuple2('ドラゴン', Icon(Icons.abc, color: Colors.blueGrey)),
-    17 : Tuple2('あく', Icon(Icons.abc, color: Colors.black54)),
-    18 : Tuple2('フェアリー', Icon(Icons.abc, color: Colors.pinkAccent)),
+    1 : Tuple2('ノーマル', Icon(Icons.radio_button_unchecked, color: Color(0xffaeaeae))),
+    2 : Tuple2('かくとう', Icon(Icons.sports_mma, color: Color(0xffee6969))),
+    3 : Tuple2('ひこう', Icon(Icons.air, color: Color(0xff64a7f1))),
+    4 : Tuple2('どく', Icon(Icons.coronavirus, color: Color(0xffab7aca))),
+    5 : Tuple2('じめん', Icon(Icons.landscape, color: Color(0xffc8a841))),
+    6 : Tuple2('いわ', Icon(Icons.diamond, color: Color(0xfffac727))),
+    7 : Tuple2('むし', Icon(Icons.bug_report, color: Color(0xff51cb5a))),
+    8 : Tuple2('ゴースト', Icon(Icons.nightlight, color: Color(0xff756eb4))),
+    9 : Tuple2('はがね', Icon(Icons.hexagon, color: Color(0xff818aa4))),
+    10 : Tuple2('ほのお', Icon(Icons.whatshot, color: Color(0xffffa766))),
+    11 : Tuple2('みず', Icon(Icons.opacity, color: Color(0xff64c5f7))),
+    12 : Tuple2('くさ', Icon(Icons.grass, color: Color(0xff9ac30e))),
+    13 : Tuple2('でんき', Icon(Icons.bolt, color: Color(0xffe7d400))),
+    14 : Tuple2('エスパー', Icon(Icons.psychology, color: Color(0xffeb7ff4))),
+    15 : Tuple2('こおり', Icon(Icons.ac_unit, color: Color(0xff60e9f5))),
+    16 : Tuple2('ドラゴン', Icon(Icons.cruelty_free, color: Color(0xff6881d4))),
+    17 : Tuple2('あく', Icon(Icons.remove_red_eye, color: Colors.black54)),
+    18 : Tuple2('フェアリー', Icon(Icons.emoji_nature, color: Color(0xfffc7799))),
   };
 
   const PokeType(this.id, this.displayName, this.displayIcon);
@@ -703,28 +703,78 @@ class Party {
       partyColumnPokemonItem3: item3?.id,
       partyColumnPokemonId4: pokemon4?.id,
       partyColumnPokemonItem4: item4?.id,
+      partyColumnPokemonId5: pokemon5?.id,
+      partyColumnPokemonItem5: item5?.id,
+      partyColumnPokemonId6: pokemon6?.id,
+      partyColumnPokemonItem6: item6?.id,
     };
   }
 }
 
 enum BattleType {
-  casual,
-  rankmatch,
+  casual(0, 'カジュアルバトル'),
+  rankmatch(1, 'ランクバトル'),
+  ;
+
+  const BattleType(this.id, this.displayName);
+
+  factory BattleType.createFromId(int id) {
+    switch (id) {
+      case 1:
+        return casual;
+      case 0:
+      default:
+        return rankmatch;
+    }
+  }
+
+  final int id;
+  final String displayName;
+}
+
+enum PlayerType {
+  me(1),
+  opponent(2),
+  ;
+
+  const PlayerType(this.id);
+
+  final int id;
+}
+
+class TurnMove {
+  TurnMove(this.playerType, this.move);
+
+  PlayerType playerType;
+  Move move;
 }
 
 class Turn {
+  Turn(this.turnMove1, this.turnMove2);
 
+  TurnMove turnMove1;
+  TurnMove turnMove2;
 }
 
 class Battle {
   String name = '';
-  late BattleType type;
-  late DateTime datatime;
-  late Party ownParty;
+  BattleType type = BattleType.rankmatch;
+  DateTime datatime = DateTime.now();
+  Party ownParty = Party();
   String opponentName = '';
   Party opponentParty = Party();
   final List<Turn> turns = [];
   bool isValid = false;
+
+  // TODO
+  void updateIsValid() {
+    ownParty.updateIsValid();
+    isValid =
+      name != '' &&
+      ownParty.isValid &&
+      opponentName != '' &&
+      opponentParty.pokemon1.name != '';
+  }
 }
 
 // シングルトンクラス
@@ -1229,6 +1279,7 @@ class PokeDB {
 
   Future<void> addMyPokemon(Pokemon myPokemon, int id) async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    myPokemon.id = id;
     var exists = await databaseExists(myPokemonDBPath);
 
     if (!exists) {    // ファイル作成
@@ -1306,6 +1357,7 @@ class PokeDB {
 
   Future<void> addParty(Party party, int id) async {
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    party.id = id;
     var exists = await databaseExists(partyDBPath);
 
     if (!exists) {    // ファイル作成

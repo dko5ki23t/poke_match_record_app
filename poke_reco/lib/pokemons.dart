@@ -70,12 +70,12 @@ class PokemonsPageState extends State<PokemonsPage> {
     Widget lists;
     checkList ??= List.generate(pokemons.length, (i) => false);
     List<int?> partyPokemonsNo = [
-      widget.party?.pokemon1.id,
-      widget.party?.pokemon2?.id,
-      widget.party?.pokemon3?.id,
-      widget.party?.pokemon4?.id,
-      widget.party?.pokemon5?.id,
-      widget.party?.pokemon6?.id,
+      widget.party?.pokemon1.no,
+      widget.party?.pokemon2?.no,
+      widget.party?.pokemon3?.no,
+      widget.party?.pokemon4?.no,
+      widget.party?.pokemon5?.no,
+      widget.party?.pokemon6?.no,
     ];
 
     if (pokemons.isEmpty) {
@@ -116,7 +116,7 @@ class PokemonsPageState extends State<PokemonsPage> {
               pokemon,
               theme,
               pokeData,
-              enabled: !partyPokemonsNo.contains(pokemon.id),
+              enabled: !partyPokemonsNo.contains(pokemon.no),
               leading: Icon(Icons.catching_pokemon),
               onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon, false) : null,
               onTap: widget.selectMode ? () {

@@ -1,5 +1,7 @@
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_file.dart';
+import 'package:intl/intl.dart';
 import 'package:poke_reco/battles.dart';
 import 'package:poke_reco/parties.dart';
 import 'package:poke_reco/register_battle.dart';
@@ -11,6 +13,9 @@ import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 void main() {
+  // TODO
+//  Intl.defaultLocale = 'ja_JP';
+//  initializeDateFormatting('ja', );
   runApp(const MyApp());
 }
 

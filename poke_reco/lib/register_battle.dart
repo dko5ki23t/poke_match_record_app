@@ -1,19 +1,27 @@
+import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:intl/intl.dart';
+import 'package:number_inc_dec/number_inc_dec.dart';
 //import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/party_tile.dart';
+import 'package:poke_reco/pokemon_mini_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/poke_db.dart';
 
 enum RegisterBattlePageType {
   basePage,
+  firstPokemonPage,
+  turnPage,
 }
 
+/*
 enum RegisterBattleDialogType {
   selectOwnPokemonDialog,
   selectOppositePokemonDialog,
 }
+*/
 
 class RegisterBattlePage extends StatefulWidget {
   RegisterBattlePage({
@@ -33,12 +41,28 @@ class RegisterBattlePage extends StatefulWidget {
 
 class RegisterBattlePageState extends State<RegisterBattlePage> {
   RegisterBattlePageType pageType = RegisterBattlePageType.basePage;
+//  final battleDatetimeController = TextEditingController(text: DateFormat('yyyy/MM/dd HH:mm', "ja_JP").format(DateTime.now()));
   final opponentPokemon1Controller = TextEditingController();
   final opponentPokemon2Controller = TextEditingController();
   final opponentPokemon3Controller = TextEditingController();
   final opponentPokemon4Controller = TextEditingController();
   final opponentPokemon5Controller = TextEditingController();
   final opponentPokemon6Controller = TextEditingController();
+
+  final move1Controller = TextEditingController();
+  final move2Controller = TextEditingController();
+
+  final HP1Controller = TextEditingController();
+
+  int checkedOwnPokemon = 0;
+  int checkedOpponentPokemon = 0;
+  late Pokemon currentOwnPokemon;
+  late Pokemon currentOpponentPokemon;
+  int turn = 1;
+  int turnPlayer1 = 0;    // ターン内で先に行動する者のID
+  Move turnMove1 = Move(0, '', 0);  // ターン内で先に実行されたわざ
+  int turnPlayer2 = 0;    // ターン内で先に行動する者のID
+  Move turnMove2 = Move(0, '', 0);  // ターン内で先に実行されたわざ
 
   // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
   static toKatakana(String str) {
@@ -64,9 +88,85 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     final theme = Theme.of(context);
 
     Widget lists;
+    Widget title;
+    void Function()? nextPressed;
+
+    void onComplete() {
+      // TODO?: 入力された値が正しいかチェック
+      if (widget.isNew) {
+        battles.add(widget.battle);
+      }
+//      pokeData.addParty(widget.party, parties.length);
+      widget.onFinish();
+    }
+
+    void onNext() {
+      switch (pageType) {
+        case RegisterBattlePageType.basePage:
+          pageType = RegisterBattlePageType.firstPokemonPage;
+          checkedOwnPokemon = 0;
+          checkedOpponentPokemon = 0;
+          setState(() {});
+          break;
+        case RegisterBattlePageType.firstPokemonPage:
+          // TODO:やっぱポケモンの配列にしないと
+          switch (checkedOwnPokemon) {
+            case 1:
+              currentOwnPokemon = widget.battle.ownParty.pokemon1;
+              break;
+            case 2:
+              currentOwnPokemon = widget.battle.ownParty.pokemon2!;
+              break;
+            case 3:
+              currentOwnPokemon = widget.battle.ownParty.pokemon3!;
+              break;
+            case 4:
+              currentOwnPokemon = widget.battle.ownParty.pokemon4!;
+              break;
+            case 5:
+              currentOwnPokemon = widget.battle.ownParty.pokemon5!;
+              break;
+            case 6:
+              currentOwnPokemon = widget.battle.ownParty.pokemon6!;
+              break;
+          }
+          switch (checkedOpponentPokemon) {
+            case 1:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon1;
+              break;
+            case 2:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon2!;
+              break;
+            case 3:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon3!;
+              break;
+            case 4:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon4!;
+              break;
+            case 5:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon5!;
+              break;
+            case 6:
+              currentOpponentPokemon = widget.battle.opponentParty.pokemon6!;
+              break;
+          }
+          pageType = RegisterBattlePageType.turnPage;
+          setState(() {});
+          break;
+        case RegisterBattlePageType.turnPage:
+          turn++;
+          pageType = RegisterBattlePageType.turnPage;
+          setState(() {});
+          break;
+        default:
+          assert(false, 'invalid page move');
+          break;
+      }
+    }
 
     switch (pageType) {
       case RegisterBattlePageType.basePage:
+        title = Text('バトル基本情報');
         lists = Container(
           padding: const EdgeInsets.all(10),
           child: Column(
@@ -83,8 +183,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ),
                       onChanged: (value) {
                         widget.battle.name = value;
-//                            widget.battle.updateIsValid();
-//                            setState(() {});
+                        widget.battle.updateIsValid();
+                        setState(() {});
                       },
                       maxLength: 10,
 //                          controller: partyNameController,
@@ -127,7 +227,26 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 //                            widget.battle.updateIsValid();
 //                            setState(() {});
                       },
-//                          controller: partyNameController,
+                      initialValue: widget.battle.datatime.toIso8601String(),
+//                      controller: battleDatetimeController,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Flexible(
+                    child: DropdownButtonFormField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'バトルの種類'
+                      ),
+                      items: <DropdownMenuItem>[
+                        for (var type in BattleType.values)
+                          DropdownMenuItem(
+                            value: type,
+                            child: Text(type.displayName),
+                        ),
+                      ],
+                      value: BattleType.rankmatch,
+                      onChanged: (value) {widget.battle.type = value;},
                     ),
                   ),
                 ],
@@ -162,8 +281,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ],
                       onChanged: (value) {
                         widget.battle.ownParty = parties[value - 1];
-//                      widget.party.updateIsValid();
-//                      setState(() {});
+                        widget.battle.updateIsValid();
+                        setState(() {});
                       },
                     ),
                   ),
@@ -181,8 +300,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ),
                       onChanged: (value) {
                         widget.battle.opponentName = value;
-//                            widget.battle.updateIsValid();
-//                            setState(() {});
+                        widget.battle.updateIsValid();
+                        setState(() {});
                       },
                       maxLength: 10,
 //                          controller: partyNameController,
@@ -231,6 +350,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         widget.battle.opponentParty.pokemon1.d.race = suggestion.d;
                         widget.battle.opponentParty.pokemon1.s.race = suggestion.s;
                         opponentPokemon1Controller.text = suggestion.name;
+                        widget.battle.updateIsValid();
+                        setState(() {});
                       },
                     ),
                   ),
@@ -599,29 +720,431 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ],
           ),
         );
+        nextPressed = (widget.battle.isValid) ? () => onNext() : null;
+        break;
+      case RegisterBattlePageType.firstPokemonPage:
+        title = Text('先頭ポケモン');
+        lists = Container(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text('あなた', style: theme.textTheme.bodyLarge,),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text(widget.battle.opponentName, style: theme.textTheme.bodyLarge,),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: PokemonMiniTile(
+                      widget.battle.ownParty.pokemon1,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 1; setState(() {});},
+                      selected: checkedOwnPokemon == 1,
+                      selectedTileColor: Colors.black26,
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon1,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 1; setState(() {});},
+                      selected: checkedOpponentPokemon == 1,
+                      selectedTileColor: Colors.black26,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.ownParty.pokemon2 != null ?
+                    PokemonMiniTile(
+                      widget.battle.ownParty.pokemon2!,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 2; setState(() {});},
+                      selected: checkedOwnPokemon == 2,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.opponentParty.pokemon2 != null ?
+                    PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon2!,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 2; setState(() {});},
+                      selected: checkedOpponentPokemon == 2,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.ownParty.pokemon3 != null ?
+                    PokemonMiniTile(
+                      widget.battle.ownParty.pokemon3!,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 3; setState(() {});},
+                      selected: checkedOwnPokemon == 3,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.opponentParty.pokemon3 != null ?
+                    PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon3!,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 3; setState(() {});},
+                      selected: checkedOpponentPokemon == 3,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.ownParty.pokemon4 != null ?
+                    PokemonMiniTile(
+                      widget.battle.ownParty.pokemon4!,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 4; setState(() {});},
+                      selected: checkedOwnPokemon == 4,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.opponentParty.pokemon4 != null ?
+                    PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon4!,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 4; setState(() {});},
+                      selected: checkedOpponentPokemon == 4,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.ownParty.pokemon5 != null ?
+                    PokemonMiniTile(
+                      widget.battle.ownParty.pokemon5!,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 5; setState(() {});},
+                      selected: checkedOwnPokemon == 5,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.opponentParty.pokemon5 != null ?
+                    PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon5!,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 5; setState(() {});},
+                      selected: checkedOpponentPokemon == 5,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.ownParty.pokemon6 != null ?
+                    PokemonMiniTile(
+                      widget.battle.ownParty.pokemon6!,
+                      theme, pokeData,
+                      onTap: () {checkedOwnPokemon = 6; setState(() {});},
+                      selected: checkedOwnPokemon == 6,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 5,
+                    child: widget.battle.opponentParty.pokemon6 != null ?
+                    PokemonMiniTile(
+                      widget.battle.opponentParty.pokemon6!,
+                      theme, pokeData,
+                      onTap: () {checkedOpponentPokemon = 6; setState(() {});},
+                      selected: checkedOpponentPokemon == 6,
+                      selectedTileColor: Colors.black26,
+                    ) : Text(''),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+        nextPressed = (checkedOwnPokemon != 0 && checkedOpponentPokemon != 0) ? () => onNext() : null;
+        break;
+      case RegisterBattlePageType.turnPage:
+        title = Text('$turnターン目');
+        lists = Container(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(height: 10,),
+              ExpandablePanel(
+                header: Text('わざ選択前'),
+                collapsed: Text('タップで詳細を設定'),
+                expanded: Text('hoge'),
+              ),
+              SizedBox(height: 20,),
+              ExpandablePanel(
+                header: Text('わざ選択'),
+                collapsed: Text('タップで詳細を設定'),
+                expanded: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.primaryColor),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('行動1'),
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: DropdownButtonFormField(
+                                  decoration: const InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: '行動主',
+                                  ),
+                                  items: <DropdownMenuItem>[
+                                    DropdownMenuItem(
+                                      value: 0,
+                                      child: Text('選択してください'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: PlayerType.me.id,
+                                      child: Text('${currentOwnPokemon.name}/あなた', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: PlayerType.opponent.id,
+                                      child: Text('${currentOpponentPokemon.name}/${widget.battle.opponentName}', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                  ],
+                                  value: turnPlayer1,
+                                  onChanged: (value) {turnPlayer1 = value; setState(() {});},
+                                ),
+                              ),
+                              SizedBox(width: 10,),
+                              Expanded(
+                                flex: 5,
+                                child: TypeAheadField(
+                                  textFieldConfiguration: TextFieldConfiguration(
+                                    controller: move1Controller,
+                                    decoration: const InputDecoration(
+                                      border: UnderlineInputBorder(),
+                                      labelText: 'わざ'
+                                    ),
+                                    enabled: turnPlayer1 != 0,
+                                  ),
+                                  autoFlipDirection: true,
+                                  suggestionsCallback: (pattern) async {
+                                    List<Move> matches = [];
+                                    if (turnPlayer1 == PlayerType.me.id) {
+                                      matches.add(currentOwnPokemon.move1);
+                                      if (currentOwnPokemon.move2 != null) matches.add(currentOwnPokemon.move2!);
+                                      if (currentOwnPokemon.move3 != null) matches.add(currentOwnPokemon.move3!);
+                                      if (currentOwnPokemon.move4 != null) matches.add(currentOwnPokemon.move4!);
+                                    }
+                                    else {
+                                      matches.addAll(pokeData.pokeBase[currentOpponentPokemon.no]!.move);
+                                    }
+                                    matches.retainWhere((s){
+                                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    });
+                                    return matches;
+                                  },
+                                  itemBuilder: (context, suggestion) {
+                                    return ListTile(
+                                      title: Text(suggestion.displayName),
+                                    );
+                                  },
+                                  onSuggestionSelected: (suggestion) {
+                                    move1Controller.text = suggestion.displayName;
+                                    /*myPokemon.move1 = suggestion;
+                                    pokePP1Controller.text = suggestion.pp.toString();
+                                    myPokemon.pp1 = suggestion.pp;*/
+                                  },
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 5,
+                                child: DropdownButtonFormField(
+                                  decoration: const InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: '命中',
+                                  ),
+                                  items: <DropdownMenuItem>[
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text('命中'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 2,
+                                      child: Text('急所に命中'),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 3,
+                                      child: Text('当たらなかった'),
+                                    ),
+                                  ],
+                                  onChanged: (value) {},
+                                ),
+                              ),
+                              SizedBox(width: 10,),
+                              Expanded(
+                                flex: 5,
+                                child: DropdownButtonFormField(
+                                  decoration: const InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: '効果',
+                                  ),
+                                  items: <DropdownMenuItem>[
+                                    DropdownMenuItem(
+                                      value: 1,
+                                      child: Text('（テキストなし）', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 2,
+                                      child: Text('ばつぐんだ', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 3,
+                                      child: Text('いまひとつのようだ', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 4,
+                                      child: Text('ないようだ', overflow: TextOverflow.ellipsis,),
+                                    ),
+                                  ],
+                                  onChanged: (value) {},
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 10,),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: NumberInputWithIncrementDecrement(
+                                  controller: HP1Controller,
+                                  numberFieldDecoration: const InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: 'HP'
+                                  ),
+                                  widgetContainerDecoration: const BoxDecoration(
+                                    border: null,
+                                  ),
+                                  initialValue: currentOwnPokemon.h.real,
+                                  min: 0,
+                                  max: currentOwnPokemon.h.real,
+                                  onIncrement: (value) {
+/*
+                                    myPokemon.b.real = value.toInt();
+                                    updateStatsRefReal();
+*/
+                                  },
+                                  onDecrement: (value) {
+/*
+                                    myPokemon.b.real = value.toInt();
+                                    updateStatsRefReal();
+*/
+                                  },
+                                  onChanged: (value) {
+/*
+                                    myPokemon.b.real = value.toInt();
+                                    updateStatsRefReal();
+*/
+                                  },
+                                ),
+                              ),
+                              Text('/${currentOwnPokemon.h.real}')
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 10,),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20,),
+              ExpandablePanel(
+                header: Text('わざ選択後'),
+                collapsed: Text('タップで詳細を設定'),
+                expanded: Text('hoge'),
+              ),
+              SizedBox(height: 10,),
+            ],
+          ),
+        );
+        nextPressed = () => onNext();
         break;
       default:
+        title = Text('バトル登録');
         lists = Center();
+        nextPressed = null;
         break;
-    }
-    
-
-    void onComplete() {
-      // TODO?: 入力された値が正しいかチェック
-      if (widget.isNew) {
-        battles.add(widget.battle);
-      }
-//      pokeData.addParty(widget.party, parties.length);
-      widget.onFinish();
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: widget.isNew ? Text('バトル記録') : Text('バトル編集'),
+        title: widget.isNew ? title : Text('バトル編集'),
         actions: [
           TextButton(
-            onPressed: (widget.battle.isValid) ? () => onComplete() : null,
-            child: Text('完了'),
+            onPressed: nextPressed,
+            child: Text('次へ'),
           ),
         ],
       ),

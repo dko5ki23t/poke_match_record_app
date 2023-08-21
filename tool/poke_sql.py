@@ -224,7 +224,7 @@ if (len(items_list) == 0):
                     name = f['name']
             is_holdable = False
             for f in item_detail['attributes']:
-                if f['name'] == 'holdable' or f['name'] == 'holdable-active':
+                if f['name'] == 'holdable' or f['name'] == 'holdable-active' or f['name'] == 'held-items':
                     is_holdable = True
                     break
             if is_holdable:     # こうしないと、もちもの多すぎ
