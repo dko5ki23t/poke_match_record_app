@@ -629,26 +629,46 @@ class Pokemon {
 class Party {
   int id = 0;    // データベースのプライマリーキー
   String name = '';
-  Pokemon pokemon1 = Pokemon();
-  Item? item1;
-  Pokemon? pokemon2;
-  Item? item2;
-  Pokemon? pokemon3;
-  Item? item3;
-  Pokemon? pokemon4;
-  Item? item4;
-  Pokemon? pokemon5;
-  Item? item5;
-  Pokemon? pokemon6;
-  Item? item6;
+  List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
+  List<Item?> _items = List.generate(6, (i) => null);
   bool isValid = false;
 
   void updateIsValid() {
-    pokemon1.updateIsValid();
+    _pokemons[0]!.updateIsValid();
     isValid =
       name != '' &&
-      pokemon1.isValid;
+      _pokemons[0]!.isValid;
   }
+
+  // getter
+  Pokemon get pokemon1 => _pokemons[0]!;
+  Pokemon? get pokemon2 => _pokemons[1];
+  Pokemon? get pokemon3 => _pokemons[2];
+  Pokemon? get pokemon4 => _pokemons[3];
+  Pokemon? get pokemon5 => _pokemons[4];
+  Pokemon? get pokemon6 => _pokemons[5];
+  List<Pokemon?> get pokemons => _pokemons;
+  Item? get item1 => _items[0];
+  Item? get item2 => _items[1];
+  Item? get item3 => _items[2];
+  Item? get item4 => _items[3];
+  Item? get item5 => _items[4];
+  Item? get item6 => _items[5];
+  List<Item?> get items => _items;
+
+  // setter
+  set pokemon1(Pokemon x)  => _pokemons[0] = x;
+  set pokemon2(Pokemon? x) => _pokemons[1] = x;
+  set pokemon3(Pokemon? x) => _pokemons[2] = x;
+  set pokemon4(Pokemon? x) => _pokemons[3] = x;
+  set pokemon5(Pokemon? x) => _pokemons[4] = x;
+  set pokemon6(Pokemon? x) => _pokemons[5] = x;
+  set item1(Item? x) => _items[0] = x;
+  set item2(Item? x) => _items[1] = x;
+  set item3(Item? x) => _items[2] = x;
+  set item4(Item? x) => _items[3] = x;
+  set item5(Item? x) => _items[4] = x;
+  set item6(Item? x) => _items[5] = x;
 
   // SQLite保存用
   Map<String, dynamic> toMap(int id) {
