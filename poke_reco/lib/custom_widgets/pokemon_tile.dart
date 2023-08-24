@@ -14,7 +14,7 @@ class PokemonTile extends ListTile {
     ThemeData theme,
     PokeDB pokeData,
     {
-      enabled,
+      enabled = true,
       leading,
       trailing,
       onTap,

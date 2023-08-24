@@ -1,12 +1,12 @@
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:intl/intl.dart';
+//import 'package:intl/intl.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 //import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/party_tile.dart';
-import 'package:poke_reco/pokemon_mini_tile.dart';
+import 'package:poke_reco/custom_widgets/party_tile.dart';
+import 'package:poke_reco/custom_widgets/pokemon_mini_tile.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/poke_db.dart';
 

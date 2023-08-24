@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -177,6 +176,7 @@ class PokeType {
   final Icon displayIcon;
 
   static const Map<int, Tuple2<String, Icon>> officialTypes = {
+    0 : Tuple2('不明', Icon(Icons.question_mark, color: Colors.grey)),
     1 : Tuple2('ノーマル', Icon(Icons.radio_button_unchecked, color: Color(0xffaeaeae))),
     2 : Tuple2('かくとう', Icon(Icons.sports_mma, color: Color(0xffee6969))),
     3 : Tuple2('ひこう', Icon(Icons.air, color: Color(0xff64a7f1))),
@@ -450,6 +450,18 @@ class PokeBase {    // 各ポケモンの種族ごとの値
 */
 }
 
+// Pokemonのstatsのインデックスに使う
+// ex) pokemon.stat[StatIndex.H.index]
+enum StatIndex {
+  H,
+  A,
+  B,
+  C,
+  D,
+  S,
+  size,
+}
+
 class Pokemon {
   int id = 0;    // データベースのプライマリーキー
   String _name = '';       // ポケモン名
@@ -461,46 +473,55 @@ class Pokemon {
   PokeType? type2;                     // タイプ2(null OK)
   PokeType teraType = PokeType.createFromId(1);     // テラスタルタイプ
   Temper temper = Temper(0, '', '', ''); // せいかく
-  SixParams _h = SixParams(0, 31, 0, 0);       // HP
-  SixParams _a = SixParams(0, 31, 0, 0);       // こうげき
-  SixParams _b = SixParams(0, 31, 0, 0);       // ぼうぎょ
-  SixParams _c = SixParams(0, 31, 0, 0);       // とくこう
-  SixParams _d = SixParams(0, 31, 0, 0);       // とくぼう
-  SixParams _s = SixParams(0, 31, 0, 0);       // すばやさ
+  // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
+  List<SixParams> _stats = List.generate(StatIndex.size.index, (i) => SixParams(0, 31, 0, 0));
   Ability ability = Ability(0, '');     // とくせい
   Item? item;                      // もちもの(null OK)
-  Move move1 = Move(0, '', 0);     // わざ1
-  int pp1 = 5;                     // PP1
-  Move? move2;                     // わざ2
-  int? pp2 = 5;                    // PP2
-  Move? move3;                     // わざ3
-  int? pp3 = 5;                    // PP3
-  Move? move4;                     // わざ4
-  int? pp4 = 5;                    // PP4
+  List<Move?> _moves = [Move(0, '', 0), null, null, null];  // わざ
+  List<int?> _pps = [5, null, null, null];  // PP
   bool _isValid = false;            // 必要な情報が入力されているか
 
   // getter
   String get name => _name;
   int get level => _level;
   int get no => _no;
-  SixParams get h => _h;
-  SixParams get a => _a;
-  SixParams get b => _b;
-  SixParams get c => _c;
-  SixParams get d => _d;
-  SixParams get s => _s;
+  SixParams get h => _stats[StatIndex.H.index];
+  SixParams get a => _stats[StatIndex.A.index];
+  SixParams get b => _stats[StatIndex.B.index];
+  SixParams get c => _stats[StatIndex.C.index];
+  SixParams get d => _stats[StatIndex.D.index];
+  SixParams get s => _stats[StatIndex.S.index];
+  List<SixParams> get stats => _stats;
+  Move get move1 => _moves[0]!;
+  int get pp1 => _pps[0]!;
+  Move? get move2 => _moves[1];
+  int? get pp2 => _pps[1];
+  Move? get move3 => _moves[2];
+  int? get pp3 => _pps[2];
+  Move? get move4 => _moves[3];
+  int? get pp4 => _pps[3];
+  List<Move?> get moves => _moves;
+  List<int?> get pps => _pps;
   bool get isValid => _isValid;
 
   // setter
   set name(String x) {_name = x; updateIsValid();}
   set level(int x) {_level = x; updateIsValid();}
   set no(int x) {_no = x; updateIsValid();}
-  set h(SixParams x) {_h = x; updateIsValid();}
-  set a(SixParams x) {_a = x; updateIsValid();}
-  set b(SixParams x) {_b = x; updateIsValid();}
-  set c(SixParams x) {_c = x; updateIsValid();}
-  set d(SixParams x) {_d = x; updateIsValid();}
-  set s(SixParams x) {_s = x; updateIsValid();}
+  set h(SixParams x) {_stats[StatIndex.H.index] = x; updateIsValid();}
+  set a(SixParams x) {_stats[StatIndex.A.index] = x; updateIsValid();}
+  set b(SixParams x) {_stats[StatIndex.B.index] = x; updateIsValid();}
+  set c(SixParams x) {_stats[StatIndex.C.index] = x; updateIsValid();}
+  set d(SixParams x) {_stats[StatIndex.D.index] = x; updateIsValid();}
+  set s(SixParams x) {_stats[StatIndex.S.index] = x; updateIsValid();}
+  set move1(Move x) => _moves[0] = x;
+  set pp1(int x) => _pps[0] = x;
+  set move2(Move? x) => _moves[1] = x;
+  set pp2(int? x) => _pps[1] = x;
+  set move3(Move? x) => _moves[2] = x;
+  set pp3(int? x) => _pps[2] = x;
+  set move4(Move? x) => _moves[3] = x;
+  set pp4(int? x) => _pps[3] = x;
 
   // 正しく情報が入力されているかどうか
   void updateIsValid() {
@@ -520,118 +541,57 @@ class Pokemon {
   // TODO habcdsのsetterで自動的に呼ぶ？
   void updateRealStats() {
     final temperBias = Temper.getTemperBias(temper);
-    _h.real = SixParams.getRealH(level, _h.race, _h.indi, _h.effort);
-    _a.real = SixParams.getRealABCDS(level, _a.race, _a.indi, _a.effort, temperBias[0]);
-    _b.real = SixParams.getRealABCDS(level, _b.race, _b.indi, _b.effort, temperBias[1]);
-    _c.real = SixParams.getRealABCDS(level, _c.race, _c.indi, _c.effort, temperBias[2]);
-    _d.real = SixParams.getRealABCDS(level, _d.race, _d.indi, _d.effort, temperBias[3]);
-    _s.real = SixParams.getRealABCDS(level, _s.race, _s.indi, _s.effort, temperBias[4]);
+    _stats[StatIndex.H.index].real = SixParams.getRealH(level, h.race, h.indi, h.effort);
+    _stats[StatIndex.A.index].real = SixParams.getRealABCDS(level, a.race, a.indi, a.effort, temperBias[0]);
+    _stats[StatIndex.B.index].real = SixParams.getRealABCDS(level, b.race, b.indi, b.effort, temperBias[1]);
+    _stats[StatIndex.C.index].real = SixParams.getRealABCDS(level, c.race, c.indi, c.effort, temperBias[2]);
+    _stats[StatIndex.D.index].real = SixParams.getRealABCDS(level, d.race, d.indi, d.effort, temperBias[3]);
+    _stats[StatIndex.S.index].real = SixParams.getRealABCDS(level, s.race, s.indi, s.effort, temperBias[4]);
   }
 
   // 実数値から努力値、個体値を更新
   void updateStatsRefReal() {
-    int effort = SixParams.getEffortH(level, _h.race, _h.indi, _h.real);
+    int effort = SixParams.getEffortH(level, h.race, h.indi, h.real);
     // 努力値の変化だけでは実数値が出せない場合は個体値を更新
     if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _h.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiH(level, _h.race, _h.effort, _h.real);
+      _stats[StatIndex.H.index].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = SixParams.getIndiH(level, h.race, h.effort, h.real);
       // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
       if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _h.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _h.real = SixParams.getRealH(level, _h.race, _h.indi, _h.effort);
+        _stats[StatIndex.H.index].indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _stats[StatIndex.H.index].real = SixParams.getRealH(level, h.race, h.indi, h.effort);
       }
       else {
-        _h.indi = indi;
+        _stats[StatIndex.H.index].indi = indi;
       }
     }
     else {
-      _h.effort = effort;
+      _stats[StatIndex.H.index].effort = effort;
     }
 
     final temperBias = Temper.getTemperBias(temper);
-    effort = SixParams.getEffortABCDS(level, _a.race, _a.indi, _a.real, temperBias[0]);
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _a.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiABCDS(level, _a.race, _a.effort, _a.real, temperBias[0]);
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _a.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _a.real = SixParams.getRealABCDS(level, _a.race, _a.indi, _a.effort, temperBias[0]);
-      }
-      else {
-        _a.indi = indi;
-      }
-    }
-    else {
-      _a.effort = effort;
-    }
 
-    effort = SixParams.getEffortABCDS(level, _b.race, _b.indi, _b.real, temperBias[1]);
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _b.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiABCDS(level, _b.race, _b.effort, _b.real, temperBias[1]);
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _b.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _b.real = SixParams.getRealABCDS(level, _b.race, _b.indi, _b.effort, temperBias[1]);
+    for (int i = StatIndex.A.index; i < StatIndex.size.index; i++) {
+      effort = SixParams.getEffortABCDS(level, _stats[i].race, _stats[i].indi, _stats[i].real, temperBias[i-1]);
+      if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+        _stats[i].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+        int indi = SixParams.getIndiABCDS(level, _stats[i].race, _stats[i].effort, _stats[i].real, temperBias[i-1]);
+        if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+          _stats[i].indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+          _stats[i].real = SixParams.getRealABCDS(level, _stats[i].race, _stats[i].indi, _stats[i].effort, temperBias[i-1]);
+        }
+        else {
+          _stats[i].indi = indi;
+        }
       }
       else {
-        _b.indi = indi;
+        _stats[i].effort = effort;
       }
-    }
-    else {
-      _b.effort = effort;
-    }
-
-    effort = SixParams.getEffortABCDS(level, _c.race, _c.indi, _c.real, temperBias[2]);
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _c.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiABCDS(level, _c.race, _c.effort, _c.real, temperBias[2]);
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _c.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _c.real = SixParams.getRealABCDS(level, _c.race, _c.indi, _c.effort, temperBias[2]);
-      }
-      else {
-        _c.indi = indi;
-      }
-    }
-    else {
-      _c.effort = effort;
-    }
-
-    effort = SixParams.getEffortABCDS(level, _d.race, _d.indi, _d.real, temperBias[3]);
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _d.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiABCDS(level, _d.race, _d.effort, _d.real, temperBias[3]);
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _d.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _d.real = SixParams.getRealABCDS(level, _d.race, _d.indi, _d.effort, temperBias[3]);
-      }
-      else {
-        _d.indi = indi;
-      }
-    }
-    else {
-      _d.effort = effort;
-    }
-
-    effort = SixParams.getEffortABCDS(level, _s.race, _s.indi, _s.real, temperBias[4]);
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _s.effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiABCDS(level, _s.race, _s.effort, _s.real, temperBias[4]);
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _s.indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _s.real = SixParams.getRealABCDS(level, _s.race, _s.indi, _s.effort, temperBias[4]);
-      }
-      else {
-        _s.indi = indi;
-      }
-    }
-    else {
-      _s.effort = effort;
     }
   }
 
   // SQLite保存用
-  Map<String, dynamic> toMap(int id) {
+  Map<String, dynamic> toMap() {
     return {
       myPokemonColumnId: id,
       myPokemonColumnNo: _no,
@@ -642,18 +602,18 @@ class Pokemon {
       myPokemonColumnTemper: temper.id,
       myPokemonColumnAbility: ability.id,
       myPokemonColumnItem: item?.id,
-      myPokemonColumnIndividual[0]: _h.indi,
-      myPokemonColumnIndividual[1]: _a.indi,
-      myPokemonColumnIndividual[2]: _b.indi,
-      myPokemonColumnIndividual[3]: _c.indi,
-      myPokemonColumnIndividual[4]: _d.indi,
-      myPokemonColumnIndividual[5]: _s.indi,
-      myPokemonColumnEffort[0]: _h.effort,
-      myPokemonColumnEffort[1]: _a.effort,
-      myPokemonColumnEffort[2]: _b.effort,
-      myPokemonColumnEffort[3]: _c.effort,
-      myPokemonColumnEffort[4]: _d.effort,
-      myPokemonColumnEffort[5]: _s.effort,
+      myPokemonColumnIndividual[0]: h.indi,
+      myPokemonColumnIndividual[1]: a.indi,
+      myPokemonColumnIndividual[2]: b.indi,
+      myPokemonColumnIndividual[3]: c.indi,
+      myPokemonColumnIndividual[4]: d.indi,
+      myPokemonColumnIndividual[5]: s.indi,
+      myPokemonColumnEffort[0]: h.effort,
+      myPokemonColumnEffort[1]: a.effort,
+      myPokemonColumnEffort[2]: b.effort,
+      myPokemonColumnEffort[3]: c.effort,
+      myPokemonColumnEffort[4]: d.effort,
+      myPokemonColumnEffort[5]: s.effort,
       myPokemonColumnMove1: move1.id,
       myPokemonColumnPP1: pp1,
       myPokemonColumnMove2: move2?.id,
@@ -1277,9 +1237,8 @@ class PokeDB {
 */
   }
 
-  Future<void> addMyPokemon(Pokemon myPokemon, int id) async {
+  Future<void> addMyPokemon(Pokemon myPokemon) async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
-    myPokemon.id = id;
     var exists = await databaseExists(myPokemonDBPath);
 
     if (!exists) {    // ファイル作成
@@ -1300,7 +1259,7 @@ class PokeDB {
     // SQLiteのDBに挿入
     await myPokemonDb.insert(
       myPokemonDBTable,
-      myPokemon.toMap(id),
+      myPokemon.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -1349,7 +1308,7 @@ class PokeDB {
       pokemons[i].id = i + 1;
       await myPokemonDb.insert(
         myPokemonDBTable,
-        pokemons[i].toMap(i + 1),
+        pokemons[i].toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
@@ -1381,6 +1340,35 @@ class PokeDB {
       party.toMap(id),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
+
+  Future<void> recreateParty(List<Party> parties) async {
+    // ID振り直しとかするの面倒だから表を一旦消してしまって整理しなおせばよいという方針
+    // TODO:これでいいのか？
+
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    assert(await databaseExists(partyDBPath));
+
+    // SQLiteのDB読み込み
+    partyDb = await openDatabase(partyDBPath, readOnly: false);
+    
+    // SQLiteのDB表ごと削除
+    await partyDb.delete(
+      partyDBTable,
+    );
+
+    // 表再作成
+    partyDb = await _createPartyDB();
+
+    // 登録パーティのID振り直し & DBに登録
+    for (int i = 0; i < parties.length; i++) {
+      parties[i].id = i + 1;
+      await partyDb.insert(
+        partyDBTable,
+        parties[i].toMap(i + 1),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
 
   Future<Database> _createMyPokemonDB() async {

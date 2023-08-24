@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
-import 'package:poke_reco/battle_tile.dart';
+import 'package:poke_reco/custom_widgets/battle_tile.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/pokemon_tile.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 class BattlesPage extends StatefulWidget {
   const BattlesPage({

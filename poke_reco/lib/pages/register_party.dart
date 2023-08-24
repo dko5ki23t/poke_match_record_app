@@ -1,15 +1,9 @@
-import 'dart:ffi';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_easyloading/flutter_easyloading.dart';
-// import 'package:flutter_spinbox/material.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/pokemon_tile.dart';
+import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/poke_db.dart';
-import 'package:number_inc_dec/number_inc_dec.dart';
 
 class RegisterPartyPage extends StatefulWidget {
   RegisterPartyPage({
@@ -30,21 +24,6 @@ class RegisterPartyPage extends StatefulWidget {
 }
 
 class RegisterPartyPageState extends State<RegisterPartyPage> {
-  // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
-  static toKatakana(String str) {
-    return str.replaceAllMapped(RegExp("[ぁ-ゔ]"),
-      (Match m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) + 0x60));
-  }
-
-  static pingpongTextEditingController(TextEditingController controller) {
-    if (controller.text == 'ping') {
-      controller.text = 'pong';
-    }
-    else {
-      controller.text = 'ping';
-    }
-  }
-
   final partyNameController = TextEditingController();
   final pokemon1Controller = TextEditingController(text: 'ポケモン選択');
   final item1Controller = TextEditingController();
@@ -64,8 +43,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
     var pokeData = appState.pokeData;
-    var pokemons = appState.pokemons;
-    final theme = Theme.of(context);
 
     void onComplete() {
       // TODO?: 入力された値が正しいかチェック

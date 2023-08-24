@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/pokemon_tile.dart';
+import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
+import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 
@@ -35,27 +35,13 @@ class PokemonsPageState extends State<PokemonsPage> {
     color: Colors.blue,
   );
 
-  void selectAll() {
-    bool existFalse = false;
-    for (final e in checkList!) {
-      if (!e) existFalse = true;
-    }
-
-    for (int i = 0; i < checkList!.length; i++) {
-      checkList![i] = existFalse;
-    }
-  }
-
-  int getSelectedNum() {
-    return checkList!.where((bool val) => val).length;
-  }
-
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+    final double deviceHeight = MediaQuery.of(context).size.height;
 
     // ポケモンデータ取得で待つ
     if (!pokeData.isLoaded) {
@@ -89,20 +75,15 @@ class PokemonsPageState extends State<PokemonsPage> {
           children: [
             for (int i = 0; i < pokemons.length; i++)
               PokemonTile(
-                pokemons[i],
-                theme,
-                pokeData,
-                leading: Checkbox(
+                pokemons[i], theme, pokeData,
+                leading: Icon(Icons.drag_handle),
+                trailing: Checkbox(
                   value: checkList![i],
                   onChanged: (isCheck) {
                     setState(() {
                       checkList![i] = isCheck ?? false;
                     });
                   },
-                ),
-                trailing: TextButton(
-                  onPressed: () => widget.onAdd(pokemons[i], false),
-                  child: Icon(Icons.edit),
                 ),
               ),
           ],
@@ -112,17 +93,18 @@ class PokemonsPageState extends State<PokemonsPage> {
         lists = ListView(
           children: [
             for (var pokemon in pokemons)
-            PokemonTile(
-              pokemon,
-              theme,
-              pokeData,
-              enabled: !partyPokemonsNo.contains(pokemon.no),
-              leading: Icon(Icons.catching_pokemon),
-              onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon, false) : null,
-              onTap: widget.selectMode ? () {
-                selectedPokemon = pokemon;
-                widget.onSelect!(pokemon);} : null,
-            ),
+              PokemonTile(
+                pokemon,
+                theme,
+                pokeData,
+                enabled: !partyPokemonsNo.contains(pokemon.no),
+                leading: Icon(Icons.catching_pokemon),
+                onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon, false) : null,
+                onTap: widget.selectMode ? () {
+                  selectedPokemon = pokemon;
+                  widget.onSelect!(pokemon);} : null,
+              ),
+            SizedBox(height: deviceHeight / 4),
           ],
         );
       }
@@ -185,12 +167,12 @@ class PokemonsPageState extends State<PokemonsPage> {
                             Text('すべて選択')
                           ]),
                           onPressed: () => setState(() {
-                            selectAll();
+                            selectAll(checkList!);
                           }),
                         ),
                         SizedBox(width: 20),
                         TextButton(
-                          onPressed: (getSelectedNum() > 0) ?
+                          onPressed: (getSelectedNum(checkList!) > 0) ?
                             () => setState(() {
                               //List<int> deleteIDs = [];
                               for (int i = checkList!.length - 1; i >= 0; i--) {
