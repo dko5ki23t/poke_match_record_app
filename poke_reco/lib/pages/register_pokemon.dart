@@ -72,16 +72,16 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     pokeNoController.text = widget.myPokemon.no.toString();
     pokeLevelController.text = widget.myPokemon.level.toString();
     pokeTemperController.text = widget.myPokemon.temper.displayName;
-    pokeStatRaceController[0].text = widget.isNew ? 'H -' : 'H ${widget.myPokemon.h.race}';
-    pokeStatRaceController[1].text = widget.isNew ? 'A -' : 'A ${widget.myPokemon.a.race}';
-    pokeStatRaceController[2].text = widget.isNew ? 'B -' : 'B ${widget.myPokemon.b.race}';
-    pokeStatRaceController[3].text = widget.isNew ? 'C -' : 'C ${widget.myPokemon.c.race}';
-    pokeStatRaceController[4].text = widget.isNew ? 'D -' : 'D ${widget.myPokemon.d.race}';
-    pokeStatRaceController[5].text = widget.isNew ? 'S -' : 'S ${widget.myPokemon.s.race}';
-    pokeMoveController[0].text = widget.isNew ? '' : widget.myPokemon.move1.displayName;
-    pokeMoveController[1].text = (widget.isNew || widget.myPokemon.move2 == null) ? '' : widget.myPokemon.move2!.displayName;
-    pokeMoveController[2].text = (widget.isNew || widget.myPokemon.move3 == null) ? '' : widget.myPokemon.move3!.displayName;
-    pokeMoveController[3].text = (widget.isNew || widget.myPokemon.move4 == null) ? '' : widget.myPokemon.move4!.displayName;
+    pokeStatRaceController[0].text = widget.myPokemon.name == '' ? 'H -' : 'H ${widget.myPokemon.h.race}';
+    pokeStatRaceController[1].text = widget.myPokemon.name == '' ? 'A -' : 'A ${widget.myPokemon.a.race}';
+    pokeStatRaceController[2].text = widget.myPokemon.name == '' ? 'B -' : 'B ${widget.myPokemon.b.race}';
+    pokeStatRaceController[3].text = widget.myPokemon.name == '' ? 'C -' : 'C ${widget.myPokemon.c.race}';
+    pokeStatRaceController[4].text = widget.myPokemon.name == '' ? 'D -' : 'D ${widget.myPokemon.d.race}';
+    pokeStatRaceController[5].text = widget.myPokemon.name == '' ? 'S -' : 'S ${widget.myPokemon.s.race}';
+    pokeMoveController[0].text = widget.myPokemon.move1.displayName;
+    pokeMoveController[1].text = widget.myPokemon.move2 == null ? '' : widget.myPokemon.move2!.displayName;
+    pokeMoveController[2].text = widget.myPokemon.move3 == null ? '' : widget.myPokemon.move3!.displayName;
+    pokeMoveController[3].text = widget.myPokemon.move4 == null ? '' : widget.myPokemon.move4!.displayName;
 
     void onComplete() {
       if (widget.isNew) {
@@ -127,6 +127,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         suggestionsCallback: (pattern) async {
                           List<PokeBase> matches = [];
                           matches.addAll(pokeData.pokeBase.values);
+                          matches.remove(pokeData.pokeBase[0]);
                           matches.retainWhere((s){
                             return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
@@ -160,7 +161,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           pokeStatRaceController[5].text = 'S ${widget.myPokemon.s.race}';
                           updateRealStat();
                           //pokeStatHRealController.text = widget.myPokemon.h.real.toString();
-                          widget.myPokemon.move1 = pokeData.pokeBase[widget.myPokemon.no]!.move[0];   // TODO:無効なわざ用意しとくべき(今、formの有効/無効切り替え条件がtextの''になってる)
+                          widget.myPokemon.move1 = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
                           widget.myPokemon.move2 = null;
                           widget.myPokemon.move3 = null;
                           widget.myPokemon.move4 = null;
@@ -220,7 +221,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         pokeData,
                         'タイプ1',
                         null,
-                        widget.myPokemon.type1.id,
+                        widget.myPokemon.type1.id == 0 ? null : widget.myPokemon.type1.id,
                       ),
                     ),
                     SizedBox(width: 10),
@@ -229,7 +230,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         pokeData,
                         'タイプ2',
                         null,
-                        widget.myPokemon.type2?.id,
+                        widget.myPokemon.type2?.id == 0 ? null : widget.myPokemon.type2?.id,
                       ),
                     ),
                     SizedBox(width: 10),
@@ -238,7 +239,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         pokeData,
                         'テラスタイプ',
                         (value) {widget.myPokemon.teraType = pokeData.types[value - 1];},
-                        widget.myPokemon.teraType.id,
+                        widget.myPokemon.teraType.id == 0 ? null : widget.myPokemon.teraType.id,
                       ),
                     ),
                   ],
@@ -311,6 +312,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         suggestionsCallback: (pattern) async {
                           List<Temper> matches = [];
                           matches.addAll(pokeData.tempers.values);
+                          matches.remove(pokeData.tempers[0]);
                           matches.retainWhere((s){
                             return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                           });
@@ -343,7 +345,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             )
                         ],
                         value: pokeData.abilities[widget.myPokemon.ability.id],
-                        onChanged: (widget.myPokemon.name == '') ? null : (dynamic value) {widget.myPokemon.ability = value;},
+                        onChanged: (widget.myPokemon.name == '') ? null :
+                          (dynamic value) {
+                            widget.myPokemon.ability = value;
+                            setState(() {});
+                          },
                       ),
                     ),
                   ],
@@ -394,11 +400,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       widget.myPokemon.moves[i] = suggestion;
                       pokePPController[i].text = suggestion.pp.toString();
                       widget.myPokemon.pps[i] = suggestion.pp;
+                      setState(() {});
                     },
                     pokePPController[i],
                     (value) {widget.myPokemon.pps[i] = value.toInt();},
-                    moveEnabled: widget.myPokemon.name != '',
-                    ppEnabled: widget.myPokemon.name != '',
+                    moveEnabled: i == 0 ?
+                      widget.myPokemon.name != '' :
+                      widget.myPokemon.moves[i-1] != null && widget.myPokemon.moves[i-1]!.id != 0,
+                    ppEnabled: widget.myPokemon.moves[i] != null && widget.myPokemon.moves[i]!.id != 0,
                     initialPPValue: widget.myPokemon.pps[i] ?? 0,
                   ),
                   SizedBox(height: 10),

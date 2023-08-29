@@ -12,40 +12,52 @@ class PokemonSexInputRow extends Row {
     void Function(PokeBase) onPokemonSuggestionSelected,
     String? labelSexText,
     void Function(dynamic)? onSexChanged,
+    {
+      bool enabledPokemon = true,
+    }
   ) : 
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
       Expanded(
         flex: 8,
-        child: TypeAheadField(
-          textFieldConfiguration: TextFieldConfiguration(
-            controller: pokemonController,
+        child: enabledPokemon ?
+          TypeAheadField(
+            textFieldConfiguration: TextFieldConfiguration(
+              controller: pokemonController,
+              decoration: InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: labelPokemonText,
+              ),
+            ),
+            autoFlipDirection: true,
+            suggestionsCallback: (pattern) async {
+              List<PokeBase> matches = [];
+              matches.addAll(pokeData.pokeBase.values);
+              matches.remove(pokeData.pokeBase[0]);
+              matches.retainWhere((s){
+                return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+              });
+              for (final pokemon in removalPokemons) {
+                matches.remove(pokemon);
+              }
+              return matches;
+            },
+            itemBuilder: (context, suggestion) {
+              return ListTile(
+                title: Text(suggestion.name),
+                autofocus: true,
+              );
+            },
+            onSuggestionSelected: onPokemonSuggestionSelected,
+          ) :
+          TextFormField(
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
               labelText: labelPokemonText,
             ),
+            enabled: false,
           ),
-          autoFlipDirection: true,
-          suggestionsCallback: (pattern) async {
-            List<PokeBase> matches = [];
-            matches.addAll(pokeData.pokeBase.values);
-            matches.retainWhere((s){
-              return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-            });
-            for (final pokemon in removalPokemons) {
-              matches.remove(pokemon);
-            }
-            return matches;
-          },
-          itemBuilder: (context, suggestion) {
-            return ListTile(
-              title: Text(suggestion.name),
-              autofocus: true,
-            );
-          },
-          onSuggestionSelected: onPokemonSuggestionSelected,
-        ),
       ),
       SizedBox(width: 10),
       Expanded(

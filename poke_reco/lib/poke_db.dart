@@ -1,13 +1,12 @@
-import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:poke_reco/poke_move.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:tuple/tuple.dart';
 import 'package:quiver/iterables.dart';
-import 'package:http/http.dart' as http;
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -16,6 +15,9 @@ const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
 const String abilityColumnId = 'id';
 const String abilityColumnName = 'name';
+const String abilityColumnTiming = 'timing';
+const String abilityColumnTarget = 'target';
+const String abilityColumnEffect = 'effect';
 
 const String temperDBFile = 'Tempers.db';
 const String temperDBTable = 'temperDB';
@@ -33,6 +35,14 @@ const String moveDBFile = 'Moves.db';
 const String moveDBTable = 'moveDB';
 const String moveColumnId = 'id';
 const String moveColumnName = 'name';
+const String moveColumnType = 'type';
+const String moveColumnPower = 'power';
+const String moveColumnAccuracy = 'accuracy';
+const String moveColumnPriority = 'priority';
+const String moveColumnTarget = 'target';
+const String moveColumnDamageClass = 'damage_class';
+const String moveColumnEffect = 'effect';
+const String moveColumnEffectChance = 'effect_chance';
 const String moveColumnPP = 'PP';
 
 const String pokeBaseDBFile = 'PokeBases.db';
@@ -50,6 +60,7 @@ const List<String> pokeBaseColumnStats = [
   'd',
   's',
 ];
+const String pokeBaseColumnType = 'type';
 
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
@@ -105,6 +116,26 @@ const String partyColumnPokemonItem5 = 'pokemonItem5';
 const String partyColumnPokemonId6 = 'pokemonID6';
 const String partyColumnPokemonItem6 = 'pokemonItem6';
 
+const String battleDBFile = 'battles.db';
+const String battleDBTable = 'battleDB';
+const String battleColumnId = 'id';
+const String battleColumnName = 'name';
+const String battleColumnTypeId = 'battleType';
+const String battleColumnDate = 'date';
+const String battleColumnOwnPartyId = 'ownParty';
+const String battleColumnOpponentPokemonID1 = 'opponentPokemon1';
+const String battleColumnOpponentItemID1 = 'opponentItem1';
+const String battleColumnOpponentPokemonID2 = 'opponentPokemon2';
+const String battleColumnOpponentItemID2 = 'opponentItem2';
+const String battleColumnOpponentPokemonID3 = 'opponentPokemon3';
+const String battleColumnOpponentItemID3 = 'opponentItem3';
+const String battleColumnOpponentPokemonID4 = 'opponentPokemon4';
+const String battleColumnOpponentItemID4 = 'opponentItem4';
+const String battleColumnOpponentPokemonID5 = 'opponentPokemon5';
+const String battleColumnOpponentItemID5 = 'opponentItem5';
+const String battleColumnOpponentPokemonID6 = 'opponentPokemon6';
+const String battleColumnOpponentItemID6 = 'opponentItem6';
+
 // 今後変更されないとも限らない
 const int pokemonMinLevel = 1;
 const int pokemonMaxLevel = 100;
@@ -123,7 +154,6 @@ pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
     'special-defense' : 4,
     'speed' : 5,
 }*/
-const String pokeBaseColumnType = 'type';
 
 enum TabItem {
   battles,
@@ -304,16 +334,110 @@ class SixParams {
   }
 }
 
+// 発動タイミング
+class AbilityTiming {
+/*
+  none(0),
+  pokemonAppear(1),     // ポケモン登場時
+  defeatOpponent(2),    // 相手を倒したとき
+  ;
+*/
+
+  const AbilityTiming(this.id);
+
+  final int id;
+}
+
+// 対象
+class Target {
+/*
+  // わざの対象から引用
+  none(0),
+  specificMove(1),
+  selectedPokemonMeFirst(2),
+  ally(3),
+  usersField(4),
+  userOrAlly(5),
+  opponentsField(6),
+  user(7),                      // 自分自身
+  randomOpponent(8),
+  allOtherPokemon(9),
+  selectedPokemon(10),          // 選択した相手
+  allOpponents(11),
+  entireField(12),
+  userAndAllies(13),
+  allPokemon(14),
+  allAllies(15),
+  faintingPokemon(16),
+  ;
+*/
+
+  const Target(this.id);
+
+  final int id;
+}
+
+// ダメージ
+class DamageClass {
+/*
+  none(0),
+  status(1),              // へんか(ダメージなし)
+  physical(2),            // ぶつり
+  special(3),             // とくしゅ
+  ;
+*/
+
+  const DamageClass(this.id);
+
+  final int id;
+}
+
+// 効果
+class AbilityEffect {
+/*
+  none(0),
+  attackDown1(1),         // こうげき1段階ダウン
+  attackUp1(2),           // こうげき1段階アップ
+  ;
+*/
+
+  const AbilityEffect(this.id);
+
+  final int id;
+}
+
+// 効果
+class MoveEffect {
+/*
+  none(0),
+  attackDown1(1),         // こうげき1段階ダウン
+  attackUp1(2),           // こうげき1段階アップ
+  ;
+*/
+
+  const MoveEffect(this.id);
+
+  final int id;
+}
+
 class Ability {
   final int id;
   final String displayName;
+  final AbilityTiming timing;
+  final Target target;
+  final AbilityEffect effect;
 
-  const Ability(this.id, this.displayName);
+  const Ability(
+    this.id, this.displayName, this.timing, this.target, this.effect
+  );
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       abilityColumnId: id,
-      abilityColumnName: displayName
+      abilityColumnName: displayName,
+      abilityColumnTiming: timing.id,
+      abilityColumnTarget: target.id,
+      abilityColumnEffect: effect.id,
     };
     return map;
   }
@@ -337,10 +461,23 @@ class Item {
 class Move {
   final int id;
   final String displayName;
+  final PokeType type;
+  int power;
+  int accuracy;
+  int priority;
+  Target target;
+  DamageClass damageClass;
+  MoveEffect effect;
+  int effectChance;
   final int pp;
 
-  const Move(this.id, this.displayName, this.pp);
+  Move(
+    this.id, this.displayName, this.type, this.power,
+    this.accuracy, this.priority, this.target,
+    this.damageClass, this.effect, this.effectChance, this.pp,
+  );
 
+/*
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       moveColumnId: id,
@@ -349,6 +486,7 @@ class Move {
     };
     return map;
   }
+*/
 }
 
 class PokeBase {    // 各ポケモンの種族ごとの値
@@ -468,17 +606,20 @@ class Pokemon {
   String nickname = '';            // ニックネーム
   int _level = 50;                  // レベル
   Sex sex = Sex.none;              // せいべつ
-  int _no = 1;                      // 図鑑No.
-  PokeType type1 = PokeType.createFromId(1);        // タイプ1
+  int _no = 0;                      // 図鑑No.
+  PokeType type1 = PokeType.createFromId(0);        // タイプ1
   PokeType? type2;                     // タイプ2(null OK)
-  PokeType teraType = PokeType.createFromId(1);     // テラスタルタイプ
+  PokeType teraType = PokeType.createFromId(0);     // テラスタルタイプ
   Temper temper = Temper(0, '', '', ''); // せいかく
   // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
   List<SixParams> _stats = List.generate(StatIndex.size.index, (i) => SixParams(0, 31, 0, 0));
-  Ability ability = Ability(0, '');     // とくせい
+  Ability ability = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0));     // とくせい
   Item? item;                      // もちもの(null OK)
-  List<Move?> _moves = [Move(0, '', 0), null, null, null];  // わざ
-  List<int?> _pps = [5, null, null, null];  // PP
+  List<Move?> _moves = [
+    Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0),
+    null, null, null
+  ];  // わざ
+  List<int?> _pps = [0, null, null, null];  // PP
   bool _isValid = false;            // 必要な情報が入力されているか
 
   // getter
@@ -528,7 +669,8 @@ class Pokemon {
     if (
       _name != '' &&
       (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
-      _no >= pokemonMinNo
+      _no >= pokemonMinNo && temper.id != 0 &&
+      ability.id != 0 && _moves[0]!.id != 0
     ) {
       _isValid = true;
     }
@@ -626,6 +768,41 @@ class Pokemon {
   }
 }
 
+// TODO
+enum Ailment {
+  none(0),
+  burn(1),    // やけど
+  freeze(2),  // こおり
+  ;
+
+  const Ailment(this.id);
+
+  final int id;
+}
+
+class PokemonState {
+  //Pokemon pokemonBaseInfo;
+  int no = 0;   // ずかんNo
+  int hp = 0;   // HP
+  int hpPercent = 100;  // 残りHP割合
+  PokeType teraType = PokeType.createFromId(0);   // テラスタイプ
+  List<Ability> possibleAbilities = [];     // 候補のあるとくせい
+  Ability ability = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい
+  List<int> statChanges = List.generate(6, (i) => 0);   // のうりょく変化
+  List<Ailment> ailment = [];   // 状態異常
+
+  PokemonState copyWith() =>
+    PokemonState()
+    ..no = no
+    ..hp = hp
+    ..hpPercent = hpPercent
+    ..teraType = teraType
+    ..possibleAbilities = possibleAbilities
+    ..ability = ability
+    ..statChanges = [...statChanges]
+    ..ailment = ailment;
+}
+
 class Party {
   int id = 0;    // データベースのプライマリーキー
   String name = '';
@@ -655,6 +832,12 @@ class Party {
   Item? get item5 => _items[4];
   Item? get item6 => _items[5];
   List<Item?> get items => _items;
+  int get pokemonNum {
+    for (int i = 0; i < 6; i++) {
+      if (pokemons[i] == null) return i;
+    }
+    return 6;
+  }
 
   // setter
   set pokemon1(Pokemon x)  => _pokemons[0] = x;
@@ -671,7 +854,7 @@ class Party {
   set item6(Item? x) => _items[5] = x;
 
   // SQLite保存用
-  Map<String, dynamic> toMap(int id) {
+  Map<String, dynamic> toMap() {
     return {
       partyColumnId: id,
       partyColumnName: name,
@@ -713,6 +896,7 @@ enum BattleType {
 }
 
 enum PlayerType {
+  none(0),
   me(1),
   opponent(2),
   ;
@@ -722,18 +906,102 @@ enum PlayerType {
   final int id;
 }
 
-class TurnMove {
-  TurnMove(this.playerType, this.move);
 
-  PlayerType playerType;
-  Move move;
+
+enum EffectType {
+  none(0),
+  ability(1),
+  item(2),
+  ;
+
+  const EffectType(this.id);
+
+  final int id;
+}
+
+class TurnEffect {
+  PlayerType playerType = PlayerType.none;
+  EffectType effect = EffectType.none;
+  int effectId = 0;
+
+  bool isValid() {
+    return
+      playerType != PlayerType.none &&
+      effect != EffectType.none &&
+      effectId > 0;
+  }
 }
 
 class Turn {
-  Turn(this.turnMove1, this.turnMove2);
+  bool changedOwnPokemon = false;
+  bool changedOpponentPokemon = false;
+  int initialOwnPokemonIndex = 0;         // 0は無効値
+  int initialOpponentPokemonIndex = 0;    // 0は無効値
+  int currentOwnPokemonIndex = 0;         // 0は無効値
+  int currentOpponentPokemonIndex = 0;    // 0は無効値
+  List<PokemonState> ownPokemonInitialStates = [];
+  List<PokemonState> opponentPokemonInitialStates = [];
+  List<PokemonState> ownPokemonCurrentStates = [];
+  List<PokemonState> opponentPokemonCurrentStates = [];
+  List<TurnEffect> beforeMoveEffects = [];
+  TurnMove turnMove1 = TurnMove();
+  TurnMove turnMove2 = TurnMove();
+  List<TurnEffect> afterMoveEffects = [];
 
-  TurnMove turnMove1;
-  TurnMove turnMove2;
+  bool canAddBeforemoveEffects() {
+    for (final effect in beforeMoveEffects) {
+      if (!effect.isValid()) return false;
+    }
+    return true;
+  }
+
+  // TODO:とある時点でのHPとか取得できるようにしたほうがいい
+  void updateCurrentStates(Party ownParty, Party opponentParty) {
+    ownPokemonCurrentStates = [];
+    for (final e in ownPokemonInitialStates) {
+      ownPokemonCurrentStates.add(e.copyWith());
+    }
+    opponentPokemonCurrentStates = [];
+    for (final e in opponentPokemonInitialStates) {
+      opponentPokemonCurrentStates.add(e.copyWith());
+    }
+    currentOwnPokemonIndex = initialOwnPokemonIndex;
+    currentOpponentPokemonIndex = initialOpponentPokemonIndex;
+
+    // わざ選択前の処理
+    for (final effect in beforeMoveEffects) {
+      switch (effect.effectId) {
+        case 1:   // いかく
+          if (effect.playerType == PlayerType.me) {
+            opponentPokemonCurrentStates[currentOpponentPokemonIndex-1].statChanges[0]--;
+          }
+          else {
+            ownPokemonCurrentStates[currentOwnPokemonIndex-1].statChanges[0]--;
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
+    // わざ1
+    turnMove1.processMove(
+      ownParty.pokemons[currentOwnPokemonIndex-1]!,
+      ownPokemonCurrentStates[currentOwnPokemonIndex-1],
+      opponentParty.pokemons[currentOpponentPokemonIndex-1]!,
+      opponentPokemonCurrentStates[currentOpponentPokemonIndex-1],
+      this,
+    );
+
+    // わざ2
+    turnMove2.processMove(
+      ownParty.pokemons[currentOwnPokemonIndex-1]!,
+      ownPokemonCurrentStates[currentOwnPokemonIndex-1],
+      opponentParty.pokemons[currentOpponentPokemonIndex-1]!,
+      opponentPokemonCurrentStates[currentOpponentPokemonIndex-1],
+      this,
+    );
+  }
 }
 
 class Battle {
@@ -741,8 +1009,10 @@ class Battle {
   BattleType type = BattleType.rankmatch;
   DateTime datatime = DateTime.now();
   Party ownParty = Party();
+  List<PokemonState> ownPokemonStates = [];
   String opponentName = '';
   Party opponentParty = Party();
+  List<PokemonState> opponentPokemonStates = [];
   final List<Turn> turns = [];
   bool isValid = false;
 
@@ -765,7 +1035,7 @@ class PokeDB {
   
   Map<int, Ability> abilities = {};
   late Database abilityDb;
-  Map<int, Temper> tempers = {};
+  Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
   Map<int, Item> items = {};
   late Database itemDb;
@@ -774,13 +1044,21 @@ class PokeDB {
   List<PokeType> types = [
     for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
   ];
-  Map<int, PokeBase> pokeBase = {};
+  Map<int, PokeBase> pokeBase = {   // 無効なポケモン
+    0: PokeBase(
+      name: '',
+      sex: [Sex.createFromId(0)],
+      no: 0, type1: PokeType.createFromId(0),
+      type2: null, h: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
+      ability: [], move: []),
+  };
   late Database pokeBaseDb;
   List<Pokemon> pokemons = [];
   late Database myPokemonDb;
   List<Party> parties = [];
   late Database partyDb;
   List<Battle> battles = [];
+  late Database battleDb;
 
   bool isLoaded = false;
 
@@ -791,6 +1069,7 @@ class PokeDB {
   // キャッシュしたインスタンスを返す
   factory PokeDB() => instance;
 
+/*
   Future<void> fetchAllAbility() async {
     var res = await http.get(Uri.parse('$pokeApiRoute/ability'));
     if (res.statusCode == 200) {
@@ -832,6 +1111,7 @@ class PokeDB {
       throw Exception('Failed to Load Ability');
     }
   }
+*/
 
 /*
   Future<void> fetchPokemon(int id) async {
@@ -896,12 +1176,15 @@ class PokeDB {
     abilityDb = await openDatabase(abilityDBPath, readOnly: true);
     // 内部データに変換
     List<Map<String, dynamic>> maps = await abilityDb.query(abilityDBTable,
-      columns: [abilityColumnId, abilityColumnName],
+      columns: [abilityColumnId, abilityColumnName, abilityColumnTiming, abilityColumnTarget, abilityColumnEffect],
     );
     for (var map in maps) {
       abilities[map[abilityColumnId]] = Ability(
         map[abilityColumnId],
-        map[abilityColumnName]
+        map[abilityColumnName],
+        AbilityTiming(map[abilityColumnTiming]),
+        Target(map[abilityColumnTarget]),
+        AbilityEffect(map[abilityColumnEffect]),
       );
     }
 
@@ -1012,12 +1295,20 @@ class PokeDB {
     moveDb = await openDatabase(moveDBPath, readOnly: true);
     // 内部データに変換
     maps = await moveDb.query(moveDBTable,
-      columns: [moveColumnId, moveColumnName, moveColumnPP],
+      columns: [moveColumnId, moveColumnName, moveColumnType, moveColumnPower, moveColumnAccuracy, moveColumnPriority, moveColumnTarget, moveColumnDamageClass, moveColumnEffect, moveColumnEffectChance, moveColumnPP],
     );
     for (var map in maps) {
       moves[map[moveColumnId]] = Move(
         map[moveColumnId],
         map[moveColumnName],
+        PokeType.createFromId(map[moveColumnType]),
+        map[moveColumnPower],
+        map[moveColumnAccuracy],
+        map[moveColumnPriority],
+        Target(map[moveColumnTarget]),
+        DamageClass(map[moveColumnDamageClass]),
+        MoveEffect(map[moveColumnEffect]),
+        map[moveColumnEffectChance],
         map[moveColumnPP],
       );
     }
@@ -1215,9 +1506,74 @@ class PokeDB {
           ..pokemon4 = map[partyColumnPokemonId4] != null ?
               pokemons.where((element) => element.id == map[partyColumnPokemonId4]).first : null
           ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
+          ..pokemon5 = map[partyColumnPokemonId5] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId5]).first : null
+          ..item5 = map[partyColumnPokemonItem5] != null ? items[map[partyColumnPokemonItem5]] : null
+          ..pokemon6 = map[partyColumnPokemonId6] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId6]).first : null
+          ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
         );
       }
     }
+
+    //////////// 登録した対戦
+    final battleDBPath = join(await getDatabasesPath(), battleDBFile);
+    //await deleteDatabase(battleDBPath);
+    exists = await databaseExists(battleDBPath);
+
+    if (!exists) {
+      try {
+        await Directory(dirname(battleDBPath)).create(recursive: true);
+      } catch (_) {}
+
+      await _createBattleDB();
+    }
+    else {
+      print("Opening existing database");
+
+      // SQLiteのDB読み込み
+      battleDb = await openDatabase(battleDBPath, readOnly: false);
+      // 内部データに変換
+      maps = await battleDb.query(battleDBTable,
+        columns: [
+          battleColumnId, battleColumnName, battleColumnTypeId,
+          battleColumnDate, battleColumnOwnPartyId,
+          battleColumnOpponentPokemonID1, battleColumnOpponentItemID1,
+          battleColumnOpponentPokemonID2, battleColumnOpponentItemID2,
+          battleColumnOpponentPokemonID3, battleColumnOpponentItemID3,
+          battleColumnOpponentPokemonID4, battleColumnOpponentItemID4,
+          battleColumnOpponentPokemonID5, battleColumnOpponentItemID5,
+          battleColumnOpponentPokemonID6, battleColumnOpponentItemID6,
+        ],
+      );
+
+/*
+      for (var map in maps) {
+        parties.add(Party()
+          ..id = map[partyColumnId]
+          ..name = map[partyColumnName]
+          ..pokemon1 = pokemons.where((element) => element.id == map[partyColumnPokemonId1]).first
+          ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
+          ..pokemon2 = map[partyColumnPokemonId2] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId2]).first : null
+          ..item2 = map[partyColumnPokemonItem2] != null ? items[map[partyColumnPokemonItem2]] : null
+          ..pokemon3 = map[partyColumnPokemonId3] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId3]).first : null
+          ..item3 = map[partyColumnPokemonItem3] != null ? items[map[partyColumnPokemonItem3]] : null
+          ..pokemon4 = map[partyColumnPokemonId4] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId4]).first : null
+          ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
+          ..pokemon5 = map[partyColumnPokemonId5] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId5]).first : null
+          ..item5 = map[partyColumnPokemonItem5] != null ? items[map[partyColumnPokemonItem5]] : null
+          ..pokemon6 = map[partyColumnPokemonId6] != null ?
+              pokemons.where((element) => element.id == map[partyColumnPokemonId6]).first : null
+          ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
+        );
+      }
+*/
+    }
+
 
     isLoaded = true;
 
@@ -1334,9 +1690,8 @@ class PokeDB {
     }
   }
 
-  Future<void> addParty(Party party, int id) async {
+  Future<void> addParty(Party party) async {
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
-    party.id = id;
     var exists = await databaseExists(partyDBPath);
 
     if (!exists) {    // ファイル作成
@@ -1357,7 +1712,7 @@ class PokeDB {
     // SQLiteのDBに挿入
     await partyDb.insert(
       partyDBTable,
-      party.toMap(id),
+      party.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -1385,7 +1740,7 @@ class PokeDB {
       parties[i].id = i + 1;
       await partyDb.insert(
         partyDBTable,
-        parties[i].toMap(i + 1),
+        parties[i].toMap(),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
     }
@@ -1459,6 +1814,38 @@ class PokeDB {
           '$partyColumnPokemonItem5 INTEGER, '
           '$partyColumnPokemonId6 INTEGER, '
           '$partyColumnPokemonItem6 INTEGER)'
+        );
+      }
+    );
+  }
+
+  Future<Database> _createBattleDB() async {
+    final battleDBPath = join(await getDatabasesPath(), battleDBFile);
+
+    // SQLiteのDB作成
+    return openDatabase(
+      battleDBPath,
+      version: 1,
+      onCreate: (db, version) {
+        return db.execute(
+          'CREATE TABLE $battleDBTable('
+          '$battleColumnId INTEGER, '
+          '$battleColumnName TEXT, '
+          '$battleColumnTypeId INTEGER, '
+          '$battleColumnDate INTEGER, '     // TODO
+          '$battleColumnOwnPartyId INTEGER, '
+          '$battleColumnOpponentPokemonID1 INTEGER, '
+          '$battleColumnOpponentItemID1 INTEGER, '
+          '$battleColumnOpponentPokemonID2 INTEGER, '
+          '$battleColumnOpponentItemID2 INTEGER, '
+          '$battleColumnOpponentPokemonID3 INTEGER, '
+          '$battleColumnOpponentItemID3 INTEGER, '
+          '$battleColumnOpponentPokemonID4 INTEGER, '
+          '$battleColumnOpponentItemID4 INTEGER, '
+          '$battleColumnOpponentPokemonID5 INTEGER, '
+          '$battleColumnOpponentItemID5 INTEGER, '
+          '$battleColumnOpponentPokemonID6 INTEGER, '
+          '$battleColumnOpponentItemID6 INTEGER)'
         );
       }
     );

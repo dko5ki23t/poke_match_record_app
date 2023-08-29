@@ -52,7 +52,7 @@ class MoveInputRow extends Row {
               title: Text(suggestion.displayName),
             );
           },
-          onSuggestionSelected: moveOnSuggestionSelected,
+          onSuggestionSelected: (suggestion) => moveOnSuggestionSelected(suggestion),
         ),
       ),
       SizedBox(width: 10),

@@ -6,10 +6,10 @@ import re
 pokeApiRoute = "https://pokeapi.co/api/v2"
 
 # APIお試し
-for i in range(1, 19):
-    response = requests.get(pokeApiRoute + '/type/' + str(i))
-    stat = response.json()
-    print(i, stat['name'])
+#for i in range(1, 19):
+#    response = requests.get(pokeApiRoute + '/type/' + str(i))
+#    stat = response.json()
+#    print(i, stat['name'])
 #print(re.findall('([0-9]+)/?$', stat['species']['url']))
 
 abilityDBFile = 'Abilities.db'

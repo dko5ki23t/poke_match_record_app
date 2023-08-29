@@ -160,7 +160,7 @@ class BattleBasicListView extends ListView {
               PokemonSexInputRow(
                 'ポケモン${i+1}', pokeData,
                 [for (int j = 0; j < 6; j++)
-                  i != j ? pokeData.pokeBase[battle.opponentParty.pokemons[j]?.id]
+                  i != j ? pokeData.pokeBase[battle.opponentParty.pokemons[j]?.no]
                   : null
                 ],
                 opponentPokemonController[i],
@@ -185,6 +185,7 @@ class BattleBasicListView extends ListView {
                 battle.opponentParty.pokemons[i] != null ?
                   (value) {battle.opponentParty.pokemons[i]!.sex = value;}
                   : null,
+                enabledPokemon: i != 0 ? battle.opponentParty.pokemons[i-1] != null && battle.opponentParty.pokemons[i-1]!.no >= pokemonMinNo : true,
               ),
               SizedBox(height: 10),
             SizedBox(height: 10),

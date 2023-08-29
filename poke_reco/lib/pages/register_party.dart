@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/pokemon_item_input_row.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
@@ -25,18 +26,8 @@ class RegisterPartyPage extends StatefulWidget {
 
 class RegisterPartyPageState extends State<RegisterPartyPage> {
   final partyNameController = TextEditingController();
-  final pokemon1Controller = TextEditingController(text: 'ポケモン選択');
-  final item1Controller = TextEditingController();
-  final pokemon2Controller = TextEditingController(text: 'ポケモン選択');
-  final item2Controller = TextEditingController();
-  final pokemon3Controller = TextEditingController(text: 'ポケモン選択');
-  final item3Controller = TextEditingController();
-  final pokemon4Controller = TextEditingController(text: 'ポケモン選択');
-  final item4Controller = TextEditingController();
-  final pokemon5Controller = TextEditingController(text: 'ポケモン選択');
-  final item5Controller = TextEditingController();
-  final pokemon6Controller = TextEditingController(text: 'ポケモン選択');
-  final item6Controller = TextEditingController();
+  final pokemonController = List.generate(6, (i) => TextEditingController(text: 'ポケモン選択'));
+  final itemController = List.generate(6, (i) => TextEditingController());
 
   @override
   Widget build(BuildContext context) {
@@ -48,8 +39,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
         parties.add(widget.party);
+        widget.party.id = parties.length;
       }
-      pokeData.addParty(widget.party, parties.length);
+      pokeData.addParty(widget.party);
       widget.onFinish();
     }
 
@@ -92,396 +84,35 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   ],
                 ),
                 SizedBox(height: 10),
-                Row(  // ポケモン1, もちもの1
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン1',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon1Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon1 = pokemon;
-                            widget.party.updateIsValid();
-                            pokemon1Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item1Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの1'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item2);
-                          matches.remove(widget.party.item3);
-                          matches.remove(widget.party.item4);
-                          matches.remove(widget.party.item5);
-                          matches.remove(widget.party.item6);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item1Controller.text = suggestion.displayName;
-                          widget.party.item1 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(  // ポケモン2, もちもの2
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン2',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon2Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon2 = pokemon;
-                            pokemon2Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item2Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの2'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item1);
-                          matches.remove(widget.party.item3);
-                          matches.remove(widget.party.item4);
-                          matches.remove(widget.party.item5);
-                          matches.remove(widget.party.item6);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item2Controller.text = suggestion.displayName;
-                          widget.party.item2 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(  // ポケモン3, もちもの3
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン3',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon3Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon3 = pokemon;
-                            pokemon3Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item3Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの3'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item1);
-                          matches.remove(widget.party.item2);
-                          matches.remove(widget.party.item4);
-                          matches.remove(widget.party.item5);
-                          matches.remove(widget.party.item6);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item3Controller.text = suggestion.displayName;
-                          widget.party.item3 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(  // ポケモン4, もちもの4
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン4',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon4Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon4 = pokemon;
-                            pokemon4Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item4Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの4'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item1);
-                          matches.remove(widget.party.item2);
-                          matches.remove(widget.party.item3);
-                          matches.remove(widget.party.item5);
-                          matches.remove(widget.party.item6);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item4Controller.text = suggestion.displayName;
-                          widget.party.item4 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(  // ポケモン5, もちもの5
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン5',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon5Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon5 = pokemon;
-                            pokemon5Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item5Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの5'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item1);
-                          matches.remove(widget.party.item2);
-                          matches.remove(widget.party.item3);
-                          matches.remove(widget.party.item4);
-                          matches.remove(widget.party.item6);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item5Controller.text = suggestion.displayName;
-                          widget.party.item5 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 10),
-                Row(  // ポケモン6, もちもの6
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      flex: 6,
-                      child: TextFormField(
-                        decoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: 'ポケモン6',
-                          suffixIcon: Icon(Icons.arrow_drop_down),
-                        ),
-                        controller: pokemon6Controller,
-                        onTap: () async {
-                          // キーボードが出ないようにする
-                          FocusScope.of(context).requestFocus(FocusNode());
-                          var pokemon = await widget.onSelectPokemon(widget.party);
-                          if (pokemon != null) {
-                            widget.party.pokemon6 = pokemon;
-                            pokemon6Controller.text =
-                              pokemon.nickname == '' ?
-                                '${pokemon.name}/${pokemon.name}' :
-                                '${pokemon.nickname}/${pokemon.name}';
-                          }
-                        },
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Flexible(
-                      flex: 4,
-                      child: TypeAheadField(
-                        textFieldConfiguration: TextFieldConfiguration(
-                          controller: item6Controller,
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: 'もちもの6'
-                          ),
-                        ),
-                        autoFlipDirection: true,
-                        suggestionsCallback: (pattern) async {
-                          List<Item> matches = [];
-                          matches.addAll(pokeData.items.values);
-                          matches.retainWhere((s){
-                            return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                          });
-                          matches.remove(widget.party.item1);
-                          matches.remove(widget.party.item2);
-                          matches.remove(widget.party.item3);
-                          matches.remove(widget.party.item4);
-                          matches.remove(widget.party.item5);
-                          return matches;
-                        },
-                        itemBuilder: (context, suggestion) {
-                          return ListTile(
-                            title: Text(suggestion.displayName),
-                          );
-                        },
-                        onSuggestionSelected: (suggestion) {
-                          item6Controller.text = suggestion.displayName;
-                          widget.party.item6 = suggestion;
-                        },
-                      ),
-                    ),
-                  ],
-                ),
+                for (int i = 0; i < 6; i++)
+                  PokemonItemInputRow(
+                    'ポケモン${i+1}',
+                    pokemonController[i],
+                    () async {
+                      // キーボードが出ないようにする
+                      FocusScope.of(context).requestFocus(FocusNode());
+                      var pokemon = await widget.onSelectPokemon(widget.party);
+                      if (pokemon != null) {
+                        widget.party.pokemons[i] = pokemon;
+                        widget.party.updateIsValid();
+                        pokemonController[i].text =
+                          pokemon.nickname == '' ?
+                            '${pokemon.name}/${pokemon.name}' :
+                            '${pokemon.nickname}/${pokemon.name}';
+                      }
+                    },
+                    'もちもの${i+1}',
+                    itemController[i],
+                    pokeData,
+                    [for (int j = 0; j < 6; j++) i != j ? widget.party.items[j] : null],
+                    (suggestion) {
+                      itemController[i].text = suggestion.displayName;
+                      widget.party.items[i] = suggestion;
+                    },
+                    enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
+                    enabledItem: widget.party.pokemons[i] != null,
+                  ),
+                  SizedBox(height: 10),
                 SizedBox(height: 10),
               ],
             ),
