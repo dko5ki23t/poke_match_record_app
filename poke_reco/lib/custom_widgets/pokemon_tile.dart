@@ -19,6 +19,7 @@ class PokemonTile extends ListTile {
       trailing,
       onTap,
       onLongPress,
+      showWarning = false,
     }
   ) : 
   super(
@@ -27,6 +28,9 @@ class PokemonTile extends ListTile {
     leading: leading,
     title: Row(
       children: [
+        showWarning && pokemon.refCount > 0 ?
+        Icon(Icons.warning, color: Colors.red,)
+        : Container(),
         Expanded(
           child: Text(
             pokemon.nickname == '' ?

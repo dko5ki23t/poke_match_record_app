@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialog/party_delete_check_dialog.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/poke_db.dart';
@@ -30,6 +31,10 @@ class PartiesPageState extends State<PartiesPage> {
 
     Widget lists;
     checkList ??= List.generate(parties.length, (i) => false);
+    // データベースの読み込みタイミングによってはリストが0の場合があるため
+    if (checkList!.length != parties.length) {
+      checkList = List.generate(parties.length, (i) => false);
+    }
 
     if (parties.isEmpty) {
       lists = Center(
@@ -63,7 +68,7 @@ class PartiesPageState extends State<PartiesPage> {
               PartyTile(
                 party, theme, pokeData,
                 leading: Icon(Icons.group),
-                onLongPress: () => widget.onAdd(party, false),
+                onLongPress: () => widget.onAdd(party.copyWith(), false),
               )
           ],
         );
@@ -126,18 +131,31 @@ class PartiesPageState extends State<PartiesPage> {
                       SizedBox(width: 20),
                       TextButton(
                         onPressed: (getSelectedNum(checkList!) > 0) ?
-                          () => setState(() {
-                            //List<int> deleteIDs = [];
-                            for (int i = checkList!.length - 1; i >= 0; i--) {
-                              if (checkList![i]) {
-                                //deleteIDs.add(pokemons[i].id);
-                                checkList!.removeAt(i);
-                                parties.removeAt(i);
+                          () {
+                            bool isContainedBattle = false;
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return PartyDeleteCheckDialog(
+                                  isContainedBattle,
+                                  () async {
+                                    List<int> deleteIDs = [];
+                                    for (int i = 0; i < checkList!.length; i++) {
+                                      if (checkList![i]) {
+                                        deleteIDs.add(parties[i].id);
+                                      }
+                                    }
+                                    //pokeData.recreateParty(parties);
+                                    await pokeData.deleteParty(deleteIDs, false);
+                                    setState(() {
+                                      checkList = List.generate(parties.length, (i) => false);
+                                    });
+                                  },
+                                  () {},        // TODO
+                                );
                               }
-                            }
-                            pokeData.recreateParty(parties);
-                            //pokeData.deleteMyPokemon(deleteIDs);
-                          })
+                            );
+                          }
                           :
                           null,
                         child: Row(children: [

@@ -97,6 +97,8 @@ const String myPokemonColumnMove3 = 'move3';
 const String myPokemonColumnPP3 = 'pp3';
 const String myPokemonColumnMove4 = 'move4';
 const String myPokemonColumnPP4 = 'pp4';
+const String myPokemonColumnOwnerID = 'owner';
+const String myPokemonColumnRefCount = 'refCount';
 
 
 const String partyDBFile = 'parties.db';
@@ -115,6 +117,8 @@ const String partyColumnPokemonId5 = 'pokemonID5';
 const String partyColumnPokemonItem5 = 'pokemonItem5';
 const String partyColumnPokemonId6 = 'pokemonID6';
 const String partyColumnPokemonItem6 = 'pokemonItem6';
+const String partyColumnOwnerID = 'owner';
+const String partyColumnRefCount = 'refCount';
 
 const String battleDBFile = 'battles.db';
 const String battleDBTable = 'battleDB';
@@ -123,18 +127,9 @@ const String battleColumnName = 'name';
 const String battleColumnTypeId = 'battleType';
 const String battleColumnDate = 'date';
 const String battleColumnOwnPartyId = 'ownParty';
-const String battleColumnOpponentPokemonID1 = 'opponentPokemon1';
-const String battleColumnOpponentItemID1 = 'opponentItem1';
-const String battleColumnOpponentPokemonID2 = 'opponentPokemon2';
-const String battleColumnOpponentItemID2 = 'opponentItem2';
-const String battleColumnOpponentPokemonID3 = 'opponentPokemon3';
-const String battleColumnOpponentItemID3 = 'opponentItem3';
-const String battleColumnOpponentPokemonID4 = 'opponentPokemon4';
-const String battleColumnOpponentItemID4 = 'opponentItem4';
-const String battleColumnOpponentPokemonID5 = 'opponentPokemon5';
-const String battleColumnOpponentItemID5 = 'opponentItem5';
-const String battleColumnOpponentPokemonID6 = 'opponentPokemon6';
-const String battleColumnOpponentItemID6 = 'opponentItem6';
+const String battleColumnOpponentName = 'opponentName';
+const String battleColumnOpponentPartyId = 'opponentParty';
+const String battleColumnTurns = 'turns';
 
 // 今後変更されないとも限らない
 const int pokemonMinLevel = 1;
@@ -238,8 +233,6 @@ class PokeType {
       tuple.item2,
     );
   }
-
-  
 }
 
 class Temper {
@@ -431,6 +424,9 @@ class Ability {
     this.id, this.displayName, this.timing, this.target, this.effect
   );
 
+  Ability copyWith() =>
+    Ability(id, displayName, timing, target, effect);
+
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       abilityColumnId: id,
@@ -448,6 +444,9 @@ class Item {
   final String displayName;
 
   const Item(this.id, this.displayName);
+
+  Item copyWith() =>
+    Item(id, displayName);
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
@@ -476,6 +475,11 @@ class Move {
     this.accuracy, this.priority, this.target,
     this.damageClass, this.effect, this.effectChance, this.pp,
   );
+
+  Move copyWith() =>
+    Move(id, displayName, type, power,
+      accuracy, priority, target,
+      damageClass, effect, effectChance, pp,);
 
 /*
   Map<String, Object?> toMap() {
@@ -600,6 +604,26 @@ enum StatIndex {
   size,
 }
 
+// 登録しているポケモンの作成者
+enum Owner {
+  mine,
+  fromBattle,
+  hidden,
+}
+
+// TODO
+Owner toOwner(int idx) {
+  switch (idx) {
+    case 0:
+      return Owner.mine;
+    case 1:
+      return Owner.fromBattle;
+    case 2:
+    default:
+      return Owner.hidden;
+  }
+}
+
 class Pokemon {
   int id = 0;    // データベースのプライマリーキー
   String _name = '';       // ポケモン名
@@ -620,7 +644,9 @@ class Pokemon {
     null, null, null
   ];  // わざ
   List<int?> _pps = [0, null, null, null];  // PP
-  bool _isValid = false;            // 必要な情報が入力されているか
+  Owner owner = Owner.mine;     // 自分でつくったか、対戦相手が作ったものか
+  int refCount = 0;                 // パーティに含まれている数（削除時に警告出す用の変数）       
+  //bool _isValid = false;            // 必要な情報が入力されているか
 
   // getter
   String get name => _name;
@@ -643,18 +669,31 @@ class Pokemon {
   int? get pp4 => _pps[3];
   List<Move?> get moves => _moves;
   List<int?> get pps => _pps;
-  bool get isValid => _isValid;
+  bool get isValid {
+    if (
+      _name != '' &&
+      (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
+      _no >= pokemonMinNo && temper.id != 0 &&
+      teraType.id != 0 &&
+      ability.id != 0 && _moves[0]!.id != 0
+    ) {
+      return true;
+    }
+    else {
+      return false;
+    }
+  }
 
   // setter
-  set name(String x) {_name = x; updateIsValid();}
-  set level(int x) {_level = x; updateIsValid();}
-  set no(int x) {_no = x; updateIsValid();}
-  set h(SixParams x) {_stats[StatIndex.H.index] = x; updateIsValid();}
-  set a(SixParams x) {_stats[StatIndex.A.index] = x; updateIsValid();}
-  set b(SixParams x) {_stats[StatIndex.B.index] = x; updateIsValid();}
-  set c(SixParams x) {_stats[StatIndex.C.index] = x; updateIsValid();}
-  set d(SixParams x) {_stats[StatIndex.D.index] = x; updateIsValid();}
-  set s(SixParams x) {_stats[StatIndex.S.index] = x; updateIsValid();}
+  set name(String x) {_name = x;}
+  set level(int x) {_level = x;}
+  set no(int x) {_no = x;}
+  set h(SixParams x) {_stats[StatIndex.H.index] = x;}
+  set a(SixParams x) {_stats[StatIndex.A.index] = x;}
+  set b(SixParams x) {_stats[StatIndex.B.index] = x;}
+  set c(SixParams x) {_stats[StatIndex.C.index] = x;}
+  set d(SixParams x) {_stats[StatIndex.D.index] = x;}
+  set s(SixParams x) {_stats[StatIndex.S.index] = x;}
   set move1(Move x) => _moves[0] = x;
   set pp1(int x) => _pps[0] = x;
   set move2(Move? x) => _moves[1] = x;
@@ -664,20 +703,27 @@ class Pokemon {
   set move4(Move? x) => _moves[3] = x;
   set pp4(int? x) => _pps[3] = x;
 
-  // 正しく情報が入力されているかどうか
-  void updateIsValid() {
-    if (
-      _name != '' &&
-      (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
-      _no >= pokemonMinNo && temper.id != 0 &&
-      ability.id != 0 && _moves[0]!.id != 0
-    ) {
-      _isValid = true;
-    }
-    else {
-      _isValid = false;
-    }
-  }
+  Pokemon copyWith() =>
+    Pokemon()
+    ..id = id
+    .._name = _name
+    ..nickname = nickname
+    .._level = _level
+    ..sex = sex
+    .._no = _no
+    ..type1 = type1
+    ..type2 = type2
+    ..teraType = teraType
+    ..temper = temper
+    .._stats = List.generate(
+      StatIndex.size.index,
+      (i) => SixParams(_stats[i].race, _stats[i].indi, _stats[i].effort, _stats[i].real))
+    ..ability = ability.copyWith()
+    ..item = item?.copyWith()
+    .._moves = [move1.copyWith(), move2?.copyWith(), move3?.copyWith(), move4?.copyWith()]
+    .._pps = [..._pps]
+    ..owner = owner
+    ..refCount = refCount;
 
   // レベル、種族値、個体値、努力値、せいかくから実数値を更新
   // TODO habcdsのsetterで自動的に呼ぶ？
@@ -692,29 +738,30 @@ class Pokemon {
   }
 
   // 実数値から努力値、個体値を更新
-  void updateStatsRefReal() {
-    int effort = SixParams.getEffortH(level, h.race, h.indi, h.real);
-    // 努力値の変化だけでは実数値が出せない場合は個体値を更新
-    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-      _stats[StatIndex.H.index].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = SixParams.getIndiH(level, h.race, h.effort, h.real);
-      // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
-      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-        _stats[StatIndex.H.index].indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _stats[StatIndex.H.index].real = SixParams.getRealH(level, h.race, h.indi, h.effort);
+  void updateStatsRefReal(int statIndex) {
+    if (statIndex == StatIndex.H.index) {
+      int effort = SixParams.getEffortH(level, h.race, h.indi, h.real);
+      // 努力値の変化だけでは実数値が出せない場合は個体値を更新
+      if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+        _stats[StatIndex.H.index].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+        int indi = SixParams.getIndiH(level, h.race, h.effort, h.real);
+        // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
+        if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+          _stats[StatIndex.H.index].indi = indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+          _stats[StatIndex.H.index].real = SixParams.getRealH(level, h.race, h.indi, h.effort);
+        }
+        else {
+          _stats[StatIndex.H.index].indi = indi;
+        }
       }
       else {
-        _stats[StatIndex.H.index].indi = indi;
+        _stats[StatIndex.H.index].effort = effort;
       }
     }
-    else {
-      _stats[StatIndex.H.index].effort = effort;
-    }
-
-    final temperBias = Temper.getTemperBias(temper);
-
-    for (int i = StatIndex.A.index; i < StatIndex.size.index; i++) {
-      effort = SixParams.getEffortABCDS(level, _stats[i].race, _stats[i].indi, _stats[i].real, temperBias[i-1]);
+    else if (statIndex < StatIndex.size.index) {
+      final temperBias = Temper.getTemperBias(temper);
+      int i = statIndex;
+      int effort = SixParams.getEffortABCDS(level, _stats[i].race, _stats[i].indi, _stats[i].real, temperBias[i-1]);
       if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
         _stats[i].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
         int indi = SixParams.getIndiABCDS(level, _stats[i].race, _stats[i].effort, _stats[i].real, temperBias[i-1]);
@@ -764,6 +811,8 @@ class Pokemon {
       myPokemonColumnPP3: pp3,
       myPokemonColumnMove4: move4?.id,
       myPokemonColumnPP4: pp4,
+      myPokemonColumnOwnerID: owner.index,
+      myPokemonColumnRefCount: refCount,
     };
   }
 }
@@ -808,14 +857,8 @@ class Party {
   String name = '';
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
   List<Item?> _items = List.generate(6, (i) => null);
-  bool isValid = false;
-
-  void updateIsValid() {
-    _pokemons[0]!.updateIsValid();
-    isValid =
-      name != '' &&
-      _pokemons[0]!.isValid;
-  }
+  Owner owner = Owner.mine;
+  int refCount = 0;
 
   // getter
   Pokemon get pokemon1 => _pokemons[0]!;
@@ -838,6 +881,11 @@ class Party {
     }
     return 6;
   }
+  bool get isValid {
+    return
+      name != '' &&
+      _pokemons[0]!.isValid;
+  }
 
   // setter
   set pokemon1(Pokemon x)  => _pokemons[0] = x;
@@ -852,6 +900,15 @@ class Party {
   set item4(Item? x) => _items[3] = x;
   set item5(Item? x) => _items[4] = x;
   set item6(Item? x) => _items[5] = x;
+
+  Party copyWith() =>
+    Party()
+    ..id = id
+    ..name = name
+    .._pokemons = [..._pokemons]
+    .._items = [..._items]
+    ..owner = owner
+    ..refCount = refCount;
 
   // SQLite保存用
   Map<String, dynamic> toMap() {
@@ -870,6 +927,8 @@ class Party {
       partyColumnPokemonItem5: item5?.id,
       partyColumnPokemonId6: pokemon6?.id,
       partyColumnPokemonItem6: item6?.id,
+      partyColumnOwnerID: owner.index,
+      partyColumnRefCount: refCount,
     };
   }
 }
@@ -1005,25 +1064,39 @@ class Turn {
 }
 
 class Battle {
+  int id = 0; // 無効値
   String name = '';
   BattleType type = BattleType.rankmatch;
-  DateTime datatime = DateTime.now();
+  DateTime datetime = DateTime.now();
   Party ownParty = Party();
   List<PokemonState> ownPokemonStates = [];
   String opponentName = '';
   Party opponentParty = Party();
   List<PokemonState> opponentPokemonStates = [];
   final List<Turn> turns = [];
-  bool isValid = false;
 
-  // TODO
-  void updateIsValid() {
-    ownParty.updateIsValid();
-    isValid =
+  // getter
+  bool get isValid {
+    // TODO
+    return
       name != '' &&
       ownParty.isValid &&
       opponentName != '' &&
       opponentParty.pokemon1.name != '';
+  }
+
+  // SQLite保存用
+  Map<String, dynamic> toMap() {
+    return {
+      battleColumnId: id,
+      battleColumnName: name,
+      battleColumnTypeId: type.id,
+      battleColumnDate: 0,      // TODO
+      battleColumnOwnPartyId: ownParty.id,
+      battleColumnOpponentName: opponentName,
+      battleColumnOpponentPartyId: opponentParty.id,
+      battleColumnTurns: 0,     // TODO
+    };
   }
 }
 
@@ -1059,6 +1132,11 @@ class PokeDB {
   late Database partyDb;
   List<Battle> battles = [];
   late Database battleDb;
+
+  // DBに使われているIDのリスト。常に降順に並び替えておく
+  List<int> myPokemonIDs = [];
+  List<int> partyIDs = [];
+  List<int> battleIDs = [];
 
   bool isLoaded = false;
 
@@ -1399,6 +1477,7 @@ class PokeDB {
           myPokemonColumnMove2, myPokemonColumnPP2,
           myPokemonColumnMove3, myPokemonColumnPP3,
           myPokemonColumnMove4, myPokemonColumnPP4,
+          myPokemonColumnOwnerID, myPokemonColumnRefCount,
         ],
       );
 
@@ -1455,10 +1534,13 @@ class PokeDB {
           ..pp3 = map[myPokemonColumnPP3]
           ..move4 = map[myPokemonColumnMove4] != null ? moves[map[myPokemonColumnMove4]]! : null
           ..pp4 = map[myPokemonColumnPP4]
+          ..owner = toOwner(map[myPokemonColumnOwnerID])
+          ..refCount = map[myPokemonColumnRefCount]
           ..updateRealStats()
-          ..updateIsValid()
         );
+        myPokemonIDs.add(map[myPokemonColumnId]);
       }
+      myPokemonIDs.sort((a, b) => a.compareTo(b));
     }
 
     //////////// 登録したパーティ
@@ -1488,6 +1570,7 @@ class PokeDB {
           partyColumnPokemonId4, partyColumnPokemonItem4,
           partyColumnPokemonId5, partyColumnPokemonItem5,
           partyColumnPokemonId6, partyColumnPokemonItem6,
+          partyColumnOwnerID, partyColumnRefCount,
         ],
       );
 
@@ -1512,8 +1595,11 @@ class PokeDB {
           ..pokemon6 = map[partyColumnPokemonId6] != null ?
               pokemons.where((element) => element.id == map[partyColumnPokemonId6]).first : null
           ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
+          ..owner = toOwner(map[partyColumnOwnerID])
         );
+        partyIDs.add(map[partyColumnId]);
       }
+      partyIDs.sort((a, b) => a.compareTo(b));
     }
 
     //////////// 登録した対戦
@@ -1538,40 +1624,25 @@ class PokeDB {
         columns: [
           battleColumnId, battleColumnName, battleColumnTypeId,
           battleColumnDate, battleColumnOwnPartyId,
-          battleColumnOpponentPokemonID1, battleColumnOpponentItemID1,
-          battleColumnOpponentPokemonID2, battleColumnOpponentItemID2,
-          battleColumnOpponentPokemonID3, battleColumnOpponentItemID3,
-          battleColumnOpponentPokemonID4, battleColumnOpponentItemID4,
-          battleColumnOpponentPokemonID5, battleColumnOpponentItemID5,
-          battleColumnOpponentPokemonID6, battleColumnOpponentItemID6,
+          battleColumnOpponentName, battleColumnOpponentPartyId,
+          battleColumnTurns,
         ],
       );
 
-/*
       for (var map in maps) {
-        parties.add(Party()
-          ..id = map[partyColumnId]
-          ..name = map[partyColumnName]
-          ..pokemon1 = pokemons.where((element) => element.id == map[partyColumnPokemonId1]).first
-          ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
-          ..pokemon2 = map[partyColumnPokemonId2] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId2]).first : null
-          ..item2 = map[partyColumnPokemonItem2] != null ? items[map[partyColumnPokemonItem2]] : null
-          ..pokemon3 = map[partyColumnPokemonId3] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId3]).first : null
-          ..item3 = map[partyColumnPokemonItem3] != null ? items[map[partyColumnPokemonItem3]] : null
-          ..pokemon4 = map[partyColumnPokemonId4] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId4]).first : null
-          ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
-          ..pokemon5 = map[partyColumnPokemonId5] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId5]).first : null
-          ..item5 = map[partyColumnPokemonItem5] != null ? items[map[partyColumnPokemonItem5]] : null
-          ..pokemon6 = map[partyColumnPokemonId6] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId6]).first : null
-          ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
+        battles.add(Battle()
+          ..id = map[battleColumnId]
+          ..name = map[battleColumnName]
+          ..type = BattleType.createFromId(map[battleColumnTypeId])
+          //..datetime = map[battleColumnDate]    // TODO
+          ..ownParty = parties.where((element) => element.id == map[battleColumnOwnPartyId]).first
+          ..opponentName = map[battleColumnOpponentName]
+          ..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
+          //..turn    // TODO
         );
+        battleIDs.add(map[battleColumnId]);
       }
-*/
+      battleIDs.sort((a, b) => a.compareTo(b));
     }
 
 
@@ -1613,6 +1684,36 @@ class PokeDB {
 */
   }
 
+  int getUniqueMyPokemonID() {
+    int ret = 1;
+    for (final e in myPokemonIDs) {
+      if (e > ret) break;
+      ret++;
+    }
+    assert(ret <= 0xffffffff);
+    return ret;
+  }
+
+  int getUniquePartyID() {
+    int ret = 1;
+    for (final e in partyIDs) {
+      if (e > ret) break;
+      ret++;
+    }
+    assert(ret <= 0xffffffff);
+    return ret;
+  }
+
+  int getUniqueBattleID() {
+    int ret = 1;
+    for (final e in battleIDs) {
+      if (e > ret) break;
+      ret++;
+    }
+    assert(ret <= 0xffffffff);
+    return ret;
+  }
+
   Future<void> addMyPokemon(Pokemon myPokemon) async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     var exists = await databaseExists(myPokemonDBPath);
@@ -1632,6 +1733,10 @@ class PokeDB {
       myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
     }
 
+    // DBのIDリストを更新
+    myPokemonIDs.add(myPokemon.id);
+    myPokemonIDs.sort((a, b) => a.compareTo(b));
+
     // SQLiteのDBに挿入
     await myPokemonDb.insert(
       myPokemonDBTable,
@@ -1640,7 +1745,7 @@ class PokeDB {
     );
   }
 
-  Future<void> deleteMyPokemon(List<int> ids) async {
+  Future<void> deleteMyPokemon(List<int> ids, bool remainRelations) async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     assert(await databaseExists(myPokemonDBPath));
     assert(ids.isNotEmpty);
@@ -1648,19 +1753,69 @@ class PokeDB {
     // SQLiteのDB読み込み
     myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
 
-    String whereStr = '$myPokemonColumnId=?';
-    for (int i = 1; i < ids.length; i++) {
-      whereStr += ' OR $myPokemonColumnId=?';
+    if (remainRelations) {
+      // TODO
     }
+    else {
+      String whereStr = '$myPokemonColumnId=?';
+      for (int i = 1; i < ids.length; i++) {
+        whereStr += ' OR $myPokemonColumnId=?';
+      }
+      
+      // 登録ポケモンリストから削除
+      for (final e in ids) {
+        pokemons.removeWhere((element) => element.id == e);
+      }
 
-    // SQLiteのDBから削除
-    await myPokemonDb.delete(
-      myPokemonDBTable,
-      where: whereStr,
-      whereArgs: ids,
-    );
+      // DBのIDリストから削除
+      for (final e in ids) {
+        myPokemonIDs.remove(e);
+      }
+
+      // SQLiteのDBから削除
+      await myPokemonDb.delete(
+        myPokemonDBTable,
+        where: whereStr,
+        whereArgs: ids,
+      );
+
+      // 各パーティに、削除したポケモンが含まれているか調べる
+      List<int> partyIDs = [];
+      for (final e in parties) {
+        for (int i = 0; i < e.pokemonNum; i++) {
+          if (ids.contains(e.pokemons[i]?.id)) {
+            partyIDs.add(e.id);
+            break;
+          }
+        }
+      }
+      deleteParty(partyIDs, false);
+    }
   }
 
+  Future<void> updateMyPokemonRefCounts() async {
+    final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    assert(await databaseExists(myPokemonDBPath));
+
+    // SQLiteのDB読み込み
+    myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+
+    String whereStr = '$myPokemonColumnId=?';
+
+    // SQLiteのDBを更新
+    // TODO: for文なしで一文でできないかな？
+    for (final e in pokemons) {
+      await myPokemonDb.update(
+        myPokemonDBTable,
+        {myPokemonColumnRefCount: e.refCount},
+        where: whereStr,
+        whereArgs: [e.id],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+/*
   Future<void> recreateMyPokemon(List<Pokemon> pokemons) async {
     // ID振り直しとかするの面倒だから表を一旦消してしまって整理しなおせばよいという方針
     // TODO:これでいいのか？
@@ -1689,6 +1844,7 @@ class PokeDB {
       );
     }
   }
+*/
 
   Future<void> addParty(Party party) async {
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
@@ -1709,14 +1865,172 @@ class PokeDB {
       partyDb = await openDatabase(partyDBPath, readOnly: false);
     }
 
+    // パーティ内ポケモンの被参照カウントをインクリメント
+    for (int i = 0; i < party.pokemonNum; i++) {
+      party.pokemons[i]!.refCount++;
+    }
+
+    // DBのIDリストを更新
+    partyIDs.add(party.id);
+    partyIDs.sort((a, b) => a.compareTo(b));
+
     // SQLiteのDBに挿入
     await partyDb.insert(
       partyDBTable,
       party.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    // refCountの更新をデータベースに反映
+    await updateMyPokemonRefCounts();
   }
 
+  Future<void> deleteParty(List<int> ids, bool remainRelations) async {
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    assert(await databaseExists(partyDBPath));
+    assert(ids.isNotEmpty);
+
+    // SQLiteのDB読み込み
+    partyDb = await openDatabase(partyDBPath, readOnly: false);
+
+    if (remainRelations) {
+      // TODO
+    }
+    else {
+      String whereStr = '$partyColumnId=?';
+      for (int i = 1; i < ids.length; i++) {
+        whereStr += ' OR $partyColumnId=?';
+      }
+
+      // 登録パーティリストから削除
+      for (final e in ids) {
+        final partyIdx = parties.indexWhere((element) => element.id == e);
+        // パーティ内ポケモンの被参照カウントをデクリメント
+        for (int j = 0; j < parties[partyIdx].pokemonNum; j++) {
+          parties[partyIdx].pokemons[j]!.refCount--;
+        }
+        parties.removeAt(partyIdx);
+      }
+      
+      // DBのIDリストから削除
+      for (final e in ids) {
+        partyIDs.remove(e);
+      }
+
+      // SQLiteのDBから削除
+      await partyDb.delete(
+        partyDBTable,
+        where: whereStr,
+        whereArgs: ids,
+      );
+
+      // refCountの更新をデータベースに反映
+      await updateMyPokemonRefCounts();
+
+      // 各対戦に、削除したパーティが含まれているか調べる
+      List<int> battleIDs = [];
+      for (final e in battles) {
+        if (ids.contains(e.ownParty.id) || ids.contains(e.opponentParty.id)) {
+          battleIDs.add(e.id);
+          break;
+        }
+      }
+      deleteBattle(battleIDs);
+    }
+  }
+
+  Future<void> updatePartyRefCounts() async {
+    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    assert(await databaseExists(partyDBPath));
+
+    // SQLiteのDB読み込み
+    partyDb = await openDatabase(partyDBPath, readOnly: false);
+
+    String whereStr = '$partyColumnId=?';
+
+    // SQLiteのDBを更新
+    // TODO: for文なしで一文でできないかな？
+    for (final e in parties) {
+      await partyDb.update(
+        partyDBTable,
+        {partyColumnRefCount: e.refCount},
+        where: whereStr,
+        whereArgs: [e.id],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  Future<void> addBattle(Battle battle) async {
+    final battleDBPath = join(await getDatabasesPath(), battleDBFile);
+    var exists = await databaseExists(battleDBPath);
+
+    if (!exists) {    // ファイル作成
+      print('Creating new copy from asset');
+
+      try {
+        await Directory(dirname(battleDBPath)).create(recursive: true);
+      } catch (_) {}
+
+      battleDb = await _createBattleDB();
+    }
+    else {
+      print("Opening existing database");
+      // SQLiteのDB読み込み
+      battleDb = await openDatabase(battleDBPath, readOnly: false);
+    }
+
+    // 対戦内パーティの被参照カウントをインクリメント
+    battle.ownParty.refCount++;
+    battle.opponentParty.refCount++;
+
+    // DBのIDリストを更新
+    battleIDs.add(battle.id);
+    battleIDs.sort((a, b) => a.compareTo(b));
+
+    // SQLiteのDBに挿入
+    await battleDb.insert(
+      battleDBTable,
+      battle.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+
+    // refCountの更新をデータベースに反映
+    await updatePartyRefCounts();
+  }
+
+  Future<void> deleteBattle(List<int> ids) async {
+    final battleDBPath = join(await getDatabasesPath(), battleDBFile);
+    assert(await databaseExists(battleDBPath));
+    assert(ids.isNotEmpty);
+
+    // SQLiteのDB読み込み
+    battleDb = await openDatabase(battleDBPath, readOnly: false);
+
+    String whereStr = '$battleColumnId=?';
+    for (int i = 1; i < ids.length; i++) {
+      whereStr += ' OR $battleColumnId=?';
+    }
+    
+    // 登録対戦リストから削除
+    for (final e in ids) {
+      battles.removeWhere((element) => element.id == e);
+    }
+
+    // DBのIDリストから削除
+    for (final e in ids) {
+      battleIDs.remove(e);
+    }
+
+    // SQLiteのDBから削除
+    await battleDb.delete(
+      battleDBTable,
+      where: whereStr,
+      whereArgs: ids,
+    );
+  }
+
+/*
   Future<void> recreateParty(List<Party> parties) async {
     // ID振り直しとかするの面倒だから表を一旦消してしまって整理しなおせばよいという方針
     // TODO:これでいいのか？
@@ -1745,6 +2059,7 @@ class PokeDB {
       );
     }
   }
+*/
 
   Future<Database> _createMyPokemonDB() async {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
@@ -1784,7 +2099,9 @@ class PokeDB {
           '$myPokemonColumnMove3 INTEGER, '
           '$myPokemonColumnPP3 INTEGER, '
           '$myPokemonColumnMove4 INTEGER, '
-          '$myPokemonColumnPP4 INTEGER)'
+          '$myPokemonColumnPP4 INTEGER, '
+          '$myPokemonColumnOwnerID INTEGER, '
+          '$myPokemonColumnRefCount INTEGER)'
         );
       }
     );
@@ -1813,7 +2130,9 @@ class PokeDB {
           '$partyColumnPokemonId5 INTEGER, '
           '$partyColumnPokemonItem5 INTEGER, '
           '$partyColumnPokemonId6 INTEGER, '
-          '$partyColumnPokemonItem6 INTEGER)'
+          '$partyColumnPokemonItem6 INTEGER, '
+          '$partyColumnOwnerID INTEGER, '
+          '$partyColumnRefCount INTEGER)'
         );
       }
     );
@@ -1834,18 +2153,9 @@ class PokeDB {
           '$battleColumnTypeId INTEGER, '
           '$battleColumnDate INTEGER, '     // TODO
           '$battleColumnOwnPartyId INTEGER, '
-          '$battleColumnOpponentPokemonID1 INTEGER, '
-          '$battleColumnOpponentItemID1 INTEGER, '
-          '$battleColumnOpponentPokemonID2 INTEGER, '
-          '$battleColumnOpponentItemID2 INTEGER, '
-          '$battleColumnOpponentPokemonID3 INTEGER, '
-          '$battleColumnOpponentItemID3 INTEGER, '
-          '$battleColumnOpponentPokemonID4 INTEGER, '
-          '$battleColumnOpponentItemID4 INTEGER, '
-          '$battleColumnOpponentPokemonID5 INTEGER, '
-          '$battleColumnOpponentItemID5 INTEGER, '
-          '$battleColumnOpponentPokemonID6 INTEGER, '
-          '$battleColumnOpponentItemID6 INTEGER)'
+          '$battleColumnOpponentName TEXT, '
+          '$battleColumnOpponentPartyId INTEGER, '
+          '$battleColumnTurns INTEGER)'    // TODO
         );
       }
     );

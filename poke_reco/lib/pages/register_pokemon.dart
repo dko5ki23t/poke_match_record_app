@@ -52,8 +52,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     setState(() {});
   }
 
-  void updateStatsRefReal() {
-    widget.myPokemon.updateStatsRefReal();
+  void updateStatsRefReal(int statIndex) {
+    widget.myPokemon.updateStatsRefReal(statIndex);
 
     for (int i = 0; i < StatIndex.size.index; i++) {
       pokeStatEffortController[i].text = widget.myPokemon.stats[i].effort.toString();
@@ -85,8 +85,12 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
 
     void onComplete() {
       if (widget.isNew) {
+        widget.myPokemon.id = pokeData.getUniqueMyPokemonID();
         pokemons.add(widget.myPokemon);
-        widget.myPokemon.id = pokemons.length;
+      }
+      else {
+        final index = pokemons.indexWhere((element) => element.id == widget.myPokemon.id);
+        pokemons[index] = widget.myPokemon;
       }
       pokeData.addMyPokemon(widget.myPokemon);
       widget.onFinish();
@@ -381,7 +385,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     widget.myPokemon.stats[i].real,
                     (value) {
                       widget.myPokemon.stats[i].real = value.toInt();
-                      updateStatsRefReal();
+                      updateStatsRefReal(i);
                     },
                     effectTemper: i != 0,
                     statName: statNames[i],

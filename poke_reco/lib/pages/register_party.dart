@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_input_row.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/poke_db.dart';
 
 class RegisterPartyPage extends StatefulWidget {
@@ -35,11 +33,30 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var parties = appState.parties;
     var pokeData = appState.pokeData;
 
+    partyNameController.text = widget.party.name;
+    for (int i = 0; i < 6; i++) {
+      final pokemon = widget.party.pokemons[i];
+      if (pokemon != null && pokemon.isValid) {
+        pokemonController[i].text =
+          pokemon.nickname == '' ?
+            '${pokemon.name}/${pokemon.name}' :
+            '${pokemon.nickname}/${pokemon.name}';
+      }
+
+      final item = widget.party.items[i];
+      if (item != null) {
+        itemController[i].text = item.displayName;
+      }
+    }
+
     void onComplete() {
-      // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
         parties.add(widget.party);
-        widget.party.id = parties.length;
+        widget.party.id = pokeData.getUniquePartyID();
+      }
+      else {
+        final index = parties.indexWhere((element) => element.id == widget.party.id);
+        parties[index] = widget.party;
       }
       pokeData.addParty(widget.party);
       widget.onFinish();
@@ -74,8 +91,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         ),
                         onChanged: (value) {
                           widget.party.name = value;
-                          widget.party.updateIsValid();
-                          setState(() {});
+                          //setState(() {});
                         },
                         maxLength: 5,
                         controller: partyNameController,
@@ -94,7 +110,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       var pokemon = await widget.onSelectPokemon(widget.party);
                       if (pokemon != null) {
                         widget.party.pokemons[i] = pokemon;
-                        widget.party.updateIsValid();
                         pokemonController[i].text =
                           pokemon.nickname == '' ?
                             '${pokemon.name}/${pokemon.name}' :

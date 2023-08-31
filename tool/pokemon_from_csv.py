@@ -36,6 +36,7 @@ pokemonsAbilityCSVPokemonIDColumn = 'pokemon_id'
 pokemonsAbilityCSVAbilityIDColumn = 'ability_id'
 
 pokemonsMoveCSVPokemonIDColumn = 'pokemon_id'
+pokemonsMoveCSVVersionGroupIDColumn = 'version_group_id'
 pokemonsMoveCSVMoveIDColumn = 'move_id'
 
 pokemonsStatCSVPokemonIDColumn = 'pokemon_id'
@@ -47,6 +48,7 @@ pokemonsTypeCSVTypeIDColumn = 'type_id'
 
 # CSVファイル(PokeAPI)の列インデックス
 pokeBaseCSVpokemonIDIndex = 1
+pokeBaseCSVevolvesFromIDIndex = 4
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
@@ -56,15 +58,16 @@ defenseID = 3
 specialAttackID = 4
 specialDefenseID = 5
 speedID = 6
+svVersionID = 25
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='TODO')
     parser.add_argument('pokemons', help='各ポケモンの情報（ID等）が記載されたCSVファイル(pokemon_species.csv)')
     parser.add_argument('pokemon_lang', help='各ポケモンと各言語での名称の情報が記載されたCSVファイル(pokemon_species_names.csv)')
-    parser.add_argument('pokemon_ability', help='各ポケモンのもつとくせいの情報が記載されたCSVファイル')
-    parser.add_argument('pokemon_move', help='各ポケモンが覚えるわざの情報が記載されたCSVファイル')
-    parser.add_argument('pokemon_stat', help='各ポケモンの種族値が記載されたCSVファイル')
-    parser.add_argument('pokemon_type', help='各ポケモンのタイプが記載されたCSVファイル')
+    parser.add_argument('pokemon_ability', help='各ポケモンのもつとくせいの情報が記載されたCSVファイル(pokemon_abilities.csv)')
+    parser.add_argument('pokemon_move', help='各ポケモンが覚えるわざの情報が記載されたCSVファイル(pokemon_moves.csv)')
+    parser.add_argument('pokemon_stat', help='各ポケモンの種族値が記載されたCSVファイル(pokemon_stats.csv)')
+    parser.add_argument('pokemon_type', help='各ポケモンのタイプが記載されたCSVファイル(pokemon_types.csv)')
     args = parser.parse_args()
     return args
 
@@ -98,6 +101,7 @@ def main():
         pokemon_df = pokemon_df.fillna(0)
         for row in pokemon_df.itertuples():
             id = row[pokeBaseCSVpokemonIDIndex]
+            evolves_from = row[pokeBaseCSVevolvesFromIDIndex]
             name = ''
             form = ['0']    # TODO:いつか実装する？
             
@@ -106,13 +110,15 @@ def main():
             if len(names) > 0:
                 name = names.iloc[0]
             # とくせい取得
-            #abilities_raw = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == id][pokemonsAbilityCSVAbilityIDColumn]
-            #abilities = []
-            #for i in abilities_raw:
-            #    abilities.append(str(i))
             abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == id][pokemonsAbilityCSVAbilityIDColumn].to_list()
             # わざ取得
-            moves = move_df[move_df[pokemonsMoveCSVPokemonIDColumn] == id][pokemonsMoveCSVMoveIDColumn].to_list()
+            moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == id) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+            # たまごわざ取得
+            if evolves_from is not None:
+                egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                moves = moves + egg_moves
+            # 重複削除
+            moves = list(set(moves))
             # HP取得
             h = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == id) & (stat_df[pokemonsStatCSVStatIDColumn] == HPID)][pokemonsStatCSVBaseStatColumn].iloc[0])
             # こうげき取得

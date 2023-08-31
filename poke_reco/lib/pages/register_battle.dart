@@ -50,12 +50,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   bool openStates = false;
 
-  // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
-  static toKatakana(String str) {
-    return str.replaceAllMapped(RegExp("[ぁ-ゔ]"),
-      (Match m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) + 0x60));
-  }
-
   static pingpongTextEditingController(TextEditingController controller) {
     if (controller.text == 'ping') {
       controller.text = 'pong';
@@ -70,6 +64,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var appState = context.watch<MyAppState>();
     var battles = appState.battles;
     var parties = appState.parties;
+    var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
 
@@ -80,9 +75,36 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     void onComplete() {
       // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
+        // 相手のパーティ、ポケモンも登録
+        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
+          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+        }
+        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
+        widget.battle.opponentParty.owner = Owner.fromBattle;
+        parties.add(widget.battle.opponentParty);
+        pokeData.addParty(widget.battle.opponentParty);
+
+        widget.battle.id = pokeData.getUniqueBattleID();
         battles.add(widget.battle);
       }
-//      pokeData.addParty(widget.party, parties.length);
+      else {
+        int index = 0;
+        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+          index = pokemons.indexWhere((element) => element.id == widget.battle.opponentParty.pokemons[i]!.id);
+          pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
+          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+        }
+        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
+        parties[index] = widget.battle.opponentParty;
+        pokeData.addParty(widget.battle.opponentParty);
+
+        index = battles.indexWhere((element) => element.id == widget.battle.id);
+        battles[index] = widget.battle;
+      }
+      pokeData.addBattle(widget.battle);
       widget.onFinish();
     }
 
@@ -446,6 +468,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           TextButton(
             onPressed: nextPressed,
             child: Text('次へ'),
+          ),
+          TextButton(
+            onPressed: pageType == RegisterBattlePageType.turnPage ? () => onComplete() : null,
+            child: Text('完了'),
           ),
         ],
       ),

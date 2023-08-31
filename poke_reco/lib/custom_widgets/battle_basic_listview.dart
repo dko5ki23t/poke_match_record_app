@@ -30,7 +30,6 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.name = value;
-                      battle.updateIsValid();
                       setState();
                     },
                     maxLength: 10,
@@ -69,11 +68,11 @@ class BattleBasicListView extends ListView {
                     },
 */
                     onChanged: (value) {
-                      battle.datatime = DateTime.parse(value);
+                      battle.datetime = DateTime.parse(value);
 //                            widget.battle.updateIsValid();
 //                            setState(() {});
                     },
-                    initialValue: battle.datatime.toIso8601String(),
+                    initialValue: battle.datetime.toIso8601String(),
 //                      controller: battleDatetimeController,
                   ),
                 ),
@@ -127,7 +126,6 @@ class BattleBasicListView extends ListView {
                     ],
                     onChanged: (value) {
                       battle.ownParty = parties[value - 1];
-                      battle.updateIsValid();
                       setState();
                     },
                   ),
@@ -146,7 +144,6 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.opponentName = value;
-                      battle.updateIsValid();
                       setState();
                     },
                     maxLength: 10,
@@ -178,7 +175,6 @@ class BattleBasicListView extends ListView {
                   ..d.race = suggestion.d
                   ..s.race = suggestion.s;
                   opponentPokemonController[i].text = suggestion.name;
-                  battle.updateIsValid();
                   setState();
                 },
                 'せいべつ${i+1}',

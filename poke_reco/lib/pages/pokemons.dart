@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialog/pokemon_delete_check_dialog.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
@@ -55,6 +56,10 @@ class PokemonsPageState extends State<PokemonsPage> {
 
     Widget lists;
     checkList ??= List.generate(pokemons.length, (i) => false);
+    // データベースの読み込みタイミングによってはリストが0の場合があるため
+    if (checkList!.length != pokemons.length) {
+      checkList = List.generate(pokemons.length, (i) => false);
+    }
     List<int?> partyPokemonsNo = [
       widget.party?.pokemon1.no,
       widget.party?.pokemon2?.no,
@@ -85,6 +90,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                     });
                   },
                 ),
+                showWarning: true,
               ),
           ],
         );
@@ -99,7 +105,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                 pokeData,
                 enabled: !partyPokemonsNo.contains(pokemon.no),
                 leading: Icon(Icons.catching_pokemon),
-                onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon, false) : null,
+                onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon.copyWith(), false) : null,
                 onTap: widget.selectMode ? () {
                   selectedPokemon = pokemon;
                   widget.onSelect!(pokemon);} : null,
@@ -173,18 +179,39 @@ class PokemonsPageState extends State<PokemonsPage> {
                         SizedBox(width: 20),
                         TextButton(
                           onPressed: (getSelectedNum(checkList!) > 0) ?
-                            () => setState(() {
-                              //List<int> deleteIDs = [];
+                            () {
+                              bool isContainedParty = false;
                               for (int i = checkList!.length - 1; i >= 0; i--) {
                                 if (checkList![i]) {
-                                  //deleteIDs.add(pokemons[i].id);
-                                  checkList!.removeAt(i);
-                                  pokemons.removeAt(i);
+                                  if (pokemons[i].refCount > 0) {
+                                    isContainedParty = true;
+                                    break;
+                                  }
                                 }
                               }
-                              pokeData.recreateMyPokemon(pokemons);
-                              //pokeData.deleteMyPokemon(deleteIDs);
-                            })
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return PokemonDeleteCheckDialog(
+                                    isContainedParty,
+                                    () async {
+                                      List<int> deleteIDs = [];
+                                      for (int i = 0; i < checkList!.length; i++) {
+                                        if (checkList![i]) {
+                                          deleteIDs.add(pokemons[i].id);
+                                        }
+                                      }
+                                      //pokeData.recreateMyPokemon(pokemons);
+                                      await pokeData.deleteMyPokemon(deleteIDs, false);
+                                      setState(() {
+                                        checkList = List.generate(pokemons.length, (i) => false);
+                                      });
+                                    },
+                                    () {},    // TODO
+                                  );
+                                }
+                              );
+                            }
                             :
                             null,
                           child: Row(children: [
