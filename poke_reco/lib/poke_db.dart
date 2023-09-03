@@ -51,6 +51,7 @@ const String pokeBaseColumnId = 'id';
 const String pokeBaseColumnName = 'name';
 const String pokeBaseColumnAbility = 'ability';
 const String pokeBaseColumnForm = 'form';
+const String pokeBaseColumnFemaleRate = 'femaleRate';
 const String pokeBaseColumnMove = 'move';
 const List<String> pokeBaseColumnStats = [
   'h',
@@ -293,22 +294,50 @@ class SixParams {
 
   static int getEffortH(int level, int race, int indi, int real) {
     // TODO ミスってるかも
-    return (((real - level - 10) * 100) ~/ level - race * 2 - indi) * 4;
+    int ret = (((real - level - 10) * 100) ~/ level - race * 2 - indi) * 4; // 暫定値
+    while (real > getRealH(level, race, indi, ret)) {    // 足りてない
+      ret += (4 - ret % 4);
+    }
+    while (real < getRealH(level, race, indi, ret)) {    // 大きい(たぶんこのwhileには入らない？)
+      ret -= ret % 4 == 0 ? 4 : ret % 4;
+    }
+    return ret;
   }
 
   static int getEffortABCDS(int level, int race, int indi, int real, double temperBias) {
     // TODO ミスってるかも
-    return ((real ~/ temperBias - 5) * 100 ~/ level - race * 2 - indi) * 4;
+    int ret = ((real ~/ temperBias - 5) * 100 ~/ level - race * 2 - indi) * 4;
+    while (real > getRealABCDS(level, race, indi, ret, temperBias)) {    // 足りてない
+      ret += (4 - ret % 4);
+    }
+    while (real < getRealABCDS(level, race, indi, ret, temperBias)) {    // 大きい(たぶんこのwhileには入らない？)
+      ret -= ret % 4 == 0 ? 4 : ret % 4;
+    }
+    return ret;
   }
 
   static int getIndiH(int level, int race, int effort, int real) {
     // TODO ミスってるかも
-    return ((real - level - 10) * 100) ~/ level - race * 2 - (effort ~/ 4);
+    int ret = ((real - level - 10) * 100) ~/ level - race * 2 - (effort ~/ 4);
+    while (real > getRealH(level, race, ret, effort)) {    // 足りてない
+      ret++;
+    }
+    while (real < getRealH(level, race, ret, effort)) {    // 大きい(たぶんこのwhileには入らない？)
+      ret--;
+    }
+    return ret;
   }
 
   static int getIndiABCDS(int level, int race, int effort, int real, double temperBias) {
     // TODO ミスってるかも
-    return ((real ~/ temperBias - 5) * 100) ~/ level - race * 2 - (effort ~/ 4); 
+    int ret = ((real ~/ temperBias - 5) * 100) ~/ level - race * 2 - (effort ~/ 4);
+    while (real > getRealABCDS(level, race, ret, effort, temperBias)) {    // 足りてない
+      ret++;
+    }
+    while (real < getRealABCDS(level, race, ret, effort, temperBias)) {    // 大きい(たぶんこのwhileには入らない？)
+      ret--;
+    }
+    return ret; 
   }
 
   factory SixParams.createFromLRIEtoH(int level, int race, int indi, int effort) {
@@ -838,7 +867,7 @@ class PokemonState {
   List<Ability> possibleAbilities = [];     // 候補のあるとくせい
   Ability ability = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい
   List<int> statChanges = List.generate(6, (i) => 0);   // のうりょく変化
-  List<Ailment> ailment = [];   // 状態異常
+  List<Ailment> ailments = [];   // 状態異常
 
   PokemonState copyWith() =>
     PokemonState()
@@ -846,10 +875,10 @@ class PokemonState {
     ..hp = hp
     ..hpPercent = hpPercent
     ..teraType = teraType
-    ..possibleAbilities = possibleAbilities
+    ..possibleAbilities = [...possibleAbilities]
     ..ability = ability
     ..statChanges = [...statChanges]
-    ..ailment = ailment;
+    ..ailments = [...ailments];
 }
 
 class Party {
@@ -983,6 +1012,12 @@ class TurnEffect {
   EffectType effect = EffectType.none;
   int effectId = 0;
 
+  TurnEffect copyWith() =>
+    TurnEffect()
+    ..playerType = playerType
+    ..effect = effect
+    ..effectId = effectId;
+
   bool isValid() {
     return
       playerType != PlayerType.none &&
@@ -1006,6 +1041,41 @@ class Turn {
   TurnMove turnMove1 = TurnMove();
   TurnMove turnMove2 = TurnMove();
   List<TurnEffect> afterMoveEffects = [];
+
+  Turn copyWith() =>
+    Turn()
+    ..changedOwnPokemon = changedOwnPokemon
+    ..changedOpponentPokemon = changedOpponentPokemon
+    ..initialOwnPokemonIndex = initialOwnPokemonIndex
+    ..initialOpponentPokemonIndex = initialOpponentPokemonIndex
+    ..currentOwnPokemonIndex = currentOwnPokemonIndex
+    ..currentOpponentPokemonIndex = currentOpponentPokemonIndex
+    ..ownPokemonInitialStates = [
+      for (final state in ownPokemonInitialStates)
+      state.copyWith()
+    ]
+    ..opponentPokemonInitialStates = [
+      for (final state in opponentPokemonInitialStates)
+      state.copyWith()
+    ]
+    ..ownPokemonCurrentStates = [
+      for (final state in ownPokemonCurrentStates)
+      state.copyWith()
+    ]
+    ..opponentPokemonCurrentStates = [
+      for (final state in opponentPokemonCurrentStates)
+      state.copyWith()
+    ]
+    ..beforeMoveEffects = [
+      for (final effect in beforeMoveEffects)
+      effect.copyWith()
+    ]
+    ..turnMove1 = turnMove1.copyWith()
+    ..turnMove2 = turnMove2.copyWith()
+    ..afterMoveEffects = [
+      for (final effect in afterMoveEffects)
+      effect.copyWith()
+    ];
 
   bool canAddBeforemoveEffects() {
     for (final effect in beforeMoveEffects) {
@@ -1063,6 +1133,581 @@ class Turn {
   }
 }
 
+PokemonState parsePokemonState(dynamic str, String split1, String split2, String split3) {
+  PokemonState pokemonState = PokemonState();
+  final stateElements = str.split(split1);
+  // no
+  pokemonState.no = int.parse(stateElements[0]);
+  // hp
+  pokemonState.hp = int.parse(stateElements[1]);
+  // hpPercent
+  pokemonState.hpPercent = int.parse(stateElements[2]);
+  // teraType
+  pokemonState.teraType = PokeType.createFromId(int.parse(stateElements[3]));
+  // possibleAbilities
+  final abilities = stateElements[4].split(split2);
+  for (var ability in abilities) {
+    if (ability == '') break;
+    final abilityElements = ability.split(split3);
+    pokemonState.possibleAbilities.add(
+      Ability(
+        int.parse(abilityElements[0]),
+        abilityElements[1],
+        AbilityTiming(int.parse(abilityElements[2])),
+        Target(int.parse(abilityElements[3])),
+        AbilityEffect(int.parse(abilityElements[4])),
+      ),
+    );
+  }
+  // ability
+  final abilityElements = stateElements[5].split(split2);
+  pokemonState.ability = Ability(
+    int.parse(abilityElements[0]),
+    abilityElements[1],
+    AbilityTiming(int.parse(abilityElements[2])),
+    Target(int.parse(abilityElements[3])),
+    AbilityEffect(int.parse(abilityElements[4])),
+  );
+  // statChanges
+  final statChangeElements = stateElements[6].split(split2);
+  for (int i = 0; i < 6; i++) {
+    pokemonState.statChanges[i] = int.parse(statChangeElements[i]);
+  }
+  // ailments
+  final ailments = stateElements[7].split(split2);
+  for (var ailment in ailments) {
+    if (ailment == '') break;
+    pokemonState.ailments.add(
+      Ailment.none,         // TODO
+    );
+  }
+
+  return pokemonState;
+}
+
+TurnMove parseTurnMove(dynamic str, String split1, String split2) {
+  TurnMove turnMove = TurnMove();
+  final turnMoveElements = str.split(split1);
+  // playerType
+  switch (int.parse(turnMoveElements[0])) {
+    case 1:
+      turnMove.playerType = PlayerType.me;
+      break;
+    case 2:
+      turnMove.playerType = PlayerType.opponent;
+      break;
+    default:
+      turnMove.playerType = PlayerType.none;
+      break;
+  }
+  // move
+  var moveElements = turnMoveElements[1].split(split2);
+  turnMove.move = Move(
+    int.parse(moveElements[0]),
+    moveElements[1],
+    PokeType.createFromId(int.parse(moveElements[2])),
+    int.parse(moveElements[3]),
+    int.parse(moveElements[4]),
+    int.parse(moveElements[5]),
+    Target(int.parse(moveElements[6])),
+    DamageClass(int.parse(moveElements[7])),
+    MoveEffect(int.parse(moveElements[8])),
+    int.parse(moveElements[9]),
+    int.parse(moveElements[10]),
+  );
+  // isSuccess
+  turnMove.isSuccess = int.parse(turnMoveElements[2]) != 0;
+  // moveHits
+  var moveHits = turnMoveElements[3].split(split2);
+  for (var moveHitsElement in moveHits) {
+    if (moveHitsElement == '') break;
+    MoveHit t = MoveHit.hit;
+    if (int.parse(moveHitsElement) == 1) {
+      t = MoveHit.critical;
+    }
+    else if (int.parse(moveHitsElement) == 2) {
+      t = MoveHit.notHit;
+    }
+    turnMove.moveHits.add(t);
+  }
+  // moveEffectiveness
+  switch (int.parse(turnMoveElements[4])) {
+    case 1:
+      turnMove.moveEffectiveness = MoveEffectiveness.great;
+      break;
+    case 2:
+      turnMove.moveEffectiveness = MoveEffectiveness.notGood;
+      break;
+    case 3:
+      turnMove.moveEffectiveness = MoveEffectiveness.noEffect;
+      break;
+    default:
+      turnMove.moveEffectiveness = MoveEffectiveness.normal;
+      break;
+  }
+  // realDamage
+  turnMove.realDamage = int.parse(turnMoveElements[5]);
+  // percentDamage
+  turnMove.percentDamage = int.parse(turnMoveElements[6]);
+  // moveAdditionalEffect
+  switch (int.parse(turnMoveElements[7])) {
+    case 1:
+      turnMove.moveAdditionalEffect = MoveAdditionalEffect.speedDown;
+      break;
+    default:
+      turnMove.moveAdditionalEffect = MoveAdditionalEffect.none;
+      break;
+  }
+  // changePokemonIndex
+  if (turnMoveElements[8] != '') {
+    turnMove.changePokemonIndex = int.parse(turnMoveElements[8]);
+  }
+
+  return turnMove;
+}
+
+List<Turn> parseTurnList(dynamic str) {
+  List<Turn> ret = [];
+  final turns = str.split(';');
+  for (var turn in turns) {
+    if (turn == '') break;
+    Turn element = Turn();
+    final turnElements = turn.split(':');
+    // changedOwnPokemon
+    if (int.parse(turnElements[0]) != 0) {
+      element.changedOwnPokemon = true;
+    }
+    else {
+      element.changedOwnPokemon = false;
+    }
+    // changedOpponentPokemon
+    if (int.parse(turnElements[1]) != 0) {
+      element.changedOpponentPokemon = true;
+    }
+    else {
+      element.changedOpponentPokemon = false;
+    }
+    // initialOwnPokemonIndex
+    element.initialOwnPokemonIndex = int.parse(turnElements[2]);
+    // initialOpponentPokemonIndex
+    element.initialOpponentPokemonIndex = int.parse(turnElements[3]);
+    // currentOwnPokemonIndex
+    element.currentOwnPokemonIndex = int.parse(turnElements[4]);
+    // currentOpponentPokemonIndex
+    element.currentOpponentPokemonIndex = int.parse(turnElements[5]);
+    // ownPokemonInitialStates
+    var states = turnElements[6].split('_');
+    for (var state in states) {
+      if (state == '') break;
+      element.ownPokemonInitialStates.add(parsePokemonState(state, '*', '!', '}'));
+    }
+    // opponentPokemonInitialStates
+    states = turnElements[7].split('_');
+    for (var state in states) {
+      if (state == '') break;
+      element.opponentPokemonInitialStates.add(parsePokemonState(state, '*', '!', '}'));
+    }
+    // ownPokemonCurrentStates
+    states = turnElements[8].split('_');
+    for (var state in states) {
+      if (state == '') break;
+      element.ownPokemonCurrentStates.add(parsePokemonState(state, '*', '!', '}'));
+    }
+    // opponentPokemonCurrentStates
+    states = turnElements[9].split('_');
+    for (var state in states) {
+      if (state == '') break;
+      element.opponentPokemonCurrentStates.add(parsePokemonState(state, '*', '!', '}'));
+    }
+    // beforeMoveEffects
+    var turnEffects = turnElements[10].split('_');
+    for (var turnEffect in turnEffects) {
+      if (turnEffect == '') break;
+      TurnEffect effect = TurnEffect();
+      final effectElements = turnEffect.split('*');
+      // playerType
+      switch (int.parse(effectElements[0])) {
+        case 1:
+          effect.playerType = PlayerType.me;
+          break;
+        case 2:
+          effect.playerType = PlayerType.opponent;
+          break;
+        default:
+          effect.playerType = PlayerType.none;
+          break;
+      }
+      // effect
+      switch (int.parse(effectElements[1])) {
+        case 1:
+          effect.effect = EffectType.ability;
+          break;
+        case 2:
+          effect.effect = EffectType.item;
+          break;
+        default:
+          effect.effect = EffectType.none;
+          break;
+      }
+      // effectId
+      effect.effectId = int.parse(effectElements[2]);
+      element.beforeMoveEffects.add(effect);
+    }
+    // turnMove1
+    element.turnMove1 = parseTurnMove(turnElements[11], '_', '*');
+    // turnMove2
+    element.turnMove2 = parseTurnMove(turnElements[12], '_', '*');
+    // afterMoveEffects
+    turnEffects = turnElements[13].split('_');
+    for (var turnEffect in turnEffects) {
+      if (turnEffect == '') break;
+      TurnEffect effect = TurnEffect();
+      final effectElements = turnEffect.split('*');
+      // playerType
+      switch (int.parse(effectElements[0])) {
+        case 1:
+          effect.playerType = PlayerType.me;
+          break;
+        case 2:
+          effect.playerType = PlayerType.opponent;
+          break;
+        default:
+          effect.playerType = PlayerType.none;
+          break;
+      }
+      // effect
+      switch (int.parse(effectElements[1])) {
+        case 1:
+          effect.effect = EffectType.ability;
+          break;
+        case 2:
+          effect.effect = EffectType.item;
+          break;
+        default:
+          effect.effect = EffectType.none;
+          break;
+      }
+      // effectId
+      effect.effectId = int.parse(effectElements[2]);
+      element.afterMoveEffects.add(effect);
+    }
+
+    ret.add(element);
+  }
+  return ret;
+}
+
+String pokemonStateToStr(PokemonState state, String split1, String split2, String split3) {
+  String ret = '';
+  // no
+  ret += state.no.toString();
+  ret += split1;
+  // hp
+  ret += state.hp.toString();
+  ret += split1;
+  // hpPercent
+  ret += state.hpPercent.toString();
+  ret += split1;
+  // teraType
+  ret += state.teraType.id.toString();
+  ret += split1;
+  // possibleAbilities
+  for (final ability in state.possibleAbilities) {
+    // id
+    ret += ability.id.toString();
+    ret += split3;
+    // displayName
+    ret += ability.displayName;
+    ret += split3;
+    // timing
+    ret += ability.timing.id.toString();
+    ret += split3;
+    // target
+    ret += ability.target.id.toString();
+    ret += split3;
+    // effect
+    ret += ability.effect.id.toString();
+
+    ret += split2;
+  }
+  ret += split1;
+  // ability
+    // id
+    ret += state.ability.id.toString();
+    ret += split2;
+    // displayName
+    ret += state.ability.displayName;
+    ret += split2;
+    // timing
+    ret += state.ability.timing.id.toString();
+    ret += split2;
+    // target
+    ret += state.ability.target.id.toString();
+    ret += split2;
+    // effect
+    ret += state.ability.effect.id.toString();
+    
+    ret += split1;
+  // statChanges
+  ret += state.statChanges[0].toString();
+  for (int i = 1; i < 6; i++) {
+    ret += split2;
+    ret += state.statChanges[i].toString();
+  }
+  ret += split1;
+  // ailments
+  for (final ailment in state.ailments) {
+    ret += '0';     // TODO
+    ret += split2;
+  }
+  ret += split1;
+
+  return ret;
+}
+
+String turnMoveToStr(TurnMove turnMove, String split1, String split2) {
+  String ret = '';
+  // playerType
+  switch (turnMove.playerType) {
+    case PlayerType.me:
+      ret += '1';
+      ret += split1;
+      break;
+    case PlayerType.opponent:
+      ret += '2';
+      ret += split1;
+      break;
+    default:
+      ret += '0';
+      ret += split1;
+      break;
+  }
+  // move
+    // id
+    ret += turnMove.move.id.toString();
+    ret += split2;
+    // displayName
+    ret += turnMove.move.displayName;
+    ret += split2;
+    // type
+    ret += turnMove.move.type.id.toString();
+    ret += split2;
+    // power
+    ret += turnMove.move.power.toString();
+    ret += split2;
+    // accuracy
+    ret += turnMove.move.accuracy.toString();
+    ret += split2;
+    // priority
+    ret += turnMove.move.priority.toString();
+    ret += split2;
+    // target
+    ret += turnMove.move.target.id.toString();
+    ret += split2;
+    // damageClass
+    ret += turnMove.move.damageClass.id.toString();
+    ret += split2;
+    // effect
+    ret += turnMove.move.effect.id.toString();
+    ret += split2;
+    // effectChance
+    ret += turnMove.move.effectChance.toString();
+    ret += split2;
+    // pp
+    ret += turnMove.move.pp.toString();
+
+  ret += split1;
+  // isSuccess
+  ret += turnMove.isSuccess ? '1' : '0';
+  ret += split1;
+  // moveHits
+  for (final moveHit in turnMove.moveHits) {
+    switch (moveHit) {
+      case MoveHit.critical:
+        ret += '1';
+        break;
+      case MoveHit.notHit:
+        ret += '2';
+        break;
+      default:
+        ret += '0';
+        break;
+    }
+    ret += split2;
+  }
+  ret += split1;
+  // moveEffectiveness
+  switch (turnMove.moveEffectiveness) {
+    case MoveEffectiveness.great:
+      ret += '1';
+      break;
+    case MoveEffectiveness.notGood:
+      ret += '2';
+      break;
+    case MoveEffectiveness.noEffect:
+      ret += '3';
+      break;
+    default:
+      ret += '0';
+      break;
+  }
+  ret += split1;
+  // realDamage
+  ret += turnMove.realDamage.toString();
+  ret += split1;
+  // percentDamage
+  ret += turnMove.percentDamage.toString();
+  ret += split1;
+  // moveAdditionalEffect
+  switch (turnMove.moveAdditionalEffect) {
+    case MoveAdditionalEffect.speedDown:
+      ret += '1';
+      break;
+    default:
+      ret += '0';
+      break;
+  }
+  ret += split1;
+  // changePokemonIndex
+  if (turnMove.changePokemonIndex != null) {
+    ret += turnMove.changePokemonIndex.toString();
+  }
+
+  return ret;
+}
+
+String turnListToStr(List<Turn> turns) {
+  String ret = '';
+  for (final turn in turns) {
+    // changedOwnPokemon
+    ret += turn.changedOwnPokemon ? '1' : '0';
+    ret += ':';
+    // changedOpponentPokemon
+    ret += turn.changedOpponentPokemon ? '1' : '0';
+    ret += ':';
+    // initialOwnPokemonIndex
+    ret += turn.initialOwnPokemonIndex.toString();
+    ret += ':';
+    // initialOpponentPokemonIndex
+    ret += turn.initialOpponentPokemonIndex.toString();
+    ret += ':';
+    // currentOwnPokemonIndex
+    ret += turn.currentOwnPokemonIndex.toString();
+    ret += ':';
+    // currentOpponentPokemonIndex
+    ret += turn.currentOpponentPokemonIndex.toString();
+    ret += ':';
+    // ownPokemonInitialStates
+    for (final state in turn.ownPokemonInitialStates) {
+      ret += pokemonStateToStr(state, '*', '!', '}');
+      ret += '_';
+    }
+    ret += ':';
+    // opponentPokemonInitialStates
+    for (final state in turn.opponentPokemonInitialStates) {
+      ret += pokemonStateToStr(state, '*', '!', '}');
+      ret += '_';
+    }
+    ret += ':';
+    // ownPokemonCurrentStates
+    for (final state in turn.ownPokemonCurrentStates) {
+      ret += pokemonStateToStr(state, '*', '!', '}');
+      ret += '_';
+    }
+    ret += ':';
+    // opponentPokemonCurrentStates
+    for (final state in turn.opponentPokemonCurrentStates) {
+      ret += pokemonStateToStr(state, '*', '!', '}');
+      ret += '_';
+    }
+    ret += ':';
+    // beforeMoveEffects
+    for (final turnEffect in turn.beforeMoveEffects) {
+      // playerType
+      switch (turnEffect.playerType) {
+        case PlayerType.me:
+          ret += '1';
+          ret += '*';
+          break;
+        case PlayerType.opponent:
+          ret += '2';
+          ret += '*';
+          break;
+        default:
+          ret += '0';
+          ret += '*';
+          break;
+      }
+      // effect
+      switch (turnEffect.effect) {
+        case EffectType.ability:
+          ret += '1';
+          ret += '*';
+          break;
+        case EffectType.item:
+          ret += '2';
+          ret += '*';
+          break;
+        default:
+          ret += '0';
+          ret += '*';
+          break;
+      }
+      // effectId
+      ret += turnEffect.effectId.toString();
+
+      ret += '_';
+    }
+    ret += ':';
+    // turnMove1
+    ret += turnMoveToStr(turn.turnMove1, '_', '*');
+    ret += ':';
+    // turnMove2
+    ret += turnMoveToStr(turn.turnMove2, '_', '*');
+    ret += ':';
+    // afterMoveEffects
+    for (final turnEffect in turn.afterMoveEffects) {
+      // playerType
+      switch (turnEffect.playerType) {
+        case PlayerType.me:
+          ret += '1';
+          ret += '*';
+          break;
+        case PlayerType.opponent:
+          ret += '2';
+          ret += '*';
+          break;
+        default:
+          ret += '0';
+          ret += '*';
+          break;
+      }
+      // effect
+      switch (turnEffect.effect) {
+        case EffectType.ability:
+          ret += '1';
+          ret += '*';
+          break;
+        case EffectType.item:
+          ret += '2';
+          ret += '*';
+          break;
+        default:
+          ret += '0';
+          ret += '*';
+          break;
+      }
+      // effectId
+      ret += turnEffect.effectId.toString();
+
+      ret += '_';
+    }
+
+    ret += ';';
+  }
+  return ret;
+}
+
 class Battle {
   int id = 0; // 無効値
   String name = '';
@@ -1073,7 +1718,29 @@ class Battle {
   String opponentName = '';
   Party opponentParty = Party();
   List<PokemonState> opponentPokemonStates = [];
-  final List<Turn> turns = [];
+  List<Turn> turns = [];
+
+  Battle copyWith() =>
+    Battle()
+    ..id = id
+    ..name = name
+    ..type = type
+    ..datetime = datetime
+    ..ownParty = ownParty.copyWith()
+    ..ownPokemonStates = [
+      for (final state in ownPokemonStates)
+      state.copyWith()
+    ]
+    ..opponentName = opponentName
+    ..opponentParty = opponentParty.copyWith()
+    ..opponentPokemonStates = [
+      for (final state in opponentPokemonStates)
+      state.copyWith()
+    ]
+    ..turns = [
+      for (final turn in turns)
+      turn.copyWith()
+    ];
 
   // getter
   bool get isValid {
@@ -1095,7 +1762,8 @@ class Battle {
       battleColumnOwnPartyId: ownParty.id,
       battleColumnOpponentName: opponentName,
       battleColumnOpponentPartyId: opponentParty.id,
-      battleColumnTurns: 0,     // TODO
+//      battleColumnTurns: '0',     // TODO
+      battleColumnTurns: turnListToStr(turns),
     };
   }
 }
@@ -1421,7 +2089,7 @@ class PokeDB {
     maps = await pokeBaseDb.query(pokeBaseDBTable,
       columns: [
         pokeBaseColumnId, pokeBaseColumnName, pokeBaseColumnAbility,
-        pokeBaseColumnForm, pokeBaseColumnMove,
+        pokeBaseColumnForm, pokeBaseColumnFemaleRate, pokeBaseColumnMove,
         for (var e in pokeBaseColumnStats) e,
         pokeBaseColumnType],
     );
@@ -1430,9 +2098,22 @@ class PokeDB {
       final pokeTypes = parseIntList(map[pokeBaseColumnType]);
       final pokeAbilities = parseIntList(map[pokeBaseColumnAbility]);
       final pokeMoves = parseIntList(map[pokeBaseColumnMove]);
+      List<Sex> sexList = [];
+      if (map[pokeBaseColumnFemaleRate] == -1) {
+        sexList = [Sex.none];
+      }
+      else if (map[pokeBaseColumnFemaleRate] == 8) {
+        sexList = [Sex.female];
+      }
+      else if (map[pokeBaseColumnFemaleRate] == 0) {
+        sexList = [Sex.male];
+      }
+      else {
+        sexList = [Sex.male, Sex.female];
+      }
       pokeBase[map[pokeBaseColumnId]] = PokeBase(
         name: map[pokeBaseColumnName],
-        sex: [Sex.none, Sex.male, Sex.female],   // TODO:
+        sex: sexList,
         no: map[pokeBaseColumnId],
         type1: PokeType.createFromId(pokeTypes[0]),
         type2: (pokeTypes.length > 1) ? PokeType.createFromId(pokeTypes[1]) : null,
@@ -1637,8 +2318,8 @@ class PokeDB {
           //..datetime = map[battleColumnDate]    // TODO
           ..ownParty = parties.where((element) => element.id == map[battleColumnOwnPartyId]).first
           ..opponentName = map[battleColumnOpponentName]
-          ..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
-          //..turn    // TODO
+          //..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
+          ..turns = parseTurnList(map[battleColumnTurns])
         );
         battleIDs.add(map[battleColumnId]);
       }
@@ -1746,9 +2427,10 @@ class PokeDB {
   }
 
   Future<void> deleteMyPokemon(List<int> ids, bool remainRelations) async {
+    //assert(ids.isNotEmpty);
+    if (ids.isEmpty) return;
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     assert(await databaseExists(myPokemonDBPath));
-    assert(ids.isNotEmpty);
 
     // SQLiteのDB読み込み
     myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
@@ -1886,9 +2568,10 @@ class PokeDB {
   }
 
   Future<void> deleteParty(List<int> ids, bool remainRelations) async {
+    //assert(ids.isNotEmpty);
+    if (ids.isEmpty) return;
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     assert(await databaseExists(partyDBPath));
-    assert(ids.isNotEmpty);
 
     // SQLiteのDB読み込み
     partyDb = await openDatabase(partyDBPath, readOnly: false);
@@ -2000,9 +2683,10 @@ class PokeDB {
   }
 
   Future<void> deleteBattle(List<int> ids) async {
+    //assert(ids.isNotEmpty);
+    if (ids.isEmpty) return;
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
     assert(await databaseExists(battleDBPath));
-    assert(ids.isNotEmpty);
 
     // SQLiteのDB読み込み
     battleDb = await openDatabase(battleDBPath, readOnly: false);
@@ -2155,7 +2839,7 @@ class PokeDB {
           '$battleColumnOwnPartyId INTEGER, '
           '$battleColumnOpponentName TEXT, '
           '$battleColumnOpponentPartyId INTEGER, '
-          '$battleColumnTurns INTEGER)'    // TODO
+          '$battleColumnTurns TEXT)'
         );
       }
     );

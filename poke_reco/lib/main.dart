@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => MyAppState(),
+      create: (context) => MyAppState(context),
       child: MaterialApp(
         title: 'Poke Reco',
         theme: ThemeData(
@@ -42,13 +42,14 @@ class MyApp extends StatelessWidget {
 }
 
 class MyAppState extends ChangeNotifier {
-  var current = WordPair.random();
   final pokeData = PokeDB();
   List<Pokemon> pokemons = [];
   List<Party> parties = [];
   List<Battle> battles = [];
+  void Function() onBackKeyPushed = (){};
+  bool allowPop = false;
 
-  MyAppState() {
+  MyAppState(BuildContext context) {
     fetchPokeData();
   }
 
@@ -57,11 +58,6 @@ class MyAppState extends ChangeNotifier {
     pokemons = pokeData.pokemons;
     parties = pokeData.parties;
     battles = pokeData.battles;
-    notifyListeners();
-  }
-
-  void getNext() {
-    current = WordPair.random();
     notifyListeners();
   }
 }
@@ -111,16 +107,26 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Scaffold(
-          body: Center(
-            child: Container(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              child: page,
+        return WillPopScope(
+          onWillPop: () async {
+            var appState = context.read<MyAppState>();
+            appState.onBackKeyPushed();
+/*            Navigator.pop(
+              currentContext,
+            );*/
+            return false;
+          },
+          child: Scaffold(
+            body: Center(
+              child: Container(
+                color: Theme.of(context).colorScheme.primaryContainer,
+                child: page,
+              ),
             ),
-          ),
-          bottomNavigationBar: BottomNavigation(
-            currentTab: _currentTab,
-            onSelectTab: _selectTab,
+            bottomNavigationBar: BottomNavigation(
+              currentTab: _currentTab,
+              onSelectTab: _selectTab,
+            ),
           ),
         );
       }
@@ -144,6 +150,10 @@ class PokemonTabNavigator extends StatefulWidget {
 
   @override
   State<PokemonTabNavigator> createState() => _PokemonTabNavigatorState();
+
+  void pop() {
+    
+  }
 }
 
 class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {

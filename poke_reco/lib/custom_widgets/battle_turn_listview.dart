@@ -21,6 +21,9 @@ class BattleTurnListView extends ListView {
     TextEditingController move1Controller,
     TextEditingController move2Controller,
     TextEditingController hpController,
+    ExpandableController beforeMoveExpandController,
+    ExpandableController moveExpandController,
+    ExpandableController afterMoveExpandController,
   ) : 
   super(
     children: [
@@ -31,6 +34,7 @@ class BattleTurnListView extends ListView {
           children: [
             SizedBox(height: 10,),
             ExpandablePanel(
+              controller: beforeMoveExpandController,
               header: Text('わざ選択前'),
               collapsed: Text('タップで詳細を設定'),
               expanded: BattleTurnEffectInputColumn(
@@ -41,6 +45,7 @@ class BattleTurnListView extends ListView {
             ),
             SizedBox(height: 20,),
             ExpandablePanel(
+              controller: moveExpandController,
               header: Text('わざ選択'),
               collapsed: Text('タップで詳細を設定'),
               expanded: BattleMoveInputColumn(
@@ -55,6 +60,7 @@ class BattleTurnListView extends ListView {
             ),
             SizedBox(height: 20,),
             ExpandablePanel(
+              controller: afterMoveExpandController,
               header: Text('わざ選択後'),
               collapsed: Text('タップで詳細を設定'),
               expanded: Text('hoge'),

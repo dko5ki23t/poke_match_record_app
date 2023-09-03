@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialog/battle_delete_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_tile.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 
 class BattlesPage extends StatefulWidget {
@@ -26,30 +28,21 @@ class BattlesPageState extends State<BattlesPage> {
     color: Colors.blue,
   );
 
-  void selectAll() {
-    bool existFalse = false;
-    for (final e in checkList!) {
-      if (!e) existFalse = true;
-    }
-
-    for (int i = 0; i < checkList!.length; i++) {
-      checkList![i] = existFalse;
-    }
-  }
-
-  int getSelectedNum() {
-    return checkList!.where((bool val) => val).length;
-  }
-
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var battles = appState.battles;
     var pokeData = appState.pokeData;
+    appState.onBackKeyPushed = (){};
     final theme = Theme.of(context);
+    final double deviceHeight = MediaQuery.of(context).size.height;
 
     Widget lists;
-//    checkList ??= List.generate(battles.length, (i) => false);
+    checkList ??= List.generate(battles.length, (i) => false);
+    // データベースの読み込みタイミングによってはリストが0の場合があるため
+    if (checkList!.length != battles.length) {
+      checkList = List.generate(battles.length, (i) => false);
+    }
 
     if (battles.isEmpty) {
       lists = Center(
@@ -57,16 +50,16 @@ class BattlesPageState extends State<BattlesPage> {
       );
     }
     else {
-/*
       if (isEditMode) {
         lists = ListView(
           children: [
-            for (int i = 0; i < pokemons.length; i++)
-              PokemonTile(
-                pokemons[i],
+            for (int i = 0; i < battles.length; i++)
+              BattleTile(
+                battles[i],
                 theme,
                 pokeData,
-                leading: Checkbox(
+                leading: Icon(Icons.drag_handle),
+                trailing: Checkbox(
                   value: checkList![i],
                   onChanged: (isCheck) {
                     setState(() {
@@ -74,36 +67,31 @@ class BattlesPageState extends State<BattlesPage> {
                     });
                   },
                 ),
-                trailing: TextButton(
-                  onPressed: () => widget.onAdd(pokemons[i], false),
-                  child: Icon(Icons.edit),
-                ),
               ),
           ],
         );
       }
       else {
-*/
         lists = ListView(
           children: [
             for (var battle in battles)
-            BattleTile(
-              battle,
-              theme,
-              pokeData,
-              leading: Icon(Icons.list_alt),
-//              onLongPress: () => widget.onAdd(pokemon, false),
-            ),
+              BattleTile(
+                battle,
+                theme,
+                pokeData,
+                leading: Icon(Icons.list_alt),
+                onLongPress: () => widget.onAdd(battle.copyWith(), false),
+              ),
+            SizedBox(height: deviceHeight / 4),
           ],
         );
-//      }
+      }
     }
 
     return Scaffold(
       appBar: AppBar(
         title: Text('バトル一覧'),
         actions: [
-/*
           isEditMode ?
           TextButton(
             onPressed: () => setState(() => isEditMode = false),
@@ -122,13 +110,12 @@ class BattlesPageState extends State<BattlesPage> {
                   child: Icon(Icons.sort),
                 ),
                 TextButton(
-                  onPressed: (pokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                  onPressed: (battles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                   child: Icon(Icons.edit),
                 ),
               ],
             ),
           ),
-*/
         ],
       ),
       body: Stack(
@@ -136,10 +123,9 @@ class BattlesPageState extends State<BattlesPage> {
         children: [
           Column(
             children:
-/*
               isEditMode ?
                 [
-                  Expanded(child: lists),
+                  Expanded(flex: 10, child: lists),
                   Expanded(child: Align(
                     alignment: Alignment.bottomCenter,
                     child: Row(
@@ -152,24 +138,34 @@ class BattlesPageState extends State<BattlesPage> {
                           Text('すべて選択')
                         ]),
                         onPressed: () => setState(() {
-                          selectAll();
+                          selectAll(checkList!);
                         }),
                       ),
                       SizedBox(width: 20),
                       TextButton(
-                        onPressed: (getSelectedNum() > 0) ?
-                          () => setState(() {
-                            //List<int> deleteIDs = [];
-                            for (int i = checkList!.length - 1; i >= 0; i--) {
-                              if (checkList![i]) {
-                                //deleteIDs.add(pokemons[i].id);
-                                checkList!.removeAt(i);
-                                pokemons.removeAt(i);
+                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                          () {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return BattleDeleteCheckDialog(
+                                  () async {
+                                    List<int> deleteIDs = [];
+                                    for (int i = 0; i < checkList!.length; i++) {
+                                      if (checkList![i]) {
+                                        deleteIDs.add(battles[i].id);
+                                      }
+                                    }
+                                    //pokeData.recreateMyPokemon(pokemons);
+                                    await pokeData.deleteBattle(deleteIDs);
+                                    setState(() {
+                                      checkList = List.generate(battles.length, (i) => false);
+                                    });
+                                  },
+                                );
                               }
-                            }
-                            pokeData.recreateMyPokemon(pokemons);
-                            //pokeData.deleteMyPokemon(deleteIDs);
-                          })
+                            );
+                          }
                           :
                           null,
                         child: Row(children: [
@@ -178,11 +174,32 @@ class BattlesPageState extends State<BattlesPage> {
                           Text('削除')
                         ]),
                       ),
+                      SizedBox(width: 20),
+                      TextButton(
+                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                          () async {
+                            for (int i = 0; i < checkList!.length; i++) {
+                              if (checkList![i]) {
+                                Battle copiedBattle = battles[i].copyWith();
+                                copiedBattle.id = pokeData.getUniqueBattleID();
+                                battles.add(copiedBattle);
+                                pokeData.addBattle(copiedBattle);
+                              }
+                            }
+                            setState(() {
+                              checkList = List.generate(battles.length, (i) => false);
+                            });
+                          } : null,
+                        child: Row(children: [
+                          Icon(Icons.copy),
+                          SizedBox(width: 10),
+                          Text('コピー作成'),
+                        ]),
+                      ),
                     ],
                   ),),),
                 ]
                 :
-*/
                 [
                   Expanded(child: lists),
                 ],
@@ -193,7 +210,7 @@ class BattlesPageState extends State<BattlesPage> {
             child: Align(
               alignment: Alignment.bottomRight,
               child: FloatingActionButton(
-                tooltip: '新規作成',
+                tooltip: 'バトル登録',
                 shape: CircleBorder(),
                 onPressed: (){
                   checkList = null;

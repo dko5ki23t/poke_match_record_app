@@ -1,4 +1,6 @@
+import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialog/delete_editing_check_dialog.dart';
 //import 'package:intl/intl.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
@@ -45,6 +47,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   final hp1Controller = TextEditingController();
 
+  final beforeMoveExpandController = ExpandableController(initialExpanded: true);
+  final moveExpandController = ExpandableController(initialExpanded: true);
+  final afterMoveExpandController = ExpandableController(initialExpanded: true);
+
   CheckedPokemons checkedPokemons = CheckedPokemons();
   int turnNum = 1;
 
@@ -67,6 +73,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+    // TODO
+    void onBack () {
+      showDialog(
+        context: context,
+        builder: (_) {
+          return DeleteEditingCheckDialog(
+            '対戦記録',
+            () {
+              Navigator.pop(context);
+            },
+          );
+        }
+      );
+    }
+    appState.onBackKeyPushed = onBack;
 
     Widget lists;
     Widget title;
@@ -76,33 +97,33 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
         // 相手のパーティ、ポケモンも登録
-        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
-          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
-        }
-        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
-        widget.battle.opponentParty.owner = Owner.fromBattle;
-        parties.add(widget.battle.opponentParty);
-        pokeData.addParty(widget.battle.opponentParty);
+//        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+//          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+//          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+//          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
+//          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+//        }
+//        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
+//        widget.battle.opponentParty.owner = Owner.fromBattle;
+//        parties.add(widget.battle.opponentParty);
+//        pokeData.addParty(widget.battle.opponentParty);
 
         widget.battle.id = pokeData.getUniqueBattleID();
         battles.add(widget.battle);
       }
       else {
-        int index = 0;
-        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-          index = pokemons.indexWhere((element) => element.id == widget.battle.opponentParty.pokemons[i]!.id);
-          pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
-          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
-        }
-        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
-        parties[index] = widget.battle.opponentParty;
-        pokeData.addParty(widget.battle.opponentParty);
-
-        index = battles.indexWhere((element) => element.id == widget.battle.id);
-        battles[index] = widget.battle;
+//        int index = 0;
+//        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+//          index = pokemons.indexWhere((element) => element.id == widget.battle.opponentParty.pokemons[i]!.id);
+//          pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
+//          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+//        }
+//        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
+//        parties[index] = widget.battle.opponentParty;
+//        pokeData.addParty(widget.battle.opponentParty);
+//
+//        index = battles.indexWhere((element) => element.id == widget.battle.id);
+//        battles[index] = widget.battle;
       }
       pokeData.addBattle(widget.battle);
       widget.onFinish();
@@ -447,7 +468,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1]!,
                 widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1]!,
                 move1Controller, move2Controller,
-                hp1Controller
+                hp1Controller, beforeMoveExpandController,
+                moveExpandController, afterMoveExpandController,
               ),
             ),
           ],

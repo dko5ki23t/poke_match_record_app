@@ -168,6 +168,7 @@ class BattleBasicListView extends ListView {
                   ..no = suggestion.no
                   ..type1 = suggestion.type1
                   ..type2 = suggestion.type2
+                  ..sex = suggestion.sex[0]
                   ..h.race = suggestion.h
                   ..a.race = suggestion.a
                   ..b.race = suggestion.b
@@ -177,7 +178,26 @@ class BattleBasicListView extends ListView {
                   opponentPokemonController[i].text = suggestion.name;
                   setState();
                 },
+                () {
+                  for (int j = i; j < 6; j++) {
+                    if (j+1 < 6 && battle.opponentParty.pokemons[j+1] != null) {
+                      opponentPokemonController[j].text = battle.opponentParty.pokemons[j+1]!.name;
+                      battle.opponentParty.pokemons[j] = battle.opponentParty.pokemons[j+1];
+                    }
+                    else {
+                      opponentPokemonController[j].text = '';
+                      battle.opponentParty.pokemons[j] = j == 0 ?
+                        Pokemon() : null;
+                      break; 
+                    }
+                  }
+                  setState();
+                },
                 'せいべつ${i+1}',
+                battle.opponentParty.pokemons[i] != null ?
+                  pokeData.pokeBase[battle.opponentParty.pokemons[i]?.no]!.sex : [Sex.none],
+                battle.opponentParty.pokemons[i] != null ?
+                  battle.opponentParty.pokemons[i]!.sex : Sex.none,
                 battle.opponentParty.pokemons[i] != null ?
                   (value) {battle.opponentParty.pokemons[i]!.sex = value;}
                   : null,

@@ -11,6 +11,7 @@ pokeBaseColumnId = 'id'
 pokeBaseColumnName = 'name'
 pokeBaseColumnAbility = 'ability'
 pokeBaseColumnForm = 'form'
+pokeBaseColumnFemaleRate = 'femaleRate'
 pokeBaseColumnMove = 'move'
 pokeBaseColumnStats = [
   'h',
@@ -49,6 +50,7 @@ pokemonsTypeCSVTypeIDColumn = 'type_id'
 # CSVファイル(PokeAPI)の列インデックス
 pokeBaseCSVpokemonIDIndex = 1
 pokeBaseCSVevolvesFromIDIndex = 4
+pokeBaseCSVfemaleRate = 9
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
@@ -102,6 +104,7 @@ def main():
         for row in pokemon_df.itertuples():
             id = row[pokeBaseCSVpokemonIDIndex]
             evolves_from = row[pokeBaseCSVevolvesFromIDIndex]
+            female_rate = row[pokeBaseCSVfemaleRate]
             name = ''
             form = ['0']    # TODO:いつか実装する？
             
@@ -137,7 +140,7 @@ def main():
                 if types[i] > 10000:    # 特殊なタイプ
                     types[i] = 0
 
-            pokemons_list.append((id, name, abilities, form, moves, h, a, b, c, d, s, types))
+            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types))
 
 
         # 作成(存在してたら作らない)
@@ -151,6 +154,7 @@ def main():
             f'  {pokeBaseColumnName} text not null,'
             f'  {pokeBaseColumnAbility} IntList,'
             f'  {pokeBaseColumnForm} IntList,'
+            f'  {pokeBaseColumnFemaleRate} integer, '
             f'  {pokeBaseColumnMove} IntList,' +
             statsColumn +
             f'  {pokeBaseColumnType} IntList)'
@@ -166,8 +170,8 @@ def main():
         try:
             con.executemany(
                 f'INSERT INTO {pokeBaseDBTable} ('
-                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, {pokeBaseColumnForm}, {pokeBaseColumnMove}, {statsColumn}, {pokeBaseColumnType}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, {pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, {statsColumn}, {pokeBaseColumnType}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 pokemons_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

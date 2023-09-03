@@ -13,6 +13,7 @@ class MoveInputRow extends Row {
     TextEditingController moveController,
     List<Move?> removalMoves,
     void Function(Move) moveOnSuggestionSelected,
+    void Function() moveOnClear,
     TextEditingController ppController,
     void Function(num)? ppChanged,
     {
@@ -32,6 +33,11 @@ class MoveInputRow extends Row {
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
               labelText: labelMove,
+              suffixIcon: moveController.text.isNotEmpty ? 
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () => moveOnClear(),
+                ) : null,
             ),
             enabled: moveEnabled,
           ),

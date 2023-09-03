@@ -10,7 +10,10 @@ class PokemonSexInputRow extends Row {
     List<PokeBase?> removalPokemons,
     TextEditingController pokemonController,
     void Function(PokeBase) onPokemonSuggestionSelected,
+    void Function() pokemonOnClear,
     String? labelSexText,
+    List<Sex> sexList,
+    Sex sexValue,
     void Function(dynamic)? onSexChanged,
     {
       bool enabledPokemon = true,
@@ -28,6 +31,11 @@ class PokemonSexInputRow extends Row {
               decoration: InputDecoration(
                 border: UnderlineInputBorder(),
                 labelText: labelPokemonText,
+                suffixIcon: pokemonController.text.isNotEmpty ?
+                  IconButton(
+                    icon: Icon(Icons.clear),
+                    onPressed: () => pokemonOnClear(),
+                  ) : null,
               ),
             ),
             autoFlipDirection: true,
@@ -68,13 +76,13 @@ class PokemonSexInputRow extends Row {
             labelText: labelSexText,
           ),
           items: <DropdownMenuItem>[
-            for (var type in Sex.values)
+            for (var type in sexList)
               DropdownMenuItem(
                 value: type,
                 child: type.displayIcon,
             ),
           ],
-          value: Sex.none,
+          value: sexValue,
           onChanged: onSexChanged,
         ),
       ),

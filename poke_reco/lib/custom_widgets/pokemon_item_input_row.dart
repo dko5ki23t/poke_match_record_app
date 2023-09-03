@@ -8,11 +8,14 @@ class PokemonItemInputRow extends Row {
     String? labelPokemonText,
     TextEditingController pokemonController,
     void Function()? onPokemonTap,
+    bool canClear,
+    void Function() pokemonOnClear,
     String? labelItemText,
     TextEditingController itemController,
     PokeDB pokeData,
     List<Item?> removalItems,
     void Function(Item) onItemSuggestionSelected,
+    void Function() itemOnClear,
     {
       bool enabledPokemon = true,
       bool enabledItem = true,
@@ -27,7 +30,12 @@ class PokemonItemInputRow extends Row {
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
               labelText: labelPokemonText,
-              suffixIcon: Icon(Icons.arrow_drop_down),
+              suffixIcon: canClear ? 
+                IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () => pokemonOnClear(),
+                ) :
+                Icon(Icons.arrow_drop_down),
             ),
             controller: pokemonController,
             onTap: onPokemonTap,
@@ -44,6 +52,11 @@ class PokemonItemInputRow extends Row {
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
                   labelText: labelItemText,
+                  suffixIcon: itemController.text.isNotEmpty ?
+                    IconButton(
+                      icon: Icon(Icons.clear),
+                      onPressed: () => itemOnClear(),
+                    ) : null,
                 ),
               ),
               autoFlipDirection: true,

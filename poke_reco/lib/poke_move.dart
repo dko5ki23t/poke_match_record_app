@@ -31,6 +31,17 @@ class TurnMove {
   MoveAdditionalEffect moveAdditionalEffect = MoveAdditionalEffect.none;
   int? changePokemonIndex;
 
+  TurnMove copyWith() =>
+    TurnMove()
+    ..playerType = playerType
+    ..move = move.copyWith()
+    ..isSuccess = isSuccess
+    ..moveHits = [...moveHits]
+    ..realDamage = realDamage
+    ..percentDamage = percentDamage
+    ..moveAdditionalEffect = moveAdditionalEffect
+    ..changePokemonIndex = changePokemonIndex;
+
   void processMove(
     Pokemon currentOwnPokemon,
     PokemonState currentOwnPokemonState,
