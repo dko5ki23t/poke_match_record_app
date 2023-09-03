@@ -10,6 +10,8 @@ class BattleBasicListView extends ListView {
     List<Party> parties,
     ThemeData theme,
     PokeDB pokeData,
+    TextEditingController battleNameController,
+    TextEditingController opponentNameController,
     List<TextEditingController> opponentPokemonController,
   ) : 
   super(
@@ -24,6 +26,7 @@ class BattleBasicListView extends ListView {
               children: [
                 Flexible(
                   child: TextFormField(
+                    controller: battleNameController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
                       labelText: 'バトル名'
@@ -90,8 +93,8 @@ class BattleBasicListView extends ListView {
                           child: Text(type.displayName),
                       ),
                     ],
-                    value: BattleType.rankmatch,
-                    onChanged: (value) {battle.type = value;},
+                    value: battle.type,
+                    onChanged: (value) {battle.type = value; setState();},
                   ),
                 ),
               ],
@@ -124,6 +127,7 @@ class BattleBasicListView extends ListView {
                           child: PartyTile(party, theme, pokeData,),
                         ),
                     ],
+                    value: battle.ownParty.id,
                     onChanged: (value) {
                       battle.ownParty = parties[value - 1];
                       setState();
@@ -138,6 +142,7 @@ class BattleBasicListView extends ListView {
               children: [
                 Flexible(
                   child: TextFormField(
+                    controller: opponentNameController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
                       labelText: 'あいての名前'

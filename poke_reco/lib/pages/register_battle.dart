@@ -41,6 +41,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   RegisterBattlePageType pageType = RegisterBattlePageType.basePage;
 //  final battleDatetimeController = TextEditingController(text: DateFormat('yyyy/MM/dd HH:mm', "ja_JP").format(DateTime.now()));
   final opponentPokemonController = List.generate(6, (i) => TextEditingController());
+  final battleNameController = TextEditingController();
+  final opponentNameController = TextEditingController();
 
   final move1Controller = TextEditingController();
   final move2Controller = TextEditingController();
@@ -73,6 +75,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+
+    battleNameController.text = widget.battle.name;
+    opponentNameController.text = widget.battle.opponentName;
+
     // TODO
     void onBack () {
       showDialog(
@@ -217,7 +223,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         lists = BattleBasicListView(
           () {setState(() {});},
           widget.battle, parties,
-          theme, pokeData, opponentPokemonController);
+          theme, pokeData, battleNameController,
+          opponentNameController,
+          opponentPokemonController);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         break;
       case RegisterBattlePageType.firstPokemonPage:
