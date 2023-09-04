@@ -103,7 +103,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     pokeMoveController[2].text = widget.myPokemon.move3 == null ? '' : widget.myPokemon.move3!.displayName;
     pokeMoveController[3].text = widget.myPokemon.move4 == null ? '' : widget.myPokemon.move4!.displayName;
 
-    void onComplete() {
+    void onComplete() async {
       if (widget.isNew) {
         widget.myPokemon.id = pokeData.getUniqueMyPokemonID();
         pokemons.add(widget.myPokemon);
@@ -112,7 +112,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
         final index = pokemons.indexWhere((element) => element.id == widget.myPokemon.id);
         pokemons[index] = widget.myPokemon;
       }
-      pokeData.addMyPokemon(widget.myPokemon);
+      await pokeData.addMyPokemon(widget.myPokemon);
       widget.onFinish();
     }
 

@@ -33,7 +33,7 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.name = value;
-                      setState();
+                      //setState();
                     },
                     maxLength: 10,
                   ),
@@ -89,12 +89,12 @@ class BattleBasicListView extends ListView {
                     items: <DropdownMenuItem>[
                       for (var type in BattleType.values)
                         DropdownMenuItem(
-                          value: type,
+                          value: type.id,
                           child: Text(type.displayName),
                       ),
                     ],
-                    value: battle.type,
-                    onChanged: (value) {battle.type = value; setState();},
+                    value: battle.type.id,
+                    onChanged: (value) {battle.type = BattleType.createFromId(value); setState();},
                   ),
                 ),
               ],
@@ -112,24 +112,20 @@ class BattleBasicListView extends ListView {
                     ),
                     selectedItemBuilder: (context) {
                       return [
-                        for (final party in parties)
+                        for (final party in parties.where((element) => element.owner == Owner.mine).toList())
                           Text(party.name),
                       ];
                     },
                     items: <DropdownMenuItem>[
-                      for (final party in parties)
+                      for (final party in parties.where((element) => element.owner == Owner.mine).toList())
                         DropdownMenuItem(
                           value: party.id,
-//                              child: FittedBox(
-//                                fit: BoxFit.fitWidth,
-//                                child: PokemonTile(e, theme, pokeData,),
-//                              ),
                           child: PartyTile(party, theme, pokeData,),
                         ),
                     ],
-                    value: battle.ownParty.id,
+                    value: battle.ownParty.id == 0 ? null : battle.ownParty.id,
                     onChanged: (value) {
-                      battle.ownParty = parties[value - 1];
+                      battle.ownParty = parties.where((element) => element.id == value).first;
                       setState();
                     },
                   ),
@@ -149,7 +145,7 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.opponentName = value;
-                      setState();
+                      //setState();
                     },
                     maxLength: 10,
 //                          controller: partyNameController,

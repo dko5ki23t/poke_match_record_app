@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialog/pokemon_delete_check_dialog.dart';
+import 'package:poke_reco/custom_dialog/pokemon_filter_dialog.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:quiver/iterables.dart';
 
 class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
@@ -28,6 +30,9 @@ class PokemonsPageState extends State<PokemonsPage> {
   bool isEditMode = false;
   List<bool>? checkList;
   Pokemon? selectedPokemon;
+  List<Owner> ownerFilter = [Owner.mine];
+  List<int> typeFilter = [for (int i = 1; i < 19; i++) i];
+  List<int> teraTypeFilter = [for (int i = 1; i < 19; i++) i];
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -40,17 +45,18 @@ class PokemonsPageState extends State<PokemonsPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
-    var filteredPokemons = pokemons.where((element) => element.owner == Owner.mine).toList();
+    var filteredPokemons = pokemons.where((element) => ownerFilter.contains(element.owner)).toList();
+    filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.type1.id) || typeFilter.contains(element.type2?.id)).toList();
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
 
-    // ポケモンデータ取得で待つ
+    // データ読み込みで待つ
     if (!pokeData.isLoaded) {
       EasyLoading.instance.userInteractions = false;  // 操作禁止にする
       EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
-      EasyLoading.show(status: 'ポケモンの情報取得中です。しばらくお待ちください...');
+      EasyLoading.show(status: 'データ読み込み中です。しばらくお待ちください...');
     }
     else {
       EasyLoading.dismiss();
@@ -138,7 +144,26 @@ class PokemonsPageState extends State<PokemonsPage> {
                 child: Row(
                   children: [
                     TextButton(
-                      onPressed: null,
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) {
+                            return PokemonFilterDialog(
+                              pokeData,
+                              ownerFilter,
+                              typeFilter,
+                              teraTypeFilter,
+                              (f1, f2, f3) {
+                                setState(() {
+                                  ownerFilter = f1;
+                                  typeFilter = f2;
+                                  teraTypeFilter = f3;
+                                });
+                              },
+                            );
+                          }
+                        );
+                      },
                       child: Icon(Icons.filter_alt),
                     ),
                     TextButton(
@@ -233,7 +258,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                   copiedPokemon.id = pokeData.getUniqueMyPokemonID();
                                   copiedPokemon.refCount = 0;
                                   pokemons.add(copiedPokemon);
-                                  pokeData.addMyPokemon(copiedPokemon);
+                                  await pokeData.addMyPokemon(copiedPokemon);
                                 }
                               }
                               setState(() {

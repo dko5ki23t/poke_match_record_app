@@ -157,14 +157,15 @@ class _BattleMoveInputColumn extends Container {
                 items: <DropdownMenuItem>[
                   for (int i = 0; i < faintingParty.pokemonNum; i++)
                     DropdownMenuItem(
-                      value: i,
+                      value: i+1,
                       child: Text(faintingParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,),
                     ),
                 ],
+                value: turnMove.changePokemonIndex,
                 onChanged: (value) {
                   turnMove.playerType =
                     turn.ownPokemonCurrentStates[turn.initialOwnPokemonIndex-1].hp == 0 ? PlayerType.me : PlayerType.opponent;
-                  turnMove.changePokemonIndex = value+1;
+                  turnMove.changePokemonIndex = value;
                   setState();
                 },
               ),

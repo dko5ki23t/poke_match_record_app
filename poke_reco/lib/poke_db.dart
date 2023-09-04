@@ -1099,17 +1099,19 @@ class Turn {
 
     // わざ選択前の処理
     for (final effect in beforeMoveEffects) {
-      switch (effect.effectId) {
-        case 1:   // いかく
-          if (effect.playerType == PlayerType.me) {
-            opponentPokemonCurrentStates[currentOpponentPokemonIndex-1].statChanges[0]--;
-          }
-          else {
-            ownPokemonCurrentStates[currentOwnPokemonIndex-1].statChanges[0]--;
-          }
-          break;
-        default:
-          break;
+      if (effect.effect == EffectType.ability) {
+        switch (effect.effectId) {
+          case 22:   // いかく
+            if (effect.playerType == PlayerType.me) {
+              opponentPokemonCurrentStates[currentOpponentPokemonIndex-1].statChanges[0]--;
+            }
+            else {
+              ownPokemonCurrentStates[currentOwnPokemonIndex-1].statChanges[0]--;
+            }
+            break;
+          default:
+            break;
+        }
       }
     }
 
@@ -1774,13 +1776,13 @@ class PokeDB {
 //  Map<int, PokeBase> pokeBase = {};
   static const String pokeApiRoute = "https://pokeapi.co/api/v2";
   
-  Map<int, Ability> abilities = {};
+  Map<int, Ability> abilities = {0: Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
   Map<int, Item> items = {};
   late Database itemDb;
-  Map<int, Move> moves = {};
+  Map<int, Move> moves = {0: Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
   List<PokeType> types = [
     for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
@@ -2318,7 +2320,7 @@ class PokeDB {
           //..datetime = map[battleColumnDate]    // TODO
           ..ownParty = parties.where((element) => element.id == map[battleColumnOwnPartyId]).first
           ..opponentName = map[battleColumnOpponentName]
-          //..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
+          ..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
           ..turns = parseTurnList(map[battleColumnTurns])
         );
         battleIDs.add(map[battleColumnId]);
@@ -2664,6 +2666,7 @@ class PokeDB {
     }
 
     // 対戦内パーティの被参照カウントをインクリメント
+    // TODO:毎回やってたらダメ
     battle.ownParty.refCount++;
     battle.opponentParty.refCount++;
 
@@ -2801,7 +2804,7 @@ class PokeDB {
       onCreate: (db, version) {
         return db.execute(
           'CREATE TABLE $partyDBTable('
-          '$partyColumnId INTEGER, '
+          '$partyColumnId INTEGER PRIMARY KEY, '
           '$partyColumnName TEXT, '
           '$partyColumnPokemonId1 INTEGER, '
           '$partyColumnPokemonItem1 INTEGER, '
@@ -2832,7 +2835,7 @@ class PokeDB {
       onCreate: (db, version) {
         return db.execute(
           'CREATE TABLE $battleDBTable('
-          '$battleColumnId INTEGER, '
+          '$battleColumnId INTEGER PRIMARY KEY, '
           '$battleColumnName TEXT, '
           '$battleColumnTypeId INTEGER, '
           '$battleColumnDate INTEGER, '     // TODO

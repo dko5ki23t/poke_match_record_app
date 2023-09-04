@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialog/battle_delete_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_tile.dart';
 import 'package:poke_reco/main.dart';
@@ -37,6 +38,16 @@ class BattlesPageState extends State<BattlesPage> {
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
 
+    // データ読み込みで待つ
+    if (!pokeData.isLoaded) {
+      EasyLoading.instance.userInteractions = false;  // 操作禁止にする
+      EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
+      EasyLoading.show(status: 'データ読み込み中です。しばらくお待ちください...');
+    }
+    else {
+      EasyLoading.dismiss();
+    }
+
     Widget lists;
     checkList ??= List.generate(battles.length, (i) => false);
     // データベースの読み込みタイミングによってはリストが0の場合があるため
@@ -46,7 +57,7 @@ class BattlesPageState extends State<BattlesPage> {
 
     if (battles.isEmpty) {
       lists = Center(
-        child: Text('バトルが登録されていません。'),
+        child: Text('表示できる対戦がありません。'),
       );
     }
     else {
@@ -90,7 +101,7 @@ class BattlesPageState extends State<BattlesPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('バトル一覧'),
+        title: Text('対戦一覧'),
         actions: [
           isEditMode ?
           TextButton(
@@ -183,7 +194,7 @@ class BattlesPageState extends State<BattlesPage> {
                                 Battle copiedBattle = battles[i].copyWith();
                                 copiedBattle.id = pokeData.getUniqueBattleID();
                                 battles.add(copiedBattle);
-                                pokeData.addBattle(copiedBattle);
+                                await pokeData.addBattle(copiedBattle);
                               }
                             }
                             setState(() {

@@ -89,15 +89,20 @@ class BattleTurnEffectInputColumn extends Column {
                         labelText: '発動効果',
                       ),
                       items: turnEffects[i].playerType == PlayerType.me ?
-                        battle.ownParty.pokemons[turn.currentOwnPokemonIndex-1]!.ability.timing.id == 1 && turn.changedOwnPokemon ?
-                          <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: battle.ownParty.pokemons[turn.currentOwnPokemonIndex-1]!.ability.effect.id,
-                              child: Text(battle.ownParty.pokemons[turn.currentOwnPokemonIndex-1]!.ability.displayName, overflow: TextOverflow.ellipsis,),
-                            ),
-                          ] :
-                        [] :
-                      [],
+                        <DropdownMenuItem>[
+                          DropdownMenuItem(
+                            value: battle.ownParty.pokemons[turn.currentOwnPokemonIndex-1]!.ability.id,
+                            child: Text(battle.ownParty.pokemons[turn.currentOwnPokemonIndex-1]!.ability.displayName, overflow: TextOverflow.ellipsis,),
+                          ),
+                        ] :
+                        turnEffects[i].playerType == PlayerType.opponent ?
+                        <DropdownMenuItem>[
+                          for (final ability in turn.opponentPokemonCurrentStates[turn.currentOpponentPokemonIndex-1].possibleAbilities)
+                          DropdownMenuItem(
+                            value: ability.id,
+                            child: Text(ability.displayName, overflow: TextOverflow.ellipsis,),
+                          ),
+                        ] : [],
                       value: turnEffects[i].effectId == 0 ? null : turnEffects[i].effectId,
                       onChanged: (value) {turnEffects[i].effectId = value! as int; setState();},
                     ),

@@ -78,6 +78,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     battleNameController.text = widget.battle.name;
     opponentNameController.text = widget.battle.opponentName;
+    for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+      opponentPokemonController[i].text = widget.battle.opponentParty.pokemons[i]!.name;
+    }
+    if (widget.battle.turns.length >= turnNum) {
+      move1Controller.text = widget.battle.turns[turnNum-1].turnMove1.move.displayName;
+      move2Controller.text = widget.battle.turns[turnNum-1].turnMove2.move.displayName;
+    }
 
     // TODO
     void onBack () {
@@ -99,39 +106,48 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Widget title;
     void Function()? nextPressed;
 
-    void onComplete() {
+    void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
         // 相手のパーティ、ポケモンも登録
-//        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-//          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-//          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-//          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
-//          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
-//        }
-//        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
-//        widget.battle.opponentParty.owner = Owner.fromBattle;
-//        parties.add(widget.battle.opponentParty);
-//        pokeData.addParty(widget.battle.opponentParty);
+        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
+          await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+        }
+        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
+        widget.battle.opponentParty.owner = Owner.fromBattle;
+        parties.add(widget.battle.opponentParty);
+        await pokeData.addParty(widget.battle.opponentParty);
 
         widget.battle.id = pokeData.getUniqueBattleID();
         battles.add(widget.battle);
       }
       else {
-//        int index = 0;
-//        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-//          index = pokemons.indexWhere((element) => element.id == widget.battle.opponentParty.pokemons[i]!.id);
-//          pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
-//          pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
-//        }
-//        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
-//        parties[index] = widget.battle.opponentParty;
-//        pokeData.addParty(widget.battle.opponentParty);
-//
-//        index = battles.indexWhere((element) => element.id == widget.battle.id);
-//        battles[index] = widget.battle;
+        int index = 0;
+        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+          int pokemonID = widget.battle.opponentParty.pokemons[i]!.id;
+          if (pokemonID == 0) {   // 編集時に追加したポケモン
+            widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+            widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+            pokemons.add(widget.battle.opponentParty.pokemons[i]!);
+            await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+          }
+          else {
+            index = pokemons.indexWhere((element) => element.id == pokemonID);
+            pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
+            await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+          }
+        }
+        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
+        parties[index] = widget.battle.opponentParty;
+        await pokeData.addParty(widget.battle.opponentParty);
+
+        index = battles.indexWhere((element) => element.id == widget.battle.id);
+        battles[index] = widget.battle;
       }
-      pokeData.addBattle(widget.battle);
+      await pokeData.addBattle(widget.battle);
       widget.onFinish();
     }
 
@@ -141,6 +157,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           pageType = RegisterBattlePageType.firstPokemonPage;
           checkedPokemons.own = 0;
           checkedPokemons.opponent = 0;
+          if (widget.battle.turns.isNotEmpty) {
+            checkedPokemons.own = widget.battle.turns[0].initialOwnPokemonIndex;
+            checkedPokemons.opponent = widget.battle.turns[0].initialOpponentPokemonIndex;
+          }
           for (final pokemon in widget.battle.ownParty.pokemons) {
             if (pokemon != null) {
               widget.battle.ownPokemonStates.add(
@@ -162,27 +182,39 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         case RegisterBattlePageType.firstPokemonPage:
           assert(checkedPokemons.own != 0);
           assert(checkedPokemons.opponent != 0);
-          Turn turn = Turn()
-          ..initialOwnPokemonIndex = checkedPokemons.own
-          ..initialOpponentPokemonIndex = checkedPokemons.opponent
-          ..currentOwnPokemonIndex = checkedPokemons.own
-          ..currentOpponentPokemonIndex = checkedPokemons.opponent
-          ..changedOwnPokemon = true
-          ..changedOpponentPokemon = true;
-          // 初期HP設定
-          widget.battle.ownPokemonStates[checkedPokemons.own-1].hp = 
-            widget.battle.ownParty.pokemons[checkedPokemons.own-1]!.h.real;
-          turn.ownPokemonInitialStates = [];
-          for (final e in widget.battle.ownPokemonStates) {
-            turn.ownPokemonInitialStates.add(e.copyWith());
-          }
-          turn.opponentPokemonInitialStates = [];
-          for (final e in widget.battle.opponentPokemonStates) {
-            turn.opponentPokemonInitialStates.add(e.copyWith());
-          }
-          turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
+          if (widget.battle.turns.isEmpty) {
+            Turn turn = Turn()
+            ..initialOwnPokemonIndex = checkedPokemons.own
+            ..initialOpponentPokemonIndex = checkedPokemons.opponent
+            ..currentOwnPokemonIndex = checkedPokemons.own
+            ..currentOpponentPokemonIndex = checkedPokemons.opponent
+            ..changedOwnPokemon = true
+            ..changedOpponentPokemon = true;
+            // 初期HP設定
+            for (int i = 0; i < widget.battle.ownPokemonStates.length; i++) {
+              widget.battle.ownPokemonStates[i].hp = 
+                widget.battle.ownParty.pokemons[i]!.h.real;
+            }
+            for (int i = 0; i < widget.battle.opponentPokemonStates.length; i++) {
+              widget.battle.opponentPokemonStates[i].hpPercent = 100;
+            }
+            // 可能性あるとくせい設定
+            for (int i = 0; i < widget.battle.opponentPokemonStates.length; i++) {
+              widget.battle.opponentPokemonStates[i].possibleAbilities =
+                pokeData.pokeBase[widget.battle.opponentParty.pokemons[i]!.no]!.ability;
+            }
+            turn.ownPokemonInitialStates = [];
+            for (final e in widget.battle.ownPokemonStates) {
+              turn.ownPokemonInitialStates.add(e.copyWith());
+            }
+            turn.opponentPokemonInitialStates = [];
+            for (final e in widget.battle.opponentPokemonStates) {
+              turn.opponentPokemonInitialStates.add(e.copyWith());
+            }
+            turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
 
-          widget.battle.turns.add(turn);
+            widget.battle.turns.add(turn);
+          }
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
@@ -191,23 +223,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           int prevOwnIndex = prevTurn.currentOwnPokemonIndex;
           int prevOpponentIndex = prevTurn.currentOpponentPokemonIndex;
           turnNum++;
-          Turn turn = Turn()
-          ..initialOwnPokemonIndex = prevOwnIndex
-          ..initialOpponentPokemonIndex = prevOpponentIndex
-          ..currentOwnPokemonIndex = prevOwnIndex
-          ..currentOpponentPokemonIndex = prevOpponentIndex
-          ..changedOwnPokemon = false
-          ..changedOpponentPokemon = false;
-          // 前ターンの最終状態をコピー
-          for (final e in prevTurn.ownPokemonCurrentStates) {
-            turn.ownPokemonInitialStates.add(e.copyWith());
-          }
-          for (final e in prevTurn.opponentPokemonCurrentStates) {
-            turn.opponentPokemonInitialStates.add(e.copyWith());
-          }
-          turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
+          if (widget.battle.turns.length < turnNum) {
+            Turn turn = Turn()
+            ..initialOwnPokemonIndex = prevOwnIndex
+            ..initialOpponentPokemonIndex = prevOpponentIndex
+            ..currentOwnPokemonIndex = prevOwnIndex
+            ..currentOpponentPokemonIndex = prevOpponentIndex
+            ..changedOwnPokemon = false
+            ..changedOpponentPokemon = false;
+            // 前ターンの最終状態をコピー
+            for (final e in prevTurn.ownPokemonCurrentStates) {
+              turn.ownPokemonInitialStates.add(e.copyWith());
+            }
+            for (final e in prevTurn.opponentPokemonCurrentStates) {
+              turn.opponentPokemonInitialStates.add(e.copyWith());
+            }
+            turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
 
-          widget.battle.turns.add(turn);
+            widget.battle.turns.add(turn);
+          }
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;

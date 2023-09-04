@@ -69,7 +69,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       }
     }
 
-    void onComplete() {
+    void onComplete() async {
       if (widget.isNew) {
         parties.add(widget.party);
         widget.party.id = pokeData.getUniquePartyID();
@@ -78,7 +78,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
         final index = parties.indexWhere((element) => element.id == widget.party.id);
         parties[index] = widget.party;
       }
-      pokeData.addParty(widget.party);
+      await pokeData.addParty(widget.party);
       widget.onFinish();
     }
 

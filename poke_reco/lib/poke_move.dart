@@ -37,6 +37,7 @@ class TurnMove {
     ..move = move.copyWith()
     ..isSuccess = isSuccess
     ..moveHits = [...moveHits]
+    ..moveEffectiveness = moveEffectiveness
     ..realDamage = realDamage
     ..percentDamage = percentDamage
     ..moveAdditionalEffect = moveAdditionalEffect

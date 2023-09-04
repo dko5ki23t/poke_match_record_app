@@ -63,7 +63,11 @@ class BattleTurnListView extends ListView {
               controller: afterMoveExpandController,
               header: Text('わざ選択後'),
               collapsed: Text('タップで詳細を設定'),
-              expanded: Text('hoge'),
+              expanded: BattleTurnEffectInputColumn(
+                setState, theme, battle,
+                battle.turns[turnNum-1],
+                battle.turns[turnNum-1].afterMoveEffects,
+              ),
             ),
             SizedBox(height: 10,),
           ],

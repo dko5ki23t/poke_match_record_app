@@ -29,6 +29,9 @@ sqlite3.register_adapter(IntList, lambda l: ';'.join([str(i) for i in l]))
 sqlite3.register_converter("IntList", lambda s: [int(i) for i in s.split(';')])
 
 # CSVファイル(PokeAPI)の列名
+pokemonSpeciesCSVIDColumn = 'id'
+pokemonSpeciesCSVEvolvesFromIDColumn = 'evolves_from_species_id'
+
 pokemonsLangCSVPokemonIDColumn = 'pokemon_species_id'
 pokemonsLangCSVLangIDColumn = 'local_language_id'
 pokemonsLangCSVNameColumn = 'name'
@@ -104,6 +107,10 @@ def main():
         for row in pokemon_df.itertuples():
             id = row[pokeBaseCSVpokemonIDIndex]
             evolves_from = row[pokeBaseCSVevolvesFromIDIndex]
+            evolves_evolves = pokemon_df[pokemon_df[pokemonSpeciesCSVIDColumn] == evolves_from][pokemonSpeciesCSVEvolvesFromIDColumn]
+            # 祖先も祖先を持ってる場合
+            if len(evolves_evolves) > 0:
+                evolves_from = evolves_evolves.iloc[0]
             female_rate = row[pokeBaseCSVfemaleRate]
             name = ''
             form = ['0']    # TODO:いつか実装する？
@@ -114,6 +121,8 @@ def main():
                 name = names.iloc[0]
             # とくせい取得
             abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == id][pokemonsAbilityCSVAbilityIDColumn].to_list()
+            # 重複削除
+            abilities = list(set(abilities))
             # わざ取得
             moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == id) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
             # たまごわざ取得

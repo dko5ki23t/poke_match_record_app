@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialog/party_delete_check_dialog.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
@@ -30,6 +31,16 @@ class PartiesPageState extends State<PartiesPage> {
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
     final theme = Theme.of(context);
+
+    // データ読み込みで待つ
+    if (!pokeData.isLoaded) {
+      EasyLoading.instance.userInteractions = false;  // 操作禁止にする
+      EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
+      EasyLoading.show(status: 'データ読み込み中です。しばらくお待ちください...');
+    }
+    else {
+      EasyLoading.dismiss();
+    }
 
     Widget lists;
     checkList ??= List.generate(filteredParties.length, (i) => false);
@@ -177,7 +188,7 @@ class PartiesPageState extends State<PartiesPage> {
                                 copiedParty.id = pokeData.getUniquePartyID();
                                 copiedParty.refCount = 0;
                                 parties.add(copiedParty);
-                                pokeData.addParty(copiedParty);
+                                await pokeData.addParty(copiedParty);
                               }
                             }
                             setState(() {
