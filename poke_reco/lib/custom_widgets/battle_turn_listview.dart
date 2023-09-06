@@ -1,11 +1,10 @@
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/custom_widgets/battle_before_move_effect_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_move_input_column.dart';
-import 'package:poke_reco/custom_widgets/battle_turn_effect_input_column.dart';
+import 'package:poke_reco/custom_widgets/battle_after_move_effect_input_column.dart';
+import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/tool.dart';
 
 class BattleTurnListView extends ListView {
   BattleTurnListView(
@@ -20,10 +19,12 @@ class BattleTurnListView extends ListView {
     Pokemon currentOpponentPokemon,
     TextEditingController move1Controller,
     TextEditingController move2Controller,
-    TextEditingController hpController,
+    TextEditingController hpController1,
+    TextEditingController hpController2,
     ExpandableController beforeMoveExpandController,
     ExpandableController moveExpandController,
     ExpandableController afterMoveExpandController,
+    MyAppState appState,
   ) : 
   super(
     children: [
@@ -37,10 +38,11 @@ class BattleTurnListView extends ListView {
               controller: beforeMoveExpandController,
               header: Text('わざ選択前'),
               collapsed: Text('タップで詳細を設定'),
-              expanded: BattleTurnEffectInputColumn(
+              expanded: BattleBeforeMoveEffectInputColumn(
                 setState, theme, battle,
                 battle.turns[turnNum-1],
                 battle.turns[turnNum-1].beforeMoveEffects,
+                appState,
               ),
             ),
             SizedBox(height: 20,),
@@ -55,7 +57,7 @@ class BattleTurnListView extends ListView {
                 currentOwnPokemon, currentOpponentPokemon,
                 battle.turns[turnNum-1].turnMove1, move1Controller,
                 battle.turns[turnNum-1].turnMove2, move2Controller,
-                hpController,
+                hpController1, hpController2,
               ),
             ),
             SizedBox(height: 20,),
@@ -63,10 +65,11 @@ class BattleTurnListView extends ListView {
               controller: afterMoveExpandController,
               header: Text('わざ選択後'),
               collapsed: Text('タップで詳細を設定'),
-              expanded: BattleTurnEffectInputColumn(
+              expanded: BattleAfterMoveEffectInputColumn(
                 setState, theme, battle,
                 battle.turns[turnNum-1],
                 battle.turns[turnNum-1].afterMoveEffects,
+                appState,
               ),
             ),
             SizedBox(height: 10,),

@@ -1,15 +1,26 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:poke_reco/poke_effect.dart';
 import 'package:poke_reco/poke_move.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:tuple/tuple.dart';
 import 'package:quiver/iterables.dart';
+import 'package:path_provider/path_provider.dart';
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
+
+const String configKeyPokemonsOwnerFilter = 'pokemonsOwnerFilter';
+const String configKeyPokemonsTypeFilter = 'pokemonsTypeFilter';
+const String configKeyPokemonsTeraTypeFilter = 'pokemonsTeraTypeFilter';
+const String configKeyPokemonsMoveFilter = 'pokemonsMoveFilter';
+const String configKeyPokemonsSexFilter = 'pokemonsSexFilter';
+const String configKeyPokemonsAbilityFilter = 'pokemonsAbilityFilter';
+const String configKeyPokemonsTemperFilter = 'pokemonsTemperFilter';
 
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
@@ -983,49 +994,6 @@ enum BattleType {
   final String displayName;
 }
 
-enum PlayerType {
-  none(0),
-  me(1),
-  opponent(2),
-  ;
-
-  const PlayerType(this.id);
-
-  final int id;
-}
-
-
-
-enum EffectType {
-  none(0),
-  ability(1),
-  item(2),
-  ;
-
-  const EffectType(this.id);
-
-  final int id;
-}
-
-class TurnEffect {
-  PlayerType playerType = PlayerType.none;
-  EffectType effect = EffectType.none;
-  int effectId = 0;
-
-  TurnEffect copyWith() =>
-    TurnEffect()
-    ..playerType = playerType
-    ..effect = effect
-    ..effectId = effectId;
-
-  bool isValid() {
-    return
-      playerType != PlayerType.none &&
-      effect != EffectType.none &&
-      effectId > 0;
-  }
-}
-
 class Turn {
   bool changedOwnPokemon = false;
   bool changedOpponentPokemon = false;
@@ -1099,20 +1067,13 @@ class Turn {
 
     // わざ選択前の処理
     for (final effect in beforeMoveEffects) {
-      if (effect.effect == EffectType.ability) {
-        switch (effect.effectId) {
-          case 22:   // いかく
-            if (effect.playerType == PlayerType.me) {
-              opponentPokemonCurrentStates[currentOpponentPokemonIndex-1].statChanges[0]--;
-            }
-            else {
-              ownPokemonCurrentStates[currentOwnPokemonIndex-1].statChanges[0]--;
-            }
-            break;
-          default:
-            break;
-        }
-      }
+      effect.processEffect(
+        ownParty.pokemons[currentOwnPokemonIndex-1]!,
+        ownPokemonCurrentStates[currentOwnPokemonIndex-1],
+        opponentParty.pokemons[currentOpponentPokemonIndex-1]!,
+        opponentPokemonCurrentStates[currentOpponentPokemonIndex-1],
+        this,
+      );
     }
 
     // わざ1
@@ -1132,6 +1093,17 @@ class Turn {
       opponentPokemonCurrentStates[currentOpponentPokemonIndex-1],
       this,
     );
+
+    // わざ選択後の処理
+    for (final effect in afterMoveEffects) {
+      effect.processEffect(
+        ownParty.pokemons[currentOwnPokemonIndex-1]!,
+        ownPokemonCurrentStates[currentOwnPokemonIndex-1],
+        opponentParty.pokemons[currentOpponentPokemonIndex-1]!,
+        opponentPokemonCurrentStates[currentOpponentPokemonIndex-1],
+        this,
+      );
+    }
   }
 }
 
@@ -1185,87 +1157,6 @@ PokemonState parsePokemonState(dynamic str, String split1, String split2, String
   }
 
   return pokemonState;
-}
-
-TurnMove parseTurnMove(dynamic str, String split1, String split2) {
-  TurnMove turnMove = TurnMove();
-  final turnMoveElements = str.split(split1);
-  // playerType
-  switch (int.parse(turnMoveElements[0])) {
-    case 1:
-      turnMove.playerType = PlayerType.me;
-      break;
-    case 2:
-      turnMove.playerType = PlayerType.opponent;
-      break;
-    default:
-      turnMove.playerType = PlayerType.none;
-      break;
-  }
-  // move
-  var moveElements = turnMoveElements[1].split(split2);
-  turnMove.move = Move(
-    int.parse(moveElements[0]),
-    moveElements[1],
-    PokeType.createFromId(int.parse(moveElements[2])),
-    int.parse(moveElements[3]),
-    int.parse(moveElements[4]),
-    int.parse(moveElements[5]),
-    Target(int.parse(moveElements[6])),
-    DamageClass(int.parse(moveElements[7])),
-    MoveEffect(int.parse(moveElements[8])),
-    int.parse(moveElements[9]),
-    int.parse(moveElements[10]),
-  );
-  // isSuccess
-  turnMove.isSuccess = int.parse(turnMoveElements[2]) != 0;
-  // moveHits
-  var moveHits = turnMoveElements[3].split(split2);
-  for (var moveHitsElement in moveHits) {
-    if (moveHitsElement == '') break;
-    MoveHit t = MoveHit.hit;
-    if (int.parse(moveHitsElement) == 1) {
-      t = MoveHit.critical;
-    }
-    else if (int.parse(moveHitsElement) == 2) {
-      t = MoveHit.notHit;
-    }
-    turnMove.moveHits.add(t);
-  }
-  // moveEffectiveness
-  switch (int.parse(turnMoveElements[4])) {
-    case 1:
-      turnMove.moveEffectiveness = MoveEffectiveness.great;
-      break;
-    case 2:
-      turnMove.moveEffectiveness = MoveEffectiveness.notGood;
-      break;
-    case 3:
-      turnMove.moveEffectiveness = MoveEffectiveness.noEffect;
-      break;
-    default:
-      turnMove.moveEffectiveness = MoveEffectiveness.normal;
-      break;
-  }
-  // realDamage
-  turnMove.realDamage = int.parse(turnMoveElements[5]);
-  // percentDamage
-  turnMove.percentDamage = int.parse(turnMoveElements[6]);
-  // moveAdditionalEffect
-  switch (int.parse(turnMoveElements[7])) {
-    case 1:
-      turnMove.moveAdditionalEffect = MoveAdditionalEffect.speedDown;
-      break;
-    default:
-      turnMove.moveAdditionalEffect = MoveAdditionalEffect.none;
-      break;
-  }
-  // changePokemonIndex
-  if (turnMoveElements[8] != '') {
-    turnMove.changePokemonIndex = int.parse(turnMoveElements[8]);
-  }
-
-  return turnMove;
 }
 
 List<Turn> parseTurnList(dynamic str) {
@@ -1325,73 +1216,17 @@ List<Turn> parseTurnList(dynamic str) {
     var turnEffects = turnElements[10].split('_');
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      TurnEffect effect = TurnEffect();
-      final effectElements = turnEffect.split('*');
-      // playerType
-      switch (int.parse(effectElements[0])) {
-        case 1:
-          effect.playerType = PlayerType.me;
-          break;
-        case 2:
-          effect.playerType = PlayerType.opponent;
-          break;
-        default:
-          effect.playerType = PlayerType.none;
-          break;
-      }
-      // effect
-      switch (int.parse(effectElements[1])) {
-        case 1:
-          effect.effect = EffectType.ability;
-          break;
-        case 2:
-          effect.effect = EffectType.item;
-          break;
-        default:
-          effect.effect = EffectType.none;
-          break;
-      }
-      // effectId
-      effect.effectId = int.parse(effectElements[2]);
-      element.beforeMoveEffects.add(effect);
+      element.beforeMoveEffects.add(TurnEffect.deserialize(turnEffect, '*'));
     }
     // turnMove1
-    element.turnMove1 = parseTurnMove(turnElements[11], '_', '*');
+    element.turnMove1 = TurnMove.deserialize(turnElements[11], '_', '*');
     // turnMove2
-    element.turnMove2 = parseTurnMove(turnElements[12], '_', '*');
+    element.turnMove2 = TurnMove.deserialize(turnElements[12], '_', '*');
     // afterMoveEffects
     turnEffects = turnElements[13].split('_');
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      TurnEffect effect = TurnEffect();
-      final effectElements = turnEffect.split('*');
-      // playerType
-      switch (int.parse(effectElements[0])) {
-        case 1:
-          effect.playerType = PlayerType.me;
-          break;
-        case 2:
-          effect.playerType = PlayerType.opponent;
-          break;
-        default:
-          effect.playerType = PlayerType.none;
-          break;
-      }
-      // effect
-      switch (int.parse(effectElements[1])) {
-        case 1:
-          effect.effect = EffectType.ability;
-          break;
-        case 2:
-          effect.effect = EffectType.item;
-          break;
-        default:
-          effect.effect = EffectType.none;
-          break;
-      }
-      // effectId
-      effect.effectId = int.parse(effectElements[2]);
-      element.afterMoveEffects.add(effect);
+      element.afterMoveEffects.add(TurnEffect.deserialize(turnEffect, '*'));
     }
 
     ret.add(element);
@@ -1467,117 +1302,6 @@ String pokemonStateToStr(PokemonState state, String split1, String split2, Strin
   return ret;
 }
 
-String turnMoveToStr(TurnMove turnMove, String split1, String split2) {
-  String ret = '';
-  // playerType
-  switch (turnMove.playerType) {
-    case PlayerType.me:
-      ret += '1';
-      ret += split1;
-      break;
-    case PlayerType.opponent:
-      ret += '2';
-      ret += split1;
-      break;
-    default:
-      ret += '0';
-      ret += split1;
-      break;
-  }
-  // move
-    // id
-    ret += turnMove.move.id.toString();
-    ret += split2;
-    // displayName
-    ret += turnMove.move.displayName;
-    ret += split2;
-    // type
-    ret += turnMove.move.type.id.toString();
-    ret += split2;
-    // power
-    ret += turnMove.move.power.toString();
-    ret += split2;
-    // accuracy
-    ret += turnMove.move.accuracy.toString();
-    ret += split2;
-    // priority
-    ret += turnMove.move.priority.toString();
-    ret += split2;
-    // target
-    ret += turnMove.move.target.id.toString();
-    ret += split2;
-    // damageClass
-    ret += turnMove.move.damageClass.id.toString();
-    ret += split2;
-    // effect
-    ret += turnMove.move.effect.id.toString();
-    ret += split2;
-    // effectChance
-    ret += turnMove.move.effectChance.toString();
-    ret += split2;
-    // pp
-    ret += turnMove.move.pp.toString();
-
-  ret += split1;
-  // isSuccess
-  ret += turnMove.isSuccess ? '1' : '0';
-  ret += split1;
-  // moveHits
-  for (final moveHit in turnMove.moveHits) {
-    switch (moveHit) {
-      case MoveHit.critical:
-        ret += '1';
-        break;
-      case MoveHit.notHit:
-        ret += '2';
-        break;
-      default:
-        ret += '0';
-        break;
-    }
-    ret += split2;
-  }
-  ret += split1;
-  // moveEffectiveness
-  switch (turnMove.moveEffectiveness) {
-    case MoveEffectiveness.great:
-      ret += '1';
-      break;
-    case MoveEffectiveness.notGood:
-      ret += '2';
-      break;
-    case MoveEffectiveness.noEffect:
-      ret += '3';
-      break;
-    default:
-      ret += '0';
-      break;
-  }
-  ret += split1;
-  // realDamage
-  ret += turnMove.realDamage.toString();
-  ret += split1;
-  // percentDamage
-  ret += turnMove.percentDamage.toString();
-  ret += split1;
-  // moveAdditionalEffect
-  switch (turnMove.moveAdditionalEffect) {
-    case MoveAdditionalEffect.speedDown:
-      ret += '1';
-      break;
-    default:
-      ret += '0';
-      break;
-  }
-  ret += split1;
-  // changePokemonIndex
-  if (turnMove.changePokemonIndex != null) {
-    ret += turnMove.changePokemonIndex.toString();
-  }
-
-  return ret;
-}
-
 String turnListToStr(List<Turn> turns) {
   String ret = '';
   for (final turn in turns) {
@@ -1625,83 +1349,19 @@ String turnListToStr(List<Turn> turns) {
     ret += ':';
     // beforeMoveEffects
     for (final turnEffect in turn.beforeMoveEffects) {
-      // playerType
-      switch (turnEffect.playerType) {
-        case PlayerType.me:
-          ret += '1';
-          ret += '*';
-          break;
-        case PlayerType.opponent:
-          ret += '2';
-          ret += '*';
-          break;
-        default:
-          ret += '0';
-          ret += '*';
-          break;
-      }
-      // effect
-      switch (turnEffect.effect) {
-        case EffectType.ability:
-          ret += '1';
-          ret += '*';
-          break;
-        case EffectType.item:
-          ret += '2';
-          ret += '*';
-          break;
-        default:
-          ret += '0';
-          ret += '*';
-          break;
-      }
-      // effectId
-      ret += turnEffect.effectId.toString();
-
+      ret += turnEffect.serialize('*');
       ret += '_';
     }
     ret += ':';
     // turnMove1
-    ret += turnMoveToStr(turn.turnMove1, '_', '*');
+    ret += turn.turnMove1.serialize('_', '*');
     ret += ':';
     // turnMove2
-    ret += turnMoveToStr(turn.turnMove2, '_', '*');
+    ret += turn.turnMove2.serialize('_', '*');
     ret += ':';
     // afterMoveEffects
     for (final turnEffect in turn.afterMoveEffects) {
-      // playerType
-      switch (turnEffect.playerType) {
-        case PlayerType.me:
-          ret += '1';
-          ret += '*';
-          break;
-        case PlayerType.opponent:
-          ret += '2';
-          ret += '*';
-          break;
-        default:
-          ret += '0';
-          ret += '*';
-          break;
-      }
-      // effect
-      switch (turnEffect.effect) {
-        case EffectType.ability:
-          ret += '1';
-          ret += '*';
-          break;
-        case EffectType.item:
-          ret += '2';
-          ret += '*';
-          break;
-        default:
-          ret += '0';
-          ret += '*';
-          break;
-      }
-      // effectId
-      ret += turnEffect.effectId.toString();
-
+      ret += turnEffect.serialize('*');
       ret += '_';
     }
 
@@ -1775,7 +1435,17 @@ class Battle {
 class PokeDB {
 //  Map<int, PokeBase> pokeBase = {};
   static const String pokeApiRoute = "https://pokeapi.co/api/v2";
-  
+
+  // 設定等を保存する(端末の)ファイル
+  late final File _saveDataFile;
+  List<Owner> pokemonsOwnerFilter = [Owner.mine];
+  List<int> pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
+  List<int> pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
+  List<int> pokemonsMoveFilter = [];
+  List<Sex> pokemonsSexFilter = Sex.values;
+  List<int> pokemonsAbilityFilter = [];
+  List<int> pokemonsTemperFilter = [];
+
   Map<int, Ability> abilities = {0: Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
@@ -1895,6 +1565,75 @@ class PokeDB {
   }
 
   Future<void> initialize() async {
+    /////////// 各種設定
+    final directory = await getApplicationDocumentsDirectory();
+    final localPath = directory.path;
+    _saveDataFile = File('$localPath/poke_reco.json');
+    try {
+      final configText = await _saveDataFile.readAsString();
+      final configJson = jsonDecode(configText);
+      pokemonsOwnerFilter = [];
+      for (final e in configJson[configKeyPokemonsOwnerFilter]) {
+        switch (e) {
+          case 0:
+            pokemonsOwnerFilter.add(Owner.mine);
+            break;
+          case 1:
+            pokemonsOwnerFilter.add(Owner.fromBattle);
+            break;
+          case 2:
+          default:
+            pokemonsOwnerFilter.add(Owner.hidden);
+            break;
+        }
+      }
+      pokemonsTypeFilter = [];
+      for (final e in configJson[configKeyPokemonsTypeFilter]) {
+        pokemonsTypeFilter.add(e as int);
+      }
+      pokemonsTeraTypeFilter = [];
+      for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
+        pokemonsTeraTypeFilter.add(e as int);
+      }
+      pokemonsMoveFilter = [];
+      for (final e in configJson[configKeyPokemonsMoveFilter]) {
+        pokemonsMoveFilter.add(e as int);
+      }
+      pokemonsSexFilter = [];
+      for (final e in configJson[configKeyPokemonsSexFilter]) {
+        switch (e) {
+          case 1:
+            pokemonsSexFilter.add(Sex.male);
+            break;
+          case 2:
+            pokemonsSexFilter.add(Sex.female);
+            break;
+          case 0:
+          default:
+            pokemonsSexFilter.add(Sex.none);
+            break;
+        }
+      }
+      pokemonsAbilityFilter = [];
+      for (final e in configJson[configKeyPokemonsAbilityFilter]) {
+        pokemonsAbilityFilter.add(e as int);
+      }
+      pokemonsTemperFilter = [];
+      for (final e in configJson[configKeyPokemonsTemperFilter]) {
+        pokemonsTemperFilter.add(e as int);
+      }
+    }
+    catch (e) {
+      pokemonsOwnerFilter = [Owner.mine];
+      pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
+      pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
+      pokemonsMoveFilter = [];
+      pokemonsSexFilter = Sex.values;
+      pokemonsAbilityFilter = [];
+      pokemonsTemperFilter = [];
+      await saveConfig();
+    }
+
     /////////// とくせい
     final abilityDBPath = join(await getDatabasesPath(), abilityDBFile);
     // TODO:アップデート時とかのみ消せばいい。設定から消せるとか、そういうのにしたい。
@@ -2367,6 +2106,21 @@ class PokeDB {
 */
   }
 
+  Future<void> saveConfig() async {
+    String jsonText = jsonEncode(
+      {
+        configKeyPokemonsOwnerFilter: [for (final e in pokemonsOwnerFilter) e.index],
+        configKeyPokemonsTypeFilter: [for (final e in pokemonsTypeFilter) e],
+        configKeyPokemonsTeraTypeFilter: [for (final e in pokemonsTeraTypeFilter) e],
+        configKeyPokemonsMoveFilter: [for (final e in pokemonsMoveFilter) e],
+        configKeyPokemonsSexFilter: [for (final e in pokemonsSexFilter) e.index],
+        configKeyPokemonsAbilityFilter: [for (final e in pokemonsAbilityFilter) e],
+        configKeyPokemonsTemperFilter: [for (final e in pokemonsTemperFilter) e],
+      }
+    );
+    await _saveDataFile.writeAsString(jsonText);
+  }
+
   int getUniqueMyPokemonID() {
     int ret = 1;
     for (final e in myPokemonIDs) {
@@ -2549,6 +2303,14 @@ class PokeDB {
       partyDb = await openDatabase(partyDBPath, readOnly: false);
     }
 
+    // 既存パーティの上書きなら、各ポケモンの被参照カウントをデクリメント
+    int index = parties.indexWhere((element) => element.id == party.id);
+    if (index >= 0) {
+      for (int i = 0; i < parties[index].pokemonNum; i++) {
+        parties[index].pokemons[i]!.refCount--;
+      }
+    }
+
     // パーティ内ポケモンの被参照カウントをインクリメント
     for (int i = 0; i < party.pokemonNum; i++) {
       party.pokemons[i]!.refCount++;
@@ -2665,8 +2427,14 @@ class PokeDB {
       battleDb = await openDatabase(battleDBPath, readOnly: false);
     }
 
+    // 既存対戦の上書きなら、対戦内パーティの被参照カウントをデクリメント
+    int index = battles.indexWhere((element) => element.id == battle.id);
+    if (index >= 0) {
+      battles[index].ownParty.refCount--;
+      battles[index].opponentParty.refCount--;
+    }
+
     // 対戦内パーティの被参照カウントをインクリメント
-    // TODO:毎回やってたらダメ
     battle.ownParty.refCount++;
     battle.opponentParty.refCount++;
 
@@ -2701,7 +2469,17 @@ class PokeDB {
     
     // 登録対戦リストから削除
     for (final e in ids) {
-      battles.removeWhere((element) => element.id == e);
+      final battleIdx = battles.indexWhere((element) => element.id == e);
+      // 対戦内パーティおよびポケモンの被参照カウントをデクリメント
+      for (int j = 0; j < battles[battleIdx].ownParty.pokemonNum; j++) {
+        battles[battleIdx].ownParty.pokemons[j]!.refCount--;
+      }
+      battles[battleIdx].ownParty.refCount--;
+      for (int j = 0; j < battles[battleIdx].opponentParty.pokemonNum; j++) {
+        battles[battleIdx].opponentParty.pokemons[j]!.refCount--;
+      }
+      battles[battleIdx].opponentParty.refCount--;
+      battles.removeAt(battleIdx);
     }
 
     // DBのIDリストから削除

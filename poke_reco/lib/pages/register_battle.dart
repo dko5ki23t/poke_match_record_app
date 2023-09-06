@@ -46,8 +46,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   final move1Controller = TextEditingController();
   final move2Controller = TextEditingController();
-
   final hp1Controller = TextEditingController();
+  final hp2Controller = TextEditingController();
 
   final beforeMoveExpandController = ExpandableController(initialExpanded: true);
   final moveExpandController = ExpandableController(initialExpanded: true);
@@ -510,8 +510,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1]!,
                 widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1]!,
                 move1Controller, move2Controller,
-                hp1Controller, beforeMoveExpandController,
+                hp1Controller, hp2Controller, beforeMoveExpandController,
                 moveExpandController, afterMoveExpandController,
+                appState,
               ),
             ),
           ],
@@ -527,7 +528,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: widget.isNew ? title : Text('バトル編集'),
+        title: title,
         actions: [
           TextButton(
             onPressed: nextPressed,

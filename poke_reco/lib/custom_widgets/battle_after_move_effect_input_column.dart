@@ -1,23 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/poke_effect.dart';
 
-class BattleTurnEffectInputColumn extends Column {
-  // TODO:これでいける？
-  static int editingIndex = 0;
-  static bool lockEditTargetChange = false;
-  
-  BattleTurnEffectInputColumn(
+class BattleAfterMoveEffectInputColumn extends Column {
+  BattleAfterMoveEffectInputColumn(
     void Function() setState,
     ThemeData theme,
     Battle battle,
     Turn turn,
     List<TurnEffect> turnEffects,
+    MyAppState appState,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
       for (int i = 0; i < turnEffects.length; i++)
-        i+1 == editingIndex ?
+        i+1 == appState.afterMoveEffectEditingIndex ?
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -35,8 +34,8 @@ class BattleTurnEffectInputColumn extends Column {
                     IconButton(
                       icon: Icon(Icons.check),
                       onPressed: turnEffects[i].isValid() ? () {
-                        lockEditTargetChange = false;
-                        editingIndex = 0;
+                        appState.afterMoveEffectLock = false;
+                        appState.afterMoveEffectEditingIndex = 0;
                         turn.updateCurrentStates(battle.ownParty, battle.opponentParty);
                         setState();
                       } : null,
@@ -45,8 +44,8 @@ class BattleTurnEffectInputColumn extends Column {
                       icon: Icon(Icons.close),
                       onPressed: () {
                         turnEffects.removeAt(i);
-                        lockEditTargetChange = false;
-                        editingIndex = 0;
+                        appState.afterMoveEffectLock = false;
+                        appState.afterMoveEffectEditingIndex = 0;
                         turn.updateCurrentStates(battle.ownParty, battle.opponentParty);
                         setState();
                       },
@@ -109,6 +108,8 @@ class BattleTurnEffectInputColumn extends Column {
                   ),
                 ],
               ),
+              SizedBox(height: 10,),
+              turnEffects[i].extraInputWidget(setState),
             ],
           ),
         ) :
@@ -122,17 +123,17 @@ class BattleTurnEffectInputColumn extends Column {
             child: Center(child: Text('処理${i+1}')),
           ),
           onPressed: () {
-            if (!lockEditTargetChange) editingIndex = i+1;
+            if (!appState.afterMoveEffectLock) appState.afterMoveEffectEditingIndex = i+1;
             setState();
           },
         ),
       // 処理追加ボタン
       TextButton(
-        onPressed: turn.canAddBeforemoveEffects() && !lockEditTargetChange ?
+        onPressed: turn.canAddBeforemoveEffects() && !appState.afterMoveEffectLock ?
           () {
-            lockEditTargetChange = true;
+            appState.afterMoveEffectLock = true;
             turnEffects.add(TurnEffect()..effect = EffectType.ability);
-            editingIndex = turnEffects.length;
+            appState.afterMoveEffectEditingIndex = turnEffects.length;
             setState();
           } : null,
         child: Container(

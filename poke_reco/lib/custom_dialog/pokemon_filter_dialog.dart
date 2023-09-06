@@ -1,21 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/tool.dart';
 
 class PokemonFilterDialog extends StatefulWidget {
-  final void Function(
+  final Future<void> Function (
     List<Owner> ownerFilter,
     List<int> typeFilter,
-    List<int> teraTypeFilter) onOK;
+    List<int> teraTypeFilter,
+    List<int> moveFilter,
+    List<Sex> sexFilter,
+    List<int> abilityFilter,
+    List<int> temperFilter) onOK;
   final PokeDB pokeData;
   final List<Owner> ownerFilter;
   final List<int> typeFilter;
   final List<int> teraTypeFilter;
+  final List<int> moveFilter;
+  final List<Sex> sexFilter;
+  final List<int> abilityFilter;
+  final List<int> temperFilter;
 
   const PokemonFilterDialog(
     this.pokeData,
     this.ownerFilter,
     this.typeFilter,
     this.teraTypeFilter,
+    this.moveFilter,
+    this.sexFilter,
+    this.abilityFilter,
+    this.temperFilter,
     this.onOK,
     {Key? key}) : super(key: key);
 
@@ -25,9 +39,23 @@ class PokemonFilterDialog extends StatefulWidget {
 
 class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   bool isFirstBuild = true;
+  bool ownerExpanded = true;
+  bool typeExpanded = true;
+  bool teraTypeExpanded = true;
+  bool moveExpanded = true;
+  bool sexExpanded = true;
+  bool abilityExpanded = true;
+  bool temperExpanded = true;
   List<Owner> ownerFilter = [];
   List<int> typeFilter = [];
   List<int> teraTypeFilter = [];
+  List<int> moveFilter = [];
+  List<Sex> sexFilter = [];
+  List<int> abilityFilter = [];
+  List<int> temperFilter = [];
+  TextEditingController moveController = TextEditingController();
+  TextEditingController abilityController = TextEditingController();
+  TextEditingController temperController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +63,10 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
       ownerFilter = [...widget.ownerFilter];
       typeFilter = [...widget.typeFilter];
       teraTypeFilter = [...widget.teraTypeFilter];
+      moveFilter = [...widget.moveFilter];
+      sexFilter = [...widget.sexFilter];
+      abilityFilter = [...widget.abilityFilter];
+      temperFilter = [...widget.temperFilter];
       isFirstBuild = false;
     }
 
@@ -43,11 +75,27 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
       content: SingleChildScrollView(
         child: Column(
           children: [
-            Text('作成者'),
+            GestureDetector(
+              onTap: () => setState(() {
+                ownerExpanded = !ownerExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('作成者'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ownerExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
             const Divider(
               height: 10,
               thickness: 1,
             ),
+            ownerExpanded ?
             ListTile(
               title: Text('自分のポケモン'),
               leading: Checkbox(
@@ -64,7 +112,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   });
                 },
               ),
-            ),
+            ) : Container(),
+            ownerExpanded ?
             ListTile(
               title: Text('対戦相手のポケモン'),
               leading: Checkbox(
@@ -81,13 +130,29 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   });
                 },
               ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                typeExpanded = !typeExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('タイプ'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: typeExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
             ),
-            Text('タイプ'),
             const Divider(
               height: 10,
               thickness: 1,
             ),
             for (final type in widget.pokeData.types)
+            typeExpanded ?
             ListTile(
               title: Row(
                 children: [
@@ -109,7 +174,303 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   });
                 },
               ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                teraTypeExpanded = !teraTypeExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('テラスタイプ'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: teraTypeExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
             ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (final type in widget.pokeData.types)
+            teraTypeExpanded ?
+            ListTile(
+              title: Row(
+                children: [
+                  type.displayIcon,
+                  Text(type.displayName)
+                ],
+              ),
+              leading: Checkbox(
+                value: teraTypeFilter.contains(type.id),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    if (value == true) {
+                      teraTypeFilter.add(type.id);
+                    }
+                    else {
+                      teraTypeFilter.remove(type.id);
+                    }
+                  });
+                },
+              ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                moveExpanded = !moveExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('わざ'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: moveExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (var moveID in moveFilter)
+              moveExpanded ?
+              ListTile(
+                title: Text(widget.pokeData.moves[moveID]!.displayName),
+                leading: Checkbox(
+                  value: moveFilter.contains(moveID),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      if (value == true) {
+                        moveFilter.add(moveID);
+                      }
+                      else {
+                        moveFilter.remove(moveID);
+                      }
+                    });
+                  },
+                ),
+              ) : Container(),
+            moveExpanded ?
+            ListTile(
+              title: TypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: moveController,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: 'わざ追加',
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Move> matches = [];
+                  matches.addAll(widget.pokeData.moves.values);
+                  matches.removeWhere((element) => element.id == 0);
+                  matches.retainWhere((s){
+                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(suggestion.displayName),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  moveController.text = '';
+                  moveFilter.add(suggestion.id);
+                  setState(() {});
+                },
+              ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                sexExpanded = !sexExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('せいべつ'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: sexExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (var type in Sex.values)
+              sexExpanded ?
+              ListTile(
+                title: type.displayIcon,
+                leading: Checkbox(
+                  value: sexFilter.contains(type),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      if (value == true) {
+                        sexFilter.add(type);
+                      }
+                      else {
+                        sexFilter.remove(type);
+                      }
+                    });
+                  },
+                ),
+              ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                abilityExpanded = !abilityExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('とくせい'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: abilityExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (var abilityID in abilityFilter)
+              abilityExpanded ?
+              ListTile(
+                title: Text(widget.pokeData.abilities[abilityID]!.displayName),
+                leading: Checkbox(
+                  value: abilityFilter.contains(abilityID),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      if (value == true) {
+                        abilityFilter.add(abilityID);
+                      }
+                      else {
+                        abilityFilter.remove(abilityID);
+                      }
+                    });
+                  },
+                ),
+              ) : Container(),
+            abilityExpanded ?
+            ListTile(
+              title: TypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: abilityController,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: 'とくせい追加',
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Ability> matches = [];
+                  matches.addAll(widget.pokeData.abilities.values);
+                  matches.removeWhere((element) => element.id == 0);
+                  matches.retainWhere((s){
+                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(suggestion.displayName),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  abilityController.text = '';
+                  abilityFilter.add(suggestion.id);
+                  setState(() {});
+                },
+              ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                temperExpanded = !temperExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('せいかく'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: temperExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (var temperID in temperFilter)
+              temperExpanded ?
+              ListTile(
+                title: Text(widget.pokeData.tempers[temperID]!.displayName),
+                leading: Checkbox(
+                  value: temperFilter.contains(temperID),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      if (value == true) {
+                        temperFilter.add(temperID);
+                      }
+                      else {
+                        temperFilter.remove(temperID);
+                      }
+                    });
+                  },
+                ),
+              ) : Container(),
+            temperExpanded ?
+            ListTile(
+              title: TypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: temperController,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: 'せいかく追加',
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Temper> matches = [];
+                  matches.addAll(widget.pokeData.tempers.values);
+                  matches.removeWhere((element) => element.id == 0);
+                  matches.retainWhere((s){
+                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(suggestion.displayName),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  temperController.text = '';
+                  temperFilter.add(suggestion.id);
+                  setState(() {});
+                },
+              ),
+            ) : Container(),
           ],
         ),
       ),
@@ -123,9 +484,13 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
           ),
           GestureDetector(
             child: Text('OK'),
-            onTap: () {
+            onTap: () async {
               Navigator.pop(context);
-              widget.onOK(ownerFilter, typeFilter, teraTypeFilter);
+              await widget.onOK(
+                ownerFilter, typeFilter, teraTypeFilter,
+                moveFilter, sexFilter, abilityFilter,
+                temperFilter,
+              );
             },
           ),
         ],

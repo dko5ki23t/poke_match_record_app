@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/poke_effect.dart';
+
+enum TurnMoveType {
+  none,
+  move,
+  change,
+  surrender,
+}
 
 enum MoveHit {
   hit,
@@ -22,6 +30,8 @@ enum MoveAdditionalEffect {
 
 class TurnMove {
   PlayerType playerType = PlayerType.none;
+  TurnMoveType type = TurnMoveType.none;
+  PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
   Move move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // へんかわざの成功/失敗
   List<MoveHit> moveHits = [MoveHit.hit];   // 命中した/急所/外した
@@ -34,6 +44,8 @@ class TurnMove {
   TurnMove copyWith() =>
     TurnMove()
     ..playerType = playerType
+    ..type = type
+    ..teraType = teraType
     ..move = move.copyWith()
     ..isSuccess = isSuccess
     ..moveHits = [...moveHits]
@@ -187,7 +199,7 @@ class TurnMove {
       // 追加効果
       Row effectInputRow = Row();
       switch (move.effect.id) {
-        case 71:
+        case 71:  // すばやさを1段階下げる
           effectInputRow = Row(
             children: [
               Expanded(
@@ -217,6 +229,7 @@ class TurnMove {
             ],
           );
           break;
+        case 28:    // 2-3ターン連続でこうげきし、自身はこんらんする
         case 148:   // 相手が「あなをほる」状態でも命中し、ダメージ2倍
         default:
           break;
@@ -252,6 +265,7 @@ class TurnMove {
               ),
             ],
           );
+        case 8:       // ランダムな相手1体
         case 9:       // 場の他のポケモン全員
         case 10:      // 選択した相手
           return Column(
@@ -290,13 +304,13 @@ class TurnMove {
                   SizedBox(width: 10,),
                   Expanded(
                     flex: 5,
-                    child: DropdownButtonFormField(
+                    child: DropdownButtonFormField<MoveEffectiveness>(
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: UnderlineInputBorder(),
                         labelText: '効果',
                       ),
-                      items: <DropdownMenuItem>[
+                      items: <DropdownMenuItem<MoveEffectiveness>>[
                         DropdownMenuItem(
                           value: MoveEffectiveness.normal,
                           child: Text('（テキストなし）', overflow: TextOverflow.ellipsis,),
@@ -315,10 +329,10 @@ class TurnMove {
                         ),
                       ],
                       value: moveEffectiveness,
-                      onChanged: (value) {
-                        moveEffectiveness = value;
+                      onChanged: moveHits[0] != MoveHit.notHit ? (value) {
+                        moveEffectiveness = value as MoveEffectiveness;
                         setState();
-                      },
+                      } : null,
                     ),
                   ),
                 ],
@@ -331,9 +345,10 @@ class TurnMove {
                   Expanded(
                     child: NumberInputWithIncrementDecrement(
                       controller: hpController,
-                      numberFieldDecoration: const InputDecoration(
+                      numberFieldDecoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'HP'
+                        labelText: playerType == PlayerType.me ? 
+                          '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
                       ),
                       widgetContainerDecoration: const BoxDecoration(
                         border: null,
@@ -341,6 +356,7 @@ class TurnMove {
                       initialValue: playerType == PlayerType.me ? opponentPokemonState.hpPercent : ownPokemonState.hp,
                       min: 0,
                       max: playerType == PlayerType.me ? 100 : ownPokemon.h.real,
+                      enabled: moveHits[0] != MoveHit.notHit,
                       onIncrement: (value) {
                         if (playerType == PlayerType.me) {
                           percentDamage = (opponentPokemonState.hpPercent - value) as int;
@@ -384,18 +400,265 @@ class TurnMove {
 
   void clear() {
     playerType = PlayerType.none;
+    type = TurnMoveType.none;
+    teraType = PokeType.createFromId(0);
     move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+    isSuccess = true;
+    moveHits = [MoveHit.hit];
+    moveEffectiveness = MoveEffectiveness.normal;
+    realDamage = 0;
+    percentDamage = 0;
+    moveAdditionalEffect = MoveAdditionalEffect.none;
+    changePokemonIndex = null;
+  }
+
+  // SQLに保存された文字列からTurnMoveをパース
+  static TurnMove deserialize(dynamic str, String split1, String split2) {
+    TurnMove turnMove = TurnMove();
+    final turnMoveElements = str.split(split1);
+    // playerType
+    switch (int.parse(turnMoveElements[0])) {
+      case 1:
+        turnMove.playerType = PlayerType.me;
+        break;
+      case 2:
+        turnMove.playerType = PlayerType.opponent;
+        break;
+      default:
+        turnMove.playerType = PlayerType.none;
+        break;
+    }
+    // type
+    switch (int.parse(turnMoveElements[1])) {
+      case 1:
+        turnMove.type = TurnMoveType.move;
+        break;
+      case 2:
+        turnMove.type = TurnMoveType.change;
+        break;
+      case 3:
+        turnMove.type = TurnMoveType.surrender;
+        break;
+      case 0:
+      default:
+        turnMove.type = TurnMoveType.none;
+        break;
+    }
+    // teraType
+    turnMove.teraType = PokeType.createFromId(int.parse(turnMoveElements[2]));
+    // move
+    var moveElements = turnMoveElements[3].split(split2);
+    turnMove.move = Move(
+      int.parse(moveElements[0]),
+      moveElements[1],
+      PokeType.createFromId(int.parse(moveElements[2])),
+      int.parse(moveElements[3]),
+      int.parse(moveElements[4]),
+      int.parse(moveElements[5]),
+      Target(int.parse(moveElements[6])),
+      DamageClass(int.parse(moveElements[7])),
+      MoveEffect(int.parse(moveElements[8])),
+      int.parse(moveElements[9]),
+      int.parse(moveElements[10]),
+    );
+    // isSuccess
+    turnMove.isSuccess = int.parse(turnMoveElements[4]) != 0;
+    // moveHits
+    var moveHits = turnMoveElements[5].split(split2);
+    for (var moveHitsElement in moveHits) {
+      if (moveHitsElement == '') break;
+      MoveHit t = MoveHit.hit;
+      if (int.parse(moveHitsElement) == 1) {
+        t = MoveHit.critical;
+      }
+      else if (int.parse(moveHitsElement) == 2) {
+        t = MoveHit.notHit;
+      }
+      turnMove.moveHits.add(t);
+    }
+    // moveEffectiveness
+    switch (int.parse(turnMoveElements[6])) {
+      case 1:
+        turnMove.moveEffectiveness = MoveEffectiveness.great;
+        break;
+      case 2:
+        turnMove.moveEffectiveness = MoveEffectiveness.notGood;
+        break;
+      case 3:
+        turnMove.moveEffectiveness = MoveEffectiveness.noEffect;
+        break;
+      default:
+        turnMove.moveEffectiveness = MoveEffectiveness.normal;
+        break;
+    }
+    // realDamage
+    turnMove.realDamage = int.parse(turnMoveElements[7]);
+    // percentDamage
+    turnMove.percentDamage = int.parse(turnMoveElements[8]);
+    // moveAdditionalEffect
+    switch (int.parse(turnMoveElements[9])) {
+      case 1:
+        turnMove.moveAdditionalEffect = MoveAdditionalEffect.speedDown;
+        break;
+      default:
+        turnMove.moveAdditionalEffect = MoveAdditionalEffect.none;
+        break;
+    }
+    // changePokemonIndex
+    if (turnMoveElements[10] != '') {
+      turnMove.changePokemonIndex = int.parse(turnMoveElements[10]);
+    }
+
+    return turnMove;
+  }
+
+  // SQL保存用の文字列に変換
+  String serialize(String split1, String split2) {
+    String ret = '';
+    // playerType
+    switch (playerType) {
+      case PlayerType.me:
+        ret += '1';
+        ret += split1;
+        break;
+      case PlayerType.opponent:
+        ret += '2';
+        ret += split1;
+        break;
+      default:
+        ret += '0';
+        ret += split1;
+        break;
+    }
+    // type
+    switch (type) {
+      case TurnMoveType.move:
+        ret += '1';
+        ret += split1;
+        break;
+      case TurnMoveType.change:
+        ret += '2';
+        ret += split1;
+        break;
+      case TurnMoveType.surrender:
+        ret += '3';
+        ret += split1;
+        break;
+      case TurnMoveType.none:
+      default:
+        ret += '0';
+        ret += split1;
+        break;
+    }
+    // teraType
+    ret += teraType.id.toString();
+    ret += split1;
+    // move
+      // id
+      ret += move.id.toString();
+      ret += split2;
+      // displayName
+      ret += move.displayName;
+      ret += split2;
+      // type
+      ret += move.type.id.toString();
+      ret += split2;
+      // power
+      ret += move.power.toString();
+      ret += split2;
+      // accuracy
+      ret += move.accuracy.toString();
+      ret += split2;
+      // priority
+      ret += move.priority.toString();
+      ret += split2;
+      // target
+      ret += move.target.id.toString();
+      ret += split2;
+      // damageClass
+      ret += move.damageClass.id.toString();
+      ret += split2;
+      // effect
+      ret += move.effect.id.toString();
+      ret += split2;
+      // effectChance
+      ret += move.effectChance.toString();
+      ret += split2;
+      // pp
+      ret += move.pp.toString();
+
+    ret += split1;
+    // isSuccess
+    ret += isSuccess ? '1' : '0';
+    ret += split1;
+    // moveHits
+    for (final moveHit in moveHits) {
+      switch (moveHit) {
+        case MoveHit.critical:
+          ret += '1';
+          break;
+        case MoveHit.notHit:
+          ret += '2';
+          break;
+        default:
+          ret += '0';
+          break;
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // moveEffectiveness
+    switch (moveEffectiveness) {
+      case MoveEffectiveness.great:
+        ret += '1';
+        break;
+      case MoveEffectiveness.notGood:
+        ret += '2';
+        break;
+      case MoveEffectiveness.noEffect:
+        ret += '3';
+        break;
+      default:
+        ret += '0';
+        break;
+    }
+    ret += split1;
+    // realDamage
+    ret += realDamage.toString();
+    ret += split1;
+    // percentDamage
+    ret += percentDamage.toString();
+    ret += split1;
+    // moveAdditionalEffect
+    switch (moveAdditionalEffect) {
+      case MoveAdditionalEffect.speedDown:
+        ret += '1';
+        break;
+      default:
+        ret += '0';
+        break;
+    }
+    ret += split1;
+    // changePokemonIndex
+    if (changePokemonIndex != null) {
+      ret += changePokemonIndex.toString();
+    }
+
+    return ret;
   }
 
   bool isValid() {
-    // ポケモン交換なら
-    if (changePokemonIndex != null) {
-      return true;
-    }
-    else {
-      return
+    switch (type) {
+      case TurnMoveType.move:
+        return
         playerType != PlayerType.none &&
         move.id != 0;
+      case TurnMoveType.change:
+        return changePokemonIndex != null;
+      case TurnMoveType.surrender:
+        return true;
+      default:
+        return false;
     }
   }
 }

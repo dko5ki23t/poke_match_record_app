@@ -30,9 +30,6 @@ class PokemonsPageState extends State<PokemonsPage> {
   bool isEditMode = false;
   List<bool>? checkList;
   Pokemon? selectedPokemon;
-  List<Owner> ownerFilter = [Owner.mine];
-  List<int> typeFilter = [for (int i = 1; i < 19; i++) i];
-  List<int> teraTypeFilter = [for (int i = 1; i < 19; i++) i];
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -44,10 +41,30 @@ class PokemonsPageState extends State<PokemonsPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var pokeData = appState.pokeData;
+    var ownerFilter = pokeData.pokemonsOwnerFilter;
+    var typeFilter = pokeData.pokemonsTypeFilter;
+    var teraTypeFilter = pokeData.pokemonsTeraTypeFilter;
+    var moveFilter = pokeData.pokemonsMoveFilter;
+    var sexFilter = pokeData.pokemonsSexFilter;
+    var abilityFilter = pokeData.pokemonsAbilityFilter;
+    var temperFilter = pokeData.pokemonsTemperFilter;
     var pokemons = appState.pokemons;
     var filteredPokemons = pokemons.where((element) => ownerFilter.contains(element.owner)).toList();
     filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.type1.id) || typeFilter.contains(element.type2?.id)).toList();
-    var pokeData = appState.pokeData;
+    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.teraType.id)).toList();
+    if (moveFilter.isNotEmpty) {
+      filteredPokemons = filteredPokemons.where((element) =>
+        moveFilter.contains(element.move1.id) || moveFilter.contains(element.move2?.id) ||
+        moveFilter.contains(element.move3?.id) || moveFilter.contains(element.move4?.id)).toList();
+    }
+    filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.sex)).toList();
+    if (abilityFilter.isNotEmpty) {
+      filteredPokemons = filteredPokemons.where((element) => abilityFilter.contains(element.ability.id)).toList();
+    }
+    if (temperFilter.isNotEmpty) {
+      filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.temper.id)).toList();
+    }
     appState.onBackKeyPushed = (){};
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
@@ -153,12 +170,27 @@ class PokemonsPageState extends State<PokemonsPage> {
                               ownerFilter,
                               typeFilter,
                               teraTypeFilter,
-                              (f1, f2, f3) {
-                                setState(() {
-                                  ownerFilter = f1;
-                                  typeFilter = f2;
-                                  teraTypeFilter = f3;
-                                });
+                              moveFilter,
+                              sexFilter,
+                              abilityFilter,
+                              temperFilter,
+                              (f1, f2, f3, f4, f5, f6, f7) async {
+                                ownerFilter.clear();
+                                typeFilter.clear();
+                                teraTypeFilter.clear();
+                                moveFilter.clear();
+                                sexFilter.clear();
+                                abilityFilter.clear();
+                                temperFilter.clear();
+                                ownerFilter.addAll(f1);
+                                typeFilter.addAll(f2);
+                                teraTypeFilter.addAll(f3);
+                                moveFilter.addAll(f4);
+                                sexFilter.addAll(f5);
+                                abilityFilter.addAll(f6);
+                                temperFilter.addAll(f7);
+                                await pokeData.saveConfig();
+                                setState(() {});
                               },
                             );
                           }
