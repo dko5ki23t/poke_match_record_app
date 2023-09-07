@@ -151,6 +151,7 @@ const int pokemonMinIndividual = 0;
 const int pokemonMaxIndividual = 31;
 const int pokemonMinEffort = 0;
 const int pokemonMaxEffort = 252;
+const int pokemonMaxEffortTotal = 510;
 
 /*
 pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
@@ -373,6 +374,56 @@ class AbilityTiming {
   none(0),
   pokemonAppear(1),     // ポケモン登場時
   defeatOpponent(2),    // 相手を倒したとき
+  attacked(3),          // こうげきわざを受けた時
+  everyTurnEnd(4),      // 毎ターン終了時
+  HPMaxAndAttacked(5),  // HPが満タンでこうげきを受けた時
+  blasted(6),           // ばくはつ系のわざ、とくせいが発動したとき
+  paralysised(7),       // まひするわざ、とくせいを受けた時
+  sandstormed(8),       // 天気がすなあらしのとき
+  directAttacked(9),    // 直接攻撃を受けた時
+  electriced(10),       // でんきタイプのわざを受けた時
+  watered(11),          // みずタイプのわざを受けた時
+  attractedTauntedIntimidated(12),    // メロメロ/ゆうわく/ちょうはつ/いかくの効果を受けたとき
+  weather(13),          // 天気があるとき
+  moving(14),           // わざを使うとき
+  sleeped(15),          // ねむり・ねむけの効果を受けた時
+  poisoned(16),         // どく・もうどくの効果を受けた時
+  fired(17),            // ほのおタイプのわざを受けた時
+  confusedIntimidated(18),  // こんらん/いかくの効果を受けた時
+  afterActedEveryTurnEnd(19),   // 1度でも行動した後毎ターン終了時
+  changeForced(20),     // こうたいわざやレッドカードによるこうたいを強制されたとき
+  notGreatAttacked(21), // 効果ばつぐん以外のタイプのこうげきざわを受けた時
+  groundFieldEffected(22),  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
+  poisonedParalysisedBurnedByOppositeMove(23),    // 相手から受けた技でどく/まひ/やけど状態にされたとき
+  statChangedByNotMyself(24),   // 自身以外の効果によって能力変化が起きるとき
+  change(25),           // 当該ポケモンを交代するとき
+  electricUse(26),      // 自分以外のポケモンがでんきわざを使ったとき
+  attack(27),           // こうげきわざを使うとき
+  rained(28),           // 天気があめのとき
+  sunny(29),            // 天気が晴れのとき
+  pokemonAppearAndChanged(30),     // ポケモン登場時、ポケモン交代時(場にいるときのみの効果)
+  always(31),           // 常に発動(バトル開始時に1度発動とする)
+  flinchedIntimidated(32),  // ひるみやいかくを受けた時
+  frozen(33),           // こおり状態になったとき
+  burned(34),           // やけど状態になったとき
+  moveUsed(35),         // わざを受けた時
+  icedFired(36),        // こおり/ほのおタイプのこうげき技を受けた時
+  accuracyDownedAttack(37),    // 命中率が下がるとき、こうげきするとき
+  itemLostByOpponent(38),   // もちものを奪われたり失ったりするとき
+  ailment(39),          // 状態異常のとき
+  drained(40),          // HP吸収技を受けた時
+  HP033(41),            // HPが1/3以下のとき
+  recoilAttack(42),     // 反動ダメージを受ける技を使ったとき
+  confusedAttacked(43), // こんらん状態でこうげきを受けた時
+  flinched(44),         // ひるんだとき
+  snowed(45),           // 天気がゆきのとき
+  HP025(46),            // HPが1/2のとき
+  criticaled(47),       // こうげきが急所に当たった時
+  itemLost(48),         // 場に出た後にもちものを失ったとき、再度もちものを得た時
+  firedBurned(49),      // ほのお技を受けるとき、やけどダメージを負うとき
+  fireWaterAttackedSunnyRained(50),   // ほのお/みずタイプのこうげきを受けた時、天気が晴れ/あめのとき
+  punchAttack(51),      // パンチ技を使用するとき
+  poisonDamage(52),     // どく/もうどくでダメージを負うとき
   ;
 */
 
@@ -388,20 +439,20 @@ class Target {
   none(0),
   specificMove(1),
   selectedPokemonMeFirst(2),
-  ally(3),
-  usersField(4),
-  userOrAlly(5),
-  opponentsField(6),
+  ally(3),                      // 味方
+  usersField(4),                // 自分の場
+  userOrAlly(5),                // 自分自身or味方
+  opponentsField(6),            // 相手の場
   user(7),                      // 自分自身
-  randomOpponent(8),
-  allOtherPokemon(9),
+  randomOpponent(8),            // ランダムな相手
+  allOtherPokemon(9),           // 他のすべてのポケモン
   selectedPokemon(10),          // 選択した相手
-  allOpponents(11),
-  entireField(12),
-  userAndAllies(13),
-  allPokemon(14),
-  allAllies(15),
-  faintingPokemon(16),
+  allOpponents(11),             // すべての相手ポケモン
+  entireField(12),              // 両者の場
+  userAndAllies(13),            // 自分自身とすべての味方
+  allPokemon(14),               // すべてのポケモン 
+  allAllies(15),                // すべての味方
+  faintingPokemon(16),          // ひんしになったポケモン
   ;
 */
 
@@ -431,6 +482,81 @@ class AbilityEffect {
   none(0),
   attackDown1(1),         // こうげき1段階ダウン
   attackUp1(2),           // こうげき1段階アップ
+  defenseDown1(3),        // ぼうぎょ1段階ダウン
+  defenseUp1(4),          // ぼうぎょ1段階アップ
+  specialAttackDown1(5),  // とくこう1段階ダウン
+  specialAttackUp1(6),    // とくこう1段階アップ
+  specialDefenseDown1(7), // とくぼう1段階ダウン
+  specialDefenseUp1(8),   // とくぼう1段階アップ
+  speedDown1(9),          // すばやさ1段階ダウン
+  speedUp1(10),           // すばやさ1段階アップ
+  evasionDown1(11),       // かいひ1段階ダウン
+  evasionUp1(12),         // かいひ1段階アップ
+  flinch(13),             // ひるませる
+  sunny(14),              // 天気を晴れにする
+  rain(15),               // 天気をあめにする
+  sandstorm(16),          // 天気をすなあらしにする
+  snow(17),               // 天気を雪にする
+  noCritical(18),         // 急所にあたらない
+  noDeath(19),            // 一撃必殺技を無効化、HP満タンならばHP1は残る
+  noExplode(20),          // ばくはつ系のわざ・とくせいが不発になる
+  noparalysised(21),      // まひにならない
+  sandVeil(22),           // 受ける技の命中率が0.8倍になる、すなあらしのダメージを受けない
+  paralysised(23),        // まひにさせる
+  voltRecover(24),        // でんきタイプわざを無効化、最大HP1/4分回復(小数点以下切り捨て)
+  waterRecover(25),       // 水タイプわざを無効化、最大HP1/4分回復(小数点以下切り捨て)
+  noEffect(26),           // 何も起きない(能力変化等無効)
+  noWeatherEffect(27),    // 天気の効果がなくなる
+  accuracy13(28),         // わざの命中率が1.3倍になる
+  oppositeMoveType(29),   // 受けたわざと同じタイプになる
+  flashFire(30),          // ほのおタイプわざを無効化、自身のほのおわざのこうげき、とくこうが1.5倍になる
+  noAdditionalEffect(31), // 追加効果を受けない
+  shadowTag(32),          // ゴーストタイプおよびかげふみをとくせいに持つポケモン以外はこうたい・にげるができない(場から交代すると効果は消える)
+  damage0125(33),         // 最大HPの1/8のダメージを与える(小数点以下切り捨て、ただし最小でも1)
+  noDamage(34),           // ダメージを受けない
+  poisonParalysisedSleep(35),   // どく/まひ/ねむり/のいずれかの状態にする
+  synchronoize(36),       // 相手にも自分と同じ状態異常を付与する
+  purge(37),              // 状態異常を回復する
+  lightningRod(38),       // でんきわざを受ける対象が自分になる。また、でんき技を無効化し、とくこうを1段階あげる。
+  additionalEffect2(39),  // 追加効果発動確率が2倍になる
+  speedUp2(40),           // すばやさが2倍になる
+  trace(41),              // 相手と同じとくせいにする(手持ちに戻るととくせいはトレースに戻る)
+  attackUp2(42),          // こうげきが2倍になる
+  poison(43),             // どくにさせる
+  magnetPull(44),         // はがねタイプ(ただしゴーストを含まない)ポケモンは交代・にげるができない
+  soundProof(45),         // 音技を無効化する
+  recover00625(46),       // 最大HPの1/16を回復する(小数点以下切り捨て)
+  PPdecreasePuls1(47),    // 消費PPの減りが1増える
+  thickFat(48),           // こうげき/とくこうを半減してダメージを計算する
+  earlyBird(49),          // ねむりの経過カウントを2消費する
+  burn(50),               // やけどにする
+  keenEye(51),            // 命中率が下がらない、回避率の変動を無視してこうげきする
+  pockUp(52),             // もちものを持っていない場合、他ポケモンが消費したどうぐを拾う
+  truant(53),             // 2ターンに1回しかわざを出せない
+  hustle(54),             // こうげきが1.5倍になるが、物理技の命中率が0.8倍になる
+  attract(55),            // 別の性別を持つ場合はメロメロにする
+  forecase(56),           // てんきに対応したタイプになる(晴れ→ほのお,あめ→みず,ゆき→こおり)
+  guts(57),               // こうげきが1.5倍になり、やけどによるダメージ半減効果を受けない
+  defense15(58),          // ぼうぎょが1.5倍になる
+  drainReverse(59),       // HP回復効果をダメージ効果に変える
+  grass15(60),            // くさタイプわざを使うときのこうげき・とくこうが1.5倍になる
+  fire15(61),             // ほのおタイプわざを使うときのこうげき・とくこうが1.5倍になる
+  water15(62),            // みずタイプわざを使うときのこうげき・とくこうが1.5倍になる
+  bug15(63),              // むしタイプわざを使うときのこうげき・とくこうが1.5倍になる
+  noRecoil(64),           // 反動ダメージを受けない
+  arenaTrap(65),          // 地面にいるゴーストタイプ以外のポケモンは交代/にげるができない
+  accracy05(66),          // 命中率が0.5倍になる
+  voltSpeedUp1(67),       // でんきタイプわざを無効化、すばやさが1段階あがる
+  rivalry(68),            // お互いの性別が同じならいりょくが1.25倍、異なれば0.75倍、どちらかが性別不明なら1倍になる
+  snowCloak(69),          // 受ける技の命中率が0.8倍になる、すなあらしのダメージを受けない
+  gluttony(70),           // HP1/4以下で発動するきのみを食べる
+  attackUp6(71),          // こうげきが6段階(最大)まで上がる
+  heatProof(72),          // ほのお技のダメージを半減する、やけどによるダメージが半減する
+  statChange2(73),        // 能力変化による変化を2倍にする
+  drySkin(74),            // みずタイプのわざを受ける→無効化、最大HPの1/4だけ回復。ほのおタイプのわざを受ける→ダメージ5/4倍。あめ状態→ターン終了時最大HPの1/8だけ回復。はれ状態→ターン終了時最大HPの1/8ダメージ。
+  download(75),           // 場に出た時の相手のぼうぎょ/とくぼうの値をもとに、こうげき/とくこうのうち有利なほうを1段階上げる
+  damage12(76),           // わざの威力を1.2倍にする
+  recover0125(77),        // 最大HPの1/8を回復する(小数点以下切り捨て)
   ;
 */
 
@@ -459,6 +585,7 @@ class Ability {
   final AbilityTiming timing;
   final Target target;
   final AbilityEffect effect;
+//  final int chance;               // 発動確率
 
   const Ability(
     this.id, this.displayName, this.timing, this.target, this.effect
@@ -710,18 +837,14 @@ class Pokemon {
   List<Move?> get moves => _moves;
   List<int?> get pps => _pps;
   bool get isValid {
-    if (
+    return (
       _name != '' &&
       (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
       _no >= pokemonMinNo && temper.id != 0 &&
       teraType.id != 0 &&
-      ability.id != 0 && _moves[0]!.id != 0
-    ) {
-      return true;
-    }
-    else {
-      return false;
-    }
+      ability.id != 0 && _moves[0]!.id != 0 &&
+      totalEffort() <= pokemonMaxEffortTotal
+    );
   }
 
   // setter
@@ -817,6 +940,16 @@ class Pokemon {
         _stats[i].effort = effort;
       }
     }
+  }
+
+  // 種族値の合計
+  int totalRace() {
+    return h.race + a.race + b.race + c.race + d.race + s.race;
+  }
+
+  // 努力値の合計
+  int totalEffort() {
+    return h.effort + a.effort + b.effort + c.effort + d.effort + s.effort;
   }
 
   // SQLite保存用
@@ -1047,6 +1180,13 @@ class Turn {
 
   bool canAddBeforemoveEffects() {
     for (final effect in beforeMoveEffects) {
+      if (!effect.isValid()) return false;
+    }
+    return true;
+  }
+
+  bool canAddAftermoveEffects() {
+    for (final effect in afterMoveEffects) {
       if (!effect.isValid()) return false;
     }
     return true;

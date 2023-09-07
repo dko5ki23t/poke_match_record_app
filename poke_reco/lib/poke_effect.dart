@@ -14,8 +14,9 @@ enum EffectType {
 
 enum PlayerType {
   none(0),
-  me(1),
-  opponent(2),
+  me(1),            // 自身
+  opponent(2),      // 相手
+  entireField(3),   // 全体の場(両者に影響あり)
   ;
 
   const PlayerType(this.id);
@@ -137,6 +138,9 @@ class TurnEffect {
       case 2:
         effect.playerType = PlayerType.opponent;
         break;
+      case 3:
+        effect.playerType = PlayerType.entireField;
+        break;
       default:
         effect.playerType = PlayerType.none;
         break;
@@ -176,6 +180,10 @@ class TurnEffect {
         ret += '2';
         ret += split1;
         break;
+      case PlayerType.entireField:
+        ret += '3';
+        ret += split1;
+        break;
       default:
         ret += '0';
         ret += split1;
@@ -206,5 +214,11 @@ class TurnEffect {
     ret += extraArg2.toString();
 
     return ret;
+  }
+
+  static void swap(List<TurnEffect> list, int idx1, int idx2) {
+    TurnEffect tmp = list[idx1].copyWith();
+    list[idx1] = list[idx2].copyWith();
+    list[idx2] = tmp;
   }
 }

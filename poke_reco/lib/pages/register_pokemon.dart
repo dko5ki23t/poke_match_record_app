@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:poke_reco/custom_dialog/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
+import 'package:poke_reco/custom_widgets/stat_total_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
@@ -28,6 +29,9 @@ class RegisterPokemonPage extends StatefulWidget {
 }
 
 class RegisterPokemonPageState extends State<RegisterPokemonPage> {
+  static const notAllowedStyle = TextStyle(
+    color: Colors.red,
+  );
   final pokeNameController = TextEditingController();     // TODO:デストラクタ？で解放しなくていいのか https://codewithandrea.com/articles/flutter-text-field-form-validation/
   final pokeNickNameController = TextEditingController();
   final pokeNoController = TextEditingController();
@@ -272,6 +276,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             widget.myPokemon.teraType = pokeData.types[value - 1];
                           });},
                           widget.myPokemon.teraType.id == 0 ? null : widget.myPokemon.teraType.id,
+                          isError: widget.myPokemon.no != 0 && widget.myPokemon.teraType.id == 0,
                         ),
                       ),
                     ],
@@ -335,9 +340,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeAheadField(
                           textFieldConfiguration: TextFieldConfiguration(
                             controller: pokeTemperController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               border: UnderlineInputBorder(),
-                              labelText: 'せいかく'
+                              labelText: 'せいかく',
+                              labelStyle: widget.myPokemon.no != 0 && widget.myPokemon.temper.id == 0 ? notAllowedStyle : null,
                             ),
                           ),
                           autoFlipDirection: true,
@@ -419,6 +425,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       statName: statNames[i],
                     ),
                     SizedBox(height: 10),
+                  // ステータスの合計値
+                  StatTotalRow(widget.myPokemon.totalRace(), widget.myPokemon.totalEffort()),
 
                   // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                   for (int i = 0; i < 4; i++)
@@ -461,6 +469,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         widget.myPokemon.moves[i-1] != null && widget.myPokemon.moves[i-1]!.id != 0,
                       ppEnabled: widget.myPokemon.moves[i] != null && widget.myPokemon.moves[i]!.id != 0,
                       initialPPValue: widget.myPokemon.pps[i] ?? 0,
+                      isError: i == 0 && widget.myPokemon.no != 0 && widget.myPokemon.move1.id == 0,
                     ),
                     SizedBox(height: 10),
 

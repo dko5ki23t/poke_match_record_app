@@ -424,6 +424,9 @@ class TurnMove {
       case 2:
         turnMove.playerType = PlayerType.opponent;
         break;
+      case 3:
+        turnMove.playerType = PlayerType.entireField;
+        break;
       default:
         turnMove.playerType = PlayerType.none;
         break;
@@ -523,6 +526,10 @@ class TurnMove {
         break;
       case PlayerType.opponent:
         ret += '2';
+        ret += split1;
+        break;
+      case PlayerType.entireField:
+        ret += '3';
         ret += split1;
         break;
       default:

@@ -13,6 +13,12 @@ int getSelectedNum(List<bool> checkList) {
   return checkList.where((bool val) => val).length;
 }
 
+void listShallowSwap(List list, int idx1, int idx2) {
+  var tmp = list[idx1];
+  list[idx1] = list[idx2];
+  list[idx2] = tmp;
+}
+
 // 引用：https://417.run/pg/flutter-dart/hiragana-to-katakana/
 String toKatakana(String str) {
   return str.replaceAllMapped(RegExp("[ぁ-ゔ]"),

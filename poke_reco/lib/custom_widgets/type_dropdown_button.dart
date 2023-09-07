@@ -2,17 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/poke_db.dart';
 
 class TypeDropdownButton extends DropdownButtonFormField {
+  static const notAllowedStyle = TextStyle(
+    color: Colors.red,
+  );
+
   TypeDropdownButton(
     PokeDB pokeData,
     String? labelText,
     void Function(dynamic)? onChanged,
     int? value,
+    {
+      bool isError = false,
+    }
   ) :
   super (
     isExpanded: true,
     decoration: InputDecoration(
       border: UnderlineInputBorder(),
       labelText: labelText,
+      labelStyle: isError ? notAllowedStyle : null,
+      
     ),
     items: <DropdownMenuItem>[
       for (var type in pokeData.types)

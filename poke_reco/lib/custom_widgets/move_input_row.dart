@@ -5,6 +5,10 @@ import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 
 class MoveInputRow extends Row {
+  static const notAllowedStyle = TextStyle(
+    color: Colors.red,
+  );
+
   MoveInputRow(
     PokeDB pokeData,
     Pokemon pokemon,
@@ -20,6 +24,7 @@ class MoveInputRow extends Row {
       bool moveEnabled = true,
       bool ppEnabled = true,
       num initialPPValue = 0,
+      bool isError = false,
     }
   ) : 
   super(
@@ -33,6 +38,7 @@ class MoveInputRow extends Row {
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
               labelText: labelMove,
+              labelStyle: isError ? notAllowedStyle : null,
               suffixIcon: moveController.text.isNotEmpty ? 
                 IconButton(
                   icon: Icon(Icons.clear),

@@ -75,6 +75,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+    const statAlphabets = ['A', 'B', 'C', 'D', 'S', 'E'];
+
+    // わざ選択前処理の数と、処理編集中を示す変数の数を同じにする
+    if (appState.beforeMoveEditing.length != widget.battle.turns[turnNum-1].beforeMoveEffects.length) {
+      appState.beforeMoveEditing = List.generate(widget.battle.turns[turnNum-1].beforeMoveEffects.length, (i) => false);
+    }
 
     battleNameController.text = widget.battle.name;
     opponentNameController.text = widget.battle.opponentName;
@@ -105,6 +111,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Widget lists;
     Widget title;
     void Function()? nextPressed;
+    void Function()? backPressed;
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
@@ -251,6 +258,30 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
+    void onturnBack() {
+      switch (pageType) {
+        case RegisterBattlePageType.firstPokemonPage:
+          pageType = RegisterBattlePageType.basePage;
+          setState(() {});
+          break;
+        case RegisterBattlePageType.turnPage:
+          turnNum--;
+          if (turnNum == 0) {
+            turnNum = 1;
+            pageType = RegisterBattlePageType.firstPokemonPage;
+          }
+          else {
+            pageType = RegisterBattlePageType.turnPage;
+          }
+          setState(() {});
+          break;
+        case RegisterBattlePageType.basePage:
+        default:
+          assert(false, 'invalid page move');
+          break;
+      }
+    }
+
     switch (pageType) {
       case RegisterBattlePageType.basePage:
         title = Text('バトル基本情報');
@@ -261,6 +292,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           opponentNameController,
           opponentPokemonController);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
+        backPressed = null;
         break;
       case RegisterBattlePageType.firstPokemonPage:
         title = Text('先頭ポケモン');
@@ -269,6 +301,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           widget.battle, theme, pokeData,
           checkedPokemons);
         nextPressed = (checkedPokemons.own != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
+        backPressed = () => onturnBack();
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('$turnNumターン目');
@@ -303,174 +336,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ),
                     ],
                   ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('A'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[0].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[0] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[0].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('A'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[0].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[0] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[0].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('B'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[1].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[1] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[1].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('B'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[1].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[1] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[1].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('C'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[2].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[2] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[2].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('C'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[2].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[2] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[2].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('D'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[3].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[3] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[3].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('D'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[3].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[3] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[3].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('S'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[4].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[4] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[4].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('S'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[4].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[4] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[4].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('E'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[5].abs(); i++)
-                          widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[5] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[5].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Text('E'),
-                          for (int i = 0; i < widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[5].abs(); i++)
-                          widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[5] > 0 ?
-                            Icon(Icons.arrow_drop_up, color: Colors.red) :
-                            Icon(Icons.arrow_drop_down, color: Colors.blue),
-                          for (int i = widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[5].abs(); i < 6; i++)
-                            Icon(Icons.minimize, color: Colors.grey),
-                        ],),
-                      ),
-                    ],
-                  ),
+                  // 各ステータス(ABCDSE)の変化
+                  for (int i = 0; i < 6; i++)
+                    _StatChangeViewRow(
+                      statAlphabets[i], widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[i],
+                      widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[i]
+                    ),
                 ],
               ),
             ) :
@@ -518,11 +389,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ],
         );
         nextPressed = () => onNext();
+        backPressed = () => onturnBack();
         break;
       default:
         title = Text('バトル登録');
         lists = Center();
         nextPressed = null;
+        backPressed = null;
         break;
     }
 
@@ -530,6 +403,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       appBar: AppBar(
         title: title,
         actions: [
+          TextButton(
+            onPressed: backPressed,
+            child: Text('前へ'),
+          ),
           TextButton(
             onPressed: nextPressed,
             child: Text('次へ'),
@@ -543,4 +420,40 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       body: lists,
     );
   }
+}
+
+class _StatChangeViewRow extends Row {
+  _StatChangeViewRow(
+    String label,
+    int ownStatChange,
+    int opponentStatChange,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          for (int i = 0; i < ownStatChange.abs(); i++)
+          ownStatChange > 0 ?
+            Icon(Icons.arrow_drop_up, color: Colors.red) :
+            Icon(Icons.arrow_drop_down, color: Colors.blue),
+          for (int i = ownStatChange.abs(); i < 6; i++)
+            Icon(Icons.minimize, color: Colors.grey),
+        ],),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          for (int i = 0; i < opponentStatChange.abs(); i++)
+          opponentStatChange > 0 ?
+            Icon(Icons.arrow_drop_up, color: Colors.red) :
+            Icon(Icons.arrow_drop_down, color: Colors.blue),
+          for (int i = opponentStatChange.abs(); i < 6; i++)
+            Icon(Icons.minimize, color: Colors.grey),
+        ],),
+      ),
+    ],
+  );
 }

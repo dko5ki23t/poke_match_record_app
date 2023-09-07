@@ -16,7 +16,6 @@ class BattleAfterMoveEffectInputColumn extends Column {
     mainAxisSize: MainAxisSize.min,
     children: [
       for (int i = 0; i < turnEffects.length; i++)
-        i+1 == appState.afterMoveEffectEditingIndex ?
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -73,9 +72,17 @@ class BattleAfterMoveEffectInputColumn extends Column {
                           value: PlayerType.opponent,
                           child: Text('${battle.opponentParty.pokemons[turn.currentOpponentPokemonIndex-1]!.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
                         ),
+                        DropdownMenuItem(
+                          value: PlayerType.entireField,
+                          child: Text('天気・フィールド', overflow: TextOverflow.ellipsis,),
+                        ),
                       ],
                       value: turnEffects[i].playerType == PlayerType.none ? null : turnEffects[i].playerType,
-                      onChanged: (value) {turnEffects[i].playerType = value; setState();},
+                      onChanged: (value) {
+                        turnEffects[i].playerType = value;
+                        turnEffects[i].effectId = 0;
+                        setState();
+                      },
                     ),
                   ),
                   SizedBox(width: 10,),
@@ -112,24 +119,10 @@ class BattleAfterMoveEffectInputColumn extends Column {
               turnEffects[i].extraInputWidget(setState),
             ],
           ),
-        ) :
-        TextButton(
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              border: Border.all(color: theme.primaryColor),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Center(child: Text('処理${i+1}')),
-          ),
-          onPressed: () {
-            if (!appState.afterMoveEffectLock) appState.afterMoveEffectEditingIndex = i+1;
-            setState();
-          },
         ),
       // 処理追加ボタン
       TextButton(
-        onPressed: turn.canAddBeforemoveEffects() && !appState.afterMoveEffectLock ?
+        onPressed: turn.canAddAftermoveEffects() && !appState.afterMoveEffectLock ?
           () {
             appState.afterMoveEffectLock = true;
             turnEffects.add(TurnEffect()..effect = EffectType.ability);
@@ -146,7 +139,7 @@ class BattleAfterMoveEffectInputColumn extends Column {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.add_circle),
-              Text('わざ選択前処理を追加'),
+              Text('わざ選択後処理を追加'),
             ],
           ),
         ),
