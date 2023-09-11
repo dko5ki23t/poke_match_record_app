@@ -50,8 +50,7 @@ class MyAppState extends ChangeNotifier {
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> beforeMoveEditing = [];
-  int afterMoveEffectEditingIndex = 0;
-  bool afterMoveEffectLock = false;
+  List<bool> afterMoveEditing = [];
 
   MyAppState(BuildContext context) {
     fetchPokeData();

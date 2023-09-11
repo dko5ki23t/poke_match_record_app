@@ -56,11 +56,11 @@ class TurnMove {
     ..changePokemonIndex = changePokemonIndex;
 
   void processMove(
-    Pokemon currentOwnPokemon,
-    PokemonState currentOwnPokemonState,
-    Pokemon currentOpponentPokemon,
-    PokemonState currentOpponentPokemonState,
-    Turn turn,
+    Party ownParty,
+    PokemonState ownPokemonState,
+    Party opponentPokemon,
+    PokemonState opponentPokemonState,
+    PhaseState state,
   )
   {
     if (playerType == PlayerType.none) return;
@@ -69,25 +69,23 @@ class TurnMove {
     if (changePokemonIndex != null) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       if (playerType == PlayerType.me) {
-        currentOwnPokemonState.statChanges = List.generate(6, (i) => 0);
-        turn.currentOwnPokemonIndex = changePokemonIndex!;
-        turn.changedOwnPokemon = true;
+        ownPokemonState.statChanges = List.generate(6, (i) => 0);
+        state.ownPokemonIndex = changePokemonIndex!;
       }
       else {
-        currentOpponentPokemonState.statChanges = List.generate(6, (i) => 0);
-        turn.currentOpponentPokemonIndex = changePokemonIndex!;
-        turn.changedOpponentPokemon = true;
+        opponentPokemonState.statChanges = List.generate(6, (i) => 0);
+        state.opponentPokemonIndex = changePokemonIndex!;
       }
       return;
     }
 
     if (move.id == 0) return;
 
-    PokemonState myState = currentOwnPokemonState;
-    PokemonState opponentState = currentOpponentPokemonState;
+    PokemonState myState = ownPokemonState;
+    PokemonState opponentState = opponentPokemonState;
     if (playerType == PlayerType.opponent) {
-      myState = currentOpponentPokemonState;
-      opponentState = currentOwnPokemonState;
+      myState = opponentPokemonState;
+      opponentState = ownPokemonState;
     }
 
     switch (move.damageClass.id) {
@@ -157,17 +155,17 @@ class TurnMove {
         break;
       case 2:     // ぶつり
         // ダメージを負わせる
-        opponentState.hp -= realDamage;
-        if (opponentState.hp < 0) opponentState.hp = 0;
-        opponentState.hpPercent -= percentDamage;
-        if (opponentState.hpPercent < 0) opponentState.hpPercent = 0;
+        opponentState.remainHP -= realDamage;
+        if (opponentState.remainHP < 0) opponentState.remainHP = 0;
+        opponentState.remainHPPercent -= percentDamage;
+        if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       case 3:     // とくしゅ
         // ダメージを負わせる
-        opponentState.hp -= realDamage;
-        if (opponentState.hp < 0) opponentState.hp = 0;
-        opponentState.hpPercent -= percentDamage;
-        if (opponentState.hpPercent < 0) opponentState.hpPercent = 0;
+        opponentState.remainHP -= realDamage;
+        if (opponentState.remainHP < 0) opponentState.remainHP = 0;
+        opponentState.remainHPPercent -= percentDamage;
+        if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       default:
         break;
@@ -353,32 +351,32 @@ class TurnMove {
                       widgetContainerDecoration: const BoxDecoration(
                         border: null,
                       ),
-                      initialValue: playerType == PlayerType.me ? opponentPokemonState.hpPercent : ownPokemonState.hp,
+                      initialValue: playerType == PlayerType.me ? opponentPokemonState.remainHPPercent : ownPokemonState.remainHP,
                       min: 0,
                       max: playerType == PlayerType.me ? 100 : ownPokemon.h.real,
                       enabled: moveHits[0] != MoveHit.notHit,
                       onIncrement: (value) {
                         if (playerType == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.hpPercent - value) as int;
+                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.hp - value) as int;
+                          realDamage = (ownPokemonState.remainHP - value) as int;
                         }
                       },
                       onDecrement: (value) {
                         if (playerType == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.hpPercent - value) as int;
+                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.hp - value) as int;
+                          realDamage = (ownPokemonState.remainHP - value) as int;
                         }
                       },
                       onChanged: (value) {
                         if (playerType == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.hpPercent - value) as int;
+                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.hp - value) as int;
+                          realDamage = (ownPokemonState.remainHP - value) as int;
                         }
                       },
                     ),

@@ -55,6 +55,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   CheckedPokemons checkedPokemons = CheckedPokemons();
   int turnNum = 1;
+  TurnPhase focusPhase = TurnPhase.beforeMove;   // どこもフォーカスしていないときはターンの最初とする
+  int focusPhaseIdx = 0;                        // 0は無効
 
   bool openStates = false;
 
@@ -76,10 +78,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     const statAlphabets = ['A', 'B', 'C', 'D', 'S', 'E'];
-
-    // わざ選択前処理の数と、処理編集中を示す変数の数を同じにする
-    if (appState.beforeMoveEditing.length != widget.battle.turns[turnNum-1].beforeMoveEffects.length) {
-      appState.beforeMoveEditing = List.generate(widget.battle.turns[turnNum-1].beforeMoveEffects.length, (i) => false);
+    PhaseState? focusState;
+    if (widget.battle.turns.length >= turnNum) {
+      focusState = widget.battle.turns[turnNum-1].
+                    getProcessedStates(focusPhase, focusPhaseIdx-1, widget.battle.ownParty, widget.battle.opponentParty);
     }
 
     battleNameController.text = widget.battle.name;
@@ -168,6 +170,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             checkedPokemons.own = widget.battle.turns[0].initialOwnPokemonIndex;
             checkedPokemons.opponent = widget.battle.turns[0].initialOpponentPokemonIndex;
           }
+/*
           for (final pokemon in widget.battle.ownParty.pokemons) {
             if (pokemon != null) {
               widget.battle.ownPokemonStates.add(
@@ -184,6 +187,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               );
             }
           }
+*/
           setState(() {});
           break;
         case RegisterBattlePageType.firstPokemonPage:
@@ -192,63 +196,66 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           if (widget.battle.turns.isEmpty) {
             Turn turn = Turn()
             ..initialOwnPokemonIndex = checkedPokemons.own
-            ..initialOpponentPokemonIndex = checkedPokemons.opponent
-            ..currentOwnPokemonIndex = checkedPokemons.own
-            ..currentOpponentPokemonIndex = checkedPokemons.opponent
-            ..changedOwnPokemon = true
-            ..changedOpponentPokemon = true;
-            // 初期HP設定
-            for (int i = 0; i < widget.battle.ownPokemonStates.length; i++) {
-              widget.battle.ownPokemonStates[i].hp = 
-                widget.battle.ownParty.pokemons[i]!.h.real;
+            ..initialOpponentPokemonIndex = checkedPokemons.opponent;
+            // 初期状態設定ここから
+            for (int i = 0; i < widget.battle.ownParty.pokemonNum; i++) {
+              turn.initialOwnPokemonStates.add(PokemonState()
+                ..pokemon = widget.battle.ownParty.pokemons[i]!
+                ..remainHP = widget.battle.ownParty.pokemons[i]!.h.real
+                ..isBattling = i+1 == turn.initialOwnPokemonIndex
+                ..holdingItem = widget.battle.ownParty.items[i]
+                ..usedPPs = List.generate(widget.battle.ownParty.pokemons[i]!.moves.length, (i) => 0)
+                ..currentAbility = widget.battle.ownParty.pokemons[i]!.ability
+                ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) widget.battle.ownParty.pokemons[i]!.stats[j]]
+                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) widget.battle.ownParty.pokemons[i]!.stats[j]]
+              );
             }
-            for (int i = 0; i < widget.battle.opponentPokemonStates.length; i++) {
-              widget.battle.opponentPokemonStates[i].hpPercent = 100;
+            for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
+              Pokemon poke = widget.battle.opponentParty.pokemons[i]!;
+              List<int> races = List.generate(StatIndex.size.index, (index) => poke.stats[index].race);
+              List<int> minReals = List.generate(StatIndex.size.index, (index) => index == StatIndex.H.index ?
+                SixParams.getRealH(poke.level, races[index], 0, 0) :
+                SixParams.getRealABCDS(poke.level, races[index], 0, 0, 0.9));
+              List<int> maxReals = List.generate(StatIndex.size.index, (index) => index == StatIndex.H.index ?
+                SixParams.getRealH(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort) :
+                SixParams.getRealABCDS(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort, 1.1));
+              turn.initialOpponentPokemonStates.add(PokemonState()
+                ..pokemon = poke
+                ..isBattling = i+1 == turn.initialOpponentPokemonIndex
+                ..minStats = [
+                  for (int j = 0; j < StatIndex.size.index; j++)
+                  SixParams(poke.stats[j].race, 0, 0, minReals[j])]
+                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++)
+                  SixParams(poke.stats[j].race, pokemonMaxIndividual, pokemonMaxEffort, maxReals[j])]
+                ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
+              );
             }
-            // 可能性あるとくせい設定
-            for (int i = 0; i < widget.battle.opponentPokemonStates.length; i++) {
-              widget.battle.opponentPokemonStates[i].possibleAbilities =
-                pokeData.pokeBase[widget.battle.opponentParty.pokemons[i]!.no]!.ability;
-            }
-            turn.ownPokemonInitialStates = [];
-            for (final e in widget.battle.ownPokemonStates) {
-              turn.ownPokemonInitialStates.add(e.copyWith());
-            }
-            turn.opponentPokemonInitialStates = [];
-            for (final e in widget.battle.opponentPokemonStates) {
-              turn.opponentPokemonInitialStates.add(e.copyWith());
-            }
-            turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
+            //turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
 
             widget.battle.turns.add(turn);
           }
+          focusPhase = TurnPhase.beforeMove;
+          focusPhaseIdx = 0;
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
           Turn prevTurn = widget.battle.turns[turnNum-1];
-          int prevOwnIndex = prevTurn.currentOwnPokemonIndex;
-          int prevOpponentIndex = prevTurn.currentOpponentPokemonIndex;
           turnNum++;
           if (widget.battle.turns.length < turnNum) {
+            PhaseState initialState =
+              prevTurn.getProcessedStates(
+                TurnPhase.afterMove, prevTurn.afterMoveEffects.length-1,
+                widget.battle.ownParty, widget.battle.opponentParty);
+            // 前ターンの最終状態を初期状態とする
             Turn turn = Turn()
-            ..initialOwnPokemonIndex = prevOwnIndex
-            ..initialOpponentPokemonIndex = prevOpponentIndex
-            ..currentOwnPokemonIndex = prevOwnIndex
-            ..currentOpponentPokemonIndex = prevOpponentIndex
-            ..changedOwnPokemon = false
-            ..changedOpponentPokemon = false;
-            // 前ターンの最終状態をコピー
-            for (final e in prevTurn.ownPokemonCurrentStates) {
-              turn.ownPokemonInitialStates.add(e.copyWith());
-            }
-            for (final e in prevTurn.opponentPokemonCurrentStates) {
-              turn.opponentPokemonInitialStates.add(e.copyWith());
-            }
-            turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
+            ..setInitialState(initialState);
+            //turn.updateCurrentStates(widget.battle.ownParty, widget.battle.opponentParty);
 
             widget.battle.turns.add(turn);
           }
+          focusPhase = TurnPhase.beforeMove;
+          focusPhaseIdx = 0;
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
@@ -273,6 +280,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           else {
             pageType = RegisterBattlePageType.turnPage;
           }
+          focusPhase = TurnPhase.beforeMove;
+          focusPhaseIdx = 0;
           setState(() {});
           break;
         case RegisterBattlePageType.basePage:
@@ -318,14 +327,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       Expanded(
                         child: Row(children: [
                           Icon(Icons.catching_pokemon),
-                          Text(widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1]!.name),
+                          Text(widget.battle.ownParty.pokemons[focusState!.ownPokemonIndex-1]!.name),
                         ],),
                       ),
                       SizedBox(width: 10,),
                       Expanded(
                         child: Row(children: [
                           Icon(Icons.catching_pokemon),
-                          Text(widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1]!.name),
+                          Text(widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!.name),
                         ],),
                       ),
                       IconButton(
@@ -339,8 +348,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 各ステータス(ABCDSE)の変化
                   for (int i = 0; i < 6; i++)
                     _StatChangeViewRow(
-                      statAlphabets[i], widget.battle.turns[turnNum-1].ownPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1].statChanges[i],
-                      widget.battle.turns[turnNum-1].opponentPokemonCurrentStates[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1].statChanges[i]
+                      statAlphabets[i], focusState.ownPokemonStates[focusState.ownPokemonIndex-1].statChanges[i],
+                      focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].statChanges[i]
                     ),
                 ],
               ),
@@ -352,14 +361,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1]!.name),
+                      Text(widget.battle.ownParty.pokemons[focusState!.ownPokemonIndex-1]!.name),
                     ],),
                   ),
                   SizedBox(width: 10,),
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1]!.name),
+                      Text(widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!.name),
                     ],),
                   ),
                   IconButton(
@@ -378,12 +387,33 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 widget.battle, turnNum, theme, pokeData,
                 widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].initialOwnPokemonIndex-1]!,
                 widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].initialOpponentPokemonIndex-1]!,
-                widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].currentOwnPokemonIndex-1]!,
-                widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].currentOpponentPokemonIndex-1]!,
                 move1Controller, move2Controller,
                 hp1Controller, hp2Controller, beforeMoveExpandController,
                 moveExpandController, afterMoveExpandController,
-                appState,
+                appState, focusPhase, focusPhaseIdx,
+                (phase, phaseIdx) {
+                  focusPhase = phase;
+                  focusPhaseIdx = phaseIdx;
+                  setState(() {});
+                },
+                List.generate(
+                  widget.battle.turns[turnNum-1].beforeMoveEffects.length,
+                  (index) => widget.battle.turns[turnNum-1].getProcessedStates(
+                    TurnPhase.beforeMove, index-1, widget.battle.ownParty, widget.battle.opponentParty
+                  )
+                ),
+                List.generate(
+                  2,
+                  (index) => widget.battle.turns[turnNum-1].getProcessedStates(
+                    TurnPhase.move, index-1, widget.battle.ownParty, widget.battle.opponentParty
+                  )
+                ),
+                List.generate(
+                  widget.battle.turns[turnNum-1].afterMoveEffects.length,
+                  (index) => widget.battle.turns[turnNum-1].getProcessedStates(
+                    TurnPhase.afterMove, index-1, widget.battle.ownParty, widget.battle.opponentParty
+                  )
+                ),
               ),
             ),
           ],

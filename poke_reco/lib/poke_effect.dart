@@ -5,6 +5,7 @@ enum EffectType {
   none(0),
   ability(1),
   item(2),
+  individualField(3),
   ;
 
   const EffectType(this.id);
@@ -47,26 +48,218 @@ class TurnEffect {
   }
 
   void processEffect(
-    Pokemon currentOwnPokemon,
-    PokemonState currentOwnPokemonState,
-    Pokemon currentOpponentPokemon,
-    PokemonState currentOpponentPokemonState,
-    Turn turn,
+    Party ownParty,
+    PokemonState ownPokemonState,
+    Party opponentPokemon,
+    PokemonState opponentPokemonState,
+    PhaseState state,
   )
   {
     if (effect == EffectType.ability) {
       switch (effectId) {
         case 22:   // いかく
           if (playerType == PlayerType.me) {
-            currentOpponentPokemonState.statChanges[0]--;
+            opponentPokemonState.statChanges[0]--;
           }
           else {
-            currentOwnPokemonState.statChanges[0]--;
+            ownPokemonState.statChanges[0]--;
           }
           break;
         default:
           break;
       }
+    }
+  }
+
+  // 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
+  static List<TurnEffect> getPossibleEffects(
+    AbilityTiming timing, PlayerType playerType, EffectType type, Pokemon? pokemon, PokemonState? state)
+  {
+    List<TurnEffect> ret = [];
+    switch (timing.id) {
+      case 1:   // ポケモンを繰り出すとき
+        if (pokemon != null) {
+          // とくせい
+          List<int> abilityIDs = [
+            256,    // かがくへんかガス
+            127,    // きんちょうかん
+            266,    // じんばいったい
+            267,    // じんばいったい
+            2,      // あめふらし
+            22,     // いかく
+            76,     // エアロック
+            226,    // エレキメイカー
+            188,    // オーラブレイク
+            119,    // おみとおし
+            190,    // おわりのだいち
+            104,    // かたやぶり
+            150,    // かわりもの
+            107,    // きけんよち
+            261,    // きみょうなくすり
+            229,    // グラスメイカー
+            227,    // サイコメイカー
+            112,    // スロースタート
+            45,     // すなおこし
+            213,    // ぜったいねむり
+            293,    // そうだいしょう
+            186,    // ダークオーラ
+            163,    // ターボブレイズ
+            88,     // ダウンロード
+            164,    // テラボルテージ
+            191,    // デルタストリーム
+            36,     // トレース
+            13,     // ノーてんき
+            189,    // はじまりのうみ
+            289,    // ハドロンエンジン
+            251,    // バリアフリー
+            70,     // ひでり
+            288,    // ひひいろのこどう
+            187,    // フェアリーオーラ
+            235,    // ふくつのたて
+            234,    // ふとうのけん
+            46,     // プレッシャー
+            278,    // マイティチェンジ
+            228,    // ミストメイカー
+            117,    // ゆきふらし
+            108,    // よちむ
+            284,    // わざわいのうつわ
+            286,    // わざわいのおふだ
+            287,    // わざわいのたま
+            285,    // わざわいのつるぎ
+            7,      // じゅうなん
+            199,    // すいほう
+            270,    // ねつこうかん
+            257,    // パステルベール
+            15,     // ふみん
+            40,     // マグマのよろい
+            41,     // みずのベール
+            17,     // めんえき
+            72,     // やるき
+            250,    // ぎたい
+            208,    // ぎょぐん
+            197,    // リミットシールド
+            248,    // アイスフェイス
+            294,    // きょうえん
+            282,    // クォークチャージ
+            281,    // こだいかっせい
+            279,    // しれいとう
+            59,     // てんきや
+            122,    // フラワーギフト
+            290,    // びんじょう
+          ];
+          if (playerType == PlayerType.me && type == EffectType.ability) {
+            if (abilityIDs.contains(pokemon.ability.id)) {
+              ret.add(TurnEffect()
+                ..playerType = PlayerType.me
+                ..effect = EffectType.ability
+                ..effectId = pokemon.ability.id
+              );
+            }
+          }
+          else if (playerType == PlayerType.opponent && type == EffectType.ability) {
+            for (final ability in state!.possibleAbilities) {
+              if (abilityIDs.contains(ability.id)) {
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType.opponent
+                  ..effect = EffectType.ability
+                  ..effectId = ability.id
+                );
+              }
+            }
+          }
+          // ポケモンの場
+          List<int> fieldIDs = [
+            IndividualField.healingWish,  // いやしのねがい
+            IndividualField.lunarDance,   // みかづきのまい
+            IndividualField.spikes,       // まきびし
+            IndividualField.toxicSpikes,  // どくびし
+            IndividualField.stickyWeb,    // ねばねばネット
+          ];
+          if (type == EffectType.individualField) {
+            for (final field in state!.fields) {
+              if (fieldIDs.contains(field.id)) {
+                ret.add(TurnEffect()
+                  ..playerType = playerType
+                  ..effect = EffectType.individualField
+                  ..effectId = field.id
+                );
+              }
+            }
+          }
+          // もちもの
+          List <int> itemIDs = [
+            126,      // クラボのみ	持たせるとまひを回復する
+            127,      // カゴのみ	持たせると眠りを回復する
+            128,      // モモンのみ	持たせるとどくを回復する
+            129,      // チーゴのみ	持たせるとやけどを回復する
+            130,      // ナナシのみ	持たせるとこおりを回復する
+            131,      // ヒメリのみ	持たせるとPPを10回復する
+            132,      // オレンのみ	持たせるとHPを10回復する
+            133,      // キーのみ	持たせると混乱を回復する
+            134,      // ラムのみ	持たせると全ての状態異常を回復する
+            135,      // オボンのみ	持たせるとHPを少しだけ回復する
+            136,      // フィラのみ	持たせるとピンチの時にHPを回復する 嫌いな味だと混乱する
+            137,      // ウイのみ	持たせるとピンチの時にHPを回復する 嫌いな味だと混乱する
+            138,      // マゴのみ	持たせるとピンチの時にHPを回復する 嫌いな味だと混乱する
+            139,      // バンジのみ	持たせるとピンチの時にHPを回復する 嫌いな味だと混乱する
+            140,      // イアのみ	持たせるとピンチの時にHPを回復する 嫌いな味だと混乱する
+            178,      // チイラのみ	持たせるとピンチの時に攻撃が上がる
+            179,      // リュガのみ	持たせるとピンチの時に防御が上がる
+            181,      // ヤタビのみ	持たせるとピンチの時に特攻が上がる
+            182,      // ズアのみ	持たせるとピンチの時に特防が上がる
+            180,      // カムラのみ	持たせるとピンチの時に素早さが上がる
+            898,      // エレキシード
+            901,      // グラスシード
+            899,      // サイコシード
+            900,      // ミストシード
+            1180,     // ルームサービス
+            1696,     // ブーストエナジー
+            191,      // しろいハーブ
+            1699,     // ものまねハーブ
+            1177,     // だっしゅつパック
+          ];
+          if (playerType == PlayerType.me && type == EffectType.item) {
+            if (itemIDs.contains(state!.holdingItem?.id)) {
+              ret.add(TurnEffect()
+                ..playerType = PlayerType.me
+                ..effect = EffectType.item
+                ..effectId = state.holdingItem!.id
+              );
+            }
+          }
+          else if (playerType == PlayerType.opponent && type == EffectType.item) {
+            for (final item in state!.impossibleItems) {
+              if (itemIDs.contains(item.id)) {
+                itemIDs.remove(item.id);
+              }
+            }
+            for (final item in itemIDs) {
+              ret.add(TurnEffect()
+                ..playerType = PlayerType.opponent
+                ..effect = EffectType.item
+                ..effectId = item
+              );
+            }
+          }
+        }
+        break;
+      default:
+        break;
+    }
+
+    return ret;
+  }
+
+  String getDisplayName(PokeDB pokeData) {
+    switch (effect) {
+      case EffectType.ability:
+        return pokeData.abilities[effectId]!.displayName;
+      case EffectType.item:
+        return pokeData.items[effectId]!.displayName;
+      case EffectType.individualField:
+        return IndividualField(effectId).displayName;
+      default:
+        return '';
     }
   }
 
