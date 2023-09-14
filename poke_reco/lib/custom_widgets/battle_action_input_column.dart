@@ -1,0 +1,170 @@
+import 'package:flutter/material.dart';
+import 'package:poke_reco/main.dart';
+import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/poke_move.dart';
+
+class BattleActionInputColumn extends Column {
+  BattleActionInputColumn(
+    PokeDB pokeData,
+    void Function() setState,
+    Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交換する場合は、交換前ポケモン)
+    Pokemon opponentPokemon,
+    ThemeData theme,
+    Battle battle,
+    Turn turn,
+    MyAppState appState,
+    int focusPhaseIdx,
+    void Function(int) onFocus,
+    int processIdx,
+    PhaseState moveState,
+    AbilityTiming timing,
+    List<TextEditingController> moveControllerList,
+    List<TextEditingController> hpControllerList,
+  ) :
+  super(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      GestureDetector(
+        onTap: focusPhaseIdx != processIdx+1 ? () => onFocus(processIdx+1) : () {},
+        child: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: focusPhaseIdx == processIdx+1 ? Border.all(width: 3, color: Colors.orange) : Border.all(color: theme.primaryColor),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              Stack(
+                children: [
+                Center(child: Text(
+                  _getTitle(turn.processes[processIdx].move!, ownPokemon, opponentPokemon)
+                )),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children:[
+                    appState.editingPhase[processIdx] ?
+                    IconButton(
+                      icon: Icon(Icons.check),
+                      onPressed: turn.processes[processIdx].move!.isValid() ? () {
+                        appState.editingPhase[processIdx] = false;
+                        setState();
+                      } : null,
+                    ) : Container(),
+                    IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () {
+                        turn.processes[processIdx].move!.clear();
+                        setState();
+                      },
+                    ),
+                  ],
+                ),
+              ],),
+              SizedBox(height: 10,),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: DropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '行動主',
+                      ),
+                      items: <DropdownMenuItem<PlayerType>>[
+                        DropdownMenuItem<PlayerType>(
+                          value: PlayerType.me,
+                          child: Text('${ownPokemon.name}/あなた', overflow: TextOverflow.ellipsis,),
+                        ),
+                        DropdownMenuItem<PlayerType>(
+                          value: PlayerType.opponent,
+                          child: Text('${opponentPokemon.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
+                        ),
+                      ],
+                      value: turn.processes[processIdx].move!.playerType == PlayerType.none ? null : turn.processes[processIdx].move!.playerType,
+                      onChanged: (value) {
+                        turn.processes[processIdx].playerType = value as PlayerType;
+                        turn.processes[processIdx].move!.playerType = value;
+                        appState.editingPhase[processIdx] = true;
+                        onFocus(processIdx+1);
+                      },
+                    ),
+                  ),
+                  SizedBox(width: 10,),
+                  Expanded(
+                    flex: 5,
+                    child: DropdownButtonFormField<bool>(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '行動の成否',
+                      ),
+                      items: <DropdownMenuItem<bool>>[
+                        DropdownMenuItem(
+                          value: true,
+                          child: Text('行動成功', overflow: TextOverflow.ellipsis,),
+                        ),
+                        DropdownMenuItem(
+                          value: false,
+                          child: Text('行動失敗', overflow: TextOverflow.ellipsis,),
+                        ),
+                      ],
+                      value: turn.processes[processIdx].move!.isSuccess,
+                      onChanged: turn.processes[processIdx].move!.playerType != PlayerType.none ?
+                        (value) {
+                          turn.processes[processIdx].move!.isSuccess = value!;
+                          appState.editingPhase[processIdx] = true;
+                          onFocus(processIdx+1);
+                        } : null,
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 10,),
+              turn.processes[processIdx].move!.extraInputWidget1(
+                () => onFocus(processIdx+1), battle.ownParty, 
+                battle.opponentParty, moveState, ownPokemon, opponentPokemon,
+                moveState.ownPokemonStates[moveState.ownPokemonIndex-1], 
+                moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
+                moveControllerList[processIdx], hpControllerList[processIdx], pokeData,
+                appState, processIdx,
+              ),
+              SizedBox(height: 10,),
+              turn.processes[processIdx].move!.extraInputWidget2(
+                () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
+                moveState.ownPokemonStates[moveState.ownPokemonIndex-1],
+                moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
+                hpControllerList[processIdx], appState, processIdx, 0,
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
+
+  static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent) {
+    switch (turnMove.type) {
+      case TurnMoveType.move:
+        if (turnMove.move.id != 0) {
+          String continous = turnMove.move.maxMoveCount() > 1 ? '【1回目】' : '';
+          if (turnMove.playerType == PlayerType.opponent) {
+            return '$continous${turnMove.move.displayName}-${opponent.name}';
+          }
+          else {
+            return '$continous${turnMove.move.displayName}-${own.name}';
+          }
+        }
+        break;
+      case TurnMoveType.change:
+        return 'ポケモン交換';
+      case TurnMoveType.surrender:
+        return 'こうさん';
+      default:
+        break;
+    }
+
+    return '行動';
+  }
+}

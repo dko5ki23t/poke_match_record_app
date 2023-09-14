@@ -49,8 +49,7 @@ class MyAppState extends ChangeNotifier {
   void Function() onBackKeyPushed = (){};
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
-  List<bool> beforeMoveEditing = [];
-  List<bool> afterMoveEditing = [];
+  List<bool> editingPhase = [];
 
   MyAppState(BuildContext context) {
     fetchPokeData();

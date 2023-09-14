@@ -394,12 +394,12 @@ class SixParams {
 
 // 発動タイミング
 class AbilityTiming {
+  static const int none = 0;
+  static const int pokemonAppear = 1;     // ポケモン登場時
+//  defeatOpponent(2),    // 相手を倒したとき
+//  attacked(3),          // こうげきわざを受けた時
+  static const int everyTurnEnd = 4;      // 毎ターン終了時
 /*
-  none(0),
-  pokemonAppear(1),     // ポケモン登場時
-  defeatOpponent(2),    // 相手を倒したとき
-  attacked(3),          // こうげきわざを受けた時
-  everyTurnEnd(4),      // 毎ターン終了時
   HPMaxAndAttacked(5),  // HPが満タンでこうげきを受けた時
   blasted(6),           // ばくはつ系のわざ、とくせいが発動したとき
   paralysised(7),       // まひするわざ、とくせいを受けた時
@@ -448,12 +448,21 @@ class AbilityTiming {
   fireWaterAttackedSunnyRained(50),   // ほのお/みずタイプのこうげきを受けた時、天気が晴れ/あめのとき
   punchAttack(51),      // パンチ技を使用するとき
   poisonDamage(52),     // どく/もうどくでダメージを負うとき
-  ;
 */
+  static const int afterActionDecision = 53;    // 行動決定後、行動実行前
+  static const int action = 54;                 // 行動時
+  static const int afterMove = 55;              // わざ使用後
+  static const int continuousMove = 56;         // 連続こうげき時(1回目除く)
 
   const AbilityTiming(this.id);
 
   final int id;
+}
+
+class SameTimingEffectRange {
+  AbilityTiming timing = AbilityTiming(0);
+  int beginIdx = 0;
+  int endIdx = 0;
 }
 
 // 対象
@@ -688,6 +697,14 @@ class Move {
     Move(id, displayName, type, power,
       accuracy, priority, target,
       damageClass, effect, effectChance, pp,);
+
+  // TODO(今はダブルウイングだけ)
+  // 連続こうげきの場合、その最大回数を返す（連続こうげきではない場合は1を返す）
+  int maxMoveCount() {
+    if (id == 814) return 2;
+    if (id == 350) return 5;
+    return 1;
+  }
 
 /*
   Map<String, Object?> toMap() {
@@ -1033,28 +1050,71 @@ class Pokemon {
 
 // 状態変化
 class Ailment {
-  static int get none => 0;
-  static int get burn => 1;               // やけど
-  static int get freeze => 2;             // こおり
-  static int get paralysis => 3;          // まひ
-  static int get poison => 4;             // どく
-  static int get badPoison => 5;          // もうどく
-  static int get sleep => 6;              // ねむり     ここまで、重複しない
-  static int get confusion => 7;          // こんらん
-  static int get curse => 8;              // のろい
-  static int get encore => 9;             // アンコール
-  static int get flinch => 10;            // ひるみ
-  static int get identify => 11;          // みやぶる
-  static int get infatuation => 12;       // メロメロ
-  static int get leechSeed => 13;         // やどりぎのタネ
-  static int get mindReader => 14;        // こころのめ
-  static int get lockOn => 15;            // ロックオン
-  static int get nightmare => 16;         // あくむ
-  static int get partiallyTrapped => 17;  // しめつける
-  static int get perishSong => 18;        // ほろびのうた
-  static int get taunt => 19;             // ちょうはつ
-  static int get torment => 20;           // いちゃもん
-  static int get noBerry => 21;           // きのみを食べられない状態(きんちょうかん)
+  static const int none = 0;
+  static const int burn = 1;                // やけど
+  static const int freeze = 2;              // こおり
+  static const int paralysis = 3;           // まひ
+  static const int poison = 4;              // どく
+  static const int badPoison = 5;           // もうどく
+  static const int sleep = 6;               // ねむり     ここまで、重複しない
+  static const int confusion = 7;           // こんらん
+  static const int curse = 8;               // のろい
+  static const int encore = 9;              // アンコール
+  static const int flinch = 10;             // ひるみ
+  static const int identify = 11;           // みやぶる
+  static const int infatuation = 12;        // メロメロ
+  static const int leechSeed = 13;          // やどりぎのタネ
+  static const int mindReader = 14;         // こころのめ
+  static const int lockOn = 15;             // ロックオン
+  static const int nightmare = 16;          // あくむ
+  static const int partiallyTrapped = 17;   // バインド(交代不可、毎ターンダメージ)
+  static const int perishSong = 18;         // ほろびのうた
+  static const int taunt = 19;              // ちょうはつ
+  static const int torment = 20;            // いちゃもん
+  static const int noBerry = 21;            // きのみを食べられない状態(きんちょうかん)
+  static const int saltCure = 22;           // しおづけ
+  static const int disable = 23;            // かなしばり
+  static const int magnetRise = 24;         // でんじふゆう
+  static const int telekinesis = 25;        // テレキネシス
+  static const int healBlock = 26;          // かいふくふうじ
+  static const int embargo = 27;            // さしおさえ
+  static const int sleepy = 28;             // ねむけ
+  static const int ingrain = 29;            // ねをはる
+  static const int uproar = 30;             // さわぐ
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'やけど',
+    2: 'こおり',
+    3: 'まひ',
+    4: 'どく',
+    5: 'もうどく',
+    6: 'ねむり',
+    7: 'こんらん',
+    8: 'のろい',
+    9: 'アンコール',
+    10: 'ひるみ',
+    11: 'みやぶる',
+    12: 'メロメロ',
+    13: 'やどりぎのタネ',
+    14: 'こころのめ',
+    15: 'ロックオン',
+    16: 'あくむ',
+    17: 'バインド',
+    18: 'ほろびのうた',
+    19: 'ちょうはつ',
+    20: 'いちゃもん',
+    21: 'きのみを食べられない状態',
+    22: 'しおづけ',
+    23: 'かなしばり',
+    24: 'でんじふゆう',
+    25: 'テレキネシス',
+    26: 'かいふくふうじ',
+    27: 'さしおさえ',
+    28: 'ねむけ',
+    29: 'ねをはる',
+    30: 'さわぐ',
+  };
 
   final int id;
   int turns = 0;        // 経過ターン
@@ -1066,6 +1126,8 @@ class Ailment {
     Ailment(id)
     ..turns = turns
     ..extraArg1 = extraArg1;
+
+  String get displayName => _displayNameMap[id]!;
 
   // SQLに保存された文字列からAilmentをパース
   static Ailment deserialize(dynamic str, String split1) {
@@ -1110,13 +1172,25 @@ class BuffDebuff {
 
 // 各々の場
 class IndividualField {
-  static int get none => 0;
-  static int get toxicSpikes => 1;        // どくびし
-  static int get spikes => 2;             // まきびし
-  static int get stealthRock => 3;        // ステルスロック
-  static int get stickyWeb => 4;          // ねばねばネット
-  static int get healingWish => 5;        // いやしのねがい
-  static int get lunarDance => 6;         // みかづきのまい
+  static const int none = 0;
+  static const int toxicSpikes = 1;       // どくびし
+  static const int spikes = 2;            // まきびし
+  static const int stealthRock = 3;       // ステルスロック
+  static const int stickyWeb = 4;         // ねばねばネット
+  static const int healingWish = 5;       // いやしのねがい
+  static const int lunarDance = 6;        // みかづきのまい
+  static const int sandStormDamage = 7;   // すなあらしによるダメージ
+  static const int futureAttack = 8;      // みらいにこうげき
+  static const int futureAttackSteel = 9; // はめつのねがい
+  static const int wish = 10;             // ねがいごと
+  static const int grassFieldRecovery = 11;   // グラスフィールドによる回復
+  static const int reflector = 12;        // リフレクター
+  static const int lightScreen = 13;      // ひかりのかべ
+  static const int safeGuard = 14;        // しんぴのまもり
+  static const int mist = 15;             // しろいきり
+  static const int tailwind = 16;         // おいかぜ
+  static const int luckyChant = 17;       // おまじない
+  static const int auroraVeil = 18;       // オーロラベール
 
   static const _displayNameMap = {
     0: '',
@@ -1126,6 +1200,18 @@ class IndividualField {
     4: 'ねばねばネット',
     5: 'いやしのねがい',
     6: 'みかづきのまい',
+    7: 'すなあらしによるダメージ',
+    8: 'みらいにこうげき',
+    9: 'はめつのねがい',
+    10: 'ねがいごと',
+    11: 'グラスフィールドによる回復',
+    12: 'ねをはる',
+    13: 'ひかりのかべ',
+    14: 'しんぴのまもり',
+    15: 'しろいきり',
+    16: 'おいかぜ',
+    17: 'おまじない',
+    18: 'オーロラベール',
   };
 
   final int id;
@@ -1157,11 +1243,21 @@ class IndividualField {
 
 // 天気
 class Weather {
-  static int get none => 0;
-  static int get sunny => 1;              // 晴れ
-  static int get rainy => 2;              // あめ
-  static int get sandStorm => 3;          // すなあらし
-  static int get snowy => 4;              // ゆき
+  static const int none = 0;
+  static const int sunny = 1;              // 晴れ
+  static const int rainy = 2;              // あめ
+  static const int sandStorm = 3;          // すなあらし
+  static const int snowy = 4;              // ゆき
+
+  static const _displayNameMap = {
+    0: '',
+    1: '晴れ',
+    2: 'あめ',
+    3: 'すなあらし',
+    4: 'ゆき',
+  };
+
+  String get displayName => _displayNameMap[id]!;
 
   final int id;
   int turns = 0;        // 経過ターン
@@ -1190,11 +1286,33 @@ class Weather {
 
 // フィールド
 class Field {
-  static int get none => 0;
-  static int get electricTerrain => 1;    // エレキフィールド
-  static int get grassyTerrain => 2;      // グラスフィールド
-  static int get mistyTerrain => 3;       // ミストフィールド
-  static int get psychicTerrain => 4;     // サイコフィールド
+  static const int none = 0;
+  static const int electricTerrain = 1;    // エレキフィールド
+  static const int grassyTerrain = 2;      // グラスフィールド
+  static const int mistyTerrain = 3;       // ミストフィールド
+  static const int psychicTerrain = 4;     // サイコフィールド
+  static const int trickRoom = 5;          // トリックルーム
+  static const int gravity = 6;            // じゅうりょく
+  static const int waterSport = 7;         // みずあそび
+  static const int mudSport = 8;           // どろあそび
+  static const int wonderRoom = 9;         // ワンダールーム
+  static const int magicRoom = 10;         // マジックルーム
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'エレキフィールド',
+    2: 'グラスフィールド',
+    3: 'ミストフィールド',
+    4: 'サイコフィールド',
+    5: 'トリックルーム',
+    6: 'じゅうりょく',
+    7: 'みずあそび',
+    8: 'どろあそび',
+    9: 'ワンダールーム',
+    10: 'マジックルーム',
+  };
+
+  String get displayName => _displayNameMap[id]!;
 
   final int id;
   int turns = 0;        // 経過ターン
@@ -1528,12 +1646,6 @@ enum BattleType {
   final String displayName;
 }
 
-enum TurnPhase {
-  beforeMove,
-  move,
-  afterMove,
-}
-
 // ある時点(ターン内のフェーズ)での状態
 class PhaseState {
   int ownPokemonIndex = 0;          // 0は無効値
@@ -1572,10 +1684,11 @@ class Turn {
 //  List<PokemonState> opponentPokemonCurrentStates = [];
   Weather initialWeather = Weather(0);
   Field initialField = Field(0);
-  List<TurnEffect> beforeMoveEffects = [];
-  TurnMove turnMove1 = TurnMove();
-  TurnMove turnMove2 = TurnMove();
-  List<TurnEffect> afterMoveEffects = [];
+  List<TurnEffect> processes = [];
+  //List<TurnEffect> beforeMoveEffects = [];
+  //TurnMove turnMove1 = TurnMove();
+  //TurnMove turnMove2 = TurnMove();
+  //List<TurnEffect> afterMoveEffects = [];
 
   Turn copyWith() =>
     Turn()
@@ -1603,6 +1716,11 @@ class Turn {
 //    ]
     ..initialWeather = initialWeather.copyWith()
     ..initialField = initialField.copyWith()
+    ..processes = [
+      for (final process in processes)
+      process.copyWith()
+    ];
+/*
     ..beforeMoveEffects = [
       for (final effect in beforeMoveEffects)
       effect.copyWith()
@@ -1613,6 +1731,7 @@ class Turn {
       for (final effect in afterMoveEffects)
       effect.copyWith()
     ];
+*/
 
   PhaseState copyInitialState() =>
     PhaseState()
@@ -1644,6 +1763,7 @@ class Turn {
     initialField = state.field;
   }
 
+/*
   bool canAddBeforemoveEffects() {
     for (final effect in beforeMoveEffects) {
       if (!effect.isValid()) return false;
@@ -1657,13 +1777,26 @@ class Turn {
     }
     return true;
   }
+*/
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
-    TurnPhase phase, int phaseIdx,
-    Party ownParty, Party opponentParty)
+    int phaseIdx, Party ownParty, Party opponentParty, PokeDB pokeData)
   {
     PhaseState ret = copyInitialState();
+
+    for (int i = 0; i < phaseIdx+1; i++) {
+      final effect = processes[i];
+      effect.processEffect(
+        ownParty,
+        ret.ownPokemonStates[ret.ownPokemonIndex-1],
+        opponentParty,
+        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
+        ret, pokeData,
+      );
+    }
+
+/*
     int beforeEndIdx = phase == TurnPhase.beforeMove ? phaseIdx+1 : beforeMoveEffects.length;
     int afterEndIdx = phase == TurnPhase.afterMove ? phaseIdx+1 : 0;
     // わざ選択前の処理
@@ -1711,6 +1844,7 @@ class Turn {
         ret,
       );
     }
+*/
 
     return ret;
   }
@@ -1742,6 +1876,13 @@ class Turn {
     ret.initialWeather = Weather.deserialize(turnElements[4], split2);
     // initialField
     ret.initialField = Field.deserialize(turnElements[5], split2);
+    // processes
+    var turnEffects = turnElements[6].split(split2);
+    for (var turnEffect in turnEffects) {
+      if (turnEffect == '') break;
+      ret.processes.add(TurnEffect.deserialize(turnEffect, split3));
+    }
+/*
     // beforeMoveEffects
     var turnEffects = turnElements[6].split(split2);
     for (var turnEffect in turnEffects) {
@@ -1758,6 +1899,7 @@ class Turn {
       if (turnEffect == '') break;
       ret.afterMoveEffects.add(TurnEffect.deserialize(turnEffect, split3));
     }
+*/
 
     return ret;
   }
@@ -1789,6 +1931,12 @@ class Turn {
     // initialField
     ret += initialField.serialize(split2);
     ret += split1;
+    // processes
+    for (final turnEffect in processes) {
+      ret += turnEffect.serialize(split3);
+      ret += split2;
+    }
+/*
     // beforeMoveEffects
     for (final turnEffect in beforeMoveEffects) {
       ret += turnEffect.serialize(split3);
@@ -1806,6 +1954,7 @@ class Turn {
       ret += turnEffect.serialize(split3);
       ret += split2;
     }
+*/
 
     return ret;
   }

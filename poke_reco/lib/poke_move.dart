@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/tool.dart';
 
 enum TurnMoveType {
   none,
@@ -14,6 +17,7 @@ enum MoveHit {
   hit,
   critical,
   notHit,
+  fail,
 }
 
 enum MoveEffectiveness {
@@ -28,17 +32,67 @@ enum MoveAdditionalEffect {
   speedDown,
 }
 
+class ActionFailure {
+  static const int none = 0;
+  static const int recoil = 1;        // わざの反動
+  static const int sleep = 2;         // ねむり(カウント消費)
+  static const int freeze = 3;        // こおり(回復判定で失敗)
+  static const int pp = 4;            // PPが残っていない
+  static const int lazy = 5;          // なまけ(カウント消費(反動で動けなくても消費はする))
+  static const int focusPunch = 6;    // きあいパンチ使用時、そのターンにダメージを受けていて動けない
+  static const int flinch = 7;        // ひるみ
+  static const int disable = 8;       // かなしばり
+  static const int gravity = 9;       // じゅうりょく
+  static const int healBlock = 10;    // かいふくふうじ
+  static const int throatChop = 11;   // じごくづき
+  static const int choice = 12;       // こだわり
+  static const int taunt = 13;        // ちょうはつ
+  static const int imprison = 14;     // ふういん
+  static const int confusion = 15;    // こんらんにより自傷
+  static const int paralysis = 16;    // まひ
+  static const int infatuation = 17;  // メロメロ
+  static const int size = 18;
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'わざの反動',
+    2: 'ねむり',
+    3: 'こおり',
+    4: 'PPが残っていない',
+    5: 'なまけ',
+    6: 'きあいパンチ中にダメージを受けた',
+    7: 'ひるみ',
+    8: 'かなしばり',
+    9: 'じゅうりょく',
+    10: 'かいふくふうじ',
+    11: 'じごくづき',
+    12: 'こだわり中以外のわざを使った',
+    13: 'ちょうはつ',
+    14: 'ふういん',
+    15: 'こんらん',
+    16: 'まひ',
+    17: 'メロメロ'
+  };
+
+  String get displayName => _displayNameMap[id]!;
+
+  const ActionFailure(this.id);
+
+  final int id;
+}
+
 class TurnMove {
   PlayerType playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
   Move move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
-  bool isSuccess = true;      // へんかわざの成功/失敗
+  bool isSuccess = true;      // 行動の成功/失敗
+  ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
   List<MoveHit> moveHits = [MoveHit.hit];   // 命中した/急所/外した
-  MoveEffectiveness moveEffectiveness = MoveEffectiveness.normal;   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
+  List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness.normal];   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
   int realDamage = 0;     // わざによって受けたダメージ（確定値）
   int percentDamage = 0;  // わざによって与えたダメージ（概算値、割合）
-  MoveAdditionalEffect moveAdditionalEffect = MoveAdditionalEffect.none;
+  List<MoveAdditionalEffect> moveAdditionalEffects = [MoveAdditionalEffect.none];
   int? changePokemonIndex;
 
   TurnMove copyWith() =>
@@ -48,11 +102,12 @@ class TurnMove {
     ..teraType = teraType
     ..move = move.copyWith()
     ..isSuccess = isSuccess
+    ..actionFailure = actionFailure
     ..moveHits = [...moveHits]
-    ..moveEffectiveness = moveEffectiveness
+    ..moveEffectivenesses = [...moveEffectivenesses]
     ..realDamage = realDamage
     ..percentDamage = percentDamage
-    ..moveAdditionalEffect = moveAdditionalEffect
+    ..moveAdditionalEffects = [...moveAdditionalEffects]
     ..changePokemonIndex = changePokemonIndex;
 
   void processMove(
@@ -61,6 +116,7 @@ class TurnMove {
     Party opponentPokemon,
     PokemonState opponentPokemonState,
     PhaseState state,
+    int continousCount,
   )
   {
     if (playerType == PlayerType.none) return;
@@ -175,7 +231,7 @@ class TurnMove {
     // 対象の相手
     PokemonState additionalEffectTargetState = opponentState;
     // TODO:追加効果の対象が自分なら変数に代入
-    switch (moveAdditionalEffect) {
+    switch (moveAdditionalEffects[continousCount]) {
       case MoveAdditionalEffect.speedDown:
         additionalEffectTargetState.statChanges[4]--;
         break;
@@ -184,16 +240,224 @@ class TurnMove {
     }
   }
 
-  Widget extraInputWidget(
-    void Function() setState,
+  Widget extraInputWidget1(
+    void Function() onFocus,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    Pokemon ownPokemon,
+    Pokemon opponentPokemon,
+    PokemonState ownPokemonState,
+    PokemonState opponentPokemonState,
+    TextEditingController moveController,
+    TextEditingController hpController,
+    PokeDB pokeData,
+    MyAppState appState,
+    int processIdx,
+  )
+  {
+    // 行動失敗時
+    if (!isSuccess) {
+      return Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: DropdownButtonFormField(
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: '失敗の原因',
+              ),
+              items: <DropdownMenuItem>[
+                for (int i = 1; i < ActionFailure.size; i++)
+                DropdownMenuItem(
+                  value: i,
+                  child: Text(ActionFailure(i).displayName, overflow: TextOverflow.ellipsis,),
+                ),
+              ],
+              value: actionFailure.id == 0 ? null : actionFailure.id,
+              onChanged: (value) {
+                actionFailure = ActionFailure(value);
+                appState.editingPhase[processIdx] = true;
+                onFocus();
+              },
+            ),
+          ),
+          SizedBox(width: 10,),
+          Expanded(
+            flex: 5,
+            child: TypeAheadField(
+              textFieldConfiguration: TextFieldConfiguration(
+                controller: moveController,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: '使用しようとしたわざ',
+                ),
+              ),
+              autoFlipDirection: true,
+              suggestionsCallback: (pattern) async {
+                List<Move> matches = [];
+                if (playerType == PlayerType.me) {
+                  matches.add(ownPokemon.move1);
+                  if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
+                  if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
+                  if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
+                }
+                else {
+                  matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
+                }
+                matches.retainWhere((s){
+                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                });
+                return matches;
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  title: Text(suggestion.displayName),
+                );
+              },
+              onSuggestionSelected: (suggestion) {
+                moveController.text = suggestion.displayName;
+                move = suggestion;
+                appState.editingPhase[processIdx] = true;
+                onFocus();
+              },
+            ),
+          ),
+        ],
+      );
+    }
+    // 行動成功時
+    else {
+      return Row(
+        children: [
+          Expanded(
+            flex: 5,
+            child: DropdownButtonFormField<TurnMoveType>(
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: '行動の種類',
+              ),
+              items: <DropdownMenuItem<TurnMoveType>>[
+                DropdownMenuItem(
+                  value: TurnMoveType.move,
+                  child: Text('わざ', overflow: TextOverflow.ellipsis,),
+                ),
+                DropdownMenuItem(
+                  value: TurnMoveType.change,
+                  child: Text('ポケモン交換', overflow: TextOverflow.ellipsis,),
+                ),
+                DropdownMenuItem(
+                  value: TurnMoveType.surrender,
+                  child: Text('こうさん', overflow: TextOverflow.ellipsis,),
+                ),
+              ],
+              value: type == TurnMoveType.none ? null : type,
+              onChanged: playerType != PlayerType.none ? (value) {
+                type = value!;
+                appState.editingPhase[processIdx] = true;
+                onFocus();
+              } : null,
+            ),
+          ),
+          SizedBox(width: 10,),
+          type == TurnMoveType.move ?     // 行動がわざの場合
+          Expanded(
+            flex: 5,
+            child: TypeAheadField(
+              textFieldConfiguration: TextFieldConfiguration(
+                controller: moveController,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: 'わざ',
+                ),
+                enabled: playerType != PlayerType.none,
+              ),
+              autoFlipDirection: true,
+              suggestionsCallback: (pattern) async {
+                List<Move> matches = [];
+                if (playerType == PlayerType.me) {
+                  matches.add(ownPokemon.move1);
+                  if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
+                  if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
+                  if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
+                }
+                else {
+                  matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
+                }
+                matches.retainWhere((s){
+                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                });
+                return matches;
+              },
+              itemBuilder: (context, suggestion) {
+                return ListTile(
+                  title: Text(suggestion.displayName),
+                );
+              },
+              onSuggestionSelected: (suggestion) {
+                moveController.text = suggestion.displayName;
+                move = suggestion;
+                appState.editingPhase[processIdx] = true;
+                onFocus();
+              },
+            ),
+          ) :
+          type == TurnMoveType.change ?     // 行動が交代の場合
+          Expanded(
+            flex: 5,
+            child: DropdownButtonFormField(
+              isExpanded: true,
+              decoration: const InputDecoration(
+                border: UnderlineInputBorder(),
+                labelText: '交換先ポケモン',
+              ),
+              items: playerType == PlayerType.me ?
+                <DropdownMenuItem>[
+                  for (int i = 0; i < ownParty.pokemonNum; i++)
+                    DropdownMenuItem(
+                      value: i+1,
+                      enabled: i+1 != state.ownPokemonIndex,
+                      child: Text(ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,),
+                    ),
+                ] :
+                <DropdownMenuItem>[
+                  for (int i = 0; i < opponentParty.pokemonNum; i++)
+                    DropdownMenuItem(
+                      value: i+1,
+                      enabled: i+1 != state.opponentPokemonIndex,
+                      child: Text(opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,),
+                    ),
+                ],
+              value: changePokemonIndex,
+              onChanged: (value) {
+                changePokemonIndex = value;
+                appState.editingPhase[processIdx] = true;
+                onFocus();
+              },
+            ),
+          ) :
+          // 行動がにげる/こうさんのとき
+          Container(),
+        ],
+      );
+    }
+  }
+
+  Widget extraInputWidget2(
+    void Function() onFocus,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
     TextEditingController hpController,
+    MyAppState appState,
+    int processIdx,
+    int continousCount,
   )
   {
-    if (playerType != PlayerType.none && move.id != 0) {
+    if (playerType != PlayerType.none && type == TurnMoveType.move) {
       // 追加効果
       Row effectInputRow = Row();
       switch (move.effect.id) {
@@ -217,10 +481,11 @@ class TurnMove {
                       child: Text('すばやさが下がった'),
                     ),
                   ],
-                  value: moveAdditionalEffect,
+                  value: moveAdditionalEffects[continousCount],
                   onChanged: (value) {
-                    moveAdditionalEffect = value;
-                    setState();
+                    moveAdditionalEffects[continousCount] = value;
+                    appState.editingPhase[processIdx] = true;
+                    onFocus();
                   },
                 ),
               ),
@@ -257,7 +522,8 @@ class TurnMove {
                   value: isSuccess,
                   onChanged: (value) {
                     isSuccess = value;
-                    setState();
+                    appState.editingPhase[processIdx] = true;
+                    onFocus();
                   },
                 ),
               ),
@@ -276,7 +542,7 @@ class TurnMove {
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: '命中',
+                        labelText: '命中/失敗',
                       ),
                       items: <DropdownMenuItem>[
                         DropdownMenuItem(
@@ -291,11 +557,16 @@ class TurnMove {
                           value: MoveHit.notHit,
                           child: Text('当たらなかった'),
                         ),
+                        DropdownMenuItem(
+                          value: MoveHit.fail,
+                          child: Text('うまく決まらなかった'),
+                        ),
                       ],
-                      value: moveHits[0],
+                      value: moveHits[continousCount],
                       onChanged: (value) {
-                        moveHits[0] = value;
-                        setState();
+                        moveHits[continousCount] = value;
+                        appState.editingPhase[processIdx] = true;
+                        onFocus();
                       },
                     ),
                   ),
@@ -326,10 +597,11 @@ class TurnMove {
                           child: Text('ないようだ', overflow: TextOverflow.ellipsis,),
                         ),
                       ],
-                      value: moveEffectiveness,
-                      onChanged: moveHits[0] != MoveHit.notHit ? (value) {
-                        moveEffectiveness = value as MoveEffectiveness;
-                        setState();
+                      value: moveEffectivenesses[continousCount],
+                      onChanged: moveHits[continousCount] != MoveHit.notHit && moveHits[continousCount] != MoveHit.fail ? (value) {
+                        moveEffectivenesses[continousCount] = value as MoveEffectiveness;
+                        appState.editingPhase[processIdx] = true;
+                        onFocus();
                       } : null,
                     ),
                   ),
@@ -354,7 +626,7 @@ class TurnMove {
                       initialValue: playerType == PlayerType.me ? opponentPokemonState.remainHPPercent : ownPokemonState.remainHP,
                       min: 0,
                       max: playerType == PlayerType.me ? 100 : ownPokemon.h.real,
-                      enabled: moveHits[0] != MoveHit.notHit,
+                      enabled: moveHits[continousCount] != MoveHit.notHit && moveHits[continousCount] != MoveHit.fail,
                       onIncrement: (value) {
                         if (playerType == PlayerType.me) {
                           percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
@@ -362,6 +634,8 @@ class TurnMove {
                         else {
                           realDamage = (ownPokemonState.remainHP - value) as int;
                         }
+                        appState.editingPhase[processIdx] = true;
+                        onFocus();
                       },
                       onDecrement: (value) {
                         if (playerType == PlayerType.me) {
@@ -370,6 +644,8 @@ class TurnMove {
                         else {
                           realDamage = (ownPokemonState.remainHP - value) as int;
                         }
+                        appState.editingPhase[processIdx] = true;
+                        onFocus();
                       },
                       onChanged: (value) {
                         if (playerType == PlayerType.me) {
@@ -378,6 +654,8 @@ class TurnMove {
                         else {
                           realDamage = (ownPokemonState.remainHP - value) as int;
                         }
+                        appState.editingPhase[processIdx] = true;
+                        onFocus();
                       },
                     ),
                   ),
@@ -403,10 +681,10 @@ class TurnMove {
     move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     moveHits = [MoveHit.hit];
-    moveEffectiveness = MoveEffectiveness.normal;
+    moveEffectivenesses = [MoveEffectiveness.normal];
     realDamage = 0;
     percentDamage = 0;
-    moveAdditionalEffect = MoveAdditionalEffect.none;
+    moveAdditionalEffects = [MoveAdditionalEffect.none];
     changePokemonIndex = null;
   }
 
@@ -478,32 +756,46 @@ class TurnMove {
       turnMove.moveHits.add(t);
     }
     // moveEffectiveness
-    switch (int.parse(turnMoveElements[6])) {
-      case 1:
-        turnMove.moveEffectiveness = MoveEffectiveness.great;
-        break;
-      case 2:
-        turnMove.moveEffectiveness = MoveEffectiveness.notGood;
-        break;
-      case 3:
-        turnMove.moveEffectiveness = MoveEffectiveness.noEffect;
-        break;
-      default:
-        turnMove.moveEffectiveness = MoveEffectiveness.normal;
-        break;
+    var moveEffectivenesses = turnMoveElements[6].split(split2);
+    turnMove.moveEffectivenesses.clear();
+    for (var moveEffectivenessElement in moveEffectivenesses) {
+      if (moveEffectivenessElement == '') break;
+      MoveEffectiveness t = MoveEffectiveness.normal;
+      switch (int.parse(moveEffectivenessElement)) {
+        case 1:
+          t = MoveEffectiveness.great;
+          break;
+        case 2:
+          t = MoveEffectiveness.notGood;
+          break;
+        case 3:
+          t = MoveEffectiveness.noEffect;
+          break;
+        default:
+          t = MoveEffectiveness.normal;
+          break;
+      }
+      turnMove.moveEffectivenesses.add(t);
     }
     // realDamage
     turnMove.realDamage = int.parse(turnMoveElements[7]);
     // percentDamage
     turnMove.percentDamage = int.parse(turnMoveElements[8]);
     // moveAdditionalEffect
-    switch (int.parse(turnMoveElements[9])) {
-      case 1:
-        turnMove.moveAdditionalEffect = MoveAdditionalEffect.speedDown;
-        break;
-      default:
-        turnMove.moveAdditionalEffect = MoveAdditionalEffect.none;
-        break;
+    var moveAdditionalEffects = turnMoveElements[9].split(split2);
+    turnMove.moveAdditionalEffects.clear();
+    for (var moveAdditionalEffect in moveAdditionalEffects) {
+      if (moveAdditionalEffect == '') break;
+      MoveAdditionalEffect t = MoveAdditionalEffect.none;
+      switch (int.parse(moveAdditionalEffect)) {
+        case 1:
+          t = MoveAdditionalEffect.speedDown;
+          break;
+        default:
+          t = MoveAdditionalEffect.none;
+          break;
+      }
+      turnMove.moveAdditionalEffects.add(t);
     }
     // changePokemonIndex
     if (turnMoveElements[10] != '') {
@@ -612,20 +904,23 @@ class TurnMove {
       ret += split2;
     }
     ret += split1;
-    // moveEffectiveness
-    switch (moveEffectiveness) {
-      case MoveEffectiveness.great:
-        ret += '1';
-        break;
-      case MoveEffectiveness.notGood:
-        ret += '2';
-        break;
-      case MoveEffectiveness.noEffect:
-        ret += '3';
-        break;
-      default:
-        ret += '0';
-        break;
+    // moveEffectivenesses
+    for (final moveEffectiveness in moveEffectivenesses) {
+      switch (moveEffectiveness) {
+        case MoveEffectiveness.great:
+          ret += '1';
+          break;
+        case MoveEffectiveness.notGood:
+          ret += '2';
+          break;
+        case MoveEffectiveness.noEffect:
+          ret += '3';
+          break;
+        default:
+          ret += '0';
+          break;
+      }
+      ret += split2;
     }
     ret += split1;
     // realDamage
@@ -634,14 +929,17 @@ class TurnMove {
     // percentDamage
     ret += percentDamage.toString();
     ret += split1;
-    // moveAdditionalEffect
-    switch (moveAdditionalEffect) {
-      case MoveAdditionalEffect.speedDown:
-        ret += '1';
-        break;
-      default:
-        ret += '0';
-        break;
+    // moveAdditionalEffects
+    for (final moveAdditionalEffect in moveAdditionalEffects) {
+      switch (moveAdditionalEffect) {
+        case MoveAdditionalEffect.speedDown:
+          ret += '1';
+          break;
+        default:
+          ret += '0';
+          break;
+      }
+      ret += split2;
     }
     ret += split1;
     // changePokemonIndex

@@ -6,8 +6,9 @@ import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
 
-class BattleBeforeMoveEffectInputColumn extends Column {
-  BattleBeforeMoveEffectInputColumn(
+/*
+class BattleTurnEndEffectInputColumn extends Column {
+  BattleTurnEndEffectInputColumn(
     PokeDB pokeData,
     void Function() setState,
     ThemeData theme,
@@ -15,9 +16,9 @@ class BattleBeforeMoveEffectInputColumn extends Column {
     Turn turn,
     List<TurnEffect> turnEffects,
     MyAppState appState,
-    TurnPhase focusPhase,
+    int focusPhaseIdxOffset,
     int focusPhaseIdx,
-    void Function(TurnPhase, int) onFocus,
+    void Function(int) onFocus,
     List<PhaseState> stateList,
   ) :
   super(
@@ -27,11 +28,11 @@ class BattleBeforeMoveEffectInputColumn extends Column {
         Column(
           children: [
             GestureDetector(
-              onTap: focusPhase != TurnPhase.beforeMove || focusPhaseIdx != i+1 ? () => onFocus(TurnPhase.beforeMove, i+1) : (){},
+              onTap: focusPhaseIdx != focusPhaseIdxOffset+i+1 ? () => onFocus(focusPhaseIdxOffset+i+1) : (){},
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  border: focusPhase == TurnPhase.beforeMove && focusPhaseIdx == i+1 ? Border.all(width: 3, color: Colors.orange) : Border.all(color: theme.primaryColor),
+                  border: focusPhaseIdx == focusPhaseIdxOffset + i+1 ? Border.all(width: 3, color: Colors.orange) : Border.all(color: theme.primaryColor),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Column(
@@ -73,7 +74,7 @@ class BattleBeforeMoveEffectInputColumn extends Column {
                             onPressed: () {
                               turnEffects.removeAt(i);
                               appState.beforeMoveEditing.removeAt(i);
-                              onFocus(TurnPhase.beforeMove, 0);   // フォーカスリセット
+                              onFocus(0);   // フォーカスリセット
                               //setState();
                             },
                           ),
@@ -137,7 +138,7 @@ class BattleBeforeMoveEffectInputColumn extends Column {
                                 child: Text('場', overflow: TextOverflow.ellipsis,),
                               ),
                             ],
-                            value: turnEffects[i].effect == EffectType.none ? null : turnEffects[i].effect,
+                            value: turnEffects[i].effect.id == EffectType.none ? null : turnEffects[i].effect,
                             onChanged: (value) {
                               turnEffects[i].effect = value;
                               appState.beforeMoveEditing[i] = true;
@@ -160,7 +161,7 @@ class BattleBeforeMoveEffectInputColumn extends Column {
                             ),
                             items:
                               <DropdownMenuItem>[
-                                for (final effect in TurnEffect.getPossibleEffects(AbilityTiming(1), turnEffects[i].playerType, turnEffects[i].effect,
+                                for (final effect in TurnEffect.getPossibleEffects(AbilityTiming(4), turnEffects[i].playerType, turnEffects[i].effect,
                                   turnEffects[i].playerType == PlayerType.me ? battle.ownParty.pokemons[stateList[i].ownPokemonIndex-1] :
                                   turnEffects[i].playerType == PlayerType.opponent ? battle.opponentParty.pokemons[stateList[i].opponentPokemonIndex-1] : null,
                                   turnEffects[i].playerType == PlayerType.me ? stateList[i].ownPokemonStates[stateList[i].ownPokemonIndex-1] :
@@ -190,11 +191,11 @@ class BattleBeforeMoveEffectInputColumn extends Column {
         ),
       // 処理追加ボタン
       TextButton(
-        onPressed: turn.canAddBeforemoveEffects() && getSelectedNum(appState.beforeMoveEditing) == 0 ?
+        onPressed: /*turn.canAddBeforemoveEffects() && */getSelectedNum(appState.beforeMoveEditing) == 0 ?
           () {
-            turnEffects.add(TurnEffect()..effect = EffectType.ability);
+            turnEffects.add(TurnEffect()..effect = EffectType(EffectType.ability));
             appState.beforeMoveEditing.add(true);
-            onFocus(TurnPhase.beforeMove, turnEffects.length);
+            onFocus(focusPhaseIdxOffset+turnEffects.length);
             //setState();
           } : null,
         child: Container(
@@ -207,7 +208,7 @@ class BattleBeforeMoveEffectInputColumn extends Column {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.add_circle),
-              Text('ポケモン登場時処理を追加'),
+              Text('ターン終了時処理を追加'),
             ],
           ),
         ),
@@ -215,3 +216,4 @@ class BattleBeforeMoveEffectInputColumn extends Column {
     ],
   );
 }
+*/
