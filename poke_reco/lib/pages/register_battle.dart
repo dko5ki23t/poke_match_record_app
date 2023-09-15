@@ -88,7 +88,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
       opponentPokemonController[i].text = widget.battle.opponentParty.pokemons[i]!.name;
     }
-    List<SameTimingEffectRange> sameTimingEffectRangeList = [];
     if (widget.battle.turns.length >= turnNum) {
       // TODO
       //move1Controller.text = widget.battle.turns[turnNum-1].turnMove1.move.displayName;
@@ -97,8 +96,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // TODO:連続こうげきのturnEffect(+それ使用後の効果)を消す
         //widget.battle.turns[turnNum-1].processes
       }
-      _clearContinuousMove(appState);     // 不整合な連続こうげきを消す
-      sameTimingEffectRangeList = _getSameTimingEffectRange();
+      _adjustProcesses(appState);
     }
 
     // TODO
@@ -222,9 +220,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             turn.processes.addAll(
               [
                 TurnEffect()
+                ..effect = EffectType(EffectType.move)
                 ..timing = AbilityTiming(AbilityTiming.action)
                 ..move = TurnMove(),
                 TurnEffect()
+                ..effect = EffectType(EffectType.move)
                 ..timing = AbilityTiming(AbilityTiming.action)
                 ..move = TurnMove(),
               ]
@@ -403,18 +403,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].initialOpponentPokemonIndex-1]!,
                 textEditingControllerList1,
                 textEditingControllerList2,
-                beforeMoveExpandController,
-                moveExpandController, afterMoveExpandController,
                 appState, focusPhaseIdx,
                 (phaseIdx) {
                   focusPhaseIdx = phaseIdx;
                   setState(() {});
                 },
-                sameTimingEffectRangeList,
-                [
-                  for (int i = 0; i < widget.battle.turns[turnNum-1].processes.length; i++)
-                  widget.battle.turns[turnNum-1].getProcessedStates(i, widget.battle.ownParty, widget.battle.opponentParty, pokeData)
-                ]
+                _getSameTimingList(pokeData),
               ),
             ),
           ],
@@ -455,6 +449,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   void _clearContinuousMove(MyAppState appState) {
     int allowedContinuous = 0;
     int continuousCount = 0;
+    bool clearAfterMove = false;    // 連続こうげき削除に伴い、そのこうげき後の効果を消すかどうかのフラグ
     List<int> removeIdxs = [];
     for (int i = 0; i < widget.battle.turns[turnNum-1].processes.length; i++) {
       var process = widget.battle.turns[turnNum-1].processes[i];
@@ -463,11 +458,35 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       ) {
         allowedContinuous = process.move!.move.maxMoveCount()-1;
         continuousCount = 0;
+        // わざが失敗/命中してない場合は、連続こうげきは問答無用で削除対象
+        if (!process.move!.isSuccess ||
+            process.move!.moveHits[0] == MoveHit.notHit ||
+            process.move!.moveHits[0] == MoveHit.fail
+        ) {
+          allowedContinuous = 0;
+        }
       }
       else if (process.timing.id == AbilityTiming.continuousMove) {
         continuousCount++;
         if (continuousCount > allowedContinuous) {
           removeIdxs.add(i);
+          clearAfterMove = true;
+        }
+        // わざが失敗/命中してない場合は、次以降の連続こうげきは問答無用で削除対象
+        if (!process.isAdding &&
+            (!process.move!.isSuccess ||
+             process.move!.moveHits[continuousCount] == MoveHit.notHit ||
+             process.move!.moveHits[continuousCount] == MoveHit.fail)
+        ) {
+          continuousCount = allowedContinuous;
+        }
+      }
+      else if (clearAfterMove) {
+        if (process.timing.id == AbilityTiming.afterMove) {
+          removeIdxs.add(i);
+        }
+        else {
+          clearAfterMove = false;
         }
       }
     }
@@ -480,123 +499,218 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  List<SameTimingEffectRange> _getSameTimingEffectRange() {
-    List<SameTimingEffectRange> ret = [];
+  void _clearPokemonApeer(MyAppState appState) {
+    List<int> removeIdxs = [];
+    var processList = widget.battle.turns[turnNum-1].processes;
+    for (int i = 0; i < processList.length; i++) {
+      var process = processList[i];
+      if (process.timing.id == AbilityTiming.action &&
+          process.move!.type != TurnMoveType.change
+      ) {
+        for (int j = i+1; j < processList.length; j++) {
+          if (processList[j].timing.id == AbilityTiming.pokemonAppear) {
+            removeIdxs.add(j);
+          }
+          else {
+            break;
+          }
+        }
+      }
+    }
+    for (int i = removeIdxs.length-1; i >= 0; i--) {
+      int idx = removeIdxs[i];
+      processList.removeAt(idx);
+      appState.editingPhase.removeAt(idx);
+      textEditingControllerList1.removeAt(idx);
+      textEditingControllerList2.removeAt(idx);
+    }
+  }
+
+  void _adjustProcesses(MyAppState appState) {
+    _clearContinuousMove(appState);
+    _clearPokemonApeer(appState);
+
     int allowedContinuous = 0;
     int continuousCount = 0;
-    SameTimingEffectRange currentSTER = SameTimingEffectRange();
-    for (int i = 0; i < widget.battle.turns[turnNum-1].processes.length; i++) {
-      var process = widget.battle.turns[turnNum-1].processes[i];
-      if (process.timing.id == AbilityTiming.action ||
-          process.timing.id == AbilityTiming.continuousMove ||
-          currentSTER.timing.id != process.timing.id      // 行動選択か、連続こうげきか、ひとつ前とは違うタイミングなら
+    int i = 0;
+    var processList = widget.battle.turns[turnNum-1].processes;
+    while (true) {
+      if (i >= processList.length) break;
+      var process = processList[i];
+      if (process.timing.id == AbilityTiming.afterMove &&
+          continuousCount < allowedContinuous &&
+          (i+1 >= processList.length ||
+           processList[i+1].timing.id != AbilityTiming.afterMove &&
+           processList[i+1].timing.id != AbilityTiming.continuousMove 
+          )
       ) {
-        // 追加
-        if (i != 0) {
-          currentSTER.endIdx = i-1;
-          ret.add(currentSTER);
-          if (currentSTER.timing.id == AbilityTiming.afterMove) {  // 追加したものがわざ使用後の場合
-            // 可能な連続こうげきが残っている場合、「連続こうげき」タイミングを追加
-            if (continuousCount < allowedContinuous &&
-                process.timing.id != AbilityTiming.continuousMove
-            ) {
-              currentSTER = SameTimingEffectRange()
-                ..timing = AbilityTiming(AbilityTiming.continuousMove)
-                ..beginIdx = i
-                ..endIdx = i-1;
-              ret.add(currentSTER);
-            }
-          }
-          currentSTER = SameTimingEffectRange();
-        }
-        currentSTER.timing = process.timing;
-        currentSTER.beginIdx = i;
-      }
-      if (process.timing.id == AbilityTiming.action &&
-          process.move!.type == TurnMoveType.change &&
-          (i+1 >= widget.battle.turns[turnNum-1].processes.length ||
-           widget.battle.turns[turnNum-1].processes[i+1].timing.id != AbilityTiming.pokemonAppear)
-           // ポケモン交換の場合、次は「ポケモン登場時」タイミングにする
-      ) {
-        currentSTER.endIdx = i;
-        ret.add(currentSTER);
-        currentSTER = SameTimingEffectRange()
-          ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-          ..beginIdx = i+1;
+        // 可能な連続こうげきが残っている場合、「連続こうげき」タイミングを追加
+        processList.insert(i+1,
+          TurnEffect()
+          ..effect = EffectType(EffectType.move)
+          ..timing = AbilityTiming(AbilityTiming.continuousMove)
+          ..isAdding = true
+        );
+        appState.editingPhase.insert(i+1, false);
+        textEditingControllerList1.insert(i+1, TextEditingController());
+        textEditingControllerList2.insert(i+1, TextEditingController());
       }
       else if (process.timing.id == AbilityTiming.action &&
-          process.move!.type == TurnMoveType.move           // わざの場合
+          process.move!.type == TurnMoveType.change &&
+          (i+1 >= processList.length ||
+           processList[i+1].timing.id != AbilityTiming.pokemonAppear)
+           // ポケモン交換の場合、次は「ポケモン登場時」タイミングにする
+      ) {
+        processList.insert(i+1,
+          TurnEffect()
+          ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+          ..isAdding = true
+        );
+        appState.editingPhase.insert(i+1, false);
+        textEditingControllerList1.insert(i+1, TextEditingController());
+        textEditingControllerList2.insert(i+1, TextEditingController());
+      }
+      else if (
+        process.timing.id == AbilityTiming.action &&
+        process.move!.type == TurnMoveType.move           // わざの場合
       ) {
         allowedContinuous = process.move!.move.maxMoveCount()-1;
         continuousCount = 0;
-        if (i+1 >= widget.battle.turns[turnNum-1].processes.length ||
-            widget.battle.turns[turnNum-1].processes[i+1].timing.id != AbilityTiming.afterMove
+        // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
+        if (!process.move!.isSuccess ||
+            process.move!.moveHits[0] == MoveHit.notHit ||
+            process.move!.moveHits[0] == MoveHit.fail
+        ) {
+          allowedContinuous = 0;
+        }
+        if (i+1 >= processList.length ||
+            processList[i+1].timing.id != AbilityTiming.afterMove
         ) {
         // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-          currentSTER.endIdx = i;
-          ret.add(currentSTER);
-          currentSTER = SameTimingEffectRange()
+          processList.insert(i+1,
+            TurnEffect()
             ..timing = AbilityTiming(AbilityTiming.afterMove)
-            ..beginIdx = i+1;
-          // さらに、連続こうげきの場合は「連続こうげき」タイミングを追加
+            ..isAdding = true
+          );
+          appState.editingPhase.insert(i+1, false);
+          textEditingControllerList1.insert(i+1, TextEditingController());
+          textEditingControllerList2.insert(i+1, TextEditingController());
+          // さらに、連続こうげきの場合は「連続こうげき」タイミングを追加(ただし、ちゃんと命中した場合のみ)
           if (continuousCount < allowedContinuous &&
-              (i+1 >= widget.battle.turns[turnNum-1].processes.length ||
-              widget.battle.turns[turnNum-1].processes[i+1].timing.id != AbilityTiming.continuousMove)
+              (i+1 >= processList.length ||
+              processList[i+1].timing.id != AbilityTiming.continuousMove &&
+              processList[i].move!.isSuccess &&
+              processList[i].move!.moveHits[0] != MoveHit.notHit &&
+              processList[i].move!.moveHits[0] != MoveHit.fail)
           ) {
-            currentSTER.endIdx = i;
-            ret.add(currentSTER);
-            currentSTER = SameTimingEffectRange()
+            processList.insert(i+1,
+              TurnEffect()
+              ..effect = EffectType(EffectType.move)
               ..timing = AbilityTiming(AbilityTiming.continuousMove)
-              ..beginIdx = i+1;
+              ..isAdding = true
+            );
+            appState.editingPhase.insert(i+1, false);
+            textEditingControllerList1.insert(i+1, TextEditingController());
+            textEditingControllerList2.insert(i+1, TextEditingController());
           }
         }
       }
-      else if (process.timing.id == AbilityTiming.continuousMove) {   // 連続こうげきの場合
+      else if (process.timing.id == AbilityTiming.continuousMove && !process.isAdding) {   // 連続こうげきの場合
         continuousCount++;
         // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-        if (i+1 >= widget.battle.turns[turnNum-1].processes.length ||
-            widget.battle.turns[turnNum-1].processes[i+1].timing.id != AbilityTiming.afterMove
-        ) {
-          currentSTER.endIdx = i;
-          ret.add(currentSTER);
-          currentSTER = SameTimingEffectRange()
+        if (i+1 >= processList.length ||
+            processList[i+1].timing.id != AbilityTiming.afterMove)
+        {
+          processList.insert(i+1,
+            TurnEffect()
             ..timing = AbilityTiming(AbilityTiming.afterMove)
-            ..beginIdx = i+1;
+            ..isAdding = true
+          );
+          appState.editingPhase.insert(i+1, false);
+          textEditingControllerList1.insert(i+1, TextEditingController());
+          textEditingControllerList2.insert(i+1, TextEditingController());
+        }
+        // わざが命中してない場合は、これ以上連続こうげきさせない
+        if (!processList[i].isAdding &&
+            (!processList[i].move!.isSuccess ||
+             processList[i].move!.moveHits[continuousCount] == MoveHit.notHit ||
+             processList[i].move!.moveHits[continuousCount] == MoveHit.fail)
+        ) {
+          continuousCount = allowedContinuous;
         }
       }
-    }
-    // 最後の要素を追加
-    if (widget.battle.turns[turnNum-1].processes.isNotEmpty) {
-      currentSTER.endIdx = widget.battle.turns[turnNum-1].processes.length-1;
-      ret.add(currentSTER);
+
+      i++;
     }
 
     // 最初のターンなら、初めにポケモン登場時処理を追加
-    if (turnNum == 1 && (ret.isEmpty || ret[0].timing.id != AbilityTiming.pokemonAppear)) {
-      ret.insert(0, SameTimingEffectRange()
+    if (turnNum == 1 && (processList.isEmpty || processList[0].timing.id != AbilityTiming.pokemonAppear)) {
+      processList.insert(0, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-        ..beginIdx = 0
-        ..endIdx = -1
+        ..isAdding = true
       );
+      appState.editingPhase.insert(0, false);
+      textEditingControllerList1.insert(0, TextEditingController());
+      textEditingControllerList2.insert(0, TextEditingController());
+    }
+    int firstPokemonAppearEndIdx = -1;
+    if (turnNum == 1) {
+      for (int i = 0; i < processList.length; i++) {
+        if (processList[i].timing.id != AbilityTiming.pokemonAppear) break;
+        firstPokemonAppearEndIdx++;
+      }
     }
     // 行動決定直後処理を追加
-    if (ret.isEmpty ||
-        (turnNum == 1 && ret.length <= 1) ||
-        ret[turnNum == 1 ? 1 : 0].timing.id != AbilityTiming.afterActionDecision
-    ) {
-      ret.insert(turnNum == 1 ? 1 : 0, SameTimingEffectRange()
+    if (processList.isEmpty ||
+        (turnNum == 1 && processList.length <= 1) ||
+        processList[firstPokemonAppearEndIdx+1].timing.id != AbilityTiming.afterActionDecision
+      )
+    {
+      processList.insert(firstPokemonAppearEndIdx+1, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
-        ..beginIdx = ret.isEmpty ? 0 : ret[0].endIdx+1
-        ..endIdx = ret.isEmpty ? -1 : ret[0].endIdx
+        ..isAdding = true
       );
+      appState.editingPhase.insert(firstPokemonAppearEndIdx+1, false);
+      textEditingControllerList1.insert(firstPokemonAppearEndIdx+1, TextEditingController());
+      textEditingControllerList2.insert(firstPokemonAppearEndIdx+1, TextEditingController());
     }
+    // ポケモン交換
     // 毎ターン終了時処理を追加
-    if (ret.last.timing.id != AbilityTiming.everyTurnEnd) {
-      ret.add(SameTimingEffectRange()
+    if (processList.last.timing.id != AbilityTiming.everyTurnEnd) {
+      processList.add(TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-        ..beginIdx = widget.battle.turns[turnNum-1].processes.length
-        ..endIdx = widget.battle.turns[turnNum-1].processes.length-1
+        ..isAdding = true
       );
+      appState.editingPhase.add(false);
+      textEditingControllerList1.add(TextEditingController());
+      textEditingControllerList2.add(TextEditingController());
+    }
+  }
+
+  List<List<TurnEffectAndState>> _getSameTimingList(PokeDB pokeData) {
+    int beginIdx = 0;
+    int timingId = 0;
+    List<List<TurnEffectAndState>> ret = [];
+    var processes = widget.battle.turns[turnNum-1].processes;
+    final turnEffectAndStates = [
+      for (int i = 0; i < processes.length; i++)
+      TurnEffectAndState()
+      ..turnEffect = processes[i]
+      ..phaseState = widget.battle.turns[turnNum-1].getProcessedStates(i, widget.battle.ownParty, widget.battle.opponentParty, pokeData)
+    ];
+    for (int i = 0; i < turnEffectAndStates.length; i++) {
+      if (turnEffectAndStates[i].turnEffect.timing.id != timingId ||
+          turnEffectAndStates[i].turnEffect.timing.id == AbilityTiming.action
+      ) {
+        if (i != 0) {
+          ret.add(turnEffectAndStates.sublist(beginIdx, i));
+        }
+        beginIdx = i;
+        timingId = turnEffectAndStates[i].turnEffect.timing.id;
+      }
+    }
+    if (processes.isNotEmpty) {
+      ret.add(turnEffectAndStates.sublist(beginIdx, processes.length));
     }
 
     return ret;

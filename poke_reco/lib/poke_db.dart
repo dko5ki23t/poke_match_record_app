@@ -459,12 +459,6 @@ class AbilityTiming {
   final int id;
 }
 
-class SameTimingEffectRange {
-  AbilityTiming timing = AbilityTiming(0);
-  int beginIdx = 0;
-  int endIdx = 0;
-}
-
 // 対象
 class Target {
 /*

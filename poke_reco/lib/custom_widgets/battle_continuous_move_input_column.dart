@@ -16,19 +16,18 @@ class BattleContinuousMoveInputColumn extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    int processIdx,   // まだ存在しないなら、追加することになるindex
+    int processIdx,
     PhaseState? moveState,
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
-    bool isExist,     // falseなら追加ボタンを表示
     TurnMove refMove,
     int continuousCount,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-      isExist ?
+      !turn.processes[processIdx].isAdding ?
       GestureDetector(
         onTap: focusPhaseIdx != processIdx+1 ? () => onFocus(processIdx+1) : () {},
         child: Container(
@@ -89,16 +88,10 @@ class BattleContinuousMoveInputColumn extends Column {
             refMove.moveHits.add(MoveHit.hit);
             refMove.moveEffectivenesses.add(MoveEffectiveness.normal);
             refMove.moveAdditionalEffects.add(MoveAdditionalEffect.none);
-            turn.processes.insert(
-              processIdx,
-              TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.continuousMove)
-              ..effect = EffectType(EffectType.move)
-              ..move = refMove
-            );
-            appState.editingPhase.insert(processIdx, true);
-            moveControllerList.insert(processIdx, TextEditingController());
-            hpControllerList.insert(processIdx, TextEditingController());
+            turn.processes[processIdx]
+            ..effect = EffectType(EffectType.move)
+            ..move = refMove
+            ..isAdding = false;
             onFocus(processIdx+1);
             //setState();
           },

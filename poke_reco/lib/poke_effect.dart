@@ -255,14 +255,18 @@ class TurnEffect {
   int extraArg1 = 0;
   int extraArg2 = 0;
   TurnMove? move;         // タイプがわざの場合は非null
+  bool isAdding = false;  // trueの場合、追加待ち状態
 
   TurnEffect copyWith() =>
     TurnEffect()
     ..playerType = playerType
+    ..timing = AbilityTiming(timing.id)
     ..effect = effect
     ..effectId = effectId
     ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2;
+    ..extraArg2 = extraArg2
+    ..move = move?.copyWith()
+    ..isAdding = isAdding;
 
   bool isValid() {
     return
@@ -608,4 +612,9 @@ class TurnEffect {
     list[idx1] = list[idx2].copyWith();
     list[idx2] = tmp;
   }
+}
+
+class TurnEffectAndState {
+  TurnEffect turnEffect = TurnEffect();
+  PhaseState phaseState = PhaseState();
 }

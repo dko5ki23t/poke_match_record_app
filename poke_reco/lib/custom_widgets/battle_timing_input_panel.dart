@@ -1,10 +1,10 @@
-import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_action_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dart';
-import 'package:poke_reco/custom_widgets/battle_first_turn_first_effect_input_column.dart';
+import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/poke_effect.dart';
 import 'package:poke_reco/poke_move.dart';
 
 class BattleTimingInputPanel extends Column {
@@ -17,9 +17,7 @@ class BattleTimingInputPanel extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    ExpandableController expandableController,
-    SameTimingEffectRange sameTimingEffectRange,
-    List<PhaseState> stateList,
+    List<TurnEffectAndState> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     Pokemon prevOwnPokemon,
@@ -31,30 +29,15 @@ class BattleTimingInputPanel extends Column {
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-/*
-      ExpandablePanel(
-        controller: expandableController,
-        header: Text(_getHeaderString(sameTimingEffectRange.timing)),
-        collapsed: Text('タップで詳細を設定'),
-        expanded: _getExpandedWidget(
-          sameTimingEffectRange.timing,
-          pokeData, setState, theme, battle,
-          turn, appState, focusPhaseIdx,
-          (phaseIdx) => onFocus(phaseIdx), sameTimingEffectRange,
-          stateList, textEditControllerList1, textEditControllerList2,
-          prevOwnPokemon, prevOpponentPokemon,
-        ),
-      ),
-*/
-      _getHeader(sameTimingEffectRange.timing, actionCount),
-      _getDivider(sameTimingEffectRange.timing),
+      _getHeader(sameTimingList.first.turnEffect.timing, actionCount),
+      _getDivider(sameTimingList.first.turnEffect.timing),
       Container(
         child: _getExpandedWidget(
-          sameTimingEffectRange.timing,
+          sameTimingList.first.turnEffect.timing,
           pokeData, setState, theme, battle,
           turn, appState, focusPhaseIdx,
-          (phaseIdx) => onFocus(phaseIdx), sameTimingEffectRange,
-          stateList, textEditControllerList1, textEditControllerList2,
+          (phaseIdx) => onFocus(phaseIdx), sameTimingList,
+          textEditControllerList1, textEditControllerList2,
           prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount,
         ),
@@ -109,8 +92,7 @@ class BattleTimingInputPanel extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    SameTimingEffectRange sameTimingEffectRange,
-    List<PhaseState> stateList,
+    List<TurnEffectAndState> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     Pokemon prevOwnPokemon,
@@ -126,7 +108,8 @@ class BattleTimingInputPanel extends Column {
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingEffectRange.beginIdx, stateList[0], timing,
+      turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
     ) :
     timing.id == AbilityTiming.continuousMove ?
@@ -136,17 +119,17 @@ class BattleTimingInputPanel extends Column {
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingEffectRange.beginIdx, stateList.isEmpty ? null : stateList[0], timing,
+      turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
-      sameTimingEffectRange.endIdx - sameTimingEffectRange.beginIdx >= 0,
       refMove!, continuousCount
     ) :
-    BattleFirstTurnFirstEffectInputColumn(
+    BattleEffectInputColumn(
       pokeData, setState, theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingEffectRange, stateList, timing,
-      textEditControllerList1, textEditControllerList2,
+      sameTimingList, turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      timing, textEditControllerList1, textEditControllerList2,
     );
   }
 }
