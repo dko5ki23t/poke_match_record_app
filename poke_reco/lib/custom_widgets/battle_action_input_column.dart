@@ -38,7 +38,7 @@ class BattleActionInputColumn extends Column {
               Stack(
                 children: [
                 Center(child: Text(
-                  _getTitle(turn.processes[processIdx].move!, ownPokemon, opponentPokemon)
+                  _getTitle(turn.phases[processIdx].move!, ownPokemon, opponentPokemon)
                 )),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -46,7 +46,7 @@ class BattleActionInputColumn extends Column {
                     appState.editingPhase[processIdx] ?
                     IconButton(
                       icon: Icon(Icons.check),
-                      onPressed: turn.processes[processIdx].move!.isValid() ? () {
+                      onPressed: turn.phases[processIdx].move!.isValid() ? () {
                         appState.editingPhase[processIdx] = false;
                         setState();
                       } : null,
@@ -54,7 +54,7 @@ class BattleActionInputColumn extends Column {
                     IconButton(
                       icon: Icon(Icons.close),
                       onPressed: () {
-                        turn.processes[processIdx].move!.clear();
+                        turn.phases[processIdx].move!.clear();
                         setState();
                       },
                     ),
@@ -82,10 +82,10 @@ class BattleActionInputColumn extends Column {
                           child: Text('${opponentPokemon.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
                         ),
                       ],
-                      value: turn.processes[processIdx].move!.playerType == PlayerType.none ? null : turn.processes[processIdx].move!.playerType,
+                      value: turn.phases[processIdx].move!.playerType == PlayerType.none ? null : turn.phases[processIdx].move!.playerType,
                       onChanged: (value) {
-                        turn.processes[processIdx].playerType = value as PlayerType;
-                        turn.processes[processIdx].move!.playerType = value;
+                        turn.phases[processIdx].playerType = value as PlayerType;
+                        turn.phases[processIdx].move!.playerType = value;
                         appState.editingPhase[processIdx] = true;
                         onFocus(processIdx+1);
                       },
@@ -110,10 +110,10 @@ class BattleActionInputColumn extends Column {
                           child: Text('行動失敗', overflow: TextOverflow.ellipsis,),
                         ),
                       ],
-                      value: turn.processes[processIdx].move!.isSuccess,
-                      onChanged: turn.processes[processIdx].move!.playerType != PlayerType.none ?
+                      value: turn.phases[processIdx].move!.isSuccess,
+                      onChanged: turn.phases[processIdx].move!.playerType != PlayerType.none ?
                         (value) {
-                          turn.processes[processIdx].move!.isSuccess = value!;
+                          turn.phases[processIdx].move!.isSuccess = value!;
                           appState.editingPhase[processIdx] = true;
                           onFocus(processIdx+1);
                         } : null,
@@ -122,7 +122,7 @@ class BattleActionInputColumn extends Column {
                 ],
               ),
               SizedBox(height: 10,),
-              turn.processes[processIdx].move!.extraInputWidget1(
+              turn.phases[processIdx].move!.extraInputWidget1(
                 () => onFocus(processIdx+1), battle.ownParty, 
                 battle.opponentParty, moveState, ownPokemon, opponentPokemon,
                 moveState.ownPokemonStates[moveState.ownPokemonIndex-1], 
@@ -131,7 +131,7 @@ class BattleActionInputColumn extends Column {
                 appState, processIdx,
               ),
               SizedBox(height: 10,),
-              turn.processes[processIdx].move!.extraInputWidget2(
+              turn.phases[processIdx].move!.extraInputWidget2(
                 () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
                 moveState.ownPokemonStates[moveState.ownPokemonIndex-1],
                 moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],

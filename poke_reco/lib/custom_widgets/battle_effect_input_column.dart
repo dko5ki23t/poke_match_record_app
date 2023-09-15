@@ -48,7 +48,7 @@ class BattleEffectInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.arrow_upward),
                             onPressed: i != 0 ? () {
-                              TurnEffect.swap(turn.processes, firstIdx+i-1, firstIdx+i);
+                              TurnEffect.swap(turn.phases, firstIdx+i-1, firstIdx+i);
                               listShallowSwap(appState.editingPhase, firstIdx+i-1, firstIdx+i);
                               setState();
                             }: null,
@@ -57,14 +57,14 @@ class BattleEffectInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.arrow_downward),
                             onPressed: i < sameTimingList.length-1 && !sameTimingList[i+1].turnEffect.isAdding ? () {
-                              TurnEffect.swap(turn.processes, firstIdx+i, firstIdx+i+1);
+                              TurnEffect.swap(turn.phases, firstIdx+i, firstIdx+i+1);
                               listShallowSwap(appState.editingPhase, firstIdx+i, firstIdx+i+1);
                               setState();
                             } : null,
                           ) :
                           IconButton(
                             icon: Icon(Icons.check),
-                            onPressed: turn.processes[firstIdx+i].isValid() ? () {
+                            onPressed: turn.phases[firstIdx+i].isValid() ? () {
                               appState.editingPhase[firstIdx+i] = false;
                               setState();
                             } : null,
@@ -72,7 +72,7 @@ class BattleEffectInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.close),
                             onPressed: () {
-                              turn.processes.removeAt(firstIdx+i);
+                              turn.phases.removeAt(firstIdx+i);
                               appState.editingPhase.removeAt(firstIdx+i);
                               textEditControllerList1.removeAt(firstIdx+i);
                               textEditControllerList2.removeAt(firstIdx+i);
@@ -108,10 +108,10 @@ class BattleEffectInputColumn extends Column {
                                 child: Text('天気・フィールド', overflow: TextOverflow.ellipsis,),
                               ),
                             ],
-                            value: turn.processes[firstIdx+i].playerType == PlayerType.none ? null : turn.processes[firstIdx+i].playerType,
+                            value: turn.phases[firstIdx+i].playerType == PlayerType.none ? null : turn.phases[firstIdx+i].playerType,
                             onChanged: (value) {
-                              turn.processes[firstIdx+i].playerType = value;
-                              turn.processes[firstIdx+i].effectId = 0;
+                              turn.phases[firstIdx+i].playerType = value;
+                              turn.phases[firstIdx+i].effectId = 0;
                               appState.editingPhase[firstIdx+i] = true;
                               setState();
                             },
@@ -144,14 +144,14 @@ class BattleEffectInputColumn extends Column {
                                 child: Text('状態異常', overflow: TextOverflow.ellipsis,),
                               ),
                             ],
-                            value: (turn.processes[firstIdx+i].effect.id == EffectType.none ||
-                                    turn.processes[firstIdx+i].effect.id == EffectType.weather ||
-                                    turn.processes[firstIdx+i].effect.id == EffectType.field ||
-                                    turn.processes[firstIdx+i].effect.id == EffectType.move) ? null : turn.processes[firstIdx+i].effect.id,
-                            onChanged: turn.processes[firstIdx+i].playerType != PlayerType.entireField && turn.processes[firstIdx+i].playerType != PlayerType.none ?
+                            value: (turn.phases[firstIdx+i].effect.id == EffectType.none ||
+                                    turn.phases[firstIdx+i].effect.id == EffectType.weather ||
+                                    turn.phases[firstIdx+i].effect.id == EffectType.field ||
+                                    turn.phases[firstIdx+i].effect.id == EffectType.move) ? null : turn.phases[firstIdx+i].effect.id,
+                            onChanged: turn.phases[firstIdx+i].playerType != PlayerType.entireField && turn.phases[firstIdx+i].playerType != PlayerType.none ?
                             (value) {
-                              turn.processes[firstIdx+i].effect = EffectType(value!);
-                              turn.processes[firstIdx+i].effectId = 0;
+                              turn.phases[firstIdx+i].effect = EffectType(value!);
+                              turn.phases[firstIdx+i].effectId = 0;
                               appState.editingPhase[firstIdx+i] = true;
                               setState();
                             } : null,
@@ -172,20 +172,20 @@ class BattleEffectInputColumn extends Column {
                             ),
                             items:
                               <DropdownMenuItem>[
-                                for (final effect in TurnEffect.getPossibleEffects(timing, turn.processes[firstIdx+i].playerType, turn.processes[firstIdx+i].effect,
-                                  turn.processes[firstIdx+i].playerType == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.processes[firstIdx+i].playerType == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                  turn.processes[firstIdx+i].playerType == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.processes[firstIdx+i].playerType == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                for (final effect in TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
+                                  turn.phases[firstIdx+i].playerType == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                  turn.phases[firstIdx+i].playerType == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                  turn.phases[firstIdx+i].playerType == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                  turn.phases[firstIdx+i].playerType == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
                                    sameTimingList[i].phaseState))
                                   DropdownMenuItem(
                                     value: effect.effectId,
                                     child: Text(effect.getDisplayName(pokeData), overflow: TextOverflow.ellipsis,),
                                   ),
                               ],
-                            value: turn.processes[firstIdx+i].effectId == 0 ? null : turn.processes[firstIdx+i].effectId,
+                            value: turn.phases[firstIdx+i].effectId == 0 ? null : turn.phases[firstIdx+i].effectId,
                             onChanged: (value) {
-                              turn.processes[firstIdx+i].effectId = value;
+                              turn.phases[firstIdx+i].effectId = value;
                               appState.editingPhase[firstIdx+i] = true;
                               setState();
                             },
@@ -193,7 +193,7 @@ class BattleEffectInputColumn extends Column {
                         ),
                       ],
                     ),
-                    turn.processes[firstIdx+i].extraInputWidget(setState),
+                    turn.phases[firstIdx+i].extraInputWidget(setState),
                   ],
                 ),
               ),
@@ -205,8 +205,8 @@ class BattleEffectInputColumn extends Column {
         TextButton(
           onPressed: getSelectedNum(appState.editingPhase.sublist(firstIdx, firstIdx+sameTimingList.length)) == 0 ?
             () {
-              turn.processes[firstIdx+i].isAdding = false;
-              turn.processes.insert(firstIdx+i+1,
+              turn.phases[firstIdx+i].isAdding = false;
+              turn.phases.insert(firstIdx+i+1,
                 TurnEffect()
                 ..timing = timing
                 ..isAdding = true

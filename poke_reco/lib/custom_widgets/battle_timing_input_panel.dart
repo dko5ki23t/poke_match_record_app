@@ -108,7 +108,7 @@ class BattleTimingInputPanel extends Column {
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
     ) :
@@ -119,7 +119,7 @@ class BattleTimingInputPanel extends Column {
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
       refMove!, continuousCount
@@ -128,7 +128,7 @@ class BattleTimingInputPanel extends Column {
       pokeData, setState, theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingList, turn.processes.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      sameTimingList, turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1, textEditControllerList2,
     );
   }

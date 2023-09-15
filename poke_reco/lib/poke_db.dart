@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:poke_reco/poke_effect.dart';
-import 'package:poke_reco/poke_move.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:tuple/tuple.dart';
@@ -1666,32 +1665,18 @@ class PhaseState {
 }
 
 class Turn {
-//  bool changedOwnPokemon = false;
-//  bool changedOpponentPokemon = false;
   int initialOwnPokemonIndex = 0;         // 0は無効値
   int initialOpponentPokemonIndex = 0;    // 0は無効値
-//  int currentOwnPokemonIndex = 0;         // 0は無効値
-//  int currentOpponentPokemonIndex = 0;    // 0は無効値
   List<PokemonState> initialOwnPokemonStates = [];
   List<PokemonState> initialOpponentPokemonStates = [];
-//  List<PokemonState> ownPokemonCurrentStates = [];
-//  List<PokemonState> opponentPokemonCurrentStates = [];
   Weather initialWeather = Weather(0);
   Field initialField = Field(0);
-  List<TurnEffect> processes = [];
-  //List<TurnEffect> beforeMoveEffects = [];
-  //TurnMove turnMove1 = TurnMove();
-  //TurnMove turnMove2 = TurnMove();
-  //List<TurnEffect> afterMoveEffects = [];
+  List<TurnEffect> phases = [];
 
   Turn copyWith() =>
     Turn()
-//    ..changedOwnPokemon = changedOwnPokemon
-//    ..changedOpponentPokemon = changedOpponentPokemon
     ..initialOwnPokemonIndex = initialOwnPokemonIndex
     ..initialOpponentPokemonIndex = initialOpponentPokemonIndex
-//    ..currentOwnPokemonIndex = currentOwnPokemonIndex
-//    ..currentOpponentPokemonIndex = currentOpponentPokemonIndex
     ..initialOwnPokemonStates = [
       for (final state in initialOwnPokemonStates)
       state.copyWith()
@@ -1700,32 +1685,12 @@ class Turn {
       for (final state in initialOpponentPokemonStates)
       state.copyWith()
     ]
-//    ..ownPokemonCurrentStates = [
-//      for (final state in ownPokemonCurrentStates)
-//      state.copyWith()
-//    ]
-//    ..opponentPokemonCurrentStates = [
-//      for (final state in opponentPokemonCurrentStates)
-//      state.copyWith()
-//    ]
     ..initialWeather = initialWeather.copyWith()
     ..initialField = initialField.copyWith()
-    ..processes = [
-      for (final process in processes)
+    ..phases = [
+      for (final process in phases)
       process.copyWith()
     ];
-/*
-    ..beforeMoveEffects = [
-      for (final effect in beforeMoveEffects)
-      effect.copyWith()
-    ]
-    ..turnMove1 = turnMove1.copyWith()
-    ..turnMove2 = turnMove2.copyWith()
-    ..afterMoveEffects = [
-      for (final effect in afterMoveEffects)
-      effect.copyWith()
-    ];
-*/
 
   PhaseState copyInitialState() =>
     PhaseState()
@@ -1757,22 +1722,6 @@ class Turn {
     initialField = state.field;
   }
 
-/*
-  bool canAddBeforemoveEffects() {
-    for (final effect in beforeMoveEffects) {
-      if (!effect.isValid()) return false;
-    }
-    return true;
-  }
-
-  bool canAddAftermoveEffects() {
-    for (final effect in afterMoveEffects) {
-      if (!effect.isValid()) return false;
-    }
-    return true;
-  }
-*/
-
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
     int phaseIdx, Party ownParty, Party opponentParty, PokeDB pokeData)
@@ -1780,7 +1729,7 @@ class Turn {
     PhaseState ret = copyInitialState();
 
     for (int i = 0; i < phaseIdx+1; i++) {
-      final effect = processes[i];
+      final effect = phases[i];
       effect.processEffect(
         ownParty,
         ret.ownPokemonStates[ret.ownPokemonIndex-1],
@@ -1789,57 +1738,6 @@ class Turn {
         ret, pokeData,
       );
     }
-
-/*
-    int beforeEndIdx = phase == TurnPhase.beforeMove ? phaseIdx+1 : beforeMoveEffects.length;
-    int afterEndIdx = phase == TurnPhase.afterMove ? phaseIdx+1 : 0;
-    // わざ選択前の処理
-    for (int i = 0; i < beforeEndIdx; i++) {
-      final effect = beforeMoveEffects[i];
-      effect.processEffect(
-        ownParty,
-        ret.ownPokemonStates[ret.ownPokemonIndex-1],
-        opponentParty,
-        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
-        ret,
-      );
-    }
-
-    // わざ1
-    if (phase != TurnPhase.beforeMove) {
-      turnMove1.processMove(
-        ownParty,
-        ret.ownPokemonStates[ret.ownPokemonIndex-1],
-        opponentParty,
-        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
-        ret,
-      );
-    }
-
-    // わざ2
-    if (phase == TurnPhase.afterMove || (phase == TurnPhase.move && phaseIdx >= 1)) {
-      turnMove2.processMove(
-        ownParty,
-        ret.ownPokemonStates[ret.ownPokemonIndex-1],
-        opponentParty,
-        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
-        ret,
-      );
-    }
-
-    // わざ選択後の処理
-    for (int i = 0; i < afterEndIdx; i++) {
-      final effect = afterMoveEffects[i];
-      effect.processEffect(
-        ownParty,
-        ret.ownPokemonStates[ret.ownPokemonIndex-1],
-        opponentParty,
-        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
-        ret,
-      );
-    }
-*/
-
     return ret;
   }
 
@@ -1870,30 +1768,12 @@ class Turn {
     ret.initialWeather = Weather.deserialize(turnElements[4], split2);
     // initialField
     ret.initialField = Field.deserialize(turnElements[5], split2);
-    // processes
+    // phases
     var turnEffects = turnElements[6].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      ret.processes.add(TurnEffect.deserialize(turnEffect, split3));
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3));
     }
-/*
-    // beforeMoveEffects
-    var turnEffects = turnElements[6].split(split2);
-    for (var turnEffect in turnEffects) {
-      if (turnEffect == '') break;
-      ret.beforeMoveEffects.add(TurnEffect.deserialize(turnEffect, split3));
-    }
-    // turnMove1
-    ret.turnMove1 = TurnMove.deserialize(turnElements[7], split2, split3);
-    // turnMove2
-    ret.turnMove2 = TurnMove.deserialize(turnElements[8], split2, split3);
-    // afterMoveEffects
-    turnEffects = turnElements[9].split(split2);
-    for (var turnEffect in turnEffects) {
-      if (turnEffect == '') break;
-      ret.afterMoveEffects.add(TurnEffect.deserialize(turnEffect, split3));
-    }
-*/
 
     return ret;
   }
@@ -1925,30 +1805,11 @@ class Turn {
     // initialField
     ret += initialField.serialize(split2);
     ret += split1;
-    // processes
-    for (final turnEffect in processes) {
+    // phases
+    for (final turnEffect in phases) {
       ret += turnEffect.serialize(split3);
       ret += split2;
     }
-/*
-    // beforeMoveEffects
-    for (final turnEffect in beforeMoveEffects) {
-      ret += turnEffect.serialize(split3);
-      ret += split2;
-    }
-    ret += split1;
-    // turnMove1
-    ret += turnMove1.serialize(split2, split3);
-    ret += split1;
-    // turnMove2
-    ret += turnMove2.serialize(split2, split3);
-    ret += split1;
-    // afterMoveEffects
-    for (final turnEffect in afterMoveEffects) {
-      ret += turnEffect.serialize(split3);
-      ret += split2;
-    }
-*/
 
     return ret;
   }

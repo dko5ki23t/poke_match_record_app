@@ -92,10 +92,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // TODO
       //move1Controller.text = widget.battle.turns[turnNum-1].turnMove1.move.displayName;
       //move2Controller.text = widget.battle.turns[turnNum-1].turnMove2.move.displayName;
-      {
-        // TODO:連続こうげきのturnEffect(+それ使用後の効果)を消す
-        //widget.battle.turns[turnNum-1].processes
-      }
       _adjustProcesses(appState);
     }
 
@@ -217,7 +213,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
               );
             }
-            turn.processes.addAll(
+            turn.phases.addAll(
               [
                 TurnEffect()
                 ..effect = EffectType(EffectType.move)
@@ -234,14 +230,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
           focusPhaseIdx = 0;
           appState.editingPhase = List.generate(
-            widget.battle.turns[turnNum-1].processes.length, (index) => false
+            widget.battle.turns[turnNum-1].phases.length, (index) => false
           );
           // TODO:初期文字列入れる
           textEditingControllerList1 = List.generate(
-            widget.battle.turns[turnNum-1].processes.length, (index) => TextEditingController()
+            widget.battle.turns[turnNum-1].phases.length, (index) => TextEditingController()
           );
           textEditingControllerList2 = List.generate(
-            widget.battle.turns[turnNum-1].processes.length, (index) => TextEditingController()
+            widget.battle.turns[turnNum-1].phases.length, (index) => TextEditingController()
           );
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
@@ -252,12 +248,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           if (widget.battle.turns.length < turnNum) {
             PhaseState initialState =
               prevTurn.getProcessedStates(
-                prevTurn.processes.length-1,
+                prevTurn.phases.length-1,
                 widget.battle.ownParty, widget.battle.opponentParty, pokeData);
             // 前ターンの最終状態を初期状態とする
             Turn turn = Turn()
             ..setInitialState(initialState);
-            turn.processes.addAll(
+            turn.phases.addAll(
               [
                 TurnEffect()
                 ..timing = AbilityTiming(AbilityTiming.action)
@@ -451,8 +447,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int continuousCount = 0;
     bool clearAfterMove = false;    // 連続こうげき削除に伴い、そのこうげき後の効果を消すかどうかのフラグ
     List<int> removeIdxs = [];
-    for (int i = 0; i < widget.battle.turns[turnNum-1].processes.length; i++) {
-      var process = widget.battle.turns[turnNum-1].processes[i];
+    for (int i = 0; i < widget.battle.turns[turnNum-1].phases.length; i++) {
+      var process = widget.battle.turns[turnNum-1].phases[i];
       if (process.timing.id == AbilityTiming.action &&
           process.move!.type == TurnMoveType.move
       ) {
@@ -492,7 +488,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     for (int i = removeIdxs.length-1; i >= 0; i--) {
       int idx = removeIdxs[i];
-      widget.battle.turns[turnNum-1].processes.removeAt(idx);
+      widget.battle.turns[turnNum-1].phases.removeAt(idx);
       appState.editingPhase.removeAt(idx);
       textEditingControllerList1.removeAt(idx);
       textEditingControllerList2.removeAt(idx);
@@ -501,7 +497,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   void _clearPokemonApeer(MyAppState appState) {
     List<int> removeIdxs = [];
-    var processList = widget.battle.turns[turnNum-1].processes;
+    var processList = widget.battle.turns[turnNum-1].phases;
     for (int i = 0; i < processList.length; i++) {
       var process = processList[i];
       if (process.timing.id == AbilityTiming.action &&
@@ -533,7 +529,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int allowedContinuous = 0;
     int continuousCount = 0;
     int i = 0;
-    var processList = widget.battle.turns[turnNum-1].processes;
+    var processList = widget.battle.turns[turnNum-1].phases;
     while (true) {
       if (i >= processList.length) break;
       var process = processList[i];
@@ -691,11 +687,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int beginIdx = 0;
     int timingId = 0;
     List<List<TurnEffectAndState>> ret = [];
-    var processes = widget.battle.turns[turnNum-1].processes;
+    var phases = widget.battle.turns[turnNum-1].phases;
     final turnEffectAndStates = [
-      for (int i = 0; i < processes.length; i++)
+      for (int i = 0; i < phases.length; i++)
       TurnEffectAndState()
-      ..turnEffect = processes[i]
+      ..turnEffect = phases[i]
       ..phaseState = widget.battle.turns[turnNum-1].getProcessedStates(i, widget.battle.ownParty, widget.battle.opponentParty, pokeData)
     ];
     for (int i = 0; i < turnEffectAndStates.length; i++) {
@@ -709,8 +705,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         timingId = turnEffectAndStates[i].turnEffect.timing.id;
       }
     }
-    if (processes.isNotEmpty) {
-      ret.add(turnEffectAndStates.sublist(beginIdx, processes.length));
+    if (phases.isNotEmpty) {
+      ret.add(turnEffectAndStates.sublist(beginIdx, phases.length));
     }
 
     return ret;

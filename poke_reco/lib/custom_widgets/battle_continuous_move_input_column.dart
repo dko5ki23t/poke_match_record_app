@@ -27,7 +27,7 @@ class BattleContinuousMoveInputColumn extends Column {
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-      !turn.processes[processIdx].isAdding ?
+      !turn.phases[processIdx].isAdding ?
       GestureDetector(
         onTap: focusPhaseIdx != processIdx+1 ? () => onFocus(processIdx+1) : () {},
         child: Container(
@@ -41,7 +41,7 @@ class BattleContinuousMoveInputColumn extends Column {
               Stack(
                 children: [
                 Center(child: Text(
-                  _getTitle(turn.processes[processIdx].move!, ownPokemon, opponentPokemon, continuousCount)
+                  _getTitle(turn.phases[processIdx].move!, ownPokemon, opponentPokemon, continuousCount)
                 )),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -49,7 +49,7 @@ class BattleContinuousMoveInputColumn extends Column {
                     appState.editingPhase[processIdx] ?
                     IconButton(
                       icon: Icon(Icons.check),
-                      onPressed: turn.processes[processIdx].move!.isValid() ? () {
+                      onPressed: turn.phases[processIdx].move!.isValid() ? () {
                         appState.editingPhase[processIdx] = false;
                         setState();
                       } : null,
@@ -60,7 +60,7 @@ class BattleContinuousMoveInputColumn extends Column {
                         refMove.moveHits.removeAt(continuousCount);
                         refMove.moveEffectivenesses.removeAt(continuousCount);
                         refMove.moveAdditionalEffects.removeAt(continuousCount);
-                        turn.processes.removeAt(processIdx);
+                        turn.phases.removeAt(processIdx);
                         appState.editingPhase.removeAt(processIdx);
                         moveControllerList.removeAt(processIdx);
                         hpControllerList.removeAt(processIdx);
@@ -71,7 +71,7 @@ class BattleContinuousMoveInputColumn extends Column {
                 ),
               ],),
               SizedBox(height: 10,),
-              turn.processes[processIdx].move!.extraInputWidget2(
+              turn.phases[processIdx].move!.extraInputWidget2(
                 () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
                 moveState!.ownPokemonStates[moveState.ownPokemonIndex-1],
                 moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
@@ -88,7 +88,7 @@ class BattleContinuousMoveInputColumn extends Column {
             refMove.moveHits.add(MoveHit.hit);
             refMove.moveEffectivenesses.add(MoveEffectiveness.normal);
             refMove.moveAdditionalEffects.add(MoveAdditionalEffect.none);
-            turn.processes[processIdx]
+            turn.phases[processIdx]
             ..effect = EffectType(EffectType.move)
             ..move = refMove
             ..isAdding = false;
