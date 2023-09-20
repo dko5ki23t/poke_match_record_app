@@ -72,20 +72,20 @@ class BattleActionInputColumn extends Column {
                         border: UnderlineInputBorder(),
                         labelText: '行動主',
                       ),
-                      items: <DropdownMenuItem<PlayerType>>[
-                        DropdownMenuItem<PlayerType>(
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
                           value: PlayerType.me,
                           child: Text('${ownPokemon.name}/あなた', overflow: TextOverflow.ellipsis,),
                         ),
-                        DropdownMenuItem<PlayerType>(
+                        DropdownMenuItem(
                           value: PlayerType.opponent,
                           child: Text('${opponentPokemon.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
                         ),
                       ],
-                      value: turn.phases[processIdx].move!.playerType == PlayerType.none ? null : turn.phases[processIdx].move!.playerType,
+                      value: turn.phases[processIdx].move!.playerType.id == PlayerType.none ? null : turn.phases[processIdx].move!.playerType.id,
                       onChanged: (value) {
-                        turn.phases[processIdx].playerType = value as PlayerType;
-                        turn.phases[processIdx].move!.playerType = value;
+                        turn.phases[processIdx].playerType = PlayerType(value);
+                        turn.phases[processIdx].move!.playerType = PlayerType(value);
                         appState.editingPhase[processIdx] = true;
                         onFocus(processIdx+1);
                       },
@@ -111,7 +111,7 @@ class BattleActionInputColumn extends Column {
                         ),
                       ],
                       value: turn.phases[processIdx].move!.isSuccess,
-                      onChanged: turn.phases[processIdx].move!.playerType != PlayerType.none ?
+                      onChanged: turn.phases[processIdx].move!.playerType.id != PlayerType.none ?
                         (value) {
                           turn.phases[processIdx].move!.isSuccess = value!;
                           appState.editingPhase[processIdx] = true;
@@ -145,11 +145,11 @@ class BattleActionInputColumn extends Column {
   );
 
   static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent) {
-    switch (turnMove.type) {
+    switch (turnMove.type.id) {
       case TurnMoveType.move:
         if (turnMove.move.id != 0) {
           String continous = turnMove.move.maxMoveCount() > 1 ? '【1回目】' : '';
-          if (turnMove.playerType == PlayerType.opponent) {
+          if (turnMove.playerType.id == PlayerType.opponent) {
             return '$continous${turnMove.move.displayName}-${opponent.name}';
           }
           else {

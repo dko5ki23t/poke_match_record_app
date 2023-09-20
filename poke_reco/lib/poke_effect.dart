@@ -17,12 +17,11 @@ class EffectType {
   final int id;
 }
 
-enum PlayerType {
-  none(0),
-  me(1),            // 自身
-  opponent(2),      // 相手
-  entireField(3),   // 全体の場(両者に影響あり)
-  ;
+class PlayerType {
+  static const int none = 0;
+  static const int me = 1;          // 自身
+  static const int opponent = 2;    // 相手
+  static const int entireField = 3; // 全体の場(両者に影響あり)
 
   const PlayerType(this.id);
 
@@ -248,8 +247,8 @@ const List<int> everyTurnEndFieldIDs = [
 ];
 
 class TurnEffect {
-  PlayerType playerType = PlayerType.none;
-  AbilityTiming timing = AbilityTiming(0);
+  PlayerType playerType = PlayerType(PlayerType.none);
+  AbilityTiming timing = AbilityTiming(AbilityTiming.none);
   EffectType effect = EffectType(EffectType.none);
   int effectId = 0;
   int extraArg1 = 0;
@@ -270,9 +269,9 @@ class TurnEffect {
 
   bool isValid() {
     return
-      playerType != PlayerType.none &&
+      playerType.id != PlayerType.none &&
       effect.id != EffectType.none &&
-      (effect.id == EffectType.move && move!.isValid() || effectId > 0);
+      (effect.id == EffectType.move && move != null && move!.isValid() || effectId > 0);
   }
 
   void processEffect(
@@ -288,19 +287,19 @@ class TurnEffect {
 
     var myState = ownPokemonState;
     var yourState = opponentPokemonState;
-    if (playerType == PlayerType.opponent) {
+    if (playerType.id == PlayerType.opponent) {
       myState = opponentPokemonState;
       yourState = ownPokemonState;
     }
     var myParty = ownParty;
     var yourParty = opponentParty;
-    if (playerType == PlayerType.opponent) {
+    if (playerType.id == PlayerType.opponent) {
       myParty = opponentParty;
       yourParty = ownParty;
     }
     var myPokemonIndex = state.ownPokemonIndex;
     var yourPokemonIndex = state.opponentPokemonIndex;
-    if (playerType == PlayerType.opponent) {
+    if (playerType.id == PlayerType.opponent) {
       myPokemonIndex = state.opponentPokemonIndex;
       yourPokemonIndex = state.ownPokemonIndex;
     }
@@ -312,7 +311,7 @@ class TurnEffect {
             yourState.statChanges[0]--;
             break;
           case 281:   // こだいかっせい
-            myState.statChanges[extraArg1]++;
+            myState.buffDebuffs.add(BuffDebuff(1+extraArg1));
 // TODO:以下のような決定をユーザに確認したい
 /*
             if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
@@ -322,19 +321,27 @@ class TurnEffect {
 */
             break;
           case 282:   // クォークチャージ
-            myState.statChanges[extraArg1]++;
+            myState.buffDebuffs.add(BuffDebuff(1+extraArg1));
             break;
           default:
             break;
         }
         break;
       case EffectType.move:
-        if (move!.isSuccess && move!.type == TurnMoveType.change) {
-          if (playerType == PlayerType.me) {
+        if (move!.isSuccess && move!.type.id == TurnMoveType.change) {
+          if (playerType.id == PlayerType.me) {
             state.ownPokemonIndex = move!.changePokemonIndex!;
           }
           else {
             state.opponentPokemonIndex = move!.changePokemonIndex!;
+          }
+        }
+        if (move!.isSuccess && move!.type.id == TurnMoveType.move) {
+          if (playerType.id == PlayerType.me) {
+            state.opponentPokemonStates[state.opponentPokemonIndex-1].remainHPPercent -= move!.percentDamage;
+          }
+          else {
+            state.ownPokemonStates[state.ownPokemonIndex-1].remainHP -= move!.realDamage;
           }
         }
         break;
@@ -376,21 +383,21 @@ class TurnEffect {
         break;
     }
 
-    if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
-      if (playerType == PlayerType.me && type.id == EffectType.ability) {
+    if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
+      if (playerType.id == PlayerType.me && type.id == EffectType.ability) {
         if (abilityIDs.contains(pokemon!.ability.id)) {
           ret.add(TurnEffect()
-            ..playerType = PlayerType.me
+            ..playerType = PlayerType(PlayerType.me)
             ..effect = EffectType(EffectType.ability)
             ..effectId = pokemon!.ability.id
           );
         }
       }
-      else if (playerType == PlayerType.opponent && type.id == EffectType.ability) {
+      else if (playerType.id == PlayerType.opponent && type.id == EffectType.ability) {
         for (final ability in pokemonState!.possibleAbilities) {
           if (abilityIDs.contains(ability.id)) {
             ret.add(TurnEffect()
-              ..playerType = PlayerType.opponent
+              ..playerType = PlayerType(PlayerType.opponent)
               ..effect = EffectType(EffectType.ability)
               ..effectId = ability.id
             );
@@ -419,16 +426,16 @@ class TurnEffect {
           }
         }
       }
-      if (playerType == PlayerType.me && type.id == EffectType.item) {
+      if (playerType.id == PlayerType.me && type.id == EffectType.item) {
         if (itemIDs.contains(pokemonState!.holdingItem?.id)) {
           ret.add(TurnEffect()
-            ..playerType = PlayerType.me
+            ..playerType = PlayerType(PlayerType.me)
             ..effect = EffectType(EffectType.item)
             ..effectId = pokemonState.holdingItem!.id
           );
         }
       }
-      else if (playerType == PlayerType.opponent && type.id == EffectType.item) {
+      else if (playerType.id == PlayerType.opponent && type.id == EffectType.item) {
         for (final item in pokemonState!.impossibleItems) {
           if (itemIDs.contains(item.id)) {
             itemIDs.remove(item.id);
@@ -436,7 +443,7 @@ class TurnEffect {
         }
         for (final item in itemIDs) {
           ret.add(TurnEffect()
-            ..playerType = PlayerType.opponent
+            ..playerType = PlayerType(PlayerType.opponent)
             ..effect = EffectType(EffectType.item)
             ..effectId = item
           );
@@ -444,17 +451,17 @@ class TurnEffect {
       }
     }
 
-    if (playerType == PlayerType.entireField) {
+    if (playerType.id == PlayerType.entireField) {
       if (weatherIDs.contains(phaseState!.weather.id)) {
         ret.add(TurnEffect()
-          ..playerType = PlayerType.entireField
+          ..playerType = PlayerType(PlayerType.entireField)
           ..effect = EffectType(EffectType.weather)
           ..effectId = phaseState.weather.id
         );
       }
       if (fieldIDs.contains(phaseState.field.id)) {
         ret.add(TurnEffect()
-          ..playerType = PlayerType.entireField
+          ..playerType = PlayerType(PlayerType.entireField)
           ..effect = EffectType(EffectType.field)
           ..effectId = phaseState.field.id
         );
@@ -481,6 +488,35 @@ class TurnEffect {
       default:
         return '';
     }
+  }
+
+  String getEditingControllerText1() {
+    switch (timing.id) {
+      case AbilityTiming.action:
+        return move == null ? '' : move!.move.displayName;
+      default:
+        return '';
+    }
+  }
+
+  String getEditingControllerText2() {
+    /*
+    switch (timing.id) {
+      case AbilityTiming.action:
+        {
+          if (move == null) return '';
+          if (move!.playerType.id == PlayerType.me) {
+            return move!.percentDamage.toString();
+          }
+          else {
+            return move!.realD
+          }
+        }
+      default:
+        return '';
+    }
+    */
+    return '';
   }
 
   Widget extraInputWidget(
@@ -540,58 +576,43 @@ class TurnEffect {
   }
 
   // SQLに保存された文字列からTurnMoveをパース
-  static TurnEffect deserialize(dynamic str, String split1) {
+  static TurnEffect deserialize(dynamic str, String split1, String split2, String split3) {
     TurnEffect effect = TurnEffect();
     final effectElements = str.split(split1);
     // playerType
-    switch (int.parse(effectElements[0])) {
-      case 1:
-        effect.playerType = PlayerType.me;
-        break;
-      case 2:
-        effect.playerType = PlayerType.opponent;
-        break;
-      case 3:
-        effect.playerType = PlayerType.entireField;
-        break;
-      default:
-        effect.playerType = PlayerType.none;
-        break;
-    }
+    effect.playerType = PlayerType(int.parse(effectElements[0]));
+    // timing
+    effect.timing = AbilityTiming(int.parse(effectElements[1]));
     // effect
-    effect.effect = EffectType(int.parse(effectElements[1]));
+    effect.effect = EffectType(int.parse(effectElements[2]));
     // effectId
-    effect.effectId = int.parse(effectElements[2]);
+    effect.effectId = int.parse(effectElements[3]);
     // extraArg1
-    effect.extraArg1 = int.parse(effectElements[3]);
+    effect.extraArg1 = int.parse(effectElements[4]);
     // extraArg2
-    effect.extraArg2 = int.parse(effectElements[4]);
+    effect.extraArg2 = int.parse(effectElements[5]);
+    // move
+    if (effectElements[6] == '') {
+      effect.move = null;
+    }
+    else {
+      effect.move = TurnMove.deserialize(effectElements[6], split2, split3);
+    }
+    // isAdding
+    effect.isAdding = int.parse(effectElements[7]) != 0;
 
     return effect;
   }
 
    // SQL保存用の文字列に変換
-  String serialize(String split1) {
+  String serialize(String split1, String split2, String split3) {
     String ret = '';
     // playerType
-    switch (playerType) {
-      case PlayerType.me:
-        ret += '1';
-        ret += split1;
-        break;
-      case PlayerType.opponent:
-        ret += '2';
-        ret += split1;
-        break;
-      case PlayerType.entireField:
-        ret += '3';
-        ret += split1;
-        break;
-      default:
-        ret += '0';
-        ret += split1;
-        break;
-    }
+    ret += playerType.id.toString();
+    ret += split1;
+    // timing
+    ret += timing.id.toString();
+    ret += split1;
     // effect
     ret += '${effect.id}';
     ret += split1;
@@ -603,6 +624,12 @@ class TurnEffect {
     ret += split1;
     // extraArg2
     ret += extraArg2.toString();
+    ret += split1;
+    // move
+    ret += move == null ? '' : move!.serialize(split2, split3);
+    ret += split1;
+    // isAdding
+    ret += isAdding ? '1' : '0';
 
     return ret;
   }

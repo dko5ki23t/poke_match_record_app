@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialog/delete_editing_check_dialog.dart';
@@ -78,21 +80,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     final theme = Theme.of(context);
     const statAlphabets = ['A', 'B', 'C', 'D', 'S', 'E'];
     PhaseState? focusState;
-    if (widget.battle.turns.length >= turnNum) {
-      focusState = widget.battle.turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, widget.battle.ownParty, widget.battle.opponentParty, pokeData);
-    }
 
     battleNameController.text = widget.battle.name;
     opponentNameController.text = widget.battle.opponentName;
     for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
       opponentPokemonController[i].text = widget.battle.opponentParty.pokemons[i]!.name;
     }
-    if (widget.battle.turns.length >= turnNum) {
-      // TODO
-      //move1Controller.text = widget.battle.turns[turnNum-1].turnMove1.move.displayName;
-      //move2Controller.text = widget.battle.turns[turnNum-1].turnMove2.move.displayName;
-      _adjustProcesses(appState);
+    
+    if (widget.battle.turns.length >= turnNum &&
+        pageType == RegisterBattlePageType.turnPage
+    ) {
+      // フォーカスしているフェーズの状態を取得
+      focusState = widget.battle.turns[turnNum-1].
+                    getProcessedStates(focusPhaseIdx-1, widget.battle.ownParty, widget.battle.opponentParty, pokeData);
+      // 各フェーズを確認して、必要なものがあれば足したり消したりする
+      _adjustPhases(appState);
     }
 
     // TODO
@@ -232,12 +234,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           appState.editingPhase = List.generate(
             widget.battle.turns[turnNum-1].phases.length, (index) => false
           );
-          // TODO:初期文字列入れる
           textEditingControllerList1 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length, (index) => TextEditingController()
+            widget.battle.turns[turnNum-1].phases.length,
+            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1())
           );
           textEditingControllerList2 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length, (index) => TextEditingController()
+            widget.battle.turns[turnNum-1].phases.length,
+            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2())
           );
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
@@ -256,9 +259,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             turn.phases.addAll(
               [
                 TurnEffect()
+                ..effect = EffectType(EffectType.move)
                 ..timing = AbilityTiming(AbilityTiming.action)
                 ..move = TurnMove(),
                 TurnEffect()
+                ..effect = EffectType(EffectType.move)
                 ..timing = AbilityTiming(AbilityTiming.action)
                 ..move = TurnMove(),
               ]
@@ -328,40 +333,79 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           children: [
             openStates ?
             Expanded(
-              //flex: 10,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Icon(Icons.catching_pokemon),
-                          Text(widget.battle.ownParty.pokemons[focusState!.ownPokemonIndex-1]!.name),
-                        ],),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        child: Row(children: [
-                          Icon(Icons.catching_pokemon),
-                          Text(widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!.name),
-                        ],),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.keyboard_double_arrow_up),
-                        onPressed: () {
-                          setState(() {openStates = false;});
-                        },
-                      ),
-                    ],
-                  ),
-                  // 各ステータス(ABCDSE)の変化
-                  for (int i = 0; i < 6; i++)
-                    _StatChangeViewRow(
-                      statAlphabets[i], focusState.ownPokemonStates[focusState.ownPokemonIndex-1].statChanges[i],
-                      focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].statChanges[i]
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Row(children: [
+                            Icon(Icons.catching_pokemon),
+                            Text(_focusingOwnPokemon(focusState!).name),
+                            _focusingOwnPokemon(focusState).sex.displayIcon,
+                          ],),
+                        ),
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Row(children: [
+                            Icon(Icons.catching_pokemon),
+                            Text(_focusingOpponentPokemon(focusState).name),
+                            _focusingOpponentPokemon(focusState).sex.displayIcon,
+                          ],),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.keyboard_double_arrow_up),
+                          onPressed: () {
+                            setState(() {openStates = false;});
+                          },
+                        ),
+                      ],
                     ),
-                ],
+                    SizedBox(height: 5),
+                    // とくせい
+                    Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text(_focusingOwnAbilityName(focusState)),
+                        ),
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text(_focusingOpponentAbilityName(focusState)),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    // もちもの
+                    Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text(_focusingOwnItemName(focusState)),
+                        ),
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text(_focusingOpponentItemName(focusState)),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
+                    // HP
+                    _HPBarRow(_focusingOwnPokemonState(focusState).remainHP, _focusingOwnPokemon(focusState).h.real, _focusingOpponentPokemonState(focusState).remainHPPercent),
+                    SizedBox(height: 5),
+                    // 各ステータス(ABCDSE)の変化
+                    for (int i = 0; i < 6; i++)
+                      _StatChangeViewRow(
+                        statAlphabets[i], _focusingOwnPokemonState(focusState).statChanges[i],
+                        _focusingOpponentPokemonState(focusState).statChanges[i]
+                      ),
+                    SizedBox(height: 5),
+                    // 状態異常・その他補正・場
+                    for (int i = 0; i < max(_focusingOwnPokemonState(focusState).buffDebuffs.length, _focusingOpponentPokemonState(focusState).buffDebuffs.length); i++)
+                    _BuffDebuffsRow(_focusingOwnPokemonState(focusState), _focusingOpponentPokemonState(focusState), i)
+                  ],
+                ),
               ),
             ) :
             Expanded(
@@ -371,14 +415,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(widget.battle.ownParty.pokemons[focusState!.ownPokemonIndex-1]!.name),
+                      Text(_focusingOwnPokemon(focusState!).name),
                     ],),
                   ),
                   SizedBox(width: 10,),
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!.name),
+                      Text(_focusingOpponentPokemon(focusState).name),
                     ],),
                   ),
                   IconButton(
@@ -450,14 +494,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = 0; i < widget.battle.turns[turnNum-1].phases.length; i++) {
       var process = widget.battle.turns[turnNum-1].phases[i];
       if (process.timing.id == AbilityTiming.action &&
-          process.move!.type == TurnMoveType.move
+          process.move!.type.id == TurnMoveType.move
       ) {
         allowedContinuous = process.move!.move.maxMoveCount()-1;
         continuousCount = 0;
         // わざが失敗/命中してない場合は、連続こうげきは問答無用で削除対象
         if (!process.move!.isSuccess ||
-            process.move!.moveHits[0] == MoveHit.notHit ||
-            process.move!.moveHits[0] == MoveHit.fail
+            process.move!.moveHits[0].id == MoveHit.notHit ||
+            process.move!.moveHits[0].id == MoveHit.fail
         ) {
           allowedContinuous = 0;
         }
@@ -471,8 +515,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // わざが失敗/命中してない場合は、次以降の連続こうげきは問答無用で削除対象
         if (!process.isAdding &&
             (!process.move!.isSuccess ||
-             process.move!.moveHits[continuousCount] == MoveHit.notHit ||
-             process.move!.moveHits[continuousCount] == MoveHit.fail)
+             process.move!.moveHits[continuousCount].id == MoveHit.notHit ||
+             process.move!.moveHits[continuousCount].id == MoveHit.fail)
         ) {
           continuousCount = allowedContinuous;
         }
@@ -501,7 +545,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = 0; i < processList.length; i++) {
       var process = processList[i];
       if (process.timing.id == AbilityTiming.action &&
-          process.move!.type != TurnMoveType.change
+          process.move!.type.id != TurnMoveType.change
       ) {
         for (int j = i+1; j < processList.length; j++) {
           if (processList[j].timing.id == AbilityTiming.pokemonAppear) {
@@ -522,7 +566,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  void _adjustProcesses(MyAppState appState) {
+  void _adjustPhases(MyAppState appState) {
     _clearContinuousMove(appState);
     _clearPokemonApeer(appState);
 
@@ -552,7 +596,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         textEditingControllerList2.insert(i+1, TextEditingController());
       }
       else if (process.timing.id == AbilityTiming.action &&
-          process.move!.type == TurnMoveType.change &&
+          process.move!.type.id == TurnMoveType.change &&
           (i+1 >= processList.length ||
            processList[i+1].timing.id != AbilityTiming.pokemonAppear)
            // ポケモン交換の場合、次は「ポケモン登場時」タイミングにする
@@ -568,14 +612,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
       else if (
         process.timing.id == AbilityTiming.action &&
-        process.move!.type == TurnMoveType.move           // わざの場合
+        process.move!.type.id == TurnMoveType.move           // わざの場合
       ) {
         allowedContinuous = process.move!.move.maxMoveCount()-1;
         continuousCount = 0;
         // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
         if (!process.move!.isSuccess ||
-            process.move!.moveHits[0] == MoveHit.notHit ||
-            process.move!.moveHits[0] == MoveHit.fail
+            process.move!.moveHits[0].id == MoveHit.notHit ||
+            process.move!.moveHits[0].id == MoveHit.fail
         ) {
           allowedContinuous = 0;
         }
@@ -596,8 +640,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               (i+1 >= processList.length ||
               processList[i+1].timing.id != AbilityTiming.continuousMove &&
               processList[i].move!.isSuccess &&
-              processList[i].move!.moveHits[0] != MoveHit.notHit &&
-              processList[i].move!.moveHits[0] != MoveHit.fail)
+              processList[i].move!.moveHits[0].id != MoveHit.notHit &&
+              processList[i].move!.moveHits[0].id != MoveHit.fail)
           ) {
             processList.insert(i+1,
               TurnEffect()
@@ -629,8 +673,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // わざが命中してない場合は、これ以上連続こうげきさせない
         if (!processList[i].isAdding &&
             (!processList[i].move!.isSuccess ||
-             processList[i].move!.moveHits[continuousCount] == MoveHit.notHit ||
-             processList[i].move!.moveHits[continuousCount] == MoveHit.fail)
+             processList[i].move!.moveHits[continuousCount].id == MoveHit.notHit ||
+             processList[i].move!.moveHits[continuousCount].id == MoveHit.fail)
         ) {
           continuousCount = allowedContinuous;
         }
@@ -711,6 +755,68 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     return ret;
   }
+
+  Pokemon _focusingOwnPokemon(PhaseState focusState) {
+    return widget.battle.ownParty.pokemons[focusState.ownPokemonIndex-1]!;
+  }
+
+  Pokemon _focusingOpponentPokemon(PhaseState focusState) {
+    return widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!;
+  }
+
+  PokemonState _focusingOwnPokemonState(PhaseState focusState) {
+    return focusState.ownPokemonStates[focusState.ownPokemonIndex-1];
+  }
+
+  PokemonState _focusingOpponentPokemonState(PhaseState focusState) {
+    return focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1];
+  }
+
+  String _focusingOwnItemName(PhaseState focusState) {
+    final item = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].holdingItem;
+    if (item == null) {
+      return 'なし';
+    }
+    else if (item.id == 0) {
+      return '？';
+    }
+    else {
+      return item.displayName;
+    }
+  }
+
+  String _focusingOpponentItemName(PhaseState focusState) {
+    final item = focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].holdingItem;
+    if (item == null) {
+      return 'なし';
+    }
+    else if (item.id == 0) {
+      return '？';
+    }
+    else {
+      return item.displayName;
+    }
+  }
+
+  String _focusingOwnAbilityName(PhaseState focusState) {
+    final ability = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].currentAbility;
+    if (ability.id == 0) {
+      return '？';
+    }
+    else {
+      return ability.displayName;
+    }
+  }
+
+  String _focusingOpponentAbilityName(PhaseState focusState) {
+    final ability = focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].currentAbility;
+    if (ability.id == 0) {
+      return '？';
+    }
+    else {
+      return ability.displayName;
+    }
+  }
 }
 
 class _StatChangeViewRow extends Row {
@@ -744,6 +850,142 @@ class _StatChangeViewRow extends Row {
           for (int i = opponentStatChange.abs(); i < 6; i++)
             Icon(Icons.minimize, color: Colors.grey),
         ],),
+      ),
+    ],
+  );
+}
+
+class _HPBarRow extends Row {
+  _HPBarRow(
+    int ownRemainHP,
+    int ownMaxHP,
+    int opponentRemainHPPercent,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: Container(
+                width: 150,
+                height: 20,
+                color: Colors.grey),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: Container(
+                width: (ownRemainHP / ownMaxHP) * 150,
+                height: 20,
+                color: (ownRemainHP / ownMaxHP) <= 0.25 ? Colors.red : (ownRemainHP / ownMaxHP) <= 0.5 ? Colors.yellow : Colors.lightGreen,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('$ownRemainHP/$ownMaxHP'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: Container(
+                width: 150,
+                height: 20,
+                color: Colors.grey),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: Container(
+                width: (opponentRemainHPPercent / 100) * 150,
+                height: 20,
+                color: opponentRemainHPPercent <= 25 ? Colors.red : opponentRemainHPPercent <= 50 ? Colors.yellow : Colors.lightGreen,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text('$opponentRemainHPPercent/100%'),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _AilmentsRow extends Row {
+  _AilmentsRow(
+    PokemonState ownPokemonState,
+    PokemonState opponentPokemonState,
+    int index,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            ownPokemonState.ailments.length > index ?
+            Container(
+              color: ownPokemonState.ailments[index].bgColor,
+              child: Text(ownPokemonState.ailments[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            opponentPokemonState.ailments.length > index ?
+            Container(
+              color: opponentPokemonState.ailments[index].bgColor,
+              child: Text(opponentPokemonState.ailments[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
+      ),
+    ],
+  );
+}
+
+class _BuffDebuffsRow extends Row {
+  _BuffDebuffsRow(
+    PokemonState ownPokemonState,
+    PokemonState opponentPokemonState,
+    int index,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Flexible(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            ownPokemonState.buffDebuffs.length > index ?
+            Container(
+              color: ownPokemonState.buffDebuffs[index].bgColor,
+              child: Text(ownPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
+      ),
+      SizedBox(width: 10,),
+      Flexible(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            opponentPokemonState.buffDebuffs.length > index ?
+            Container(
+              color: opponentPokemonState.buffDebuffs[index].bgColor,
+              child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
       ),
     ],
   );

@@ -108,9 +108,9 @@ class BattleEffectInputColumn extends Column {
                                 child: Text('天気・フィールド', overflow: TextOverflow.ellipsis,),
                               ),
                             ],
-                            value: turn.phases[firstIdx+i].playerType == PlayerType.none ? null : turn.phases[firstIdx+i].playerType,
+                            value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
-                              turn.phases[firstIdx+i].playerType = value;
+                              turn.phases[firstIdx+i].playerType = PlayerType(value);
                               turn.phases[firstIdx+i].effectId = 0;
                               appState.editingPhase[firstIdx+i] = true;
                               setState();
@@ -148,7 +148,7 @@ class BattleEffectInputColumn extends Column {
                                     turn.phases[firstIdx+i].effect.id == EffectType.weather ||
                                     turn.phases[firstIdx+i].effect.id == EffectType.field ||
                                     turn.phases[firstIdx+i].effect.id == EffectType.move) ? null : turn.phases[firstIdx+i].effect.id,
-                            onChanged: turn.phases[firstIdx+i].playerType != PlayerType.entireField && turn.phases[firstIdx+i].playerType != PlayerType.none ?
+                            onChanged: turn.phases[firstIdx+i].playerType.id != PlayerType.entireField && turn.phases[firstIdx+i].playerType.id != PlayerType.none ?
                             (value) {
                               turn.phases[firstIdx+i].effect = EffectType(value!);
                               turn.phases[firstIdx+i].effectId = 0;
@@ -173,10 +173,10 @@ class BattleEffectInputColumn extends Column {
                             items:
                               <DropdownMenuItem>[
                                 for (final effect in TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
-                                  turn.phases[firstIdx+i].playerType == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.phases[firstIdx+i].playerType == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                  turn.phases[firstIdx+i].playerType == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.phases[firstIdx+i].playerType == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                  turn.phases[firstIdx+i].playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                  turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                  turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                  turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
                                    sameTimingList[i].phaseState))
                                   DropdownMenuItem(
                                     value: effect.effectId,

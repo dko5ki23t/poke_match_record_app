@@ -85,9 +85,9 @@ class BattleContinuousMoveInputColumn extends Column {
       TextButton(
         onPressed:
           () {
-            refMove.moveHits.add(MoveHit.hit);
-            refMove.moveEffectivenesses.add(MoveEffectiveness.normal);
-            refMove.moveAdditionalEffects.add(MoveAdditionalEffect.none);
+            refMove.moveHits.add(MoveHit(MoveHit.hit));
+            refMove.moveEffectivenesses.add(MoveEffectiveness(MoveEffectiveness.normal));
+            refMove.moveAdditionalEffects.add(MoveAdditionalEffect(MoveAdditionalEffect.none));
             turn.phases[processIdx]
             ..effect = EffectType(EffectType.move)
             ..move = refMove
@@ -114,10 +114,10 @@ class BattleContinuousMoveInputColumn extends Column {
   );
 
   static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent, int continuousCount) {
-    switch (turnMove.type) {
+    switch (turnMove.type.id) {
       case TurnMoveType.move:
         if (turnMove.move.id != 0) {
-          if (turnMove.playerType == PlayerType.opponent) {
+          if (turnMove.playerType.id == PlayerType.opponent) {
             return '【${continuousCount+1}回目】${turnMove.move.displayName}-${opponent.name}';
           }
           else {

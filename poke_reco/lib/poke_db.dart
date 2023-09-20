@@ -1109,6 +1109,41 @@ class Ailment {
     30: 'さわぐ',
   };
 
+  // TODO:
+  static const _bgColor = {
+    0: Colors.black,
+    1: Colors.black,
+    2: Colors.black,
+    3: Colors.black,
+    4: Colors.black,
+    5: Colors.black,
+    6: Colors.black,
+    7: Colors.black,
+    8: Colors.black,
+    9: Colors.black,
+    10: Colors.black,
+    11: Colors.black,
+    12: Colors.black,
+    13: Colors.black,
+    14: Colors.black,
+    15: Colors.black,
+    16: Colors.black,
+    17: Colors.black,
+    18: Colors.black,
+    19: Colors.black,
+    20: Colors.black,
+    21: Colors.black,
+    22: Colors.black,
+    23: Colors.black,
+    24: Colors.black,
+    25: Colors.black,
+    26: Colors.black,
+    27: Colors.black,
+    28: Colors.black,
+    29: Colors.black,
+    30: Colors.black,
+  };
+
   final int id;
   int turns = 0;        // 経過ターン
   int extraArg1 = 0;    // アンコール対象のわざID等
@@ -1121,6 +1156,7 @@ class Ailment {
     ..extraArg1 = extraArg1;
 
   String get displayName => _displayNameMap[id]!;
+  Color get bgColor => _bgColor[id]!;
 
   // SQLに保存された文字列からAilmentをパース
   static Ailment deserialize(dynamic str, String split1) {
@@ -1138,6 +1174,31 @@ class Ailment {
 
 // その他の補正(フォルムとか)
 class BuffDebuff {
+  static const int none = 0;
+  static const int attack1_3 = 1;         // こうげき1.3倍
+  static const int defense1_3 = 2;        // ぼうぎょ1.3倍
+  static const int specialAttack1_3 = 3;  // とくこう1.3倍
+  static const int specialDefense1_3 = 4; // とくぼう1.3倍
+  static const int speed1_5 = 5;          // すばやさ1.5倍
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'こうげき1.3倍',
+    2: 'ぼうぎょ1.3倍',
+    3: 'とくこう1.3倍',
+    4: 'とくぼう1.3倍',
+    5: 'すばやさ1.5倍',
+  };
+
+  static const _bgColorMap = {
+    0: Colors.black,
+    1: Colors.red,
+    2: Colors.red,
+    3: Colors.red,
+    4: Colors.red,
+    5: Colors.red,
+  };
+
   final int id;
   int turns = 0;        // 経過ターン
   int extraArg1 = 0;    // 
@@ -1148,6 +1209,9 @@ class BuffDebuff {
     BuffDebuff(id)
     ..turns = turns
     ..extraArg1 = extraArg1;
+
+  String get displayName => _displayNameMap[id]!;
+  Color get bgColor => _bgColorMap[id]!;
   
   // SQLに保存された文字列からBuffDebuffをパース
   static BuffDebuff deserialize(dynamic str, String split1) {
@@ -1266,9 +1330,9 @@ class Weather {
   // SQLに保存された文字列からWeatherをパース
   static Weather deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return Weather(elements[0])
-      ..turns = elements[1]
-      ..extraArg1 = elements[2];
+    return Weather(int.parse(elements[0]))
+      ..turns = int.parse(elements[1])
+      ..extraArg1 = int.parse(elements[2]);
   }
 
   // SQL保存用の文字列に変換
@@ -1321,9 +1385,9 @@ class Field {
   // SQLに保存された文字列からFieldをパース
   static Field deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return Field(elements[0])
-      ..turns = elements[1]
-      ..extraArg1 = elements[2];
+    return Field(int.parse(elements[0]))
+      ..turns = int.parse(elements[1])
+      ..extraArg1 = int.parse(elements[2]);
   }
 
   // SQL保存用の文字列に変換
@@ -1353,7 +1417,7 @@ class PokemonState {
 
   PokemonState copyWith() =>
     PokemonState()
-    ..pokemon = pokemon.copyWith()
+    ..pokemon = pokemon
     ..remainHP = remainHP
     ..remainHPPercent = remainHPPercent
     ..isTerastal = isTerastal
@@ -1402,7 +1466,6 @@ class PokemonState {
       pokemonState.statChanges[i] = int.parse(statChangeElements[i]);
     }
     // buffDebuffs
-    pokemonState.buffDebuffs.clear();
     final buffDebuffElements = stateElements[9].split(split2);
     for (final buffDebuff in buffDebuffElements) {
       if (buffDebuff == '') break;
@@ -1411,14 +1474,12 @@ class PokemonState {
     // currentAbility
     pokemonState.currentAbility = Ability.deserialize(stateElements[10], split2);
     // fields
-    pokemonState.fields.clear();
     final fieldElements = stateElements[11].split(split2);
     for (final field in fieldElements) {
       if (field == '') break;
       pokemonState.fields.add(IndividualField.deserialize(field, split3));
     }
     // ailments
-    pokemonState.ailments.clear();
     final ailmentElements = stateElements[12].split(split2);
     for (final ailment in ailmentElements) {
       if (ailment == '') break;
@@ -1435,14 +1496,12 @@ class PokemonState {
       pokemonState.maxStats[i] = SixParams.deserialize(maxStatElements[i], split3);
     }
     // possibleAbilities
-    pokemonState.possibleAbilities.clear();
     final abilities = stateElements[15].split(split2);
     for (var ability in abilities) {
       if (ability == '') break;
       pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
     }
     // impossibleItems
-    pokemonState.impossibleItems.clear();
     final items = stateElements[16].split(split2);
     for (var item in items) {
       if (item == '') break;
@@ -1688,8 +1747,8 @@ class Turn {
     ..initialWeather = initialWeather.copyWith()
     ..initialField = initialField.copyWith()
     ..phases = [
-      for (final process in phases)
-      process.copyWith()
+      for (final phase in phases)
+      phase.copyWith()
     ];
 
   PhaseState copyInitialState() =>
@@ -1772,7 +1831,7 @@ class Turn {
     var turnEffects = turnElements[6].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      ret.phases.add(TurnEffect.deserialize(turnEffect, split3));
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
     }
 
     return ret;
@@ -1807,7 +1866,7 @@ class Turn {
     ret += split1;
     // phases
     for (final turnEffect in phases) {
-      ret += turnEffect.serialize(split3);
+      ret += turnEffect.serialize(split3, split4, split5);
       ret += split2;
     }
 
@@ -1899,7 +1958,7 @@ class PokeDB {
   late Database abilityDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
-  Map<int, Item> items = {};
+  Map<int, Item> items = {0: Item(0, '')};  // 無効なもちもの
   late Database itemDb;
   Map<int, Move> moves = {0: Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
@@ -2475,7 +2534,7 @@ class PokeDB {
 
     //////////// 登録した対戦
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
-    await deleteDatabase(battleDBPath);
+    //await deleteDatabase(battleDBPath);
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {
