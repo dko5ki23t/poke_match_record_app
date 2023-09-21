@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/main.dart';
@@ -635,50 +636,26 @@ class TurnMove {
               effectInputRow,
               SizedBox(height: 10,),
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: NumberInputWithIncrementDecrement(
+                  Flexible(
+                    child: TextFormField(
                       controller: hpController,
-                      numberFieldDecoration: InputDecoration(
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
                         labelText: playerType.id == PlayerType.me ? 
                           '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
                       ),
-                      widgetContainerDecoration: const BoxDecoration(
-                        border: null,
-                      ),
-                      initialValue: playerType.id == PlayerType.me ?
-                        opponentPokemonState.remainHPPercent - percentDamage[continousCount] :
-                        ownPokemonState.remainHP - realDamage[continousCount],
-                      min: 0,
-                      max: playerType.id == PlayerType.me ? 100 : ownPokemon.h.real,
                       enabled: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail,
-                      onIncrement: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
-                        }
-                        else {
-                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
-                        }
-                        appState.editingPhase[processIdx] = true;
-                        onFocus();
-                      },
-                      onDecrement: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
-                        }
-                        else {
-                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
-                        }
-                        appState.editingPhase[processIdx] = true;
-                        onFocus();
-                      },
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
+                          percentDamage[continousCount] = opponentPokemonState.remainHPPercent - int.parse(value);
                         }
                         else {
-                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
+                          realDamage[continousCount] = ownPokemonState.remainHP - int.parse(value);
                         }
                         appState.editingPhase[processIdx] = true;
                         onFocus();
@@ -686,8 +663,8 @@ class TurnMove {
                     ),
                   ),
                   playerType.id == PlayerType.me ?
-                  Text('% /100%') :
-                  Text('/${ownPokemon.h.real}')
+                  Flexible(child: Text('% /100%')) :
+                  Flexible(child: Text('/${ownPokemon.h.real}'))
                 ],
               ),
             ],
