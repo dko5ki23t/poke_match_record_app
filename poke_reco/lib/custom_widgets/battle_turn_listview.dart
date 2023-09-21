@@ -20,7 +20,7 @@ class BattleTurnListView extends ListView {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    List<List<TurnEffectAndState>> sameTimingList,
+    List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) : 
   super(
     children: [
@@ -50,7 +50,7 @@ class BattleTurnListView extends ListView {
 
   static Pokemon _getPrevPhaseOwnPokemon(
     Battle battle, Turn turn, int i,
-    List<List<TurnEffectAndState>> sameTimingList,
+    List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
       return battle.ownParty.pokemons[turn.initialOwnPokemonIndex-1]!;
@@ -60,7 +60,7 @@ class BattleTurnListView extends ListView {
 
   static Pokemon _getPrevPhaseOpponentPokemon(
     Battle battle, Turn turn, int i,
-    List<List<TurnEffectAndState>> sameTimingList,
+    List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
       return battle.opponentParty.pokemons[turn.initialOpponentPokemonIndex-1]!;
@@ -68,7 +68,7 @@ class BattleTurnListView extends ListView {
     return battle.opponentParty.pokemons[sameTimingList[i-1].last.phaseState.opponentPokemonIndex-1]!;
   }
 
-  static TurnMove? _getRefMove(List<List<TurnEffectAndState>> sameTimingList, int i, Turn turn) {
+  static TurnMove? _getRefMove(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i, Turn turn) {
     if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.continuousMove) return null;
     TurnMove? ret;
     for (int j = 0; j < i; j++) {
@@ -82,7 +82,7 @@ class BattleTurnListView extends ListView {
     return ret;
   }
 
-  static int _getContinuousCount(List<List<TurnEffectAndState>> sameTimingList, int i, Turn turn) {
+  static int _getContinuousCount(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i, Turn turn) {
     if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.continuousMove) return 0;
     int ret = 0;
     for (int j = 0; j <= i; j++) {
@@ -99,7 +99,7 @@ class BattleTurnListView extends ListView {
     return ret;
   }
 
-  static int _getActionCount(List<List<TurnEffectAndState>> sameTimingList, int i,) {
+  static int _getActionCount(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i,) {
     if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.action) return 0;
     int ret = 0;
     for (int j = 0; j < i; j++) {

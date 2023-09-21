@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
@@ -14,7 +15,7 @@ class BattleEffectInputColumn extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    List<TurnEffectAndState> sameTimingList,
+    List<TurnEffectAndStateAndGuide> sameTimingList,
     int firstIdx,
     AbilityTiming timing,
     List<TextEditingController> textEditControllerList1,
@@ -164,41 +165,57 @@ class BattleEffectInputColumn extends Column {
                       children: [
                         Expanded(
                           flex: 5,
-                          child: DropdownButtonFormField(
-                            isExpanded: true,
-                            decoration: const InputDecoration(
-                              border: UnderlineInputBorder(),
-                              labelText: '発動効果',
+                          child: TypeAheadField(
+                            textFieldConfiguration: TextFieldConfiguration(
+                              controller: textEditControllerList1[firstIdx+i],
+                              decoration: const InputDecoration(
+                                border: UnderlineInputBorder(),
+                                labelText: '発動効果',
+                              ),
                             ),
-                            items:
-                              <DropdownMenuItem>[
-                                for (final effect in TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
-                                  turn.phases[firstIdx+i].playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                  turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                  turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                   sameTimingList[i].phaseState))
-                                  DropdownMenuItem(
-                                    value: effect.effectId,
-                                    child: Text(effect.getDisplayName(pokeData), overflow: TextOverflow.ellipsis,),
-                                  ),
-                              ],
-                            value: turn.phases[firstIdx+i].effectId == 0 ? null : turn.phases[firstIdx+i].effectId,
-                            onChanged: (value) {
-                              turn.phases[firstIdx+i].effectId = value;
+                            autoFlipDirection: true,
+                            suggestionsCallback: (pattern) async {
+                              List<TurnEffect> matches = 
+                                TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                sameTimingList[i].phaseState);
+                              matches.retainWhere((s){
+                                return toKatakana(s.getDisplayName(pokeData).toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                              });
+                              return matches;
+                            },
+                            itemBuilder: (context, suggestion) {
+                              return ListTile(
+                                title: Text(suggestion.getDisplayName(pokeData), overflow: TextOverflow.ellipsis,),
+                              );
+                            },
+                            onSuggestionSelected: (suggestion) {
+                              textEditControllerList1[firstIdx+i].text = suggestion.getDisplayName(pokeData);
+                              turn.phases[firstIdx+i].effectId = suggestion.effectId;
                               appState.editingPhase[firstIdx+i] = true;
-                              setState();
+                              onFocus(firstIdx+i);
                             },
                           ),
                         ),
                       ],
                     ),
                     turn.phases[firstIdx+i].extraInputWidget(setState),
+                    SizedBox(height: 10),
+                    for (final e in sameTimingList[i].guides)
+                    Row(
+                      children: [
+                        Icon(Icons.info, color: Colors.lightGreen,),
+                        Text(e, overflow: TextOverflow.ellipsis,),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 10,),
           ],
         ) :
         // 処理追加ボタン

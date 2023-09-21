@@ -78,7 +78,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
-    const statAlphabets = ['A', 'B', 'C', 'D', 'S', 'E'];
+    const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
     PhaseState? focusState;
 
     battleNameController.text = widget.battle.name;
@@ -204,7 +204,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               List<int> maxReals = List.generate(StatIndex.size.index, (index) => index == StatIndex.H.index ?
                 SixParams.getRealH(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort) :
                 SixParams.getRealABCDS(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort, 1.1));
-              turn.initialOpponentPokemonStates.add(PokemonState()
+              final state = PokemonState()
                 ..pokemon = poke
                 ..isBattling = i+1 == turn.initialOpponentPokemonIndex
                 ..minStats = [
@@ -212,8 +212,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   SixParams(poke.stats[j].race, 0, 0, minReals[j])]
                 ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++)
                   SixParams(poke.stats[j].race, pokemonMaxIndividual, pokemonMaxEffort, maxReals[j])]
-                ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
-              );
+                ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability;
+              if (state.possibleAbilities.length == 1) {    // 対象ポケモンのとくせいが1つしかあり得ないなら確定
+                widget.battle.opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
+                state.currentAbility = state.possibleAbilities[0];
+              }
+              turn.initialOpponentPokemonStates.add(state);
             }
             turn.phases.addAll(
               [
@@ -236,11 +240,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           );
           textEditingControllerList1 = List.generate(
             widget.battle.turns[turnNum-1].phases.length,
-            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1())
+            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1(pokeData))
           );
           textEditingControllerList2 = List.generate(
             widget.battle.turns[turnNum-1].phases.length,
-            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2())
+            (index) => TextEditingController(text:
+              widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2(
+                widget.battle.turns[turnNum-1].getProcessedStates(
+                  index, widget.battle.ownParty, widget.battle.opponentParty, pokeData
+                )
+              )
+            )
           );
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
@@ -272,6 +282,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             widget.battle.turns.add(turn);
           }
           focusPhaseIdx = 0;
+          appState.editingPhase = List.generate(
+            widget.battle.turns[turnNum-1].phases.length, (index) => false
+          );
+          textEditingControllerList1 = List.generate(
+            widget.battle.turns[turnNum-1].phases.length,
+            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1(pokeData))
+          );
+          textEditingControllerList2 = List.generate(
+            widget.battle.turns[turnNum-1].phases.length,
+            (index) => TextEditingController(text:
+              widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2(
+                widget.battle.turns[turnNum-1].getProcessedStates(
+                  index, widget.battle.ownParty, widget.battle.opponentParty, pokeData
+                )
+              )
+            )
+          );
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
@@ -395,11 +422,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     _HPBarRow(_focusingOwnPokemonState(focusState).remainHP, _focusingOwnPokemon(focusState).h.real, _focusingOpponentPokemonState(focusState).remainHPPercent),
                     SizedBox(height: 5),
                     // 各ステータス(ABCDSE)の変化
-                    for (int i = 0; i < 6; i++)
+                    for (int i = 0; i < 7; i++)
                       _StatChangeViewRow(
                         statAlphabets[i], _focusingOwnPokemonState(focusState).statChanges[i],
                         _focusingOpponentPokemonState(focusState).statChanges[i]
                       ),
+                    SizedBox(height: 5),
+                    // すばやさ実数値
+                    Row(
+                      children: [
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text('すばやさ実数値：${_focusingOwnSpeed(focusState)}'),
+                        ),
+                        SizedBox(width: 10,),
+                        Expanded(
+                          child: Text(''),
+                        ),
+                      ],
+                    ),
                     SizedBox(height: 5),
                     // 状態異常・その他補正・場
                     for (int i = 0; i < max(_focusingOwnPokemonState(focusState).buffDebuffs.length, _focusingOpponentPokemonState(focusState).buffDebuffs.length); i++)
@@ -492,37 +533,37 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     bool clearAfterMove = false;    // 連続こうげき削除に伴い、そのこうげき後の効果を消すかどうかのフラグ
     List<int> removeIdxs = [];
     for (int i = 0; i < widget.battle.turns[turnNum-1].phases.length; i++) {
-      var process = widget.battle.turns[turnNum-1].phases[i];
-      if (process.timing.id == AbilityTiming.action &&
-          process.move!.type.id == TurnMoveType.move
+      var phase = widget.battle.turns[turnNum-1].phases[i];
+      if (phase.timing.id == AbilityTiming.action &&
+          phase.move!.type.id == TurnMoveType.move
       ) {
-        allowedContinuous = process.move!.move.maxMoveCount()-1;
+        allowedContinuous = phase.move!.move.maxMoveCount()-1;
         continuousCount = 0;
         // わざが失敗/命中してない場合は、連続こうげきは問答無用で削除対象
-        if (!process.move!.isSuccess ||
-            process.move!.moveHits[0].id == MoveHit.notHit ||
-            process.move!.moveHits[0].id == MoveHit.fail
+        if (!phase.move!.isSuccess ||
+            phase.move!.moveHits[0].id == MoveHit.notHit ||
+            phase.move!.moveHits[0].id == MoveHit.fail
         ) {
           allowedContinuous = 0;
         }
       }
-      else if (process.timing.id == AbilityTiming.continuousMove) {
+      else if (phase.timing.id == AbilityTiming.continuousMove) {
         continuousCount++;
         if (continuousCount > allowedContinuous) {
           removeIdxs.add(i);
           clearAfterMove = true;
         }
         // わざが失敗/命中してない場合は、次以降の連続こうげきは問答無用で削除対象
-        if (!process.isAdding &&
-            (!process.move!.isSuccess ||
-             process.move!.moveHits[continuousCount].id == MoveHit.notHit ||
-             process.move!.moveHits[continuousCount].id == MoveHit.fail)
+        if (!phase.isAdding &&
+            (!phase.move!.isSuccess ||
+             phase.move!.moveHits[continuousCount].id == MoveHit.notHit ||
+             phase.move!.moveHits[continuousCount].id == MoveHit.fail)
         ) {
           continuousCount = allowedContinuous;
         }
       }
       else if (clearAfterMove) {
-        if (process.timing.id == AbilityTiming.afterMove) {
+        if (phase.timing.id == AbilityTiming.afterMove) {
           removeIdxs.add(i);
         }
         else {
@@ -541,14 +582,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   void _clearPokemonApeer(MyAppState appState) {
     List<int> removeIdxs = [];
-    var processList = widget.battle.turns[turnNum-1].phases;
-    for (int i = 0; i < processList.length; i++) {
-      var process = processList[i];
-      if (process.timing.id == AbilityTiming.action &&
-          process.move!.type.id != TurnMoveType.change
+    var phases = widget.battle.turns[turnNum-1].phases;
+    for (int i = 0; i < phases.length; i++) {
+      var phase = phases[i];
+      if (phase.timing.id == AbilityTiming.action &&
+          phase.move!.type.id != TurnMoveType.change
       ) {
-        for (int j = i+1; j < processList.length; j++) {
-          if (processList[j].timing.id == AbilityTiming.pokemonAppear) {
+        for (int j = i+1; j < phases.length; j++) {
+          if (phases[j].timing.id == AbilityTiming.pokemonAppear) {
             removeIdxs.add(j);
           }
           else {
@@ -559,7 +600,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     for (int i = removeIdxs.length-1; i >= 0; i--) {
       int idx = removeIdxs[i];
-      processList.removeAt(idx);
+      phases.removeAt(idx);
       appState.editingPhase.removeAt(idx);
       textEditingControllerList1.removeAt(idx);
       textEditingControllerList2.removeAt(idx);
@@ -573,19 +614,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int allowedContinuous = 0;
     int continuousCount = 0;
     int i = 0;
-    var processList = widget.battle.turns[turnNum-1].phases;
+    var phases = widget.battle.turns[turnNum-1].phases;
     while (true) {
-      if (i >= processList.length) break;
-      var process = processList[i];
-      if (process.timing.id == AbilityTiming.afterMove &&
+      if (i >= phases.length) break;
+      var phase = phases[i];
+      if (phase.timing.id == AbilityTiming.afterMove &&
           continuousCount < allowedContinuous &&
-          (i+1 >= processList.length ||
-           processList[i+1].timing.id != AbilityTiming.afterMove &&
-           processList[i+1].timing.id != AbilityTiming.continuousMove 
+          (i+1 >= phases.length ||
+           phases[i+1].timing.id != AbilityTiming.afterMove &&
+           phases[i+1].timing.id != AbilityTiming.continuousMove 
           )
       ) {
         // 可能な連続こうげきが残っている場合、「連続こうげき」タイミングを追加
-        processList.insert(i+1,
+        phases.insert(i+1,
           TurnEffect()
           ..effect = EffectType(EffectType.move)
           ..timing = AbilityTiming(AbilityTiming.continuousMove)
@@ -595,13 +636,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         textEditingControllerList1.insert(i+1, TextEditingController());
         textEditingControllerList2.insert(i+1, TextEditingController());
       }
-      else if (process.timing.id == AbilityTiming.action &&
-          process.move!.type.id == TurnMoveType.change &&
-          (i+1 >= processList.length ||
-           processList[i+1].timing.id != AbilityTiming.pokemonAppear)
+      else if (phase.timing.id == AbilityTiming.action &&
+          phase.move!.type.id == TurnMoveType.change &&
+          (i+1 >= phases.length ||
+           phases[i+1].timing.id != AbilityTiming.pokemonAppear)
            // ポケモン交換の場合、次は「ポケモン登場時」タイミングにする
       ) {
-        processList.insert(i+1,
+        phases.insert(i+1,
           TurnEffect()
           ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
           ..isAdding = true
@@ -611,23 +652,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         textEditingControllerList2.insert(i+1, TextEditingController());
       }
       else if (
-        process.timing.id == AbilityTiming.action &&
-        process.move!.type.id == TurnMoveType.move           // わざの場合
+        phase.timing.id == AbilityTiming.action &&
+        phase.move!.type.id == TurnMoveType.move           // わざの場合
       ) {
-        allowedContinuous = process.move!.move.maxMoveCount()-1;
+        allowedContinuous = phase.move!.move.maxMoveCount()-1;
         continuousCount = 0;
         // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
-        if (!process.move!.isSuccess ||
-            process.move!.moveHits[0].id == MoveHit.notHit ||
-            process.move!.moveHits[0].id == MoveHit.fail
+        if (!phase.move!.isSuccess ||
+            phase.move!.moveHits[0].id == MoveHit.notHit ||
+            phase.move!.moveHits[0].id == MoveHit.fail
         ) {
           allowedContinuous = 0;
         }
-        if (i+1 >= processList.length ||
-            processList[i+1].timing.id != AbilityTiming.afterMove
+        if (i+1 >= phases.length ||
+            phases[i+1].timing.id != AbilityTiming.afterMove
         ) {
         // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-          processList.insert(i+1,
+          phases.insert(i+1,
             TurnEffect()
             ..timing = AbilityTiming(AbilityTiming.afterMove)
             ..isAdding = true
@@ -637,13 +678,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           textEditingControllerList2.insert(i+1, TextEditingController());
           // さらに、連続こうげきの場合は「連続こうげき」タイミングを追加(ただし、ちゃんと命中した場合のみ)
           if (continuousCount < allowedContinuous &&
-              (i+1 >= processList.length ||
-              processList[i+1].timing.id != AbilityTiming.continuousMove &&
-              processList[i].move!.isSuccess &&
-              processList[i].move!.moveHits[0].id != MoveHit.notHit &&
-              processList[i].move!.moveHits[0].id != MoveHit.fail)
+              (i+1 >= phases.length ||
+              phases[i+1].timing.id != AbilityTiming.continuousMove &&
+              phases[i].move!.isSuccess &&
+              phases[i].move!.moveHits[0].id != MoveHit.notHit &&
+              phases[i].move!.moveHits[0].id != MoveHit.fail)
           ) {
-            processList.insert(i+1,
+            phases.insert(i+1,
               TurnEffect()
               ..effect = EffectType(EffectType.move)
               ..timing = AbilityTiming(AbilityTiming.continuousMove)
@@ -655,13 +696,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
         }
       }
-      else if (process.timing.id == AbilityTiming.continuousMove && !process.isAdding) {   // 連続こうげきの場合
+      else if (phase.timing.id == AbilityTiming.continuousMove && !phase.isAdding) {   // 連続こうげきの場合
         continuousCount++;
         // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-        if (i+1 >= processList.length ||
-            processList[i+1].timing.id != AbilityTiming.afterMove)
+        if (i+1 >= phases.length ||
+            phases[i+1].timing.id != AbilityTiming.afterMove)
         {
-          processList.insert(i+1,
+          phases.insert(i+1,
             TurnEffect()
             ..timing = AbilityTiming(AbilityTiming.afterMove)
             ..isAdding = true
@@ -671,10 +712,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           textEditingControllerList2.insert(i+1, TextEditingController());
         }
         // わざが命中してない場合は、これ以上連続こうげきさせない
-        if (!processList[i].isAdding &&
-            (!processList[i].move!.isSuccess ||
-             processList[i].move!.moveHits[continuousCount].id == MoveHit.notHit ||
-             processList[i].move!.moveHits[continuousCount].id == MoveHit.fail)
+        if (!phases[i].isAdding &&
+            (!phases[i].move!.isSuccess ||
+             phases[i].move!.moveHits[continuousCount].id == MoveHit.notHit ||
+             phases[i].move!.moveHits[continuousCount].id == MoveHit.fail)
         ) {
           continuousCount = allowedContinuous;
         }
@@ -684,8 +725,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
 
     // 最初のターンなら、初めにポケモン登場時処理を追加
-    if (turnNum == 1 && (processList.isEmpty || processList[0].timing.id != AbilityTiming.pokemonAppear)) {
-      processList.insert(0, TurnEffect()
+    if (turnNum == 1 && (phases.isEmpty || phases[0].timing.id != AbilityTiming.pokemonAppear)) {
+      phases.insert(0, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
         ..isAdding = true
       );
@@ -695,18 +736,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     int firstPokemonAppearEndIdx = -1;
     if (turnNum == 1) {
-      for (int i = 0; i < processList.length; i++) {
-        if (processList[i].timing.id != AbilityTiming.pokemonAppear) break;
+      for (int i = 0; i < phases.length; i++) {
+        if (phases[i].timing.id != AbilityTiming.pokemonAppear) break;
         firstPokemonAppearEndIdx++;
       }
     }
     // 行動決定直後処理を追加
-    if (processList.isEmpty ||
-        (turnNum == 1 && processList.length <= 1) ||
-        processList[firstPokemonAppearEndIdx+1].timing.id != AbilityTiming.afterActionDecision
+    if (phases.isEmpty ||
+        (turnNum == 1 && phases.length <= 1) ||
+        phases[firstPokemonAppearEndIdx+1].timing.id != AbilityTiming.afterActionDecision
       )
     {
-      processList.insert(firstPokemonAppearEndIdx+1, TurnEffect()
+      phases.insert(firstPokemonAppearEndIdx+1, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
         ..isAdding = true
       );
@@ -716,8 +757,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     // ポケモン交換
     // 毎ターン終了時処理を追加
-    if (processList.last.timing.id != AbilityTiming.everyTurnEnd) {
-      processList.add(TurnEffect()
+    if (phases.last.timing.id != AbilityTiming.everyTurnEnd) {
+      phases.add(TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
         ..isAdding = true
       );
@@ -727,30 +768,47 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  List<List<TurnEffectAndState>> _getSameTimingList(PokeDB pokeData) {
+  List<List<TurnEffectAndStateAndGuide>> _getSameTimingList(PokeDB pokeData) {
     int beginIdx = 0;
     int timingId = 0;
-    List<List<TurnEffectAndState>> ret = [];
+    List<List<TurnEffectAndStateAndGuide>> ret = [];
     var phases = widget.battle.turns[turnNum-1].phases;
-    final turnEffectAndStates = [
-      for (int i = 0; i < phases.length; i++)
-      TurnEffectAndState()
-      ..turnEffect = phases[i]
-      ..phaseState = widget.battle.turns[turnNum-1].getProcessedStates(i, widget.battle.ownParty, widget.battle.opponentParty, pokeData)
-    ];
-    for (int i = 0; i < turnEffectAndStates.length; i++) {
-      if (turnEffectAndStates[i].turnEffect.timing.id != timingId ||
-          turnEffectAndStates[i].turnEffect.timing.id == AbilityTiming.action
+    List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
+    PhaseState currentState = widget.battle.turns[turnNum-1].copyInitialState();
+    int continousCount = 0;
+    for (int i = 0; i < phases.length; i++) {
+      if (phases[i].timing.id == AbilityTiming.continuousMove) {
+        continousCount++;
+      }
+      else if (phases[i].timing.id == AbilityTiming.action) {
+        continousCount = 0;
+      }
+      final guide = phases[i].processEffect(
+        widget.battle.ownParty,
+        currentState.ownPokemonStates[currentState.ownPokemonIndex-1],
+        widget.battle.opponentParty,
+        currentState.opponentPokemonStates[currentState.opponentPokemonIndex-1],
+        currentState, pokeData, continousCount);
+      turnEffectAndStateAndGuides.add(
+        TurnEffectAndStateAndGuide()
+        ..turnEffect = phases[i]
+        ..phaseState = currentState.copyWith()
+        ..guides = guide
+      );
+    }
+    for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
+      if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action
       ) {
         if (i != 0) {
-          ret.add(turnEffectAndStates.sublist(beginIdx, i));
+          ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
         }
         beginIdx = i;
-        timingId = turnEffectAndStates[i].turnEffect.timing.id;
+        timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
       }
     }
     if (phases.isNotEmpty) {
-      ret.add(turnEffectAndStates.sublist(beginIdx, phases.length));
+      ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
     }
 
     return ret;
@@ -816,6 +874,59 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     else {
       return ability.displayName;
     }
+  }
+
+  int _focusingOwnSpeed(PhaseState focusState) {
+    int ret = widget.battle.ownParty.pokemons[focusState.ownPokemonIndex-1]!.s.real;
+    final item = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].holdingItem;
+    final ability = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].currentAbility;
+    final weather = focusState.weather;
+    final ailments = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].ailments;
+    final fields = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].fields;
+    bool ignoreParalysis = false;
+    
+    // ステータス変化
+    int rank = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].statChanges[4];
+    if (rank >= 0) {
+      ret = (ret * (2 + rank) / 2).floor();
+    }
+    else {
+      ret = (ret * 2 / (2 + rank)).floor();
+    }
+    // もちもの
+    if (item?.id == 251) {  // スピードパウダー
+      ret *= 2;
+    }
+    else if (item?.id == 264) {   // こだわりスカーフ
+      ret = (ret * 1.5).floor();
+    }
+    else if (item?.id == 255) {   // くろいてっきゅう
+      ret = (ret * 0.5).floor();
+    }
+    // とくせい
+    if (ability.id == 33 && weather.id == Weather.rainy) {      // 雨下のすいすい
+      ret *= 2;
+    }
+    else if (ability.id == 34 && weather.id == Weather.sunny) { // 晴れ下のようりょくそ
+      ret *= 2;
+    }
+    else if (ability.id == 95 && ailments.where((element) => element.id <= Ailment.sleep).isNotEmpty) {   // 状態異常中のはやあし
+      ret *= 2;
+      ignoreParalysis = true;
+    }
+    else if (ability.id == 84 && item == null) {  // もちものを持っていないときのかるわざ
+      ret *= 2;
+    }
+    // スロースタート(未実装)
+    // 場・状態異常
+    if (fields.where((element) => element.id == IndividualField.tailwind).isNotEmpty) {   // おいかぜ
+      ret *= 2;
+    }
+    if (!ignoreParalysis && ailments.where((element) => element.id == Ailment.paralysis).isNotEmpty) {  // まひ
+      ret = (ret * 0.5).floor();
+    }
+
+    return ret;
   }
 }
 

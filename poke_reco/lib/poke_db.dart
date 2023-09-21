@@ -1405,7 +1405,7 @@ class PokemonState {
   bool isBattling = false;      // バトルに参加しているかどうか
   Item? holdingItem = Item(0, '');  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
-  List<int> statChanges = List.generate(6, (i) => 0);   // のうりょく変化
+  List<int> statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   Ability currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい(バトル中にとくせいが変わることあるので)
   List<IndividualField> fields = [];        // 場(天気やフィールドを含まない、かべ等)
@@ -1462,7 +1462,7 @@ class PokemonState {
     }
     // statChanges
     final statChangeElements = stateElements[8].split(split2);
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
       pokemonState.statChanges[i] = int.parse(statChangeElements[i]);
     }
     // buffDebuffs
@@ -1542,7 +1542,7 @@ class PokemonState {
     }
     ret += split1;
     // statChanges
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 7; i++) {
       ret += statChanges[i].toString();
       ret += split2;
     }
@@ -1786,15 +1786,23 @@ class Turn {
     int phaseIdx, Party ownParty, Party opponentParty, PokeDB pokeData)
   {
     PhaseState ret = copyInitialState();
+    int continousCount = 0;
 
     for (int i = 0; i < phaseIdx+1; i++) {
       final effect = phases[i];
+      if (effect.isAdding) continue;
+      if (effect.timing.id == AbilityTiming.continuousMove) {
+        continousCount++;
+      }
+      else if (effect.timing.id == AbilityTiming.action) {
+        continousCount = 0;
+      }
       effect.processEffect(
         ownParty,
         ret.ownPokemonStates[ret.ownPokemonIndex-1],
         opponentParty,
         ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
-        ret, pokeData,
+        ret, pokeData, continousCount,
       );
     }
     return ret;

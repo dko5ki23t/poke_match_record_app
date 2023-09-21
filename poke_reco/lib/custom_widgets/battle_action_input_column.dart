@@ -21,6 +21,7 @@ class BattleActionInputColumn extends Column {
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
+    List<String> guides,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -136,6 +137,14 @@ class BattleActionInputColumn extends Column {
                 moveState.ownPokemonStates[moveState.ownPokemonIndex-1],
                 moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
                 hpControllerList[processIdx], appState, processIdx, 0,
+              ),
+              SizedBox(height: 10,),
+              for (final e in guides)
+              Row(
+                children: [
+                  Icon(Icons.info, color: Colors.lightGreen,),
+                  Text(e, overflow: TextOverflow.ellipsis,),
+                ],
               ),
             ],
           ),

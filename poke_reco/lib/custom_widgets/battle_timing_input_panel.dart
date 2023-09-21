@@ -17,7 +17,7 @@ class BattleTimingInputPanel extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    List<TurnEffectAndState> sameTimingList,
+    List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     Pokemon prevOwnPokemon,
@@ -92,7 +92,7 @@ class BattleTimingInputPanel extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    List<TurnEffectAndState> sameTimingList,
+    List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     Pokemon prevOwnPokemon,
@@ -111,6 +111,7 @@ class BattleTimingInputPanel extends Column {
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
+      sameTimingList.first.guides,
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(
@@ -122,7 +123,8 @@ class BattleTimingInputPanel extends Column {
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       sameTimingList.first.phaseState, timing,
       textEditControllerList1, textEditControllerList2,
-      refMove!, continuousCount
+      refMove!, continuousCount,
+      sameTimingList.first.guides,
     ) :
     BattleEffectInputColumn(
       pokeData, setState, theme, battle, turn,

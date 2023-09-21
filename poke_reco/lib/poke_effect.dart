@@ -150,6 +150,151 @@ const List <int> afterActionDecisionItemIDs = [
   187,      // イバンのみ
 ];
 
+// わざ使用後
+// とくせい
+const List<int> afterMoveAbilityIDs = [
+  209,      // ばけのかわ
+  248,      // アイスフェイス
+  5,        // がんじょう
+  157,      // そうしょく
+  18,       // もらいび
+  87,       // かんそうはだ
+  114,      // よびみず
+  11,       // ちょすい
+  31,       // ひらいしん
+  78,       // でんきエンジン
+  10,       // ちくでん
+  43,       // ぼうおん
+  25,       // ふしぎなまもり
+  142,      // ぼうじん
+  143,      // どくしゅ
+  106,      // ゆうばく
+  215,      // とびだすなかみ
+  28,       // シンクロ
+  160,      // てつのトゲ
+  24,       // さめはだ
+  27,       // ほうし
+  38,       // どくのトゲ
+  9,        // せいでんき
+  49,       // ほのおのからだ
+  56,       // メロメロボディ
+  152,      // ミイラ
+  183,      // ぬめぬめ
+  221,      // カーリーヘアー
+  254,      // さまようたましい
+  253,      // ほろびのボディ
+  268,      // とれないにおい
+  130,      // のろわれボディ
+  149,      // イリュージョン
+  192,      // じきゅうりょく
+  245,      // すなはき
+  238,      // わたげ
+  241,      // うのミサイル
+  269,      // こぼれダネ
+  280,      // でんきにかえる
+  133,      // くだけるよろい
+  295,      // どくげしょう
+  195,      // みずがため
+  154,      // せいぎのこころ
+  155,      // びびり
+  243,      // じょうききかん
+  277,      // ふうりょくでんき
+  83,       // いかりのつぼ
+  170,      // マジシャン
+  153,      // じしんかじょう
+  224,      // ビーストブースト
+  265,      // くろのいななき
+  264,      // しろのいななき
+  16,       // へんしょく
+  201,      // ぎゃくじょう
+  271,      // いかりのこうら
+//  547,      // いにしえのうた
+  219,      // きずなへんげ
+  194,      // ききかいひ
+  193,      // にげごし
+  124,      // わるいてぐせ
+  7,        // じゅうなん
+  199,      // すいほう
+  12,       // どんかん
+  270,      // ねつこうかん
+  257,      // パステルベール
+  15,       // ふみん
+  201,      // マイペース
+  40,       // マグマのよろい
+  41,       // みずのベール
+  17,       // めんえき
+  72,       // やるき
+  290,      // びんじょう
+  216,      // おどりこ
+];
+// もちもの
+const List<int> afterMoveItemIDs = [
+  584,      // ふうせん
+  252,      // きあいのタスキ
+  207,      // きあいのハチマキ
+  723,      // ロゼルのみ
+  177,      // ホズのみ
+  176,      // リリバのみ
+  175,      // ナモのみ
+  174,      // ハバンのみ
+  173,      // カシブのみ
+  172,      // ヨロギのみ
+  171,      // タンガのみ
+  170,      // ウタンのみ
+  169,      // バコウのみ
+  168,      // シュカのみ
+  167,      // ビアーのみ
+  166,      // ヨプのみ
+  165,      // ヤチェのみ
+  164,      // リンドのみ
+  163,      // ソクノのみ
+  162,      // イトケのみ
+  161,      // オッカのみ
+  185,      // ナゾのみ
+  682,      // じゃくてんほけん
+  589,      // じゅうでんち
+  689,      // ゆきだま
+  588,      // きゅうこん
+  688,      // ひかりごけ
+  583,      // ゴツゴツメット
+  265,      // くっつきバリ
+  584,      // ふうせん
+  188,      // ジャポのみ
+  189,      // レンブのみ
+  724,      // アッキのみ
+  725,      // タラプのみ
+  590,      // だっしゅつボタン
+  585,      // レッドカード
+  247,      // いのちのたま
+  230,      // かいがらのすず
+  135,      // オボンのみ
+  136,      // フィラのみ
+  137,      // ウイのみ
+  138,      // マゴのみ
+  139,      // バンジのみ
+  140,      // イアのみ
+  178,      // チイラのみ
+  179,      // リュガのみ
+  181,      // ヤタピのみ
+  182,      // ズアのみ
+  180,      // カムラのみ
+  183,      // サンのみ
+  184,      // スターのみ
+  186,      // ミクルのみ
+  43,       // きのみジュース
+  898,      // エレキシード
+  901,      // グラスシード
+  900,      // ミストシード
+  899,      // サイコシード
+  1180,     // ルームサービス
+  131,      // ヒメリのみ
+  1176,     // のどスプレー
+  1179,     // からぶりほけん
+  191,      // しろいハーブ
+  1699,     // ものまねハーブ
+  1177,     // だっしゅつパック
+];
+
 // 毎ターン終了時
 // とくせい
 const List<int> everyTurnEndAbilityIDs = [
@@ -274,16 +419,56 @@ class TurnEffect {
       (effect.id == EffectType.move && move != null && move!.isValid() || effectId > 0);
   }
 
-  void processEffect(
+  // processEffect前処理
+  /*
+  void preprocessEffect(
+    List<TurnEffect> phases,
+    int index,
+  )
+  {
+    if (!isValid()) return;
+
+    int prevMoveIdx = index;
+    for (int i = index-1; i >= 0; i--) {    // 直前のわざのインデックスを探す
+      if ((phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) &&
+          phases[i].effect.id == EffectType.move)
+      {
+        prevMoveIdx = i;
+        break;
+      }
+    }
+
+    switch (effect.id) {
+      case EffectType.ability:
+        switch (effectId) {
+          case 209:   // ばけのかわ
+            if (playerType.id == PlayerType.opponent) {   // ダメージは1/8にする(自身のダメージはゆーざの入力に任せる)
+              phases[prevMoveIdx].move!.percentDamage = 12;
+            }
+            break;
+          case 248:   // アイスフェイス
+            if (playerType.id == PlayerType.opponent) {   // ダメージは0にする(自身のダメージはゆーざの入力に任せる)
+              phases[prevMoveIdx].move!.percentDamage = 0;
+            }
+            break;
+        }
+    }
+  }
+  */
+
+  // 効果やわざの結果から、各ポケモン等の状態を更新する
+  List<String> processEffect(
     Party ownParty,
     PokemonState ownPokemonState,
     Party opponentParty,
     PokemonState opponentPokemonState,
     PhaseState state,
     PokeDB pokeData,
+    int continousCount,
   )
   {
-    if (!isValid()) return;
+    List<String> ret = [];
+    if (!isValid()) return ret;
 
     var myState = ownPokemonState;
     var yourState = opponentPokemonState;
@@ -311,41 +496,34 @@ class TurnEffect {
             yourState.statChanges[0]--;
             break;
           case 281:   // こだいかっせい
-            myState.buffDebuffs.add(BuffDebuff(1+extraArg1));
-// TODO:以下のような決定をユーザに確認したい
-/*
+            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
             if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
               myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
               myState.holdingItem = null;   // アイテム消費
+              if (playerType.id == PlayerType.opponent) {
+                ret.add('もちものをブーストエナジーで確定しました。');
+              }
             }
-*/
             break;
           case 282:   // クォークチャージ
-            myState.buffDebuffs.add(BuffDebuff(1+extraArg1));
+            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
+            if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
+              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
+              myState.holdingItem = null;   // アイテム消費
+              if (playerType.id == PlayerType.opponent) {
+                ret.add('もちものをブーストエナジーで確定しました。');
+              }
+            }
             break;
           default:
             break;
         }
         break;
       case EffectType.move:
-        if (move!.isSuccess && move!.type.id == TurnMoveType.change) {
-          if (playerType.id == PlayerType.me) {
-            state.ownPokemonIndex = move!.changePokemonIndex!;
-          }
-          else {
-            state.opponentPokemonIndex = move!.changePokemonIndex!;
-          }
-        }
-        if (move!.isSuccess && move!.type.id == TurnMoveType.move) {
-          if (playerType.id == PlayerType.me) {
-            state.opponentPokemonStates[state.opponentPokemonIndex-1].remainHPPercent -= move!.percentDamage;
-          }
-          else {
-            state.ownPokemonStates[state.ownPokemonIndex-1].remainHP -= move!.realDamage;
-          }
-        }
+        ret.addAll(move!.processMove(ownParty, ownPokemonState, opponentPokemonState, state, continousCount));
         break;
     }
+    return ret;
   }
 
   // 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
@@ -378,6 +556,8 @@ class TurnEffect {
         itemIDs = afterActionDecisionItemIDs;
         break;
       case AbilityTiming.afterMove:     // わざ使用後
+        abilityIDs = afterMoveAbilityIDs;
+        itemIDs = afterMoveItemIDs;
         break;
       default:
         break;
@@ -490,33 +670,37 @@ class TurnEffect {
     }
   }
 
-  String getEditingControllerText1() {
+  String getEditingControllerText1(PokeDB pokeData) {
     switch (timing.id) {
       case AbilityTiming.action:
+      case AbilityTiming.continuousMove:
         return move == null ? '' : move!.move.displayName;
+      case AbilityTiming.afterActionDecision:
+      case AbilityTiming.afterMove:
+      case AbilityTiming.pokemonAppear:
+      case AbilityTiming.everyTurnEnd:
+        return getDisplayName(pokeData);
       default:
         return '';
     }
   }
 
-  String getEditingControllerText2() {
-    /*
+  String getEditingControllerText2(PhaseState state) {
     switch (timing.id) {
       case AbilityTiming.action:
+      case AbilityTiming.continuousMove:
         {
           if (move == null) return '';
           if (move!.playerType.id == PlayerType.me) {
-            return move!.percentDamage.toString();
+            return (state.opponentPokemonStates[state.opponentPokemonIndex-1].remainHPPercent - move!.percentDamage).toString();
           }
           else {
-            return move!.realD
+            return (state.ownPokemonStates[state.ownPokemonIndex-1].remainHP - move!.realDamage).toString();
           }
         }
       default:
         return '';
     }
-    */
-    return '';
   }
 
   Widget extraInputWidget(
@@ -641,7 +825,8 @@ class TurnEffect {
   }
 }
 
-class TurnEffectAndState {
+class TurnEffectAndStateAndGuide {
   TurnEffect turnEffect = TurnEffect();
   PhaseState phaseState = PhaseState();
+  List<String> guides = [];
 }

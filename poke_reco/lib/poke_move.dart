@@ -49,6 +49,7 @@ class MoveAdditionalEffect {
 }
 
 class ActionFailure {
+  // TODO:多い(まだ他にもある)から、何か情報が得られるものに限定したい
   static const int none = 0;
   static const int recoil = 1;        // わざの反動
   static const int sleep = 2;         // ねむり(カウント消費)
@@ -126,32 +127,37 @@ class TurnMove {
     ..moveAdditionalEffects = [...moveAdditionalEffects]
     ..changePokemonIndex = changePokemonIndex;
 
-  void processMove(
+  List<String> processMove(
     Party ownParty,
     PokemonState ownPokemonState,
-    Party opponentPokemon,
     PokemonState opponentPokemonState,
     PhaseState state,
     int continousCount,
   )
   {
-    if (playerType.id == PlayerType.none) return;
+    List<String> ret = [];
+    if (playerType.id == PlayerType.none) return ret;
+    if (!isSuccess) return ret;
 
     // ポケモン交換
-    if (changePokemonIndex != null) {
+    if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       if (playerType.id == PlayerType.me) {
-        ownPokemonState.statChanges = List.generate(6, (i) => 0);
+        ownPokemonState.statChanges = List.generate(7, (i) => 0);
+        ownPokemonState.buffDebuffs.clear();
+        ownPokemonState.fields.clear();
         state.ownPokemonIndex = changePokemonIndex!;
       }
       else {
-        opponentPokemonState.statChanges = List.generate(6, (i) => 0);
+        opponentPokemonState.statChanges = List.generate(7, (i) => 0);
+        opponentPokemonState.buffDebuffs.clear();
+        opponentPokemonState.fields.clear();
         state.opponentPokemonIndex = changePokemonIndex!;
       }
-      return;
+      return ret;
     }
 
-    if (move.id == 0) return;
+    if (move.id == 0) return ret;
 
     PokemonState myState = ownPokemonState;
     PokemonState opponentState = opponentPokemonState;
@@ -254,6 +260,8 @@ class TurnMove {
       default:
         break;
     }
+
+    return ret;
   }
 
   Widget extraInputWidget1(

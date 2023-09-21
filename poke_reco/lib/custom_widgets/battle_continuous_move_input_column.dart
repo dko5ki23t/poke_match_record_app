@@ -23,6 +23,7 @@ class BattleContinuousMoveInputColumn extends Column {
     List<TextEditingController> hpControllerList,
     TurnMove refMove,
     int continuousCount,
+    List<String> guides,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -77,6 +78,14 @@ class BattleContinuousMoveInputColumn extends Column {
                 moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
                 hpControllerList[processIdx], appState, processIdx, continuousCount,
               ),
+              SizedBox(height: 10,),
+              for (final e in guides)
+              Row(
+                children: [
+                  Icon(Icons.info, color: Colors.lightGreen,),
+                  Text(e, overflow: TextOverflow.ellipsis,),
+                ],
+              ),
             ],
           ),
         ),
@@ -93,7 +102,6 @@ class BattleContinuousMoveInputColumn extends Column {
             ..move = refMove
             ..isAdding = false;
             onFocus(processIdx+1);
-            //setState();
           },
         child: Container(
           padding: const EdgeInsets.all(10),
