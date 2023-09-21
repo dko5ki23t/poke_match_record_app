@@ -692,10 +692,10 @@ class TurnEffect {
         {
           if (move == null) return '';
           if (move!.playerType.id == PlayerType.me) {
-            return (state.opponentPokemonStates[state.opponentPokemonIndex-1].remainHPPercent - move!.percentDamage).toString();
+            return state.opponentPokemonState.remainHPPercent.toString();
           }
           else {
-            return (state.ownPokemonStates[state.ownPokemonIndex-1].remainHP - move!.realDamage).toString();
+            return state.ownPokemonState.remainHP.toString();
           }
         }
       default:

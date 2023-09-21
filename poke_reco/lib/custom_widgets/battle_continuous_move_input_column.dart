@@ -8,6 +8,7 @@ class BattleContinuousMoveInputColumn extends Column {
   BattleContinuousMoveInputColumn(
     PokeDB pokeData,
     void Function() setState,
+    PhaseState prevState,       // 直前までの状態
     Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交換する場合は、交換前ポケモン)
     Pokemon opponentPokemon,
     ThemeData theme,
@@ -17,7 +18,6 @@ class BattleContinuousMoveInputColumn extends Column {
     int focusPhaseIdx,
     void Function(int) onFocus,
     int processIdx,
-    PhaseState? moveState,
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
@@ -74,8 +74,8 @@ class BattleContinuousMoveInputColumn extends Column {
               SizedBox(height: 10,),
               turn.phases[processIdx].move!.extraInputWidget2(
                 () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
-                moveState!.ownPokemonStates[moveState.ownPokemonIndex-1],
-                moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
+                prevState.ownPokemonState,
+                prevState.opponentPokemonState,
                 hpControllerList[processIdx], appState, processIdx, continuousCount,
               ),
               SizedBox(height: 10,),
@@ -100,6 +100,7 @@ class BattleContinuousMoveInputColumn extends Column {
             turn.phases[processIdx]
             ..effect = EffectType(EffectType.move)
             ..move = refMove
+            ..playerType = refMove.playerType
             ..isAdding = false;
             onFocus(processIdx+1);
           },

@@ -647,7 +647,7 @@ class TurnMove {
                       widgetContainerDecoration: const BoxDecoration(
                         border: null,
                       ),
-                      initialValue: playerType.id == PlayerType.me ? opponentPokemonState.remainHPPercent : ownPokemonState.remainHP,
+                      initialValue: playerType.id == PlayerType.me ? opponentPokemonState.remainHPPercent - percentDamage : ownPokemonState.remainHP - realDamage,
                       min: 0,
                       max: playerType.id == PlayerType.me ? 100 : ownPokemon.h.real,
                       enabled: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail,
@@ -742,6 +742,7 @@ class TurnMove {
     // actionFailure
     turnMove.actionFailure = ActionFailure(int.parse(turnMoveElements[5]));
     // moveHits
+    turnMove.moveHits.clear();
     var moveHits = turnMoveElements[6].split(split2);
     for (var moveHitsElement in moveHits) {
       if (moveHitsElement == '') break;

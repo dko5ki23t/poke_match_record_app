@@ -20,6 +20,7 @@ class BattleTimingInputPanel extends Column {
     List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
+    PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
     TurnMove? refMove,
@@ -38,7 +39,7 @@ class BattleTimingInputPanel extends Column {
           turn, appState, focusPhaseIdx,
           (phaseIdx) => onFocus(phaseIdx), sameTimingList,
           textEditControllerList1, textEditControllerList2,
-          prevOwnPokemon, prevOpponentPokemon,
+          prevState, prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount,
         ),
       ),
@@ -95,6 +96,7 @@ class BattleTimingInputPanel extends Column {
     List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
+    PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
     TurnMove? refMove,
@@ -103,26 +105,26 @@ class BattleTimingInputPanel extends Column {
     return 
     timing.id == AbilityTiming.action ?
     BattleActionInputColumn(
-      pokeData, setState,
+      pokeData, setState, prevState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
-      sameTimingList.first.phaseState, timing,
-      textEditControllerList1, textEditControllerList2,
+      timing, textEditControllerList1,
+      textEditControllerList2,
       sameTimingList.first.guides,
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(
-      pokeData, setState,
+      pokeData, setState, prevState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
-      sameTimingList.first.phaseState, timing,
-      textEditControllerList1, textEditControllerList2,
+      timing, textEditControllerList1,
+      textEditControllerList2,
       refMove!, continuousCount,
       sameTimingList.first.guides,
     ) :

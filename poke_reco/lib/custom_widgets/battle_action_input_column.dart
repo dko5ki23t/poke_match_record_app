@@ -8,6 +8,7 @@ class BattleActionInputColumn extends Column {
   BattleActionInputColumn(
     PokeDB pokeData,
     void Function() setState,
+    PhaseState prevState,       // 直前までの状態
     Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交換する場合は、交換前ポケモン)
     Pokemon opponentPokemon,
     ThemeData theme,
@@ -17,7 +18,6 @@ class BattleActionInputColumn extends Column {
     int focusPhaseIdx,
     void Function(int) onFocus,
     int processIdx,
-    PhaseState moveState,
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
@@ -125,17 +125,17 @@ class BattleActionInputColumn extends Column {
               SizedBox(height: 10,),
               turn.phases[processIdx].move!.extraInputWidget1(
                 () => onFocus(processIdx+1), battle.ownParty, 
-                battle.opponentParty, moveState, ownPokemon, opponentPokemon,
-                moveState.ownPokemonStates[moveState.ownPokemonIndex-1], 
-                moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
+                battle.opponentParty, prevState, ownPokemon, opponentPokemon,
+                prevState.ownPokemonState,
+                prevState.opponentPokemonState,
                 moveControllerList[processIdx], hpControllerList[processIdx], pokeData,
                 appState, processIdx,
               ),
               SizedBox(height: 10,),
               turn.phases[processIdx].move!.extraInputWidget2(
                 () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
-                moveState.ownPokemonStates[moveState.ownPokemonIndex-1],
-                moveState.opponentPokemonStates[moveState.opponentPokemonIndex-1],
+                prevState.ownPokemonState,
+                prevState.opponentPokemonState,
                 hpControllerList[processIdx], appState, processIdx, 0,
               ),
               SizedBox(height: 10,),

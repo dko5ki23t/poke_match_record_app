@@ -1721,6 +1721,9 @@ class PhaseState {
     ]
     ..weather = weather.copyWith()
     ..field = field.copyWith();
+  
+  PokemonState get ownPokemonState => ownPokemonStates[ownPokemonIndex-1];
+  PokemonState get opponentPokemonState => opponentPokemonStates[opponentPokemonIndex-1];
 }
 
 class Turn {
@@ -1799,9 +1802,9 @@ class Turn {
       }
       effect.processEffect(
         ownParty,
-        ret.ownPokemonStates[ret.ownPokemonIndex-1],
+        ret.ownPokemonState,
         opponentParty,
-        ret.opponentPokemonStates[ret.opponentPokemonIndex-1],
+        ret.opponentPokemonState,
         ret, pokeData, continousCount,
       );
     }

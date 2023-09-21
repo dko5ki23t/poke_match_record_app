@@ -179,8 +179,8 @@ class BattleEffectInputColumn extends Column {
                                 TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
                                 turn.phases[firstIdx+i].playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
                                 turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonStates[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonStates[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonState :
+                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonState : null,
                                 sameTimingList[i].phaseState);
                               matches.retainWhere((s){
                                 return toKatakana(s.getDisplayName(pokeData).toLowerCase()).contains(toKatakana(pattern.toLowerCase()));

@@ -81,18 +81,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
     PhaseState? focusState;
 
+    // エイリアス
+    List<Turn> turns = widget.battle.turns;
+    Party ownParty = widget.battle.ownParty;
+    Party opponentParty = widget.battle.opponentParty;
+
     battleNameController.text = widget.battle.name;
     opponentNameController.text = widget.battle.opponentName;
-    for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-      opponentPokemonController[i].text = widget.battle.opponentParty.pokemons[i]!.name;
+    for (int i = 0; i < opponentParty.pokemonNum; i++) {
+      opponentPokemonController[i].text = opponentParty.pokemons[i]!.name;
     }
     
-    if (widget.battle.turns.length >= turnNum &&
+    if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage
     ) {
       // フォーカスしているフェーズの状態を取得
-      focusState = widget.battle.turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, widget.battle.ownParty, widget.battle.opponentParty, pokeData);
+      focusState = turns[turnNum-1].
+                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       _adjustPhases(appState);
     }
@@ -122,39 +127,39 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // TODO?: 入力された値が正しいかチェック
       if (widget.isNew) {
         // 相手のパーティ、ポケモンも登録
-        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-          widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-          widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-          pokemons.add(widget.battle.opponentParty.pokemons[i]!);
-          await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+        for (int i = 0; i < opponentParty.pokemonNum; i++) {
+          opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+          opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+          pokemons.add(opponentParty.pokemons[i]!);
+          await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
         }
-        widget.battle.opponentParty.id = pokeData.getUniquePartyID();
-        widget.battle.opponentParty.owner = Owner.fromBattle;
-        parties.add(widget.battle.opponentParty);
-        await pokeData.addParty(widget.battle.opponentParty);
+        opponentParty.id = pokeData.getUniquePartyID();
+        opponentParty.owner = Owner.fromBattle;
+        parties.add(opponentParty);
+        await pokeData.addParty(opponentParty);
 
         widget.battle.id = pokeData.getUniqueBattleID();
         battles.add(widget.battle);
       }
       else {
         int index = 0;
-        for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-          int pokemonID = widget.battle.opponentParty.pokemons[i]!.id;
+        for (int i = 0; i < opponentParty.pokemonNum; i++) {
+          int pokemonID = opponentParty.pokemons[i]!.id;
           if (pokemonID == 0) {   // 編集時に追加したポケモン
-            widget.battle.opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-            widget.battle.opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-            pokemons.add(widget.battle.opponentParty.pokemons[i]!);
-            await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+            opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+            opponentParty.pokemons[i]!.owner = Owner.fromBattle;
+            pokemons.add(opponentParty.pokemons[i]!);
+            await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
           }
           else {
             index = pokemons.indexWhere((element) => element.id == pokemonID);
-            pokemons[index] = widget.battle.opponentParty.pokemons[i]!;
-            await pokeData.addMyPokemon(widget.battle.opponentParty.pokemons[i]!);
+            pokemons[index] = opponentParty.pokemons[i]!;
+            await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
           }
         }
-        index = parties.indexWhere((element) => element.id == widget.battle.opponentParty.id);
-        parties[index] = widget.battle.opponentParty;
-        await pokeData.addParty(widget.battle.opponentParty);
+        index = parties.indexWhere((element) => element.id == opponentParty.id);
+        parties[index] = opponentParty;
+        await pokeData.addParty(opponentParty);
 
         index = battles.indexWhere((element) => element.id == widget.battle.id);
         battles[index] = widget.battle;
@@ -169,34 +174,34 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           pageType = RegisterBattlePageType.firstPokemonPage;
           checkedPokemons.own = 0;
           checkedPokemons.opponent = 0;
-          if (widget.battle.turns.isNotEmpty) {
-            checkedPokemons.own = widget.battle.turns[0].initialOwnPokemonIndex;
-            checkedPokemons.opponent = widget.battle.turns[0].initialOpponentPokemonIndex;
+          if (turns.isNotEmpty) {
+            checkedPokemons.own = turns[0].initialOwnPokemonIndex;
+            checkedPokemons.opponent = turns[0].initialOpponentPokemonIndex;
           }
           setState(() {});
           break;
         case RegisterBattlePageType.firstPokemonPage:
           assert(checkedPokemons.own != 0);
           assert(checkedPokemons.opponent != 0);
-          if (widget.battle.turns.isEmpty) {
+          if (turns.isEmpty) {
             Turn turn = Turn()
             ..initialOwnPokemonIndex = checkedPokemons.own
             ..initialOpponentPokemonIndex = checkedPokemons.opponent;
             // 初期状態設定ここから
-            for (int i = 0; i < widget.battle.ownParty.pokemonNum; i++) {
+            for (int i = 0; i < ownParty.pokemonNum; i++) {
               turn.initialOwnPokemonStates.add(PokemonState()
-                ..pokemon = widget.battle.ownParty.pokemons[i]!
-                ..remainHP = widget.battle.ownParty.pokemons[i]!.h.real
+                ..pokemon = ownParty.pokemons[i]!
+                ..remainHP = ownParty.pokemons[i]!.h.real
                 ..isBattling = i+1 == turn.initialOwnPokemonIndex
-                ..holdingItem = widget.battle.ownParty.items[i]
-                ..usedPPs = List.generate(widget.battle.ownParty.pokemons[i]!.moves.length, (i) => 0)
-                ..currentAbility = widget.battle.ownParty.pokemons[i]!.ability
-                ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) widget.battle.ownParty.pokemons[i]!.stats[j]]
-                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) widget.battle.ownParty.pokemons[i]!.stats[j]]
+                ..holdingItem = ownParty.items[i]
+                ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
+                ..currentAbility = ownParty.pokemons[i]!.ability
+                ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
+                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
               );
             }
-            for (int i = 0; i < widget.battle.opponentParty.pokemonNum; i++) {
-              Pokemon poke = widget.battle.opponentParty.pokemons[i]!;
+            for (int i = 0; i < opponentParty.pokemonNum; i++) {
+              Pokemon poke = opponentParty.pokemons[i]!;
               List<int> races = List.generate(StatIndex.size.index, (index) => poke.stats[index].race);
               List<int> minReals = List.generate(StatIndex.size.index, (index) => index == StatIndex.H.index ?
                 SixParams.getRealH(poke.level, races[index], 0, 0) :
@@ -214,7 +219,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   SixParams(poke.stats[j].race, pokemonMaxIndividual, pokemonMaxEffort, maxReals[j])]
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability;
               if (state.possibleAbilities.length == 1) {    // 対象ポケモンのとくせいが1つしかあり得ないなら確定
-                widget.battle.opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
+                opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
                 state.currentAbility = state.possibleAbilities[0];
               }
               turn.initialOpponentPokemonStates.add(state);
@@ -232,22 +237,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               ]
             );
             // 初期状態設定ここまで
-            widget.battle.turns.add(turn);
+            turns.add(turn);
           }
           focusPhaseIdx = 0;
+          var currentTurn = turns[turnNum-1];
           appState.editingPhase = List.generate(
-            widget.battle.turns[turnNum-1].phases.length, (index) => false
+            currentTurn.phases.length, (index) => false
           );
           textEditingControllerList1 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length,
-            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1(pokeData))
+            currentTurn.phases.length,
+            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
           );
           textEditingControllerList2 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length,
+            currentTurn.phases.length,
             (index) => TextEditingController(text:
-              widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2(
-                widget.battle.turns[turnNum-1].getProcessedStates(
-                  index, widget.battle.ownParty, widget.battle.opponentParty, pokeData
+              currentTurn.phases[index].getEditingControllerText2(
+                currentTurn.getProcessedStates(
+                  index, ownParty, opponentParty, pokeData
                 )
               )
             )
@@ -256,13 +262,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
-          Turn prevTurn = widget.battle.turns[turnNum-1];
+          Turn prevTurn = turns[turnNum-1];
           turnNum++;
-          if (widget.battle.turns.length < turnNum) {
+          if (turns.length < turnNum) {
             PhaseState initialState =
               prevTurn.getProcessedStates(
                 prevTurn.phases.length-1,
-                widget.battle.ownParty, widget.battle.opponentParty, pokeData);
+                ownParty, opponentParty, pokeData);
             // 前ターンの最終状態を初期状態とする
             Turn turn = Turn()
             ..setInitialState(initialState);
@@ -279,22 +285,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               ]
             );
 
-            widget.battle.turns.add(turn);
+            turns.add(turn);
           }
+          var currentTurn = turns[turnNum-1];
           focusPhaseIdx = 0;
           appState.editingPhase = List.generate(
-            widget.battle.turns[turnNum-1].phases.length, (index) => false
+            currentTurn.phases.length, (index) => false
           );
           textEditingControllerList1 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length,
-            (index) => TextEditingController(text: widget.battle.turns[turnNum-1].phases[index].getEditingControllerText1(pokeData))
+            currentTurn.phases.length,
+            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
           );
           textEditingControllerList2 = List.generate(
-            widget.battle.turns[turnNum-1].phases.length,
+            currentTurn.phases.length,
             (index) => TextEditingController(text:
-              widget.battle.turns[turnNum-1].phases[index].getEditingControllerText2(
-                widget.battle.turns[turnNum-1].getProcessedStates(
-                  index, widget.battle.ownParty, widget.battle.opponentParty, pokeData
+              currentTurn.phases[index].getEditingControllerText2(
+                currentTurn.getProcessedStates(
+                  index, ownParty, opponentParty, pokeData
                 )
               )
             )
@@ -321,6 +328,24 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             pageType = RegisterBattlePageType.firstPokemonPage;
           }
           else {
+            var currentTurn = turns[turnNum-1];
+            appState.editingPhase = List.generate(
+              currentTurn.phases.length, (index) => false
+            );
+            textEditingControllerList1 = List.generate(
+              currentTurn.phases.length,
+              (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
+            );
+            textEditingControllerList2 = List.generate(
+              currentTurn.phases.length,
+              (index) => TextEditingController(text:
+                currentTurn.phases[index].getEditingControllerText2(
+                  currentTurn.getProcessedStates(
+                    index, ownParty, opponentParty, pokeData
+                  )
+                )
+              )
+            );
             pageType = RegisterBattlePageType.turnPage;
           }
           focusPhaseIdx = 0;
@@ -419,13 +444,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     ),
                     SizedBox(height: 5),
                     // HP
-                    _HPBarRow(_focusingOwnPokemonState(focusState).remainHP, _focusingOwnPokemon(focusState).h.real, _focusingOpponentPokemonState(focusState).remainHPPercent),
+                    _HPBarRow(focusState.ownPokemonState.remainHP, _focusingOwnPokemon(focusState).h.real, focusState.opponentPokemonState.remainHPPercent),
                     SizedBox(height: 5),
                     // 各ステータス(ABCDSE)の変化
                     for (int i = 0; i < 7; i++)
                       _StatChangeViewRow(
-                        statAlphabets[i], _focusingOwnPokemonState(focusState).statChanges[i],
-                        _focusingOpponentPokemonState(focusState).statChanges[i]
+                        statAlphabets[i], focusState.ownPokemonState.statChanges[i],
+                        focusState.opponentPokemonState.statChanges[i]
                       ),
                     SizedBox(height: 5),
                     // すばやさ実数値
@@ -443,8 +468,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     ),
                     SizedBox(height: 5),
                     // 状態異常・その他補正・場
-                    for (int i = 0; i < max(_focusingOwnPokemonState(focusState).buffDebuffs.length, _focusingOpponentPokemonState(focusState).buffDebuffs.length); i++)
-                    _BuffDebuffsRow(_focusingOwnPokemonState(focusState), _focusingOpponentPokemonState(focusState), i)
+                    for (int i = 0; i < max(focusState.ownPokemonState.buffDebuffs.length, focusState.opponentPokemonState.buffDebuffs.length); i++)
+                    _BuffDebuffsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i)
                   ],
                 ),
               ),
@@ -480,8 +505,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               child: BattleTurnListView(
                 () {setState(() {});},
                 widget.battle, turnNum, theme, pokeData,
-                widget.battle.ownParty.pokemons[widget.battle.turns[turnNum-1].initialOwnPokemonIndex-1]!,
-                widget.battle.opponentParty.pokemons[widget.battle.turns[turnNum-1].initialOpponentPokemonIndex-1]!,
+                ownParty.pokemons[turns[turnNum-1].initialOwnPokemonIndex-1]!,
+                opponentParty.pokemons[turns[turnNum-1].initialOpponentPokemonIndex-1]!,
                 textEditingControllerList1,
                 textEditingControllerList2,
                 appState, focusPhaseIdx,
@@ -532,8 +557,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int continuousCount = 0;
     bool clearAfterMove = false;    // 連続こうげき削除に伴い、そのこうげき後の効果を消すかどうかのフラグ
     List<int> removeIdxs = [];
-    for (int i = 0; i < widget.battle.turns[turnNum-1].phases.length; i++) {
-      var phase = widget.battle.turns[turnNum-1].phases[i];
+    Turn currentTurn = widget.battle.turns[turnNum-1];
+    for (int i = 0; i < currentTurn.phases.length; i++) {
+      var phase = currentTurn.phases[i];
       if (phase.timing.id == AbilityTiming.action &&
           phase.move!.type.id == TurnMoveType.move
       ) {
@@ -573,7 +599,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     for (int i = removeIdxs.length-1; i >= 0; i--) {
       int idx = removeIdxs[i];
-      widget.battle.turns[turnNum-1].phases.removeAt(idx);
+      currentTurn.phases.removeAt(idx);
       appState.editingPhase.removeAt(idx);
       textEditingControllerList1.removeAt(idx);
       textEditingControllerList2.removeAt(idx);
@@ -772,9 +798,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int beginIdx = 0;
     int timingId = 0;
     List<List<TurnEffectAndStateAndGuide>> ret = [];
-    var phases = widget.battle.turns[turnNum-1].phases;
+    Turn currentTurn = widget.battle.turns[turnNum-1];
+    var phases = currentTurn.phases;
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    PhaseState currentState = widget.battle.turns[turnNum-1].copyInitialState();
+    PhaseState currentState = currentTurn.copyInitialState();
     int continousCount = 0;
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].timing.id == AbilityTiming.continuousMove) {
@@ -785,9 +812,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
       final guide = phases[i].processEffect(
         widget.battle.ownParty,
-        currentState.ownPokemonStates[currentState.ownPokemonIndex-1],
+        currentState.ownPokemonState,
         widget.battle.opponentParty,
-        currentState.opponentPokemonStates[currentState.opponentPokemonIndex-1],
+        currentState.opponentPokemonState,
         currentState, pokeData, continousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
@@ -822,16 +849,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     return widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!;
   }
 
-  PokemonState _focusingOwnPokemonState(PhaseState focusState) {
-    return focusState.ownPokemonStates[focusState.ownPokemonIndex-1];
-  }
-
-  PokemonState _focusingOpponentPokemonState(PhaseState focusState) {
-    return focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1];
-  }
-
   String _focusingOwnItemName(PhaseState focusState) {
-    final item = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].holdingItem;
+    final item = focusState.ownPokemonState.holdingItem;
     if (item == null) {
       return 'なし';
     }
@@ -844,7 +863,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   String _focusingOpponentItemName(PhaseState focusState) {
-    final item = focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].holdingItem;
+    final item = focusState.opponentPokemonState.holdingItem;
     if (item == null) {
       return 'なし';
     }
@@ -857,7 +876,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   String _focusingOwnAbilityName(PhaseState focusState) {
-    final ability = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].currentAbility;
+    final ability = focusState.ownPokemonState.currentAbility;
     if (ability.id == 0) {
       return '？';
     }
@@ -867,7 +886,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   String _focusingOpponentAbilityName(PhaseState focusState) {
-    final ability = focusState.opponentPokemonStates[focusState.opponentPokemonIndex-1].currentAbility;
+    final ability = focusState.opponentPokemonState.currentAbility;
     if (ability.id == 0) {
       return '？';
     }
@@ -878,15 +897,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   int _focusingOwnSpeed(PhaseState focusState) {
     int ret = widget.battle.ownParty.pokemons[focusState.ownPokemonIndex-1]!.s.real;
-    final item = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].holdingItem;
-    final ability = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].currentAbility;
+    final item = focusState.ownPokemonState.holdingItem;
+    final ability = focusState.ownPokemonState.currentAbility;
     final weather = focusState.weather;
-    final ailments = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].ailments;
-    final fields = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].fields;
+    final ailments = focusState.ownPokemonState.ailments;
+    final fields = focusState.ownPokemonState.fields;
     bool ignoreParalysis = false;
     
     // ステータス変化
-    int rank = focusState.ownPokemonStates[focusState.ownPokemonIndex-1].statChanges[4];
+    int rank = focusState.ownPokemonState.statChanges[4];
     if (rank >= 0) {
       ret = (ret * (2 + rank) / 2).floor();
     }
@@ -991,6 +1010,13 @@ class _HPBarRow extends Row {
                 width: (ownRemainHP / ownMaxHP) * 150,
                 height: 20,
                 color: (ownRemainHP / ownMaxHP) <= 0.25 ? Colors.red : (ownRemainHP / ownMaxHP) <= 0.5 ? Colors.yellow : Colors.lightGreen,
+              ),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: SizedBox(
+                width: 150,
+                height: 20,
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text('$ownRemainHP/$ownMaxHP'),
@@ -1017,6 +1043,13 @@ class _HPBarRow extends Row {
                 width: (opponentRemainHPPercent / 100) * 150,
                 height: 20,
                 color: opponentRemainHPPercent <= 25 ? Colors.red : opponentRemainHPPercent <= 50 ? Colors.yellow : Colors.lightGreen,
+              ),
+            ),
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child: SizedBox(
+                width: 150,
+                height: 20,
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text('$opponentRemainHPPercent/100%'),

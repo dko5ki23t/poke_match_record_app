@@ -36,6 +36,7 @@ class BattleTurnListView extends ListView {
               appState, focusPhaseIdx, onFocus,
               sameTimingList[i],
               textEditControllerList1, textEditControllerList2,
+              _getPrevPhase(battle.turns[turnNum-1], i, sameTimingList),
               _getPrevPhaseOwnPokemon(battle, battle.turns[turnNum-1], i, sameTimingList),
               _getPrevPhaseOpponentPokemon(battle, battle.turns[turnNum-1], i, sameTimingList),
               _getRefMove(sameTimingList, i, battle.turns[turnNum-1]),
@@ -66,6 +67,16 @@ class BattleTurnListView extends ListView {
       return battle.opponentParty.pokemons[turn.initialOpponentPokemonIndex-1]!;
     }
     return battle.opponentParty.pokemons[sameTimingList[i-1].last.phaseState.opponentPokemonIndex-1]!;
+  }
+
+  static PhaseState _getPrevPhase(
+    Turn turn, int i,
+    List<List<TurnEffectAndStateAndGuide>> sameTimingList,
+  ) {
+    if (i <= 0 || i > sameTimingList.length) {
+      return turn.copyInitialState();
+    }
+    return sameTimingList[i-1].last.phaseState;
   }
 
   static TurnMove? _getRefMove(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i, Turn turn) {
