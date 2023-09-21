@@ -61,6 +61,8 @@ class BattleContinuousMoveInputColumn extends Column {
                         refMove.moveHits.removeAt(continuousCount);
                         refMove.moveEffectivenesses.removeAt(continuousCount);
                         refMove.moveAdditionalEffects.removeAt(continuousCount);
+                        refMove.realDamage.removeAt(continuousCount);
+                        refMove.percentDamage.removeAt(continuousCount);
                         turn.phases.removeAt(processIdx);
                         appState.editingPhase.removeAt(processIdx);
                         moveControllerList.removeAt(processIdx);
@@ -97,6 +99,8 @@ class BattleContinuousMoveInputColumn extends Column {
             refMove.moveHits.add(MoveHit(MoveHit.hit));
             refMove.moveEffectivenesses.add(MoveEffectiveness(MoveEffectiveness.normal));
             refMove.moveAdditionalEffects.add(MoveAdditionalEffect(MoveAdditionalEffect.none));
+            refMove.realDamage.add(0);
+            refMove.percentDamage.add(0);
             turn.phases[processIdx]
             ..effect = EffectType(EffectType.move)
             ..move = refMove

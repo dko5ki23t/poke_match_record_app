@@ -107,8 +107,8 @@ class TurnMove {
   ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
   List<MoveHit> moveHits = [MoveHit(MoveHit.hit)];   // 命中した/急所/外した
   List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
-  int realDamage = 0;     // わざによって受けたダメージ（確定値）
-  int percentDamage = 0;  // わざによって与えたダメージ（概算値、割合）
+  List<int> realDamage = [0];     // わざによって受けたダメージ（確定値）
+  List<int> percentDamage = [0];  // わざによって与えたダメージ（概算値、割合）
   List<MoveAdditionalEffect> moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
   int? changePokemonIndex;
 
@@ -122,8 +122,8 @@ class TurnMove {
     ..actionFailure = actionFailure
     ..moveHits = [...moveHits]
     ..moveEffectivenesses = [...moveEffectivenesses]
-    ..realDamage = realDamage
-    ..percentDamage = percentDamage
+    ..realDamage = [...realDamage]
+    ..percentDamage = [...percentDamage]
     ..moveAdditionalEffects = [...moveAdditionalEffects]
     ..changePokemonIndex = changePokemonIndex;
 
@@ -233,16 +233,16 @@ class TurnMove {
         break;
       case 2:     // ぶつり
         // ダメージを負わせる
-        opponentState.remainHP -= realDamage;
+        opponentState.remainHP -= realDamage[continousCount];
         if (opponentState.remainHP < 0) opponentState.remainHP = 0;
-        opponentState.remainHPPercent -= percentDamage;
+        opponentState.remainHPPercent -= percentDamage[continousCount];
         if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       case 3:     // とくしゅ
         // ダメージを負わせる
-        opponentState.remainHP -= realDamage;
+        opponentState.remainHP -= realDamage[continousCount];
         if (opponentState.remainHP < 0) opponentState.remainHP = 0;
-        opponentState.remainHPPercent -= percentDamage;
+        opponentState.remainHPPercent -= percentDamage[continousCount];
         if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       default:
@@ -647,36 +647,38 @@ class TurnMove {
                       widgetContainerDecoration: const BoxDecoration(
                         border: null,
                       ),
-                      initialValue: playerType.id == PlayerType.me ? opponentPokemonState.remainHPPercent - percentDamage : ownPokemonState.remainHP - realDamage,
+                      initialValue: playerType.id == PlayerType.me ?
+                        opponentPokemonState.remainHPPercent - percentDamage[continousCount] :
+                        ownPokemonState.remainHP - realDamage[continousCount],
                       min: 0,
                       max: playerType.id == PlayerType.me ? 100 : ownPokemon.h.real,
                       enabled: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail,
                       onIncrement: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
+                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.remainHP - value) as int;
+                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
                         }
                         appState.editingPhase[processIdx] = true;
                         onFocus();
                       },
                       onDecrement: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
+                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.remainHP - value) as int;
+                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
                         }
                         appState.editingPhase[processIdx] = true;
                         onFocus();
                       },
                       onChanged: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage = (opponentPokemonState.remainHPPercent - value) as int;
+                          percentDamage[continousCount] = (opponentPokemonState.remainHPPercent - value) as int;
                         }
                         else {
-                          realDamage = (ownPokemonState.remainHP - value) as int;
+                          realDamage[continousCount] = (ownPokemonState.remainHP - value) as int;
                         }
                         appState.editingPhase[processIdx] = true;
                         onFocus();
@@ -706,8 +708,8 @@ class TurnMove {
     isSuccess = true;
     moveHits = [MoveHit(MoveHit.hit)];
     moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];
-    realDamage = 0;
-    percentDamage = 0;
+    realDamage = [0];
+    percentDamage = [0];
     moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
     changePokemonIndex = null;
   }
@@ -756,9 +758,19 @@ class TurnMove {
       turnMove.moveEffectivenesses.add(MoveEffectiveness(int.parse(moveEffectivenessElement)));
     }
     // realDamage
-    turnMove.realDamage = int.parse(turnMoveElements[8]);
+    var realDamages = turnMoveElements[8].split(split2);
+    turnMove.realDamage.clear();
+    for (var realDamage in realDamages) {
+      if (realDamage == '') break;
+      turnMove.realDamage.add(int.parse(realDamage));
+    }
     // percentDamage
-    turnMove.percentDamage = int.parse(turnMoveElements[9]);
+    var percentDamages = turnMoveElements[9].split(split2);
+    turnMove.percentDamage.clear();
+    for (var percentDamage in percentDamages) {
+      if (percentDamage == '') break;
+      turnMove.percentDamage.add(int.parse(percentDamage));
+    }
     // moveAdditionalEffect
     var moveAdditionalEffects = turnMoveElements[10].split(split2);
     turnMove.moveAdditionalEffects.clear();
@@ -840,10 +852,16 @@ class TurnMove {
     }
     ret += split1;
     // realDamage
-    ret += realDamage.toString();
+    for (final damage in realDamage) {
+      ret += damage.toString();
+      ret += split2;
+    }
     ret += split1;
     // percentDamage
-    ret += percentDamage.toString();
+    for (final damage in percentDamage) {
+      ret += damage.toString();
+      ret += split2;
+    }
     ret += split1;
     // moveAdditionalEffects
     for (final moveAdditionalEffect in moveAdditionalEffects) {
