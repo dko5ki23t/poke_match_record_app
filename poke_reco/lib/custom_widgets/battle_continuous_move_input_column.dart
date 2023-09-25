@@ -7,9 +7,9 @@ import 'package:poke_reco/poke_move.dart';
 class BattleContinuousMoveInputColumn extends Column {
   BattleContinuousMoveInputColumn(
     PokeDB pokeData,
-    void Function() setState,
     PhaseState prevState,       // 直前までの状態
-    Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交換する場合は、交換前ポケモン)
+    PhaseState currentState,
+    Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交代する場合は、交代前ポケモン)
     Pokemon opponentPokemon,
     ThemeData theme,
     Battle battle,
@@ -17,7 +17,7 @@ class BattleContinuousMoveInputColumn extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
-    int processIdx,
+    int phaseIdx,
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
@@ -28,13 +28,13 @@ class BattleContinuousMoveInputColumn extends Column {
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-      !turn.phases[processIdx].isAdding ?
+      !turn.phases[phaseIdx].isAdding ?
       GestureDetector(
-        onTap: focusPhaseIdx != processIdx+1 ? () => onFocus(processIdx+1) : () {},
+        onTap: focusPhaseIdx != phaseIdx+1 ? () => onFocus(phaseIdx+1) : () {},
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            border: focusPhaseIdx == processIdx+1 ? Border.all(width: 3, color: Colors.orange) : Border.all(color: theme.primaryColor),
+            border: focusPhaseIdx == phaseIdx+1 ? Border.all(width: 3, color: Colors.orange) : Border.all(color: theme.primaryColor),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Column(
@@ -42,17 +42,17 @@ class BattleContinuousMoveInputColumn extends Column {
               Stack(
                 children: [
                 Center(child: Text(
-                  _getTitle(turn.phases[processIdx].move!, ownPokemon, opponentPokemon, continuousCount)
+                  _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon, continuousCount)
                 )),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children:[
-                    appState.editingPhase[processIdx] ?
+                    appState.editingPhase[phaseIdx] ?
                     IconButton(
                       icon: Icon(Icons.check),
-                      onPressed: turn.phases[processIdx].move!.isValid() ? () {
-                        appState.editingPhase[processIdx] = false;
-                        setState();
+                      onPressed: turn.phases[phaseIdx].move!.isValid() ? () {
+                        appState.editingPhase[phaseIdx] = false;
+                        onFocus(phaseIdx+1);
                       } : null,
                     ) : Container(),
                     IconButton(
@@ -63,10 +63,10 @@ class BattleContinuousMoveInputColumn extends Column {
                         refMove.moveAdditionalEffects.removeAt(continuousCount);
                         refMove.realDamage.removeAt(continuousCount);
                         refMove.percentDamage.removeAt(continuousCount);
-                        turn.phases.removeAt(processIdx);
-                        appState.editingPhase.removeAt(processIdx);
-                        moveControllerList.removeAt(processIdx);
-                        hpControllerList.removeAt(processIdx);
+                        turn.phases.removeAt(phaseIdx);
+                        appState.editingPhase.removeAt(phaseIdx);
+                        moveControllerList.removeAt(phaseIdx);
+                        hpControllerList.removeAt(phaseIdx);
                         onFocus(0); // フォーカスリセット
                       },
                     ),
@@ -74,11 +74,11 @@ class BattleContinuousMoveInputColumn extends Column {
                 ),
               ],),
               SizedBox(height: 10,),
-              turn.phases[processIdx].move!.extraInputWidget2(
-                () => onFocus(processIdx+1), ownPokemon, opponentPokemon,
+              turn.phases[phaseIdx].move!.extraInputWidget2(
+                () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
                 prevState.ownPokemonState,
                 prevState.opponentPokemonState,
-                hpControllerList[processIdx], appState, processIdx, continuousCount,
+                hpControllerList[phaseIdx], appState, phaseIdx, continuousCount,
               ),
               SizedBox(height: 10,),
               for (final e in guides)
@@ -101,12 +101,12 @@ class BattleContinuousMoveInputColumn extends Column {
             refMove.moveAdditionalEffects.add(MoveAdditionalEffect(MoveAdditionalEffect.none));
             refMove.realDamage.add(0);
             refMove.percentDamage.add(0);
-            turn.phases[processIdx]
+            turn.phases[phaseIdx]
             ..effect = EffectType(EffectType.move)
             ..move = refMove
             ..playerType = refMove.playerType
             ..isAdding = false;
-            onFocus(processIdx+1);
+            onFocus(phaseIdx+1);
           },
         child: Container(
           padding: const EdgeInsets.all(10),
@@ -139,7 +139,7 @@ class BattleContinuousMoveInputColumn extends Column {
         }
         break;
       case TurnMoveType.change:
-        return 'ポケモン交換';
+        return 'ポケモン交代';
       case TurnMoveType.surrender:
         return 'こうさん';
       default:

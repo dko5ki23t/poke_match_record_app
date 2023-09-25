@@ -198,6 +198,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..currentAbility = ownParty.pokemons[i]!.ability
                 ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
                 ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
+                ..moves = [for (int j = 0; j < ownParty.pokemons[i]!.moveNum; j++) ownParty.pokemons[i]!.moves[j]!]
               );
             }
             for (int i = 0; i < opponentParty.pokemonNum; i++) {
@@ -519,7 +520,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ),
           ],
         );
-        nextPressed = () => onNext();
+        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid()) ? () => onNext() : null;
         backPressed = () => onturnBack();
         break;
       default:
@@ -552,6 +553,22 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     );
   }
 
+  void _insertPhase(int index, TurnEffect phase, MyAppState appState) {
+    widget.battle.turns[turnNum-1].phases.insert(
+      index, phase
+    );
+    appState.editingPhase.insert(index, false);
+    textEditingControllerList1.insert(index, TextEditingController());
+    textEditingControllerList2.insert(index, TextEditingController());
+  }
+
+  void _removeAtPhase(int index, MyAppState appState) {
+    widget.battle.turns[turnNum-1].phases.removeAt(index);
+    appState.editingPhase.removeAt(index);
+    textEditingControllerList1.removeAt(index);
+    textEditingControllerList2.removeAt(index);
+  }
+
   void _clearContinuousMove(MyAppState appState) {
     int allowedContinuous = 0;
     int continuousCount = 0;
@@ -565,10 +582,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       ) {
         allowedContinuous = phase.move!.move.maxMoveCount()-1;
         continuousCount = 0;
-        // わざが失敗/命中してない場合は、連続こうげきは問答無用で削除対象
-        if (!phase.move!.isSuccess ||
-            phase.move!.moveHits[0].id == MoveHit.notHit ||
-            phase.move!.moveHits[0].id == MoveHit.fail
+        // 1.わざが失敗/命中してない場合
+        // 2.わざによってポケモンがひんしになった場合
+        // は、連続こうげきは問答無用で削除対象
+        if ((!phase.move!.isSuccess ||
+             phase.move!.moveHits[0].id == MoveHit.notHit ||
+             phase.move!.moveHits[0].id == MoveHit.fail) ||
+            (phase.isOwnFainting || phase.isOpponentFainting)
         ) {
           allowedContinuous = 0;
         }
@@ -579,11 +599,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           removeIdxs.add(i);
           clearAfterMove = true;
         }
-        // わざが失敗/命中してない場合は、次以降の連続こうげきは問答無用で削除対象
+        // 1.わざが失敗/命中してない場合
+        // 2.わざによってポケモンがひんしになった場合
+        // は、次以降の連続こうげきは問答無用で削除対象
         if (!phase.isAdding &&
-            (!phase.move!.isSuccess ||
-             phase.move!.moveHits[continuousCount].id == MoveHit.notHit ||
-             phase.move!.moveHits[continuousCount].id == MoveHit.fail)
+            ((!phase.move!.isSuccess ||
+              phase.move!.moveHits[continuousCount].id == MoveHit.notHit ||
+              phase.move!.moveHits[continuousCount].id == MoveHit.fail) ||
+             (phase.isOwnFainting || phase.isOpponentFainting))
         ) {
           continuousCount = allowedContinuous;
         }
@@ -597,22 +620,68 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
       }
     }
+    // 削除インデックスリストの重複削除、ソート(念のため)
+    removeIdxs = removeIdxs.toSet().toList();
+    removeIdxs.sort();
     for (int i = removeIdxs.length-1; i >= 0; i--) {
-      int idx = removeIdxs[i];
-      currentTurn.phases.removeAt(idx);
-      appState.editingPhase.removeAt(idx);
-      textEditingControllerList1.removeAt(idx);
-      textEditingControllerList2.removeAt(idx);
+      _removeAtPhase(removeIdxs[i], appState);
+    }
+  }
+
+  void _clearChangeFaintingPokemon(MyAppState appState) {
+    bool clearPokemonAppear = false;    // 「死に出し」削除に伴い、ポケモン登場時処理を消すかどうかのフラグ
+    int faintingCount = 0;
+    List<int> removeIdxs = [];
+    Turn currentTurn = widget.battle.turns[turnNum-1];
+    for (int i = 0; i < currentTurn.phases.length; i++) {
+      var phase = currentTurn.phases[i];
+      if (phase.isOwnFainting) {
+        faintingCount++;
+        clearPokemonAppear = false;
+      }
+      if (phase.isOpponentFainting) {
+        faintingCount++;
+        clearPokemonAppear = false;
+      }
+
+      if (phase.timing.id == AbilityTiming.changeFaintingPokemon) {
+        if (faintingCount > 0) {
+          faintingCount--;
+        }
+        else {
+          removeIdxs.add(i);
+          clearPokemonAppear = true;
+        }
+      }
+      else if (phase.timing.id == AbilityTiming.action &&
+        phase.move!.changePokemonIndex != null)
+      {
+        clearPokemonAppear = false;
+      }
+      else if (phase.timing.id == AbilityTiming.pokemonAppear && clearPokemonAppear) {
+        removeIdxs.add(i);
+      }
+    }
+    // 削除インデックスリストの重複削除、ソート(念のため)
+    removeIdxs = removeIdxs.toSet().toList();
+    removeIdxs.sort();
+    for (int i = removeIdxs.length-1; i >= 0; i--) {
+      _removeAtPhase(removeIdxs[i], appState);
     }
   }
 
   void _clearPokemonApeer(MyAppState appState) {
     List<int> removeIdxs = [];
+    bool isFirstPokemonAppear = true;
     var phases = widget.battle.turns[turnNum-1].phases;
     for (int i = 0; i < phases.length; i++) {
       var phase = phases[i];
-      if (phase.timing.id == AbilityTiming.action &&
-          phase.move!.type.id != TurnMoveType.change
+      // 最初のポケモン登場時処理はOK
+      if (isFirstPokemonAppear && phase.timing.id == AbilityTiming.pokemonAppear) continue;
+      // そのフェーズでひんしになってない、ポケモン交代やわざによる交代が発生しない場合
+      if (!phase.isOwnFainting && !phase.isOpponentFainting &&
+          !(phase.timing.id == AbilityTiming.action &&
+            phase.move!.changePokemonIndex != null)
       ) {
         for (int j = i+1; j < phases.length; j++) {
           if (phases[j].timing.id == AbilityTiming.pokemonAppear) {
@@ -624,17 +693,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
       }
     }
+    // 削除インデックスリストの重複削除、ソート(念のため)
+    removeIdxs = removeIdxs.toSet().toList();
+    removeIdxs.sort();
     for (int i = removeIdxs.length-1; i >= 0; i--) {
-      int idx = removeIdxs[i];
-      phases.removeAt(idx);
-      appState.editingPhase.removeAt(idx);
-      textEditingControllerList1.removeAt(idx);
-      textEditingControllerList2.removeAt(idx);
+      _removeAtPhase(removeIdxs[i], appState);
     }
   }
 
   void _adjustPhases(MyAppState appState) {
     _clearContinuousMove(appState);
+    _clearChangeFaintingPokemon(appState);
     _clearPokemonApeer(appState);
 
     int allowedContinuous = 0;
@@ -644,7 +713,98 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     while (true) {
       if (i >= phases.length) break;
       var phase = phases[i];
-      if (phase.timing.id == AbilityTiming.afterMove &&
+      if (phase.isOwnFainting || phase.isOpponentFainting) {
+        // そのフェーズで少なくともどちらかがひんしになる場合、
+        // 「死に出し」フェーズを追加
+        int insertIdx = i+1;
+        for (; insertIdx < phases.length; insertIdx++) {
+          if (phases[insertIdx].timing.id != AbilityTiming.afterMove) break;
+        }
+        if (phase.isOwnFainting) {
+          bool isInsert = false;
+          if (insertIdx == phases.length || phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon) {
+            _insertPhase(insertIdx++,
+              TurnEffect()
+                ..playerType = PlayerType(PlayerType.me)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
+                ..isAdding = false,
+              appState
+            );
+            isInsert = true;
+          }
+          else if (phases[insertIdx].playerType.id != PlayerType.me) {
+            for (++insertIdx; insertIdx < phases.length; insertIdx++) {
+              if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
+            }
+            if (insertIdx == phases.length ||
+                phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon ||
+                phases[insertIdx].playerType.id != PlayerType.me) {
+              _insertPhase(insertIdx++,
+                TurnEffect()
+                  ..playerType = PlayerType(PlayerType.me)
+                  ..effect = EffectType(EffectType.changeFaintingPokemon)
+                  ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
+                  ..isAdding = false,
+                appState
+              );
+              isInsert = true;
+            }
+          }
+          if (isInsert) {
+            _insertPhase(insertIdx,
+              TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..isAdding = true,
+              appState
+            );
+          }
+        }
+        for (++insertIdx; insertIdx < phases.length; insertIdx++) {
+          if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
+        }
+        if (phase.isOpponentFainting) {
+          bool isInsert = false;
+          if (insertIdx == phases.length || phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon) {
+            _insertPhase(insertIdx++,
+              TurnEffect()
+                ..playerType = PlayerType(PlayerType.opponent)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
+                ..isAdding = false,
+              appState
+            );
+            isInsert = true;
+          }
+          else if (phases[insertIdx].playerType.id != PlayerType.opponent) {
+            for (++insertIdx; insertIdx < phases.length; insertIdx++) {
+              if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
+            }
+            if (insertIdx == phases.length ||
+                phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon ||
+                phases[insertIdx].playerType.id != PlayerType.opponent) {
+              _insertPhase(insertIdx++,
+                TurnEffect()
+                  ..playerType = PlayerType(PlayerType.opponent)
+                  ..effect = EffectType(EffectType.changeFaintingPokemon)
+                  ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
+                  ..isAdding = false,
+                appState
+              );
+              isInsert = true;
+            }
+          }
+          if (isInsert) {
+            _insertPhase(insertIdx,
+              TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..isAdding = true,
+              appState
+            );
+          }
+        }
+      }
+      else if (phase.timing.id == AbilityTiming.afterMove &&
           continuousCount < allowedContinuous &&
           (i+1 >= phases.length ||
            phases[i+1].timing.id != AbilityTiming.afterMove &&
@@ -652,30 +812,38 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           )
       ) {
         // 可能な連続こうげきが残っている場合、「連続こうげき」タイミングを追加
-        phases.insert(i+1,
+        _insertPhase(i+1,
           TurnEffect()
-          ..effect = EffectType(EffectType.move)
-          ..timing = AbilityTiming(AbilityTiming.continuousMove)
-          ..isAdding = true
+            ..effect = EffectType(EffectType.move)
+            ..timing = AbilityTiming(AbilityTiming.continuousMove)
+            ..isAdding = true,
+          appState
         );
-        appState.editingPhase.insert(i+1, false);
-        textEditingControllerList1.insert(i+1, TextEditingController());
-        textEditingControllerList2.insert(i+1, TextEditingController());
       }
       else if (phase.timing.id == AbilityTiming.action &&
-          phase.move!.type.id == TurnMoveType.change &&
+          phase.move!.changePokemonIndex != null &&
           (i+1 >= phases.length ||
            phases[i+1].timing.id != AbilityTiming.pokemonAppear)
-           // ポケモン交換の場合、次は「ポケモン登場時」タイミングにする
+           // ポケモン交代の場合、次は「ポケモン登場時」タイミングにする
       ) {
-        phases.insert(i+1,
+        _insertPhase(i+1,
           TurnEffect()
-          ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-          ..isAdding = true
+            ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+            ..isAdding = true,
+          appState
         );
-        appState.editingPhase.insert(i+1, false);
-        textEditingControllerList1.insert(i+1, TextEditingController());
-        textEditingControllerList2.insert(i+1, TextEditingController());
+      }
+      else if (phase.timing.id == AbilityTiming.changeFaintingPokemon &&
+          (i+1 >= phases.length ||
+           phases[i+1].timing.id != AbilityTiming.pokemonAppear)
+           // ひんし後のポケモン交代の場合、次は「ポケモン登場時」タイミングにする
+      ) {
+        _insertPhase(i+1,
+          TurnEffect()
+            ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+            ..isAdding = true,
+          appState
+        );
       }
       else if (
         phase.timing.id == AbilityTiming.action &&
@@ -694,14 +862,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             phases[i+1].timing.id != AbilityTiming.afterMove
         ) {
         // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-          phases.insert(i+1,
+          _insertPhase(i+1,
             TurnEffect()
-            ..timing = AbilityTiming(AbilityTiming.afterMove)
-            ..isAdding = true
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..isAdding = true,
+            appState
           );
-          appState.editingPhase.insert(i+1, false);
-          textEditingControllerList1.insert(i+1, TextEditingController());
-          textEditingControllerList2.insert(i+1, TextEditingController());
           // さらに、連続こうげきの場合は「連続こうげき」タイミングを追加(ただし、ちゃんと命中した場合のみ)
           if (continuousCount < allowedContinuous &&
               (i+1 >= phases.length ||
@@ -710,15 +876,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               phases[i].move!.moveHits[0].id != MoveHit.notHit &&
               phases[i].move!.moveHits[0].id != MoveHit.fail)
           ) {
-            phases.insert(i+1,
+            _insertPhase(i+1,
               TurnEffect()
-              ..effect = EffectType(EffectType.move)
-              ..timing = AbilityTiming(AbilityTiming.continuousMove)
-              ..isAdding = true
+                ..effect = EffectType(EffectType.move)
+                ..timing = AbilityTiming(AbilityTiming.continuousMove)
+                ..isAdding = true,
+              appState
             );
-            appState.editingPhase.insert(i+1, false);
-            textEditingControllerList1.insert(i+1, TextEditingController());
-            textEditingControllerList2.insert(i+1, TextEditingController());
           }
         }
       }
@@ -728,14 +892,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         if (i+1 >= phases.length ||
             phases[i+1].timing.id != AbilityTiming.afterMove)
         {
-          phases.insert(i+1,
+          _insertPhase(i+1,
             TurnEffect()
-            ..timing = AbilityTiming(AbilityTiming.afterMove)
-            ..isAdding = true
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..isAdding = true,
+            appState
           );
-          appState.editingPhase.insert(i+1, false);
-          textEditingControllerList1.insert(i+1, TextEditingController());
-          textEditingControllerList2.insert(i+1, TextEditingController());
         }
         // わざが命中してない場合は、これ以上連続こうげきさせない
         if (!phases[i].isAdding &&
@@ -752,13 +914,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     // 最初のターンなら、初めにポケモン登場時処理を追加
     if (turnNum == 1 && (phases.isEmpty || phases[0].timing.id != AbilityTiming.pokemonAppear)) {
-      phases.insert(0, TurnEffect()
+      _insertPhase(0, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-        ..isAdding = true
+        ..isAdding = true,
+        appState
       );
-      appState.editingPhase.insert(0, false);
-      textEditingControllerList1.insert(0, TextEditingController());
-      textEditingControllerList2.insert(0, TextEditingController());
     }
     int firstPokemonAppearEndIdx = -1;
     if (turnNum == 1) {
@@ -773,15 +933,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         phases[firstPokemonAppearEndIdx+1].timing.id != AbilityTiming.afterActionDecision
       )
     {
-      phases.insert(firstPokemonAppearEndIdx+1, TurnEffect()
+      _insertPhase(firstPokemonAppearEndIdx+1, TurnEffect()
         ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
-        ..isAdding = true
+        ..isAdding = true,
+        appState
       );
-      appState.editingPhase.insert(firstPokemonAppearEndIdx+1, false);
-      textEditingControllerList1.insert(firstPokemonAppearEndIdx+1, TextEditingController());
-      textEditingControllerList2.insert(firstPokemonAppearEndIdx+1, TextEditingController());
     }
-    // ポケモン交換
+    // ポケモン交代
     // 毎ターン終了時処理を追加
     if (phases.last.timing.id != AbilityTiming.everyTurnEnd) {
       phases.add(TurnEffect()
@@ -807,7 +965,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       if (phases[i].timing.id == AbilityTiming.continuousMove) {
         continousCount++;
       }
-      else if (phases[i].timing.id == AbilityTiming.action) {
+      else if (phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.changeFaintingPokemon) {
         continousCount = 0;
       }
       final guide = phases[i].processEffect(

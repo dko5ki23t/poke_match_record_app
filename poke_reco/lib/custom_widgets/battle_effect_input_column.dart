@@ -8,13 +8,13 @@ import 'package:poke_reco/tool.dart';
 class BattleEffectInputColumn extends Column {
   BattleEffectInputColumn(
     PokeDB pokeData,
-    void Function() setState,
     ThemeData theme,
     Battle battle,
     Turn turn,
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
+    PhaseState prevState,       // 直前までの状態
     List<TurnEffectAndStateAndGuide> sameTimingList,
     int firstIdx,
     AbilityTiming timing,
@@ -51,7 +51,7 @@ class BattleEffectInputColumn extends Column {
                             onPressed: i != 0 ? () {
                               TurnEffect.swap(turn.phases, firstIdx+i-1, firstIdx+i);
                               listShallowSwap(appState.editingPhase, firstIdx+i-1, firstIdx+i);
-                              setState();
+                              onFocus(firstIdx+i);
                             }: null,
                           ) : Container(),
                           !appState.editingPhase[firstIdx+i] ?
@@ -60,14 +60,14 @@ class BattleEffectInputColumn extends Column {
                             onPressed: i < sameTimingList.length-1 && !sameTimingList[i+1].turnEffect.isAdding ? () {
                               TurnEffect.swap(turn.phases, firstIdx+i, firstIdx+i+1);
                               listShallowSwap(appState.editingPhase, firstIdx+i, firstIdx+i+1);
-                              setState();
+                              onFocus(firstIdx+i+2);
                             } : null,
                           ) :
                           IconButton(
                             icon: Icon(Icons.check),
                             onPressed: turn.phases[firstIdx+i].isValid() ? () {
                               appState.editingPhase[firstIdx+i] = false;
-                              setState();
+                              onFocus(firstIdx+i+1);
                             } : null,
                           ),
                           IconButton(
@@ -78,7 +78,6 @@ class BattleEffectInputColumn extends Column {
                               textEditControllerList1.removeAt(firstIdx+i);
                               textEditControllerList2.removeAt(firstIdx+i);
                               onFocus(0);   // フォーカスリセット
-                              //setState();
                             },
                           ),
                         ],
@@ -114,7 +113,7 @@ class BattleEffectInputColumn extends Column {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
                               turn.phases[firstIdx+i].effectId = 0;
                               appState.editingPhase[firstIdx+i] = true;
-                              setState();
+                              onFocus(firstIdx+i+1);
                             },
                           ),
                         ),
@@ -154,7 +153,7 @@ class BattleEffectInputColumn extends Column {
                               turn.phases[firstIdx+i].effect = EffectType(value!);
                               turn.phases[firstIdx+i].effectId = 0;
                               appState.editingPhase[firstIdx+i] = true;
-                              setState();
+                              onFocus(firstIdx+i+1);
                             } : null,
                           ),
                         ),
@@ -196,13 +195,22 @@ class BattleEffectInputColumn extends Column {
                               textEditControllerList1[firstIdx+i].text = suggestion.getDisplayName(pokeData);
                               turn.phases[firstIdx+i].effectId = suggestion.effectId;
                               appState.editingPhase[firstIdx+i] = true;
-                              onFocus(firstIdx+i);
+                              textEditControllerList2[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
+                              onFocus(firstIdx+i+1);
                             },
                           ),
                         ),
                       ],
                     ),
-                    turn.phases[firstIdx+i].extraInputWidget(setState),
+                    turn.phases[firstIdx+i].extraInputWidget(
+                      () => onFocus(firstIdx+i+1),
+                      battle.ownParty.pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).ownPokemonIndex-1]!,
+                      battle.opponentParty.pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonIndex-1]!,
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).ownPokemonState,
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonState,
+                      textEditControllerList2[firstIdx+i],
+                      appState, firstIdx+i),
                     SizedBox(height: 10),
                     for (final e in sameTimingList[i].guides)
                     Row(
@@ -232,8 +240,7 @@ class BattleEffectInputColumn extends Column {
               appState.editingPhase.insert(firstIdx+i+1, false);
               textEditControllerList1.insert(firstIdx+i+1, TextEditingController());
               textEditControllerList2.insert(firstIdx+i+1, TextEditingController());
-              onFocus(firstIdx+i);
-              //setState();
+              onFocus(firstIdx+i+1);
             } : null,
           child: Container(
             padding: const EdgeInsets.all(10),
@@ -266,5 +273,13 @@ class BattleEffectInputColumn extends Column {
       default:
         return '';
     }
+  }
+
+  static PhaseState _getPrevState(
+    PhaseState prevState, int firstIdx, int i,
+    List<TurnEffectAndStateAndGuide> sameTimingList)
+  {
+    if (i==0) return prevState;
+    return sameTimingList[i-1].phaseState;
   }
 }

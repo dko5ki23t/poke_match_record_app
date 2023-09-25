@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_move.dart';
 
@@ -11,6 +13,7 @@ class EffectType {
   static const int weather = 5;
   static const int field = 6;
   static const int move = 7;
+  static const int changeFaintingPokemon = 8;
 
   const EffectType(this.id);
 
@@ -400,6 +403,8 @@ class TurnEffect {
   int extraArg2 = 0;
   TurnMove? move;         // タイプがわざの場合は非null
   bool isAdding = false;  // trueの場合、追加待ち状態
+  bool isOwnFainting = false;   // このフェーズで自身のポケモンがひんしになるかどうか
+  bool isOpponentFainting = false;
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -470,6 +475,10 @@ class TurnEffect {
     List<String> ret = [];
     if (!isValid()) return ret;
 
+    // ひんし判定
+    bool alreadyOwnFainting = ownPokemonState.isFainting;
+    bool alreadyOpponentFainting = opponentPokemonState.isFainting;
+
     var myState = ownPokemonState;
     var yourState = opponentPokemonState;
     if (playerType.id == PlayerType.opponent) {
@@ -498,31 +507,96 @@ class TurnEffect {
           case 281:   // こだいかっせい
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
             if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
-              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-              myState.holdingItem = null;   // アイテム消費
-              if (playerType.id == PlayerType.opponent) {
+              if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+                myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
                 ret.add('もちものをブーストエナジーで確定しました。');
               }
+              myState.holdingItem = null;   // アイテム消費
             }
             break;
           case 282:   // クォークチャージ
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
             if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
-              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-              myState.holdingItem = null;   // アイテム消費
-              if (playerType.id == PlayerType.opponent) {
+              if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+                myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
                 ret.add('もちものをブーストエナジーで確定しました。');
               }
+              myState.holdingItem = null;   // アイテム消費
             }
             break;
           default:
             break;
         }
         break;
+      case EffectType.item:
+        switch (effectId) {
+          case 247:    // いのちのたま
+            if (playerType.id == PlayerType.me) {
+              myState.remainHP -= extraArg1;
+            }
+            else {
+              myState.remainHPPercent -= extraArg1;
+            }
+            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+              myParty.items[myPokemonIndex-1] = pokeData.items[247];   // いのちのたま確定
+              ret.add('もちものをいのちのたまで確定しました。');
+            }
+            myState.holdingItem = pokeData.items[247];
+            break;
+          default:
+            break;
+        }
+        break;
       case EffectType.move:
-        ret.addAll(move!.processMove(ownParty, ownPokemonState, opponentPokemonState, state, continousCount));
+        ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continousCount));
+        break;
+      case EffectType.changeFaintingPokemon:    // ひんし後のポケモン交代
+        // のうりょく変化リセット、現在のポケモンを表すインデックス更新
+        if (playerType.id == PlayerType.me) {
+          ownPokemonState.statChanges = List.generate(7, (i) => 0);
+          ownPokemonState.buffDebuffs.clear();
+          ownPokemonState.fields.clear();
+          if (effectId != 0) {
+            state.ownPokemonIndex = effectId;
+          }
+        }
+        else {
+          opponentPokemonState.statChanges = List.generate(7, (i) => 0);
+          opponentPokemonState.buffDebuffs.clear();
+          opponentPokemonState.fields.clear();
+          if (effectId != 0) {
+            state.opponentPokemonIndex = effectId;
+          }
+        }
+        break;
+      default:
         break;
     }
+
+    // ひんし判定(本フェーズでひんしになったか)
+    isOwnFainting = false;
+    if (ownPokemonState.remainHP <= 0) {
+      ownPokemonState.remainHP = 0;
+      ownPokemonState.isFainting = true;
+      if (!alreadyOwnFainting) {
+        isOwnFainting = true;
+      }
+    }
+    else {
+      ownPokemonState.isFainting = false;
+    }
+    isOpponentFainting = false;
+    if (opponentPokemonState.remainHPPercent <= 0) {
+      opponentPokemonState.remainHPPercent = 0;
+      opponentPokemonState.isFainting = true;
+      if (!alreadyOpponentFainting) {
+        isOpponentFainting = true;
+      }
+    }
+    else {
+      opponentPokemonState.isFainting = false;
+    }
+
     return ret;
   }
 
@@ -699,12 +773,33 @@ class TurnEffect {
           }
         }
       default:
-        return '';
+        {
+          switch (effect.id) {
+            case EffectType.item:
+              switch (effectId) {
+                case 247:     // いのちのたま
+                  if (playerType.id == PlayerType.me) {
+                    return state.ownPokemonState.remainHP.toString();
+                  }
+                  else {
+                    return state.opponentPokemonState.remainHPPercent.toString();
+                  }
+              }
+          }
+        }
     }
+    return '';
   }
 
   Widget extraInputWidget(
-    void Function() setState,
+    void Function() onFocus,
+    Pokemon ownPokemon,
+    Pokemon opponentPokemon,
+    PokemonState ownPokemonState,
+    PokemonState opponentPokemonState,
+    TextEditingController controller,
+    MyAppState appState,
+    int phaseIdx,
   )
   {
     if (effect.id == EffectType.ability) {   // とくせいによる効果
@@ -744,11 +839,49 @@ class TurnEffect {
                   value: extraArg1,
                   onChanged: (value) {
                     extraArg1 = value;
-                    setState();
+                    onFocus();
                   },
                 ),
               ),
               Text('があがった'),
+            ],
+          );
+        default:
+          break;
+      }
+    }
+    else if (effect.id == EffectType.item) {   // もちものによる効果
+      switch (effectId) {
+        case 247:     // いのちのたま
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: playerType.id == PlayerType.me ? 
+                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('/${ownPokemon.h.real}')) :
+              Flexible(child: Text('% /100%')),
             ],
           );
         default:
@@ -784,6 +917,10 @@ class TurnEffect {
     }
     // isAdding
     effect.isAdding = int.parse(effectElements[7]) != 0;
+    // isOwnFainting
+    effect.isOwnFainting = int.parse(effectElements[8]) != 0;
+    // isOpponentFainting
+    effect.isOpponentFainting = int.parse(effectElements[9]) != 0;
 
     return effect;
   }
@@ -814,6 +951,12 @@ class TurnEffect {
     ret += split1;
     // isAdding
     ret += isAdding ? '1' : '0';
+    ret += split1;
+    // isOwnFainting
+    ret += isOwnFainting ? '1' : '0';
+    ret += split1;
+    // isOpponentFainting
+    ret += isOpponentFainting ? '1' : '0';
 
     return ret;
   }

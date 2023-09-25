@@ -452,6 +452,7 @@ class AbilityTiming {
   static const int action = 54;                 // 行動時
   static const int afterMove = 55;              // わざ使用後
   static const int continuousMove = 56;         // 連続こうげき時(1回目除く)
+  static const int changeFaintingPokemon = 57;  // ポケモンがひんしになったため交代
 
   const AbilityTiming(this.id);
 
@@ -887,6 +888,12 @@ class Pokemon {
   int? get pp4 => _pps[3];
   List<Move?> get moves => _moves;
   List<int?> get pps => _pps;
+  int get moveNum {
+    for (int i = 0; i < 4; i++) {
+      if (moves[i] == null) return i;
+    }
+    return 4;
+  }
   bool get isValid {
     return (
       _name != '' &&
@@ -1413,7 +1420,8 @@ class PokemonState {
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
   List<Ability> possibleAbilities = [];     // 候補のとくせい
-  List<Item> impossibleItems =[];           // 候補から外れたもちもの(他ポケモンが持ってる等)
+  List<Item> impossibleItems = [];          // 候補から外れたもちもの(他ポケモンが持ってる等)
+  List<Move> moves = [];         // 判明しているわざ
 
   PokemonState copyWith() =>
     PokemonState()
@@ -1433,7 +1441,8 @@ class PokemonState {
     ..minStats = [...minStats]        // TODO:よい？
     ..maxStats = [...maxStats]        // TODO:よい？
     ..possibleAbilities = [for (final e in possibleAbilities) e.copyWith()]
-    ..impossibleItems = [for (final e in impossibleItems) e.copyWith()];
+    ..impossibleItems = [for (final e in impossibleItems) e.copyWith()]
+    ..moves = [...moves];
   
   // SQLに保存された文字列からPokemonStateをパース
   static PokemonState deserialize(dynamic str, PokeDB pokeData, String split1, String split2, String split3) {
@@ -1506,6 +1515,12 @@ class PokemonState {
     for (var item in items) {
       if (item == '') break;
       pokemonState.impossibleItems.add(pokeData.items[int.parse(item)]!);
+    }
+    // moves
+    final moves = stateElements[17].split(split2);
+    for (var move in moves) {
+      if (move == '') break;
+      pokemonState.moves.add(pokeData.moves[int.parse(move)]!);
     }
 
     return pokemonState;
@@ -1589,6 +1604,12 @@ class PokemonState {
     // impossibleItems
     for (final item in impossibleItems) {
       ret += item.id.toString();
+      ret += split2;
+    }
+    ret += split1;
+    // moves
+    for (final move in moves) {
+      ret += move.id.toString();
       ret += split2;
     }
 
@@ -1768,6 +1789,16 @@ class Turn {
     ]
     ..weather = initialWeather.copyWith()
     ..field = initialField.copyWith();
+
+  bool isValid() {
+    int validCount = 0;
+    for (final phase in phases) {
+      if (phase.timing.id == AbilityTiming.action && phase.isValid()) {
+        if (++validCount == 2) break;
+      }
+    }
+    return validCount == 2;
+  }
 
   void setInitialState(PhaseState state) {
     initialOwnPokemonIndex = state.ownPokemonIndex;

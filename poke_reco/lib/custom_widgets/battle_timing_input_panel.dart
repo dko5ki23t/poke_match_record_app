@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_action_input_column.dart';
+import 'package:poke_reco/custom_widgets/battle_change_fainting_pokemon_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
 import 'package:poke_reco/main.dart';
@@ -61,6 +62,8 @@ class BattleTimingInputPanel extends Column {
         return Container();
       case AbilityTiming.afterMove:
         return Text('わざ使用後');
+      case AbilityTiming.changeFaintingPokemon:
+        return Text('ポケモン交代');
       default:
         return Container();
     }
@@ -72,6 +75,7 @@ class BattleTimingInputPanel extends Column {
       case AbilityTiming.everyTurnEnd:
       case AbilityTiming.afterActionDecision:
       case AbilityTiming.action:
+      case AbilityTiming.changeFaintingPokemon:
         return const Divider(
           height: 10,
           thickness: 1,
@@ -105,7 +109,8 @@ class BattleTimingInputPanel extends Column {
     return 
     timing.id == AbilityTiming.action ?
     BattleActionInputColumn(
-      pokeData, setState, prevState,
+      pokeData, prevState,
+      sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
       appState, focusPhaseIdx,
@@ -117,7 +122,8 @@ class BattleTimingInputPanel extends Column {
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(
-      pokeData, setState, prevState,
+      pokeData, prevState,
+      sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
       appState, focusPhaseIdx,
@@ -128,11 +134,23 @@ class BattleTimingInputPanel extends Column {
       refMove!, continuousCount,
       sameTimingList.first.guides,
     ) :
-    BattleEffectInputColumn(
-      pokeData, setState, theme, battle, turn,
+    timing.id == AbilityTiming.changeFaintingPokemon ?
+    BattleChangeFaintingPokemonInputColumn(
+      pokeData, prevState,
+      theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingList, turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
+      timing, textEditControllerList1,
+      textEditControllerList2,
+      sameTimingList.first.guides,
+    ) :
+    BattleEffectInputColumn(
+      pokeData, theme, battle, turn,
+      appState, focusPhaseIdx,
+      (phaseIdx) => onFocus(phaseIdx),
+      prevState, sameTimingList,
+      turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1, textEditControllerList2,
     );
   }

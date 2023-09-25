@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
@@ -130,6 +131,7 @@ class TurnMove {
 
   List<String> processMove(
     Party ownParty,
+    Party opponentParty,
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
     PhaseState state,
@@ -138,9 +140,23 @@ class TurnMove {
   {
     List<String> ret = [];
     if (playerType.id == PlayerType.none) return ret;
+
+    // わざ確定
+    var tmp = opponentPokemonState.moves.where(
+          (element) => element.id != 0 && element.id == move.id
+        );
+    if (playerType.id == PlayerType.opponent &&
+        type.id == TurnMoveType.move &&
+        opponentPokemonState.moves.length < 4 &&
+        tmp.isEmpty
+    ) {
+      opponentPokemonState.moves.add(move);
+      ret.add('わざの1つを${move.displayName}で確定しました。');
+    }
+
     if (!isSuccess) return ret;
 
-    // ポケモン交換
+    // ポケモン交代
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       if (playerType.id == PlayerType.me) {
@@ -235,16 +251,12 @@ class TurnMove {
       case 2:     // ぶつり
         // ダメージを負わせる
         opponentState.remainHP -= realDamage[continousCount];
-        if (opponentState.remainHP < 0) opponentState.remainHP = 0;
         opponentState.remainHPPercent -= percentDamage[continousCount];
-        if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       case 3:     // とくしゅ
         // ダメージを負わせる
         opponentState.remainHP -= realDamage[continousCount];
-        if (opponentState.remainHP < 0) opponentState.remainHP = 0;
         opponentState.remainHPPercent -= percentDamage[continousCount];
-        if (opponentState.remainHPPercent < 0) opponentState.remainHPPercent = 0;
         break;
       default:
         break;
@@ -278,7 +290,7 @@ class TurnMove {
     TextEditingController hpController,
     PokeDB pokeData,
     MyAppState appState,
-    int processIdx,
+    int phaseIdx,
   )
   {
     // 行動失敗時
@@ -303,7 +315,7 @@ class TurnMove {
               value: actionFailure.id == 0 ? null : actionFailure.id,
               onChanged: (value) {
                 actionFailure = ActionFailure(value);
-                appState.editingPhase[processIdx] = true;
+                appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
             ),
@@ -344,7 +356,7 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
-                appState.editingPhase[processIdx] = true;
+                appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
             ),
@@ -371,7 +383,7 @@ class TurnMove {
                 ),
                 DropdownMenuItem(
                   value: TurnMoveType.change,
-                  child: Text('ポケモン交換', overflow: TextOverflow.ellipsis,),
+                  child: Text('ポケモン交代', overflow: TextOverflow.ellipsis,),
                 ),
                 DropdownMenuItem(
                   value: TurnMoveType.surrender,
@@ -381,7 +393,7 @@ class TurnMove {
               value: type.id == TurnMoveType.none ? null : type.id,
               onChanged: playerType.id != PlayerType.none ? (value) {
                 type = TurnMoveType(value as int);
-                appState.editingPhase[processIdx] = true;
+                appState.editingPhase[phaseIdx] = true;
                 onFocus();
               } : null,
             ),
@@ -424,7 +436,7 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
-                appState.editingPhase[processIdx] = true;
+                appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
             ),
@@ -436,29 +448,37 @@ class TurnMove {
               isExpanded: true,
               decoration: const InputDecoration(
                 border: UnderlineInputBorder(),
-                labelText: '交換先ポケモン',
+                labelText: '交代先ポケモン',
               ),
               items: playerType.id == PlayerType.me ?
                 <DropdownMenuItem>[
                   for (int i = 0; i < ownParty.pokemonNum; i++)
                     DropdownMenuItem(
                       value: i+1,
-                      enabled: i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
-                      child: Text(ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,),
+                      enabled: !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
+                      child: Text(
+                        ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
+                          Colors.black : Colors.grey),
+                        ),
                     ),
                 ] :
                 <DropdownMenuItem>[
                   for (int i = 0; i < opponentParty.pokemonNum; i++)
                     DropdownMenuItem(
                       value: i+1,
-                      enabled: i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
-                      child: Text(opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,),
+                      enabled: !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
+                      child: Text(
+                        opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
+                          Colors.black : Colors.grey),
+                        ),
                     ),
                 ],
               value: changePokemonIndex,
               onChanged: (value) {
                 changePokemonIndex = value;
-                appState.editingPhase[processIdx] = true;
+                appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
             ),
@@ -470,6 +490,54 @@ class TurnMove {
     }
   }
 
+  Widget terastalInputWidget(
+    void Function() onFocus,
+    MyAppState appState,
+    Pokemon ownPokemon,
+    bool alreadyTerastal,
+  )
+  {
+    if (playerType.id != PlayerType.none && type.id == TurnMoveType.move) {
+      // テラスタル有無
+      return Row(
+        children: [
+          Expanded(
+            child: CheckboxListTile(
+              title: Text('テラスタル'),
+              value: teraType.id != 0,
+              enabled: !alreadyTerastal,
+              onChanged: (value) {
+                if (value != null && value) {
+                  if (playerType.id == PlayerType.me) {
+                    teraType = ownPokemon.teraType;
+                  }
+                  else {
+                    teraType = appState.pokeData.types[0];  // とりあえずノーマル
+                  }
+                }
+                else {
+                  teraType = PokeType.createFromId(0);
+                }
+                onFocus();
+              },
+            ),
+          ),
+          SizedBox(width: 10,),
+          Expanded(
+            child: TypeDropdownButton(
+              appState.pokeData,
+              'タイプ',
+              teraType.id == 0 || alreadyTerastal || playerType.id == PlayerType.me ?
+                null : (val) {teraType = appState.pokeData.types[val - 1];},
+              teraType.id == 0 ? null : teraType.id,
+            ),
+          ),
+        ],
+      );
+    }
+    return Container();
+  }
+
   Widget extraInputWidget2(
     void Function() onFocus,
     Pokemon ownPokemon,
@@ -478,7 +546,7 @@ class TurnMove {
     PokemonState opponentPokemonState,
     TextEditingController hpController,
     MyAppState appState,
-    int processIdx,
+    int phaseIdx,
     int continousCount,
   )
   {
@@ -509,7 +577,7 @@ class TurnMove {
                   value: moveAdditionalEffects[continousCount],
                   onChanged: (value) {
                     moveAdditionalEffects[continousCount] = value;
-                    appState.editingPhase[processIdx] = true;
+                    appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
                 ),
@@ -547,7 +615,7 @@ class TurnMove {
                   value: isSuccess,
                   onChanged: (value) {
                     isSuccess = value;
-                    appState.editingPhase[processIdx] = true;
+                    appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
                 ),
@@ -590,7 +658,7 @@ class TurnMove {
                       value: moveHits[continousCount].id,
                       onChanged: (value) {
                         moveHits[continousCount] = MoveHit(value);
-                        appState.editingPhase[processIdx] = true;
+                        appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
                     ),
@@ -625,7 +693,7 @@ class TurnMove {
                       value: moveEffectivenesses[continousCount].id,
                       onChanged: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail ? (value) {
                         moveEffectivenesses[continousCount] = MoveEffectiveness(value!);
-                        appState.editingPhase[processIdx] = true;
+                        appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       } : null,
                     ),
@@ -652,12 +720,12 @@ class TurnMove {
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onChanged: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage[continousCount] = opponentPokemonState.remainHPPercent - int.parse(value);
+                          percentDamage[continousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
                         }
                         else {
-                          realDamage[continousCount] = ownPokemonState.remainHP - int.parse(value);
+                          realDamage[continousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
                         }
-                        appState.editingPhase[processIdx] = true;
+                        appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
                     ),
