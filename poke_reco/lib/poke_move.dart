@@ -154,6 +154,16 @@ class TurnMove {
       ret.add('わざの1つを${move.displayName}で確定しました。');
     }
 
+    // テラスタル
+    if (teraType.id != 0) {
+      if (playerType.id == PlayerType.me) {
+        ownPokemonState.teraType ??= teraType;
+      }
+      else {
+        opponentPokemonState.teraType ??= teraType;
+      }
+    }
+
     if (!isSuccess) return ret;
 
     // ポケモン交代
@@ -420,9 +430,13 @@ class TurnMove {
                   if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
                   if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
                 }
+                else if (opponentPokemonState.moves.length == 4) {  //　わざがすべて判明している場合
+                  matches.addAll(opponentPokemonState.moves);
+                }
                 else {
                   matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
                 }
+                matches.add(pokeData.moves[165]!);    // わるあがき
                 matches.retainWhere((s){
                   return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                 });
@@ -718,6 +732,7 @@ class TurnMove {
                       enabled: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
                       onChanged: (value) {
                         if (playerType.id == PlayerType.me) {
                           percentDamage[continousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);

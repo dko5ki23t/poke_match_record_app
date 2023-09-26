@@ -11,6 +11,7 @@ import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_effect.dart';
 import 'package:poke_reco/poke_move.dart';
+import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/poke_db.dart';
 
@@ -99,7 +100,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       focusState = turns[turnNum-1].
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      _adjustPhases(appState);
+      if (getSelectedNum(appState.editingPhase) == 0) {
+        _adjustPhases(appState);
+      }
     }
 
     // TODO
@@ -225,18 +228,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               turn.initialOpponentPokemonStates.add(state);
             }
-            turn.phases.addAll(
-              [
-                TurnEffect()
-                ..effect = EffectType(EffectType.move)
-                ..timing = AbilityTiming(AbilityTiming.action)
-                ..move = TurnMove(),
-                TurnEffect()
-                ..effect = EffectType(EffectType.move)
-                ..timing = AbilityTiming(AbilityTiming.action)
-                ..move = TurnMove(),
-              ]
-            );
             // 初期状態設定ここまで
             turns.add(turn);
           }
@@ -273,19 +264,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             // 前ターンの最終状態を初期状態とする
             Turn turn = Turn()
             ..setInitialState(initialState);
-            turn.phases.addAll(
-              [
-                TurnEffect()
-                ..effect = EffectType(EffectType.move)
-                ..timing = AbilityTiming(AbilityTiming.action)
-                ..move = TurnMove(),
-                TurnEffect()
-                ..effect = EffectType(EffectType.move)
-                ..timing = AbilityTiming(AbilityTiming.action)
-                ..move = TurnMove(),
-              ]
-            );
-
             turns.add(turn);
           }
           var currentTurn = turns[turnNum-1];
@@ -569,128 +547,20 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList2.removeAt(index);
   }
 
-  void _clearContinuousMove(MyAppState appState) {
-    int allowedContinuous = 0;
-    int continuousCount = 0;
-    bool clearAfterMove = false;    // 連続こうげき削除に伴い、そのこうげき後の効果を消すかどうかのフラグ
-    List<int> removeIdxs = [];
-    Turn currentTurn = widget.battle.turns[turnNum-1];
-    for (int i = 0; i < currentTurn.phases.length; i++) {
-      var phase = currentTurn.phases[i];
-      if (phase.timing.id == AbilityTiming.action &&
-          phase.move!.type.id == TurnMoveType.move
-      ) {
-        allowedContinuous = phase.move!.move.maxMoveCount()-1;
-        continuousCount = 0;
-        // 1.わざが失敗/命中してない場合
-        // 2.わざによってポケモンがひんしになった場合
-        // は、連続こうげきは問答無用で削除対象
-        if ((!phase.move!.isSuccess ||
-             phase.move!.moveHits[0].id == MoveHit.notHit ||
-             phase.move!.moveHits[0].id == MoveHit.fail) ||
-            (phase.isOwnFainting || phase.isOpponentFainting)
-        ) {
-          allowedContinuous = 0;
-        }
-      }
-      else if (phase.timing.id == AbilityTiming.continuousMove) {
-        continuousCount++;
-        if (continuousCount > allowedContinuous) {
-          removeIdxs.add(i);
-          clearAfterMove = true;
-        }
-        // 1.わざが失敗/命中してない場合
-        // 2.わざによってポケモンがひんしになった場合
-        // は、次以降の連続こうげきは問答無用で削除対象
-        if (!phase.isAdding &&
-            ((!phase.move!.isSuccess ||
-              phase.move!.moveHits[continuousCount].id == MoveHit.notHit ||
-              phase.move!.moveHits[continuousCount].id == MoveHit.fail) ||
-             (phase.isOwnFainting || phase.isOpponentFainting))
-        ) {
-          continuousCount = allowedContinuous;
-        }
-      }
-      else if (clearAfterMove) {
-        if (phase.timing.id == AbilityTiming.afterMove) {
-          removeIdxs.add(i);
-        }
-        else {
-          clearAfterMove = false;
-        }
-      }
-    }
-    // 削除インデックスリストの重複削除、ソート(念のため)
-    removeIdxs = removeIdxs.toSet().toList();
-    removeIdxs.sort();
-    for (int i = removeIdxs.length-1; i >= 0; i--) {
-      _removeAtPhase(removeIdxs[i], appState);
-    }
+  void _removeRangePhase(int begin, int end, MyAppState appState) {
+    widget.battle.turns[turnNum-1].phases.removeRange(begin, end);
+    appState.editingPhase.removeRange(begin, end);
+    textEditingControllerList1.removeRange(begin, end);
+    textEditingControllerList2.removeRange(begin, end);
   }
 
-  void _clearChangeFaintingPokemon(MyAppState appState) {
-    bool clearPokemonAppear = false;    // 「死に出し」削除に伴い、ポケモン登場時処理を消すかどうかのフラグ
-    int faintingCount = 0;
+  // 追加用のフェーズを削除
+  void _clearAddingPhase(MyAppState appState) {
     List<int> removeIdxs = [];
-    Turn currentTurn = widget.battle.turns[turnNum-1];
-    for (int i = 0; i < currentTurn.phases.length; i++) {
-      var phase = currentTurn.phases[i];
-      if (phase.isOwnFainting) {
-        faintingCount++;
-        clearPokemonAppear = false;
-      }
-      if (phase.isOpponentFainting) {
-        faintingCount++;
-        clearPokemonAppear = false;
-      }
-
-      if (phase.timing.id == AbilityTiming.changeFaintingPokemon) {
-        if (faintingCount > 0) {
-          faintingCount--;
-        }
-        else {
-          removeIdxs.add(i);
-          clearPokemonAppear = true;
-        }
-      }
-      else if (phase.timing.id == AbilityTiming.action &&
-        phase.move!.changePokemonIndex != null)
-      {
-        clearPokemonAppear = false;
-      }
-      else if (phase.timing.id == AbilityTiming.pokemonAppear && clearPokemonAppear) {
-        removeIdxs.add(i);
-      }
-    }
-    // 削除インデックスリストの重複削除、ソート(念のため)
-    removeIdxs = removeIdxs.toSet().toList();
-    removeIdxs.sort();
-    for (int i = removeIdxs.length-1; i >= 0; i--) {
-      _removeAtPhase(removeIdxs[i], appState);
-    }
-  }
-
-  void _clearPokemonApeer(MyAppState appState) {
-    List<int> removeIdxs = [];
-    bool isFirstPokemonAppear = true;
     var phases = widget.battle.turns[turnNum-1].phases;
     for (int i = 0; i < phases.length; i++) {
-      var phase = phases[i];
-      // 最初のポケモン登場時処理はOK
-      if (isFirstPokemonAppear && phase.timing.id == AbilityTiming.pokemonAppear) continue;
-      // そのフェーズでひんしになってない、ポケモン交代やわざによる交代が発生しない場合
-      if (!phase.isOwnFainting && !phase.isOpponentFainting &&
-          !(phase.timing.id == AbilityTiming.action &&
-            phase.move!.changePokemonIndex != null)
-      ) {
-        for (int j = i+1; j < phases.length; j++) {
-          if (phases[j].timing.id == AbilityTiming.pokemonAppear) {
-            removeIdxs.add(j);
-          }
-          else {
-            break;
-          }
-        }
+      if (phases[i].isAdding) {
+          removeIdxs.add(i);
       }
     }
     // 削除インデックスリストの重複削除、ソート(念のため)
@@ -699,256 +569,471 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = removeIdxs.length-1; i >= 0; i--) {
       _removeAtPhase(removeIdxs[i], appState);
     }
+  }
+
+  // 不要なフェーズを削除
+  void _clearInvalidPhase(MyAppState appState, int index, bool pokemonAppear, bool afterMove) {
+    var phases = widget.battle.turns[turnNum-1].phases;
+    int endIdx = index;
+    for (; endIdx < phases.length; endIdx++) {
+      if (pokemonAppear && phases[endIdx].timing.id == AbilityTiming.pokemonAppear) {
+      }
+      else if (afterMove && phases[endIdx].timing.id == AbilityTiming.afterMove) {
+      }
+      else {
+        break;
+      }
+    }
+    _removeRangePhase(index, endIdx, appState);
   }
 
   void _adjustPhases(MyAppState appState) {
-    _clearContinuousMove(appState);
-    _clearChangeFaintingPokemon(appState);
-    _clearPokemonApeer(appState);
+    _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
+    int s1 = 0;   // 試合最初のポケモン登場時処理状態
+    int s2 = 0;   // どちらもひんしでない状態
+    int end = 100;
+    int i = 0;
+    int actionCount = 0;
     int allowedContinuous = 0;
     int continuousCount = 0;
-    int i = 0;
+    bool isOwnFainting = false;
+    bool isOpponentFainting = false;
+    if (turnNum != 1) {
+      s1 = 1;
+    }
     var phases = widget.battle.turns[turnNum-1].phases;
-    while (true) {
-      if (i >= phases.length) break;
-      var phase = phases[i];
-      if (phase.isOwnFainting || phase.isOpponentFainting) {
-        // そのフェーズで少なくともどちらかがひんしになる場合、
-        // 「死に出し」フェーズを追加
-        int insertIdx = i+1;
-        for (; insertIdx < phases.length; insertIdx++) {
-          if (phases[insertIdx].timing.id != AbilityTiming.afterMove) break;
-        }
-        if (phase.isOwnFainting) {
-          bool isInsert = false;
-          if (insertIdx == phases.length || phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon) {
-            _insertPhase(insertIdx++,
-              TurnEffect()
+
+    while (s1 != end) {
+      bool isInserted = false;
+      switch (s2) {
+        case 1:       // わざでひんし状態
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+            _insertPhase(i, TurnEffect()
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..isAdding = true,
+              appState
+            );
+            isInserted = true;
+            s2++;   // わざでひんし交代状態へ
+          }
+          break;
+        case 2:       // わざでひんし交代状態
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon) {
+            if (isOwnFainting) {
+              isOwnFainting = false;
+              _insertPhase(i,TurnEffect()
                 ..playerType = PlayerType(PlayerType.me)
                 ..effect = EffectType(EffectType.changeFaintingPokemon)
-                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
-                ..isAdding = false,
-              appState
-            );
-            isInsert = true;
-          }
-          else if (phases[insertIdx].playerType.id != PlayerType.me) {
-            for (++insertIdx; insertIdx < phases.length; insertIdx++) {
-              if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
-            }
-            if (insertIdx == phases.length ||
-                phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon ||
-                phases[insertIdx].playerType.id != PlayerType.me) {
-              _insertPhase(insertIdx++,
-                TurnEffect()
-                  ..playerType = PlayerType(PlayerType.me)
-                  ..effect = EffectType(EffectType.changeFaintingPokemon)
-                  ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
-                  ..isAdding = false,
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
                 appState
               );
-              isInsert = true;
+              isInserted = true;
+              if (!isOpponentFainting) {
+                s2 = 0;
+                s1 = 8;   // ターン終了状態へ
+              }
+              else {
+                s2 = 6;   // わざでひんし交代状態(2匹目)へ
+              }
             }
-          }
-          if (isInsert) {
-            _insertPhase(insertIdx,
-              TurnEffect()
-                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                ..isAdding = true,
-              appState
-            );
-          }
-        }
-        for (++insertIdx; insertIdx < phases.length; insertIdx++) {
-          if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
-        }
-        if (phase.isOpponentFainting) {
-          bool isInsert = false;
-          if (insertIdx == phases.length || phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon) {
-            _insertPhase(insertIdx++,
-              TurnEffect()
+            else if (isOpponentFainting) {
+              isOpponentFainting = false;
+              _insertPhase(i,TurnEffect()
                 ..playerType = PlayerType(PlayerType.opponent)
                 ..effect = EffectType(EffectType.changeFaintingPokemon)
-                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
-                ..isAdding = false,
-              appState
-            );
-            isInsert = true;
-          }
-          else if (phases[insertIdx].playerType.id != PlayerType.opponent) {
-            for (++insertIdx; insertIdx < phases.length; insertIdx++) {
-              if (phases[insertIdx].timing.id != AbilityTiming.pokemonAppear) break;
-            }
-            if (insertIdx == phases.length ||
-                phases[insertIdx].timing.id != AbilityTiming.changeFaintingPokemon ||
-                phases[insertIdx].playerType.id != PlayerType.opponent) {
-              _insertPhase(insertIdx++,
-                TurnEffect()
-                  ..playerType = PlayerType(PlayerType.opponent)
-                  ..effect = EffectType(EffectType.changeFaintingPokemon)
-                  ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon)
-                  ..isAdding = false,
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
                 appState
               );
-              isInsert = true;
+              isInserted = true;
+              s2 = 0;
+              s1 = 8;   // ターン終了状態へ
             }
           }
-          if (isInsert) {
-            _insertPhase(insertIdx,
-              TurnEffect()
-                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                ..isAdding = true,
+          else {
+            if (isOwnFainting) {
+              phases[i].playerType = PlayerType(PlayerType.me);
+              isOwnFainting = false;
+            }
+            else if (isOpponentFainting) {
+              phases[i].playerType = PlayerType(PlayerType.opponent);
+              isOpponentFainting = false;
+            }
+            if (phases[i].isValid()) {
+              s2++;   // わざでひんし交代後状態へ
+            }
+            else {
+              if (!isOpponentFainting) {
+                s2 = 0;
+                s1 = 8;   // ターン終了状態へ
+              }
+              else {
+                s2 = 6;   // わざでひんし交代状態(2匹目)へ
+              }
+            }
+          }
+          break;
+        case 3:       // わざでひんし交代後状態
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+            _insertPhase(i,TurnEffect()
+              ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+              ..isAdding = true,
               appState
             );
+            isInserted = true;
+            if (!isOpponentFainting) {
+              s2 = 0;
+              s1 = 8;   // ターン終了状態へ
+            }
+            else {
+              s2 = 2;   // わざでひんし交代状態へ
+            }
           }
-        }
-      }
-      else if (phase.timing.id == AbilityTiming.afterMove &&
-          continuousCount < allowedContinuous &&
-          (i+1 >= phases.length ||
-           phases[i+1].timing.id != AbilityTiming.afterMove &&
-           phases[i+1].timing.id != AbilityTiming.continuousMove 
-          )
-      ) {
-        // 可能な連続こうげきが残っている場合、「連続こうげき」タイミングを追加
-        _insertPhase(i+1,
-          TurnEffect()
-            ..effect = EffectType(EffectType.move)
-            ..timing = AbilityTiming(AbilityTiming.continuousMove)
-            ..isAdding = true,
-          appState
-        );
-      }
-      else if (phase.timing.id == AbilityTiming.action &&
-          phase.move!.changePokemonIndex != null &&
-          (i+1 >= phases.length ||
-           phases[i+1].timing.id != AbilityTiming.pokemonAppear)
-           // ポケモン交代の場合、次は「ポケモン登場時」タイミングにする
-      ) {
-        _insertPhase(i+1,
-          TurnEffect()
-            ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-            ..isAdding = true,
-          appState
-        );
-      }
-      else if (phase.timing.id == AbilityTiming.changeFaintingPokemon &&
-          (i+1 >= phases.length ||
-           phases[i+1].timing.id != AbilityTiming.pokemonAppear)
-           // ひんし後のポケモン交代の場合、次は「ポケモン登場時」タイミングにする
-      ) {
-        _insertPhase(i+1,
-          TurnEffect()
-            ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-            ..isAdding = true,
-          appState
-        );
-      }
-      else if (
-        phase.timing.id == AbilityTiming.action &&
-        phase.move!.type.id == TurnMoveType.move           // わざの場合
-      ) {
-        allowedContinuous = phase.move!.move.maxMoveCount()-1;
-        continuousCount = 0;
-        // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
-        if (!phase.move!.isSuccess ||
-            phase.move!.moveHits[0].id == MoveHit.notHit ||
-            phase.move!.moveHits[0].id == MoveHit.fail
-        ) {
-          allowedContinuous = 0;
-        }
-        if (i+1 >= phases.length ||
-            phases[i+1].timing.id != AbilityTiming.afterMove
-        ) {
-        // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-          _insertPhase(i+1,
-            TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.afterMove)
+          break;
+        case 4:       // わざ以外でひんし状態
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon) {
+            if (isOwnFainting) {
+              isOwnFainting = false;
+              _insertPhase(i,TurnEffect()
+                ..playerType = PlayerType(PlayerType.me)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                appState
+              );
+              isInserted = true;
+              if (!isOpponentFainting) {
+                s2 = 0;
+              }
+              else {
+                s2 = 7;   // わざ以外でひんし状態(2匹目)へ
+              }
+            }
+            else if (isOpponentFainting) {
+              isOpponentFainting = false;
+              _insertPhase(i,TurnEffect()
+                ..playerType = PlayerType(PlayerType.opponent)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                appState
+              );
+              isInserted = true;
+              s2 = 0;
+            }
+          }
+          else if (phases[i].timing.id == AbilityTiming.changeFaintingPokemon) {
+            if (isOwnFainting) {
+              phases[i].playerType = PlayerType(PlayerType.me);
+              isOwnFainting = false;
+            }
+            else if (isOpponentFainting) {
+              phases[i].playerType = PlayerType(PlayerType.opponent);
+              isOpponentFainting = false;
+            }
+            if (phases[i].isValid()) {
+              s2++;   // わざ以外でひんし交代後状態へ
+            }
+            else {
+              if (!isOpponentFainting) {
+                s2 = 0;
+              }
+              else {
+                s2 = 7;   // わざ以外でひんし状態(2匹目)へ
+              }
+            }
+          }
+          break;
+        case 5:       // わざ以外でひんし交代後状態
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+            _insertPhase(i,TurnEffect()
+              ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
               ..isAdding = true,
-            appState
-          );
-          // さらに、連続こうげきの場合は「連続こうげき」タイミングを追加(ただし、ちゃんと命中した場合のみ)
-          if (continuousCount < allowedContinuous &&
-              (i+1 >= phases.length ||
-              phases[i+1].timing.id != AbilityTiming.continuousMove &&
-              phases[i].move!.isSuccess &&
-              phases[i].move!.moveHits[0].id != MoveHit.notHit &&
-              phases[i].move!.moveHits[0].id != MoveHit.fail)
+              appState
+            );
+            isInserted = true;
+            if (!isOpponentFainting) {
+              s2 = 0;
+            }
+            else {
+              s2 = 4;   // わざ以外でひんし状態へ
+            }
+          }
+          break;
+        case 6:       // わざでひんし交代状態(2匹目)
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon ||
+              (isOpponentFainting && phases[i].playerType.id == PlayerType.me)
           ) {
-            _insertPhase(i+1,
-              TurnEffect()
-                ..effect = EffectType(EffectType.move)
-                ..timing = AbilityTiming(AbilityTiming.continuousMove)
-                ..isAdding = true,
-              appState
-            );
+            if (isOpponentFainting) {
+              isOpponentFainting = false;
+              _insertPhase(i,TurnEffect()
+                ..playerType = PlayerType(PlayerType.opponent)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                appState
+              );
+              isInserted = true;
+              s2 = 0;
+              s1 = 8;   // ターン終了状態へ
+            }
           }
+          else {
+            if (phases[i].playerType.id == PlayerType.me) {
+              isOwnFainting = false;
+            }
+            else {
+              isOpponentFainting = false;
+            }
+            if (phases[i].isValid()) {
+              s2 = 3;   // わざでひんし交代後状態へ
+            }
+            else {
+              if (!isOpponentFainting) {
+                s2 = 0;
+                s1 = 8;   // ターン終了状態へ
+              }
+            }
+          }
+          break;
+        case 7:       // わざ以外でひんし状態(2匹目)
+          if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon ||
+              (isOpponentFainting && phases[i].playerType.id == PlayerType.me)
+          ) {
+            if (isOpponentFainting) {
+              isOpponentFainting = false;
+              _insertPhase(i,TurnEffect()
+                ..playerType = PlayerType(PlayerType.opponent)
+                ..effect = EffectType(EffectType.changeFaintingPokemon)
+                ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                appState
+              );
+              isInserted = true;
+              s2 = 0;
+            }
+          }
+          else {
+            if (phases[i].playerType.id == PlayerType.me) {
+              isOwnFainting = false;
+            }
+            else {
+              isOpponentFainting = false;
+            }
+            if (phases[i].isValid()) {
+              s2 = 5;   // わざ以外でひんし交代後状態へ
+            }
+            else {
+              if (!isOpponentFainting) {
+                s2 = 0;
+              }
+            }
+          }
+          break;
+        case 0:       // どちらもひんしでない状態
+          switch (s1) {
+            case 0:         // 試合最初のポケモン登場時処理状態
+              if (phases.isEmpty || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                s1++;  // 行動決定直後処理状態へ
+              }
+              break;
+            case 1:       // 行動決定直後処理状態
+              if (phases.isEmpty ||
+                  (turnNum == 1 && phases.length <= 1) ||
+                  phases[i].timing.id != AbilityTiming.afterActionDecision
+                )
+              {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                s1++; // 行動選択状態へ
+              }
+              break;
+            case 2:       // 行動選択状態
+              {
+                _clearInvalidPhase(appState, i, true, true);
+                actionCount++;
+                if (i >= phases.length || phases[i].timing.id != AbilityTiming.action) {
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.action)
+                    ..effect = EffectType(EffectType.move)
+                    ..move = TurnMove(),
+                    appState
+                  );
+                  isInserted = true;
+                  if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;    // 行動選択状態へ
+                  }
+                }
+                else if (!phases[i].isValid() || phases[i].move!.type.id == TurnMoveType.surrender) {
+                  if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;    // 行動選択状態へ
+                  }
+                }
+                else if (phases[i].move!.type.id == TurnMoveType.move) {
+                  if (phases[i].move!.changePokemonIndex != null) {
+                    allowedContinuous = phases[i].move!.move.maxMoveCount()-1;
+                    continuousCount = 0;
+                    // わざが失敗/命中していなければポケモン交代も発生しない
+                    if (!phases[i].move!.isSuccess ||
+                        phases[i].move!.moveHits[0].id == MoveHit.notHit ||
+                        phases[i].move!.moveHits[0].id == MoveHit.fail
+                    ) {
+                      allowedContinuous = 0;
+                      s1 = 4;   // わざ使用後状態へ
+                    }
+                    else {
+                      s1 = 6;   // 交代わざ使用後状態へ
+                    }
+                  }
+                  else {
+                    allowedContinuous = phases[i].move!.move.maxMoveCount()-1;
+                    continuousCount = 0;
+                    // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
+                    if (!phases[i].move!.isSuccess ||
+                        phases[i].move!.moveHits[0].id == MoveHit.notHit ||
+                        phases[i].move!.moveHits[0].id == MoveHit.fail
+                    ) {
+                      allowedContinuous = 0;
+                    }
+                    s1 = 4;   // わざ使用後状態へ
+                  }
+                }
+                else if (phases[i].move!.changePokemonIndex != null) {
+                  s1++;   // ポケモン交代後状態へ
+                }
+              }
+              break;
+            case 3:       // ポケモン交代後状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                if (actionCount == 2) {
+                  s1 = 8;    // ターン終了状態へ
+                }
+                else {
+                  s1 = 2;     // 行動選択状態へ
+                }
+              }
+              break;
+            case 4:         // わざ使用後状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                if (continuousCount < allowedContinuous) {
+                  s1 = 5;    // 連続わざ状態へ
+                }
+                else if (actionCount == 2) {
+                  s1 = 8;    // ターン終了状態へ
+                }
+                else {
+                  s1 = 2;     // 行動選択状態へ
+                }
+              }
+              break;
+            case 5:         // 連続わざ状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.continuousMove) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.continuousMove)
+                  ..effect = EffectType(EffectType.move)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                if (actionCount == 2) {
+                  s1 = 8;    // ターン終了状態へ
+                }
+                else {
+                  s1 = 2;    // 行動選択状態へ
+                }
+              }
+              else if (!phases[i].isValid()) {
+                if (actionCount == 2) {
+                  s1 = 8;    // ターン終了状態へ
+                }
+                else {
+                  s1 = 2;    // 行動選択状態へ
+                }
+              }
+              else {
+                continuousCount++;
+                // わざが失敗/命中していなければ次以降の連続こうげきは追加しない
+                if (!phases[i].move!.isSuccess ||
+                    phases[i].move!.moveHits[0].id == MoveHit.notHit ||
+                    phases[i].move!.moveHits[0].id == MoveHit.fail
+                ) {
+                  allowedContinuous = 0;
+                }
+                s1 = 4;   // わざ使用後状態へ
+              }
+              break;
+            case 6:         // 交代わざ使用後状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                s1++;     // 交代わざ交代状態へ
+              }
+              break;
+            case 7:         // 交代わざ交代状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.changePokemonMove) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.changePokemonMove),
+                  appState
+                );
+                isInserted = true;
+              }
+              s1 = 3;     // ポケモン交代後状態へ
+              break;
+            case 8:       // ターン終了状態
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.everyTurnEnd) {
+                _insertPhase(i, TurnEffect()
+                  ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                  ..isAdding = true,
+                  appState
+                );
+                isInserted = true;
+                _removeRangePhase(i+1, phases.length, appState);
+                s1 = end;
+              }
+              break;
+          }
+          break;
+      }
+      if (!isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
+        if (phases[i].isOwnFainting) isOwnFainting = true;
+        if (phases[i].isOpponentFainting) isOpponentFainting = true;
+        if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
+          actionCount = 2;
+          s2 = 1;     // わざでひんし状態へ
+        }
+        else {
+          s2 = 4;   // わざ以外でひんし状態へ
         }
       }
-      else if (phase.timing.id == AbilityTiming.continuousMove && !phase.isAdding) {   // 連続こうげきの場合
-        continuousCount++;
-        // 次が「わざ使用後」タイミングでない場合は「わざ使用後」タイミングにする
-        if (i+1 >= phases.length ||
-            phases[i+1].timing.id != AbilityTiming.afterMove)
-        {
-          _insertPhase(i+1,
-            TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.afterMove)
-              ..isAdding = true,
-            appState
-          );
-        }
-        // わざが命中してない場合は、これ以上連続こうげきさせない
-        if (!phases[i].isAdding &&
-            (!phases[i].move!.isSuccess ||
-             phases[i].move!.moveHits[continuousCount].id == MoveHit.notHit ||
-             phases[i].move!.moveHits[continuousCount].id == MoveHit.fail)
-        ) {
-          continuousCount = allowedContinuous;
-        }
-      }
-
       i++;
-    }
-
-    // 最初のターンなら、初めにポケモン登場時処理を追加
-    if (turnNum == 1 && (phases.isEmpty || phases[0].timing.id != AbilityTiming.pokemonAppear)) {
-      _insertPhase(0, TurnEffect()
-        ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-        ..isAdding = true,
-        appState
-      );
-    }
-    int firstPokemonAppearEndIdx = -1;
-    if (turnNum == 1) {
-      for (int i = 0; i < phases.length; i++) {
-        if (phases[i].timing.id != AbilityTiming.pokemonAppear) break;
-        firstPokemonAppearEndIdx++;
-      }
-    }
-    // 行動決定直後処理を追加
-    if (phases.isEmpty ||
-        (turnNum == 1 && phases.length <= 1) ||
-        phases[firstPokemonAppearEndIdx+1].timing.id != AbilityTiming.afterActionDecision
-      )
-    {
-      _insertPhase(firstPokemonAppearEndIdx+1, TurnEffect()
-        ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
-        ..isAdding = true,
-        appState
-      );
-    }
-    // ポケモン交代
-    // 毎ターン終了時処理を追加
-    if (phases.last.timing.id != AbilityTiming.everyTurnEnd) {
-      phases.add(TurnEffect()
-        ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-        ..isAdding = true
-      );
-      appState.editingPhase.add(false);
-      textEditingControllerList1.add(TextEditingController());
-      textEditingControllerList2.add(TextEditingController());
     }
   }
 
@@ -960,20 +1045,20 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var phases = currentTurn.phases;
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
     PhaseState currentState = currentTurn.copyInitialState();
-    int continousCount = 0;
+    int continuousCount = 0;
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].timing.id == AbilityTiming.continuousMove) {
-        continousCount++;
+        continuousCount++;
       }
       else if (phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.changeFaintingPokemon) {
-        continousCount = 0;
+        continuousCount = 0;
       }
       final guide = phases[i].processEffect(
         widget.battle.ownParty,
         currentState.ownPokemonState,
         widget.battle.opponentParty,
         currentState.opponentPokemonState,
-        currentState, pokeData, continousCount);
+        currentState, pokeData, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
         ..turnEffect = phases[i]
@@ -983,7 +1068,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
       if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action
+          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
       ) {
         if (i != 0) {
           ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));

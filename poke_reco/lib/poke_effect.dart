@@ -497,6 +497,8 @@ class TurnEffect {
       myPokemonIndex = state.opponentPokemonIndex;
       yourPokemonIndex = state.ownPokemonIndex;
     }
+    var myPokemon = myParty.pokemons[myPokemonIndex-1];
+    var yourPokemon = yourParty.pokemons[yourPokemonIndex-1];
 
     switch (effect.id) {
       case EffectType.ability:
@@ -548,7 +550,13 @@ class TurnEffect {
         }
         break;
       case EffectType.move:
-        ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continousCount));
+        {
+          // テラスタル済みならわざもテラスタル化
+          if (myState.teraType != null) {
+            move!.teraType = myState.teraType!;
+          }
+          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continousCount));
+        }
         break;
       case EffectType.changeFaintingPokemon:    // ひんし後のポケモン交代
         // のうりょく変化リセット、現在のポケモンを表すインデックス更新
@@ -867,6 +875,7 @@ class TurnEffect {
                   ),
                   keyboardType: TextInputType.number,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
                   onChanged: (value) {
                     if (playerType.id == PlayerType.me) {
                       extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);

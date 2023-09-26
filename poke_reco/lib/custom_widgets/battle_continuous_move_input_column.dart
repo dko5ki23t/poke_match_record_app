@@ -106,6 +106,8 @@ class BattleContinuousMoveInputColumn extends Column {
             ..move = refMove
             ..playerType = refMove.playerType
             ..isAdding = false;
+            hpControllerList[phaseIdx].text =
+              turn.phases[phaseIdx].getEditingControllerText2(currentState);
             onFocus(phaseIdx+1);
           },
         child: Container(

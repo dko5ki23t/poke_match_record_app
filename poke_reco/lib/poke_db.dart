@@ -453,6 +453,7 @@ class AbilityTiming {
   static const int afterMove = 55;              // わざ使用後
   static const int continuousMove = 56;         // 連続こうげき時(1回目除く)
   static const int changeFaintingPokemon = 57;  // ポケモンがひんしになったため交代
+  static const int changePokemonMove = 58;      // 交代わざによる交代
 
   const AbilityTiming(this.id);
 
@@ -1407,7 +1408,7 @@ class PokemonState {
   Pokemon pokemon = Pokemon();  // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
-  bool isTerastal = false;      // テラスタルしたかどうか
+  PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
   Item? holdingItem = Item(0, '');  // 持っているもちもの(失えばnullにする)
@@ -1428,7 +1429,7 @@ class PokemonState {
     ..pokemon = pokemon
     ..remainHP = remainHP
     ..remainHPPercent = remainHPPercent
-    ..isTerastal = isTerastal
+    ..teraType = teraType
     ..isFainting = isFainting
     ..isBattling = isBattling
     ..holdingItem = holdingItem?.copyWith()
@@ -1454,8 +1455,10 @@ class PokemonState {
     pokemonState.remainHP = int.parse(stateElements[1]);
     // remainHPPercent
     pokemonState.remainHPPercent = int.parse(stateElements[2]);
-    // isTerastal
-    pokemonState.isTerastal = int.parse(stateElements[3]) != 0;
+    // teraType
+    if (stateElements[3] != '') {
+      pokemonState.teraType = PokeType.createFromId(int.parse(stateElements[3]));
+    }
     // isFainting
     pokemonState.isFainting = int.parse(stateElements[4]) != 0;
     // isBattling
@@ -1538,8 +1541,10 @@ class PokemonState {
     // remainHPPercent
     ret += remainHPPercent.toString();
     ret += split1;
-    // isTerastal
-    ret += isTerastal ? '1' : '0';
+    // teraType
+    if (teraType != null) {
+      ret += teraType!.id.toString();
+    }
     ret += split1;
     // isFainting
     ret += isFainting ? '1' : '0';
@@ -1791,13 +1796,17 @@ class Turn {
     ..field = initialField.copyWith();
 
   bool isValid() {
+    int actionCount = 0;
     int validCount = 0;
     for (final phase in phases) {
-      if (phase.timing.id == AbilityTiming.action && phase.isValid()) {
-        if (++validCount == 2) break;
+      if (phase.timing.id == AbilityTiming.action ||
+          phase.timing.id == AbilityTiming.changeFaintingPokemon
+      ) {
+        actionCount++;
+        if (phase.isValid()) validCount++;
       }
     }
-    return validCount == 2;
+    return actionCount == validCount && actionCount >= 2;
   }
 
   void setInitialState(PhaseState state) {

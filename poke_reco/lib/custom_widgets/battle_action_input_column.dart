@@ -86,7 +86,9 @@ class BattleActionInputColumn extends Column {
                       value: turn.phases[phaseIdx].move!.playerType.id == PlayerType.none ? null : turn.phases[phaseIdx].move!.playerType.id,
                       onChanged: (value) {
                         turn.phases[phaseIdx].playerType = PlayerType(value);
+                        turn.phases[phaseIdx].move!.clear();
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
+                        moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =
                           turn.phases[phaseIdx].getEditingControllerText2(currentState);
                         appState.editingPhase[phaseIdx] = true;
@@ -137,7 +139,7 @@ class BattleActionInputColumn extends Column {
               turn.phases[phaseIdx].move!.terastalInputWidget(
                 () => onFocus(phaseIdx+1), appState,
                 ownPokemon, turn.phases[phaseIdx].playerType.id == PlayerType.me ?
-                  prevState.ownPokemonState.isTerastal : prevState.opponentPokemonState.isTerastal,
+                  prevState.ownPokemonState.teraType != null : prevState.opponentPokemonState.teraType != null,
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraInputWidget2(

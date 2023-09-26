@@ -231,11 +231,6 @@ class BattleEffectInputColumn extends Column {
           onPressed: getSelectedNum(appState.editingPhase.sublist(firstIdx, firstIdx+sameTimingList.length)) == 0 ?
             () {
               turn.phases[firstIdx+i].isAdding = false;
-              turn.phases.insert(firstIdx+i+1,
-                TurnEffect()
-                ..timing = timing
-                ..isAdding = true
-              );
               appState.editingPhase[firstIdx+i] = true;
               appState.editingPhase.insert(firstIdx+i+1, false);
               textEditControllerList1.insert(firstIdx+i+1, TextEditingController());
