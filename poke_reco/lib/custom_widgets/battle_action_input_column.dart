@@ -139,13 +139,17 @@ class BattleActionInputColumn extends Column {
               turn.phases[phaseIdx].move!.terastalInputWidget(
                 () => onFocus(phaseIdx+1), appState,
                 ownPokemon, turn.phases[phaseIdx].playerType.id == PlayerType.me ?
-                  prevState.ownPokemonState.teraType != null : prevState.opponentPokemonState.teraType != null,
+                  prevState.hasOwnTerastal : prevState.hasOpponentTerastal,
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraInputWidget2(
                 () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
+                battle.ownParty, battle.opponentParty,
                 prevState.ownPokemonState,
                 prevState.opponentPokemonState,
+                prevState.ownPokemonStates,
+                prevState.opponentPokemonStates,
+                prevState,
                 hpControllerList[phaseIdx], appState, phaseIdx, 0,
               ),
               SizedBox(height: 10,),

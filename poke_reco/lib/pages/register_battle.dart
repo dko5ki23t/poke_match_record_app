@@ -498,7 +498,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ),
           ],
         );
-        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid()) ? () => onNext() : null;
+        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
+                       getSelectedNum(appState.editingPhase) == 0 && widget.battle.turns[turnNum-1].phases.last.timing.id != AbilityTiming.gameSet) ? () => onNext() : null;
         backPressed = () => onturnBack();
         break;
       default:
@@ -522,7 +523,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             child: Text('次へ'),
           ),
           TextButton(
-            onPressed: pageType == RegisterBattlePageType.turnPage ? () => onComplete() : null,
+            onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
             child: Text('完了'),
           ),
         ],
@@ -1022,7 +1023,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
           break;
       }
-      if (!isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
+      if (!isInserted && i < phases.length &&
+          (phases[i].isMyWin || phases[i].isYourWin))     // どちらかが勝利したら
+      {
+        _insertPhase(i+1, TurnEffect()
+          ..timing = AbilityTiming(AbilityTiming.gameSet)
+          ..isMyWin = phases[i].isMyWin
+          ..isYourWin = phases[i].isYourWin,
+          appState
+        );
+        _removeRangePhase(i+2, phases.length, appState);
+        s1 = end;
+      }
+      else if (!isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
         if (phases[i].isOwnFainting) isOwnFainting = true;
         if (phases[i].isOpponentFainting) isOpponentFainting = true;
         if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {

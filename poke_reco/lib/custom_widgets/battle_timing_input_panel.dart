@@ -3,6 +3,7 @@ import 'package:poke_reco/custom_widgets/battle_action_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_change_fainting_pokemon_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
+import 'package:poke_reco/custom_widgets/battle_gameset_column.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
@@ -64,6 +65,8 @@ class BattleTimingInputPanel extends Column {
         return Text('わざ使用後');
       case AbilityTiming.changeFaintingPokemon:
         return Text('ポケモン交代');
+      case AbilityTiming.gameSet:
+        return Text('対戦終了！');
       default:
         return Container();
     }
@@ -76,6 +79,7 @@ class BattleTimingInputPanel extends Column {
       case AbilityTiming.afterActionDecision:
       case AbilityTiming.action:
       case AbilityTiming.changeFaintingPokemon:
+      case AbilityTiming.gameSet:
         return const Divider(
           height: 10,
           thickness: 1,
@@ -145,6 +149,10 @@ class BattleTimingInputPanel extends Column {
       textEditControllerList2,
       sameTimingList.first.guides,
     ) :
+    timing.id == AbilityTiming.gameSet ?
+    BattleGamesetColumn(
+      theme, sameTimingList.first.turnEffect,
+      battle.opponentName) :
     BattleEffectInputColumn(
       pokeData, theme, battle, turn,
       appState, focusPhaseIdx,

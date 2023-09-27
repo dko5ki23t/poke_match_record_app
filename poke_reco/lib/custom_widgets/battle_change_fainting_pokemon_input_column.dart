@@ -121,10 +121,10 @@ class BattleChangeFaintingPokemonInputColumn extends Column {
                           for (int i = 0; i < battle.ownParty.pokemonNum; i++)
                             DropdownMenuItem(
                               value: i+1,
-                              enabled: !prevState.ownPokemonStates[i].isFainting,
+                              enabled: prevState.isPossibleOwnBattling(i) && !prevState.ownPokemonStates[i].isFainting,
                               child: Text(
                                 battle.ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: !prevState.ownPokemonStates[i].isFainting ?
+                                style: TextStyle(color: prevState.isPossibleOwnBattling(i) && !prevState.ownPokemonStates[i].isFainting ?
                                   Colors.black : Colors.grey),
                                 ),
                             ),
@@ -133,10 +133,10 @@ class BattleChangeFaintingPokemonInputColumn extends Column {
                           for (int i = 0; i < battle.opponentParty.pokemonNum; i++)
                             DropdownMenuItem(
                               value: i+1,
-                              enabled: !prevState.opponentPokemonStates[i].isFainting,
+                              enabled: prevState.isPossibleOpponentBattling(i) && !prevState.opponentPokemonStates[i].isFainting,
                               child: Text(
                                 battle.opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: !prevState.opponentPokemonStates[i].isFainting ?
+                                style: TextStyle(color: prevState.isPossibleOpponentBattling(i) && !prevState.opponentPokemonStates[i].isFainting ?
                                   Colors.black : Colors.grey),
                                 ),
                             ),

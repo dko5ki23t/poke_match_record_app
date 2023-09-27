@@ -454,6 +454,7 @@ class AbilityTiming {
   static const int continuousMove = 56;         // 連続こうげき時(1回目除く)
   static const int changeFaintingPokemon = 57;  // ポケモンがひんしになったため交代
   static const int changePokemonMove = 58;      // 交代わざによる交代
+  static const int gameSet = 59;                // 対戦終了
 
   const AbilityTiming(this.id);
 
@@ -1169,9 +1170,9 @@ class Ailment {
   // SQLに保存された文字列からAilmentをパース
   static Ailment deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return Ailment(elements[0])
-      ..turns = elements[1]
-      ..extraArg1 = elements[2];
+    return Ailment(int.parse(elements[0]))
+      ..turns = int.parse(elements[1])
+      ..extraArg1 = int.parse(elements[2]);
   }
 
   // SQL保存用の文字列に変換
@@ -1224,9 +1225,9 @@ class BuffDebuff {
   // SQLに保存された文字列からBuffDebuffをパース
   static BuffDebuff deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return BuffDebuff(elements[0])
-      ..turns = elements[1]
-      ..extraArg1 = elements[2];
+    return BuffDebuff(int.parse(elements[0]))
+      ..turns = int.parse(elements[1])
+      ..extraArg1 = int.parse(elements[2]);
   }
 
   // SQL保存用の文字列に変換
@@ -1704,16 +1705,16 @@ class Party {
 }
 
 enum BattleType {
-  casual(0, 'カジュアルバトル'),
-  rankmatch(1, 'ランクバトル'),
+  //casual(0, 'カジュアルバトル'),
+  rankmatch(0, 'ランクバトル'),
   ;
 
   const BattleType(this.id, this.displayName);
 
   factory BattleType.createFromId(int id) {
     switch (id) {
-      case 1:
-        return casual;
+//      case 1:
+//        return casual;
       case 0:
       default:
         return rankmatch;
@@ -1750,6 +1751,25 @@ class PhaseState {
   
   PokemonState get ownPokemonState => ownPokemonStates[ownPokemonIndex-1];
   PokemonState get opponentPokemonState => opponentPokemonStates[opponentPokemonIndex-1];
+  bool get hasOwnTerastal => ownPokemonStates.where((element) => element.teraType != null).isNotEmpty;
+  bool get hasOpponentTerastal => opponentPokemonStates.where((element) => element.teraType != null).isNotEmpty;
+  bool get isMyWin => opponentPokemonStates.where((element) => element.isFainting).length >= 3;
+  bool get isYourWin => ownPokemonStates.where((element) => element.isFainting).length >= 3;
+  
+  // 対戦に登場する3匹が確定していた場合、対象のポケモンが登場しているかどうか
+  // 3匹が確定していない場合は常にtrue
+  bool isPossibleOwnBattling(int i) {
+    if (ownPokemonStates.where((element) => element.isBattling).length < 3) {
+      return true;
+    }
+    return ownPokemonStates[i].isBattling;
+  }
+  bool isPossibleOpponentBattling(int i) {
+    if (opponentPokemonStates.where((element) => element.isBattling).length < 3) {
+      return true;
+    }
+    return opponentPokemonStates[i].isBattling;
+  }
 }
 
 class Turn {
@@ -2585,7 +2605,7 @@ class PokeDB {
 
     //////////// 登録した対戦
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
-    //await deleteDatabase(battleDBPath);
+    // await deleteDatabase(battleDBPath);
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {

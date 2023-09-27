@@ -405,6 +405,8 @@ class TurnEffect {
   bool isAdding = false;  // trueの場合、追加待ち状態
   bool isOwnFainting = false;   // このフェーズで自身のポケモンがひんしになるかどうか
   bool isOpponentFainting = false;
+  bool isMyWin = false;   // 自身の勝利（両方勝利の場合は引き分け）
+  bool isYourWin = false;
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -415,7 +417,11 @@ class TurnEffect {
     ..extraArg1 = extraArg1
     ..extraArg2 = extraArg2
     ..move = move?.copyWith()
-    ..isAdding = isAdding;
+    ..isAdding = isAdding
+    ..isOwnFainting = isOwnFainting
+    ..isOpponentFainting = isOpponentFainting
+    ..isMyWin = isMyWin
+    ..isYourWin = isYourWin;
 
   bool isValid() {
     return
@@ -545,6 +551,14 @@ class TurnEffect {
             }
             myState.holdingItem = pokeData.items[247];
             break;
+          // 消費系アイテム
+          case 252:   // きあいのタスキ
+            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+              myParty.items[myPokemonIndex-1] = pokeData.items[effectId];   // もちもの確定
+                ret.add('もちものを${pokeData.items[effectId]!.displayName}で確定しました。');
+              }
+              myState.holdingItem = null;   // アイテム消費
+            break;
           default:
             break;
         }
@@ -566,6 +580,7 @@ class TurnEffect {
           ownPokemonState.fields.clear();
           if (effectId != 0) {
             state.ownPokemonIndex = effectId;
+            state.ownPokemonState.isBattling = true;
           }
         }
         else {
@@ -574,6 +589,7 @@ class TurnEffect {
           opponentPokemonState.fields.clear();
           if (effectId != 0) {
             state.opponentPokemonIndex = effectId;
+            state.opponentPokemonState.isBattling = true;
           }
         }
         break;
@@ -604,6 +620,11 @@ class TurnEffect {
     else {
       opponentPokemonState.isFainting = false;
     }
+
+    // 勝利判定
+    isMyWin = state.isMyWin;
+    isYourWin = state.isYourWin;
+    // TODO わざの反動とかで同時に倒れる場合あり、その場合の勝者判定必要
 
     return ret;
   }
@@ -698,17 +719,26 @@ class TurnEffect {
         }
       }
       else if (playerType.id == PlayerType.opponent && type.id == EffectType.item) {
-        for (final item in pokemonState!.impossibleItems) {
-          if (itemIDs.contains(item.id)) {
-            itemIDs.remove(item.id);
-          }
-        }
-        for (final item in itemIDs) {
+        if (pokemonState!.holdingItem?.id != 0 && itemIDs.contains(pokemonState.holdingItem?.id)) {
           ret.add(TurnEffect()
             ..playerType = PlayerType(PlayerType.opponent)
             ..effect = EffectType(EffectType.item)
-            ..effectId = item
+            ..effectId = pokemonState.holdingItem!.id
           );
+        }
+        else {
+          for (final item in pokemonState!.impossibleItems) {
+            if (itemIDs.contains(item.id)) {
+              itemIDs.remove(item.id);
+            }
+          }
+          for (final item in itemIDs) {
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(PlayerType.opponent)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = item
+            );
+          }
         }
       }
     }
@@ -930,6 +960,10 @@ class TurnEffect {
     effect.isOwnFainting = int.parse(effectElements[8]) != 0;
     // isOpponentFainting
     effect.isOpponentFainting = int.parse(effectElements[9]) != 0;
+    // isMyWin
+    effect.isMyWin = int.parse(effectElements[10]) != 0;
+    // isYourWin
+    effect.isYourWin = int.parse(effectElements[11]) != 0;
 
     return effect;
   }
@@ -966,6 +1000,12 @@ class TurnEffect {
     ret += split1;
     // isOpponentFainting
     ret += isOpponentFainting ? '1' : '0';
+    ret += split1;
+    // isMyWin
+    ret += isMyWin ? '1' : '0';
+    ret += split1;
+    // isYourWin
+    ret += isYourWin ? '1' : '0';
 
     return ret;
   }

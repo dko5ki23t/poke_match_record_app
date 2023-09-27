@@ -76,8 +76,13 @@ class BattleContinuousMoveInputColumn extends Column {
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraInputWidget2(
                 () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
+                battle.ownParty,
+                battle.opponentParty,
                 prevState.ownPokemonState,
                 prevState.opponentPokemonState,
+                prevState.ownPokemonStates,
+                prevState.opponentPokemonStates,
+                prevState,
                 hpControllerList[phaseIdx], appState, phaseIdx, continuousCount,
               ),
               SizedBox(height: 10,),

@@ -113,6 +113,7 @@ class TurnMove {
   List<int> percentDamage = [0];  // わざによって与えたダメージ（概算値、割合）
   List<MoveAdditionalEffect> moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
   int? changePokemonIndex;
+  int? targetMyPokemonIndex;   // わざの対象ポケモン
 
   TurnMove copyWith() =>
     TurnMove()
@@ -127,7 +128,8 @@ class TurnMove {
     ..realDamage = [...realDamage]
     ..percentDamage = [...percentDamage]
     ..moveAdditionalEffects = [...moveAdditionalEffects]
-    ..changePokemonIndex = changePokemonIndex;
+    ..changePokemonIndex = changePokemonIndex
+    ..targetMyPokemonIndex = targetMyPokemonIndex;
 
   List<String> processMove(
     Party ownParty,
@@ -140,6 +142,23 @@ class TurnMove {
   {
     List<String> ret = [];
     if (playerType.id == PlayerType.none) return ret;
+
+    // こうさん
+    if (type.id == TurnMoveType.surrender) {
+      if (playerType.id == PlayerType.me) {   // パーティ全員ひんし状態にする
+        for (var pokeState in state.ownPokemonStates) {
+          pokeState.remainHP = 0;
+          pokeState.isFainting = true;
+        }
+      }
+      else if (playerType.id == PlayerType.opponent) {
+        for (var pokeState in state.opponentPokemonStates) {
+          pokeState.remainHPPercent = 0;
+          pokeState.isFainting = true;
+        }
+      }
+      return ret;
+    }
 
     // わざ確定
     var tmp = opponentPokemonState.moves.where(
@@ -209,31 +228,29 @@ class TurnMove {
           case 6:
             break;
           case 7:     // 自分自身
-            if (isSuccess) {
-              switch (move.effect.id) {
-                case 1:
-                  break;
-                case 2:
-                  break;
-                case 3:
-                  break;
-                case 4:
-                  break;
-                case 5:
-                  break;
-                case 6:
-                  break;
-                case 7:
-                  break;
-                case 8:
-                  break;
-                case 213:   // こうげきとすばやさを1段階上げる
-                  myState.statChanges[0]++;
-                  myState.statChanges[4]++;
-                  break;
-                default:
-                  break;
-              }
+            switch (move.effect.id) {
+              case 1:
+                break;
+              case 2:
+                break;
+              case 3:
+                break;
+              case 4:
+                break;
+              case 5:
+                break;
+              case 6:
+                break;
+              case 7:
+                break;
+              case 8:
+                break;
+              case 213:   // こうげきとすばやさを1段階上げる
+                myState.statChanges[0]++;
+                myState.statChanges[4]++;
+                break;
+              default:
+                break;
             }
             break;
           case 8:
@@ -252,7 +269,17 @@ class TurnMove {
             break;
           case 15:
             break;
-          case 16:
+          case 16:    // ひんしの(味方)ポケモン
+            if (move.id == 863) {   // TODO さいきのいのり
+              if (targetMyPokemonIndex == null) break;
+              if (playerType.id == PlayerType.me) {
+                state.ownPokemonStates[targetMyPokemonIndex!-1].remainHP =
+                  (ownParty.pokemons[targetMyPokemonIndex!-1]!.h.real / 2).floor();
+              }
+              else {
+                state.opponentPokemonStates[targetMyPokemonIndex!-1].remainHPPercent = 50;
+              }
+            }
             break;
           default:
             break;
@@ -469,10 +496,10 @@ class TurnMove {
                   for (int i = 0; i < ownParty.pokemonNum; i++)
                     DropdownMenuItem(
                       value: i+1,
-                      enabled: !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
+                      enabled: state.isPossibleOwnBattling(i) && !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
                       child: Text(
                         ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
+                        style: TextStyle(color: state.isPossibleOwnBattling(i) && !state.ownPokemonStates[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
                           Colors.black : Colors.grey),
                         ),
                     ),
@@ -481,10 +508,10 @@ class TurnMove {
                   for (int i = 0; i < opponentParty.pokemonNum; i++)
                     DropdownMenuItem(
                       value: i+1,
-                      enabled: !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
+                      enabled: state.isPossibleOpponentBattling(i) && !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
                       child: Text(
                         opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
+                        style: TextStyle(color: state.isPossibleOpponentBattling(i) && !state.opponentPokemonStates[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
                           Colors.black : Colors.grey),
                         ),
                     ),
@@ -556,8 +583,13 @@ class TurnMove {
     void Function() onFocus,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
+    Party ownParty,
+    Party opponentParty,
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
+    List<PokemonState> ownPokemonStates,
+    List<PokemonState> opponentPokemonStates,
+    PhaseState state,
     TextEditingController hpController,
     MyAppState appState,
     int phaseIdx,
@@ -588,7 +620,7 @@ class TurnMove {
                       child: Text('すばやさが下がった'),
                     ),
                   ],
-                  value: moveAdditionalEffects[continousCount],
+                  value: moveAdditionalEffects[continousCount].id,
                   onChanged: (value) {
                     moveAdditionalEffects[continousCount] = value;
                     appState.editingPhase[phaseIdx] = true;
@@ -752,6 +784,51 @@ class TurnMove {
               ),
             ],
           );
+        case 16:    // ひんしになった(味方の)ポケモン
+          return Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '復活させるポケモン',
+                  ),
+                  items: playerType.id == PlayerType.me ?
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < ownParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleOwnBattling(i) && ownPokemonStates[i].isFainting,
+                          child: Text(
+                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleOwnBattling(i) && ownPokemonStates[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ] :
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < opponentParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleOpponentBattling(i) && opponentPokemonStates[i].isFainting,
+                          child: Text(
+                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleOpponentBattling(i) && opponentPokemonStates[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ],
+                  value: targetMyPokemonIndex,
+                  onChanged: (value) {
+                    targetMyPokemonIndex = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+            ],
+          );
         default:
           break;
       }
@@ -772,6 +849,7 @@ class TurnMove {
     percentDamage = [0];
     moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
     changePokemonIndex = null;
+    targetMyPokemonIndex = null;
   }
 
   // SQLに保存された文字列からTurnMoveをパース
@@ -841,6 +919,10 @@ class TurnMove {
     // changePokemonIndex
     if (turnMoveElements[11] != '') {
       turnMove.changePokemonIndex = int.parse(turnMoveElements[11]);
+    }
+    // targetMyPokemonIndex
+    if (turnMoveElements[12] != '') {
+      turnMove.targetMyPokemonIndex = int.parse(turnMoveElements[12]);
     }
 
     return turnMove;
@@ -932,6 +1014,11 @@ class TurnMove {
     // changePokemonIndex
     if (changePokemonIndex != null) {
       ret += changePokemonIndex.toString();
+    }
+    ret += split1;
+    // targetMyPokemonIndex
+    if (targetMyPokemonIndex != null) {
+      ret += targetMyPokemonIndex.toString();
     }
 
     return ret;
