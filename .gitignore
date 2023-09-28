@@ -37,3 +37,5 @@ poke_reco/linux/
 poke_reco/windows/
 poke_reco/macos/
 poke_reco/web/
+
+.vscode/*

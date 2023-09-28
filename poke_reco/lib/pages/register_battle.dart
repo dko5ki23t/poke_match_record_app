@@ -59,6 +59,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   CheckedPokemons checkedPokemons = CheckedPokemons();
   int turnNum = 1;
   int focusPhaseIdx = 0;                        // 0は無効
+  List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
 
   bool openStates = false;
 
@@ -101,7 +102,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       if (getSelectedNum(appState.editingPhase) == 0) {
-        _adjustPhases(appState);
+        sameTimingList = _adjustPhases(appState);
       }
     }
 
@@ -493,7 +494,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   focusPhaseIdx = phaseIdx;
                   setState(() {});
                 },
-                _getSameTimingList(pokeData),
+                //_getSameTimingList(pokeData),
+                sameTimingList,
               ),
             ),
           ],
@@ -588,9 +590,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     _removeRangePhase(index, endIdx, appState);
   }
 
-  void _adjustPhases(MyAppState appState) {
+  List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
+    int beginIdx = 0;
+    int timingId = 0;
+    List<List<TurnEffectAndStateAndGuide>> ret = [];
+    Turn currentTurn = widget.battle.turns[turnNum-1];
+    List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
+    PhaseState currentState = currentTurn.copyInitialState();
     int s1 = 0;   // 試合最初のポケモン登場時処理状態
     int s2 = 0;   // どちらもひんしでない状態
     int end = 100;
@@ -600,6 +608,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int continuousCount = 0;
     bool isOwnFainting = false;
     bool isOpponentFainting = false;
+    bool isMyWin = false;
+    bool isYourWin = false;
     if (turnNum != 1) {
       s1 = 1;
     }
@@ -1020,22 +1030,29 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 s1 = end;
               }
               break;
+            case 9:     // 試合終了状態
+               _insertPhase(i, TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.gameSet)
+                ..isMyWin = isMyWin
+                ..isYourWin = isYourWin,
+                appState
+              );
+              _removeRangePhase(i+1, phases.length, appState);
+              s1 = end;
+              break;
           }
           break;
       }
-      if (!isInserted && i < phases.length &&
+      if (s1 != end &&
+          !isInserted && i < phases.length &&
           (phases[i].isMyWin || phases[i].isYourWin))     // どちらかが勝利したら
       {
-        _insertPhase(i+1, TurnEffect()
-          ..timing = AbilityTiming(AbilityTiming.gameSet)
-          ..isMyWin = phases[i].isMyWin
-          ..isYourWin = phases[i].isYourWin,
-          appState
-        );
-        _removeRangePhase(i+2, phases.length, appState);
-        s1 = end;
+        isMyWin = phases[i].isMyWin;
+        isYourWin = phases[i].isYourWin;
+        s2 = 0;
+        s1 = 9;     // 試合終了状態へ
       }
-      else if (!isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
+      else if (s1 != end && !isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
         if (phases[i].isOwnFainting) isOwnFainting = true;
         if (phases[i].isOpponentFainting) isOpponentFainting = true;
         if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
@@ -1046,39 +1063,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           s2 = 4;   // わざ以外でひんし状態へ
         }
       }
-      i++;
-    }
-  }
 
-  List<List<TurnEffectAndStateAndGuide>> _getSameTimingList(PokeDB pokeData) {
-    int beginIdx = 0;
-    int timingId = 0;
-    List<List<TurnEffectAndStateAndGuide>> ret = [];
-    Turn currentTurn = widget.battle.turns[turnNum-1];
-    var phases = currentTurn.phases;
-    List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    PhaseState currentState = currentTurn.copyInitialState();
-    int continuousCount = 0;
-    for (int i = 0; i < phases.length; i++) {
-      if (phases[i].timing.id == AbilityTiming.continuousMove) {
-        continuousCount++;
-      }
-      else if (phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.changeFaintingPokemon) {
-        continuousCount = 0;
-      }
       final guide = phases[i].processEffect(
         widget.battle.ownParty,
         currentState.ownPokemonState,
         widget.battle.opponentParty,
         currentState.opponentPokemonState,
-        currentState, pokeData, continuousCount);
+        currentState, appState.pokeData, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
         ..turnEffect = phases[i]
         ..phaseState = currentState.copyWith()
         ..guides = guide
       );
+
+      i++;
     }
+
     for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
       if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
           turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
@@ -1091,10 +1092,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
       }
     }
+
     if (phases.isNotEmpty) {
       ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
     }
-
     return ret;
   }
 
