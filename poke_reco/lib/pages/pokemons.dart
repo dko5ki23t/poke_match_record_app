@@ -7,7 +7,6 @@ import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:quiver/iterables.dart';
 
 class PokemonsPage extends StatefulWidget {
   const PokemonsPage({

@@ -1776,6 +1776,45 @@ class PhaseState {
     }
     return opponentPokemonStates[i].isBattling;
   }
+
+  // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
+  List<TurnEffect> getDefaultEffectList(PokeDB pokeData, AbilityTiming timing, bool changedOwn, bool changedOpponent) {
+    List<TurnEffect> ret = [];
+    switch (timing.id) {
+      case AbilityTiming.pokemonAppear:   // ポケモン登場時
+        {
+          // ポケモン登場時には無条件で発動する効果
+          var abilityIDList = [];
+          for (var ability in pokeData.abilities.values) {
+            if (ability.timing.id == AbilityTiming.pokemonAppear) abilityIDList.add(ability.id);
+          }
+          // TODO アイテムとかも
+          // TODO 追加順はすばやさを考慮したい
+          if (changedOwn) {
+            if (abilityIDList.contains(ownPokemonState.currentAbility.id)) {
+              ret.add(TurnEffect()
+                ..playerType = PlayerType(PlayerType.me)
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..effect = EffectType(EffectType.ability)
+                ..effectId = ownPokemonState.currentAbility.id
+              );
+            }
+          }
+          if (changedOpponent) {
+            if (abilityIDList.contains(opponentPokemonState.currentAbility.id)) {
+              ret.add(TurnEffect()
+                ..playerType = PlayerType(PlayerType.opponent)
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..effect = EffectType(EffectType.ability)
+                ..effectId = opponentPokemonState.currentAbility.id
+              );
+            }
+          }
+        }
+        break;
+    }
+    return ret;
+  }
 }
 
 class Turn {

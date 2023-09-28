@@ -61,6 +61,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   int focusPhaseIdx = 0;                        // 0は無効
   List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
 
+  bool isNewTurn = false;
   bool openStates = false;
 
   static pingpongTextEditingController(TextEditingController controller) {
@@ -102,7 +103,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       if (getSelectedNum(appState.editingPhase) == 0) {
-        sameTimingList = _adjustPhases(appState);
+        sameTimingList = _adjustPhases(appState, isNewTurn);
+        isNewTurn = false;
       }
     }
 
@@ -231,12 +233,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             // 初期状態設定ここまで
             turns.add(turn);
+            isNewTurn = true;
           }
           focusPhaseIdx = 0;
           var currentTurn = turns[turnNum-1];
           appState.editingPhase = List.generate(
             currentTurn.phases.length, (index) => false
           );
+          // 各フェーズを確認して、必要なものがあれば足したり消したりする
+          sameTimingList = _adjustPhases(appState, isNewTurn);
+          isNewTurn = false;
+          // テキストフィールドの初期値設定
           textEditingControllerList1 = List.generate(
             currentTurn.phases.length,
             (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
@@ -266,12 +273,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             Turn turn = Turn()
             ..setInitialState(initialState);
             turns.add(turn);
+            isNewTurn = true;
           }
           var currentTurn = turns[turnNum-1];
           focusPhaseIdx = 0;
           appState.editingPhase = List.generate(
             currentTurn.phases.length, (index) => false
           );
+          // 各フェーズを確認して、必要なものがあれば足したり消したりする
+          sameTimingList = _adjustPhases(appState, isNewTurn);
+          isNewTurn = false;
+          // テキストフィールドの初期値設定
           textEditingControllerList1 = List.generate(
             currentTurn.phases.length,
             (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
@@ -590,15 +602,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     _removeRangePhase(index, endIdx, appState);
   }
 
-  List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState) {
+  List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
     int beginIdx = 0;
     int timingId = 0;
     List<List<TurnEffectAndStateAndGuide>> ret = [];
-    Turn currentTurn = widget.battle.turns[turnNum-1];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    PhaseState currentState = currentTurn.copyInitialState();
+    PhaseState currentState = widget.battle.turns[turnNum-1].copyInitialState();
     int s1 = 0;   // 試合最初のポケモン登場時処理状態
     int s2 = 0;   // どちらもひんしでない状態
     int end = 100;
@@ -610,6 +621,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     bool isOpponentFainting = false;
     bool isMyWin = false;
     bool isYourWin = false;
+    int timingListIdx = 0;
+    List<TurnEffect> assistList = [];
+    if (isNewTurn) {
+      assistList = currentState.getDefaultEffectList(
+        appState.pokeData, turnNum == 1 ? AbilityTiming(AbilityTiming.pokemonAppear) : AbilityTiming(AbilityTiming.afterActionDecision),
+        turnNum == 1, turnNum == 1
+      );
+    }
+
     if (turnNum != 1) {
       s1 = 1;
     }
@@ -840,19 +860,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         case 0:       // どちらもひんしでない状態
           switch (s1) {
             case 0:         // 試合最初のポケモン登場時処理状態
-              if (phases.isEmpty || phases[i].timing.id != AbilityTiming.pokemonAppear) {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                s1++;  // 行動決定直後処理状態へ
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  assistList.removeAt(0);
+                  //isInserted = true;
+                }
+                else {
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  s1++;  // 行動決定直後処理状態へ
+                  timingListIdx++;
+                }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                int findIdx = assistList.indexWhere((element) => element.nearEqual(phases[i]));
+                if (findIdx > 0) assistList.removeAt(findIdx);
               }
               break;
             case 1:       // 行動決定直後処理状態
-              if (phases.isEmpty ||
-                  (turnNum == 1 && phases.length <= 1) ||
+              if (i >= phases.length ||
                   phases[i].timing.id != AbilityTiming.afterActionDecision
                 )
               {
@@ -863,6 +896,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 );
                 isInserted = true;
                 s1++; // 行動選択状態へ
+                timingListIdx++;
               }
               break;
             case 2:       // 行動選択状態

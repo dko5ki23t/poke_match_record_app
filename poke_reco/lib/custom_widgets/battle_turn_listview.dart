@@ -1,4 +1,3 @@
-import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_timing_input_panel.dart';
 import 'package:poke_reco/main.dart';

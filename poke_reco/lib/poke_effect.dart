@@ -430,6 +430,13 @@ class TurnEffect {
       (effect.id == EffectType.move && move != null && move!.isValid() || effectId > 0);
   }
 
+  bool nearEqual(TurnEffect other) {
+    return playerType.id == other.playerType.id &&
+      timing.id == other.timing.id &&
+      effect.id == other.effect.id &&
+      effectId == other.effectId;
+  }
+
   // processEffect前処理
   /*
   void preprocessEffect(
@@ -672,7 +679,7 @@ class TurnEffect {
           ret.add(TurnEffect()
             ..playerType = PlayerType(PlayerType.me)
             ..effect = EffectType(EffectType.ability)
-            ..effectId = pokemon!.ability.id
+            ..effectId = pokemon.ability.id
           );
         }
       }
@@ -727,7 +734,7 @@ class TurnEffect {
           );
         }
         else {
-          for (final item in pokemonState!.impossibleItems) {
+          for (final item in pokemonState.impossibleItems) {
             if (itemIDs.contains(item.id)) {
               itemIDs.remove(item.id);
             }
@@ -1021,4 +1028,5 @@ class TurnEffectAndStateAndGuide {
   TurnEffect turnEffect = TurnEffect();
   PhaseState phaseState = PhaseState();
   List<String> guides = [];
+  bool needAssist = false;
 }

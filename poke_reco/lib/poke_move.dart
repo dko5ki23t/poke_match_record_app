@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
