@@ -330,6 +330,30 @@ class TurnMove {
     int phaseIdx,
   )
   {
+    // 交代先ポケモンがいるかどうか
+    int count = 0;
+    if (playerType.id == PlayerType.me) {
+      for (int i = 0; i < ownParty.pokemonNum; i++) {
+        if (state.isPossibleOwnBattling(i) &&
+            !state.ownPokemonStates[i].isFainting &&
+            i != ownParty.pokemons.indexWhere((element) => element == ownPokemon)
+        ) {
+          count++;
+        }
+      }
+    }
+    else if (playerType.id == PlayerType.opponent) {
+      for (int i = 0; i < opponentParty.pokemonNum; i++) {
+        if (state.isPossibleOpponentBattling(i) &&
+            !state.opponentPokemonStates[i].isFainting &&
+            i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon)
+        ) {
+          count++;
+        }
+      }
+    }
+    bool canChange = count >= 1;
+
     // 行動失敗時
     if (!isSuccess) {
       return Row(
@@ -419,8 +443,10 @@ class TurnMove {
                   child: Text('わざ', overflow: TextOverflow.ellipsis,),
                 ),
                 DropdownMenuItem(
+                  enabled: canChange,
                   value: TurnMoveType.change,
-                  child: Text('ポケモン交代', overflow: TextOverflow.ellipsis,),
+                  child: Text('ポケモン交代', overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: canChange ? Colors.black : Colors.grey),),
                 ),
                 DropdownMenuItem(
                   value: TurnMoveType.surrender,

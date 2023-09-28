@@ -95,23 +95,37 @@ class BattleEffectInputColumn extends Column {
                               labelText: '発動主',
                             ),
                             items: <DropdownMenuItem>[
-                              DropdownMenuItem(
-                                value: PlayerType.me,
-                                child: Text('${battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1]!.name}/あなた', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.me), null, sameTimingList[i]).isNotEmpty,
+                                PlayerType.me,
+                                '${battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1]!.name}/あなた',
                               ),
-                              DropdownMenuItem(
-                                value: PlayerType.opponent,
-                                child: Text('${battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1]!.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.opponent), null, sameTimingList[i]).isNotEmpty,
+                                PlayerType.opponent,
+                                '${battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1]!.name}/${battle.opponentName}',
                               ),
-                              DropdownMenuItem(
-                                value: PlayerType.entireField,
-                                child: Text('天気・フィールド', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.entireField), null, sameTimingList[i]).isNotEmpty,
+                                PlayerType.entireField,
+                                '天気・フィールド',
                               ),
                             ],
                             value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
-                              turn.phases[firstIdx+i].effectId = 0;
+                              var candidates = _getEffectCandidates(timing, battle, PlayerType(value), null, sameTimingList[i]);
+                              if (candidates.length == 1) {       // 候補が1つだけなら
+                                turn.phases[firstIdx+i].effect = candidates.first.effect;
+                                turn.phases[firstIdx+i].effectId = candidates.first.effectId;
+                              }
+                              else {
+                                turn.phases[firstIdx+i].effect = EffectType(EffectType.none);
+                                turn.phases[firstIdx+i].effectId = 0;
+                              }
+                              textEditControllerList1[firstIdx+i].text = turn.phases[firstIdx+i].getDisplayName(pokeData);
+                              textEditControllerList2[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
                               appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             },
@@ -127,21 +141,33 @@ class BattleEffectInputColumn extends Column {
                               labelText: '種別',
                             ),
                             items: <DropdownMenuItem<int>>[
-                              DropdownMenuItem(
-                                value: EffectType.ability,
-                                child: Text('とくせい', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ability), sameTimingList[i]
+                                ).isNotEmpty,
+                                EffectType.ability, 'とくせい',
                               ),
-                              DropdownMenuItem(
-                                value: EffectType.item,
-                                child: Text('もちもの', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.item), sameTimingList[i]
+                                ).isNotEmpty,
+                                EffectType.item, 'もちもの',
                               ),
-                              DropdownMenuItem(
-                                value: EffectType.individualField,
-                                child: Text('場', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.individualField), sameTimingList[i]
+                                ).isNotEmpty,
+                                EffectType.individualField, '場',
                               ),
-                              DropdownMenuItem(
-                                value: EffectType.ailment,
-                                child: Text('状態異常', overflow: TextOverflow.ellipsis,),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ailment), sameTimingList[i]
+                                ).isNotEmpty,
+                                EffectType.ailment, '状態異常',
                               ),
                             ],
                             value: (turn.phases[firstIdx+i].effect.id == EffectType.none ||
@@ -151,7 +177,21 @@ class BattleEffectInputColumn extends Column {
                             onChanged: turn.phases[firstIdx+i].playerType.id != PlayerType.entireField && turn.phases[firstIdx+i].playerType.id != PlayerType.none ?
                             (value) {
                               turn.phases[firstIdx+i].effect = EffectType(value!);
-                              turn.phases[firstIdx+i].effectId = 0;
+                              var candidates = _getEffectCandidates(
+                                timing, battle,
+                                turn.phases[firstIdx+i].playerType,
+                                turn.phases[firstIdx+i].effect, sameTimingList[i]
+                              );
+                              if (candidates.length == 1) {   // 候補が一つしかないならそれに決めてしまう
+                                
+                                turn.phases[firstIdx+i].effectId = candidates.first.effectId;
+                              }
+                              else {
+                                turn.phases[firstIdx+i].effectId = 0;
+                              }
+                              textEditControllerList1[firstIdx+i].text = turn.phases[firstIdx+i].getDisplayName(pokeData);
+                              textEditControllerList2[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
                               appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             } : null,
@@ -174,13 +214,10 @@ class BattleEffectInputColumn extends Column {
                             ),
                             autoFlipDirection: true,
                             suggestionsCallback: (pattern) async {
-                              List<TurnEffect> matches = 
-                                TurnEffect.getPossibleEffects(timing, turn.phases[firstIdx+i].playerType, turn.phases[firstIdx+i].effect,
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1] :
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1] : null,
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.me ? sameTimingList[i].phaseState.ownPokemonState :
-                                turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ? sameTimingList[i].phaseState.opponentPokemonState : null,
-                                sameTimingList[i].phaseState);
+                              List<TurnEffect> matches =
+                                _getEffectCandidates(timing, battle,
+                                  turn.phases[firstIdx+i].playerType,
+                                  turn.phases[firstIdx+i].effect, sameTimingList[i]);
                               matches.retainWhere((s){
                                 return toKatakana(s.getDisplayName(pokeData).toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                               });
@@ -277,4 +314,62 @@ class BattleEffectInputColumn extends Column {
     if (i==0) return prevState;
     return sameTimingList[i-1].phaseState;
   }
+
+  static List<TurnEffect> _getEffectCandidatesWithEffectType(
+    AbilityTiming timing,
+    Battle battle,
+    PlayerType playerType,
+    EffectType effectType,
+    TurnEffectAndStateAndGuide sameTiming,
+  ) {
+    return TurnEffect.getPossibleEffects(timing, playerType, effectType,
+    playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTiming.phaseState.ownPokemonIndex-1] :
+    playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTiming.phaseState.opponentPokemonIndex-1] : null,
+    playerType.id == PlayerType.me ? sameTiming.phaseState.ownPokemonState :
+    playerType.id == PlayerType.opponent ? sameTiming.phaseState.opponentPokemonState : null,
+    sameTiming.phaseState);
+  }
+
+  static List<TurnEffect> _getEffectCandidates(
+    AbilityTiming timing,
+    Battle battle,
+    PlayerType playerType,
+    EffectType? effectType,
+    TurnEffectAndStateAndGuide sameTiming,
+  ) {
+    if (playerType.id == PlayerType.none) return [];
+    if (playerType.id == PlayerType.entireField) {
+      return _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ability), sameTiming);
+    }
+    if (effectType == null) {
+      List<TurnEffect> ret = [];
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ability), sameTiming)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.item), sameTiming)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.individualField), sameTiming)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ailment), sameTiming)
+      );
+      return ret;
+    }
+    else {
+      return _getEffectCandidatesWithEffectType(timing, battle, playerType, effectType, sameTiming);
+    }
+  }
+
+  static DropdownMenuItem<int> _myDropDown(bool enabled, int value, String label) {
+    return DropdownMenuItem(
+      enabled: enabled,
+      value: value,
+      child: Text(label, overflow: TextOverflow.ellipsis,
+        style: TextStyle(color: enabled ? Colors.black : Colors.grey,),
+      ),
+    );
+  }
+
 }

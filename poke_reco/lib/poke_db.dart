@@ -1753,8 +1753,14 @@ class PhaseState {
   PokemonState get opponentPokemonState => opponentPokemonStates[opponentPokemonIndex-1];
   bool get hasOwnTerastal => ownPokemonStates.where((element) => element.teraType != null).isNotEmpty;
   bool get hasOpponentTerastal => opponentPokemonStates.where((element) => element.teraType != null).isNotEmpty;
-  bool get isMyWin => opponentPokemonStates.where((element) => element.isFainting).length >= 3;
-  bool get isYourWin => ownPokemonStates.where((element) => element.isFainting).length >= 3;
+  bool get isMyWin {
+    var n = opponentPokemonStates.where((element) => element.isFainting).length;
+    return n >= 3 || n >= opponentPokemonStates.length;
+  }
+  bool get isYourWin {
+    var n = ownPokemonStates.where((element) => element.isFainting).length;
+    return n >= 3 || n >= ownPokemonStates.length;
+  }
   
   // 対戦に登場する3匹が確定していた場合、対象のポケモンが登場しているかどうか
   // 3匹が確定していない場合は常にtrue
