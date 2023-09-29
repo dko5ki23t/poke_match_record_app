@@ -141,6 +141,10 @@ const List<int> pokemonAppearFieldIDs = [
   IndividualField.stealthRock,  // ステルスロック
   IndividualField.stickyWeb,    // ねばねばネット
 ];
+// タイミング
+const List<int> pokemonAppearTimingIDs = [
+
+];
 
 // 行動決定直後
 // とくせい
@@ -151,6 +155,10 @@ const List<int> afterActionDecisionAbilityIDs = [
 const List <int> afterActionDecisionItemIDs = [
   194,      // せんせいのツメ
   187,      // イバンのみ
+];
+// タイミング
+const List<int> afterActionDecisionTimingIDs = [
+
 ];
 
 // わざ使用後
@@ -297,6 +305,10 @@ const List<int> afterMoveItemIDs = [
   1699,     // ものまねハーブ
   1177,     // だっしゅつパック
 ];
+// タイミング
+const List<int> afterMoveAppearTimingIDs = [
+  3,    // こうげきし、相手にあたったとき(確率)
+];
 
 // 毎ターン終了時
 // とくせい
@@ -392,6 +404,9 @@ const List<int> everyTurnEndFieldIDs = [
   Field.grassyTerrain,  // グラスフィールド終了
   Field.mistyTerrain,   // ミストフィールド終了
   Field.psychicTerrain, // サイコフィールド終了
+];
+// タイミング
+const List<int> everyTurnTimingIDs = [
 ];
 
 class TurnEffect {

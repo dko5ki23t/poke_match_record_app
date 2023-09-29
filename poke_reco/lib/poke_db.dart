@@ -40,6 +40,7 @@ const String itemDBFile = 'Items.db';
 const String itemDBTable = 'itemDB';
 const String itemColumnId = 'id';
 const String itemColumnName = 'name';
+const String itemColumnTiming = 'timing';
 
 const String moveDBFile = 'Moves.db';
 const String moveDBTable = 'moveDB';
@@ -396,58 +397,56 @@ class AbilityTiming {
   static const int none = 0;
   static const int pokemonAppear = 1;     // ポケモン登場時
 //  defeatOpponent(2),    // 相手を倒したとき
-//  attacked(3),          // こうげきわざを受けた時
+  static const int attackSuccessedWithChance = 3;          // こうげきし、相手にあたったとき(確率)
   static const int everyTurnEnd = 4;      // 毎ターン終了時
-/*
-  HPMaxAndAttacked(5),  // HPが満タンでこうげきを受けた時
-  blasted(6),           // ばくはつ系のわざ、とくせいが発動したとき
-  paralysised(7),       // まひするわざ、とくせいを受けた時
-  sandstormed(8),       // 天気がすなあらしのとき
-  directAttacked(9),    // 直接攻撃を受けた時
-  electriced(10),       // でんきタイプのわざを受けた時
-  watered(11),          // みずタイプのわざを受けた時
-  attractedTauntedIntimidated(12),    // メロメロ/ゆうわく/ちょうはつ/いかくの効果を受けたとき
-  weather(13),          // 天気があるとき
-  moving(14),           // わざを使うとき
-  sleeped(15),          // ねむり・ねむけの効果を受けた時
-  poisoned(16),         // どく・もうどくの効果を受けた時
-  fired(17),            // ほのおタイプのわざを受けた時
-  confusedIntimidated(18),  // こんらん/いかくの効果を受けた時
-  afterActedEveryTurnEnd(19),   // 1度でも行動した後毎ターン終了時
-  changeForced(20),     // こうたいわざやレッドカードによるこうたいを強制されたとき
-  notGreatAttacked(21), // 効果ばつぐん以外のタイプのこうげきざわを受けた時
-  groundFieldEffected(22),  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
-  poisonedParalysisedBurnedByOppositeMove(23),    // 相手から受けた技でどく/まひ/やけど状態にされたとき
-  statChangedByNotMyself(24),   // 自身以外の効果によって能力変化が起きるとき
-  change(25),           // 当該ポケモンを交代するとき
-  electricUse(26),      // 自分以外のポケモンがでんきわざを使ったとき
-  attack(27),           // こうげきわざを使うとき
-  rained(28),           // 天気があめのとき
-  sunny(29),            // 天気が晴れのとき
-  pokemonAppearAndChanged(30),     // ポケモン登場時、ポケモン交代時(場にいるときのみの効果)
-  always(31),           // 常に発動(バトル開始時に1度発動とする)
-  flinchedIntimidated(32),  // ひるみやいかくを受けた時
-  frozen(33),           // こおり状態になったとき
-  burned(34),           // やけど状態になったとき
-  moveUsed(35),         // わざを受けた時
-  icedFired(36),        // こおり/ほのおタイプのこうげき技を受けた時
-  accuracyDownedAttack(37),    // 命中率が下がるとき、こうげきするとき
-  itemLostByOpponent(38),   // もちものを奪われたり失ったりするとき
-  ailment(39),          // 状態異常のとき
-  drained(40),          // HP吸収技を受けた時
-  HP033(41),            // HPが1/3以下のとき
-  recoilAttack(42),     // 反動ダメージを受ける技を使ったとき
-  confusedAttacked(43), // こんらん状態でこうげきを受けた時
-  flinched(44),         // ひるんだとき
-  snowed(45),           // 天気がゆきのとき
-  HP025(46),            // HPが1/2のとき
-  criticaled(47),       // こうげきが急所に当たった時
-  itemLost(48),         // 場に出た後にもちものを失ったとき、再度もちものを得た時
-  firedBurned(49),      // ほのお技を受けるとき、やけどダメージを負うとき
-  fireWaterAttackedSunnyRained(50),   // ほのお/みずタイプのこうげきを受けた時、天気が晴れ/あめのとき
-  punchAttack(51),      // パンチ技を使用するとき
-  poisonDamage(52),     // どく/もうどくでダメージを負うとき
-*/
+//  HPMaxAndAttacked(5),  // HPが満タンでこうげきを受けた時
+//  blasted(6),           // ばくはつ系のわざ、とくせいが発動したとき
+//  paralysised(7),       // まひするわざ、とくせいを受けた時
+//  sandstormed(8),       // 天気がすなあらしのとき
+//  directAttacked(9),    // 直接攻撃を受けた時
+//  electriced(10),       // でんきタイプのわざを受けた時
+//  watered(11),          // みずタイプのわざを受けた時
+//  attractedTauntedIntimidated(12),    // メロメロ/ゆうわく/ちょうはつ/いかくの効果を受けたとき
+//  weather(13),          // 天気があるとき
+//  moving(14),           // わざを使うとき
+//  sleeped(15),          // ねむり・ねむけの効果を受けた時
+//  poisoned(16),         // どく・もうどくの効果を受けた時
+//  fired(17),            // ほのおタイプのわざを受けた時
+//  confusedIntimidated(18),  // こんらん/いかくの効果を受けた時
+//  afterActedEveryTurnEnd(19),   // 1度でも行動した後毎ターン終了時
+//  changeForced(20),     // こうたいわざやレッドカードによるこうたいを強制されたとき
+//  notGreatAttacked(21), // 効果ばつぐん以外のタイプのこうげきざわを受けた時
+//  groundFieldEffected(22),  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
+//  poisonedParalysisedBurnedByOppositeMove(23),    // 相手から受けた技でどく/まひ/やけど状態にされたとき
+//  statChangedByNotMyself(24),   // 自身以外の効果によって能力変化が起きるとき
+//  change(25),           // 当該ポケモンを交代するとき
+//  electricUse(26),      // 自分以外のポケモンがでんきわざを使ったとき
+//  attack(27),           // こうげきわざを使うとき
+//  rained(28),           // 天気があめのとき
+//  sunny(29),            // 天気が晴れのとき
+//  pokemonAppearAndChanged(30),     // ポケモン登場時、ポケモン交代時(場にいるときのみの効果)
+//  always(31),           // 常に発動(バトル開始時に1度発動とする)
+//  flinchedIntimidated(32),  // ひるみやいかくを受けた時
+//  frozen(33),           // こおり状態になったとき
+//  burned(34),           // やけど状態になったとき
+//  moveUsed(35),         // わざを受けた時
+//  icedFired(36),        // こおり/ほのおタイプのこうげき技を受けた時
+//  accuracyDownedAttack(37),    // 命中率が下がるとき、こうげきするとき
+//  itemLostByOpponent(38),   // もちものを奪われたり失ったりするとき
+//  ailment(39),          // 状態異常のとき
+//  drained(40),          // HP吸収技を受けた時
+//  HP033(41),            // HPが1/3以下のとき
+//  recoilAttack(42),     // 反動ダメージを受ける技を使ったとき
+//  confusedAttacked(43), // こんらん状態でこうげきを受けた時
+//  flinched(44),         // ひるんだとき
+//  snowed(45),           // 天気がゆきのとき
+//  HP025(46),            // HPが1/2のとき
+//  criticaled(47),       // こうげきが急所に当たった時
+//  itemLost(48),         // 場に出た後にもちものを失ったとき、再度もちものを得た時
+//  firedBurned(49),      // ほのお技を受けるとき、やけどダメージを負うとき
+//  fireWaterAttackedSunnyRained(50),   // ほのお/みずタイプのこうげきを受けた時、天気が晴れ/あめのとき
+//  punchAttack(51),      // パンチ技を使用するとき
+//  poisonDamage(52),     // どく/もうどくでダメージを負うとき
   static const int afterActionDecision = 53;    // 行動決定後、行動実行前
   static const int action = 54;                 // 行動時
   static const int afterMove = 55;              // わざ使用後
@@ -455,6 +454,7 @@ class AbilityTiming {
   static const int changeFaintingPokemon = 57;  // ポケモンがひんしになったため交代
   static const int changePokemonMove = 58;      // 交代わざによる交代
   static const int gameSet = 59;                // 対戦終了
+  static const int attackSuccessed = 60;        // こうげきし、相手に当たったとき
 
   const AbilityTiming(this.id);
 
@@ -634,7 +634,7 @@ class Ability {
     return map;
   }
 
-  // SQLに保存された文字列からBuffDebuffをパース
+  // SQLに保存された文字列からabilityをパース
   static Ability deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
     return Ability(
@@ -655,16 +655,18 @@ class Ability {
 class Item {
   final int id;
   final String displayName;
+  final AbilityTiming timing;
 
-  const Item(this.id, this.displayName);
+  const Item(this.id, this.displayName, this.timing,);
 
   Item copyWith() =>
-    Item(id, displayName);
+    Item(id, displayName, timing);
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       itemColumnId: id,
-      itemColumnName: displayName
+      itemColumnName: displayName,
+      itemColumnTiming: timing.id,
     };
     return map;
   }
@@ -1412,7 +1414,7 @@ class PokemonState {
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
-  Item? holdingItem = Item(0, '');  // 持っているもちもの(失えばnullにする)
+  Item? holdingItem = Item(0, '', AbilityTiming(0));  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
@@ -1778,7 +1780,10 @@ class PhaseState {
   }
 
   // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
-  List<TurnEffect> getDefaultEffectList(PokeDB pokeData, AbilityTiming timing, bool changedOwn, bool changedOpponent) {
+  List<TurnEffect> getDefaultEffectList(
+    PokeDB pokeData, AbilityTiming timing, bool changedOwn, bool changedOpponent,
+    TurnEffect? prevAction,
+  ) {
     List<TurnEffect> ret = [];
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:   // ポケモン登場時
@@ -1808,6 +1813,49 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ability)
                 ..effectId = opponentPokemonState.currentAbility.id
               );
+            }
+          }
+        }
+        break;
+      case AbilityTiming.afterMove:   // わざ使用後
+        {
+          if (prevAction != null && prevAction.move != null && prevAction.move!.isSuccess && prevAction.move!.move.damageClass.id >= 2) {
+            // こうげきわざ使用＆成功後に発動する効果
+            // TODO とくせいとかも
+            var itemIDList = [];
+            for (var item in pokeData.items.values) {
+              if (item.timing.id == AbilityTiming.attackSuccessed) itemIDList.add(item.id);
+            }
+            // TODO 追加順はすばやさを考慮したい
+            if (prevAction.playerType.id == PlayerType.me) {
+              if (itemIDList.contains(ownPokemonState.holdingItem?.id)) {
+                int extraArg1 = 0;
+                if (ownPokemonState.holdingItem!.id == 247) {   // いのちのたま
+                  extraArg1 = (ownPokemonState.pokemon.h.real / 10).floor();
+                }
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(PlayerType.me)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.item)
+                  ..effectId = ownPokemonState.holdingItem!.id
+                  ..extraArg1 = extraArg1
+                );
+              }
+            }
+            else if (prevAction.playerType.id == PlayerType.opponent) {
+              if (itemIDList.contains(opponentPokemonState.holdingItem?.id)) {
+                int extraArg1 = 0;
+                if (ownPokemonState.holdingItem!.id == 247) {   // いのちのたま
+                  extraArg1 = 10;
+                }
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(PlayerType.opponent)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.item)
+                  ..effectId = opponentPokemonState.holdingItem!.id
+                  ..extraArg1 = extraArg1
+                );
+              }
             }
           }
         }
@@ -2074,7 +2122,7 @@ class PokeDB {
   late Database abilityDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
-  Map<int, Item> items = {0: Item(0, '')};  // 無効なもちもの
+  Map<int, Item> items = {0: Item(0, '', AbilityTiming(0))};  // 無効なもちもの
   late Database itemDb;
   Map<int, Move> moves = {0: Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
@@ -2368,12 +2416,13 @@ class PokeDB {
     itemDb = await openDatabase(itemDBPath, readOnly: true);
     // 内部データに変換
     maps = await itemDb.query(itemDBTable,
-      columns: [itemColumnId, itemColumnName],
+      columns: [itemColumnId, itemColumnName, itemColumnTiming],
     );
     for (var map in maps) {
       items[map[itemColumnId]] = Item(
         map[itemColumnId],
         map[itemColumnName],
+        AbilityTiming(map[itemColumnTiming])
       );
     }
 
@@ -2571,7 +2620,7 @@ class PokeDB {
             map[myPokemonColumnEffort[5]],
             0)
           ..ability = abilities[map[myPokemonColumnAbility]]!
-          ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '') : null
+          ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '', AbilityTiming(0)) : null   // TODO 消す
           ..move1 = moves[map[myPokemonColumnMove1]]!
           ..pp1 = map[myPokemonColumnPP1]
           ..move2 = map[myPokemonColumnMove2] != null ? moves[map[myPokemonColumnMove2]]! : null

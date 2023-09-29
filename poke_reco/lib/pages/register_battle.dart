@@ -610,7 +610,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     List<List<TurnEffectAndStateAndGuide>> ret = [];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
     PhaseState currentState = widget.battle.turns[turnNum-1].copyInitialState();
-    int s1 = 0;   // 試合最初のポケモン登場時処理状態
+    int s1 = turnNum == 1 ? 0 : 1;   // 試合最初のポケモン登場時処理状態
     int s2 = 0;   // どちらもひんしでない状態
     int end = 100;
     int i = 0;
@@ -621,32 +621,94 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     bool isOpponentFainting = false;
     bool isMyWin = false;
     bool isYourWin = false;
+    bool changeOwn = turnNum == 1;
+    bool changeOpponent = turnNum == 1;
+    const Map<int, int> s1TimingMap = {
+      0: AbilityTiming.pokemonAppear,
+      1: AbilityTiming.afterActionDecision,
+      2: AbilityTiming.action,
+      3: AbilityTiming.pokemonAppear,
+      4: AbilityTiming.afterMove,
+      5: AbilityTiming.continuousMove,
+      6: AbilityTiming.afterMove,
+      7: AbilityTiming.changePokemonMove,
+      8: AbilityTiming.everyTurnEnd,
+    };
+    const Map<int, int> s2TimingMap = {
+      1: AbilityTiming.afterMove,
+      2: AbilityTiming.changeFaintingPokemon,
+      3: AbilityTiming.pokemonAppear,
+      4: AbilityTiming.changeFaintingPokemon,
+      5: AbilityTiming.pokemonAppear,
+      6: AbilityTiming.changeFaintingPokemon,
+      7: AbilityTiming.changeFaintingPokemon,
+    };
     int timingListIdx = 0;
+    int currentTimingID = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
     List<TurnEffect> assistList = [];
+    List<TurnEffect> delAssistList = [];
+    TurnEffect? lastAction;
+    bool isAssisting = false;
+    // 自動入力リスト作成
     if (isNewTurn) {
       assistList = currentState.getDefaultEffectList(
-        appState.pokeData, turnNum == 1 ? AbilityTiming(AbilityTiming.pokemonAppear) : AbilityTiming(AbilityTiming.afterActionDecision),
-        turnNum == 1, turnNum == 1
+        appState.pokeData, AbilityTiming(currentTimingID),
+        changeOwn, changeOpponent, lastAction,
       );
     }
 
-    if (turnNum != 1) {
-      s1 = 1;
-    }
     var phases = widget.battle.turns[turnNum-1].phases;
 
     while (s1 != end) {
+      // 自動入力効果を作成
+      currentTimingID = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+      if (timingListIdx >= sameTimingList.length ||
+          sameTimingList[timingListIdx].first.turnEffect.timing.id != currentTimingID ||
+          sameTimingList[timingListIdx].first.needAssist
+      ) {
+        assistList = currentState.getDefaultEffectList(
+          appState.pokeData, AbilityTiming(currentTimingID),
+          changeOwn, changeOpponent, lastAction,
+        );
+        for (var del in delAssistList) {
+          int findIdx = assistList.indexWhere((element) => element.nearEqual(del));
+          if (findIdx >= 0) assistList.removeAt(findIdx);
+        }
+        changeOwn = false;
+        changeOpponent = false;
+      }
+      else {
+        assistList.clear();
+        delAssistList.clear();
+      }
       bool isInserted = false;
       switch (s2) {
         case 1:       // わざでひんし状態
           if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
-            _insertPhase(i, TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.afterMove)
-              ..isAdding = true,
-              appState
-            );
-            isInserted = true;
-            s2++;   // わざでひんし交代状態へ
+            // 自動追加
+            if (assistList.isNotEmpty) {
+              _insertPhase(i, assistList.first, appState);
+              delAssistList.add(assistList.first);
+              assistList.removeAt(0);
+              isAssisting = true;
+              isInserted = true;
+            }
+            else {
+              _insertPhase(i, TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.afterMove)
+                ..isAdding = true,
+                appState
+              );
+              isInserted = true;
+              s2++;   // わざでひんし交代状態へ
+              timingListIdx++;
+              isAssisting = false;
+            }
+          }
+          else {
+            // 自動追加リストに載っているものがあればリストから除外
+            delAssistList.add(phases[i]);
+            isAssisting = true;
           }
           break;
         case 2:       // わざでひんし交代状態
@@ -703,22 +765,40 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
             }
           }
+          timingListIdx++;
           break;
         case 3:       // わざでひんし交代後状態
           if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
-            _insertPhase(i,TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-              ..isAdding = true,
-              appState
-            );
-            isInserted = true;
-            if (!isOpponentFainting) {
-              s2 = 0;
-              s1 = 8;   // ターン終了状態へ
+            // 自動追加
+            if (assistList.isNotEmpty) {
+              _insertPhase(i, assistList.first, appState);
+              delAssistList.add(assistList.first);
+              assistList.removeAt(0);
+              isAssisting = true;
+              isInserted = true;
             }
             else {
-              s2 = 2;   // わざでひんし交代状態へ
+              _insertPhase(i,TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..isAdding = true,
+                appState
+              );
+              isInserted = true;
+              timingListIdx++;
+              isAssisting = false;
+              if (!isOpponentFainting) {
+                s2 = 0;
+                s1 = 8;   // ターン終了状態へ
+              }
+              else {
+                s2 = 2;   // わざでひんし交代状態へ
+              }
             }
+          }
+          else {
+            // 自動追加リストに載っているものがあればリストから除外
+            delAssistList.add(phases[i]);
+            isAssisting = true;
           }
           break;
         case 4:       // わざ以外でひんし状態
@@ -772,21 +852,39 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
             }
           }
+          timingListIdx++;
           break;
         case 5:       // わざ以外でひんし交代後状態
           if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
-            _insertPhase(i,TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-              ..isAdding = true,
-              appState
-            );
-            isInserted = true;
-            if (!isOpponentFainting) {
-              s2 = 0;
+            // 自動追加
+            if (assistList.isNotEmpty) {
+              _insertPhase(i, assistList.first, appState);
+              delAssistList.add(assistList.first);
+              assistList.removeAt(0);
+              isAssisting = true;
+              isInserted = true;
             }
             else {
-              s2 = 4;   // わざ以外でひんし状態へ
+              _insertPhase(i,TurnEffect()
+                ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                ..isAdding = true,
+                appState
+              );
+              isInserted = true;
+              timingListIdx++;
+              isAssisting = false;
+              if (!isOpponentFainting) {
+                s2 = 0;
+              }
+              else {
+                s2 = 4;   // わざ以外でひんし状態へ
+              }
             }
+          }
+          else {
+            // 自動追加リストに載っているものがあればリストから除外
+            delAssistList.add(phases[i]);
+            isAssisting = true;
           }
           break;
         case 6:       // わざでひんし交代状態(2匹目)
@@ -823,6 +921,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
             }
           }
+          timingListIdx++;
           break;
         case 7:       // わざ以外でひんし状態(2匹目)
           if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon ||
@@ -856,6 +955,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
             }
           }
+          timingListIdx++;
           break;
         case 0:       // どちらもひんしでない状態
           switch (s1) {
@@ -864,8 +964,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 // 自動追加
                 if (assistList.isNotEmpty) {
                   _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
                   assistList.removeAt(0);
-                  //isInserted = true;
+                  isAssisting = true;
+                  isInserted = true;
                 }
                 else {
                   _insertPhase(i, TurnEffect()
@@ -876,27 +978,41 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isInserted = true;
                   s1++;  // 行動決定直後処理状態へ
                   timingListIdx++;
+                  isAssisting = false;
                 }
               }
               else {
                 // 自動追加リストに載っているものがあればリストから除外
-                int findIdx = assistList.indexWhere((element) => element.nearEqual(phases[i]));
-                if (findIdx > 0) assistList.removeAt(findIdx);
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 1:       // 行動決定直後処理状態
-              if (i >= phases.length ||
-                  phases[i].timing.id != AbilityTiming.afterActionDecision
-                )
-              {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                s1++; // 行動選択状態へ
-                timingListIdx++;
+              if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterActionDecision) {
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
+                  assistList.removeAt(0);
+                  isAssisting = true;
+                  isInserted = true;
+                }
+                else {
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  s1++; // 行動選択状態へ
+                  timingListIdx++;
+                  isAssisting = false;
+                }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 2:       // 行動選択状態
@@ -958,41 +1074,77 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 else if (phases[i].move!.changePokemonIndex != null) {
                   s1++;   // ポケモン交代後状態へ
                 }
+                lastAction = phases[i];
+                timingListIdx++;
               }
               break;
             case 3:       // ポケモン交代後状態
               if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                if (actionCount == 2) {
-                  s1 = 8;    // ターン終了状態へ
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
+                  assistList.removeAt(0);
+                  isAssisting = true;
+                  isInserted = true;
                 }
                 else {
-                  s1 = 2;     // 行動選択状態へ
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  timingListIdx++;
+                  isAssisting = false;
+                  if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;     // 行動選択状態へ
+                  }
                 }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 4:         // わざ使用後状態
               if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                if (continuousCount < allowedContinuous) {
-                  s1 = 5;    // 連続わざ状態へ
-                }
-                else if (actionCount == 2) {
-                  s1 = 8;    // ターン終了状態へ
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
+                  assistList.removeAt(0);
+                  isAssisting = true;
+                  isInserted = true;
                 }
                 else {
-                  s1 = 2;     // 行動選択状態へ
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.afterMove)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  timingListIdx++;
+                  isAssisting = false;
+                  if (continuousCount < allowedContinuous) {
+                    s1 = 5;    // 連続わざ状態へ
+                  }
+                  else if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;     // 行動選択状態へ
+                  }
                 }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 5:         // 連続わざ状態
@@ -1030,16 +1182,35 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 s1 = 4;   // わざ使用後状態へ
               }
+              lastAction = phases[i];
+              timingListIdx++;
               break;
             case 6:         // 交代わざ使用後状態
               if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                s1++;     // 交代わざ交代状態へ
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
+                  assistList.removeAt(0);
+                  isAssisting = true;
+                  isInserted = true;
+                }
+                else {
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.afterMove)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  timingListIdx++;
+                  isAssisting = false;
+                  s1++;     // 交代わざ交代状態へ
+                }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 7:         // 交代わざ交代状態
@@ -1051,17 +1222,34 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 isInserted = true;
               }
               s1 = 3;     // ポケモン交代後状態へ
+              timingListIdx++;
               break;
             case 8:       // ターン終了状態
               if (i >= phases.length || phases[i].timing.id != AbilityTiming.everyTurnEnd) {
-                _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                  ..isAdding = true,
-                  appState
-                );
-                isInserted = true;
-                _removeRangePhase(i+1, phases.length, appState);
-                s1 = end;
+                // 自動追加
+                if (assistList.isNotEmpty) {
+                  _insertPhase(i, assistList.first, appState);
+                  delAssistList.add(assistList.first);
+                  assistList.removeAt(0);
+                  isAssisting = true;
+                  isInserted = true;
+                }
+                else {
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  isAssisting = false;
+                  _removeRangePhase(i+1, phases.length, appState);
+                  s1 = end;
+                }
+              }
+              else {
+                // 自動追加リストに載っているものがあればリストから除外
+                delAssistList.add(phases[i]);
+                isAssisting = true;
               }
               break;
             case 9:     // 試合終了状態
@@ -1077,26 +1265,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
           break;
       }
-      if (s1 != end &&
-          !isInserted && i < phases.length &&
-          (phases[i].isMyWin || phases[i].isYourWin))     // どちらかが勝利したら
-      {
-        isMyWin = phases[i].isMyWin;
-        isYourWin = phases[i].isYourWin;
-        s2 = 0;
-        s1 = 9;     // 試合終了状態へ
-      }
-      else if (s1 != end && !isInserted && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
-        if (phases[i].isOwnFainting) isOwnFainting = true;
-        if (phases[i].isOpponentFainting) isOpponentFainting = true;
-        if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
-          actionCount = 2;
-          s2 = 1;     // わざでひんし状態へ
-        }
-        else {
-          s2 = 4;   // わざ以外でひんし状態へ
-        }
-      }
 
       final guide = phases[i].processEffect(
         widget.battle.ownParty,
@@ -1110,6 +1278,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         ..phaseState = currentState.copyWith()
         ..guides = guide
       );
+      // 追加されたフェーズのフォームの内容を変える
+      if (isInserted) {
+        textEditingControllerList1[i].text = phases[i].getEditingControllerText1(appState.pokeData);
+        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
+      }
+
+      if (s1 != end &&
+          (!isInserted || isAssisting) && i < phases.length &&
+          (phases[i].isMyWin || phases[i].isYourWin))     // どちらかが勝利したら
+      {
+        isMyWin = phases[i].isMyWin;
+        isYourWin = phases[i].isYourWin;
+        s2 = 0;
+        s1 = 9;     // 試合終了状態へ
+      }
+      else if (s1 != end && (!isInserted || isAssisting) && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
+        if (phases[i].isOwnFainting) isOwnFainting = true;
+        if (phases[i].isOpponentFainting) isOpponentFainting = true;
+        if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
+          actionCount = 2;
+          s2 = 1;     // わざでひんし状態へ
+        }
+        else {
+          s2 = 4;   // わざ以外でひんし状態へ
+        }
+      }
 
       i++;
     }
