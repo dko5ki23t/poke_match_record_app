@@ -3,6 +3,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/poke_db.dart';
 import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/poke_move.dart';
 import 'package:poke_reco/tool.dart';
 
 class BattleEffectInputColumn extends Column {
@@ -20,6 +21,9 @@ class BattleEffectInputColumn extends Column {
     AbilityTiming timing,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
+    List<TextEditingController> textEditControllerList3,
+    PlayerType attacker,
+    TurnMove turnMove,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -77,6 +81,7 @@ class BattleEffectInputColumn extends Column {
                               appState.editingPhase.removeAt(firstIdx+i);
                               textEditControllerList1.removeAt(firstIdx+i);
                               textEditControllerList2.removeAt(firstIdx+i);
+                              textEditControllerList3.removeAt(firstIdx+i);
                               onFocus(0);   // フォーカスリセット
                             },
                           ),
@@ -96,17 +101,17 @@ class BattleEffectInputColumn extends Column {
                             ),
                             items: <DropdownMenuItem>[
                               _myDropDown(
-                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.me), null, sameTimingList[i]).isNotEmpty,
+                                _getEffectCandidates(pokeData, timing, battle, PlayerType(PlayerType.me), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
                                 PlayerType.me,
                                 '${battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1]!.name}/あなた',
                               ),
                               _myDropDown(
-                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.opponent), null, sameTimingList[i]).isNotEmpty,
+                                _getEffectCandidates(pokeData, timing, battle, PlayerType(PlayerType.opponent), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
                                 PlayerType.opponent,
                                 '${battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1]!.name}/${battle.opponentName}',
                               ),
                               _myDropDown(
-                                _getEffectCandidates(timing, battle, PlayerType(PlayerType.entireField), null, sameTimingList[i]).isNotEmpty,
+                                _getEffectCandidates(pokeData, timing, battle, PlayerType(PlayerType.entireField), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
                                 PlayerType.entireField,
                                 '天気・フィールド',
                               ),
@@ -114,7 +119,7 @@ class BattleEffectInputColumn extends Column {
                             value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
-                              var candidates = _getEffectCandidates(timing, battle, PlayerType(value), null, sameTimingList[i]);
+                              var candidates = _getEffectCandidates(pokeData, timing, battle, PlayerType(value), null, sameTimingList[i], attacker, turnMove, turn);
                               if (candidates.length == 1) {       // 候補が1つだけなら
                                 turn.phases[firstIdx+i].effect = candidates.first.effect;
                                 turn.phases[firstIdx+i].effectId = candidates.first.effectId;
@@ -125,7 +130,9 @@ class BattleEffectInputColumn extends Column {
                               }
                               textEditControllerList1[firstIdx+i].text = turn.phases[firstIdx+i].getDisplayName(pokeData);
                               textEditControllerList2[firstIdx+i].text =
-                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
+                                turn.phases[firstIdx+i].getEditingControllerText2(pokeData, sameTimingList[i].phaseState);
+                              textEditControllerList3[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText3(pokeData, sameTimingList[i].phaseState);
                               appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             },
@@ -143,29 +150,29 @@ class BattleEffectInputColumn extends Column {
                             items: <DropdownMenuItem<int>>[
                               _myDropDown(
                                 _getEffectCandidates(
-                                  timing, battle, turn.phases[firstIdx+i].playerType,
-                                  EffectType(EffectType.ability), sameTimingList[i]
+                                  pokeData, timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ability), sameTimingList[i], attacker, turnMove, turn
                                 ).isNotEmpty,
                                 EffectType.ability, 'とくせい',
                               ),
                               _myDropDown(
                                 _getEffectCandidates(
-                                  timing, battle, turn.phases[firstIdx+i].playerType,
-                                  EffectType(EffectType.item), sameTimingList[i]
+                                  pokeData, timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.item), sameTimingList[i], attacker, turnMove, turn
                                 ).isNotEmpty,
                                 EffectType.item, 'もちもの',
                               ),
                               _myDropDown(
                                 _getEffectCandidates(
-                                  timing, battle, turn.phases[firstIdx+i].playerType,
-                                  EffectType(EffectType.individualField), sameTimingList[i]
+                                  pokeData, timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.individualField), sameTimingList[i], attacker, turnMove, turn
                                 ).isNotEmpty,
                                 EffectType.individualField, '場',
                               ),
                               _myDropDown(
                                 _getEffectCandidates(
-                                  timing, battle, turn.phases[firstIdx+i].playerType,
-                                  EffectType(EffectType.ailment), sameTimingList[i]
+                                  pokeData, timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ailment), sameTimingList[i], attacker, turnMove, turn
                                 ).isNotEmpty,
                                 EffectType.ailment, '状態異常',
                               ),
@@ -178,9 +185,10 @@ class BattleEffectInputColumn extends Column {
                             (value) {
                               turn.phases[firstIdx+i].effect = EffectType(value!);
                               var candidates = _getEffectCandidates(
-                                timing, battle,
+                                pokeData, timing, battle,
                                 turn.phases[firstIdx+i].playerType,
-                                turn.phases[firstIdx+i].effect, sameTimingList[i]
+                                turn.phases[firstIdx+i].effect, sameTimingList[i],
+                                attacker, turnMove, turn
                               );
                               if (candidates.length == 1) {   // 候補が一つしかないならそれに決めてしまう
                                 
@@ -191,7 +199,9 @@ class BattleEffectInputColumn extends Column {
                               }
                               textEditControllerList1[firstIdx+i].text = turn.phases[firstIdx+i].getDisplayName(pokeData);
                               textEditControllerList2[firstIdx+i].text =
-                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
+                                turn.phases[firstIdx+i].getEditingControllerText2(pokeData, sameTimingList[i].phaseState);
+                              textEditControllerList3[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText3(pokeData, sameTimingList[i].phaseState);
                               appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             } : null,
@@ -215,9 +225,9 @@ class BattleEffectInputColumn extends Column {
                             autoFlipDirection: true,
                             suggestionsCallback: (pattern) async {
                               List<TurnEffect> matches =
-                                _getEffectCandidates(timing, battle,
+                                _getEffectCandidates(pokeData, timing, battle,
                                   turn.phases[firstIdx+i].playerType,
-                                  turn.phases[firstIdx+i].effect, sameTimingList[i]);
+                                  turn.phases[firstIdx+i].effect, sameTimingList[i], attacker, turnMove, turn);
                               matches.retainWhere((s){
                                 return toKatakana(s.getDisplayName(pokeData).toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                               });
@@ -233,7 +243,9 @@ class BattleEffectInputColumn extends Column {
                               turn.phases[firstIdx+i].effectId = suggestion.effectId;
                               appState.editingPhase[firstIdx+i] = true;
                               textEditControllerList2[firstIdx+i].text =
-                                turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
+                                turn.phases[firstIdx+i].getEditingControllerText2(pokeData, sameTimingList[i].phaseState);
+                              textEditControllerList3[firstIdx+i].text =
+                                turn.phases[firstIdx+i].getEditingControllerText3(pokeData, sameTimingList[i].phaseState);
                               onFocus(firstIdx+i+1);
                             },
                           ),
@@ -246,7 +258,7 @@ class BattleEffectInputColumn extends Column {
                       battle.opponentParty.pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonIndex-1]!,
                       _getPrevState(prevState, firstIdx, i, sameTimingList).ownPokemonState,
                       _getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonState,
-                      textEditControllerList2[firstIdx+i],
+                      textEditControllerList2[firstIdx+i], textEditControllerList3[firstIdx+i],
                       appState, firstIdx+i),
                     SizedBox(height: 10),
                     for (final e in sameTimingList[i].guides)
@@ -316,49 +328,57 @@ class BattleEffectInputColumn extends Column {
   }
 
   static List<TurnEffect> _getEffectCandidatesWithEffectType(
+    PokeDB pokeData,
     AbilityTiming timing,
     Battle battle,
     PlayerType playerType,
     EffectType effectType,
     TurnEffectAndStateAndGuide sameTiming,
+    PlayerType attacker,
+    TurnMove turnMove,
+    Turn turn,
   ) {
-    return TurnEffect.getPossibleEffects(timing, playerType, effectType,
+    return TurnEffect.getPossibleEffects(pokeData, timing, playerType, effectType,
     playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTiming.phaseState.ownPokemonIndex-1] :
     playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTiming.phaseState.opponentPokemonIndex-1] : null,
     playerType.id == PlayerType.me ? sameTiming.phaseState.ownPokemonState :
     playerType.id == PlayerType.opponent ? sameTiming.phaseState.opponentPokemonState : null,
-    sameTiming.phaseState);
+    sameTiming.phaseState, attacker, turnMove, turn);
   }
 
   static List<TurnEffect> _getEffectCandidates(
+    PokeDB pokeData,
     AbilityTiming timing,
     Battle battle,
     PlayerType playerType,
     EffectType? effectType,
     TurnEffectAndStateAndGuide sameTiming,
+    PlayerType attacker,
+    TurnMove turnMove,
+    Turn turn,
   ) {
     if (playerType.id == PlayerType.none) return [];
     if (playerType.id == PlayerType.entireField) {
-      return _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ability), sameTiming);
+      return _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, EffectType(EffectType.ability), sameTiming, attacker, turnMove, turn);
     }
     if (effectType == null) {
       List<TurnEffect> ret = [];
       ret.addAll(
-        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ability), sameTiming)
+        _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, EffectType(EffectType.ability), sameTiming, attacker, turnMove, turn)
       );
       ret.addAll(
-        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.item), sameTiming)
+        _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, EffectType(EffectType.item), sameTiming, attacker, turnMove, turn)
       );
       ret.addAll(
-        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.individualField), sameTiming)
+        _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, EffectType(EffectType.individualField), sameTiming, attacker, turnMove, turn)
       );
       ret.addAll(
-        _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ailment), sameTiming)
+        _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, EffectType(EffectType.ailment), sameTiming, attacker, turnMove, turn)
       );
       return ret;
     }
     else {
-      return _getEffectCandidatesWithEffectType(timing, battle, playerType, effectType, sameTiming);
+      return _getEffectCandidatesWithEffectType(pokeData, timing, battle, playerType, effectType, sameTiming, attacker, turnMove, turn);
     }
   }
 

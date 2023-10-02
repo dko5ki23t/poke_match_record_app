@@ -21,6 +21,7 @@ class BattleContinuousMoveInputColumn extends Column {
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
+    List<TextEditingController> textEditingControllerList3,
     TurnMove refMove,
     int continuousCount,
     List<String> guides,
@@ -112,7 +113,7 @@ class BattleContinuousMoveInputColumn extends Column {
             ..playerType = refMove.playerType
             ..isAdding = false;
             hpControllerList[phaseIdx].text =
-              turn.phases[phaseIdx].getEditingControllerText2(currentState);
+              turn.phases[phaseIdx].getEditingControllerText2(pokeData, currentState);
             onFocus(phaseIdx+1);
           },
         child: Container(

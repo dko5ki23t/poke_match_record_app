@@ -17,6 +17,7 @@ class BattleChangeFaintingPokemonInputColumn extends Column {
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
+    List<TextEditingController> textEditingControllerList3,
     List<String> guides,
   ) :
   super(

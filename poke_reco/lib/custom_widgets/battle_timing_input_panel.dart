@@ -22,12 +22,15 @@ class BattleTimingInputPanel extends Column {
     List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
+    List<TextEditingController> textEditControllerList3,
     PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
     TurnMove? refMove,
     int continuousCount,
     int actionCount,
+    PlayerType attacker,
+    TurnMove turnMove,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -40,9 +43,9 @@ class BattleTimingInputPanel extends Column {
           pokeData, setState, theme, battle,
           turn, appState, focusPhaseIdx,
           (phaseIdx) => onFocus(phaseIdx), sameTimingList,
-          textEditControllerList1, textEditControllerList2,
+          textEditControllerList1, textEditControllerList2, textEditControllerList3,
           prevState, prevOwnPokemon, prevOpponentPokemon,
-          refMove, continuousCount,
+          refMove, continuousCount, attacker, turnMove,
         ),
       ),
       SizedBox(height: 20,),
@@ -104,11 +107,14 @@ class BattleTimingInputPanel extends Column {
     List<TurnEffectAndStateAndGuide> sameTimingList,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
+    List<TextEditingController> textEditControllerList3,
     PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
     TurnMove? refMove,
     int continuousCount,
+    PlayerType attacker,
+    TurnMove turnMove,
   ) {
     return 
     timing.id == AbilityTiming.action ?
@@ -122,6 +128,7 @@ class BattleTimingInputPanel extends Column {
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1,
       textEditControllerList2,
+      textEditControllerList3,
       sameTimingList.first.guides,
     ) :
     timing.id == AbilityTiming.continuousMove ?
@@ -135,6 +142,7 @@ class BattleTimingInputPanel extends Column {
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1,
       textEditControllerList2,
+      textEditControllerList3,
       refMove!, continuousCount,
       sameTimingList.first.guides,
     ) :
@@ -147,6 +155,7 @@ class BattleTimingInputPanel extends Column {
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1,
       textEditControllerList2,
+      textEditControllerList3,
       sameTimingList.first.guides,
     ) :
     timing.id == AbilityTiming.gameSet ?
@@ -160,6 +169,7 @@ class BattleTimingInputPanel extends Column {
       prevState, sameTimingList,
       turn.phases.indexWhere((element) => element == sameTimingList.first.turnEffect),
       timing, textEditControllerList1, textEditControllerList2,
+      textEditControllerList3, attacker, turnMove,
     );
   }
 }

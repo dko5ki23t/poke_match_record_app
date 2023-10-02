@@ -127,7 +127,7 @@ class BattleBasicListView extends ListView {
                     onChanged: (value) {
                       // 各ポケモンのレベルを50にするためコピー作成
                       battle.ownParty = parties.where((element) => element.id == value).first.copyWith();
-                      for (int i = 0; i < battle.ownParty.pokemons.length; i++) {
+                      for (int i = 0; i < battle.ownParty.pokemonNum; i++) {
                         battle.ownParty.pokemons[i] = battle.ownParty.pokemons[i]!.copyWith();
                         battle.ownParty.pokemons[i]!.level = 50;
                       }

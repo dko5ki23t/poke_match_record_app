@@ -69,7 +69,8 @@ class ActionFailure {
   static const int confusion = 15;    // こんらんにより自傷
   static const int paralysis = 16;    // まひ
   static const int infatuation = 17;  // メロメロ
-  static const int size = 18;
+  static const int other = 18;        // その他
+  static const int size = 19;
 
   static const _displayNameMap = {
     0: '',
@@ -89,7 +90,8 @@ class ActionFailure {
     14: 'ふういん',
     15: 'こんらん',
     16: 'まひ',
-    17: 'メロメロ'
+    17: 'メロメロ',
+    18: 'その他',
   };
 
   String get displayName => _displayNameMap[id]!;
@@ -130,6 +132,16 @@ class TurnMove {
     ..changePokemonIndex = changePokemonIndex
     ..targetMyPokemonIndex = targetMyPokemonIndex;
 
+  // わざが成功＆ヒットしたかどうか
+  // へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
+  bool isNormallyHit(int continousCount) {
+    return isSuccess &&
+      (move.damageClass.id >= 2 && 
+       moveHits[continousCount].id != MoveHit.notHit &&
+       moveHits[continousCount].id != MoveHit.fail) ||
+      (move.damageClass.id == 1);
+  }
+
   List<String> processMove(
     Party ownParty,
     Party opponentParty,
@@ -163,7 +175,8 @@ class TurnMove {
     var tmp = opponentPokemonState.moves.where(
           (element) => element.id != 0 && element.id == move.id
         );
-    if (playerType.id == PlayerType.opponent &&
+    if (move.id != 165 &&     // わるあがきは除外
+        playerType.id == PlayerType.opponent &&
         type.id == TurnMoveType.move &&
         opponentPokemonState.moves.length < 4 &&
         tmp.isEmpty
@@ -188,16 +201,14 @@ class TurnMove {
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       if (playerType.id == PlayerType.me) {
-        ownPokemonState.statChanges = List.generate(7, (i) => 0);
-        ownPokemonState.buffDebuffs.clear();
-        ownPokemonState.fields.clear();
+        ownPokemonState.processExitEffect(true);
         state.ownPokemonIndex = changePokemonIndex!;
+        state.ownPokemonState.processEnterEffect(true, state.weather, state.field);
       }
       else {
-        opponentPokemonState.statChanges = List.generate(7, (i) => 0);
-        opponentPokemonState.buffDebuffs.clear();
-        opponentPokemonState.fields.clear();
+        opponentPokemonState.processExitEffect(false);
         state.opponentPokemonIndex = changePokemonIndex!;
+        state.opponentPokemonState.processEnterEffect(false, state.weather, state.field);
       }
       return ret;
     }
@@ -245,8 +256,8 @@ class TurnMove {
               case 8:
                 break;
               case 213:   // こうげきとすばやさを1段階上げる
-                myState.statChanges[0]++;
-                myState.statChanges[4]++;
+                myState.addStatChanges(true, 0, 1, moveId: move.id);
+                myState.addStatChanges(true, 4, 1, moveId: move.id);
                 break;
               default:
                 break;
@@ -304,7 +315,7 @@ class TurnMove {
     // TODO:追加効果の対象が自分なら変数に代入
     switch (moveAdditionalEffects[continousCount].id) {
       case MoveAdditionalEffect.speedDown:
-        additionalEffectTargetState.statChanges[4]--;
+        additionalEffectTargetState.addStatChanges(false, 4, -1, moveId: move.id);
         break;
       default:
         break;
@@ -351,7 +362,15 @@ class TurnMove {
         }
       }
     }
-    bool canChange = count >= 1;
+    // 相手のポケモンのとくせいによって交代可能かどうか
+    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    bool isShadowTag = !(myState.type1.id == 8 || myState.type2?.id == 8) &&    // ゴーストタイプではない
+      (yourState.currentAbility.id == 23 ||                                                         // 相手がかげふみ
+       (yourState.currentAbility.id == 42 && (myState.type1.id == 9 || myState.type2?.id == 9)) ||  // 相手がじりょく＆自身がはがね
+       (yourState.currentAbility.id == 71 && myState.isGround)                                      // 相手がありじごく＆自身が地面にいる
+      );
+    bool canChange = count >= 1 && !isShadowTag;
 
     // 行動失敗時
     if (!isSuccess) {
@@ -502,6 +521,7 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
+                moveEffectivenesses[0] = PokeType.effectiveness(myState.currentAbility.id == 113, move.type, yourState.type1, yourState.type2);
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
@@ -647,7 +667,7 @@ class TurnMove {
                   ],
                   value: moveAdditionalEffects[continousCount].id,
                   onChanged: (value) {
-                    moveAdditionalEffects[continousCount] = value;
+                    moveAdditionalEffects[continousCount] = MoveAdditionalEffect(value);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -868,6 +888,7 @@ class TurnMove {
     teraType = PokeType.createFromId(0);
     move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
+    actionFailure = ActionFailure(0);
     moveHits = [MoveHit(MoveHit.hit)];
     moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];
     realDamage = [0];
@@ -1050,6 +1071,9 @@ class TurnMove {
   }
 
   bool isValid() {
+    if (!isSuccess) {
+      return playerType.id != PlayerType.none && actionFailure.id != 0;
+    }
     switch (type.id) {
       case TurnMoveType.move:
         return

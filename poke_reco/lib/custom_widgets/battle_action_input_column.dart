@@ -21,6 +21,7 @@ class BattleActionInputColumn extends Column {
     AbilityTiming timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
+    List<TextEditingController> textEditingControllerList3,
     List<String> guides,
   ) :
   super(
@@ -90,7 +91,7 @@ class BattleActionInputColumn extends Column {
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
                         moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =
-                          turn.phases[phaseIdx].getEditingControllerText2(currentState);
+                          turn.phases[phaseIdx].getEditingControllerText2(pokeData, currentState);
                         appState.editingPhase[phaseIdx] = true;
                         onFocus(phaseIdx+1);
                       },
@@ -119,6 +120,7 @@ class BattleActionInputColumn extends Column {
                       onChanged: turn.phases[phaseIdx].move!.playerType.id != PlayerType.none ?
                         (value) {
                           turn.phases[phaseIdx].move!.isSuccess = value!;
+                          if (!value) turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
                           appState.editingPhase[phaseIdx] = true;
                           onFocus(phaseIdx+1);
                         } : null,
