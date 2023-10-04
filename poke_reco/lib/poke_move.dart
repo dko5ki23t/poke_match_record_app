@@ -201,14 +201,14 @@ class TurnMove {
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       if (playerType.id == PlayerType.me) {
-        ownPokemonState.processExitEffect(true);
+        ownPokemonState.processExitEffect(true, state.opponentPokemonState);
         state.ownPokemonIndex = changePokemonIndex!;
-        state.ownPokemonState.processEnterEffect(true, state.weather, state.field);
+        state.ownPokemonState.processEnterEffect(true, state.weather, state.field, state.opponentPokemonState);
       }
       else {
-        opponentPokemonState.processExitEffect(false);
+        opponentPokemonState.processExitEffect(false, state.ownPokemonState);
         state.opponentPokemonIndex = changePokemonIndex!;
-        state.opponentPokemonState.processEnterEffect(false, state.weather, state.field);
+        state.opponentPokemonState.processEnterEffect(false, state.weather, state.field, state.ownPokemonState);
       }
       return ret;
     }
@@ -216,10 +216,10 @@ class TurnMove {
     if (move.id == 0) return ret;
 
     PokemonState myState = ownPokemonState;
-    PokemonState opponentState = opponentPokemonState;
+    PokemonState yourState = opponentPokemonState;
     if (playerType.id == PlayerType.opponent) {
       myState = opponentPokemonState;
-      opponentState = ownPokemonState;
+      yourState = ownPokemonState;
     }
 
     switch (move.damageClass.id) {
@@ -256,8 +256,8 @@ class TurnMove {
               case 8:
                 break;
               case 213:   // こうげきとすばやさを1段階上げる
-                myState.addStatChanges(true, 0, 1, moveId: move.id);
-                myState.addStatChanges(true, 4, 1, moveId: move.id);
+                myState.addStatChanges(true, 0, 1, yourState, moveId: move.id);
+                myState.addStatChanges(true, 4, 1, yourState, moveId: move.id);
                 break;
               default:
                 break;
@@ -297,13 +297,13 @@ class TurnMove {
         break;
       case 2:     // ぶつり
         // ダメージを負わせる
-        opponentState.remainHP -= realDamage[continousCount];
-        opponentState.remainHPPercent -= percentDamage[continousCount];
+        yourState.remainHP -= realDamage[continousCount];
+        yourState.remainHPPercent -= percentDamage[continousCount];
         break;
       case 3:     // とくしゅ
         // ダメージを負わせる
-        opponentState.remainHP -= realDamage[continousCount];
-        opponentState.remainHPPercent -= percentDamage[continousCount];
+        yourState.remainHP -= realDamage[continousCount];
+        yourState.remainHPPercent -= percentDamage[continousCount];
         break;
       default:
         break;
@@ -311,11 +311,11 @@ class TurnMove {
 
     // 追加効果
     // 対象の相手
-    PokemonState additionalEffectTargetState = opponentState;
+    PokemonState additionalEffectTargetState = yourState;
     // TODO:追加効果の対象が自分なら変数に代入
     switch (moveAdditionalEffects[continousCount].id) {
       case MoveAdditionalEffect.speedDown:
-        additionalEffectTargetState.addStatChanges(false, 4, -1, moveId: move.id);
+        additionalEffectTargetState.addStatChanges(false, 4, -1, myState, moveId: move.id);
         break;
       default:
         break;

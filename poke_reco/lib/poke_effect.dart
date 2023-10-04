@@ -59,6 +59,16 @@ const List<int> allTimingIDs = [
   85,     // 自身以外の効果によってぼうぎょランクが下がるとき
   87,     // あく/ゴースト/むしタイプのこうげきを受けた時、いかくを受けた時
   89,     // メロメロ/アンコール/いちゃもん/かなしばり/ちょうはつ/かいふくふうじの効果を受けたとき
+  93,     // ほのおわざを受けるとき/みずタイプでこうげきする時/やけどを負うとき
+  98,     // 場にいるポケモンがひんしになったとき
+  105,    // ぶつりこうげきを受けた時、天気がゆきに変化したとき(条件)
+  106,    // フィールドが変化したとき
+  108,    // 状態異常・ねむけになるとき
+  109,    // おいかぜ発生時、おいかぜ中にポケモン登場時、かぜ技を受けた時
+  110,    // こうたいわざやレッドカードによるこうたいを強制されたとき、いかくを受けた時
+  111,    // 天気が晴れかブーストエナジーを持っているとき
+  112,    // エレキフィールドかブーストエナジーを持っているとき
+  114,    // 相手の能力ランクが上昇したとき
 ];
 
 // ポケモンを繰り出すとき
@@ -175,6 +185,7 @@ const List<int> pokemonAppearFieldIDs = [
 const List<int> pokemonAppearTimingIDs = [
   1,      // ポケモン登場時
   76,     // ポケモン登場時(確率/条件)
+  94,     // ポケモン登場時と毎ターン終了時（ともに条件あり）
 ];
 
 // 行動決定直後
@@ -189,6 +200,8 @@ const List <int> afterActionDecisionItemIDs = [
 ];
 // タイミング
 const List<int> afterActionDecisionTimingIDs = [
+  53,     // 行動決定後、行動実行前
+  107,    // 行動決定後、行動実行前(確率)
 ];
 
 // わざ使用後
@@ -339,6 +352,7 @@ const List<int> afterMoveItemIDs = [
 const List<int> afterMoveAttackerTimingIDs = [
   3,      // こうげきし、相手にあたったとき(確率)
   14,     // わざを使うとき(確率・条件)
+  91,     // わざを使うとき(条件)、特定のわざを使ったとき
 ];
 const List<int> afterMoveDefenderTimingIDs = [
   5,      // HPが満タンでこうげきを受けた時
@@ -444,6 +458,7 @@ const List<int> everyTurnEndFieldIDs = [
 const List<int> everyTurnEndTimingIDs = [
   4,      // 毎ターン終了時
   70,     // 毎ターン終了時（確率）
+  94,     // ポケモン登場時と毎ターン終了時（ともに条件あり）
 ];
 
 class TurnEffect {
@@ -489,43 +504,6 @@ class TurnEffect {
       effectId == other.effectId;
   }
 
-  // processEffect前処理
-  /*
-  void preprocessEffect(
-    List<TurnEffect> phases,
-    int index,
-  )
-  {
-    if (!isValid()) return;
-
-    int prevMoveIdx = index;
-    for (int i = index-1; i >= 0; i--) {    // 直前のわざのインデックスを探す
-      if ((phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) &&
-          phases[i].effect.id == EffectType.move)
-      {
-        prevMoveIdx = i;
-        break;
-      }
-    }
-
-    switch (effect.id) {
-      case EffectType.ability:
-        switch (effectId) {
-          case 209:   // ばけのかわ
-            if (playerType.id == PlayerType.opponent) {   // ダメージは1/8にする(自身のダメージはゆーざの入力に任せる)
-              phases[prevMoveIdx].move!.percentDamage = 12;
-            }
-            break;
-          case 248:   // アイスフェイス
-            if (playerType.id == PlayerType.opponent) {   // ダメージは0にする(自身のダメージはゆーざの入力に任せる)
-              phases[prevMoveIdx].move!.percentDamage = 0;
-            }
-            break;
-        }
-    }
-  }
-  */
-
   // 効果やわざの結果から、各ポケモン等の状態を更新する
   List<String> processEffect(
     Party ownParty,
@@ -553,12 +531,8 @@ class TurnEffect {
     bool alreadyOwnFainting = ownPokemonState.isFainting;
     bool alreadyOpponentFainting = opponentPokemonState.isFainting;
 
-    var myState = ownPokemonState;
-    var yourState = opponentPokemonState;
-    if (playerType.id == PlayerType.opponent) {
-      myState = opponentPokemonState;
-      yourState = ownPokemonState;
-    }
+    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
     var myParty = ownParty;
     var yourParty = opponentParty;
     if (playerType.id == PlayerType.opponent) {
@@ -594,7 +568,7 @@ class TurnEffect {
             case 78:    // でんきエンジン
             case 80:    // ふくつのこころ
             case 155:   // びびり
-              myState.addStatChanges(true, 4, 1, abilityId: effectId);
+              myState.addStatChanges(true, 4, 1, yourState, abilityId: effectId);
               break;
             case 7:     // じゅうなん
               {   // まひになっていれば消す
@@ -612,6 +586,7 @@ class TurnEffect {
             case 90:    // ポイズンヒール
             case 94:    // サンパワー
             case 115:   // アイスボディ
+            case 297:   // どしょく
               if (playerType.id == PlayerType.me) {
                 myState.remainHP -= extraArg1;
               }
@@ -647,6 +622,7 @@ class TurnEffect {
               }
               break;
             case 17:    // めんえき
+            case 257:   // パステルベール
               {   // どく/もうどくになっていれば消す
                 int findIdx = myState.ailmentsIndexWhere((element) => element.id == Ailment.poison);
                 if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
@@ -667,12 +643,13 @@ class TurnEffect {
               }
               break;
             case 22:    // いかく
-              yourState.addStatChanges(false, 0, -1, abilityId: effectId);
+              yourState.addStatChanges(false, 0, -1, myState, abilityId: effectId);
               break;
             case 24:    // さめはだ
             case 106:   // ゆうばく
             case 123:   // ナイトメア
             case 160:   // てつのトゲ
+            case 215:   // とびだすなかみ
               if (yourPlayerID == PlayerType.me) {
                 yourState.remainHP -= extraArg1;
               }
@@ -696,7 +673,11 @@ class TurnEffect {
               break;
             case 31:    // ひらいしん
             case 114:   // よびみず
-              myState.addStatChanges(true, 2, 1, abilityId: effectId);
+            case 201:   // ぎゃくじょう
+            case 220:   // ソウルハート
+            case 265:   // くろのいななき
+            case 267:   // じんばいったい（くろのいななき）
+              myState.addStatChanges(true, 2, 1, yourState, abilityId: effectId);
               break;
             case 36:    // トレース
               {
@@ -711,7 +692,7 @@ class TurnEffect {
                   yourState.currentAbility = yourState.pokemon.ability;   // とくせい確定
                   ret.add('とくせいを${yourState.currentAbility.displayName}で確定しました。');
                 }
-                myState.processPassiveEffect(myPlayerID == PlayerType.me, state.weather, state.field);
+                myState.processPassiveEffect(myPlayerID == PlayerType.me, state.weather, state.field, yourState);
               }
               break;
             case 38:    // どくのトゲ
@@ -725,12 +706,14 @@ class TurnEffect {
               }
               break;
             case 41:    // みずのベール
+            case 199:   // すいほう
               {   // やけどになっていれば消す
                 int findIdx = myState.ailmentsIndexWhere((element) => element.id == Ailment.burn);
                 if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
               }
               break;
             case 45:    // すなおこし
+            case 245:   // すなはき
               state.weather = Weather(Weather.sandStorm);
               break;
             case 49:    // ほのおのからだ
@@ -750,14 +733,16 @@ class TurnEffect {
                 if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
               }
               break;
-            case 70:     // ひでり
+            case 70:      // ひでり
+            case 288:     // ひひいろのこどう
               state.weather = Weather(Weather.sunny);
               break;
             case 83:    // いかりのつぼ
-              myState.addStatChanges(true, 0, 6, abilityId: effectId);
+              myState.addStatChanges(true, 0, 6, yourState, abilityId: effectId);
               break;
             case 88:    // ダウンロード
-              myState.addStatChanges(true, extraArg1, 1, abilityId: effectId);
+            case 224:   // ビーストブースト
+              myState.addStatChanges(true, extraArg1, 1, yourState, abilityId: effectId);
               break;
             case 108:   // よちむ
               // わざ確定
@@ -802,20 +787,26 @@ class TurnEffect {
               yourState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = extraArg1, state.weather, state.field);
               break;
             case 133:     // くだけるよろい
-              myState.addStatChanges(true, 1, -1);
-              myState.addStatChanges(true, 4, 2);
+              myState.addStatChanges(true, 1, -1, yourState, abilityId: effectId);
+              myState.addStatChanges(true, 4, 2, yourState, abilityId: effectId);
               break;
             case 141:     // ムラっけ
-              myState.addStatChanges(true, extraArg1, 2);
-              myState.addStatChanges(true, extraArg2, -1);
+              myState.addStatChanges(true, extraArg1, 2, yourState, abilityId: effectId);
+              myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: effectId);
               break;
             case 152:   // ミイラ
-              yourState.currentAbility = myState.currentAbility.copyWith();
+            case 268:   // とれないにおい
+              yourState.currentAbility = myState.currentAbility;
               break;
             case 153:     // じしんかじょう
             case 154:     // せいぎのこころ
             case 157:     // そうしょく
-              myState.addStatChanges(true, 0, 1, abilityId: effectId);
+            case 234:     // ふとうのけん
+            case 264:     // しろのいななき
+            case 266:     // じんばいったい（しろのいななき）
+            case 270:     // ねつこうかん
+            case 274:     // かぜのり
+              myState.addStatChanges(true, 0, 1, yourState, abilityId: effectId);
               break;
             case 161:     // ダルマモード
               {
@@ -836,24 +827,253 @@ class TurnEffect {
                   e.id == Ailment.disable || e.id == Ailment.taunt || e.id == Ailment.healBlock);
               }
               break;
-            case 166:    // フラワーベール
+            case 166:     // フラワーベール
+            case 272:     // きよめのしお
               {   // まひ/こおり/やけど/どく/もうどく/ねむり/ねむけになっていれば消す
                 myState.ailmentsRemoveWhere((element) => element.id <= Ailment.sleep || element.id == Ailment.sleepy);
               }
               break;
             case 168:   // へんげんじざい
+            case 236:   // リベロ
               myState.type1 = PokeType.createFromId(extraArg1);
               myState.type2 = null;
               break;
             case 172:   // かちき
-              myState.addStatChanges(true, 2, 2);
+              myState.addStatChanges(true, 2, 2, yourState, abilityId: effectId);
+              break;
+            case 183:   // ぬめぬめ
+            case 238:   // わたげ
+              yourState.addStatChanges(false, 4, -1, myState, abilityId: effectId);
+              break;
+            case 176:   // バトルスイッチ
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bladeForm);
+                if (findIdx >= 0) {
+                  myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.shieldForm);
+                }
+                else {
+                  findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.shieldForm);
+                  if (findIdx >= 0) myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.bladeForm);
+                }
+              }
+              break;
+            case 192:   // じきゅうりょく
+            case 235:   // ふくつのたて
+              myState.addStatChanges(true, 1, 1, yourState, abilityId: effectId);
+              break;
+            case 195:   // みずがため
+            case 273:   // こんがりボディ
+              myState.addStatChanges(true, 1, 2, yourState, abilityId: effectId);
+              break;
+            case 208:     // ぎょぐん
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.singleForm);
+                if (findIdx >= 0) {
+                  myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.multipleForm);
+                }
+                else {
+                  findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.multipleForm);
+                  if (findIdx >= 0) {
+                    myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.singleForm);
+                  }
+                }
+              }
+              break;
+            case 209:   // ばけのかわ
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.transedForm);
+                if (findIdx >= 0) {
+                  myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.revealedForm);
+                }
+                if (playerType.id == PlayerType.me) {
+                  myState.remainHP -= extraArg1;
+                }
+                else {
+                  myState.remainHPPercent -= extraArg1;
+                }
+              }
+              break;
+            case 210:   // きずなへんげ
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.satoshiGekkoga);
+                if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.satoshiGekkoga));
+              }
+              break;
+            case 211:   // スワームチェンジ
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.perfectForm);
+                if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.perfectForm));
+                if (playerType.id == PlayerType.me) {
+                  myState.remainHP -= extraArg1;
+                }
+                else {
+                  myState.remainHPPercent -= extraArg1;
+                }
+              }
+              break;
+            case 216:   // おどりこ
+              switch (extraArg1) {
+                case 872:   // アクアステップ
+                case 10552: // ほのおのまい(とくこう1段階上昇)
+                  if (yourPlayerID == PlayerType.me) {
+                    yourState.remainHP -= extraArg2;
+                  }
+                  else {
+                    yourState.remainHPPercent -= extraArg2;
+                  }
+                  myState.addStatChanges(true, extraArg1 == 872 ? 4 : 2, 1, yourState, moveId: extraArg1);
+                  break;
+                case 80:    // はなびらのまい
+                  if (yourPlayerID == PlayerType.me) {
+                    yourState.remainHP -= extraArg2;
+                  }
+                  else {
+                    yourState.remainHPPercent -= extraArg2;
+                  }
+                  myState.ailmentsAdd(Ailment(Ailment.thrash), state.weather, state.field);
+                  break;
+                case 552:   // ほのおのまい
+                case 686:   // めざめるダンス
+                  if (yourPlayerID == PlayerType.me) {
+                    yourState.remainHP -= extraArg2;
+                  }
+                  else {
+                    yourState.remainHPPercent -= extraArg2;
+                  }
+                  break;
+                case 837:   // しょうりのまい
+                  myState.addStatChanges(true, 0, 1, yourState, moveId: extraArg1);
+                  myState.addStatChanges(true, 1, 1, yourState, moveId: extraArg1);
+                  myState.addStatChanges(true, 4, 1, yourState, moveId: extraArg1);
+                  break;
+                case 483:   // ちょうのまい
+                  myState.addStatChanges(true, 2, 1, yourState, moveId: extraArg1);
+                  myState.addStatChanges(true, 3, 1, yourState, moveId: extraArg1);
+                  myState.addStatChanges(true, 4, 1, yourState, moveId: extraArg1);
+                  break;
+                case 14:    // つるぎのまい
+                  myState.addStatChanges(true, 0, 2, yourState, moveId: extraArg1);
+                  break;
+                case 297:   // フェザーダンス
+                  yourState.addStatChanges(false, 0, -2, myState, moveId: extraArg1);
+                  break;
+                case 298:   // フラフラダンス
+                  yourState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+                  break;
+                case 461:   // みかづきのまい
+                  if (myPlayerID == PlayerType.me) {
+                    myState.remainHP = 0;
+                  }
+                  else {
+                    myState.remainHPPercent = 0;
+                  }
+                  myState.fields.add(IndividualField(IndividualField.lunarDance));
+                  break;
+                case 349:   // りゅうのまい
+                  myState.addStatChanges(true, 0, 1, yourState, moveId: extraArg1);
+                  myState.addStatChanges(true, 4, 1, yourState, moveId: extraArg1);
+                  break;
+                case 775:   // ソウルビート
+                  {
+                    if (myPlayerID == PlayerType.me) {
+                      myState.remainHP -= extraArg2;
+                    }
+                    else {
+                      myState.remainHPPercent -= extraArg2;
+                    }
+                    myState.addStatChanges(true, 0, 1, yourState, moveId: extraArg1);
+                    myState.addStatChanges(true, 1, 1, yourState, moveId: extraArg1);
+                    myState.addStatChanges(true, 2, 1, yourState, moveId: extraArg1);
+                    myState.addStatChanges(true, 3, 1, yourState, moveId: extraArg1);
+                    myState.addStatChanges(true, 4, 1, yourState, moveId: extraArg1);
+                  }
+                  break;
+                default:
+                  break;
+              }
+              break;
+            case 221:   // カーリーヘアー
+              yourState.addStatChanges(true, 4, -1, myState, abilityId: effectId);
+              break;
+            case 226:   // エレキメイカー
+            case 289:   // ハドロンエンジン
+              state.field = Field(Field.electricTerrain);
+              break;
+            case 227:   // サイコメイカー
+              state.field = Field(Field.psychicTerrain);
+              break;
+            case 228:   // ミストメイカー
+              state.field = Field(Field.mistyTerrain);
+              break;
+            case 229:   // グラスメイカー
+              state.field = Field(Field.grassyTerrain);
+              break;
+            case 243:   // じょうききかん
+              myState.addStatChanges(true, 4, 6, yourState, abilityId: effectId);
+              break;
+            case 248:   // アイスフェイス
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.iceFace);
+                if (findIdx >= 0) {
+                  myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.niceFace);
+                }
+                else {
+                  findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.niceFace);
+                  if (findIdx >= 0) {
+                    myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.iceFace);
+                  }
+                }
+              }
+              break;
+            case 251:   // バリアフリー
+              myState.fields.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen || e.id == IndividualField.auroraVeil);
+              yourState.fields.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen || e.id == IndividualField.auroraVeil);
+              break;
+            case 253:   // ほろびのボディ
+              myState.ailmentsAdd(Ailment(Ailment.perishSong), state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.perishSong), state.weather, state.field);
+              break;
+            case 254:   // さまようたましい
+              if (yourState.currentAbility.canExchange) {
+                var tmp = yourState.currentAbility;
+                yourState.currentAbility = myState.currentAbility;
+                myState.currentAbility = tmp;
+              }
+              break;
+            case 258:   // はらぺこスイッチ
+              {
+                int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.manpukuForm);
+                if (findIdx >= 0) {
+                  myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.harapekoForm);
+                }
+                else {
+                  findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.harapekoForm);
+                  if (findIdx >= 0) {
+                    myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.manpukuForm);
+                  }
+                }
+              }
+              break;
+            case 269:   // こぼれダネ
+              state.field = Field(Field.grassyTerrain);
+              break;
+            case 271:   // いかりのこうら
+              myState.addStatChanges(true, 0, 1, yourState, abilityId: effectId);
+              myState.addStatChanges(true, 1, -1, yourState, abilityId: effectId);
+              myState.addStatChanges(true, 2, 1, yourState, abilityId: effectId);
+              myState.addStatChanges(true, 3, -1, yourState, abilityId: effectId);
+              myState.addStatChanges(true, 4, 1, yourState, abilityId: effectId);
+              break;
+            case 277:   // ふうりょくでんき
+            case 280:   // でんきにかえる
+              myState.ailmentsAdd(Ailment(Ailment.charging), state.weather, state.field);
               break;
             case 281:   // こだいかっせい
               myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
               if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
                 if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
                   myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-                  ret.add('もちものをブーストエナジーで確定しました。');
+                  ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
                 }
                 myState.holdingItem = null;   // アイテム消費
               }
@@ -863,9 +1083,37 @@ class TurnEffect {
               if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
                 if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
                   myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-                  ret.add('もちものをブーストエナジーで確定しました。');
+                  ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
                 }
                 myState.holdingItem = null;   // アイテム消費
+              }
+              break;
+            case 290:   // びんじょう
+              myState.addStatChanges(true, extraArg1, extraArg2, yourState, abilityId: effectId);
+              break;
+            case 291:   // はんすう
+              ret.addAll(Item.processEffect(
+                extraArg1, playerType, myParty, myPokemonIndex, myState,
+                yourParty, yourPokemonIndex, yourState, state, pokeData,
+                extraArg2, 0, prevAction,
+              ));
+              break;
+            case 293:   // そうだいしょう
+              {
+                int faintingNum = myPlayerID == PlayerType.me ?
+                      state.ownFaintingNum : state.opponentFaintingNum;
+                if (faintingNum > 0) {
+                  myState.buffDebuffs.add(BuffDebuff(BuffDebuff.power10 + faintingNum - 1));
+                }
+              }
+              break;
+            case 295:   // どくげしょう
+              int findIdx = yourState.fields.indexWhere((e) => e.id == IndividualField.toxicSpikes);
+              if (findIdx < 0) {
+                yourState.fields.add(IndividualField(IndividualField.toxicSpikes)..extraArg1 = 1);
+              }
+              else {
+                yourState.fields[findIdx].extraArg1 = 2;
               }
               break;
             default:
@@ -879,31 +1127,11 @@ class TurnEffect {
         }
         break;
       case EffectType.item:
-        switch (effectId) {
-          case 247:    // いのちのたま
-            if (playerType.id == PlayerType.me) {
-              myState.remainHP -= extraArg1;
-            }
-            else {
-              myState.remainHPPercent -= extraArg1;
-            }
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-              myParty.items[myPokemonIndex-1] = pokeData.items[247];   // いのちのたま確定
-              ret.add('もちものをいのちのたまで確定しました。');
-            }
-            myState.holdingItem = pokeData.items[247];
-            break;
-          // 消費系アイテム
-          case 252:   // きあいのタスキ
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-              myParty.items[myPokemonIndex-1] = pokeData.items[effectId];   // もちもの確定
-                ret.add('もちものを${pokeData.items[effectId]!.displayName}で確定しました。');
-              }
-              myState.holdingItem = null;   // アイテム消費
-            break;
-          default:
-            break;
-        }
+        ret.addAll(Item.processEffect(
+          effectId, playerType, myParty, myPokemonIndex, myState,
+          yourParty, yourPokemonIndex, yourState, state, pokeData,
+          extraArg1, extraArg2, prevAction,
+        ));
         break;
       case EffectType.move:
         {
@@ -922,17 +1150,17 @@ class TurnEffect {
       case EffectType.changeFaintingPokemon:    // ひんし後のポケモン交代
         // のうりょく変化リセット、現在のポケモンを表すインデックス更新
         if (playerType.id == PlayerType.me) {
-          ownPokemonState.processExitEffect(true);
+          ownPokemonState.processExitEffect(true, state.opponentPokemonState);
           if (effectId != 0) {
             state.ownPokemonIndex = effectId;
-            state.ownPokemonState.processEnterEffect(true, state.weather, state.field);
+            state.ownPokemonState.processEnterEffect(true, state.weather, state.field, state.opponentPokemonState);
           }
         }
         else {
-          opponentPokemonState.processExitEffect(false);
+          opponentPokemonState.processExitEffect(false, state.ownPokemonState);
           if (effectId != 0) {
             state.opponentPokemonIndex = effectId;
-            state.opponentPokemonState.processEnterEffect(false, state.weather, state.field);
+            state.opponentPokemonState.processEnterEffect(false, state.weather, state.field, state.ownPokemonState);
           }
         }
         break;
@@ -949,9 +1177,13 @@ class TurnEffect {
         if (pokeState.currentAbility.id == 136) {   // マルチスケイル
           if (pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.damaged0_5) < 0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.damaged0_5));
         }
+        if (pokeState.currentAbility.id == 177) {   // はやてのつばさ
+          if (pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.galeWings) < 0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.galeWings));
+        }
       }
       else {
-        if (pokeState.currentAbility.id == 136) pokeState.buffDebuffs.remove(BuffDebuff(BuffDebuff.damaged0_5)); // マルチスケイル
+        if (pokeState.currentAbility.id == 136) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.damaged0_5)); // マルチスケイル
+        if (pokeState.currentAbility.id == 177) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.galeWings));  // はやてのつばさ
       }
     }
 
@@ -966,7 +1198,7 @@ class TurnEffect {
         }
       }
       else {
-        if (pokeState.currentAbility.id == 129) pokeState.buffDebuffs.remove(BuffDebuff(BuffDebuff.defeatist)); // よわき
+        if (pokeState.currentAbility.id == 129) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist)); // よわき
       }
     }
 
@@ -990,10 +1222,10 @@ class TurnEffect {
         }
       }
       else {
-        if (pokeState.currentAbility.id == 65) pokeState.buffDebuffs.remove(BuffDebuff(BuffDebuff.overgrow));   // しんりょく
-        if (pokeState.currentAbility.id == 66) pokeState.buffDebuffs.remove(BuffDebuff(BuffDebuff.blaze));      // もうか
-        if (pokeState.currentAbility.id == 67) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.torrent));       // げきりゅう
-        if (pokeState.currentAbility.id == 68) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.swarm));         // むしのしらせ
+        if (pokeState.currentAbility.id == 65) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow));   // しんりょく
+        if (pokeState.currentAbility.id == 66) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze));      // もうか
+        if (pokeState.currentAbility.id == 67) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent));       // げきりゅう
+        if (pokeState.currentAbility.id == 68) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm));         // むしのしらせ
       }
     }
 
@@ -1083,6 +1315,10 @@ class TurnEffect {
           if (phaseState.weather.id != Weather.sandStorm) timingIDs.add(66);  // ポケモン登場時(天気がすなあらしでない)
           if (phaseState.weather.id != Weather.sunny) timingIDs.add(71);      // ポケモン登場時(天気が晴れでない)
           if (phaseState.weather.id != Weather.snowy) timingIDs.add(80);      // ポケモン登場時(天気がゆきでない)
+          if (phaseState.field.id != Field.electricTerrain) timingIDs.add(99);  // ポケモン登場時(エレキフィールドでない)
+          if (phaseState.field.id != Field.psychicTerrain) timingIDs.add(100);  // ポケモン登場時(サイコフィールドでない)
+          if (phaseState.field.id != Field.mistyTerrain) timingIDs.add(101);    // ポケモン登場時(ミストフィールドでない)
+          if (phaseState.field.id != Field.grassyTerrain) timingIDs.add(102);   // ポケモン登場時(グラスフィールドでない)
           individualFieldIDs = [...pokemonAppearFieldIDs];
         }
         break;
@@ -1111,6 +1347,9 @@ class TurnEffect {
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {   // どく/もうどく状態のとき
             timingIDs.add(52);
           }
+          if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
+            timingIDs.add(116);
+          }
           individualFieldIDs = [...everyTurnEndIndividualFieldIDs];
           ailmentIDs = [...everyTurnEndAilmentIDs];
           weatherIDs = [...everyTurnEndWeatherIDs];
@@ -1128,15 +1367,24 @@ class TurnEffect {
           defenderTimingIDs.addAll(afterMoveDefenderTimingIDs);
           var attackerState = attacker.id == PlayerType.me ? phaseState.ownPokemonState : phaseState.opponentPokemonState;
           var defenderState = attacker.id == PlayerType.me ? phaseState.opponentPokemonState : phaseState.ownPokemonState;
+          if (turnMove.move.priority >= 1) defenderTimingIDs.addAll([95]);   // 優先度1以上のわざを受けた時
+          // へんかわざを受けた時
+          if (turnMove.move.damageClass.id == 1) defenderTimingIDs.addAll([113]);
           // こうげきしたとき/うけたとき
           if (turnMove.move.damageClass.id >= 2) {
             defenderTimingIDs.addAll([62, 82]);
             attackerTimingIDs.addAll([2]);
             // あくタイプのこうげきを受けた時
             if (turnMove.move.type.id == 17) defenderTimingIDs.addAll([86]);
+            // みずタイプのこうげきを受けた時
+            if (turnMove.move.type.id == 11) defenderTimingIDs.addAll([92, 104]);
+            // ほのおタイプのこうげきを受けた時
+            if (turnMove.move.type.id == 10) defenderTimingIDs.addAll([104, 107]);
+            // こうげきによりひんしになっているとき
+            if (defenderState.isFainting) defenderTimingIDs.add(96);
           }
           if (turnMove.move.damageClass.id == DamageClass.physical) defenderTimingIDs.addAll([83]);   // ぶつりこうげきを受けた時
-          if (turnMove.move.isDirect) {
+          if (turnMove.move.isDirect && attackerState.currentAbility.id != 203) {
             defenderTimingIDs.add(9);  // 直接攻撃を受けた時(確率)
             defenderTimingIDs.add(63);  // 直接攻撃を受けた時
             attackerTimingIDs.add(84);  // 直接攻撃をあてたとき(確率)
@@ -1147,6 +1395,7 @@ class TurnEffect {
           }
           if (turnMove.move.isSound) defenderTimingIDs.add(64);  // 音技を受けた時
           if (turnMove.move.isDrain) defenderTimingIDs.add(40);  // HP吸収わざを受けた時
+          if (turnMove.move.isDance) defenderTimingIDs.add(97);  // おどり技を受けた時
           if (turnMove.move.type.id == 13) {  // でんきタイプのわざを受けた時
             defenderTimingIDs.addAll([10, 26]);
           }
@@ -1159,6 +1408,9 @@ class TurnEffect {
           if (turnMove.move.type.id == 12) {  // くさタイプのわざを受けた時
             defenderTimingIDs.addAll([88]);
           }
+          if (turnMove.move.type.id == 5) {   // じめんタイプのわざを受けた時
+            defenderTimingIDs.addAll([115]);
+          }
           if (PokeType.effectiveness(attackerState.currentAbility.id == 113, turnMove.move.type, pokemonState!.type1, pokemonState.type2).id != MoveEffectiveness.great) {
             defenderTimingIDs.add(21);  // 効果ばつぐん以外のタイプのこうげきざわを受けた時
           }
@@ -1166,6 +1418,12 @@ class TurnEffect {
             if (turnMove.move.id != 28 && turnMove.move.id != 614) {  // すなかけ/サウザンアローではない
               defenderTimingIDs.add(22);  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
             }
+          }
+          // とくせいがおどりこの場合
+          if (phaseState.ownPokemonState.currentAbility.id == 216 || phaseState.opponentPokemonState.currentAbility.id == 216) {
+            attackerTimingIDs.addAll(defenderTimingIDs);
+            attackerTimingIDs = attackerTimingIDs.toSet().toList();
+            defenderTimingIDs = attackerTimingIDs;
           }
         }
         break;
@@ -1385,6 +1643,9 @@ class TurnEffect {
                 case 90:    // ポイズンヒール
                 case 94:    // サンパワー
                 case 115:   // アイスボディ
+                case 209:   // ばけのかわ
+                case 211:   // スワームチェンジ
+                case 297:   // どしょく
                   if (playerType.id == PlayerType.me) {
                     return state.ownPokemonState.remainHP.toString();
                   }
@@ -1395,6 +1656,7 @@ class TurnEffect {
                 case 106:   // ゆうばく
                 case 123:   // ナイトメア
                 case 160:   // てつのトゲ
+                case 215:   // とびだすなかみ
                   if (playerType.id == PlayerType.me) {
                     return state.opponentPokemonState.remainHPPercent.toString();
                   }
@@ -1423,6 +1685,8 @@ class TurnEffect {
                   return pokeData.items[extraArg1]!.displayName;
                 case 108:   // よちむ
                   return pokeData.moves[extraArg1]!.displayName;
+                case 216:   // おどりこ
+                  return pokeData.moves[extraArg1 % 10000]!.displayName;
               }
               break;
           }
@@ -1453,6 +1717,40 @@ class TurnEffect {
               break;
             case EffectType.ability:
               switch (effectId) {
+                case 216:   // おどりこ
+                  switch (extraArg1) {
+                    case 872:   // アクアステップ
+                    case 80:    // はなびらのまい
+                    case 552:   // ほのおのまい
+                    case 10552: // ほのおのまい(とくこう1段階上昇)
+                    case 686:   // めざめるダンス
+                      {
+                        if (playerType.id == PlayerType.me) {
+                          return state.opponentPokemonState.remainHPPercent.toString();
+                        }
+                        else {
+                          return state.ownPokemonState.remainHP.toString();
+                        }
+                      }
+                    case 837:   // しょうりのまい
+                    case 483:   // ちょうのまい
+                    case 14:    // つるぎのまい
+                    case 297:   // フェザーダンス
+                    case 298:   // フラフラダンス
+                    case 461:   // みかづきのまい
+                    case 349:   // りゅうのまい
+                      return '';
+                    case 775:   // ソウルビート
+                       {
+                        if (playerType.id == PlayerType.me) {
+                          return state.ownPokemonState.remainHP.toString();
+                        }
+                        else {
+                          return state.opponentPokemonState.remainHPPercent.toString();
+                        }
+                      }
+                  }
+                  break;
               }
               break;
           }
@@ -1482,6 +1780,9 @@ class TurnEffect {
         case 90:      // ポイズンヒール
         case 94:      // サンパワー
         case 115:     // アイスボディ
+        case 209:   // ばけのかわ
+        case 211:   // スワームチェンジ
+        case 297:   // どしょく
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1516,6 +1817,7 @@ class TurnEffect {
           );
         case 16:      // へんしょく
         case 168:     // へんげんじざい
+        case 236:     // リベロ
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1537,6 +1839,7 @@ class TurnEffect {
         case 106:   // ゆうばく
         case 123:   // ナイトメア
         case 160:   // てつのトゲ
+        case 215:   // とびだすなかみ
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -1902,6 +2205,7 @@ class TurnEffect {
           );
         case 281:     // こだいかっせい
         case 282:     // クォークチャージ
+        case 224:     // ビーストブースト
           return Row(
             children: [
               Flexible(
@@ -1941,6 +2245,225 @@ class TurnEffect {
                 ),
               ),
               Text('があがった'),
+            ],
+          );
+        case 290:     // びんじょう
+          return Row(
+            children: [
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('こうげき'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('ぼうぎょ'),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text('とくこう'),
+                    ),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text('とくぼう'),
+                    ),
+                    DropdownMenuItem(
+                      value: 4,
+                      child: Text('すばやさ'),
+                    ),
+                  ],
+                  value: extraArg1,
+                  onChanged: (value) {
+                    extraArg1 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              Text('が'),
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('1'),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text('2'),
+                    ),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text('3'),
+                    ),
+                    DropdownMenuItem(
+                      value: 4,
+                      child: Text('4'),
+                    ),
+                    DropdownMenuItem(
+                      value: 5,
+                      child: Text('5'),
+                    ),
+                    DropdownMenuItem(
+                      value: 6,
+                      child: Text('6'),
+                    ),
+                  ],
+                  value: extraArg2 == 0 ? null : extraArg2,
+                  onChanged: (value) {
+                    extraArg2 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              Text('段階あがった'),
+            ],
+          );
+        case 216:   // おどりこ
+          return Column(
+            children: [
+              Expanded(
+                child: TypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'わざ',
+                    ),
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<int> ids = [
+                      872, 837, 775, 483, 14, 80, 297, 298, 552, 461, 686, 349,
+                    ];
+                    List<Move> matches = [];
+                    for (var i in ids) {
+                      matches.add(appState.pokeData.moves[i]!);
+                    }
+                    matches.retainWhere((s){
+                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              SizedBox(height: 10,),
+              extraArg1 == 872 || extraArg1 == 80 || extraArg1 == 552 || extraArg1 == 10552 || extraArg1 == 686 ?
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: playerType.id == PlayerType.me ? 
+                          '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        if (playerType.id == PlayerType.me) {
+                          extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        }
+                        else {
+                          extraArg2 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                        }
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  playerType.id == PlayerType.me ?
+                  Flexible(child: Text('% /100%')) :
+                  Flexible(child: Text('/${ownPokemon.h.real}')),
+                ],
+              ) :
+              extraArg1 == 775 ?
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: playerType.id == PlayerType.me ? 
+                          '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        if (playerType.id == PlayerType.me) {
+                          extraArg2 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                        }
+                        else {
+                          extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        }
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  playerType.id == PlayerType.me ?
+                  Flexible(child: Text('/${ownPokemon.h.real}')) :
+                  Flexible(child: Text('% /100%')),
+                ],
+              ) :
+              Container(),
+              extraArg1 == 552 || extraArg1 == 10552 ? SizedBox(height: 10,) : Container(),
+              extraArg1 == 552 || extraArg1 == 10552 ?
+              Expanded(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '追加効果',
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 552,
+                      child: Text('なし'),
+                    ),
+                    DropdownMenuItem(
+                      value: 10552,
+                      child: Text('とくこうがあがった'),
+                    ),
+                  ],
+                  value: extraArg1,
+                  onChanged: (value) {
+                    extraArg1 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ) : Container(),
             ],
           );
         default:

@@ -582,7 +582,7 @@ class AbilityTiming {
   static const int everyTurnEndSnowy = 79;      // 天気がゆきのとき、毎ターン終了時
   static const int pokemonAppearNotSnowed = 80; // ポケモン登場時(天気がゆきでない)
   static const int everyTurnEndOpponentSleep = 81;  // 毎ターン終了時、相手がねむっているとき
-  static const int attackedHittedWithChance = 82;   // こうげきを受けたとき(確率)
+  static const int attackedHittedWithChance = 82;   // こうげきを受けたとき(確率・条件)
   static const int phisycalAttackedHitted = 83;     // ぶつりこうげきを受けたとき
   static const int directAttackHitWithChance = 84;  // 直接攻撃をあてたとき(確率)
   static const int guardChangedByNotMyself = 85;    // 自身以外の効果によってぼうぎょランクが下がるとき
@@ -591,6 +591,33 @@ class AbilityTiming {
   static const int grassed = 88;                    // くさタイプのわざを受けた時
   static const int mentalAilments = 89;         // メロメロ/アンコール/いちゃもん/かなしばり/ちょうはつ/かいふくふうじの効果を受けたとき
   static const int statChangeAbnormal = 90;     // 能力を下げられたり状態異常・ねむけになるとき
+  static const int movingMovedWithCondition = 91;   // わざを使うとき(条件)、特定のわざを使ったとき
+  static const int waterAttacked = 92;          // みずタイプのこうげきを受けた時
+  static const int firedWaterAttackBurned = 93; // ほのおわざを受けるとき/みずタイプでこうげきする時/やけどを負うとき
+  static const int pokemonAppearWithChanceEveryTurnEndWithChance = 94;  // ポケモン登場時と毎ターン終了時（ともに条件あり）
+  static const int priorityMoved = 95;          // 優先度1以上のわざを受けた時
+  static const int attackedFainting = 96;       // こうげきを受けてひんしになったとき
+  static const int otherDance = 97;             // 自身以外がおどりわざをつかったとき
+  static const int otherFainting = 98;          // 場にいるポケモンがひんしになったとき
+  static const int pokemonAppearNotEreciField = 99;   // ポケモン登場時(エレキフィールドでない)
+  static const int pokemonAppearNotPsycoField = 100;  // ポケモン登場時(サイコフィールドでない)
+  static const int pokemonAppearNotMistField = 101;   // ポケモン登場時(ミストフィールドでない)
+  static const int pokemonAppearNotGrassField = 102;  // ポケモン登場時(グラスフィールドでない)
+  static const int movingAttacked = 103;        // 特定のわざを使ったとき、こうげきわざを受けたとき(条件)
+  static const int fireWaterAttacked = 104;     // ほのお/みずタイプのこうげきを受けた時
+  static const int phisycalAttackedHittedSnowed = 105;  // ぶつりこうげきを受けた時、天気がゆきに変化したとき(条件)
+  static const int fieldChanged = 106;          // フィールドが変化したとき
+  static const int afterActionDecisionWithChance = 107;    // 行動決定後、行動実行前(確率)
+  static const int fireAtaccked = 107;          // ほのおタイプのこうげきを受けた時
+  static const int abnormaledSleepy = 108;      // 状態異常・ねむけになるとき
+  static const int winded = 109;                // おいかぜ発生時、おいかぜ中にポケモン登場時、かぜ技を受けた時
+  static const int changeForcedIntimidated = 110;   // こうたいわざやレッドカードによるこうたいを強制されたとき、いかくを受けた時
+  static const int sunnyBoostEnergy = 111;      // 天気が晴れかブーストエナジーを持っているとき
+  static const int elecFieldBoostEnergy = 112;  // エレキフィールドかブーストエナジーを持っているとき
+  static const int statused = 113;              // へんかわざを受けた時
+  static const int opponentStatUp = 114;        // 相手の能力ランクが上昇したとき
+  static const int grounded = 115;              // じめんタイプのわざを受けるとき
+  static const int everyTurnEndNotTerastaled = 116;   // テラスタルしていない毎ターン終了時
 
   const AbilityTiming(this.id);
 
@@ -767,6 +794,25 @@ class Ability {
     return map;
   }
 
+  // 交換可能なとくせいかどうか
+  bool get canExchange {
+    const ids = [
+      225, 248, 149, 241, 256, 208, 266, 211, 161, 209,
+      176, 258, 25,
+    ];
+    return !ids.contains(id);
+  }
+
+  // TODO
+  // コピー可能なとくせいかどうか
+  bool get canCopy {
+    const ids = [
+      225, 248, 149, 241, 256, 208, 266, 211, 161, 209,
+      176, 258, 25,
+    ];
+    return !ids.contains(id);
+  }
+
   // SQLに保存された文字列からabilityをパース
   static Ability deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
@@ -794,6 +840,50 @@ class Item {
 
   Item copyWith() =>
     Item(id, displayName, timing);
+
+  static List<String> processEffect(
+    int itemID,
+    PlayerType playerType,
+    Party myParty,
+    int myPokemonIndex,
+    PokemonState myState,
+    Party yourParty,
+    int yourPokemonIndex,
+    PokemonState yourState,
+    PhaseState state,
+    PokeDB pokeData,
+    int extraArg1,
+    int extraArg2,
+    TurnEffect? prevAction,
+  ) {
+    List<String> ret = [];
+    switch (itemID) {
+      case 247:    // いのちのたま
+        if (playerType.id == PlayerType.me) {
+          myState.remainHP -= extraArg1;
+        }
+        else {
+          myState.remainHPPercent -= extraArg1;
+        }
+        if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+          myParty.items[myPokemonIndex-1] = pokeData.items[247];   // いのちのたま確定
+          ret.add('もちものをいのちのたまで確定しました。');
+        }
+        myState.holdingItem = pokeData.items[247];
+        break;
+      // 消費系アイテム
+      case 252:   // きあいのタスキ
+        if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+          myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
+            ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
+          }
+          myState.holdingItem = null;   // アイテム消費
+        break;
+      default:
+        break;
+    }
+    return ret;
+  }
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
@@ -859,6 +949,13 @@ class Move {
       223, 418, 146, 838, 721, 889, 7, 183, 5, 8, 4,
     ];
     return punchMoveIDs.contains(id);
+  }
+
+  bool get isDance {  // おどりわざかどうか
+    const danceMoveIDs = [
+      872, 837, 775, 483, 14, 80, 297, 298, 552, 461, 686, 349,
+    ];
+    return danceMoveIDs.contains(id);
   }
 
   Move(
@@ -1263,6 +1360,8 @@ class Ailment {
   static const int uproar = 30;             // さわぐ
   static const int antiAir = 31;            // うちおとす
   static const int magicCoat = 32;          // マジックコート
+  static const int charging = 33;           // じゅうでん
+  static const int thrash = 34;             // あばれる
 
   static const _displayNameMap = {
     0: '',
@@ -1297,7 +1396,9 @@ class Ailment {
     29: 'ねをはる',
     30: 'さわぐ',
     31: 'うちおとす',
-    32: 'マジックコート'
+    32: 'マジックコート',
+    33: 'じゅうでん',
+    34: 'あばれる',
   };
 
   // TODO:
@@ -1335,6 +1436,8 @@ class Ailment {
     30: Colors.black,
     31: Colors.black,
     32: Colors.black,
+    33: Colors.yellow.shade700,
+    34: Colors.black,
   };
 
   final int id;
@@ -1489,7 +1592,7 @@ class BuffDebuff {
   static const int vital3 = 42;           // 急所率+3
   static const int ignoreRank = 43;       // 相手のランク補正無視
   static const int notGoodType2 = 44;     // タイプ相性いまひとつ時ダメージ2倍
-  static const int greatDamage0_75 = 45;  // こうかばつぐん被ダメージ0.75倍
+  static const int greatDamaged0_75 = 45; // こうかばつぐん被ダメージ0.75倍
   static const int attackSpeed0_5 = 46;   // こうげき・すばやさ0.5倍
   static const int recoil1_2 = 47;        // 反動わざ威力1.2倍
   static const int negaForm = 48;         // チェリムのネガフォルム
@@ -1513,6 +1616,72 @@ class BuffDebuff {
   static const int bulletProof = 66;      // 弾のわざ無効
   static const int bite1_5 = 67;          // かみつきわざ威力1.5倍
   static const int freezeSkin = 68;       // ノーマルわざ→こおりわざ＆こおりわざ威力1.2倍
+  static const int bladeForm = 69;        // ブレードフォルム
+  static const int shieldForm = 70;       // シールドフォルム
+  static const int galeWings = 71;        // ひこうわざ優先度+1
+  static const int wave1_5 = 72;          // はどうわざ威力1.5倍
+  static const int guard1_5 = 73;         // ぼうぎょ1.5倍
+  static const int directAttack1_3 = 74;  // 直接攻撃威力1.3倍
+  static const int fairySkin = 75;        // ノーマルわざ→フェアリーわざ＆フェアリーわざ威力1.2倍
+  static const int airSkin = 76;          // ノーマルわざ→ひこうわざ＆ひこうわざ威力1.2倍
+  static const int darkAura = 77;         // あくわざ威力1.33倍
+  static const int fairyAura = 78;        // フェアリーわざ威力1.33倍
+  static const int antiDarkAura = 79;     // あくわざ威力0.75倍
+  static const int antiFairyAura = 80;    // フェアリーわざ威力0.75倍
+  static const int merciless = 81;        // どく・もうどく状態へのこうげき急所率100%
+  static const int change2 = 82;          // こうたい後ポケモンへのこうげき・とくこう2倍
+  static const int waterBubble1 = 83;     // 相手ほのおわざこうげき・とくこう0.5倍
+  static const int waterBubble2 = 84;     // みずわざこうげき・とくこう2倍
+  static const int steelWorker = 85;      // はがねわざこうげき・とくこう1.5倍
+  static const int liquidVoice = 86;      // 音わざタイプ→みず
+  static const int healingShift = 87;     // かいふくわざ優先度+3
+  static const int electricSkin = 88;     // ノーマルわざ→でんきわざ＆でんきわざ威力1.2倍
+  static const int singleForm = 89;       // たんどくのすがた
+  static const int multipleForm = 90;     // むれたすがた
+  static const int transedForm = 91;      // ばけたすがた
+  static const int revealedForm = 92;     // ばれたすがた
+  static const int satoshiGekkoga = 93;   // サトシゲッコウガ
+  static const int tenPercentForm = 94;   // 10%フォルム
+  static const int fiftyPercentForm = 95; // 50%フォルム
+  static const int perfectForm = 96;      // パーフェクトフォルム
+  static const int priorityCut = 97;      // 相手の優先度1以上わざ無効
+  static const int directAttackedDamage0_5 = 98;  // 直接攻撃被ダメージ半減
+  static const int fireAttackedDamage2 = 99;  // ほのおわざ被ダメージ2倍
+  static const int greatDamage1_25 = 100; // こうかばつぐんわざダメージ1.25倍
+  static const int targetRock = 101;      // わざの対象相手が変更されない
+  static const int unomiForm = 102;       // うのみのすがた
+  static const int marunomiForm = 103;    // まるのみのすがた
+  static const int sound1_3 = 104;        // 音わざ威力1.3倍
+  static const int soundedDamage0_5 = 105;  // 音わざ被ダメージ半減
+  static const int specialDamaged0_5 = 106; // とくしゅわざ被ダメージ半減
+  static const int nuts2 = 107;           // きのみ効果2倍
+  static const int iceFace = 108;         // アイスフェイス
+  static const int niceFace = 109;        // ナイスフェイス
+  static const int attackMove1_3 = 110;   // こうげきわざ威力1.3倍
+  static const int steel1_5 = 111;        // はがねわざ威力1.5倍
+  static const int gorimuchu = 112;       // わざこだわり・こうげき1.5倍
+  static const int manpukuForm = 113;     // まんぷくもよう
+  static const int harapekoForm = 114;    // はらぺこもよう
+  static const int directAttackIgnoreGurad = 115;   // まもり不可の直接こうげき
+  static const int electric1_3 = 116;     // でんきわざ時こうげき・とくこう1.3倍
+  static const int dragon1_5 = 117;       // ドラゴンわざ時こうげき・とくこう1.5倍
+  static const int ghosted0_5 = 118;      // ゴーストわざ被ダメ計算時こうげき・とくこう半減
+  static const int rock1_5 = 119;         // いわわざ時こうげき・とくこう1.5倍
+  static const int naiveForm = 120;       // ナイーブフォルム
+  static const int mightyForm = 121;      // マイティフォルム
+  static const int specialAttack0_75 = 122;   // とくこう0.75倍
+  static const int defense0_75 = 123;     // ぼうぎょ0.75倍
+  static const int attack0_75 = 124;      // こうげき0.75倍
+  static const int specialDefense0_75 = 125;  // とくぼう0.75倍
+  static const int attack1_33 = 126;      // こうげき1.33倍
+  static const int specialAttack1_33 = 127;   // とくこう1.33倍
+  static const int cut1_5 = 128;          // 切るわざ威力1.5倍
+  static const int power10 = 129;         // わざ威力10%アップ
+  static const int power20 = 130;         // わざ威力20%アップ
+  static const int power30 = 131;         // わざ威力30%アップ
+  static const int power40 = 132;         // わざ威力40%アップ
+  static const int power50 = 133;         // わざ威力50%アップ
+  static const int myceliumMight = 134;   // へんかわざ最後に行動＆相手のとくせい無視
 
   static const _displayNameMap = {
     0:  '',
@@ -1584,6 +1753,72 @@ class BuffDebuff {
     66: '弾のわざ無効',
     67: 'かみつきわざ威力1.5倍',
     68: 'ノーマルわざ→こおりわざ＆こおりわざ威力1.2倍',
+    69: 'ブレードフォルム',
+    70: 'シールドフォルム',
+    71: 'ひこうわざ優先度+1',
+    72: ' はどうわざ威力1.5倍',
+    73: 'ぼうぎょ1.5倍',
+    74: '直接攻撃威力1.3倍',
+    75: 'ノーマルわざ→フェアリーわざ＆フェアリーわざ威力1.2倍',
+    76: 'ノーマルわざ→ひこうわざ＆ひこうわざ威力1.2倍',
+    77: 'あくわざ威力1.33倍',
+    78: 'フェアリーわざ威力1.33倍',
+    79: 'あくわざ威力0.75倍',
+    80: 'フェアリーわざ威力0.75倍',
+    81: 'どく・もうどく状態へのこうげき急所率100%',
+    82: 'こうたい後ポケモンへのこうげき・とくこう2倍',
+    83: '相手ほのおわざこうげき・とくこう0.5倍',
+    84: 'みずわざこうげき・とくこう2倍',
+    85: 'はがねわざこうげき・とくこう1.5倍',
+    86: '音わざタイプ→みず',
+    87: 'かいふくわざ優先度+3',
+    88: 'ノーマルわざ→でんきわざ＆でんきわざ威力1.2倍',
+    89: 'たんどくのすがた',
+    90: 'むれたすがた',
+    91: 'ばけたすがた',
+    92: 'ばれたすがた',
+    93: 'サトシゲッコウガ',
+    94: '10%フォルム',
+    95: '50%フォルム',
+    96: 'パーフェクトフォルム',
+    97: '相手の優先度1以上わざ無効',
+    98: '直接攻撃被ダメージ半減',
+    99: 'ほのおわざ被ダメージ2倍',
+    100: 'こうかばつぐんわざダメージ1.25倍',
+    101: 'わざの対象相手が変更されない',
+    102: 'うのみのすがた',
+    103: 'まるのみのすがた',
+    104: '音わざ威力1.3倍',
+    105: '音わざ被ダメージ半減',
+    106: 'とくしゅわざ被ダメージ半減',
+    107: 'きのみ効果2倍',
+    108: 'アイスフェイス',
+    109: 'ナイスフェイス',
+    110: 'こうげきわざ威力1.3倍',
+    111: 'はがねわざ威力1.5倍',
+    112: 'わざこだわり・こうげき1.5倍',
+    113: 'まんぷくもよう',
+    114: 'はらぺこもよう',
+    115: '直接こうげきのまもり不可',
+    116: 'でんきわざ時こうげき・とくこう1.3倍',
+    117: 'ドラゴンわざ時こうげき・とくこう1.5倍',
+    118: 'ゴーストわざ被ダメ計算時こうげき・とくこう半減',
+    119: 'いわわざ時こうげき・とくこう1.5倍',
+    120: 'ナイーブフォルム',
+    121: 'マイティフォルム',
+    122: 'とくこう0.75倍',
+    123: 'ぼうぎょ0.75倍',
+    124: 'こうげき0.75倍',
+    125: 'とくぼう0.75倍',
+    126: 'こうげき1.33倍',
+    127: 'とくこう1.33倍',
+    128: '切るわざ威力1.5倍',
+    129: 'わざ威力10%アップ',
+    130: 'わざ威力20%アップ',
+    131: 'わざ威力30%アップ',
+    132: 'わざ威力40%アップ',
+    133: 'わざ威力50%アップ',
+    134: 'へんかわざ最後に行動＆相手のとくせい無視',
   };
 
   static const _bgColorMap = {
@@ -1656,6 +1891,72 @@ class BuffDebuff {
     66: Colors.red,
     67: Colors.red,
     68: Colors.orange,
+    69: Colors.orange,
+    70: Colors.orange,
+    71: Colors.red,
+    72: Colors.red,
+    73: Colors.red,
+    74: Colors.red,
+    75: Colors.red,
+    76: Colors.red,
+    77: Colors.red,
+    78: Colors.red,
+    79: Colors.blue,
+    80: Colors.blue,
+    81: Colors.red,
+    82: Colors.red,
+    83: Colors.red,
+    84: Colors.red,
+    85: Colors.red,
+    86: Colors.orange,
+    87: Colors.red,
+    88: Colors.red,
+    89: Colors.orange,
+    90: Colors.orange,
+    91: Colors.orange,
+    92: Colors.orange,
+    93: Colors.orange,
+    94: Colors.orange,
+    95: Colors.orange,
+    96: Colors.orange,
+    97: Colors.red,
+    98: Colors.red,
+    99: Colors.blue,
+    100: Colors.red,
+    101: Colors.red,
+    102: Colors.orange,
+    103: Colors.orange,
+    104: Colors.red,
+    105: Colors.red,
+    106: Colors.red,
+    107: Colors.red,
+    108: Colors.orange,
+    109: Colors.orange,
+    110: Colors.red,
+    111: Colors.red,
+    112: Colors.red,
+    113: Colors.orange,
+    114: Colors.orange,
+    115: Colors.red,
+    116: Colors.red,
+    117: Colors.red,
+    118: Colors.red,
+    119: Colors.red,
+    120: Colors.orange,
+    121: Colors.orange,
+    122: Colors.blue,
+    123: Colors.blue,
+    124: Colors.blue,
+    125: Colors.blue,
+    126: Colors.red,
+    127: Colors.red,
+    128: Colors.red,
+    129: Colors.red,
+    130: Colors.red,
+    131: Colors.red,
+    132: Colors.red,
+    133: Colors.red,
+    134: Colors.red,
   };
 
   final int id;
@@ -1871,32 +2172,56 @@ class Weather {
         if (ownPokemonState != null && ownPokemonState.currentAbility.id == 34) {   // ようりょくそ
           ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
         }
+        if (ownPokemonState != null && ownPokemonState.currentAbility.id == 288) {   // ひひいろのこどう
+          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_33));
+        }
         if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 34) {   // ようりょくそ
           opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+        }
+        if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 288) {   // ひひいろのこどう
+          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_33));
         }
       }
       if (before.id == Weather.sunny && after.id != Weather.sunny) {  // 晴れではなくなる時
         if (ownPokemonState != null && ownPokemonState.currentAbility.id == 34) {   // ようりょくそ
           ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
         }
+        if (ownPokemonState != null && ownPokemonState.currentAbility.id == 288) {   // ひひいろのこどう
+          ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.attack1_33));
+        }
         if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 34) {   // ようりょくそ
           opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+        }
+        if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 288) {   // ひひいろのこどう
+          opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.attack1_33));
         }
       }
       if (before.id != Weather.snowy && after.id == Weather.snowy) {  // ゆきになる時
         if (ownPokemonState != null && ownPokemonState.currentAbility.id == 81) {   // ゆきがくれ
           ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
         }
+        if (ownPokemonState != null && ownPokemonState.currentAbility.id == 202) {   // ゆきかき
+          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+        }
         if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 81) {   // ゆきがくれ
           opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
+        }
+        if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 202) {   // ゆきかき
+          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
         }
       }
       if (before.id == Weather.snowy && after.id != Weather.snowy) {  // ゆきではなくなる時
         if (ownPokemonState != null && ownPokemonState.currentAbility.id == 81) {   // ゆきがくれ
           ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.yourAccuracy0_8));
         }
+        if (ownPokemonState != null && ownPokemonState.currentAbility.id == 202) {   // ゆきかき
+          ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+        }
         if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 81) {   // ゆきがくれ
           opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.yourAccuracy0_8));
+        }
+        if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 202) {   // ゆきかき
+          opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
         }
       }
 
@@ -2008,6 +2333,80 @@ class Field {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
+  // フィールド変化もしくは場に登場したポケモンに対してフィールドの効果をかける
+  // (場に出たポケモンに対しては、変化前を「フィールドなし」として引数を渡すとよい)
+  static void processFieldEffect(Field before, Field after, PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
+    // ぎたい
+    int newTypeID = 0;
+    switch (after.id) {
+      case Field.electricTerrain:
+        newTypeID = 13;
+        break;
+      case Field.grassyTerrain:
+        newTypeID = 12;
+        break;
+      case Field.mistyTerrain:
+        newTypeID = 18;
+        break;
+      case Field.psychicTerrain:
+        newTypeID = 14;
+        break;
+    }
+    if (ownPokemonState != null && ownPokemonState.currentAbility.id == 250) {
+      ownPokemonState.type1 = newTypeID == 0 ? ownPokemonState.pokemon.type1 : PokeType.createFromId(newTypeID);
+      ownPokemonState.type2 = newTypeID == 0 ? ownPokemonState.pokemon.type2 : null;
+    }
+    if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 250) {
+      opponentPokemonState.type1 = newTypeID == 0 ? opponentPokemonState.pokemon.type1 : PokeType.createFromId(newTypeID);
+      opponentPokemonState.type2 = newTypeID == 0 ? opponentPokemonState.pokemon.type2 : null;
+    }
+
+    if (before.id != Field.grassyTerrain && after.id == Field.grassyTerrain) {  // グラスフィールドになる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {   // くさのけがわ
+        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 179) {   // くさのけがわ
+        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
+      }
+    }
+    if (before.id == Field.grassyTerrain && after.id != Field.grassyTerrain) {  // グラスフィールドではなくなる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {   // くさのけがわ
+        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.guard1_5));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 179) {   // くさのけがわ
+        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.guard1_5));
+      }
+    }
+    if (before.id != Field.electricTerrain && after.id == Field.electricTerrain) {  // エレキフィールドになる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {   // サーフテール
+        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+      }
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
+        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack1_33));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 207) {   // サーフテール
+        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
+        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack1_33));
+      }
+    }
+    if (before.id == Field.electricTerrain && after.id != Field.electricTerrain) {  // エレキフィールドではなくなる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {   // サーフテール
+        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+      }
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
+        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack1_33));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 207) {   // サーフテール
+        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+      }
+      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
+        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack1_33));
+      }
+    }
+  }
+
   // SQLに保存された文字列からFieldをパース
   static Field deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
@@ -2095,13 +2494,44 @@ class PokemonState {
   }
 
   // ポケモン交代やひんしにより退場する場合の処理
-  void processExitEffect(bool isOwn) {
+  void processExitEffect(bool isOwn, PokemonState yourState) {
     resetStatChanges();
     currentAbility = pokemon.ability;
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
     if (isFainting) ailmentsClear();
+    // 退場後も継続するフォルム以外をクリア
+    var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
+    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
     buffDebuffs.clear();
+    buffDebuffs.addAll(unchangingForms);
     fields.clear();
+    // 場にいると両者にバフ/デバフがかかる場合
+    if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    if (currentAbility.id == 187 && yourState.currentAbility.id == 187) { // フェアリーオーラ
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura || element.id == BuffDebuff.antiFairyAura);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    // 場にいると相手にバフ/デバフがかかる場合
+    if (currentAbility.id == 284) { // わざわいのうつわ
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack0_75);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    if (currentAbility.id == 285) { // わざわいのつるぎ
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.defense0_75);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    if (currentAbility.id == 286) { // わざわいのおふだ
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.attack0_75);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    if (currentAbility.id == 287) { // わざわいのたま
+      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialDefense0_75);
+      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+    }
+    // 退場することで自身に効果がある場合
     if (!isFainting && currentAbility.id == 30) { // しぜんかいふく
       ailmentsClear();
     }
@@ -2116,15 +2546,16 @@ class PokemonState {
   }
 
   // ポケモン交代や死に出しにより登場する場合の処理
-  void processEnterEffect(bool isOwn, Weather weather, Field field) {
+  void processEnterEffect(bool isOwn, Weather weather, Field field, PokemonState yourState) {
     isBattling = true;
     currentAbility = pokemon.ability;
-    processPassiveEffect(isOwn, weather, field);   // パッシブ効果
+    processPassiveEffect(isOwn, weather, field, yourState);   // パッシブ効果
     Weather.processWeatherEffect(Weather(0), weather, isOwn ? this : null, isOwn ? null : this);  // 天気の影響
+    Field.processFieldEffect(Field(0), field, isOwn ? this : null, isOwn ? null : this);  // フィールドの影響
   }
 
   // ポケモンのとくせい/もちもの等で常に働く効果を付与。ポケモン登場時に一度だけ呼ぶ
-  void processPassiveEffect(bool isOwn, Weather weather, Field field) {
+  void processPassiveEffect(bool isOwn, Weather weather, Field field, PokemonState yourState) {
     switch (currentAbility.id) {
       case 14:  // ふくがん
         buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
@@ -2215,7 +2646,8 @@ class PokemonState {
         break;
       case 111: // フィルター
       case 116: // ハードロック
-        buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamage0_75));
+      case 232: // プリズムアーマー
+        buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamaged0_75));
         break;
       case 120: // すてみ
         buffDebuffs.add(BuffDebuff(BuffDebuff.recoil1_2));
@@ -2233,6 +2665,7 @@ class PokemonState {
         buffDebuffs.add(BuffDebuff(BuffDebuff.heavy0_5));
         break;
       case 136: // マルチスケイル
+      case 231: // ファントムガード
         if ((isOwn && remainHP == pokemon.h.real) || (!isOwn && remainHPPercent == 100)) {
           buffDebuffs.add(BuffDebuff(BuffDebuff.damaged0_5));
         }
@@ -2283,11 +2716,184 @@ class PokemonState {
       case 174:   // フリーズスキン
         buffDebuffs.add(BuffDebuff(BuffDebuff.freezeSkin));
         break;
+      case 176:   // バトルスイッチ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.shieldForm));
+        break;
+      case 177: // はやてのつばさ
+        if ((isOwn && remainHP == pokemon.h.real) || (!isOwn && remainHPPercent == 100)) {
+          buffDebuffs.add(BuffDebuff(BuffDebuff.galeWings));
+        }
+        break;
+      case 178:   // メガランチャー
+        buffDebuffs.add(BuffDebuff(BuffDebuff.wave1_5));
+        break;
+      case 181:   // かたいツメ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttack1_3));
+        break;
+      case 182:   // フェアリースキン
+        buffDebuffs.add(BuffDebuff(BuffDebuff.fairySkin));
+        break;
+      case 184:   // スカイスキン
+        buffDebuffs.add(BuffDebuff(BuffDebuff.airSkin));
+        break;
+      case 196:   // ひとでなし
+        buffDebuffs.add(BuffDebuff(BuffDebuff.merciless));
+        break;
+      case 198:   // はりこみ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.change2));
+        break;
+      case 199:   // すいほう
+        buffDebuffs.add(BuffDebuff(BuffDebuff.waterBubble1));
+        buffDebuffs.add(BuffDebuff(BuffDebuff.waterBubble2));
+        break;
+      case 200:   // はがねつかい
+        buffDebuffs.add(BuffDebuff(BuffDebuff.steelWorker));
+        break;
+      case 204:   // うるおいボイス
+        buffDebuffs.add(BuffDebuff(BuffDebuff.liquidVoice));
+        break;
+      case 205:   // ヒーリングシフト
+        buffDebuffs.add(BuffDebuff(BuffDebuff.healingShift));
+        break;
+      case 206:   // エレキスキン
+        buffDebuffs.add(BuffDebuff(BuffDebuff.electricSkin));
+        break;
+      case 208:   // ぎょぐん
+        buffDebuffs.add(BuffDebuff(BuffDebuff.singleForm));
+        break;
+      case 209:   // ばけのかわ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
+        break;
+      case 217:   // バッテリー
+        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
+        break;
+      case 218:   // もふもふ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttackedDamage0_5));
+        buffDebuffs.add(BuffDebuff(BuffDebuff.fireAttackedDamage2));
+        break;
+      case 233:   // ブレインフォース
+        buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamage1_25));
+        break;
+      case 239:   // スクリューおびれ
+      case 242:   // すじがねいり
+        buffDebuffs.add(BuffDebuff(BuffDebuff.targetRock));
+        break;
+      case 244:   // パンクロック
+        buffDebuffs.add(BuffDebuff(BuffDebuff.sound1_3));
+        buffDebuffs.add(BuffDebuff(BuffDebuff.soundedDamage0_5));
+        break;
+      case 246:   // こおりのりんぷん
+        buffDebuffs.add(BuffDebuff(BuffDebuff.specialDamaged0_5));
+        break;
+      case 247:   // じゅくせい
+        buffDebuffs.add(BuffDebuff(BuffDebuff.nuts2));
+        break;
+      case 248:   // アイスフェイス
+        {
+          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace);
+          if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.iceFace));
+        }
+        break;
+      case 249:   // パワースポット
+        buffDebuffs.add(BuffDebuff(BuffDebuff.attackMove1_3));
+        break;
+      case 252:   // はがねのせいしん
+        buffDebuffs.add(BuffDebuff(BuffDebuff.steel1_5));
+        break;
+      case 255:   // ごりむちゅう
+        buffDebuffs.add(BuffDebuff(BuffDebuff.gorimuchu));
+        break;
+      case 258:   // はらぺこスイッチ
+        if (teraType == null || teraType!.id == 0) {
+          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.harapekoForm || e.id == BuffDebuff.manpukuForm);
+          if (findIdx < 0) {
+            buffDebuffs.add(BuffDebuff(BuffDebuff.manpukuForm));
+          }
+          else {
+            buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.manpukuForm);
+          }
+        }
+        break;
+      case 260:   // ふかしのこぶし
+        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttackIgnoreGurad));
+        break;
+      case 262:   // トランジスタ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.electric1_3));
+        break;
+      case 263:   // りゅうのあぎと
+        buffDebuffs.add(BuffDebuff(BuffDebuff.dragon1_5));
+        break;
+      case 272:   // きよめのしお
+        buffDebuffs.add(BuffDebuff(BuffDebuff.ghosted0_5));
+        break;
+      case 276:   // いわはこび
+        buffDebuffs.add(BuffDebuff(BuffDebuff.rock1_5));
+        break;
+      case 278:   // マイティチェンジ
+        {
+          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm);
+          if (findIdx < 0) {
+            buffDebuffs.add(BuffDebuff(BuffDebuff.naiveForm));
+          }
+          else {
+            buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.mightyForm);
+          }
+        }
+        break;
+      case 284:   // わざわいのうつわ
+        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack0_75));
+        break;
+      case 285:   // わざわいのつるぎ
+        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.defense0_75));
+        break;
+      case 286:   // わざわいのおふだ
+        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack0_75));
+        break;
+      case 287:   // わざわいのたま
+        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense0_75));
+        break;
+      case 292:   // きれあじ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.cut1_5));
+        break;
+      case 298:   // きんしのちから
+        buffDebuffs.add(BuffDebuff(BuffDebuff.myceliumMight));
+        break;
+    }
+    // 両者のバフ/デバフに関係する場合
+    if (currentAbility.id == 186 || yourState.currentAbility.id == 186) { // ダークオーラ
+      if (currentAbility.id == 188 || yourState.currentAbility.id == 188) { // オーラブレイク
+        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
+        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
+        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
+        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
+      }
+      else {
+        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura);
+        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
+        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura);
+        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
+      }
+    }
+    if (currentAbility.id == 187 || yourState.currentAbility.id == 187) { // フェアリーオーラ
+      if (currentAbility.id == 188 || yourState.currentAbility.id == 188) { // オーラブレイク
+        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
+        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
+        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
+        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
+      }
+      else {
+        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura);
+        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
+        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura);
+        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
+      }
     }
   }
 
   // 状態異常に関する関数群ここから
   bool ailmentsAdd(Ailment ailment, Weather weather, Field field, {bool forceAdd = false}) {
+    // すでに同じものになっている場合は何も起こらない
+    if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
     if ((type1.id == 9 || type1.id == 4 || type2?.id == 9 || type2?.id == 4) &&
         (ailment.id == Ailment.poison || (!forceAdd && ailment.id == Ailment.badPoison))    // もうどくに関しては、わざ使用者のとくせいがふしょくなら可能
@@ -2297,13 +2903,13 @@ class PokemonState {
     // とくせいによる耐性
     if ((currentAbility.id == 17 || currentAbility.id == 257) && (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) return false;
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
-    if ((currentAbility.id == 41 || currentAbility.id == 199) && (ailment.id == Ailment.burn)) return false;    // みずのベール<-やけど
-    if (currentAbility.id == 102 && (weather.id == Weather.sunny) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;       // リーフガード
+    if ((currentAbility.id == 41 || currentAbility.id == 199 || currentAbility.id == 270) && (ailment.id == Ailment.burn)) return false;    // みずのベール/ねつこうかん<-やけど
     if (currentAbility.id == 166 && (type1.id == 12 || type2?.id == 12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
     if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze)) return false;      // マグマのよろい<-こおり
     if ((currentAbility.id == 102) && (weather.id == Weather.sunny) &&
         (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // 晴れ下リーフガード<-状態異常＋ねむけ
+    if (currentAbility.id == 213 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // ぜったいねむり<-状態異常＋ねむけ
     // TODO:リミットシールド
     if (currentAbility.id == 213) return false;
     if (field.id == Field.mistyTerrain) return false;
@@ -2457,8 +3063,8 @@ class PokemonState {
 
   // とくせい等によって変化できなかった場合はfalseが返る
   bool addStatChanges(
-    bool isOwnEffect, int index, int num,
-    {int? moveId, int? abilityId, int? itemId,}
+    bool isOwnEffect, int index, int num, PokemonState yourState,
+    {int? moveId, int? abilityId, int? itemId, bool lastMirror = false}
   ) {
     int change = num;
     if (!isOwnEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
@@ -2466,11 +3072,16 @@ class PokemonState {
         (currentAbility.id == 12 || currentAbility.id == 20  || currentAbility.id == 39 ||    // どんかん/マイペース/せいしんりょく
          currentAbility.id == 113)) return false;                                             // きもったま
     if (!isOwnEffect && currentAbility.id == 20 && abilityId == 22) return false;   // マイペース
-    if (!isOwnEffect && (currentAbility.id == 29 || currentAbility.id == 73) && num < 0) return false;   // クリアボディ/しろいけむり
+    if (!isOwnEffect && (currentAbility.id == 29 || currentAbility.id == 73 || currentAbility.id == 230) && num < 0) return false;   // クリアボディ/しろいけむり/メタルプロテクト
     if (!isOwnEffect && (currentAbility.id == 35 || currentAbility.id == 51) && index == 5 && num < 0) return false;   // はっこう/するどいめ
     if (!isOwnEffect && currentAbility.id == 52 && index == 0 && num < 0) return false;   // かいりきバサミ
     if (!isOwnEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
     if (!isOwnEffect && currentAbility.id == 166 && (type1.id == 12 || type2?.id == 12) && num < 0) return false;   // フラワーベール
+    if (!isOwnEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
+      yourState.addStatChanges(isOwnEffect, index, num, this, lastMirror: true);
+      return false;
+    }
+    if (!isOwnEffect && abilityId == 22 && currentAbility.id == 275) num = 1;   // いかくに対するばんけん
 
     if (currentAbility.id == 86) change *= 2;   // たんじゅん
     if (currentAbility.id == 126) change *= -1; // あまのじゃく
@@ -2784,6 +3395,8 @@ class PhaseState {
 
   Weather get weather => _weather;
   Field get field => _field;
+  int get ownFaintingNum => ownPokemonStates.where((e) => e.isFainting).length;
+  int get opponentFaintingNum => opponentPokemonStates.where((e) => e.isFainting).length;
 
   set weather(Weather w) {
     Weather.processWeatherEffect(_weather, w, ownPokemonState, opponentPokemonState);
@@ -2791,6 +3404,8 @@ class PhaseState {
     _weather = w;
   }
   set field(Field f) {
+    Field.processFieldEffect(_field, f, ownPokemonState, opponentPokemonState);
+
     _field = f;
   }
 
@@ -2907,6 +3522,22 @@ class PhaseState {
       case AbilityTiming.afterMove:   // わざ使用後
         {
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount)) {  // わざ成功時
+            if (prevAction.move!.move.damageClass.id == 1) {
+              // へんかわざを受けた後
+              var defenderAbilityIDList = [];
+              for (var ability in pokeData.abilities.values) {
+                if (ability.timing.id == AbilityTiming.statused) defenderAbilityIDList.add(ability.id);
+              }
+              // TODO 追加順はすばやさを考慮したい
+              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(defenderPlayerTypeId)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.ability)
+                  ..effectId = defenderState.currentAbility.id
+                );
+              }
+            }
             if (prevAction.move!.move.damageClass.id >= 2) {
               // こうげきわざヒット後
               var itemIDList = [];
@@ -2938,10 +3569,28 @@ class PhaseState {
               for (var ability in pokeData.abilities.values) {
                 if (ability.timing.id == AbilityTiming.attackedHitted) defenderAbilityIDList.add(ability.id);
               }
+              // こうげきわざを受けてひんしになったとき
+              if (defenderState.isFainting) {
+                for (var ability in pokeData.abilities.values) {
+                  if (ability.timing.id == AbilityTiming.attackedFainting) defenderAbilityIDList.add(ability.id);
+                }
+              }
               // あくタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 17) {
                 for (var ability in pokeData.abilities.values) {
                   if (ability.timing.id == 86 || ability.timing.id == 87) defenderAbilityIDList.add(ability.id);
+                }
+              }
+              // みずタイプのこうげきをうけたとき
+              if (prevAction.move!.move.type.id == 11) {
+                for (var ability in pokeData.abilities.values) {
+                  if (ability.timing.id == 92 || ability.timing.id == 104) defenderAbilityIDList.add(ability.id);
+                }
+              }
+              // ほのおタイプのこうげきをうけたとき
+              if (prevAction.move!.move.type.id == 10) {
+                for (var ability in pokeData.abilities.values) {
+                  if (ability.timing.id == 104 || ability.timing.id == 107) defenderAbilityIDList.add(ability.id);
                 }
               }
               // ゴーストタイプのこうげきをうけたとき
@@ -2953,11 +3602,11 @@ class PhaseState {
               // むしタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 7) {
                 for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 87) defenderAbilityIDList.add(ability.id);
+                  if (ability.timing.id == 92) defenderAbilityIDList.add(ability.id);
                 }
               }
               // 直接こうげきを受けた後
-              if (prevAction.move!.move.isDirect) {
+              if (prevAction.move!.move.isDirect && attackerState.currentAbility.id != 203) {
                 for (var ability in pokeData.abilities.values) {
                   if (ability.timing.id == AbilityTiming.directAttacked) defenderAbilityIDList.add(ability.id);
                 }
@@ -2996,6 +3645,22 @@ class PhaseState {
                   ..effect = EffectType(EffectType.ability)
                   ..effectId = defenderState.currentAbility.id
                   ..extraArg1 = extraArg1
+                );
+              }
+            }
+            // 優先度1以上のわざを受けた後
+            if (prevAction.move!.move.priority >= 1) {
+              var defenderAbilityIDList = [];
+              for (var ability in pokeData.abilities.values) {
+                if (ability.timing.id == AbilityTiming.priorityMoved) defenderAbilityIDList.add(ability.id);
+              }
+              // TODO 追加順はすばやさを考慮したい
+              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(defenderPlayerTypeId)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.ability)
+                  ..effectId = defenderState.currentAbility.id
                 );
               }
             }
@@ -3121,6 +3786,9 @@ class PhaseState {
             }
             if (prevAction.move!.move.type.id == 5) {    // じめんタイプのわざをうけた時
               var defenderAbilityIDList = [];
+              for (var ability in pokeData.abilities.values) {
+                if (ability.timing.id == AbilityTiming.grounded) defenderAbilityIDList.add(ability.id);
+              }
               if (prevAction.move!.move.id != 28 && prevAction.move!.move.id != 614) {  // すなかけ/サウザンアローではない
                 for (var ability in pokeData.abilities.values) {
                   if (ability.timing.id == AbilityTiming.groundFieldEffected) defenderAbilityIDList.add(ability.id);
@@ -3180,6 +3848,12 @@ class PhaseState {
           }
           if (opponentPokemonState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {  // どく/もうどく状態
             opponentTimingIDs.add(52);
+          }
+          if (ownPokemonState.teraType == null || ownPokemonState.teraType!.id == 0) {  // テラスタルしていない
+            ownTimingIDs.add(116);
+          }
+          if (opponentPokemonState.teraType == null || opponentPokemonState.teraType!.id == 0) {  // テラスタルしていない
+            opponentTimingIDs.add(116);
           }
           ownTimingIDs.addAll(timingIDs);
           opponentTimingIDs.addAll(timingIDs);

@@ -236,8 +236,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               turn.initialOpponentPokemonStates.add(state);
             }
-            turn.initialOwnPokemonState.processEnterEffect(true, turn.initialWeather, turn.initialField);
-            turn.initialOpponentPokemonState.processEnterEffect(false, turn.initialWeather, turn.initialField);
+            turn.initialOwnPokemonState.processEnterEffect(true, turn.initialWeather, turn.initialField, turn.initialOpponentPokemonState);
+            turn.initialOpponentPokemonState.processEnterEffect(false, turn.initialWeather, turn.initialField, turn.initialOwnPokemonState);
             // 初期状態設定ここまで
             turns.add(turn);
             isNewTurn = true;
