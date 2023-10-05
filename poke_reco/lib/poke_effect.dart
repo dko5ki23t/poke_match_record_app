@@ -69,6 +69,17 @@ const List<int> allTimingIDs = [
   111,    // 天気が晴れかブーストエナジーを持っているとき
   112,    // エレキフィールドかブーストエナジーを持っているとき
   114,    // 相手の能力ランクが上昇したとき
+  117,    // HPが1/4以下になったとき
+  121,    // エレキフィールドのとき
+  122,    // グラスフィールドのとき
+  125,    // サイコフィールドのとき
+  126,    // ミストフィールドのとき
+  128,    // 能力ランクが下がったとき
+  129,    // トリックルームのとき
+  46,     // HPが1/2以下になったとき
+  150,    // 状態異常・こんらんになるとき
+  151,    // こんらんになるとき
+  153,    // メロメロになるとき
 ];
 
 // ポケモンを繰り出すとき
@@ -202,6 +213,7 @@ const List <int> afterActionDecisionItemIDs = [
 const List<int> afterActionDecisionTimingIDs = [
   53,     // 行動決定後、行動実行前
   107,    // 行動決定後、行動実行前(確率)
+  154,    // HPが1/4以下で行動決定後
 ];
 
 // わざ使用後
@@ -353,6 +365,9 @@ const List<int> afterMoveAttackerTimingIDs = [
   3,      // こうげきし、相手にあたったとき(確率)
   14,     // わざを使うとき(確率・条件)
   91,     // わざを使うとき(条件)、特定のわざを使ったとき
+  127,    // わざが当たらなかったとき
+  149,    // 1つのわざのPPが0になったとき
+  155,    // ためわざを使うとき
 ];
 const List<int> afterMoveDefenderTimingIDs = [
   5,      // HPが満タンでこうげきを受けた時
@@ -443,12 +458,12 @@ const List<int> everyTurnEndIndividualFieldIDs = [
 ];
 // フィールド
 const List<int> everyTurnEndFieldIDs = [
-  Field.trickRoom,      // トリックルーム終了
+//  Field.trickRoom,      // トリックルーム終了
 //  Field.gravity,        // じゅうりょく終了
-  Field.waterSport,     // みずあそび終了
-  Field.mudSport,       // どろあそび終了
-  Field.wonderRoom,     // ワンダールーム終了
-  Field.magicRoom,      // マジックルーム終了
+//  Field.waterSport,     // みずあそび終了
+//  Field.mudSport,       // どろあそび終了
+//  Field.wonderRoom,     // ワンダールーム終了
+//  Field.magicRoom,      // マジックルーム終了
   Field.electricTerrain,// エレキフィールド終了
   Field.grassyTerrain,  // グラスフィールド終了
   Field.mistyTerrain,   // ミストフィールド終了
@@ -1292,6 +1307,8 @@ class TurnEffect {
     PlayerType attacker, TurnMove turnMove, Turn currentTurn)
   {
     List<TurnEffect> ret = [];
+    List<int> retAbilityIDs = [];
+    List<int> retItemIDs = [];
     List<int> timingIDs = [...allTimingIDs];
     List<int> attackerTimingIDs = [...allTimingIDs];
     List<int> defenderTimingIDs = [...allTimingIDs];
@@ -1350,6 +1367,11 @@ class TurnEffect {
           if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
+          if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
+            if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
+              timingIDs.add(152);     // 状態異常でない毎ターン終了時
+            }
+          }
           individualFieldIDs = [...everyTurnEndIndividualFieldIDs];
           ailmentIDs = [...everyTurnEndAilmentIDs];
           weatherIDs = [...everyTurnEndWeatherIDs];
@@ -1362,7 +1384,7 @@ class TurnEffect {
         }
         break;
       case AbilityTiming.afterMove:     // わざ使用後
-        {
+        if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
           attackerTimingIDs.addAll(afterMoveAttackerTimingIDs);
           defenderTimingIDs.addAll(afterMoveDefenderTimingIDs);
           var attackerState = attacker.id == PlayerType.me ? phaseState.ownPokemonState : phaseState.opponentPokemonState;
@@ -1374,16 +1396,23 @@ class TurnEffect {
           if (turnMove.move.damageClass.id >= 2) {
             defenderTimingIDs.addAll([62, 82]);
             attackerTimingIDs.addAll([2]);
+            // ノーマルタイプのこうげきをした時
+            if (turnMove.move.type.id == 1) attackerTimingIDs.addAll([130]);
             // あくタイプのこうげきを受けた時
             if (turnMove.move.type.id == 17) defenderTimingIDs.addAll([86]);
             // みずタイプのこうげきを受けた時
             if (turnMove.move.type.id == 11) defenderTimingIDs.addAll([92, 104]);
             // ほのおタイプのこうげきを受けた時
             if (turnMove.move.type.id == 10) defenderTimingIDs.addAll([104, 107]);
+            // でんきタイプのこうげきを受けた時
+            if (turnMove.move.type.id == 13) defenderTimingIDs.addAll([118]);
+            // こおりタイプのこうげきを受けた時
+            if (turnMove.move.type.id == 15) defenderTimingIDs.addAll([119]);
             // こうげきによりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(96);
           }
           if (turnMove.move.damageClass.id == DamageClass.physical) defenderTimingIDs.addAll([83]);   // ぶつりこうげきを受けた時
+          if (turnMove.move.damageClass.id == DamageClass.special) defenderTimingIDs.addAll([124]);   // とくしゅこうげきを受けた時
           if (turnMove.move.isDirect && attackerState.currentAbility.id != 203) {
             defenderTimingIDs.add(9);  // 直接攻撃を受けた時(確率)
             defenderTimingIDs.add(63);  // 直接攻撃を受けた時
@@ -1393,9 +1422,15 @@ class TurnEffect {
             // 直接攻撃によりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(75);
           }
-          if (turnMove.move.isSound) defenderTimingIDs.add(64);  // 音技を受けた時
+          if (turnMove.move.isSound) {
+            attackerTimingIDs.add(123);  // 音技を使ったとき
+            defenderTimingIDs.add(64);  // 音技を受けた時
+          }
           if (turnMove.move.isDrain) defenderTimingIDs.add(40);  // HP吸収わざを受けた時
           if (turnMove.move.isDance) defenderTimingIDs.add(97);  // おどり技を受けた時
+          if (turnMove.move.type.id == 1) {  // ノーマルタイプのわざを受けた時
+            defenderTimingIDs.addAll([148]);
+          }
           if (turnMove.move.type.id == 13) {  // でんきタイプのわざを受けた時
             defenderTimingIDs.addAll([10, 26]);
           }
@@ -1411,7 +1446,31 @@ class TurnEffect {
           if (turnMove.move.type.id == 5) {   // じめんタイプのわざを受けた時
             defenderTimingIDs.addAll([115]);
           }
-          if (PokeType.effectiveness(attackerState.currentAbility.id == 113, turnMove.move.type, pokemonState!.type1, pokemonState.type2).id != MoveEffectiveness.great) {
+          if (PokeType.effectiveness(
+              attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+              turnMove.move.type, pokemonState!.type1, pokemonState.type2
+            ).id == MoveEffectiveness.great
+          ) {
+            defenderTimingIDs.add(120);  // 効果ばつぐんのタイプのこうげきざわを受けた時
+            if (turnMove.move.type.id == 10) defenderTimingIDs.add(131);
+            if (turnMove.move.type.id == 11) defenderTimingIDs.add(132);
+            if (turnMove.move.type.id == 13) defenderTimingIDs.add(133);
+            if (turnMove.move.type.id == 12) defenderTimingIDs.add(134);
+            if (turnMove.move.type.id == 15) defenderTimingIDs.add(135);
+            if (turnMove.move.type.id == 2) defenderTimingIDs.add(136);
+            if (turnMove.move.type.id == 4) defenderTimingIDs.add(137);
+            if (turnMove.move.type.id == 5) defenderTimingIDs.add(138);
+            if (turnMove.move.type.id == 3) defenderTimingIDs.add(139);
+            if (turnMove.move.type.id == 14) defenderTimingIDs.add(140);
+            if (turnMove.move.type.id == 7) defenderTimingIDs.add(141);
+            if (turnMove.move.type.id == 6) defenderTimingIDs.add(142);
+            if (turnMove.move.type.id == 8) defenderTimingIDs.add(143);
+            if (turnMove.move.type.id == 16) defenderTimingIDs.add(144);
+            if (turnMove.move.type.id == 17) defenderTimingIDs.add(145);
+            if (turnMove.move.type.id == 9) defenderTimingIDs.add(146);
+            if (turnMove.move.type.id == 18) defenderTimingIDs.add(147);
+          }
+          else {
             defenderTimingIDs.add(21);  // 効果ばつぐん以外のタイプのこうげきざわを受けた時
           }
           if (turnMove.move.type.id == 5) {
@@ -1435,43 +1494,35 @@ class TurnEffect {
       if (type.id == EffectType.ability) {
         if (pokemonState!.currentAbility.id != 0) {   // とくせいが確定している場合
           if (timingIDs.contains(pokemonState.currentAbility.timing.id)) {
-            ret.add(TurnEffect()
-              ..playerType = playerType
-              ..effect = EffectType(EffectType.ability)
-              ..effectId = pokemonState.currentAbility.id
-            );
+            retAbilityIDs.add(pokemonState.currentAbility.id);
           }
           // わざ使用後に発動する効果
           if (attacker.id == playerType.id && attackerTimingIDs.contains(pokemonState.currentAbility.timing.id) ||
               attacker.id != playerType.id && defenderTimingIDs.contains(pokemonState.currentAbility.timing.id)
           ) {
-            ret.add(TurnEffect()
-              ..playerType = playerType
-              ..effect = EffectType(EffectType.ability)
-              ..effectId = pokemonState.currentAbility.id
-            );
+            retAbilityIDs.add(pokemonState.currentAbility.id);
           }
         }
         else {      // とくせいが確定していない場合
           for (final ability in pokemonState.possibleAbilities) {
             if (timingIDs.contains(ability.timing.id)) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effect = EffectType(EffectType.ability)
-                ..effectId = ability.id
-              );
+              retAbilityIDs.add(ability.id);
             }
             // わざ使用後に発動する効果
             if (attacker.id == playerType.id && attackerTimingIDs.contains(ability.timing.id) ||
                 attacker.id != playerType.id && defenderTimingIDs.contains(ability.timing.id)
             ) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effect = EffectType(EffectType.ability)
-                ..effectId = ability.id
-              );
+              retAbilityIDs.add(ability.id);
             }
           }
+        }
+        final abilityIDs = retAbilityIDs.toSet();
+        for (final abilityID in abilityIDs) {
+          ret.add(TurnEffect()
+            ..playerType = playerType
+            ..effect = EffectType(EffectType.ability)
+            ..effectId = abilityID
+          );
         }
       }
       if (type.id == EffectType.individualField) {
@@ -1496,57 +1547,50 @@ class TurnEffect {
           }
         }
       }
-      if (playerType.id == PlayerType.me && type.id == EffectType.item) {
-        if (timingIDs.contains(pokemonState!.holdingItem?.timing.id)) {
-          ret.add(TurnEffect()
-            ..playerType = PlayerType(PlayerType.me)
-            ..effect = EffectType(EffectType.item)
-            ..effectId = pokemonState.holdingItem!.id
-          );
-        }
-        // わざ使用後に発動する効果
-        if (attacker.id == PlayerType.me && attackerTimingIDs.contains(pokemonState.holdingItem?.timing.id) ||
-            attacker.id == PlayerType.opponent && defenderTimingIDs.contains(pokemonState.holdingItem?.timing.id)
-        ) {
-          ret.add(TurnEffect()
-            ..playerType = PlayerType(PlayerType.me)
-            ..effect = EffectType(EffectType.item)
-            ..effectId = pokemonState.holdingItem!.id
-          );
-        }
-      }
-      else if (playerType.id == PlayerType.opponent && type.id == EffectType.item) {
-        if (pokemonState!.holdingItem?.id != 0) {
-          if (timingIDs.contains(pokemonState.holdingItem?.timing.id)) {
-            ret.add(TurnEffect()
-              ..playerType = PlayerType(PlayerType.opponent)
-              ..effect = EffectType(EffectType.item)
-              ..effectId = pokemonState.holdingItem!.id
-            );
-          }
-          // わざ使用後に発動する効果
-          if (attacker.id == PlayerType.opponent && attackerTimingIDs.contains(pokemonState.holdingItem?.timing.id) ||
-              attacker.id == PlayerType.me && defenderTimingIDs.contains(pokemonState.holdingItem?.timing.id)
-          ) {
-            ret.add(TurnEffect()
-              ..playerType = PlayerType(PlayerType.opponent)
-              ..effect = EffectType(EffectType.item)
-              ..effectId = pokemonState.holdingItem!.id
-            );
-          }
-        }
-        else {
-          var allItemIDs = [for (final item in pokeData.items.values) item.id];
-          for (final item in pokemonState.impossibleItems) {
-            allItemIDs.remove(item.id);
-          }
-          for (final itemID in allItemIDs) {
-            if (timingIDs.contains(pokeData.items[itemID]!.timing.id)) {
+      if (type.id == EffectType.item) {
+        if (pokemonState!.holdingItem != null) {
+          if (pokemonState.holdingItem!.id != 0) {   // もちものが確定している場合
+            if (timingIDs.contains(pokemonState.holdingItem!.timing.id)) {
               ret.add(TurnEffect()
-                ..playerType = PlayerType(PlayerType.opponent)
+                ..playerType = playerType
                 ..effect = EffectType(EffectType.item)
-                ..effectId = itemID
+                ..effectId = pokemonState.holdingItem!.id
               );
+            }
+            // わざ使用後に発動する効果
+            if (attacker.id == playerType.id && attackerTimingIDs.contains(pokemonState.holdingItem!.timing.id) ||
+                attacker.id != playerType.id && defenderTimingIDs.contains(pokemonState.holdingItem!.timing.id)
+            ) {
+              ret.add(TurnEffect()
+                ..playerType = playerType
+                ..effect = EffectType(EffectType.item)
+                ..effectId = pokemonState.holdingItem!.id
+              );
+            }
+          }
+          else {      // もちものが確定していない場合
+            var allItems = [for (final item in pokeData.items.values) item];
+            for (final item in pokemonState.impossibleItems) {
+              allItems.removeWhere((e) => e.id == item.id);
+            }
+            for (final item in allItems) {
+              if (timingIDs.contains(item.timing.id)) {
+                ret.add(TurnEffect()
+                  ..playerType = playerType
+                  ..effect = EffectType(EffectType.item)
+                  ..effectId = item.id
+                );
+              }
+              // わざ使用後に発動する効果
+              if (attacker.id == playerType.id && attackerTimingIDs.contains(item.timing.id) ||
+                  attacker.id != playerType.id && defenderTimingIDs.contains(item.timing.id)
+              ) {
+                ret.add(TurnEffect()
+                  ..playerType = playerType
+                  ..effect = EffectType(EffectType.item)
+                  ..effectId = item.id
+                );
+              }
             }
           }
         }
@@ -1624,13 +1668,35 @@ class TurnEffect {
         {
           switch (effect.id) {
             case EffectType.item:
-              switch (effectId) {
+              switch (effectId) {    
                 case 247:     // いのちのたま
+                case 265:     // くっつきバリ
+                case 258:     // くろいヘドロ
+                case 211:     // たべのこし
+                case 132:     // オレンのみ
+                case 135:     // オボンのみ
+                case 136:     // フィラのみ
+                case 137:     // ウイのみ
+                case 138:     // マゴのみ
+                case 139:     // バンジのみ
+                case 140:     // イアのみ
+                case 185:     // ナゾのみ
+                case 230:     // かいがらのすず
+                case 43:      // きのみジュース
                   if (playerType.id == PlayerType.me) {
                     return state.ownPokemonState.remainHP.toString();
                   }
                   else {
                     return state.opponentPokemonState.remainHPPercent.toString();
+                  }
+                case 583:     // ゴツゴツメット
+                case 188:     // ジャポのみ
+                case 189:     // レンブのみ
+                  if (playerType.id == PlayerType.me) {
+                    return state.opponentPokemonState.remainHPPercent.toString();
+                  }
+                  else {
+                    return state.ownPokemonState.remainHP.toString();
                   }
               }
               break;
@@ -1773,13 +1839,13 @@ class TurnEffect {
   {
     if (effect.id == EffectType.ability) {   // とくせいによる効果
       switch (effectId) {
-        case 10:      // ちくでん
-        case 11:      // ちょすい
-        case 44:      // あめうけざら
-        case 87:      // かんそうはだ
-        case 90:      // ポイズンヒール
-        case 94:      // サンパワー
-        case 115:     // アイスボディ
+        case 10:    // ちくでん
+        case 11:    // ちょすい
+        case 44:    // あめうけざら
+        case 87:    // かんそうはだ
+        case 90:    // ポイズンヒール
+        case 94:    // サンパワー
+        case 115:   // アイスボディ
         case 209:   // ばけのかわ
         case 211:   // スワームチェンジ
         case 297:   // どしょく
@@ -2472,7 +2538,57 @@ class TurnEffect {
     }
     else if (effect.id == EffectType.item) {   // もちものによる効果
       switch (effectId) {
+        case 184:     // スターのみ
+          return Row(
+            children: [
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('こうげき'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('ぼうぎょ'),
+                    ),
+                    DropdownMenuItem(
+                      value: 2,
+                      child: Text('とくこう'),
+                    ),
+                    DropdownMenuItem(
+                      value: 3,
+                      child: Text('とくぼう'),
+                    ),
+                    DropdownMenuItem(
+                      value: 4,
+                      child: Text('すばやさ'),
+                    ),
+                  ],
+                  value: extraArg1,
+                  onChanged: (value) {
+                    extraArg1 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              Text('があがった'),
+            ],
+          );
         case 247:     // いのちのたま
+        case 265:     // くっつきバリ
+        case 258:     // くろいヘドロ
+        case 211:     // たべのこし
+        case 132:     // オレンのみ
+        case 135:     // オボンのみ
+        case 185:     // ナゾのみ
+        case 230:     // かいがらのすず
+        case 43:      // きのみジュース
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2503,6 +2619,109 @@ class TurnEffect {
               playerType.id == PlayerType.me ?
               Flexible(child: Text('/${ownPokemon.h.real}')) :
               Flexible(child: Text('% /100%')),
+            ],
+          );
+        case 136:     // フィラのみ
+        case 137:     // ウイのみ
+        case 138:     // マゴのみ
+        case 139:     // バンジのみ
+        case 140:     // イアのみ
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('HPが回復した'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('こんらんした'),
+                    ),
+                  ],
+                  value: extraArg2,
+                  onChanged: (value) {
+                    extraArg2 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
+              extraArg2 == 0 ?
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: playerType.id == PlayerType.me ? 
+                          '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        if (playerType.id == PlayerType.me) {
+                          extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                        }
+                        else {
+                          extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        }
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  playerType.id == PlayerType.me ?
+                  Flexible(child: Text('/${ownPokemon.h.real}')) :
+                  Flexible(child: Text('% /100%')),
+                ],
+              ) : Container(),
+            ],
+          );
+        case 583:     // ゴツゴツメット
+        case 188:     // ジャポのみ
+        case 189:     // レンブのみ
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: playerType.id == PlayerType.me ? 
+                      '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('% /100%')) :
+              Flexible(child: Text('/${ownPokemon.h.real}')),
             ],
           );
         default:

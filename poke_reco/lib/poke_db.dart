@@ -258,7 +258,7 @@ class PokeType {
 
   // タイプ相性
   static MoveEffectiveness effectiveness(
-    bool isScrappy, PokeType attackType, PokeType defenseType1, PokeType? defenseType2
+    bool isScrappy, bool isRingTarget, PokeType attackType, PokeType defenseType1, PokeType? defenseType2
   )
   {
     int deg = 0;
@@ -268,12 +268,12 @@ class PokeType {
       switch (attackType.id) {
         case 1:
           if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
-          if (!isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);   // ノーマル->ゴースト
+          if (!isRingTarget && !isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);   // ノーマル->ゴースト
           break;
         case 2:
           if (type.id == 1 || type.id == 15 || type.id == 6 || type.id == 17 || type.id == 9) deg++;
           if (type.id == 4 || type.id == 3 || type.id == 14 || type.id == 7 || type.id == 18) deg--;
-          if (!isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && !isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 3:
           if (type.id == 2 || type.id == 12 || type.id == 7) deg++;
@@ -282,12 +282,12 @@ class PokeType {
         case 4:
           if (type.id == 12 || type.id == 18) deg++;
           if (type.id == 4 || type.id == 5 || type.id == 6 || type.id == 8) deg--;
-          if (type.id == 9) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 9) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 5:
           if (type.id == 10 || type.id == 13 || type.id == 4 || type.id == 6 || type.id == 9) deg++;
           if (type.id == 12 || type.id == 7) deg--;
-          if (type.id == 3) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 3) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 6:
           if (type.id == 10 || type.id == 3 || type.id == 15 || type.id == 7) deg++;
@@ -300,7 +300,7 @@ class PokeType {
         case 8:
           if (type.id == 14 || type.id == 8) deg++;
           if (type.id == 17) deg--;
-          if (type.id == 1) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 1) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 9:
           if (type.id == 15 || type.id == 6 || type.id == 18) deg++;
@@ -321,12 +321,12 @@ class PokeType {
         case 13:
           if (type.id == 11 || type.id == 3) deg++;
           if (type.id == 13 || type.id == 12 || type.id == 16) deg--;
-          if (type.id == 5) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 5) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 14:
           if (type.id == 2 || type.id == 4) deg++;
           if (type.id == 14 || type.id == 9) deg--;
-          if (type.id == 17) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 17) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 15:
           if (type.id == 12 || type.id == 5 || type.id == 3 || type.id == 16) deg++;
@@ -335,7 +335,7 @@ class PokeType {
         case 16:
           if (type.id == 16) deg++;
           if (type.id == 9) deg--;
-          if (type.id == 18) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 18) return MoveEffectiveness(MoveEffectiveness.noEffect);
           break;
         case 17:
           if (type.id == 14 || type.id == 8) deg++;
@@ -546,7 +546,7 @@ class AbilityTiming {
 //  confusedAttacked(43), // こんらん状態でこうげきを受けた時
   static const int flinched = 44;         // ひるんだとき
   static const int snowed = 45;           // 天気がゆきのとき(永続、効果は明示されない)
-//  HP025(46),            // HPが1/2のとき
+  static const int hp050 = 46;                  // HPが1/2以下になったとき
   static const int criticaled = 47;       // こうげきが急所に当たった時
 //  static const int itemLost = 48;         // 場に出た後にもちものを失っている状態のとき(効果は明示されない)
 //  firedBurned(49),      // ほのお技を受けるとき、やけどダメージを負うとき
@@ -618,6 +618,45 @@ class AbilityTiming {
   static const int opponentStatUp = 114;        // 相手の能力ランクが上昇したとき
   static const int grounded = 115;              // じめんタイプのわざを受けるとき
   static const int everyTurnEndNotTerastaled = 116;   // テラスタルしていない毎ターン終了時
+  static const int hp025 = 117;                 // HPが1/4以下になったとき
+  static const int electricAttacked = 118;      // でんきタイプのこうげきを受けた時
+  static const int iceAttacked = 119;           // こおりタイプのこうげきを受けた時
+  static const int greatAttacked = 120;         // 効果ばつぐんのタイプのこうげきざわを受けた時
+  static const int elecField = 121;             // エレキフィールドのとき
+  static const int grassField = 122;            // グラスフィールドのとき
+  static const int soundAttack = 123;           // 音技を使ったとき
+  static const int specialAttackedHitted = 124; // とくしゅこうげきを受けたとき
+  static const int psycoField = 125;            // サイコフィールドのとき
+  static const int mistField = 126;             // ミストフィールドのとき
+  static const int notHit = 127;                // わざが当たらなかったとき
+  static const int statDowned = 128;            // 能力ランクが下がったとき
+  static const int trickRoom = 129;             // トリックルームのとき
+  static const int normalAttackHit = 130;       // ノーマルタイプのこうげきわざが当たった時
+  static const int greatFireAttacked = 131;     // 効果ばつぐんのほのおタイプのこうげきわざを受けた時
+  static const int greatWaterAttacked = 132;    // 効果ばつぐんのみずタイプのこうげきわざを受けた時
+  static const int greatElectricAttacked = 133; // 効果ばつぐんのでんきタイプのこうげきわざを受けた時
+  static const int greatgrassAttacked = 134;    // 効果ばつぐんのくさタイプのこうげきわざを受けた時
+  static const int greatIceAttacked = 135;      // 効果ばつぐんのこおりタイプのこうげきわざを受けた時
+  static const int greatFightAttacked = 136;    // 効果ばつぐんのかくとうタイプのこうげきわざを受けた時
+  static const int greatPoisonAttacked = 137;   // 効果ばつぐんのどくタイプのこうげきわざを受けた時
+  static const int greatGroundAttacked = 138;   // 効果ばつぐんのじめんタイプのこうげきわざを受けた時
+  static const int greatAirAttacked = 139;      // 効果ばつぐんのひこうタイプのこうげきわざを受けた時
+  static const int greatPsycoAttacked = 140;    // 効果ばつぐんのエスパータイプのこうげきわざを受けた時
+  static const int greatBugAttacked = 141;      // 効果ばつぐんのむしタイプのこうげきわざを受けた時
+  static const int greatRockAttacked = 142;     // 効果ばつぐんのいわタイプのこうげきわざを受けた時
+  static const int greatGhostAttacked = 143;    // 効果ばつぐんのゴーストタイプのこうげきわざを受けた時
+  static const int greatDragonAttacked = 144;   // 効果ばつぐんのドラゴンタイプのこうげきわざを受けた時
+  static const int greatEvilAttacked = 145;     // 効果ばつぐんのあくタイプのこうげきわざを受けた時
+  static const int greatSteelAttacked = 146;    // 効果ばつぐんのはがねタイプのこうげきわざを受けた時
+  static const int greatFairyAttacked = 147;    // 効果ばつぐんのフェアリータイプのこうげきわざを受けた時
+  static const int normalAttacked = 148;        // ノーマルタイプのこうげきわざを受けた時
+  static const int runOutPP = 149;              // 1つのわざのPPが0になったとき
+  static const int abnormaledConfused = 150;    // 状態異常・こんらんになるとき
+  static const int confused = 151;              // こんらんになるとき
+  static const int everyTurnEndNotAbnormal = 152;   // 状態異常でない毎ターン終了時
+  static const int infatuation = 153;           // メロメロになるとき
+  static const int afterActionDecisionHP025 = 154;  // HPが1/4以下で行動決定後
+  static const int chargeMoving = 155;          // ためわざを使うとき
 
   const AbilityTiming(this.id);
 
@@ -857,32 +896,801 @@ class Item {
     TurnEffect? prevAction,
   ) {
     List<String> ret = [];
+    if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+      myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
+      ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
+    }
     switch (itemID) {
-      case 247:    // いのちのたま
+      case 161:     // オッカのみ
+      case 162:     // イトケのみ
+      case 163:     // ソクノのみ
+      case 164:     // リンドのみ
+      case 165:     // ヤチェのみ
+      case 166:     // ヨプのみ
+      case 167:     // ビアーのみ
+      case 168:     // シュカのみ
+      case 169:     // バコウのみ
+      case 170:     // ウタンのみ
+      case 171:     // タンガのみ
+      case 172:     // ヨロギのみ
+      case 173:     // カシブのみ
+      case 174:     // ハバンのみ
+      case 175:     // ナモのみ
+      case 176:     // リリバのみ
+      case 723:     // ロゼルのみ
+      case 177:     // ホズのみ
+      case 187:     // イバンのみ
+      case 248:     // パワフルハーブ
+      case 585:     // レッドカード
+      case 590:     // だっしゅつボタン
+      case 1177:    // だっしゅつパック
+        // ダメージ軽減効果はユーザ入力に任せる
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 194:     // せんせいのツメ
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 178:     // チイラのみ
+      case 589:     // じゅうでんち
+      case 689:     // ゆきだま
+        myState.addStatChanges(true, 0, 1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 179:     // リュガのみ
+      case 724:     // アッキのみ
+      case 898:     // エレキシード
+      case 901:     // グラスシード
+        myState.addStatChanges(true, 1, 1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 181:     // ヤタピのみ
+      case 588:     // きゅうこん
+      case 1176:    // のどスプレー
+        myState.addStatChanges(true, 2, 1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 182:     // ズアのみ
+      case 725:     // タラプのみ
+      case 688:     // ひかりごけ
+      case 899:     // サイコシード
+      case 900:     // ミストシード
+        myState.addStatChanges(true, 3, 1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 180:     // カムラのみ
+      case 883:     // ビビリだま
+        myState.addStatChanges(true, 4, 1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 183:     // サンのみ
+        myState.addVitalRank(1);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 184:     // スターのみ
+        myState.addStatChanges(true, extraArg1, 2, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 186:     // ミクルのみ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceAccuracy1_2));
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 188:   // ジャポのみ
+      case 189:   // レンブのみ
+        if (playerType.id == PlayerType.me) {
+          yourState.remainHPPercent -= extraArg1;
+        }
+        else {
+          yourState.remainHP -= extraArg1;
+        }
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 191:     // しろいハーブ
+        myState.resetDownedStatChanges();
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 682:     // じゃくてんほけん
+        myState.addStatChanges(true, 0, 2, yourState, itemId: itemID);
+        myState.addStatChanges(true, 2, 2, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 247:     // いのちのたま
+      case 265:     // くっつきバリ
+      case 258:     // くろいヘドロ
+      case 211:     // たべのこし
+      case 230:     // かいがらのすず
         if (playerType.id == PlayerType.me) {
           myState.remainHP -= extraArg1;
         }
         else {
           myState.remainHPPercent -= extraArg1;
         }
-        if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-          myParty.items[myPokemonIndex-1] = pokeData.items[247];   // いのちのたま確定
-          ret.add('もちものをいのちのたまで確定しました。');
-        }
-        myState.holdingItem = pokeData.items[247];
+        myState.holdingItem = pokeData.items[itemID];
         break;
-      // 消費系アイテム
-      case 252:   // きあいのタスキ
-        if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-          myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
-            ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
+      case 132:     // オレンのみ
+      case 43:      // きのみジュース
+      case 135:     // オボンのみ
+      case 185:     // ナゾのみ
+        if (playerType.id == PlayerType.me) {
+          myState.remainHP -= extraArg1;
+        }
+        else {
+          myState.remainHPPercent -= extraArg1;
+        }
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 136:     // フィラのみ
+      case 137:     // ウイのみ
+      case 138:     // マゴのみ
+      case 139:     // バンジのみ
+      case 140:     // イアのみ
+        if (extraArg2 == 0) {
+          if (playerType.id == PlayerType.me) {
+            myState.remainHP -= extraArg1;
           }
+          else {
+            myState.remainHPPercent -= extraArg1;
+          }
+        }
+        else {
+          myState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+        }
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 126:   // クラボのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.paralysis);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
           myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 127:   // カゴのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.sleep);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 128:   // モモンのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 129:   // チーゴのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.burn);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 130:   // ナナシのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.freeze);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 133:   // キーのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.confusion);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 134:   // ラムのみ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.confusion);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 196:   // メンタルハーブ
+        {
+          int findIdx = myState.ailmentsIndexWhere((e) => 
+            e.id == Ailment.infatuation || e.id == Ailment.encore ||
+            e.id == Ailment.torment || e.id == Ailment.disable ||
+            e.id == Ailment.taunt || e.id == Ailment.healBlock);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 249:   // どくどくだま
+        myState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 250:   // かえんだま
+        myState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 257:   // あかいいと
+        yourState.ailmentsAdd(Ailment(Ailment.infatuation), state.weather, state.field);
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 207:   // きあいのハチマキ
+        if (playerType.id == PlayerType.me) {
+          myState.remainHP == 1;
+        }
+        else {
+          myState.remainHPPercent == 1;
+        }
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 252:   // きあいのタスキ
+        if (playerType.id == PlayerType.me) {
+          myState.remainHP == 1;
+        }
+        else {
+          myState.remainHPPercent == 1;
+        }
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 583:   // ゴツゴツメット
+        if (playerType.id == PlayerType.me) {
+          yourState.remainHPPercent -= extraArg1;
+        }
+        else {
+          yourState.remainHP -= extraArg1;
+        }
+        myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 1179:  // からぶりほけん
+        myState.addStatChanges(true, 4, 2, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
+        break;
+      case 1180:  // ルームサービス
+        myState.addStatChanges(true, 4, -1, yourState, itemId: itemID);
+        myState.holdingItem = null;   // アイテム消費
         break;
       default:
         break;
     }
     return ret;
+  }
+
+  void processPassiveEffect(/*bool isOwn, Weather weather, Field field,*/ PokemonState myState, /*PokemonState yourState*/) {
+    switch (id) {
+      case 112:   // こんごうだま
+        if (myState.pokemon.no == 483) {    // ディアルガ
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.steelAttack1_2));
+        }
+        break;
+      case 113:   // しらたま
+        if (myState.pokemon.no == 484) {    // パルキア
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.waterAttack1_2));
+        }
+        break;
+      case 442:   // はっきんだま
+        if (myState.pokemon.no == 487) {    // ギラティナ
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ghostAttack1_2));
+        }
+        break;
+      case 202:   // こころのしずく
+        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {   // ラティアス/ラティオス
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.psycoAttack1_2));
+        }
+        break;
+      case 190:   // ひかりのこな
+      case 232:   // のんきのおこう
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_9));
+        break;
+      case 197:   // こだわりハチマキ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.gorimuchu));
+        break;
+      case 203:   // しんかいのキバ
+        if (myState.pokemon.no == 366) {    // パールル
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack2));
+        }
+        break;
+      case 204:   // しんかいのウロコ
+        if (myState.pokemon.no == 366) {    // パールル
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense2));
+        }
+        break;
+      case 209:   // ピントレンズ
+      case 303:   // するどいツメ
+        myState.addVitalRank(1);
+        break;
+      case 213:   // でんきだま
+        if (myState.pokemon.no == 25) {     // ピカチュウ
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackMove2));
+        }
+        break;
+      case 235:   // ふといホネ
+        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {   // カラカラ/ガラガラ
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack2));
+        }
+        break;
+      case 233:   // ラッキーパンチ
+        if (myState.pokemon.no == 113) {   // ラッキー
+          myState.addVitalRank(2);
+        }
+        break;
+      case 236:   // ながねぎ
+        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {   // カモネギ/ネギガナイト
+          myState.addVitalRank(2);
+        }
+        break;
+      case 242:   // こうかくレンズ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_1));
+        break;
+      case 243:   // ちからのハチマキ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_1));
+        break;
+      case 244:   // ものしりメガネ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.special1_1));
+        break;
+      case 245:   // たつじんのおび
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamage1_2));
+        break;
+      case 247:   // いのちのたま
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.lifeOrb));
+        break;
+      case 253:   // フォーカスレンズ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.movedAccuracy1_2));
+        break;
+      case 254:   // メトロノーム
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.continuousMoveDamageInc0_2));
+        break;
+      case 255:   // くろいてっきゅう
+      case 192:   // きょうせいギプス
+      case 266:   // パワーリスト
+      case 267:   // パワーベルト
+      case 268:   // パワーレンズ
+      case 269:   // パワーバンド
+      case 270:   // パワーアンクル
+      case 271:   // パワーウエイト
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed0_5));
+        break;
+      case 264:   // こだわりスカーフ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.choiceScarf));
+        break;
+      case 274:   // こだわりメガネ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.choiceSpecs));
+        break;
+      case 275:   // ひのたまプレート
+      case 226:   // もくたん
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fireAttack1_2));
+        break;
+      case 276:   // しずくプレート
+      case 220:   // しんぴのしずく
+      case 231:   // うしおのおこう
+      case 294:   // さざなみのおこう
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.waterAttack1_2));
+        break;
+      case 277:   // いかずちプレート
+      case 219:   // じしゃく
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.electricAttack1_2));
+        break;
+      case 278:   // みどりのプレート
+      case 216:   // きせきのタネ
+      case 295:   // おはなのおこう
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.grassAttack1_2));
+        break;
+      case 279:   // つららのプレート
+      case 223:   // とけないこおり
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.iceAttack1_2));
+        break;
+      case 280:   // こぶしのプレート
+      case 218:   // くろおび
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fightAttack1_2));
+        break;
+      case 281:   // もうどくプレート
+      case 222:   // どくバリ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.poisonAttack1_2));
+        break;
+      case 282:   // だいちのプレート
+      case 214:   // やわらかいすな
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.groundAttack1_2));
+        break;
+      case 283:   // あおぞらプレート
+      case 221:   // するどいくちばし
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.airAttack1_2));
+        break;
+      case 284:   // ふしぎのプレート
+      case 225:   // まがったスプーン
+      case 291:   // あやしいおこう
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.psycoAttack1_2));
+        break;
+      case 285:   // たまむしプレート
+      case 199:   // ぎんのこな
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.bugAttack1_2));
+        break;
+      case 286:   // がんせきプレート
+      case 215:   // かたいいし
+      case 292:   // がんせきおこう
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.rockAttack1_2));
+        break;
+      case 287:   // もののけプレート
+      case 224:   // のろいのおふだ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ghostAttack1_2));
+        break;
+      case 288:   // りゅうのプレート
+      case 227:   // りゅうのキバ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
+        break;
+      case 289:   // こわもてプレート
+      case 217:   // くろいメガネ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.evilAttack1_2));
+        break;
+      case 290:   // こうてつプレート
+      case 210:   // メタルコート
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.steelAttack1_2));
+        break;
+      case 684:   // せいれいプレート
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAttack1_2));
+        break;
+      case 1664:  // レジェンドプレート
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.moveAttack1_2));
+        break;
+      case 581:   // しんかのきせき
+        if (myState.pokemon.isEvolvable) {
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense1_5));
+        }
+        break;
+      case 587:   // しめつけバンド
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.bindDamage1_6));
+        break;
+      case 669:   // ノーマルジュエル
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceNormalAttack1_3));
+        break;
+      case 683:   // とつげきチョッキ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onlyAttackSpecialDefense1_5));
+        break;
+      case 690:   // ぼうじんゴーグル
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignorePowder));
+        break;
+      case 897:   // ぼうごパット
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreDirectAtackEffect));
+        break;
+      case 1178:  // あつぞこブーツ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreInstallingEffect));
+        break;
+      case 1662:  // まっさらプレート
+      case 228:   // シルクのスカーフ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.normalAttack1_2));
+        break;
+    }
+  }
+
+  void clearPassiveEffect(/*bool isOwn, Weather weather, Field field,*/ PokemonState myState, /*PokemonState yourState*/) {
+    switch (id) {
+      case 112:     // こんごうだま
+        if (myState.pokemon.no == 483) {    // ディアルガ
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 113:     // しらたま
+        if (myState.pokemon.no == 484) {    // パルキア
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 442:     // はっきんだま
+        if (myState.pokemon.no == 487) {    // ギラティナ
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 202:     // こころのしずく
+        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {   // ラティアス/ラティオス
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 190:   // ひかりのこな
+      case 232:   // のんきのおこう
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.yourAccuracy0_9);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 197:   // こだわりハチマキ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 213:   // でんきだま
+        if (myState.pokemon.no == 25) {     // ピカチュウ
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 235:   // ふといホネ
+        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {   // カラカラ/ガラガラ
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 233:   // ラッキーパンチ
+        if (myState.pokemon.no == 113) {   // ラッキー
+          myState.addVitalRank(-2);
+        }
+        break;
+      case 236:   // ながねぎ
+        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {   // カモネギ/ネギガナイト
+          myState.addVitalRank(-2);
+        }
+        break;
+      case 203:   // しんかいのキバ
+        if (myState.pokemon.no == 366) {    // パールル
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 204:   // しんかいのウロコ
+        if (myState.pokemon.no == 366) {    // パールル
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 209:   // ピントレンズ
+      case 303:   // するどいツメ
+        myState.addVitalRank(-1);
+        break;
+      case 242:   // こうかくレンズ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.accuracy1_1);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 243:   // ちからのハチマキ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 244:   // ものしりメガネ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 245:   // たつじんのおび
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.greatDamage1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 247:   // いのちのたま
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.lifeOrb);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 253:   // フォーカスレンズ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 254:   // メトロノーム
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 255:   // くろいてっきゅう
+      case 192:   // きょうせいギプス
+      case 266:   // パワーリスト
+      case 267:   // パワーベルト
+      case 268:   // パワーレンズ
+      case 269:   // パワーバンド
+      case 270:   // パワーアンクル
+      case 271:   // パワーウエイト
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed0_5);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 264:   // こだわりスカーフ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceScarf);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 274:   // こだわりメガネ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceSpecs);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 275:   // ひのたまプレート
+      case 226:   // もくたん
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 276:   // しずくプレート
+      case 220:   // しんぴのしずく
+      case 231:   // うしおのおこう
+      case 294:   // さざなみのおこう
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 277:   // いかずちプレート
+      case 219:   // じしゃく
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 278:   // みどりのプレート
+      case 216:   // きせきのタネ
+      case 295:   // おはなのおこう
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 279:   // つららのプレート
+      case 223:   // とけないこおり
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 280:   // こぶしのプレート
+      case 218:   // くろおび
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 281:   // もうどくプレート
+      case 222:   // どくバリ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 282:   // だいちのプレート
+      case 214:   // やわらかいすな
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 283:   // あおぞらプレート
+      case 221:   // するどいくちばし
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 284:   // ふしぎのプレート
+      case 225:   // まがったスプーン
+      case 291:   // あやしいおこう
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 285:   // たまむしプレート
+      case 199:   // ぎんのこな
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 286:   // がんせきプレート
+      case 215:   // かたいいし
+      case 292:   // がんせきおこう
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 287:   // もののけプレート
+      case 224:   // のろいのおふだ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 288:   // りゅうのプレート
+      case 227:   // りゅうのキバ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 289:   // こわもてプレート
+      case 217:   // くろいメガネ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 290:   // こうてつプレート
+      case 210:   // メタルコート
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 684:   // せいれいプレート
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 1664:  // レジェンドプレート
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 581:   // しんかのきせき
+        if (myState.pokemon.isEvolvable) {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense1_5);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 587:   // しめつけバンド
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bindDamage1_6);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 669:   // ノーマルジュエル
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 683:   // とつげきチョッキ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 690:   // ぼうじんゴーグル
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignorePowder);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 897:   // ぼうごパット
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignoreDirectAtackEffect);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 1178:  // あつぞこブーツ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignoreInstallingEffect);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+      case 1662:  // まっさらプレート
+      case 228:   // シルクのスカーフ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
+    }
   }
 
   Map<String, Object?> toMap() {
@@ -1020,72 +1828,8 @@ class PokeBase {    // 各ポケモンの種族ごとの値
     required this.move,
   });
 
-/*
-  factory PokeBase.fromJson(Map<String, dynamic> json, Map<String, dynamic> speciesJson) {
-    String getJAName(dynamic species) {
-      return species['names'].firstWhere((e) => e['language']['name'] == 'ja')['name'];
-    }
-    
-    List<String> typesToList(dynamic types) {
-      List<String> ret = [];
-      for (int i = 0; i < types.length; i++) {
-        ret.add(types[i]['type']['name']);
-      }
-      return ret;
-    }
-
-    Map<String, int> statusToMap(dynamic status) {
-      Map<String, int> ret = {};
-      for (int i = 0; i < status.length; i++) {
-        ret[status[i]['stat']['name']] = status[i]['base_stat'];
-      }
-      return ret;
-    }
-
-    List<String> movesToList(dynamic moves) {
-      List<String> ret = [];
-      for (int i = 0; i < moves.length; i++) {
-        ret.add(moves[i]['move']['name']);
-      }
-      return ret;
-    }
-
-    List<String> abilitiesToList(dynamic abilities) {
-      List<String> ret = [];
-      for (int i = 0; i < abilities.length; i++) {
-        ret.add(abilities[i]['ability']['name']);
-      }
-      return ret;
-    }
-
-    final List<String> types = typesToList(json['types']);
-    final Map<String, int> status = statusToMap(json['stats']);
-    final List<String> moves = movesToList(json['moves']);
-    final List<String> abilities = abilitiesToList(json['abilities']);
-
-    return PokeBase(
-      name: getJAName(speciesJson),
-      sex: [Sex.none, Sex.male, Sex.female],
-      no: json['id'],
-      type1: PokeType.values.byName(types[0]),
-      type2: (types.length > 1) ? PokeType.values.byName(types[1]) : null,
-      h: status['hp'] ?? 0,
-      a: status['hp'] ?? 0,
-      b: status['hp'] ?? 0,
-      c: status['hp'] ?? 0,
-      d: status['hp'] ?? 0,
-      s: status['hp'] ?? 0,
-      ability: [
-//        for (var name in abilities)
-//          Ability.values.byName(name)
-      ],
-      move: [
-//        for (var name in moves)
-//          Move.values.byName(name)
-      ],
-    );
-  }
-*/
+  // TODO:しんかのきせきが適用できるかどうか
+  bool get isEvolvable => true;
 }
 
 // Pokemonのstatsのインデックスに使う
@@ -1181,6 +1925,8 @@ class Pokemon {
       totalEffort() <= pokemonMaxEffortTotal
     );
   }
+  // TODO:しんかのきせきが適用できるかどうか
+  bool get isEvolvable => true;
 
   // setter
   set name(String x) {_name = x;}
@@ -1682,6 +2428,47 @@ class BuffDebuff {
   static const int power40 = 132;         // わざ威力40%アップ
   static const int power50 = 133;         // わざ威力50%アップ
   static const int myceliumMight = 134;   // へんかわざ最後に行動＆相手のとくせい無視
+  static const int specialDefense1_5 = 135;   // とくぼう1.5倍
+  static const int choiceSpecs = 136;     // わざこだわり・とくこう1.5倍
+  static const int specialAttack2 = 137;  // とくこう2倍
+  static const int onlyAttackSpecialDefense1_5 = 138;   // こうげきわざのみ選択可・とくぼう1.5倍
+  static const int specialDefense2 = 139; // とくぼう2倍
+  static const int choiceScarf = 140;     // わざこだわり・すばやさ1.5倍
+  static const int onceAccuracy1_2 = 141;      // 次に使うわざ命中率1.2倍
+  static const int movedAccuracy1_2 = 142;     // 当ターン行動済み相手へのわざ命中率1.2倍
+  static const int attackMove2 = 143;        // こうげきわざ時こうげき・とくこう2倍
+  static const int speed0_5 = 144;           // すばやさ0.5倍
+  static const int yourAccuracy0_9 = 145; // 相手わざ命中率0.9倍
+  static const int physical1_1 = 146;     // ぶつりわざ威力1.1倍
+  static const int special1_1 = 147;      // とくしゅわざ威力1.1倍
+  static const int onceNormalAttack1_3 = 148;   // ノーマルわざ威力1.3倍
+  static const int normalAttack1_2 = 149; // ノーマルわざ威力1.2倍
+  static const int fireAttack1_2 = 150;   // ほのおわざ威力1.2倍
+  static const int waterAttack1_2 = 151;  // みずわざ威力1.2倍
+  static const int electricAttack1_2 = 152;   // でんきわざ威力1.2倍
+  static const int grassAttack1_2 = 153;  // くさわざ威力1.2倍
+  static const int iceAttack1_2 = 154;    // こおりわざ威力1.2倍
+  static const int fightAttack1_2 = 155;  // かくとうわざ威力1.2倍
+  static const int poisonAttack1_2 = 156; // どくわざ威力1.2倍
+  static const int groundAttack1_2 = 157; // じめんわざ威力1.2倍
+  static const int airAttack1_2 = 158;    // ひこうわざ威力1.2倍
+  static const int psycoAttack1_2 = 159;  // エスパーわざ威力1.2倍
+  static const int bugAttack1_2 = 160;    // むしわざ威力1.2倍
+  static const int rockAttack1_2 = 161;   // いわわざ威力1.2倍
+  static const int ghostAttack1_2 = 162;  // ゴーストわざ威力1.2倍
+  static const int dragonAttack1_2 = 163; // ドラゴンわざ威力1.2倍
+  static const int evilAttack1_2 = 164;   // あくわざ威力1.2倍
+  static const int steelAttack1_2 = 165;  // はがねわざ威力1.2倍
+  static const int fairyAttack1_2 = 166;  // フェアリーわざ威力1.2倍
+  static const int moveAttack1_2 = 167;   // わざ威力1.2倍
+  static const int lifeOrb = 168;         // こうげきわざダメージ1.3倍・自身HP1/10ダメージ
+  static const int greatDamage1_2 = 169;  // こうかばつぐん時ダメージ1.2倍
+  static const int continuousMoveDamageInc0_2 = 170;  // 同じわざ連続使用ごとにダメージ+20%(MAX 200%)
+  static const int bindDamage1_6 = 171;   // バインド与ダメージ→最大HP1/6
+  static const int ignorePowder = 172;    // すなあらしダメージ・こな・ほうし無効
+  static const int ignoreDirectAtackEffect = 173; // 直接こうげきに対して発動する効果無効
+  static const int ignoreInstallingEffect = 174;  // 設置わざ効果無効
+  static const int attackWithFlinch10 = 175;      // こうげき時10%ひるみ
 
   static const _displayNameMap = {
     0:  '',
@@ -1819,6 +2606,47 @@ class BuffDebuff {
     132: 'わざ威力40%アップ',
     133: 'わざ威力50%アップ',
     134: 'へんかわざ最後に行動＆相手のとくせい無視',
+    135: 'とくぼう1.5倍',
+    136: 'わざこだわり・とくこう1.5倍',
+    137: 'とくこう2倍',
+    138: 'こうげきわざのみ選択可・とくぼう1.5倍',
+    139: 'とくぼう2倍',
+    140: 'わざこだわり・すばやさ1.5倍',
+    141: '次に使うわざ命中率1.2倍',
+    142: '当ターン行動済み相手へのわざ命中率1.2倍',
+    143: 'こうげきわざ時こうげき・とくこう2倍',
+    144: 'すばやさ0.5倍',
+    145: '相手わざ命中率0.9倍',
+    146: 'ぶつりわざ威力1.1倍',
+    147: 'とくしゅわざ威力1.1倍',
+    148: 'ノーマルわざ威力1.3倍',
+    149: 'ノーマルわざ威力1.2倍',
+    150: 'ほのおわざ威力1.2倍',
+    151: 'みずわざ威力1.2倍',
+    152: 'でんきわざ威力1.2倍',
+    153: 'くさわざ威力1.2倍',
+    154: 'こおりわざ威力1.2倍',
+    155: 'かくとうわざ威力1.2倍',
+    156: 'どくわざ威力1.2倍',
+    157: 'じめんわざ威力1.2倍',
+    158: 'ひこうわざ威力1.2倍',
+    159: 'エスパーわざ威力1.2倍',
+    160: 'むしわざ威力1.2倍',
+    161: 'いわわざ威力1.2倍',
+    162: 'ゴーストわざ威力1.2倍',
+    163: 'ドラゴンわざ威力1.2倍',
+    164: 'あくわざ威力1.2倍',
+    165: 'はがねわざ威力1.2倍',
+    166: 'フェアリーわざ威力1.2倍',
+    167: 'わざ威力1.2倍',
+    168: 'こうげきわざダメージ1.3倍・自身HP1/10ダメージ',
+    169: 'こうかばつぐん時ダメージ1.2倍',
+    170: '同じわざ連続使用ごとにダメージ+20%(MAX 200%)',
+    171: 'バインド与ダメージ→最大HP1/6',
+    172: 'すなあらしダメージ・こな・ほうし無効',
+    173: '直接こうげきに対して発動する効果無効',
+    174: '設置わざ効果無効',
+    175: 'こうげき時10%ひるみ',
   };
 
   static const _bgColorMap = {
@@ -1957,6 +2785,46 @@ class BuffDebuff {
     132: Colors.red,
     133: Colors.red,
     134: Colors.red,
+    135: Colors.red,
+    136: Colors.red,
+    137: Colors.red,
+    138: Colors.red,
+    139: Colors.red,
+    140: Colors.red,
+    141: Colors.red,
+    142: Colors.red,
+    143: Colors.red,
+    144: Colors.blue,
+    145: Colors.red,
+    146: Colors.red,
+    147: Colors.red,
+    148: Colors.red,
+    150: Colors.red,
+    151: Colors.red,
+    152: Colors.red,
+    153: Colors.red,
+    154: Colors.red,
+    155: Colors.red,
+    156: Colors.red,
+    157: Colors.red,
+    158: Colors.red,
+    159: Colors.red,
+    160: Colors.red,
+    161: Colors.red,
+    162: Colors.red,
+    163: Colors.red,
+    164: Colors.red,
+    165: Colors.red,
+    166: Colors.red,
+    167: Colors.red,
+    168: Colors.red,
+    169: Colors.red,
+    170: Colors.red,
+    171: Colors.red,
+    172: Colors.red,
+    173: Colors.red,
+    174: Colors.red,
+    175: Colors.red,
   };
 
   final int id;
@@ -2009,6 +2877,11 @@ class IndividualField {
   static const int luckyChant = 17;       // おまじない
   static const int auroraVeil = 18;       // オーロラベール
   static const int gravity = 19;          // じゅうりょく
+  static const int trickRoom = 20;        // トリックルーム
+  static const int waterSport = 21;       // みずあそび
+  static const int mudSport = 22;         // どろあそび
+  static const int wonderRoom = 23;       // ワンダールーム
+  static const int magicRoom = 24;        // マジックルーム
 
   static const _displayNameMap = {
     0: '',
@@ -2031,6 +2904,11 @@ class IndividualField {
     17: 'おまじない',
     18: 'オーロラベール',
     19: 'じゅうりょく',
+    20: 'トリックルーム',
+    21: 'みずあそび',
+    22: 'どろあそび',
+    23: 'ワンダールーム',
+    24: 'マジックルーム',
   };
 
   final int id;
@@ -2288,12 +3166,6 @@ class Field {
   static const int grassyTerrain = 2;      // グラスフィールド
   static const int mistyTerrain = 3;       // ミストフィールド
   static const int psychicTerrain = 4;     // サイコフィールド
-  static const int trickRoom = 5;          // トリックルーム
-//  static const int gravity = 6;            // じゅうりょく
-  static const int waterSport = 7;         // みずあそび
-  static const int mudSport = 8;           // どろあそび
-  static const int wonderRoom = 9;         // ワンダールーム
-  static const int magicRoom = 10;         // マジックルーム
 
   static const _displayNameMap = {
     0: '',
@@ -2301,12 +3173,6 @@ class Field {
     2: 'グラスフィールド',
     3: 'ミストフィールド',
     4: 'サイコフィールド',
-    5: 'トリックルーム',
-    6: 'じゅうりょく',
-    7: 'みずあそび',
-    8: 'どろあそび',
-    9: 'ワンダールーム',
-    10: 'マジックルーム',
   };
 
   static const _bgColorMap = {
@@ -2428,7 +3294,7 @@ class PokemonState {
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
-  Item? holdingItem = Item(0, '', AbilityTiming(0));  // 持っているもちもの(失えばnullにする)
+  Item? _holdingItem = Item(0, '', AbilityTiming(0));  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
@@ -2451,7 +3317,7 @@ class PokemonState {
     ..teraType = teraType
     ..isFainting = isFainting
     ..isBattling = isBattling
-    ..holdingItem = holdingItem?.copyWith()
+    .._holdingItem = _holdingItem?.copyWith()
     ..usedPPs = [...usedPPs]
     .._statChanges = [..._statChanges]
     ..buffDebuffs = [for (final e in buffDebuffs) e.copyWith()]
@@ -2466,6 +3332,13 @@ class PokemonState {
     ..type1 = type1
     ..type2 = type2;
 
+  Item? get holdingItem => _holdingItem;
+
+  set holdingItem(Item? item) {
+    _holdingItem?.clearPassiveEffect(this);
+    item?.processPassiveEffect(this);
+  }
+
   // 地面にいるかどうかの判定
   bool get isGround {
     if (ailmentsWhere((e) => e.id == Ailment.ingrain || e.id == Ailment.antiAir).isNotEmpty ||
@@ -2473,7 +3346,7 @@ class PokemonState {
         holdingItem?.id == 255) {
       return true;
     }
-    if (type1.id == 3 || type2?.id == 3 || currentAbility.id == 26 || holdingItem?.id == 584 ||
+    if (isTypeContain(3) || currentAbility.id == 26 || holdingItem?.id == 584 ||
         ailmentsWhere((e) => e.id == Ailment.magnetRise || e.id == Ailment.telekinesis).isNotEmpty) {
       return false;
     }
@@ -2488,8 +3361,24 @@ class PokemonState {
       buffDebuffs.add(BuffDebuff(vitalRank));
     }
     else {
-      int vitalRank = (buffDebuffs[findIdx].id + i).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-      buffDebuffs[findIdx] = BuffDebuff(vitalRank);
+      int newRank = buffDebuffs[findIdx].id + i;
+      if (newRank < BuffDebuff.vital1) {
+        buffDebuffs.removeAt(findIdx);
+      }
+      else {
+        int vitalRank = (newRank).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
+        buffDebuffs[findIdx] = BuffDebuff(vitalRank);
+      }
+    }
+  }
+
+  // タイプが含まれるか判定(テラスタル後ならテラスタイプで判定)
+  bool isTypeContain(int typeId) {
+    if (teraType != null) {
+      return teraType!.id == typeId;
+    }
+    else {
+      return type1.id == typeId || type2?.id == typeId;
     }
   }
 
@@ -2859,6 +3748,10 @@ class PokemonState {
         buffDebuffs.add(BuffDebuff(BuffDebuff.myceliumMight));
         break;
     }
+    
+    // もちものの効果を反映
+    holdingItem?.processPassiveEffect(this);
+  
     // 両者のバフ/デバフに関係する場合
     if (currentAbility.id == 186 || yourState.currentAbility.id == 186) { // ダークオーラ
       if (currentAbility.id == 188 || yourState.currentAbility.id == 188) { // オーラブレイク
@@ -2895,16 +3788,16 @@ class PokemonState {
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
-    if ((type1.id == 9 || type1.id == 4 || type2?.id == 9 || type2?.id == 4) &&
+    if ((isTypeContain(9) || isTypeContain(4)) &&
         (ailment.id == Ailment.poison || (!forceAdd && ailment.id == Ailment.badPoison))    // もうどくに関しては、わざ使用者のとくせいがふしょくなら可能
     ) return false;
-    if ((type1.id == 10 || type2?.id == 10) && ailment.id == Ailment.burn) return false;
-    if ((type1.id == 13 || type2?.id == 13) && ailment.id == Ailment.paralysis) return false;
+    if (isTypeContain(10) && ailment.id == Ailment.burn) return false;
+    if (isTypeContain(13) && ailment.id == Ailment.paralysis) return false;
     // とくせいによる耐性
     if ((currentAbility.id == 17 || currentAbility.id == 257) && (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) return false;
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
     if ((currentAbility.id == 41 || currentAbility.id == 199 || currentAbility.id == 270) && (ailment.id == Ailment.burn)) return false;    // みずのベール/ねつこうかん<-やけど
-    if (currentAbility.id == 166 && (type1.id == 12 || type2?.id == 12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
+    if (currentAbility.id == 166 && isTypeContain(12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
     if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze)) return false;      // マグマのよろい<-こおり
     if ((currentAbility.id == 102) && (weather.id == Weather.sunny) &&
@@ -3076,7 +3969,7 @@ class PokemonState {
     if (!isOwnEffect && (currentAbility.id == 35 || currentAbility.id == 51) && index == 5 && num < 0) return false;   // はっこう/するどいめ
     if (!isOwnEffect && currentAbility.id == 52 && index == 0 && num < 0) return false;   // かいりきバサミ
     if (!isOwnEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
-    if (!isOwnEffect && currentAbility.id == 166 && (type1.id == 12 || type2?.id == 12) && num < 0) return false;   // フラワーベール
+    if (!isOwnEffect && currentAbility.id == 166 && isTypeContain(12) && num < 0) return false;   // フラワーベール
     if (!isOwnEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
       yourState.addStatChanges(isOwnEffect, index, num, this, lastMirror: true);
       return false;
@@ -3095,6 +3988,12 @@ class PokemonState {
 
   void resetStatChanges() {
     _statChanges = List.generate(7, (index) => 0);
+  }
+
+  void resetDownedStatChanges() {
+    for (int i = 0; i < 7; i++) {
+      if (_statChanges[i] < 0) _statChanges[i] = 0;
+    }
   }
   // ランク変化に関する関数群ここまで
 
@@ -3521,309 +4420,202 @@ class PhaseState {
         break;
       case AbilityTiming.afterMove:   // わざ使用後
         {
+          var defenderTimingIDList = [];
+          var attackerTimingIDList = [];
+          int variedExtraArg1 = 0;
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount)) {  // わざ成功時
             if (prevAction.move!.move.damageClass.id == 1) {
               // へんかわざを受けた後
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.statused) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                );
-              }
+              defenderTimingIDList.add(AbilityTiming.statused);
             }
             if (prevAction.move!.move.damageClass.id >= 2) {
               // こうげきわざヒット後
-              var itemIDList = [];
-              for (var item in pokeData.items.values) {
-                if (item.timing.id == AbilityTiming.attackHitted) itemIDList.add(item.id);
-              }
+              attackerTimingIDList.add(AbilityTiming.attackHitted);
               // ぶつりこうげきを受けた時
               if (prevAction.move!.move.damageClass.id == DamageClass.physical) {
-                for (var item in pokeData.items.values) {
-                  if (item.timing.id == AbilityTiming.phisycalAttackedHitted) itemIDList.add(item.id);
-                }
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (itemIDList.contains(attackerState.holdingItem?.id)) {
-                int extraArg1 = 0;
-                if (attackerState.holdingItem!.id == 247) {   // いのちのたま
-                  extraArg1 = (attackerState.pokemon.h.real / 10).floor();
-                }
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(attackerPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.item)
-                  ..effectId = attackerState.holdingItem!.id
-                  ..extraArg1 = extraArg1
-                );
+                defenderTimingIDList.add(AbilityTiming.phisycalAttackedHitted);
               }
               // こうげきわざを受けた後
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.attackedHitted) defenderAbilityIDList.add(ability.id);
-              }
+              defenderTimingIDList.add(AbilityTiming.attackedHitted);
               // こうげきわざを受けてひんしになったとき
               if (defenderState.isFainting) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == AbilityTiming.attackedFainting) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.add(AbilityTiming.attackedFainting);
+              }
+              // ノーマルタイプのこうげきをうけたとき
+              if (prevAction.move!.move.type.id == 1) {
+                defenderTimingIDList.add(148);
               }
               // あくタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 17) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 86 || ability.timing.id == 87) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.addAll([86, 87]);
               }
               // みずタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 11) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 92 || ability.timing.id == 104) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.addAll([92, 104]);
               }
               // ほのおタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 10) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 104 || ability.timing.id == 107) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.addAll([104, 107]);
+              }
+              // でんきタイプのこうげきをうけたとき
+              if (prevAction.move!.move.type.id == 13) {
+                defenderTimingIDList.addAll([118]);
+              }
+              // こおりタイプのこうげきをうけたとき
+              if (prevAction.move!.move.type.id == 15) {
+                defenderTimingIDList.addAll([119]);
               }
               // ゴーストタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 8) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 87) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.addAll([87]);
               }
               // むしタイプのこうげきをうけたとき
               if (prevAction.move!.move.type.id == 7) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == 92) defenderAbilityIDList.add(ability.id);
-                }
+                defenderTimingIDList.addAll([92]);
               }
               // 直接こうげきを受けた後
               if (prevAction.move!.move.isDirect && attackerState.currentAbility.id != 203) {
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == AbilityTiming.directAttacked) defenderAbilityIDList.add(ability.id);
-                }
-                // 直接攻撃によってひんしになった場合
-                if (defenderState.isFainting) {
-                  for (var ability in pokeData.abilities.values) {
-                    if (ability.timing.id == AbilityTiming.directAttackedFainting) defenderAbilityIDList.add(ability.id);
+                // ぼうごパットで防がれないなら
+                if (attackerState.holdingItem?.id != 897) {
+                  defenderTimingIDList.addAll([AbilityTiming.directAttacked]);
+                  // 直接攻撃によってひんしになった場合
+                  if (defenderState.isFainting) {
+                    defenderTimingIDList.addAll([AbilityTiming.directAttackedFainting]);
                   }
                 }
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                if (defenderState.currentAbility.id == 16) {   // へんしょく
-                  extraArg1 = prevAction.move!.move.type.id;
-                }
-                if (defenderState.currentAbility.id == 24 || defenderState.currentAbility.id == 160) {   // さめはだ/てつのトゲ
-                  if (attackerPlayerTypeId == PlayerType.me) {
-                    extraArg1 = (attackerState.pokemon.h.real / 8).floor();
-                  }
-                  else {
-                    extraArg1 = 12;
-                  }
-                }
-                if (defenderState.currentAbility.id == 106) {   // ゆうばく
-                  if (attackerPlayerTypeId == PlayerType.me) {
-                    extraArg1 = (attackerState.pokemon.h.real / 4).floor();
-                  }
-                  else {
-                    extraArg1 = 25;
-                  }
-                }
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
               }
             }
             // 優先度1以上のわざを受けた後
             if (prevAction.move!.move.priority >= 1) {
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.priorityMoved) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                );
-              }
+              defenderTimingIDList.add(AbilityTiming.priorityMoved);
             }
             // 音技を受けた後
             if (prevAction.move!.move.isSound) {
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.soundAttacked) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                );
-              }
+              defenderTimingIDList.add(AbilityTiming.soundAttacked);
             }
             // HP吸収わざを受けた後
             if (prevAction.move!.move.isDrain) {
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.drained) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                );
-              }
+              defenderTimingIDList.add(AbilityTiming.drained);
             }
             if (prevAction.move!.move.type.id == 13) {    // でんきタイプのわざをうけた時
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.electriced) defenderAbilityIDList.add(ability.id);
-                if (ability.timing.id == AbilityTiming.electricUse) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                if (defenderState.currentAbility.id == 10) {   // ちくでん
-                  if (defenderPlayerTypeId == PlayerType.me) {
-                    extraArg1 = -((ownPokemonState.pokemon.h.real / 4).floor());
-                  }
-                  else {
-                    extraArg1 = -25;
-                  }
-                }
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
-              }
+              defenderTimingIDList.addAll([AbilityTiming.electriced, AbilityTiming.electricUse]);
             }
             if (prevAction.move!.move.type.id == 11) {    // みずタイプのわざをうけた時
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.watered) defenderAbilityIDList.add(ability.id);
-                if (ability.timing.id == AbilityTiming.fireWaterAttackedSunnyRained) defenderAbilityIDList.add(ability.id);
-                if (ability.timing.id == AbilityTiming.waterUse) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                if (defenderState.currentAbility.id == 11 || defenderState.currentAbility.id == 87) {   // ちょすい/かんそうはだ
-                  if (defenderPlayerTypeId == PlayerType.me) {
-                    extraArg1 = -((ownPokemonState.pokemon.h.real / 4).floor());
-                  }
-                  else {
-                    extraArg1 = -25;
-                  }
-                }
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
+              defenderTimingIDList.addAll([AbilityTiming.watered, AbilityTiming.fireWaterAttackedSunnyRained, AbilityTiming.waterUse]);
+              if (defenderState.currentAbility.id == 87) {   // かんそうはだ
+                variedExtraArg1 = defenderPlayerTypeId == PlayerType.me ? -((ownPokemonState.pokemon.h.real / 4).floor()) : -25;
               }
             }
             if (prevAction.move!.move.type.id == 10) {    // ほのおタイプのわざをうけた時
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.fired) defenderAbilityIDList.add(ability.id);
-                if (ability.timing.id == AbilityTiming.fireWaterAttackedSunnyRained) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
-              }
+              defenderTimingIDList.addAll([AbilityTiming.fired, AbilityTiming.fireWaterAttackedSunnyRained]);
             }
             if (prevAction.move!.move.type.id == 12) {    // くさタイプのわざをうけた時
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.grassed) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
-              }
+              defenderTimingIDList.addAll([AbilityTiming.grassed]);
             }
             if (prevAction.move!.move.type.id == 5) {    // じめんタイプのわざをうけた時
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.grounded) defenderAbilityIDList.add(ability.id);
-              }
+              defenderTimingIDList.addAll([AbilityTiming.grounded]);
               if (prevAction.move!.move.id != 28 && prevAction.move!.move.id != 614) {  // すなかけ/サウザンアローではない
-                for (var ability in pokeData.abilities.values) {
-                  if (ability.timing.id == AbilityTiming.groundFieldEffected) defenderAbilityIDList.add(ability.id);
-                }
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
+                defenderTimingIDList.addAll([AbilityTiming.groundFieldEffected]);
               }
             }
-            if (PokeType.effectiveness(attackerState.currentAbility.id == 113, prevAction.move!.move.type, defenderState.type1, defenderState.type2).id != MoveEffectiveness.great) {
-            // 効果ばつぐん以外のわざを受けたとき
-              var defenderAbilityIDList = [];
-              for (var ability in pokeData.abilities.values) {
-                if (ability.timing.id == AbilityTiming.notGreatAttacked) defenderAbilityIDList.add(ability.id);
-              }
-              // TODO 追加順はすばやさを考慮したい
-              if (defenderAbilityIDList.contains(defenderState.currentAbility.id)) {
-                int extraArg1 = 0;
-                ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
-                  ..effect = EffectType(EffectType.ability)
-                  ..effectId = defenderState.currentAbility.id
-                  ..extraArg1 = extraArg1
-                );
-              }
+            if (PokeType.effectiveness(
+                  attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+                  prevAction.move!.move.type, defenderState.type1, defenderState.type2
+                ).id == MoveEffectiveness.great
+            ) {
+              // 効果ばつぐんのわざを受けたとき
+              defenderTimingIDList.addAll([AbilityTiming.greatAttacked]);
+              var moveTypeId = prevAction.move!.move.type.id;
+              if (moveTypeId == 10) defenderTimingIDList.add(131);
+              if (moveTypeId == 11) defenderTimingIDList.add(132);
+              if (moveTypeId == 13) defenderTimingIDList.add(133);
+              if (moveTypeId == 12) defenderTimingIDList.add(134);
+              if (moveTypeId == 15) defenderTimingIDList.add(135);
+              if (moveTypeId == 2) defenderTimingIDList.add(136);
+              if (moveTypeId == 4) defenderTimingIDList.add(137);
+              if (moveTypeId == 5) defenderTimingIDList.add(138);
+              if (moveTypeId == 3) defenderTimingIDList.add(139);
+              if (moveTypeId == 14) defenderTimingIDList.add(140);
+              if (moveTypeId == 7) defenderTimingIDList.add(141);
+              if (moveTypeId == 6) defenderTimingIDList.add(142);
+              if (moveTypeId == 8) defenderTimingIDList.add(143);
+              if (moveTypeId == 16) defenderTimingIDList.add(144);
+              if (moveTypeId == 17) defenderTimingIDList.add(145);
+              if (moveTypeId == 9) defenderTimingIDList.add(146);
+              if (moveTypeId == 18) defenderTimingIDList.add(147);
             }
+            else {
+              // 効果ばつぐん以外のわざを受けたとき
+              defenderTimingIDList.addAll([AbilityTiming.notGreatAttacked]);
+            }
+          }
+
+          // 対応するタイミングに該当するとくせい
+          // TODO 追加順はすばやさを考慮したい
+          if (attackerTimingIDList.contains(attackerState.currentAbility.timing.id)) {
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.ability)
+              ..effectId = attackerState.currentAbility.id
+            );
+          }
+          if (defenderTimingIDList.contains(defenderState.currentAbility.timing.id)) {
+            int extraArg1 = 0;
+            if (defenderState.currentAbility.id == 10 ||  // ちくでん
+                defenderState.currentAbility.id == 11     // ちょすい
+            ) {
+              extraArg1 = defenderPlayerTypeId == PlayerType.me ? -((ownPokemonState.pokemon.h.real / 4).floor()) : -25;
+            }
+            if (defenderState.currentAbility.id == 16) {   // へんしょく
+              extraArg1 = prevAction!.move!.move.type.id;
+            }
+            if (defenderState.currentAbility.id == 24 || defenderState.currentAbility.id == 160) {   // さめはだ/てつのトゲ
+              extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 8).floor() : 12;
+            }
+            if (defenderState.currentAbility.id == 87) {    // かんそうはだ
+              extraArg1 = variedExtraArg1;
+            }
+            if (defenderState.currentAbility.id == 106) {   // ゆうばく
+                extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 4).floor() : 25;
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.ability)
+              ..effectId = defenderState.currentAbility.id
+              ..extraArg1 = extraArg1
+            );
+          }
+          // 対応するタイミングに該当するもちもの
+          if (attackerState.holdingItem != null && attackerTimingIDList.contains(attackerState.holdingItem!.timing.id)) {
+            int extraArg1 = 0;
+            if (attackerState.holdingItem!.id == 247) {   // いのちのたま
+              extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 10).floor() : 10;
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = attackerState.holdingItem!.id
+              ..extraArg1 = extraArg1
+            );
+          }
+          if (defenderState.holdingItem != null && defenderTimingIDList.contains(defenderState.holdingItem!.timing.id)) {
+            int extraArg1 = 0;
+            if (defenderState.holdingItem!.id == 583) {   // ゴツゴツメット
+              extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 6).floor() : 16;
+            }
+            if (defenderState.holdingItem!.id == 188 || defenderState.holdingItem!.id == 189) {   // ジャポのみ/レンブのみ
+              extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 8).floor() : 12;
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = defenderState.holdingItem!.id
+              ..extraArg1 = extraArg1
+            );
           }
         }
         break;
@@ -3855,6 +4647,8 @@ class PhaseState {
           if (opponentPokemonState.teraType == null || opponentPokemonState.teraType!.id == 0) {  // テラスタルしていない
             opponentTimingIDs.add(116);
           }
+          if (ownPokemonState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) ownTimingIDs.add(152);             // 状態異常でない毎ターン終了時
+          if (opponentPokemonState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) opponentTimingIDs.add(152);   // 状態異常でない毎ターン終了時
           ownTimingIDs.addAll(timingIDs);
           opponentTimingIDs.addAll(timingIDs);
 
@@ -3903,6 +4697,87 @@ class PhaseState {
               ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
               ..effect = EffectType(EffectType.ability)
               ..effectId = opponentPokemonState.currentAbility.id
+              ..extraArg1 = extraArg1
+            );
+          }
+
+          if (ownPokemonState.holdingItem != null && ownTimingIDs.contains(ownPokemonState.holdingItem!.timing.id)) {
+            int extraArg1 = 0;
+            switch (ownPokemonState.holdingItem!.id) {
+              case 265:     // くっつきバリ
+                extraArg1 = (ownPokemonState.pokemon.h.real / 8).floor();
+                break;
+              case 132:     // オレンのみ
+                extraArg1 = -10;
+                break;
+              case 43:      // きのみジュース
+                extraArg1 = -20;
+                break;
+              case 135:     // オボンのみ
+              case 185:     // ナゾのみ
+                extraArg1 = -(ownPokemonState.pokemon.h.real / 4).floor();
+                break;
+              case 136:     // フィラのみ
+              case 137:     // ウイのみ
+              case 138:     // マゴのみ
+              case 139:     // バンジのみ
+              case 140:     // イアのみ
+                extraArg1 = -(ownPokemonState.pokemon.h.real / 3).floor();
+                break;
+              case 258:     // くろいヘドロ
+                if (ownPokemonState.isTypeContain(4)) {   // どくタイプか
+                  extraArg1 = -(ownPokemonState.pokemon.h.real / 16).floor();
+                }
+                else {
+                  extraArg1 = (ownPokemonState.pokemon.h.real / 8).floor();
+                }
+                break;
+              case 211:     // たべのこし
+                extraArg1 = -(ownPokemonState.pokemon.h.real / 16).floor();
+                break;
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(PlayerType.me)
+              ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = ownPokemonState.holdingItem!.id
+              ..extraArg1 = extraArg1
+            );
+          }
+          if (opponentPokemonState.holdingItem != null && opponentTimingIDs.contains(opponentPokemonState.holdingItem!.timing.id)) {
+            int extraArg1 = 0;
+            switch (ownPokemonState.holdingItem!.id) {
+              case 265:     // くっつきバリ
+                extraArg1 = 12;
+                break;
+              case 135:     // オボンのみ
+              case 185:     // ナゾのみ
+                extraArg1 = -25;
+                break;
+              case 136:     // フィラのみ
+              case 137:     // ウイのみ
+              case 138:     // マゴのみ
+              case 139:     // バンジのみ
+              case 140:     // イアのみ
+                extraArg1 = -33;
+                break;
+              case 258:     // くろいヘドロ
+                if (ownPokemonState.isTypeContain(4)) {   // どくタイプか
+                  extraArg1 = -6;
+                }
+                else {
+                  extraArg1 = 12;
+                }
+                break;
+              case 211:     // たべのこし
+                extraArg1 = -6;
+                break;
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(PlayerType.opponent)
+              ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = opponentPokemonState.holdingItem!.id
               ..extraArg1 = extraArg1
             );
           }

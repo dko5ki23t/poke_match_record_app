@@ -222,6 +222,19 @@ class TurnMove {
       yourState = ownPokemonState;
     }
 
+    // ミクルのみのこうかが残っていれば消費
+    int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
+    if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+    // ノーマルジュエル消費
+    if (myState.holdingItem?.id == 669 && move.damageClass.id >= 2 && move.type.id == 1) {
+      myState.holdingItem = null;
+    }
+    // くっつきバリ移動
+    if (move.isDirect && myState.holdingItem == null && yourState.holdingItem?.id == 265) {
+      myState.holdingItem = yourState.holdingItem;
+      yourState.holdingItem = null;
+    }
+
     switch (move.damageClass.id) {
       case 1:     // へんか
         switch (move.target.id) {
@@ -365,10 +378,10 @@ class TurnMove {
     // 相手のポケモンのとくせいによって交代可能かどうか
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    bool isShadowTag = !(myState.type1.id == 8 || myState.type2?.id == 8) &&    // ゴーストタイプではない
-      (yourState.currentAbility.id == 23 ||                                                         // 相手がかげふみ
-       (yourState.currentAbility.id == 42 && (myState.type1.id == 9 || myState.type2?.id == 9)) ||  // 相手がじりょく＆自身がはがね
-       (yourState.currentAbility.id == 71 && myState.isGround)                                      // 相手がありじごく＆自身が地面にいる
+    bool isShadowTag = !myState.isTypeContain(8) &&    // ゴーストタイプではない
+      (yourState.currentAbility.id == 23 ||                                     // 相手がかげふみ
+       (yourState.currentAbility.id == 42 && myState.isTypeContain(9)) ||       // 相手がじりょく＆自身がはがね
+       (yourState.currentAbility.id == 71 && myState.isGround)                  // 相手がありじごく＆自身が地面にいる
       );
     bool canChange = count >= 1 && !isShadowTag;
 
@@ -521,7 +534,8 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
-                moveEffectivenesses[0] = PokeType.effectiveness(myState.currentAbility.id == 113, move.type, yourState.type1, yourState.type2);
+                moveEffectivenesses[0] = PokeType.effectiveness(
+                    myState.currentAbility.id == 113, yourState.holdingItem?.id == 586, move.type, yourState.type1, yourState.type2);
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
