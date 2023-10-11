@@ -657,6 +657,7 @@ class AbilityTiming {
   static const int infatuation = 153;           // メロメロになるとき
   static const int afterActionDecisionHP025 = 154;  // HPが1/4以下で行動決定後
   static const int chargeMoving = 155;          // ためわざを使うとき
+  static const int changedIgnoredAbility = 156; // とくせいを変更される、無効化される、無視されるとき
 
   const AbilityTiming(this.id);
 
@@ -795,12 +796,8 @@ class AbilityEffect {
 
 // 効果
 class MoveEffect {
-/*
-  none(0),
-  attackDown1(1),         // こうげき1段階ダウン
-  attackUp1(2),           // こうげき1段階アップ
-  ;
-*/
+  static const int none = 0;
+  // IDはpokeAPIのmove_effect_idに対応
 
   const MoveEffect(this.id);
 
@@ -1355,6 +1352,9 @@ class Item {
       case 228:   // シルクのスカーフ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.normalAttack1_2));
         break;
+      case 1696:  // パンチグローブ
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.punchNotDirect1_1));
+        break;
     }
   }
 
@@ -1690,6 +1690,12 @@ class Item {
           if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
         }
         break;
+      case 1696:  // パンチグローブ
+        {
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1);
+          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        }
+        break;
     }
   }
 
@@ -1777,11 +1783,11 @@ class Move {
       accuracy, priority, target,
       damageClass, effect, effectChance, pp,);
 
-  // TODO(今はダブルウイングだけ)
   // 連続こうげきの場合、その最大回数を返す（連続こうげきではない場合は1を返す）
   int maxMoveCount() {
-    if (id == 814) return 2;
-    if (id == 350) return 5;
+    if (effect.id == 30) return 5;
+    if (effect.id == 45) return 2;
+    if (effect.id == 78) return 2;
     return 1;
   }
 
@@ -2108,6 +2114,7 @@ class Ailment {
   static const int magicCoat = 32;          // マジックコート
   static const int charging = 33;           // じゅうでん
   static const int thrash = 34;             // あばれる
+  static const int bide = 35;               // がまん
 
   static const _displayNameMap = {
     0: '',
@@ -2469,6 +2476,9 @@ class BuffDebuff {
   static const int ignoreDirectAtackEffect = 173; // 直接こうげきに対して発動する効果無効
   static const int ignoreInstallingEffect = 174;  // 設置わざ効果無効
   static const int attackWithFlinch10 = 175;      // こうげき時10%ひるみ
+  static const int substitute = 176;      // みがわり
+  static const int rage = 177;            // わざによるダメージでこうげき1段階上昇
+  static const int punchNotDirect1_1 = 178;   // パンチわざ非接触化・威力1.1倍
 
   static const _displayNameMap = {
     0:  '',
@@ -2647,6 +2657,9 @@ class BuffDebuff {
     173: '直接こうげきに対して発動する効果無効',
     174: '設置わざ効果無効',
     175: 'こうげき時10%ひるみ',
+    176: 'みがわり',
+    177: 'わざによるダメージでこうげき1段階上昇',
+    178: 'パンチわざ非接触化・威力1.1倍',
   };
 
   static const _bgColorMap = {
@@ -2825,6 +2838,9 @@ class BuffDebuff {
     173: Colors.red,
     174: Colors.red,
     175: Colors.red,
+    176: Colors.green,
+    177: Colors.red,
+    178: Colors.red,
   };
 
   final int id;
@@ -3337,6 +3353,7 @@ class PokemonState {
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
+    _holdingItem = item;
   }
 
   // 地面にいるかどうかの判定
@@ -3956,29 +3973,30 @@ class PokemonState {
 
   // とくせい等によって変化できなかった場合はfalseが返る
   bool addStatChanges(
-    bool isOwnEffect, int index, int num, PokemonState yourState,
+    bool isMyEffect, int index, int num, PokemonState yourState,
     {int? moveId, int? abilityId, int? itemId, bool lastMirror = false}
   ) {
     int change = num;
-    if (!isOwnEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
-    if (!isOwnEffect && abilityId == 22 &&        // いかくに対する
+    if (!isMyEffect && holdingItem?.id == 1698 && num < 0) return false;    // クリアチャーム
+    if (!isMyEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
+    if (!isMyEffect && abilityId == 22 &&        // いかくに対する
         (currentAbility.id == 12 || currentAbility.id == 20  || currentAbility.id == 39 ||    // どんかん/マイペース/せいしんりょく
          currentAbility.id == 113)) return false;                                             // きもったま
-    if (!isOwnEffect && currentAbility.id == 20 && abilityId == 22) return false;   // マイペース
-    if (!isOwnEffect && (currentAbility.id == 29 || currentAbility.id == 73 || currentAbility.id == 230) && num < 0) return false;   // クリアボディ/しろいけむり/メタルプロテクト
-    if (!isOwnEffect && (currentAbility.id == 35 || currentAbility.id == 51) && index == 5 && num < 0) return false;   // はっこう/するどいめ
-    if (!isOwnEffect && currentAbility.id == 52 && index == 0 && num < 0) return false;   // かいりきバサミ
-    if (!isOwnEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
-    if (!isOwnEffect && currentAbility.id == 166 && isTypeContain(12) && num < 0) return false;   // フラワーベール
-    if (!isOwnEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
-      yourState.addStatChanges(isOwnEffect, index, num, this, lastMirror: true);
+    if (!isMyEffect && currentAbility.id == 20 && abilityId == 22) return false;   // マイペース
+    if (!isMyEffect && (currentAbility.id == 29 || currentAbility.id == 73 || currentAbility.id == 230) && num < 0) return false;   // クリアボディ/しろいけむり/メタルプロテクト
+    if (!isMyEffect && (currentAbility.id == 35 || currentAbility.id == 51) && index == 5 && num < 0) return false;   // はっこう/するどいめ
+    if (!isMyEffect && currentAbility.id == 52 && index == 0 && num < 0) return false;   // かいりきバサミ
+    if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
+    if (!isMyEffect && currentAbility.id == 166 && isTypeContain(12) && num < 0) return false;   // フラワーベール
+    if (!isMyEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
+      yourState.addStatChanges(isMyEffect, index, num, this, lastMirror: true);
       return false;
     }
-    if (!isOwnEffect && abilityId == 22 && currentAbility.id == 275) num = 1;   // いかくに対するばんけん
+    if (!isMyEffect && abilityId == 22 && currentAbility.id == 275) num = 1;   // いかくに対するばんけん
 
     if (currentAbility.id == 86) change *= 2;   // たんじゅん
     if (currentAbility.id == 126) change *= -1; // あまのじゃく
-    if (!isOwnEffect && currentAbility.id == 128 && num < 0) {  // まけんき
+    if (!isMyEffect && currentAbility.id == 128 && num < 0) {  // まけんき
       _statChanges[0] =  (_statChanges[0] + 2).clamp(-6, 6);
     }
 
@@ -4474,7 +4492,10 @@ class PhaseState {
                 defenderTimingIDList.addAll([92]);
               }
               // 直接こうげきを受けた後
-              if (prevAction.move!.move.isDirect && attackerState.currentAbility.id != 203) {
+              if (prevAction.move!.move.isDirect &&
+                  !(prevAction.move!.move.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+                  attackerState.currentAbility.id != 203    // とくせいがえんかくでない
+              ) {
                 // ぼうごパットで防がれないなら
                 if (attackerState.holdingItem?.id != 897) {
                   defenderTimingIDList.addAll([AbilityTiming.directAttacked]);

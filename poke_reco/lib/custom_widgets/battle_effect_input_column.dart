@@ -77,12 +77,27 @@ class BattleEffectInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.close),
                             onPressed: () {
-                              turn.phases.removeAt(firstIdx+i);
-                              appState.editingPhase.removeAt(firstIdx+i);
-                              textEditControllerList1.removeAt(firstIdx+i);
-                              textEditControllerList2.removeAt(firstIdx+i);
-                              textEditControllerList3.removeAt(firstIdx+i);
-                              onFocus(0);   // フォーカスリセット
+                              if (i == 0) {
+                                var timing = turn.phases[firstIdx+i].timing;
+                                turn.phases[firstIdx+i] =
+                                  TurnEffect()
+                                  ..timing = timing
+                                  ..isAdding = true;
+                                appState.editingPhase[firstIdx+i] = false;
+                                textEditControllerList1[firstIdx+i].text = '';
+                                textEditControllerList2[firstIdx+i].text = '';
+                                textEditControllerList3[firstIdx+i].text = '';
+                                appState.needAdjustPhases = true;
+                                onFocus(0);   // フォーカスリセット
+                              }
+                              else {
+                                turn.phases.removeAt(firstIdx+i);
+                                appState.editingPhase.removeAt(firstIdx+i);
+                                textEditControllerList1.removeAt(firstIdx+i);
+                                textEditControllerList2.removeAt(firstIdx+i);
+                                textEditControllerList3.removeAt(firstIdx+i);
+                                onFocus(0);   // フォーカスリセット
+                              }
                             },
                           ),
                         ],
@@ -281,9 +296,9 @@ class BattleEffectInputColumn extends Column {
             () {
               turn.phases[firstIdx+i].isAdding = false;
               appState.editingPhase[firstIdx+i] = true;
-              appState.editingPhase.insert(firstIdx+i+1, false);
-              textEditControllerList1.insert(firstIdx+i+1, TextEditingController());
-              textEditControllerList2.insert(firstIdx+i+1, TextEditingController());
+//              appState.editingPhase.insert(firstIdx+i+1, false);
+//              textEditControllerList1.insert(firstIdx+i+1, TextEditingController());
+//              textEditControllerList2.insert(firstIdx+i+1, TextEditingController());
               onFocus(firstIdx+i+1);
             } : null,
           child: Container(

@@ -103,9 +103,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       focusState = turns[turnNum-1].
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      if (getSelectedNum(appState.editingPhase) == 0) {
+      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases) {
         sameTimingList = _adjustPhases(appState, isNewTurn);
         isNewTurn = false;
+        appState.needAdjustPhases = false;
       }
     }
 
@@ -1353,6 +1354,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         currentState, appState.pokeData, lastAction, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
+        ..phaseIdx = i
         ..turnEffect = phases[i]
         ..phaseState = currentState.copyWith()
         ..guides = guide

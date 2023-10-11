@@ -112,7 +112,9 @@ class TurnMove {
   List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
   List<int> realDamage = [0];     // わざによって受けたダメージ（確定値）
   List<int> percentDamage = [0];  // わざによって与えたダメージ（概算値、割合）
-  List<MoveAdditionalEffect> moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
+  List<MoveEffect> moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
+  List<int> extraArg1 = [0];
+  List<int> extraArg2 = [0];
   int? changePokemonIndex;
   int? targetMyPokemonIndex;   // わざの対象ポケモン
 
@@ -129,6 +131,8 @@ class TurnMove {
     ..realDamage = [...realDamage]
     ..percentDamage = [...percentDamage]
     ..moveAdditionalEffects = [...moveAdditionalEffects]
+    ..extraArg1 = [...extraArg1]
+    ..extraArg2 = [...extraArg2]
     ..changePokemonIndex = changePokemonIndex
     ..targetMyPokemonIndex = targetMyPokemonIndex;
 
@@ -142,13 +146,31 @@ class TurnMove {
       (move.damageClass.id == 1);
   }
 
+  // 追加効果に対応する文字列
+  static const Map<int, String> moveEffectText = {
+    2: 'ねむってしまった',
+    3: 'どくにかかった',
+    5: 'やけどをおった',
+    6: 'こおってしまった',
+    7: 'しびれてしまった',
+    32: 'ひるんで技がだせない',
+    50: 'こんらんした',
+    69: 'こうげきが下がった',
+    70: 'ぼうぎょが下がった',
+    71: 'すばやさが下がった',
+    72: 'とくこうが下がった',
+    73: 'とくぼうが下がった',
+    74: '命中率が下がった',
+    77: 'こんらんした',
+  };
+
   List<String> processMove(
     Party ownParty,
     Party opponentParty,
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
     PhaseState state,
-    int continousCount,
+    int continuousCount,
   )
   {
     List<String> ret = [];
@@ -215,12 +237,10 @@ class TurnMove {
 
     if (move.id == 0) return ret;
 
-    PokemonState myState = ownPokemonState;
-    PokemonState yourState = opponentPokemonState;
-    if (playerType.id == PlayerType.opponent) {
-      myState = opponentPokemonState;
-      yourState = ownPokemonState;
-    }
+    PokemonState myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    PokemonState yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    int myPlayerTypeID = playerType.id;
+    int yourPlayerTypeID = playerType.id == PlayerType.me ? PlayerType.opponent : PlayerType.me;
 
     // ミクルのみのこうかが残っていれば消費
     int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
@@ -235,104 +255,339 @@ class TurnMove {
       yourState.holdingItem = null;
     }
 
-    switch (move.damageClass.id) {
-      case 1:     // へんか
-        switch (move.target.id) {
-          case 1:
-            break;
-          case 2:
-            break;
-          case 3:
-            break;
-          case 4:
-            break;
-          case 5:
-            break;
-          case 6:
-            break;
-          case 7:     // 自分自身
-            switch (move.effect.id) {
-              case 1:
-                break;
-              case 2:
-                break;
-              case 3:
-                break;
-              case 4:
-                break;
-              case 5:
-                break;
-              case 6:
-                break;
-              case 7:
-                break;
-              case 8:
-                break;
-              case 213:   // こうげきとすばやさを1段階上げる
-                myState.addStatChanges(true, 0, 1, yourState, moveId: move.id);
-                myState.addStatChanges(true, 4, 1, yourState, moveId: move.id);
-                break;
-              default:
-                break;
-            }
-            break;
-          case 8:
-            break;
-          case 9:
-            break;
-          case 10:
-            break;
-          case 11:
-            break;
-          case 12:
-            break;
-          case 13:
-            break;
-          case 14:
-            break;
-          case 15:
-            break;
-          case 16:    // ひんしの(味方)ポケモン
-            if (move.id == 863) {   // TODO さいきのいのり
-              if (targetMyPokemonIndex == null) break;
-              if (playerType.id == PlayerType.me) {
-                state.ownPokemonStates[targetMyPokemonIndex!-1].remainHP =
-                  (ownParty.pokemons[targetMyPokemonIndex!-1]!.h.real / 2).floor();
-              }
-              else {
-                state.opponentPokemonStates[targetMyPokemonIndex!-1].remainHPPercent = 50;
-              }
-            }
-            break;
-          default:
-            break;
+    // わざの対象決定
+    List<PokemonState> targetStates = [yourState];
+    List<int> targetPlayerTypeIDs = [yourPlayerTypeID];
+    PhaseState? targetField;
+    switch (move.target.id) {
+      case 1:     // TODO:わざによって異なる？
+        break;
+      case 2:     // 選択した自分以外の場にいるポケモン(TODO:10との違い？)
+        break;
+      case 3:     // 味方(存在する場合)
+        break;
+      case 4:     // 使用者の場
+        targetStates = [myState];
+        targetPlayerTypeIDs = [myPlayerTypeID];
+        break;
+      case 5:     // 使用者もしくは味方
+        targetStates = [myState];
+        targetPlayerTypeIDs = [myPlayerTypeID];
+        break;
+      case 6:     // 相手の場
+        break;
+      case 7:     // 使用者自身
+        targetStates = [myState];
+        targetPlayerTypeIDs = [myPlayerTypeID];
+        break;
+      case 8:     // ランダムな相手
+        break;
+      case 9:     // 場にいる使用者以外の全ポケモン
+        break;
+      case 10:    // 選択した自分以外の場にいるポケモン
+        break;
+      case 11:    // 場にいる相手側の全ポケモン
+        break;
+      case 12:    // 全体の場
+        targetStates = [];
+        targetField = state;
+        break;
+      case 13:    // 使用者と味方
+        targetStates = [myState];
+        targetPlayerTypeIDs = [myPlayerTypeID];
+        break;
+      case 14:    // 場にいるすべてのポケモン
+        targetStates.add(myState);
+        targetPlayerTypeIDs.add(myPlayerTypeID);
+        break;
+      case 15:    // すべての味方
+        targetStates.clear();
+        targetPlayerTypeIDs.clear();  // 使わない
+        for (int i = 0; i < state.ownPokemonStates.length; i++) {
+          if (i != state.ownPokemonIndex-1 && !state.ownPokemonStates[i].isFainting) {
+            targetStates.add(state.ownPokemonStates[i]);
+            targetPlayerTypeIDs.add(myPlayerTypeID);
+          }
         }
         break;
-      case 2:     // ぶつり
-        // ダメージを負わせる
-        yourState.remainHP -= realDamage[continousCount];
-        yourState.remainHPPercent -= percentDamage[continousCount];
+      case 16:    // ひんしの(味方)ポケモン
+        targetStates.clear();
+        targetPlayerTypeIDs.clear();  // 使わない
+        for (int i = 0; i < state.ownPokemonStates.length; i++) {
+          if (i != state.ownPokemonIndex-1 && state.ownPokemonStates[i].isFainting) {
+            targetStates.add(state.ownPokemonStates[i]);
+            targetPlayerTypeIDs.add(myPlayerTypeID);
+          }
+        }
         break;
+      default:
+        break;
+    }
+
+    switch (move.damageClass.id) {
+      case 1:     // へんか
+        break;
+      case 2:     // ぶつり
       case 3:     // とくしゅ
         // ダメージを負わせる
-        yourState.remainHP -= realDamage[continousCount];
-        yourState.remainHPPercent -= percentDamage[continousCount];
+        for (var targetState in targetStates) {
+          targetState.remainHP -= realDamage[continuousCount];
+          targetState.remainHPPercent -= percentDamage[continuousCount];
+        }
         break;
       default:
         break;
     }
 
     // 追加効果
-    // 対象の相手
-    PokemonState additionalEffectTargetState = yourState;
-    // TODO:追加効果の対象が自分なら変数に代入
-    switch (moveAdditionalEffects[continousCount].id) {
+    for (int i = 0; i < targetStates.length; i++) {
+      var targetState = targetStates[i];
+      var targetPlayerTypeID = targetPlayerTypeIDs[i];
+      switch (moveAdditionalEffects[continuousCount].id) {
+        case 1:     // 特殊効果なし
+          break;
+        case 2:     // 眠らせる
+          targetState.ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+          break;
+        case 3:     // どくにする(確率)
+        case 67:    // どくにする
+        case 78:    // 2回こうげき、どくにする(確率)
+          targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+          break;
+        case 4:     // 与えたダメージの半分だけHP回復
+          myState.remainHP -= extraArg1[continuousCount];
+          myState.remainHPPercent -= extraArg2[continuousCount];
+          break;
+        case 5:     // やけどにする(確率)
+          targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+          break;
+        case 6:     // こおりにする(確率)
+          targetState.ailmentsAdd(Ailment(Ailment.freeze), state.weather, state.field);
+          break;
+        case 7:     // まひにする(確率)
+        case 68:    // まひにする
+          targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+          break;
+        case 8:     // 使用者はひんしになる
+          myState.remainHP = 0;
+          myState.remainHPPercent = 0;
+          myState.isFainting = true;
+          break;
+        case 9:     // ねむり状態の対象にのみダメージ、与えたダメージの半分だけHP回復
+          myState.remainHP -= extraArg1[continuousCount];
+          myState.remainHPPercent -= extraArg2[continuousCount];
+          break;
+        case 10:    // 対象が最後に使ったわざを使う
+          // TODO
+          break;
+        case 11:    // 使用者のこうげきを1段階上げる
+          myState.addStatChanges(true, 0, 1, targetState, moveId: move.id);
+          break;
+        case 12:    // 使用者のぼうぎょを1段階上げる
+          myState.addStatChanges(true, 1, 1, targetState, moveId: move.id);
+          break;
+        case 14:    // 使用者のとくこうを1段階上げる
+          myState.addStatChanges(true, 2, 1, targetState, moveId: move.id);
+          break;
+        case 17:    // 使用者のかいひを1段階上げる
+          myState.addStatChanges(true, 6, 1, targetState, moveId: move.id);
+          break;
+        case 18:    // 必中
+        case 79:    // 必中
+          break;
+        case 19:    // こうげきを1段階下げる
+        case 69:    // こうげきを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: move.id);
+          break;
+        case 20:    // ぼうぎょを1段階下げる
+        case 70:    // ぼうぎょを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 1, -1, myState, moveId: move.id);
+          break;
+        case 21:    // すばやさを1段階下げる
+        case 71:    // すばやさを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 4, -1, myState, moveId: move.id);
+          break;
+        case 24:    // めいちゅうを1段階下げる
+        case 74:    // めいちゅうを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 5, -1, myState, moveId: move.id);
+          break;
+        case 25:    // かいひを1段階下げる
+          targetState.addStatChanges(targetState == myState, 6, -1, myState, moveId: move.id);
+          break;
+        case 26:    // すべての能力ランクを0にリセットする
+          targetState.resetStatChanges();
+          break;
+        case 27:    // 2ターン後の自身の行動までがまん状態になり、その間受けた合計ダメージの2倍を相手に返す
+          myState.ailmentsAdd(Ailment(Ailment.bide), state.weather, state.field);
+          // TODO
+          break;
+        case 28:    // 2～3ターンの間あばれる状態になり、攻撃し続ける。攻撃終了後、自身がこんらん状態となる
+          myState.ailmentsAdd(Ailment(Ailment.thrash), state.weather, state.field);
+          // TODO
+          break;
+        case 29:    // 相手ポケモンをランダムに交代させる
+          if (extraArg1[continuousCount] != 0) {
+            targetState.processExitEffect(targetPlayerTypeID == PlayerType.me, myState);
+            if (playerType.id == PlayerType.me) {
+              state.opponentPokemonIndex = extraArg1[continuousCount];
+            }
+            else {
+              state.ownPokemonIndex = extraArg1[continuousCount];
+            }
+            targetState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state.weather, state.field, myState);
+          }
+          break;
+        case 30:    // 2～5回こうげきする
+          break;
+        case 31:    // 使用者のタイプを変更する
+          if (extraArg1[continuousCount] != 0) {
+            myState.type1 = PokeType.createFromId(extraArg1[continuousCount]);
+            myState.type2 = null;
+          }
+          break;
+        case 32:    // ひるませる(確率)
+          targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+          break;
+        case 33:    // 最大HPの半分まで回復する
+          myState.remainHP -= extraArg1[continuousCount];
+          myState.remainHPPercent -= extraArg2[continuousCount];
+          break;
+        case 34:    // もうどくにする
+          targetState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+          break;
+        case 35:    // 戦闘後おかねを拾える
+          break;
+        case 36:    // 場に「ひかりのかべ」を発生させる
+          int findIdx = targetState.fields.indexWhere((e) => e.id == IndividualField.lightScreen);
+          if (findIdx < 0) targetState.fields.add(IndividualField(IndividualField.lightScreen));
+          break;
+        case 37:    // やけど・こおり・まひのいずれかにする(確率)
+          if (extraArg1[continuousCount] != 0) {
+            targetState.ailmentsAdd(Ailment(extraArg1[continuousCount]), state.weather, state.field);
+          }
+          break;
+        case 38:    // 使用者はHP満タン・状態異常を回復して2ターン眠る
+          int findIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.sleep);
+          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          if (myPlayerTypeID == PlayerType.me) {
+            myState.remainHP = myState.pokemon.h.real;
+          }
+          else {
+            myState.remainHPPercent = 100;
+          }
+          targetState.ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+          break;
+        case 39:    // 一撃必殺
+          targetState.remainHP = 0;
+          targetState.remainHPPercent = 0;
+          targetState.isFainting = true;
+          break;
+        case 40:    // 1ターン目にため、2ターン目でこうげきする
+          // TODO
+          break;
+        case 41:    // 残りHPの半分のダメージ(残り1の場合は1)
+          break;
+        case 42:    // 40の固定ダメージ
+          break;
+        case 43:    // バインド状態にする
+          targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state.weather, state.field);
+          break;
+        case 44:    // きゅうしょに当たりやすい
+          break;
+        case 45:    // 2回こうげき
+          break;
+        case 46:    // わざを外すと使用者に、使用者の最大HP1/2のダメージ
+          myState.remainHP -= extraArg1[continuousCount];
+          myState.remainHPPercent -= extraArg2[continuousCount];
+          break;
+        case 47:    // 場に「しろいきり」を発生させる
+          int findIdx = targetState.fields.indexWhere((e) => e.id == IndividualField.mist);
+          if (findIdx < 0) targetState.fields.add(IndividualField(IndividualField.mist));
+          break;
+        case 48:    // 使用者の急所ランク+1
+          myState.addVitalRank(1);
+          break;
+        case 49:    // 使用者は相手に与えたダメージの1/4ダメージを受ける
+          myState.remainHP -= extraArg1[continuousCount];
+          myState.remainHPPercent -= extraArg2[continuousCount];
+          break;
+        case 50:    // こんらんさせる
+        case 77:    // こんらんさせる(確率)
+          targetState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+          break;
+        case 51:    // 使用者のこうげきを2段階上げる
+          myState.addStatChanges(true, 0, 2, targetState, moveId: move.id);
+          break;
+        case 52:    // 使用者のぼうぎょを2段階上げる
+          myState.addStatChanges(true, 1, 2, targetState, moveId: move.id);
+          break;
+        case 53:    // 使用者のすばやさを2段階上げる
+          myState.addStatChanges(true, 4, 2, targetState, moveId: move.id);
+          break;
+        case 54:    // 使用者のとくこうを2段階上げる
+          myState.addStatChanges(true, 2, 2, targetState, moveId: move.id);
+          break;
+        case 55:    // 使用者のとくこうを2段階上げる
+          myState.addStatChanges(true, 3, 2, targetState, moveId: move.id);
+          break;
+        case 58:    // へんしん状態となる
+          // TODO
+          break;
+        case 59:    // こうげきを2段階下げる
+          targetState.addStatChanges(targetState == myState, 0, -2, myState, moveId: move.id);
+          break;
+        case 60:    // ぼうぎょを2段階下げる
+          targetState.addStatChanges(targetState == myState, 1, -2, myState, moveId: move.id);
+          break;
+        case 61:    // すばやさを2段階下げる
+          targetState.addStatChanges(targetState == myState, 4, -2, myState, moveId: move.id);
+          break;
+        case 62:    // とくこうを2段階下げる
+          targetState.addStatChanges(targetState == myState, 2, -2, myState, moveId: move.id);
+          break;
+        case 63:    // とくぼうを2段階下げる
+          targetState.addStatChanges(targetState == myState, 3, -2, myState, moveId: move.id);
+          break;
+        case 66:    // 場に「リフレクター」を発生させる
+          int findIdx = targetState.fields.indexWhere((e) => e.id == IndividualField.reflector);
+          if (findIdx < 0) targetState.fields.add(IndividualField(IndividualField.reflector));
+          break;
+        case 72:    // とくこうを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: move.id);
+          break;
+        case 73:    // とくぼうを1段階下げる(確率)
+          targetState.addStatChanges(targetState == myState, 3, -1, myState, moveId: move.id);
+          break;
+        case 76:    // 1ターン目は攻撃せず、2ターン目に攻撃。ひるませる(確率)
+          // TODO
+          break;
+        case 80:    // 場に「みがわり」を発生させる
+          targetState.remainHP -= extraArg1[continuousCount];
+          targetState.remainHPPercent -= extraArg2[continuousCount];
+          int findIdx = targetState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.substitute);
+          if (findIdx < 0) {
+            targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute)
+              ..extraArg1 = extraArg1[continuousCount] != 0 ? -extraArg1[continuousCount] : 25);
+          }
+          break;
+        case 81:    // 使用者は次のターン動けない
+          // TODO
+          break;
+        case 82:    // 使用者はいかり状態になる
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rage);
+          if (findIdx < 0) targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.rage));
+          break;
+        default:
+          break;
+      }
+    }
+    /*switch (moveAdditionalEffects[continousCount].id) {
       case MoveAdditionalEffect.speedDown:
         additionalEffectTargetState.addStatChanges(false, 4, -1, myState, moveId: move.id);
         break;
       default:
         break;
-    }
+    }*/
 
     return ret;
   }
@@ -534,6 +789,7 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
+                moveAdditionalEffects[0] = MoveEffect(move.effect.id);
                 moveEffectivenesses[0] = PokeType.effectiveness(
                     myState.currentAbility.id == 113, yourState.holdingItem?.id == 586, move.type, yourState.type1, yourState.type2);
                 appState.editingPhase[phaseIdx] = true;
@@ -650,16 +906,44 @@ class TurnMove {
     List<PokemonState> opponentPokemonStates,
     PhaseState state,
     TextEditingController hpController,
+    TextEditingController hpController2,
     MyAppState appState,
     int phaseIdx,
-    int continousCount,
+    int continuousCount,
   )
   {
     if (playerType.id != PlayerType.none && type.id == TurnMoveType.move) {
       // 追加効果
       Row effectInputRow = Row();
+      Row effectInputRow2 = Row();
       switch (move.effect.id) {
-        case 71:  // すばやさを1段階下げる
+        //case 2:     // 眠らせる
+        case 3:     // どくにする(確率)
+        case 5:     // やけどにする(確率)
+        case 6:     // こおりにする(確率)
+        case 7:     // まひにする(確率)
+        //case 19:    // こうげきを1段階下げる
+        //case 20:    // ぼうぎょを1段階下げる
+        //case 21:    // すばやさを1段階下げる
+        //case 24:    // めいちゅうを1段階下げる
+        //case 25:    // かいひを1段階下げる
+        case 32:    // ひるませる(確率)
+        //case 34:    // もうどくにする
+        //case 50:    // こんらんさせる
+        //case 59:    // こうげきを2段階下げる
+        //case 60:    // ぼうぎょを2段階下げる
+        //case 61:    // すばやさを2段階下げる
+        //case 62:    // とくこうを2段階下げる
+        //case 63:    // とくぼうを2段階下げる
+        //case 67:    // どくにする
+        //case 68:    // まひにする
+        case 69:    // こうげきを1段階下げる(確率)
+        case 70:    // ぼうぎょを1段階下げる(確率)
+        case 71:    // すばやさを1段階下げる(確率)
+        case 72:    // とくこうを1段階下げる(確率)
+        case 73:    // とくぼうを1段階下げる(確率)
+        case 74:    // めいちゅうを1段階下げる(確率)
+        case 78:    // 2回こうげき、どくにする(確率)
           effectInputRow = Row(
             children: [
               Expanded(
@@ -671,17 +955,17 @@ class TurnMove {
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
-                      value: MoveAdditionalEffect.none,
+                      value: MoveEffect.none,
                       child: Text('なし'),
                     ),
                     DropdownMenuItem(
-                      value: MoveAdditionalEffect.speedDown,
-                      child: Text('すばやさが下がった'),
+                      value: move.effect.id,
+                      child: Text('相手は${moveEffectText[move.effect.id]!}'),
                     ),
                   ],
-                  value: moveAdditionalEffects[continousCount].id,
+                  value: moveAdditionalEffects[continuousCount].id,
                   onChanged: (value) {
-                    moveAdditionalEffects[continousCount] = MoveAdditionalEffect(value);
+                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -690,7 +974,220 @@ class TurnMove {
             ],
           );
           break;
-        case 28:    // 2-3ターン連続でこうげきし、自身はこんらんする
+        case 4:     // 与えたダメージの半分だけHP回復
+        case 9:     // ねむり状態の対象にのみダメージ、与えたダメージの半分だけHP回復
+        case 33:    // 最大HPの半分まで回復する
+        case 49:    // 使用者は相手に与えたダメージの1/4ダメージを受ける
+        case 80:    // 場に「みがわり」を発生させる
+          effectInputRow2 = Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: hpController2,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: playerType.id == PlayerType.me ? 
+                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                  ),
+                  enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('/${ownPokemon.h.real}')) :
+              Flexible(child: Text('% /100%'))
+            ],
+          );
+          break;
+        //case 11:    // 使用者のこうげきを1段階上げる
+        //case 12:    // 使用者のぼうぎょを1段階上げる
+        //case 14:    // 使用者のとくこうを1段階上げる
+        //case 17:    // 使用者のかいひを1段階上げる
+        //case 51:    // 使用者のこうげきを2段階上げる
+        //case 52:    // 使用者のぼうぎょを2段階上げる
+        //case 53:    // 使用者のすばやさを2段階上げる
+        //case 54:    // 使用者のとくこうを2段階上げる
+        //case 55:    // 使用者のとくこうを2段階上げる
+          effectInputRow = Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '追加効果',
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: MoveEffect.none,
+                      child: Text('なし'),
+                    ),
+                    DropdownMenuItem(
+                      value: move.effect.id,
+                      child: Text('自身は${moveEffectText[move.effect.id]!}'),
+                    ),
+                  ],
+                  value: moveAdditionalEffects[continuousCount].id,
+                  onChanged: (value) {
+                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+            ],
+          );
+        case 29:    // 相手ポケモンをランダムに交代させる
+          effectInputRow = Row(
+            children: [
+              Expanded(
+                flex: 5,
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '交代先ポケモン',
+                  ),
+                  items: playerType.id == PlayerType.opponent ?
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < ownParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleOwnBattling(i) && !state.ownPokemonStates[i].isFainting,
+                          child: Text(
+                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleOwnBattling(i) && !state.ownPokemonStates[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ] :
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < opponentParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleOpponentBattling(i) && !state.opponentPokemonStates[i].isFainting,
+                          child: Text(
+                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleOpponentBattling(i) && !state.opponentPokemonStates[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ],
+                  value: extraArg1[continuousCount],
+                  onChanged: (value) {
+                    extraArg1[continuousCount] = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+            ],
+          );
+          break;
+        case 31:    // 使用者のタイプを変更する
+          effectInputRow = Row(
+            children: [
+              Expanded(
+                child: TypeDropdownButton(
+                  appState.pokeData,
+                  '変更先タイプ',
+                  (val) {extraArg1[continuousCount] = val;},
+                  extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
+                ),
+              ),
+            ],
+          );
+          break;
+        case 37:    // やけど・こおり・まひのいずれかにする(確率)
+          effectInputRow = Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '追加効果',
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: MoveEffect.none,
+                      child: Text('なし'),
+                    ),
+                    DropdownMenuItem(
+                      value: Ailment.burn,
+                      child: Text('相手はやけどをおった'),
+                    ),
+                    DropdownMenuItem(
+                      value: Ailment.freeze,
+                      child: Text('相手はこおってしまった'),
+                    ),
+                    DropdownMenuItem(
+                      value: Ailment.paralysis,
+                      child: Text('相手はしびれてしまった'),
+                    ),
+                  ],
+                  value: moveAdditionalEffects[continuousCount].id,
+                  onChanged: (value) {
+                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+            ],
+          );
+          break;
+        case 46:    // わざを外すと使用者にダメージ
+          if (moveHits[continuousCount].id == MoveHit.notHit || moveHits[continuousCount].id == MoveHit.fail) {
+            effectInputRow2 = Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: hpController2,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: playerType.id == PlayerType.me ? 
+                        '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                    ),
+                    enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onTap: () => onFocus(),
+                    onChanged: (value) {
+                      if (playerType.id == PlayerType.me) {
+                        extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                      }
+                      else {
+                        extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                      }
+                      appState.editingPhase[phaseIdx] = true;
+                      onFocus();
+                    },
+                  ),
+                ),
+                playerType.id == PlayerType.me ?
+                Flexible(child: Text('/${ownPokemon.h.real}')) :
+                Flexible(child: Text('% /100%'))
+              ],
+            );
+          }
+          break;
         case 148:   // 相手が「あなをほる」状態でも命中し、ダメージ2倍
         default:
           break;
@@ -760,9 +1257,9 @@ class TurnMove {
                           child: Text('うまく決まらなかった'),
                         ),
                       ],
-                      value: moveHits[continousCount].id,
+                      value: moveHits[continuousCount].id,
                       onChanged: (value) {
-                        moveHits[continousCount] = MoveHit(value);
+                        moveHits[continuousCount] = MoveHit(value);
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
@@ -795,9 +1292,9 @@ class TurnMove {
                           child: Text('ないようだ', overflow: TextOverflow.ellipsis,),
                         ),
                       ],
-                      value: moveEffectivenesses[continousCount].id,
-                      onChanged: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail ? (value) {
-                        moveEffectivenesses[continousCount] = MoveEffectiveness(value!);
+                      value: moveEffectivenesses[continuousCount].id,
+                      onChanged: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail ? (value) {
+                        moveEffectivenesses[continuousCount] = MoveEffectiveness(value!);
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       } : null,
@@ -820,16 +1317,16 @@ class TurnMove {
                         labelText: playerType.id == PlayerType.me ? 
                           '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
                       ),
-                      enabled: moveHits[continousCount].id != MoveHit.notHit && moveHits[continousCount].id != MoveHit.fail,
+                      enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                       onTap: () => onFocus(),
                       onChanged: (value) {
                         if (playerType.id == PlayerType.me) {
-                          percentDamage[continousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                          percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
                         }
                         else {
-                          realDamage[continousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                          realDamage[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
                         }
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
@@ -841,6 +1338,8 @@ class TurnMove {
                   Flexible(child: Text('/${ownPokemon.h.real}'))
                 ],
               ),
+              SizedBox(height: 10,),
+              effectInputRow2,
             ],
           );
         case 16:    // ひんしになった(味方の)ポケモン
@@ -907,7 +1406,7 @@ class TurnMove {
     moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];
     realDamage = [0];
     percentDamage = [0];
-    moveAdditionalEffects = [MoveAdditionalEffect(MoveAdditionalEffect.none)];
+    moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
     changePokemonIndex = null;
     targetMyPokemonIndex = null;
   }
@@ -974,14 +1473,28 @@ class TurnMove {
     turnMove.moveAdditionalEffects.clear();
     for (var moveAdditionalEffect in moveAdditionalEffects) {
       if (moveAdditionalEffect == '') break;
-      turnMove.moveAdditionalEffects.add(MoveAdditionalEffect(int.parse(moveAdditionalEffect)));
+      turnMove.moveAdditionalEffects.add(MoveEffect(int.parse(moveAdditionalEffect)));
+    }
+    // extraArg1
+    var extraArg1s = turnMoveElements[11].split(split2);
+    turnMove.extraArg1.clear();
+    for (var e in extraArg1s) {
+      if (e == '') break;
+      turnMove.extraArg1.add(int.parse(e));
+    }
+    // extraArg2
+    var extraArg2s = turnMoveElements[12].split(split2);
+    turnMove.extraArg2.clear();
+    for (var e in extraArg2s) {
+      if (e == '') break;
+      turnMove.extraArg2.add(int.parse(e));
     }
     // changePokemonIndex
-    if (turnMoveElements[11] != '') {
+    if (turnMoveElements[13] != '') {
       turnMove.changePokemonIndex = int.parse(turnMoveElements[11]);
     }
     // targetMyPokemonIndex
-    if (turnMoveElements[12] != '') {
+    if (turnMoveElements[14] != '') {
       turnMove.targetMyPokemonIndex = int.parse(turnMoveElements[12]);
     }
 
@@ -1068,6 +1581,18 @@ class TurnMove {
     // moveAdditionalEffects
     for (final moveAdditionalEffect in moveAdditionalEffects) {
       ret += moveAdditionalEffect.id.toString();
+      ret += split2;
+    }
+    ret += split1;
+    // extraArg1
+    for (final arg in extraArg1) {
+      ret += arg.toString();
+      ret += split2;
+    }
+    ret += split1;
+    // extraArg2
+    for (final arg in extraArg2) {
+      ret += arg.toString();
       ret += split2;
     }
     ret += split1;

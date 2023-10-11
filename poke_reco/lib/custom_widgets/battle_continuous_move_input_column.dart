@@ -84,7 +84,9 @@ class BattleContinuousMoveInputColumn extends Column {
                 prevState.ownPokemonStates,
                 prevState.opponentPokemonStates,
                 prevState,
-                hpControllerList[phaseIdx], appState, phaseIdx, continuousCount,
+                hpControllerList[phaseIdx],
+                textEditingControllerList3[phaseIdx],
+                appState, phaseIdx, continuousCount,
               ),
               SizedBox(height: 10,),
               for (final e in guides)
@@ -104,7 +106,9 @@ class BattleContinuousMoveInputColumn extends Column {
           () {
             refMove.moveHits.add(MoveHit(MoveHit.hit));
             refMove.moveEffectivenesses.add(MoveEffectiveness(MoveEffectiveness.normal));
-            refMove.moveAdditionalEffects.add(MoveAdditionalEffect(MoveAdditionalEffect.none));
+            refMove.moveAdditionalEffects.add(MoveEffect(refMove.move.effect.id));
+            refMove.extraArg1.add(0);
+            refMove.extraArg2.add(0);
             refMove.realDamage.add(0);
             refMove.percentDamage.add(0);
             turn.phases[phaseIdx]

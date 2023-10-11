@@ -49,6 +49,8 @@ class MyAppState extends ChangeNotifier {
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
+  // ターン内のフェーズ更新要求フラグ
+  bool needAdjustPhases = false;
 
   MyAppState(BuildContext context) {
     fetchPokeData();

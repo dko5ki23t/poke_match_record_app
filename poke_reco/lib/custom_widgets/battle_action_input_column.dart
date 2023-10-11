@@ -152,7 +152,9 @@ class BattleActionInputColumn extends Column {
                 prevState.ownPokemonStates,
                 prevState.opponentPokemonStates,
                 prevState,
-                hpControllerList[phaseIdx], appState, phaseIdx, 0,
+                hpControllerList[phaseIdx],
+                textEditingControllerList3[phaseIdx],
+                appState, phaseIdx, 0,
               ),
               SizedBox(height: 10,),
               for (final e in guides)
