@@ -258,9 +258,34 @@ class PokeType {
 
   // タイプ相性
   static MoveEffectiveness effectiveness(
-    bool isScrappy, bool isRingTarget, PokeType attackType, PokeType defenseType1, PokeType? defenseType2
+    bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState defenseState,
   )
   {
+    double rate = effectivenessRate(isScrappy, isRingTarget, isMiracleEye, attackType, defenseState);
+    if (rate == 0) {
+      return MoveEffectiveness(MoveEffectiveness.noEffect);
+    }
+    else if (rate == 1) {
+      return MoveEffectiveness(MoveEffectiveness.normal);
+    }
+    else if (rate > 1) {
+      return MoveEffectiveness(MoveEffectiveness.great);
+    }
+    else {
+      return MoveEffectiveness(MoveEffectiveness.notGood);
+    }
+  }
+
+  static double effectivenessRate(
+    bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState state,
+  )
+  {
+    PokeType defenseType1 = state.type1;
+    PokeType? defenseType2 = state.type2;
+    if (state.teraType != null) {
+      defenseType1 = state.teraType!;
+      defenseType2 = null;
+    }
     int deg = 0;
     PokeType? type = defenseType1;
     for (int i = 0; i < 2; i++) {
@@ -268,12 +293,12 @@ class PokeType {
       switch (attackType.id) {
         case 1:
           if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
-          if (!isRingTarget && !isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);   // ノーマル->ゴースト
+          if (!isRingTarget && !isScrappy && type.id == 8) return 0;   // ノーマル->ゴースト
           break;
         case 2:
           if (type.id == 1 || type.id == 15 || type.id == 6 || type.id == 17 || type.id == 9) deg++;
           if (type.id == 4 || type.id == 3 || type.id == 14 || type.id == 7 || type.id == 18) deg--;
-          if (!isRingTarget && !isScrappy && type.id == 8) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && !isScrappy && type.id == 8) return 0;
           break;
         case 3:
           if (type.id == 2 || type.id == 12 || type.id == 7) deg++;
@@ -282,12 +307,12 @@ class PokeType {
         case 4:
           if (type.id == 12 || type.id == 18) deg++;
           if (type.id == 4 || type.id == 5 || type.id == 6 || type.id == 8) deg--;
-          if (!isRingTarget && type.id == 9) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 9) return 0;
           break;
         case 5:
           if (type.id == 10 || type.id == 13 || type.id == 4 || type.id == 6 || type.id == 9) deg++;
           if (type.id == 12 || type.id == 7) deg--;
-          if (!isRingTarget && type.id == 3) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 3) return 0;
           break;
         case 6:
           if (type.id == 10 || type.id == 3 || type.id == 15 || type.id == 7) deg++;
@@ -300,7 +325,7 @@ class PokeType {
         case 8:
           if (type.id == 14 || type.id == 8) deg++;
           if (type.id == 17) deg--;
-          if (!isRingTarget && type.id == 1) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 1) return 0;
           break;
         case 9:
           if (type.id == 15 || type.id == 6 || type.id == 18) deg++;
@@ -321,12 +346,12 @@ class PokeType {
         case 13:
           if (type.id == 11 || type.id == 3) deg++;
           if (type.id == 13 || type.id == 12 || type.id == 16) deg--;
-          if (!isRingTarget && type.id == 5) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 5) return 0;
           break;
         case 14:
           if (type.id == 2 || type.id == 4) deg++;
           if (type.id == 14 || type.id == 9) deg--;
-          if (!isRingTarget && type.id == 17) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && !isMiracleEye && type.id == 17) return 0;
           break;
         case 15:
           if (type.id == 12 || type.id == 5 || type.id == 3 || type.id == 16) deg++;
@@ -335,7 +360,7 @@ class PokeType {
         case 16:
           if (type.id == 16) deg++;
           if (type.id == 9) deg--;
-          if (!isRingTarget && type.id == 18) return MoveEffectiveness(MoveEffectiveness.noEffect);
+          if (!isRingTarget && type.id == 18) return 0;
           break;
         case 17:
           if (type.id == 14 || type.id == 8) deg++;
@@ -350,14 +375,20 @@ class PokeType {
       }
       type = defenseType2;
     }
-    if (deg > 0) {
-      return MoveEffectiveness(MoveEffectiveness.great);
+    if (deg == 2) {
+      return 4;
     }
-    else if (deg < 0) {
-      return MoveEffectiveness(MoveEffectiveness.notGood);
+    else if (deg == 1) {
+      return 2;
+    }
+    else if (deg == -1) {
+      return 0.5;
+    }
+    else if (deg == -2) {
+      return 0.25;
     }
     else {
-      return MoveEffectiveness(MoveEffectiveness.normal);
+      return 1;
     }
   } 
 }
@@ -1788,6 +1819,11 @@ class Move {
     if (effect.id == 30) return 5;
     if (effect.id == 45) return 2;
     if (effect.id == 78) return 2;
+    if (effect.id == 105) return 3;
+    if (effect.id == 155) return 6;
+    if (effect.id == 361) return 5;
+    if (effect.id == 428) return 2;
+    if (effect.id == 443) return 5;
     return 1;
   }
 
@@ -2115,6 +2151,31 @@ class Ailment {
   static const int charging = 33;           // じゅうでん
   static const int thrash = 34;             // あばれる
   static const int bide = 35;               // がまん
+  static const int destinyBond = 36;        // みちづれ     // TODO
+  static const int cannotRunAway = 37;      // にげられない
+  static const int minimize = 38;           // ちいさくなる
+  static const int flying = 39;             // そらをとぶ
+  static const int digging = 40;            // あなをほる
+  static const int curl = 41;               // まるくなる(ころがる・アイスボールの威力2倍)
+  static const int stock1 = 42;             // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
+  static const int stock2 = 43;             // たくわえる(2)
+  static const int stock3 = 44;             // たくわえる(3)
+  static const int attention = 45;          // ちゅうもくのまと
+  static const int helpHand = 46;           // てだすけ
+  static const int imprison = 47;           // ふういん
+  static const int grudge = 48;             // おんねん
+  static const int roost = 49;              // はねやすめ
+  static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
+  static const int powerTrick = 51;         // パワートリック
+  static const int abilityNoEffect = 52;    // とくせいなし
+  static const int aquaRing = 53;           // アクアリング
+  static const int diving = 54;             // ダイビング
+  static const int shadowForcing = 55;      // シャドーダイブ(姿を消した状態)
+  static const int electrify = 56;          // そうでん
+  static const int powder = 57;             // ふんじん
+  static const int throatChop = 58;         // じごくづき
+  static const int tarShot = 59;            // タールショット
+  static const int octoLock = 60;           // たこがため
 
   static const _displayNameMap = {
     0: '',
@@ -2152,6 +2213,32 @@ class Ailment {
     32: 'マジックコート',
     33: 'じゅうでん',
     34: 'あばれる',
+    35: 'がまん',
+    36: 'みちづれ',
+    37: 'にげられない',
+    38: 'ちいさくなる',
+    39: 'そらをとぶ',
+    40: 'あなをほる',
+    41: 'まるくなる',
+    42: 'たくわえる(1)',
+    43: 'たくわえる(2)',
+    44: 'たくわえる(3)',
+    45: 'ちゅうもくのまと',
+    46: 'てだすけ',
+    47: 'ふういん',
+    48: 'おんねん',
+    49: 'はねやすめ',
+    50: 'ミラクルアイ',
+    51: 'パワートリック',
+    52: 'とくせいなし',
+    53: 'アクアリング',
+    54: 'ダイビング',
+    55: 'シャドーダイブ',
+    56: 'そうでん',
+    57: 'ふんじん',
+    58: 'じごくづき',
+    59: 'タールショット',
+    60: 'たこがため',
   };
 
   // TODO:
@@ -2191,6 +2278,32 @@ class Ailment {
     32: Colors.black,
     33: Colors.yellow.shade700,
     34: Colors.black,
+    35: Colors.black,
+    36: Colors.black,
+    37: Colors.black,
+    38: Colors.black,
+    39: Colors.black,
+    40: Colors.black,
+    41: Colors.black,
+    42: Colors.black,
+    43: Colors.black,
+    44: Colors.black,
+    45: Colors.black,
+    46: Colors.black,
+    47: Colors.black,
+    48: Colors.black,
+    49: Colors.black,
+    50: Colors.black,
+    51: Colors.black,
+    52: Colors.black,
+    53: Colors.black,
+    54: Colors.black,
+    55: Colors.black,
+    56: Colors.black,
+    57: Colors.black,
+    58: Colors.black,
+    59: Colors.black,
+    60: Colors.black,
   };
 
   final int id;
@@ -2479,6 +2592,8 @@ class BuffDebuff {
   static const int substitute = 176;      // みがわり
   static const int rage = 177;            // わざによるダメージでこうげき1段階上昇
   static const int punchNotDirect1_1 = 178;   // パンチわざ非接触化・威力1.1倍
+  static const int voiceForm = 179;       // ボイスフォルム
+  static const int stepForm = 180;        // ステップフォルム
 
   static const _displayNameMap = {
     0:  '',
@@ -2660,6 +2775,8 @@ class BuffDebuff {
     176: 'みがわり',
     177: 'わざによるダメージでこうげき1段階上昇',
     178: 'パンチわざ非接触化・威力1.1倍',
+    179: 'ボイスフォルム',
+    180: 'ステップフォルム',
   };
 
   static const _bgColorMap = {
@@ -2841,6 +2958,8 @@ class BuffDebuff {
     176: Colors.green,
     177: Colors.red,
     178: Colors.red,
+    179: Colors.orange,
+    180: Colors.orange,
   };
 
   final int id;
@@ -2898,6 +3017,8 @@ class IndividualField {
   static const int mudSport = 22;         // どろあそび
   static const int wonderRoom = 23;       // ワンダールーム
   static const int magicRoom = 24;        // マジックルーム
+  static const int ionDeluge = 25;        // プラズマシャワー(わざタイプ：ノーマル→でんき)
+  static const int fairyLock = 26;        // フェアリーロック
 
   static const _displayNameMap = {
     0: '',
@@ -2925,6 +3046,8 @@ class IndividualField {
     22: 'どろあそび',
     23: 'ワンダールーム',
     24: 'マジックルーム',
+    25: 'プラズマシャワー',
+    26: 'フェアリーロック',
   };
 
   final int id;
@@ -3437,6 +3560,8 @@ class PokemonState {
       int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialDefense0_75);
       if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
     }
+    // にげられない状態の解除
+    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway);
     // 退場することで自身に効果がある場合
     if (!isFainting && currentAbility.id == 30) { // しぜんかいふく
       ailmentsClear();
@@ -3462,6 +3587,11 @@ class PokemonState {
 
   // ポケモンのとくせい/もちもの等で常に働く効果を付与。ポケモン登場時に一度だけ呼ぶ
   void processPassiveEffect(bool isOwn, Weather weather, Field field, PokemonState yourState) {
+    // ポケモン固有のフォルム等
+    if (pokemon.no == 648) {  // メロエッタ
+      buffDebuffs.add(BuffDebuff(BuffDebuff.voiceForm));
+    }
+
     switch (currentAbility.id) {
       case 14:  // ふくがん
         buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
@@ -4541,7 +4671,8 @@ class PhaseState {
             }
             if (PokeType.effectiveness(
                   attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
-                  prevAction.move!.move.type, defenderState.type1, defenderState.type2
+                  defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                  prevAction.move!.move.type, defenderState
                 ).id == MoveEffectiveness.great
             ) {
               // 効果ばつぐんのわざを受けたとき

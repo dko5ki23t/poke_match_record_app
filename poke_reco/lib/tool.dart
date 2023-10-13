@@ -24,3 +24,11 @@ String toKatakana(String str) {
   return str.replaceAllMapped(RegExp("[ぁ-ゔ]"),
     (Match m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) + 0x60));
 }
+
+// 五捨五超入
+int roundOff5(double a) {
+  int ret = a.floor();
+  double b = a - ret;
+  if (b > 0.5) return ret+1;
+  return ret;
+}

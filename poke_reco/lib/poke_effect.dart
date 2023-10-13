@@ -875,7 +875,7 @@ class TurnEffect {
           if (myState.teraType != null) {
             move!.teraType = myState.teraType!;
           }
-          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount));
+          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount, pokeData));
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
           if (move!.type.id == TurnMoveType.change) {
             if (playerType.id == PlayerType.me) isOwnChanged = true;
@@ -1170,7 +1170,8 @@ class TurnEffect {
           }
           if (PokeType.effectiveness(
               attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
-              turnMove.move.type, pokemonState!.type1, pokemonState.type2
+              defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+              turnMove.move.type, pokemonState!
             ).id == MoveEffectiveness.great
           ) {
             defenderTimingIDs.add(120);  // 効果ばつぐんのタイプのこうげきざわを受けた時
