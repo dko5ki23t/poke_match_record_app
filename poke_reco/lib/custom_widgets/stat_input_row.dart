@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
-import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 
 class StatInputRow extends Row {
   static const increaseStateStyle = TextStyle(

@@ -10,6 +10,9 @@ import 'package:poke_reco/pages/pokemons.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/battle.dart';
 
 void main() {
   // TODO

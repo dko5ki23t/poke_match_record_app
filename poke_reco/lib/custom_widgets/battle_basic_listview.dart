@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/custom_widgets/pokemon_sex_input_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/battle.dart';
+import 'package:poke_reco/data_structs/party.dart';
 
 class BattleBasicListView extends ListView {
   BattleBasicListView(

@@ -4,6 +4,11 @@ import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/battle.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/turn.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
 
 class BattleTurnListView extends ListView {
   BattleTurnListView(

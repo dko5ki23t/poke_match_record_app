@@ -1,7 +1,7 @@
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
-import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 
 // 使い方：print(PokeType.normal.displayName) -> 'ノーマル'
 // TODO:これもPokeAPIから取得すべき。変な感じになってしまった。

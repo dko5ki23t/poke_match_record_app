@@ -6,6 +6,7 @@ import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
+import 'package:poke_reco/data_structs/party.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({

@@ -12,6 +12,9 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
+import 'package:poke_reco/data_structs/poke_move.dart';
 
 class RegisterPokemonPage extends StatefulWidget {
   RegisterPokemonPage({

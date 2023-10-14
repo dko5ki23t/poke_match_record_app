@@ -6,7 +6,29 @@ import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/weather.dart';
+import 'package:poke_reco/data_structs/field.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
+
+// ダメージ
+class DamageClass {
+  static const int none = 0;
+  static const int status = 1;    // へんか(ダメージなし)
+  static const int physical = 2;  // ぶつり
+  static const int special = 3;   // とくしゅ
+
+  const DamageClass(this.id);
+
+  final int id;
+}
 
 class TurnMoveType {
   static const int none = 0;

@@ -14,6 +14,16 @@ import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/battle.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/turn.dart';
+import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/weather.dart';
+import 'package:poke_reco/data_structs/individual_field.dart';
 
 enum RegisterBattlePageType {
   basePage,

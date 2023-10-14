@@ -3,6 +3,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 
 class MoveInputRow extends Row {
   static const notAllowedStyle = TextStyle(
