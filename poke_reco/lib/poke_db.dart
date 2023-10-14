@@ -10,6 +10,8 @@ import 'package:path/path.dart';
 import 'package:tuple/tuple.dart';
 import 'package:quiver/iterables.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -5326,72 +5328,85 @@ class PokeDB {
 
   Future<void> initialize() async {
     /////////// 各種設定
-    final directory = await getApplicationDocumentsDirectory();
-    final localPath = directory.path;
-    _saveDataFile = File('$localPath/poke_reco.json');
-    try {
-      final configText = await _saveDataFile.readAsString();
-      final configJson = jsonDecode(configText);
-      pokemonsOwnerFilter = [];
-      for (final e in configJson[configKeyPokemonsOwnerFilter]) {
-        switch (e) {
-          case 0:
-            pokemonsOwnerFilter.add(Owner.mine);
-            break;
-          case 1:
-            pokemonsOwnerFilter.add(Owner.fromBattle);
-            break;
-          case 2:
-          default:
-            pokemonsOwnerFilter.add(Owner.hidden);
-            break;
+    String localPath ='';
+    if (kIsWeb) {
+      // Web appでは一旦各種設定の保存はできないこととする
+      //localPath = 'assets/data';
+    }
+    else {
+      final directory = await getApplicationDocumentsDirectory();
+      localPath = directory.path;
+      _saveDataFile = File('$localPath/poke_reco.json');
+      try {
+        final configText = await _saveDataFile.readAsString();
+        final configJson = jsonDecode(configText);
+        pokemonsOwnerFilter = [];
+        for (final e in configJson[configKeyPokemonsOwnerFilter]) {
+          switch (e) {
+            case 0:
+              pokemonsOwnerFilter.add(Owner.mine);
+              break;
+            case 1:
+              pokemonsOwnerFilter.add(Owner.fromBattle);
+              break;
+            case 2:
+            default:
+              pokemonsOwnerFilter.add(Owner.hidden);
+              break;
+          }
+        }
+        pokemonsTypeFilter = [];
+        for (final e in configJson[configKeyPokemonsTypeFilter]) {
+          pokemonsTypeFilter.add(e as int);
+        }
+        pokemonsTeraTypeFilter = [];
+        for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
+          pokemonsTeraTypeFilter.add(e as int);
+        }
+        pokemonsMoveFilter = [];
+        for (final e in configJson[configKeyPokemonsMoveFilter]) {
+          pokemonsMoveFilter.add(e as int);
+        }
+        pokemonsSexFilter = [];
+        for (final e in configJson[configKeyPokemonsSexFilter]) {
+          switch (e) {
+            case 1:
+              pokemonsSexFilter.add(Sex.male);
+              break;
+            case 2:
+              pokemonsSexFilter.add(Sex.female);
+              break;
+            case 0:
+            default:
+              pokemonsSexFilter.add(Sex.none);
+              break;
+          }
+        }
+        pokemonsAbilityFilter = [];
+        for (final e in configJson[configKeyPokemonsAbilityFilter]) {
+          pokemonsAbilityFilter.add(e as int);
+        }
+        pokemonsTemperFilter = [];
+        for (final e in configJson[configKeyPokemonsTemperFilter]) {
+          pokemonsTemperFilter.add(e as int);
         }
       }
-      pokemonsTypeFilter = [];
-      for (final e in configJson[configKeyPokemonsTypeFilter]) {
-        pokemonsTypeFilter.add(e as int);
-      }
-      pokemonsTeraTypeFilter = [];
-      for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
-        pokemonsTeraTypeFilter.add(e as int);
-      }
-      pokemonsMoveFilter = [];
-      for (final e in configJson[configKeyPokemonsMoveFilter]) {
-        pokemonsMoveFilter.add(e as int);
-      }
-      pokemonsSexFilter = [];
-      for (final e in configJson[configKeyPokemonsSexFilter]) {
-        switch (e) {
-          case 1:
-            pokemonsSexFilter.add(Sex.male);
-            break;
-          case 2:
-            pokemonsSexFilter.add(Sex.female);
-            break;
-          case 0:
-          default:
-            pokemonsSexFilter.add(Sex.none);
-            break;
-        }
-      }
-      pokemonsAbilityFilter = [];
-      for (final e in configJson[configKeyPokemonsAbilityFilter]) {
-        pokemonsAbilityFilter.add(e as int);
-      }
-      pokemonsTemperFilter = [];
-      for (final e in configJson[configKeyPokemonsTemperFilter]) {
-        pokemonsTemperFilter.add(e as int);
+      catch (e) {
+        pokemonsOwnerFilter = [Owner.mine];
+        pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
+        pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
+        pokemonsMoveFilter = [];
+        pokemonsSexFilter = Sex.values;
+        pokemonsAbilityFilter = [];
+        pokemonsTemperFilter = [];
+        await saveConfig();
       }
     }
-    catch (e) {
-      pokemonsOwnerFilter = [Owner.mine];
-      pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
-      pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
-      pokemonsMoveFilter = [];
-      pokemonsSexFilter = Sex.values;
-      pokemonsAbilityFilter = [];
-      pokemonsTemperFilter = [];
-      await saveConfig();
+
+    DatabaseFactory factory;
+    if (kIsWeb) {
+      // Webも含めてのsqflite Database準備
+      databaseFactory = databaseFactoryFfiWeb;
     }
 
     /////////// とくせい
@@ -5403,24 +5418,31 @@ class PokeDB {
     if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(abilityDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(abilityDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       // アセットからコピー
       ByteData data = await rootBundle.load(join('assets', abilityDBFile));
-      List<int> bytes =
+      var bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // 書き込まれたバイトを書き込み、フラッシュする
-      await File(abilityDBPath).writeAsBytes(bytes, flush: true);
+      if (kIsWeb) {
+        await databaseFactoryFfiWeb.writeDatabaseBytes(abilityDBPath, bytes);
+      }
+      else {
+        await File(abilityDBPath).writeAsBytes(bytes, flush: true);
+      }
     }
     else {
       print("Opening existing database");
     }
 
     // SQLiteのDB読み込み
-    abilityDb = await openDatabase(abilityDBPath, readOnly: true);
+    abilityDb = await openDatabase(abilityDBPath);
     // 内部データに変換
     List<Map<String, dynamic>> maps = await abilityDb.query(abilityDBTable,
       columns: [abilityColumnId, abilityColumnName, abilityColumnTiming, abilityColumnTarget, abilityColumnEffect],
@@ -5444,24 +5466,31 @@ class PokeDB {
     if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(temperDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(temperDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       // アセットからコピー
       ByteData data = await rootBundle.load(join('assets', temperDBFile));
-      List<int> bytes =
+      var bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // 書き込まれたバイトを書き込み、フラッシュする
-      await File(temperDBPath).writeAsBytes(bytes, flush: true);
+      if (kIsWeb) {
+        await databaseFactoryFfiWeb.writeDatabaseBytes(temperDBPath, bytes);
+      }
+      else {
+        await File(temperDBPath).writeAsBytes(bytes, flush: true);
+      }
     }
     else {
       print("Opening existing database");
     }
 
     // SQLiteのDB読み込み
-    temperDb = await openDatabase(temperDBPath, readOnly: true);
+    temperDb = await openDatabase(temperDBPath);
     // 内部データに変換
     maps = await temperDb.query(temperDBTable,
       columns: [temperColumnId, temperColumnName, temperColumnDe, temperColumnIn],
@@ -5484,24 +5513,31 @@ class PokeDB {
     if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(itemDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(itemDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       // アセットからコピー
       ByteData data = await rootBundle.load(join('assets', itemDBFile));
-      List<int> bytes =
+      var bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // 書き込まれたバイトを書き込み、フラッシュする
-      await File(itemDBPath).writeAsBytes(bytes, flush: true);
+      if (kIsWeb) {
+        await databaseFactoryFfiWeb.writeDatabaseBytes(itemDBPath, bytes);
+      }
+      else {
+        await File(itemDBPath).writeAsBytes(bytes, flush: true);
+      }
     }
     else {
       print("Opening existing database");
     }
 
     // SQLiteのDB読み込み
-    itemDb = await openDatabase(itemDBPath, readOnly: true);
+    itemDb = await openDatabase(itemDBPath);
     // 内部データに変換
     maps = await itemDb.query(itemDBTable,
       columns: [itemColumnId, itemColumnName, itemColumnTiming],
@@ -5523,24 +5559,31 @@ class PokeDB {
     if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(moveDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(moveDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       // アセットからコピー
       ByteData data = await rootBundle.load(join('assets', moveDBFile));
-      List<int> bytes =
+      var bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // 書き込まれたバイトを書き込み、フラッシュする
-      await File(moveDBPath).writeAsBytes(bytes, flush: true);
+      if (kIsWeb) {
+        await databaseFactoryFfiWeb.writeDatabaseBytes(moveDBPath, bytes);
+      }
+      else {
+        await File(moveDBPath).writeAsBytes(bytes, flush: true);
+      }
     }
     else {
       print("Opening existing database");
     }
 
     // SQLiteのDB読み込み
-    moveDb = await openDatabase(moveDBPath, readOnly: true);
+    moveDb = await openDatabase(moveDBPath);
     // 内部データに変換
     maps = await moveDb.query(moveDBTable,
       columns: [moveColumnId, moveColumnName, moveColumnType, moveColumnPower, moveColumnAccuracy, moveColumnPriority, moveColumnTarget, moveColumnDamageClass, moveColumnEffect, moveColumnEffectChance, moveColumnPP],
@@ -5569,24 +5612,31 @@ class PokeDB {
     if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(pokeBaseDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(pokeBaseDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       // アセットからコピー
       ByteData data = await rootBundle.load(join('assets', pokeBaseDBFile));
-      List<int> bytes =
+      var bytes =
         data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
 
       // 書き込まれたバイトを書き込み、フラッシュする
-      await File(pokeBaseDBPath).writeAsBytes(bytes, flush: true);
+      if (kIsWeb) {
+        await databaseFactoryFfiWeb.writeDatabaseBytes(pokeBaseDBPath, bytes);
+      }
+      else {
+        await File(pokeBaseDBPath).writeAsBytes(bytes, flush: true);
+      }
     }
     else {
       print("Opening existing database");
     }
 
     // SQLiteのDB読み込み
-    pokeBaseDb = await openDatabase(pokeBaseDBPath, readOnly: true);
+    pokeBaseDb = await openDatabase(pokeBaseDBPath);
     // 内部データに変換
     maps = await pokeBaseDb.query(pokeBaseDBTable,
       columns: [
@@ -5636,9 +5686,11 @@ class PokeDB {
     exists = await databaseExists(myPokemonDBPath);
 
     if (!exists) {
-      try {
-        await Directory(dirname(myPokemonDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(myPokemonDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       await _createMyPokemonDB();
     }
@@ -5646,7 +5698,7 @@ class PokeDB {
       print("Opening existing database");
 
       // SQLiteのDB読み込み
-      myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+      myPokemonDb = await openDatabase(myPokemonDBPath);
       // 内部データに変換
       maps = await myPokemonDb.query(myPokemonDBTable,
         columns: [
@@ -5732,9 +5784,11 @@ class PokeDB {
     exists = await databaseExists(partyDBPath);
 
     if (!exists) {
-      try {
-        await Directory(dirname(partyDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(partyDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       await _createPartyDB();
     }
@@ -5742,7 +5796,7 @@ class PokeDB {
       print("Opening existing database");
 
       // SQLiteのDB読み込み
-      partyDb = await openDatabase(partyDBPath, readOnly: false);
+      partyDb = await openDatabase(partyDBPath);
       // 内部データに変換
       maps = await partyDb.query(partyDBTable,
         columns: [
@@ -5791,9 +5845,11 @@ class PokeDB {
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {
-      try {
-        await Directory(dirname(battleDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(battleDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       await _createBattleDB();
     }
@@ -5801,7 +5857,7 @@ class PokeDB {
       print("Opening existing database");
 
       // SQLiteのDB読み込み
-      battleDb = await openDatabase(battleDBPath, readOnly: false);
+      battleDb = await openDatabase(battleDBPath);
       // 内部データに変換
       maps = await battleDb.query(battleDBTable,
         columns: [
@@ -5918,22 +5974,27 @@ class PokeDB {
   }
 
   Future<void> addMyPokemon(Pokemon myPokemon) async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     var exists = await databaseExists(myPokemonDBPath);
 
     if (!exists) {    // ファイル作成
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(myPokemonDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(myPokemonDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       myPokemonDb = await _createMyPokemonDB();
     }
     else {
       print("Opening existing database");
       // SQLiteのDB読み込み
-      myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+      myPokemonDb = await openDatabase(myPokemonDBPath);
     }
 
     // DBのIDリストを更新
@@ -5951,11 +6012,14 @@ class PokeDB {
   Future<void> deleteMyPokemon(List<int> ids, bool remainRelations) async {
     //assert(ids.isNotEmpty);
     if (ids.isEmpty) return;
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     assert(await databaseExists(myPokemonDBPath));
 
     // SQLiteのDB読み込み
-    myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+    myPokemonDb = await openDatabase(myPokemonDBPath);
 
     if (remainRelations) {
       // TODO
@@ -5998,11 +6062,14 @@ class PokeDB {
   }
 
   Future<void> updateMyPokemonRefCounts() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     assert(await databaseExists(myPokemonDBPath));
 
     // SQLiteのDB読み込み
-    myPokemonDb = await openDatabase(myPokemonDBPath, readOnly: false);
+    myPokemonDb = await openDatabase(myPokemonDBPath);
 
     String whereStr = '$myPokemonColumnId=?';
 
@@ -6051,22 +6118,27 @@ class PokeDB {
 */
 
   Future<void> addParty(Party party) async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     var exists = await databaseExists(partyDBPath);
 
     if (!exists) {    // ファイル作成
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(partyDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(partyDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       partyDb = await _createPartyDB();
     }
     else {
       print("Opening existing database");
       // SQLiteのDB読み込み
-      partyDb = await openDatabase(partyDBPath, readOnly: false);
+      partyDb = await openDatabase(partyDBPath);
     }
 
     // 既存パーティの上書きなら、各ポケモンの被参照カウントをデクリメント
@@ -6100,11 +6172,14 @@ class PokeDB {
   Future<void> deleteParty(List<int> ids, bool remainRelations) async {
     //assert(ids.isNotEmpty);
     if (ids.isEmpty) return;
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     assert(await databaseExists(partyDBPath));
 
     // SQLiteのDB読み込み
-    partyDb = await openDatabase(partyDBPath, readOnly: false);
+    partyDb = await openDatabase(partyDBPath);
 
     if (remainRelations) {
       // TODO
@@ -6153,11 +6228,14 @@ class PokeDB {
   }
 
   Future<void> updatePartyRefCounts() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     assert(await databaseExists(partyDBPath));
 
     // SQLiteのDB読み込み
-    partyDb = await openDatabase(partyDBPath, readOnly: false);
+    partyDb = await openDatabase(partyDBPath);
 
     String whereStr = '$partyColumnId=?';
 
@@ -6175,22 +6253,27 @@ class PokeDB {
   }
 
   Future<void> addBattle(Battle battle) async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
     var exists = await databaseExists(battleDBPath);
 
     if (!exists) {    // ファイル作成
       print('Creating new copy from asset');
 
-      try {
-        await Directory(dirname(battleDBPath)).create(recursive: true);
-      } catch (_) {}
+      if (!kIsWeb) {
+        try {
+          await Directory(dirname(battleDBPath)).create(recursive: true);
+        } catch (_) {}
+      }
 
       battleDb = await _createBattleDB();
     }
     else {
       print("Opening existing database");
       // SQLiteのDB読み込み
-      battleDb = await openDatabase(battleDBPath, readOnly: false);
+      battleDb = await openDatabase(battleDBPath);
     }
 
     // 既存対戦の上書きなら、対戦内パーティの被参照カウントをデクリメント
@@ -6222,11 +6305,14 @@ class PokeDB {
   Future<void> deleteBattle(List<int> ids) async {
     //assert(ids.isNotEmpty);
     if (ids.isEmpty) return;
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
     assert(await databaseExists(battleDBPath));
 
     // SQLiteのDB読み込み
-    battleDb = await openDatabase(battleDBPath, readOnly: false);
+    battleDb = await openDatabase(battleDBPath);
 
     String whereStr = '$battleColumnId=?';
     for (int i = 1; i < ids.length; i++) {
@@ -6293,102 +6379,147 @@ class PokeDB {
 */
 
   Future<Database> _createMyPokemonDB() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
+    var text = 'CREATE TABLE $myPokemonDBTable('
+            '$myPokemonColumnId INTEGER PRIMARY KEY, '
+            '$myPokemonColumnNo INTEGER, '
+            '$myPokemonColumnNickName TEXT, '
+            '$myPokemonColumnTeraType INTEGER, '
+            '$myPokemonColumnLevel INTEGER, '
+            '$myPokemonColumnSex INTEGER, '
+            '$myPokemonColumnTemper INTEGER, '
+            '$myPokemonColumnAbility INTEGER, '
+            '$myPokemonColumnItem INTEGER, '
+            '${myPokemonColumnIndividual[0]} INTEGER, '
+            '${myPokemonColumnIndividual[1]} INTEGER, '
+            '${myPokemonColumnIndividual[2]} INTEGER, '
+            '${myPokemonColumnIndividual[3]} INTEGER, '
+            '${myPokemonColumnIndividual[4]} INTEGER, '
+            '${myPokemonColumnIndividual[5]} INTEGER, '
+            '${myPokemonColumnEffort[0]} INTEGER, '
+            '${myPokemonColumnEffort[1]} INTEGER, '
+            '${myPokemonColumnEffort[2]} INTEGER, '
+            '${myPokemonColumnEffort[3]} INTEGER, '
+            '${myPokemonColumnEffort[4]} INTEGER, '
+            '${myPokemonColumnEffort[5]} INTEGER, '
+            '$myPokemonColumnMove1 INTEGER, '
+            '$myPokemonColumnPP1 INTEGER, '
+            '$myPokemonColumnMove2 INTEGER, '
+            '$myPokemonColumnPP2 INTEGER, '
+            '$myPokemonColumnMove3 INTEGER, '
+            '$myPokemonColumnPP3 INTEGER, '
+            '$myPokemonColumnMove4 INTEGER, '
+            '$myPokemonColumnPP4 INTEGER, '
+            '$myPokemonColumnOwnerID INTEGER, '
+            '$myPokemonColumnRefCount INTEGER)';
 
     // SQLiteのDB作成
-    return openDatabase(
-      myPokemonDBPath,
-      version: 1,
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE $myPokemonDBTable('
-          '$myPokemonColumnId INTEGER PRIMARY KEY, '
-          '$myPokemonColumnNo INTEGER, '
-          '$myPokemonColumnNickName TEXT, '
-          '$myPokemonColumnTeraType INTEGER, '
-          '$myPokemonColumnLevel INTEGER, '
-          '$myPokemonColumnSex INTEGER, '
-          '$myPokemonColumnTemper INTEGER, '
-          '$myPokemonColumnAbility INTEGER, '
-          '$myPokemonColumnItem INTEGER, '
-          '${myPokemonColumnIndividual[0]} INTEGER, '
-          '${myPokemonColumnIndividual[1]} INTEGER, '
-          '${myPokemonColumnIndividual[2]} INTEGER, '
-          '${myPokemonColumnIndividual[3]} INTEGER, '
-          '${myPokemonColumnIndividual[4]} INTEGER, '
-          '${myPokemonColumnIndividual[5]} INTEGER, '
-          '${myPokemonColumnEffort[0]} INTEGER, '
-          '${myPokemonColumnEffort[1]} INTEGER, '
-          '${myPokemonColumnEffort[2]} INTEGER, '
-          '${myPokemonColumnEffort[3]} INTEGER, '
-          '${myPokemonColumnEffort[4]} INTEGER, '
-          '${myPokemonColumnEffort[5]} INTEGER, '
-          '$myPokemonColumnMove1 INTEGER, '
-          '$myPokemonColumnPP1 INTEGER, '
-          '$myPokemonColumnMove2 INTEGER, '
-          '$myPokemonColumnPP2 INTEGER, '
-          '$myPokemonColumnMove3 INTEGER, '
-          '$myPokemonColumnPP3 INTEGER, '
-          '$myPokemonColumnMove4 INTEGER, '
-          '$myPokemonColumnPP4 INTEGER, '
-          '$myPokemonColumnOwnerID INTEGER, '
-          '$myPokemonColumnRefCount INTEGER)'
-        );
-      }
-    );
+    if (kIsWeb) {
+      return databaseFactoryFfiWeb.openDatabase(
+        myPokemonDBPath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, version) {
+            return db.execute(text);
+          }
+        ),
+      );
+    }
+    else {
+      return openDatabase(
+        myPokemonDBPath,
+        version: 1,
+        onCreate: (db, version) {
+          return db.execute(text);
+        }
+      );
+    }
   }
 
   Future<Database> _createPartyDB() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
+    var text = 'CREATE TABLE $partyDBTable('
+            '$partyColumnId INTEGER PRIMARY KEY, '
+            '$partyColumnName TEXT, '
+            '$partyColumnPokemonId1 INTEGER, '
+            '$partyColumnPokemonItem1 INTEGER, '
+            '$partyColumnPokemonId2 INTEGER, '
+            '$partyColumnPokemonItem2 INTEGER, '
+            '$partyColumnPokemonId3 INTEGER, '
+            '$partyColumnPokemonItem3 INTEGER, '
+            '$partyColumnPokemonId4 INTEGER, '
+            '$partyColumnPokemonItem4 INTEGER, '
+            '$partyColumnPokemonId5 INTEGER, '
+            '$partyColumnPokemonItem5 INTEGER, '
+            '$partyColumnPokemonId6 INTEGER, '
+            '$partyColumnPokemonItem6 INTEGER, '
+            '$partyColumnOwnerID INTEGER, '
+            '$partyColumnRefCount INTEGER)';
 
     // SQLiteのDB作成
-    return openDatabase(
-      partyDBPath,
-      version: 1,
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE $partyDBTable('
-          '$partyColumnId INTEGER PRIMARY KEY, '
-          '$partyColumnName TEXT, '
-          '$partyColumnPokemonId1 INTEGER, '
-          '$partyColumnPokemonItem1 INTEGER, '
-          '$partyColumnPokemonId2 INTEGER, '
-          '$partyColumnPokemonItem2 INTEGER, '
-          '$partyColumnPokemonId3 INTEGER, '
-          '$partyColumnPokemonItem3 INTEGER, '
-          '$partyColumnPokemonId4 INTEGER, '
-          '$partyColumnPokemonItem4 INTEGER, '
-          '$partyColumnPokemonId5 INTEGER, '
-          '$partyColumnPokemonItem5 INTEGER, '
-          '$partyColumnPokemonId6 INTEGER, '
-          '$partyColumnPokemonItem6 INTEGER, '
-          '$partyColumnOwnerID INTEGER, '
-          '$partyColumnRefCount INTEGER)'
-        );
-      }
-    );
+    if (kIsWeb) {
+      return databaseFactoryFfiWeb.openDatabase(
+        partyDBPath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, version) {
+            return db.execute(text);
+          }
+        ),
+      );
+    }
+    else {
+      return openDatabase(
+        partyDBPath,
+        version: 1,
+        onCreate: (db, version) {
+          return db.execute(text);
+        }
+      );
+    }
   }
 
   Future<Database> _createBattleDB() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+    }
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
+    var text = 'CREATE TABLE $battleDBTable('
+            '$battleColumnId INTEGER PRIMARY KEY, '
+            '$battleColumnName TEXT, '
+            '$battleColumnTypeId INTEGER, '
+            '$battleColumnDate INTEGER, '     // TODO
+            '$battleColumnOwnPartyId INTEGER, '
+            '$battleColumnOpponentName TEXT, '
+            '$battleColumnOpponentPartyId INTEGER, '
+            '$battleColumnTurns TEXT)';
 
     // SQLiteのDB作成
-    return openDatabase(
-      battleDBPath,
-      version: 1,
-      onCreate: (db, version) {
-        return db.execute(
-          'CREATE TABLE $battleDBTable('
-          '$battleColumnId INTEGER PRIMARY KEY, '
-          '$battleColumnName TEXT, '
-          '$battleColumnTypeId INTEGER, '
-          '$battleColumnDate INTEGER, '     // TODO
-          '$battleColumnOwnPartyId INTEGER, '
-          '$battleColumnOpponentName TEXT, '
-          '$battleColumnOpponentPartyId INTEGER, '
-          '$battleColumnTurns TEXT)'
-        );
-      }
-    );
+    if (kIsWeb) {
+      return databaseFactoryFfiWeb.openDatabase(
+        battleDBPath,
+        options: OpenDatabaseOptions(
+          version: 1,
+          onCreate: (db, version) {
+            return db.execute(text);
+          }
+        ),
+      );
+    }
+    else {
+      return openDatabase(
+        battleDBPath,
+        version: 1,
+        onCreate: (db, version) {
+          return db.execute(text);
+        }
+      );
+    }
   }
 }

@@ -35,7 +35,8 @@ dependencies:
   provider: ^6.0.0
   #flutter_spinbox: ^0.13.1
   flutter_typeahead: ^4.3.8
-  sqflite: ^2.2.8
+  #sqflite: ^2.2.8
+  sqflite:
   http: ^0.13.6
   flutter_easyloading: ^3.0.5
   path: ^1.8.0
@@ -46,6 +47,7 @@ dependencies:
   intl: ^0.18.1
   expandable: ^5.0.1
   path_provider: 2.0.15
+  sqflite_common_ffi_web: '>=0.1.0-dev.1'
 
 
   # The following adds the Cupertino Icons font to your application.
