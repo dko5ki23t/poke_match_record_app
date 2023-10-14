@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/pokemon_mini_tile.dart';
 import 'package:poke_reco/pages/register_battle.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 class BattleFirstPokemonListView extends ListView {
   BattleFirstPokemonListView(

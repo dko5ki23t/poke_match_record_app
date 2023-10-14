@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 class TypeDropdownButton extends DropdownButtonFormField {
   static const notAllowedStyle = TextStyle(

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_dialog/delete_editing_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_input_row.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 class RegisterPartyPage extends StatefulWidget {
   RegisterPartyPage({

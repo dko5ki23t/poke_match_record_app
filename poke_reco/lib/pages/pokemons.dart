@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_dialog/pokemon_delete_check_dialog.dart';
-import 'package:poke_reco/custom_dialog/pokemon_filter_dialog.dart';
+import 'package:poke_reco/custom_dialogs/pokemon_delete_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/pokemon_filter_dialog.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';

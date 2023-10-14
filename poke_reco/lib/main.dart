@@ -7,7 +7,7 @@ import 'package:poke_reco/pages/register_battle.dart';
 import 'package:poke_reco/pages/register_party.dart';
 import 'package:poke_reco/pages/register_pokemon.dart';
 import 'package:poke_reco/pages/pokemons.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 

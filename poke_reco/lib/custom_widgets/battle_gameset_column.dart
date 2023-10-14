@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 
 class BattleGamesetColumn extends Column {
   BattleGamesetColumn(

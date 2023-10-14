@@ -15,7 +15,7 @@ class BattleDeleteCheckDialogState extends State<BattleDeleteCheckDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('対戦記録のデータを削除してもいいですか？'),
+      title: Text('編集中のデータを削除してもいいですか？'),
       actions: <Widget>[
         GestureDetector(
           child: Text('いいえ'),

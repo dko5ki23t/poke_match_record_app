@@ -3,8 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/poke_move.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/tool.dart';
 
 class EffectType {
@@ -19,17 +21,6 @@ class EffectType {
   static const int changeFaintingPokemon = 8;
 
   const EffectType(this.id);
-
-  final int id;
-}
-
-class PlayerType {
-  static const int none = 0;
-  static const int me = 1;          // 自身
-  static const int opponent = 2;    // 相手
-  static const int entireField = 3; // 全体の場(両者に影響あり)
-
-  const PlayerType(this.id);
 
   final int id;
 }

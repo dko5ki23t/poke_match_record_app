@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 
 class BattleChangeFaintingPokemonInputColumn extends Column {
   BattleChangeFaintingPokemonInputColumn(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 class StatTotalRow extends Row {
   static const notAllowedStyle = TextStyle(

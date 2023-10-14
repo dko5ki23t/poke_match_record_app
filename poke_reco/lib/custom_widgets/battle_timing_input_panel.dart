@@ -5,9 +5,9 @@ import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dar
 import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_gameset_column.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/poke_effect.dart';
-import 'package:poke_reco/poke_move.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/poke_move.dart';
 
 class BattleTimingInputPanel extends Column {
   BattleTimingInputPanel(

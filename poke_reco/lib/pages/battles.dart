@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:poke_reco/custom_dialog/battle_delete_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/battle_delete_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_tile.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 

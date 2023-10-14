@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/poke_db.dart';
-import 'package:poke_reco/poke_effect.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/tool.dart';
 
 class TurnMoveType {

@@ -1,3 +1,51 @@
+import 'dart:io';
+
+import 'package:flutter/services.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+
+Future<Database> openAssetDatabase(String dbFileName) async {
+  if (kIsWeb) {
+    // 動作環境がWebの場合
+    databaseFactory = databaseFactoryFfiWeb;
+  }
+  final path = join(await getDatabasesPath(), dbFileName);
+  // TODO:アップデート時とかのみ消せばいい。設定から消せるとか、そういうのにしたい。
+  await deleteDatabase(path);
+  var exists = await databaseExists(path);
+
+  if (!exists) {    // アプリケーションを最初に起動したときのみ発生？
+    print('Creating new copy from asset');
+
+    if (!kIsWeb) {
+      try {
+        await Directory(dirname(path)).create(recursive: true);
+      } catch (_) {}
+    }
+
+    // アセットからコピー
+    ByteData data = await rootBundle.load(join('assets', dbFileName));
+    var bytes =
+      data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+
+    // 書き込まれたバイトを書き込み、フラッシュする
+    if (kIsWeb) {
+      await databaseFactoryFfiWeb.writeDatabaseBytes(path, bytes);
+    }
+    else {
+      await File(path).writeAsBytes(bytes, flush: true);
+    }
+  }
+  else {
+    print("Opening existing database");
+  }
+
+  // SQLiteのDB読み込み
+  return await openDatabase(path);
+}
+
 void selectAll(List<bool> checkList) {
   bool existFalse = false;
   for (final e in checkList) {
