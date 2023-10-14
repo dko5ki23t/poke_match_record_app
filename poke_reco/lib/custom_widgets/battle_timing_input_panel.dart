@@ -11,7 +11,6 @@ import 'package:poke_reco/poke_move.dart';
 
 class BattleTimingInputPanel extends Column {
   BattleTimingInputPanel(
-    PokeDB pokeData,
     void Function() setState,
     ThemeData theme,
     Battle battle,
@@ -40,7 +39,7 @@ class BattleTimingInputPanel extends Column {
       Container(
         child: _getExpandedWidget(
           sameTimingList.first.turnEffect.timing,
-          pokeData, setState, theme, battle,
+          setState, theme, battle,
           turn, appState, focusPhaseIdx,
           (phaseIdx) => onFocus(phaseIdx), sameTimingList,
           textEditControllerList1, textEditControllerList2, textEditControllerList3,
@@ -96,7 +95,6 @@ class BattleTimingInputPanel extends Column {
 
   static Widget _getExpandedWidget(
     AbilityTiming timing,
-    PokeDB pokeData,
     void Function() setState,
     ThemeData theme,
     Battle battle,
@@ -119,7 +117,7 @@ class BattleTimingInputPanel extends Column {
     return 
     timing.id == AbilityTiming.action ?
     BattleActionInputColumn(
-      pokeData, prevState,
+      prevState,
       sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
@@ -133,7 +131,7 @@ class BattleTimingInputPanel extends Column {
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(
-      pokeData, prevState,
+      prevState,
       sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
       theme, battle, turn,
@@ -148,7 +146,7 @@ class BattleTimingInputPanel extends Column {
     ) :
     timing.id == AbilityTiming.changeFaintingPokemon ?
     BattleChangeFaintingPokemonInputColumn(
-      pokeData, prevState,
+      prevState,
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
@@ -163,7 +161,7 @@ class BattleTimingInputPanel extends Column {
       theme, sameTimingList.first.turnEffect,
       battle.opponentName) :
     BattleEffectInputColumn(
-      pokeData, theme, battle, turn,
+      theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
       prevState, sameTimingList,

@@ -60,7 +60,7 @@ class PartiesPageState extends State<PartiesPage> {
           children: [
             for (int i = 0; i < filteredParties.length; i++)
               PartyTile(
-                filteredParties[i], theme, pokeData,
+                filteredParties[i], theme,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
                   value: checkList![i],
@@ -79,7 +79,7 @@ class PartiesPageState extends State<PartiesPage> {
           children: [
             for (var party in filteredParties)
               PartyTile(
-                party, theme, pokeData,
+                party, theme,
                 leading: Icon(Icons.group),
                 onLongPress: () => widget.onAdd(party.copyWith(), false),
               )

@@ -12,7 +12,6 @@ class PokemonItemInputRow extends Row {
     void Function() pokemonOnClear,
     String? labelItemText,
     TextEditingController itemController,
-    PokeDB pokeData,
     List<Item?> removalItems,
     void Function(Item) onItemSuggestionSelected,
     void Function() itemOnClear,
@@ -63,7 +62,7 @@ class PokemonItemInputRow extends Row {
               hideOnEmpty: true,
               suggestionsCallback: (pattern) async {
                 List<Item> matches = [];
-                matches.addAll(pokeData.items.values);
+                matches.addAll(PokeDB().items.values);
                 matches.retainWhere((s){
                   return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                 });

@@ -920,11 +920,11 @@ class Item {
     int yourPokemonIndex,
     PokemonState yourState,
     PhaseState state,
-    PokeDB pokeData,
     int extraArg1,
     int extraArg2,
     TurnEffect? prevAction,
   ) {
+    final pokeData = PokeDB();
     List<String> ret = [];
     if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
       myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
@@ -2319,7 +2319,8 @@ class Ailment {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
-  String displayName(PokeDB pokeData) {
+  String get displayName {
+    final pokeData = PokeDB();
     if (id == Ailment.disable) return '${_displayNameMap[id]!}(${pokeData.moves[extraArg1]!.displayName})';
     return _displayNameMap[id]!;
   }
@@ -4148,7 +4149,8 @@ class PokemonState {
   // ランク変化に関する関数群ここまで
 
   // SQLに保存された文字列からPokemonStateをパース
-  static PokemonState deserialize(dynamic str, PokeDB pokeData, String split1, String split2, String split3) {
+  static PokemonState deserialize(dynamic str, String split1, String split2, String split3) {
+    final pokeData = PokeDB();
     PokemonState pokemonState = PokemonState();
     final stateElements = str.split(split1);
     // pokemon
@@ -4510,7 +4512,7 @@ class PhaseState {
 
   // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
   List<TurnEffect> getDefaultEffectList(
-    PokeDB pokeData, Turn currentTurn, AbilityTiming timing, bool changedOwn, bool changedOpponent,
+    Turn currentTurn, AbilityTiming timing, bool changedOwn, bool changedOpponent,
     TurnEffect? prevAction, int continuousCount
   ) {
     List<TurnEffect> ret = [];
@@ -5026,7 +5028,7 @@ class Turn {
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
-    int phaseIdx, Party ownParty, Party opponentParty, PokeDB pokeData)
+    int phaseIdx, Party ownParty, Party opponentParty)
   {
     PhaseState ret = copyInitialState();
     int continousCount = 0;
@@ -5048,7 +5050,7 @@ class Turn {
         ret.ownPokemonState,
         opponentParty,
         ret.opponentPokemonState,
-        ret, pokeData, lastAction, continousCount,
+        ret, lastAction, continousCount,
       );
     }
     return ret;
@@ -5056,7 +5058,7 @@ class Turn {
 
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
-    dynamic str, PokeDB pokeData, String split1, String split2,
+    dynamic str, String split1, String split2,
     String split3, String split4, String split5,)
   {
     Turn ret = Turn();
@@ -5069,13 +5071,13 @@ class Turn {
     var states = turnElements[2].split(split2);
     for (final state in states) {
       if (state == '') break;
-      ret.initialOwnPokemonStates.add(PokemonState.deserialize(state, pokeData, split3, split4, split5));
+      ret.initialOwnPokemonStates.add(PokemonState.deserialize(state, split3, split4, split5));
     }
     // initialOpponentPokemonStates
     states = turnElements[3].split(split2);
     for (final state in states) {
       if (state == '') break;
-      ret.initialOpponentPokemonStates.add(PokemonState.deserialize(state, pokeData, split3, split4, split5));
+      ret.initialOpponentPokemonStates.add(PokemonState.deserialize(state, split3, split4, split5));
     }
     // initialWeather
     ret.initialWeather = Weather.deserialize(turnElements[4], split2);
@@ -5248,67 +5250,6 @@ class PokeDB {
   static final PokeDB instance = PokeDB._internal();
   // キャッシュしたインスタンスを返す
   factory PokeDB() => instance;
-
-/*
-  Future<void> fetchAllAbility() async {
-    var res = await http.get(Uri.parse('$pokeApiRoute/ability'));
-    if (res.statusCode == 200) {
-      var jsonBody = jsonDecode(res.body);
-      while (true) {
-        // results(デフォルト20件まで)を内部データに変換
-        for (var e in jsonBody['results']) {
-          final ability = await http.get(Uri.parse(e['url']));
-          if (ability.statusCode == 200) {
-            final jsonAbility = jsonDecode(ability.body);
-            abilities[jsonAbility['id']] = Ability(
-              jsonAbility['id'],
-              // 日本語見つからんかったら英語名で(orElseでjsonAbility返してるのがミソ)
-              jsonAbility['names'].firstWhere((e) => e['language']['name'] == 'ja', orElse: () => jsonAbility)['name']
-            );
-          } else {
-            // 失敗したら無視して次
-            // TODO:ログは残す
-            continue;
-          }
-        }
-
-        if (jsonBody['next'] == null) {   // リストを網羅したので終了
-          break;
-        }
-
-        // 次のURLから取得
-        res = await http.get(Uri.parse(jsonBody['next']));
-        if (res.statusCode == 200) {
-          jsonBody = jsonDecode(res.body);
-          continue;
-        } else {
-          // 失敗したらあきらめる
-          // TODO:ログは残す
-          break;
-        }
-      }
-    } else {
-      throw Exception('Failed to Load Ability');
-    }
-  }
-*/
-
-/*
-  Future<void> fetchPokemon(int id) async {
-    if (pokeBase[id] != null) {
-      return;
-    }
-    final res = await http.get(Uri.parse('$pokeApiRoute/pokemon/$id'));
-    if (res.statusCode == 200) {
-      final jsonBody = jsonDecode(res.body);
-      final speciesURL = jsonBody['species']['url'];
-      final species = await http.get(Uri.parse(speciesURL));
-      pokeBase[id] = (PokeBase.fromJson(jsonBody, jsonDecode(species.body)));
-    } else {
-      throw Exception('Failed to Load Pokemon');
-    }
-  }
-*/
 
   List<int> parseIntList(dynamic str) {
     List<int> ret = [];
@@ -5882,7 +5823,7 @@ class PokeDB {
         final turns = map[battleColumnTurns].split(sqlSplit1);
         for (final turn in turns) {
           if (turn == '') break;
-          battles.last.turns.add(Turn.deserialize(turn, this, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6));
+          battles.last.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6));
         }
         battleIDs.add(map[battleColumnId]);
       }

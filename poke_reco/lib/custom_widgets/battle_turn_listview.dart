@@ -11,7 +11,6 @@ class BattleTurnListView extends ListView {
     Battle battle,
     int turnNum,
     ThemeData theme,
-    PokeDB pokeData,
     Pokemon initialOwnPokemon,
     Pokemon initialOpponentPokemon,
     List<TextEditingController> textEditControllerList1,
@@ -32,7 +31,7 @@ class BattleTurnListView extends ListView {
             SizedBox(height: 10,),
             for (int i = 0; i < sameTimingList.length; i++)
             BattleTimingInputPanel(
-              pokeData, setState, theme, battle, battle.turns[turnNum-1],
+              setState, theme, battle, battle.turns[turnNum-1],
               appState, focusPhaseIdx, onFocus,
               sameTimingList[i],
               textEditControllerList1, textEditControllerList2, textEditControllerList3,

@@ -5,7 +5,6 @@ import 'package:poke_reco/poke_effect.dart';
 
 class BattleChangeFaintingPokemonInputColumn extends Column {
   BattleChangeFaintingPokemonInputColumn(
-    PokeDB pokeData,
     PhaseState prevState,       // 直前までの状態
     ThemeData theme,
     Battle battle,

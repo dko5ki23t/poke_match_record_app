@@ -101,7 +101,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     ) {
       // フォーカスしているフェーズの状態を取得
       focusState = turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, pokeData);
+                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases) {
         sameTimingList = _adjustPhases(appState, isNewTurn);
@@ -251,15 +251,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // テキストフィールドの初期値設定
           textEditingControllerList1 = List.generate(
             currentTurn.phases.length,
-            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
+            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1())
           );
           textEditingControllerList2 = List.generate(
             currentTurn.phases.length,
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
-                pokeData,
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty, pokeData
+                  index, ownParty, opponentParty
                 )
               )
             )
@@ -268,9 +267,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             currentTurn.phases.length,
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
-                pokeData,
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty, pokeData
+                  index, ownParty, opponentParty
                 )
               )
             )
@@ -285,7 +283,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             PhaseState initialState =
               prevTurn.getProcessedStates(
                 prevTurn.phases.length-1,
-                ownParty, opponentParty, pokeData);
+                ownParty, opponentParty);
             // 前ターンの最終状態を初期状態とする
             Turn turn = Turn()
             ..setInitialState(initialState);
@@ -300,15 +298,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // テキストフィールドの初期値設定
           textEditingControllerList1 = List.generate(
             currentTurn.phases.length,
-            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
+            (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1())
           );
           textEditingControllerList2 = List.generate(
             currentTurn.phases.length,
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
-                pokeData,
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty, pokeData
+                  index, ownParty, opponentParty
                 )
               )
             )
@@ -317,9 +314,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             currentTurn.phases.length,
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
-                pokeData,
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty, pokeData
+                  index, ownParty, opponentParty
                 )
               )
             )
@@ -352,15 +348,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             );
             textEditingControllerList1 = List.generate(
               currentTurn.phases.length,
-              (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1(pokeData))
+              (index) => TextEditingController(text: currentTurn.phases[index].getEditingControllerText1())
             );
             textEditingControllerList2 = List.generate(
               currentTurn.phases.length,
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText2(
-                  pokeData,
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty, pokeData
+                    index, ownParty, opponentParty
                   )
                 )
               )
@@ -369,9 +364,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               currentTurn.phases.length,
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText3(
-                  pokeData,
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty, pokeData
+                    index, ownParty, opponentParty
                   )
                 )
               )
@@ -394,7 +388,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         lists = BattleBasicListView(
           () {setState(() {});},
           widget.battle, parties,
-          theme, pokeData, battleNameController,
+          theme, battleNameController,
           opponentNameController,
           opponentPokemonController);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
@@ -404,7 +398,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         title = Text('先頭ポケモン');
         lists = BattleFirstPokemonListView(
           () {setState(() {});},
-          widget.battle, theme, pokeData,
+          widget.battle, theme,
           checkedPokemons);
         nextPressed = (checkedPokemons.own != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
@@ -499,7 +493,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     SizedBox(height: 5),
                     // 状態異常・その他補正・場
                     for (int i = 0; i < max(focusState.ownPokemonState.ailmentsLength, focusState.opponentPokemonState.ailmentsLength); i++)
-                    _AilmentsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i, pokeData),
+                    _AilmentsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i),
                     for (int i = 0; i < max(focusState.ownPokemonState.buffDebuffs.length, focusState.opponentPokemonState.buffDebuffs.length); i++)
                     _BuffDebuffsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i),
                     _WeatherFieldRow(focusState)
@@ -537,7 +531,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               flex: openStates ? 1 : 10,
               child: BattleTurnListView(
                 () {setState(() {});},
-                widget.battle, turnNum, theme, pokeData,
+                widget.battle, turnNum, theme, 
                 ownParty.pokemons[turns[turnNum-1].initialOwnPokemonIndex-1]!,
                 opponentParty.pokemons[turns[turnNum-1].initialOpponentPokemonIndex-1]!,
                 textEditingControllerList1,
@@ -679,6 +673,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       6: AbilityTiming.afterMove,
       7: AbilityTiming.changePokemonMove,
       8: AbilityTiming.everyTurnEnd,
+      9: AbilityTiming.gameSet,
     };
     const Map<int, int> s2TimingMap = {
       1: AbilityTiming.afterMove,
@@ -698,7 +693,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     // 自動入力リスト作成
     if (isNewTurn) {
       assistList = currentState.getDefaultEffectList(
-        appState.pokeData, currentTurn, AbilityTiming(currentTimingID),
+        currentTurn, AbilityTiming(currentTimingID),
         changeOwn, changeOpponent, lastAction, continuousCount,
       );
     }
@@ -713,7 +708,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           sameTimingList[timingListIdx].first.needAssist
       ) {
         assistList = currentState.getDefaultEffectList(
-          appState.pokeData, currentTurn, AbilityTiming(currentTimingID),
+          currentTurn, AbilityTiming(currentTimingID),
           changeOwn, changeOpponent, lastAction, continuousCount,
         );
         for (var del in delAssistList) {
@@ -1351,7 +1346,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         currentState.ownPokemonState,
         widget.battle.opponentParty,
         currentState.opponentPokemonState,
-        currentState, appState.pokeData, lastAction, continuousCount);
+        currentState, lastAction, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
         ..phaseIdx = i
@@ -1361,9 +1356,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       );
       // 追加されたフェーズのフォームの内容を変える
       if (isInserted) {
-        textEditingControllerList1[i].text = phases[i].getEditingControllerText1(appState.pokeData);
-        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(appState.pokeData, currentState);
-        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(appState.pokeData, currentState);
+        textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
+        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
+        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
       }
 
       if (s1 != end &&
@@ -1636,7 +1631,6 @@ class _AilmentsRow extends Row {
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
     int index,
-    PokeDB pokeData,
   ) :
   super(
     children: [
@@ -1648,7 +1642,7 @@ class _AilmentsRow extends Row {
             ownPokemonState.ailmentsLength > index ?
             Container(
               color: ownPokemonState.ailments(index).bgColor,
-              child: Text(ownPokemonState.ailments(index).displayName(pokeData), style: TextStyle(color: Colors.white)),
+              child: Text(ownPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
             ) : Container(),
         ),
       ),
@@ -1660,7 +1654,7 @@ class _AilmentsRow extends Row {
             opponentPokemonState.ailmentsLength > index ?
             Container(
               color: opponentPokemonState.ailments(index).bgColor,
-              child: Text(opponentPokemonState.ailments(index).displayName(pokeData), style: TextStyle(color: Colors.white)),
+              child: Text(opponentPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
             ) : Container(),
         ),
       ),

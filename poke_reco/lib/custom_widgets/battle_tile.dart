@@ -5,7 +5,6 @@ class BattleTile extends ListTile {
   BattleTile(
     Battle battle,
     ThemeData theme,
-    PokeDB pokeData,
     {
       leading,
       trailing,

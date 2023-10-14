@@ -9,7 +9,6 @@ class BattleBasicListView extends ListView {
     Battle battle,
     List<Party> parties,
     ThemeData theme,
-    PokeDB pokeData,
     TextEditingController battleNameController,
     TextEditingController opponentNameController,
     List<TextEditingController> opponentPokemonController,
@@ -120,7 +119,7 @@ class BattleBasicListView extends ListView {
                       for (final party in parties.where((element) => element.owner == Owner.mine).toList())
                         DropdownMenuItem(
                           value: party.id,
-                          child: PartyTile(party, theme, pokeData,),
+                          child: PartyTile(party, theme,),
                         ),
                     ],
                     value: battle.ownParty.id == 0 ? null : battle.ownParty.id,
@@ -161,9 +160,9 @@ class BattleBasicListView extends ListView {
             SizedBox(height: 10),
             for (int i = 0; i < 6; i++)
               PokemonSexInputRow(
-                'ポケモン${i+1}', pokeData,
+                'ポケモン${i+1}',
                 [for (int j = 0; j < 6; j++)
-                  i != j ? pokeData.pokeBase[battle.opponentParty.pokemons[j]?.no]
+                  i != j ? PokeDB().pokeBase[battle.opponentParty.pokemons[j]?.no]
                   : null
                 ],
                 opponentPokemonController[i],
@@ -201,7 +200,7 @@ class BattleBasicListView extends ListView {
                 },
                 'せいべつ${i+1}',
                 battle.opponentParty.pokemons[i] != null ?
-                  pokeData.pokeBase[battle.opponentParty.pokemons[i]?.no]!.sex : [Sex.none],
+                  PokeDB().pokeBase[battle.opponentParty.pokemons[i]?.no]!.sex : [Sex.none],
                 battle.opponentParty.pokemons[i] != null ?
                   battle.opponentParty.pokemons[i]!.sex : Sex.none,
                 battle.opponentParty.pokemons[i] != null ?

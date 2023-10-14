@@ -10,7 +10,6 @@ class MoveInputRow extends Row {
   );
 
   MoveInputRow(
-    PokeDB pokeData,
     Pokemon pokemon,
     String? labelMove,
     String? labelPP,
@@ -50,7 +49,7 @@ class MoveInputRow extends Row {
           autoFlipDirection: true,
           suggestionsCallback: (pattern) async {
             List<Move> matches = [];
-            matches.addAll(pokeData.pokeBase[pokemon.no]!.move);
+            matches.addAll(PokeDB().pokeBase[pokemon.no]!.move);
             matches.retainWhere((s){
               return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
             });

@@ -12,7 +12,6 @@ class PokemonTile extends ListTile {
   PokemonTile(
     Pokemon pokemon,
     ThemeData theme,
-    PokeDB pokeData,
     {
       enabled = true,
       leading,
@@ -53,7 +52,7 @@ class PokemonTile extends ListTile {
           children: [
             pokemon.type1.displayIcon,
             pokemon.type2 != null ? Text(' / ') : Opacity(opacity: 0, child: Text(' / ')),
-            pokemon.type2 != null ? pokemon.type2!.displayIcon : Opacity(opacity: 0, child: pokeData.types[0].displayIcon),
+            pokemon.type2 != null ? pokemon.type2!.displayIcon : Opacity(opacity: 0, child: PokeDB().types[0].displayIcon),
             SizedBox(width: 10),
             pokemon.teraType.displayIcon,
             Expanded(

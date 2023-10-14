@@ -6,7 +6,6 @@ import 'package:poke_reco/poke_move.dart';
 
 class BattleActionInputColumn extends Column {
   BattleActionInputColumn(
-    PokeDB pokeData,
     PhaseState prevState,       // 直前までの状態
     PhaseState currentState,
     Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交代する場合は、交代前ポケモン)
@@ -91,7 +90,7 @@ class BattleActionInputColumn extends Column {
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
                         moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =
-                          turn.phases[phaseIdx].getEditingControllerText2(pokeData, currentState);
+                          turn.phases[phaseIdx].getEditingControllerText2(currentState);
                         appState.editingPhase[phaseIdx] = true;
                         onFocus(phaseIdx+1);
                       },
@@ -134,12 +133,12 @@ class BattleActionInputColumn extends Column {
                 battle.opponentParty, prevState, ownPokemon, opponentPokemon,
                 prevState.ownPokemonState,
                 prevState.opponentPokemonState,
-                moveControllerList[phaseIdx], hpControllerList[phaseIdx], pokeData,
+                moveControllerList[phaseIdx], hpControllerList[phaseIdx],
                 appState, phaseIdx,
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.terastalInputWidget(
-                () => onFocus(phaseIdx+1), appState,
+                () => onFocus(phaseIdx+1),
                 ownPokemon, turn.phases[phaseIdx].playerType.id == PlayerType.me ?
                   prevState.hasOwnTerastal : prevState.hasOpponentTerastal,
               ),

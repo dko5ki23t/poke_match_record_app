@@ -202,9 +202,9 @@ class TurnMove {
     PokemonState opponentPokemonState,
     PhaseState state,
     int continuousCount,
-    PokeDB pokeData,
   )
   {
+    final pokeData = PokeDB();
     List<String> ret = [];
     if (playerType.id == PlayerType.none) return ret;
 
@@ -2307,11 +2307,11 @@ class TurnMove {
     PokemonState opponentPokemonState,
     TextEditingController moveController,
     TextEditingController hpController,
-    PokeDB pokeData,
     MyAppState appState,
     int phaseIdx,
   )
   {
+    final pokeData = PokeDB();
     // 交代先ポケモンがいるかどうか
     int count = 0;
     if (playerType.id == PlayerType.me) {
@@ -2554,11 +2554,11 @@ class TurnMove {
 
   Widget terastalInputWidget(
     void Function() onFocus,
-    MyAppState appState,
     Pokemon ownPokemon,
     bool alreadyTerastal,
   )
   {
+    final pokeData = PokeDB();
     if (playerType.id != PlayerType.none && type.id == TurnMoveType.move) {
       // テラスタル有無
       return Row(
@@ -2574,7 +2574,7 @@ class TurnMove {
                     teraType = ownPokemon.teraType;
                   }
                   else {
-                    teraType = appState.pokeData.types[0];  // とりあえずノーマル
+                    teraType = pokeData.types[0];  // とりあえずノーマル
                   }
                 }
                 else {
@@ -2587,10 +2587,9 @@ class TurnMove {
           SizedBox(width: 10,),
           Expanded(
             child: TypeDropdownButton(
-              appState.pokeData,
               'タイプ',
               teraType.id == 0 || alreadyTerastal || playerType.id == PlayerType.me ?
-                null : (val) {teraType = appState.pokeData.types[val - 1];},
+                null : (val) {teraType = pokeData.types[val - 1];},
               teraType.id == 0 ? null : teraType.id,
             ),
           ),
@@ -2841,7 +2840,6 @@ class TurnMove {
             children: [
               Expanded(
                 child: TypeDropdownButton(
-                  appState.pokeData,
                   '変更先タイプ',
                   (val) {extraArg1[continuousCount] = val;},
                   extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
@@ -3131,7 +3129,6 @@ class TurnMove {
             children: [
               Expanded(
                 child: TypeDropdownButton(
-                  appState.pokeData,
                   'わざのタイプ',
                   (val) {extraArg1[continuousCount] = val;},
                   extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],

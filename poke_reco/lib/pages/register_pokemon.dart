@@ -252,7 +252,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     children: [
                       Flexible(
                         child: TypeDropdownButton(
-                          pokeData,
                           'タイプ1',
                           null,
                           widget.myPokemon.type1.id == 0 ? null : widget.myPokemon.type1.id,
@@ -261,7 +260,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: TypeDropdownButton(
-                          pokeData,
                           'タイプ2',
                           null,
                           widget.myPokemon.type2?.id == 0 ? null : widget.myPokemon.type2?.id,
@@ -270,7 +268,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: TypeDropdownButton(
-                          pokeData,
                           'テラスタイプ',
                           (value) {setState(() {
                             widget.myPokemon.teraType = pokeData.types[value - 1];
@@ -431,7 +428,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                   // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                   for (int i = 0; i < 4; i++)
                     MoveInputRow(
-                      pokeData, widget.myPokemon,
+                      widget.myPokemon,
                       'わざ${i+1}', 'PP',
                       pokeMoveController[i],
                       [for (int j = 0; j < 4; j++) i != j ? widget.myPokemon.moves[j] : null],

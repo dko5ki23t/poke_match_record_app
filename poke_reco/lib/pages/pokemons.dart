@@ -104,7 +104,7 @@ class PokemonsPageState extends State<PokemonsPage> {
           children: [
             for (int i = 0; i < filteredPokemons.length; i++)
               PokemonTile(
-                filteredPokemons[i], theme, pokeData,
+                filteredPokemons[i], theme,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
                   value: checkList![i],
@@ -126,7 +126,6 @@ class PokemonsPageState extends State<PokemonsPage> {
               PokemonTile(
                 pokemon,
                 theme,
-                pokeData,
                 enabled: !partyPokemonsNo.contains(pokemon.no),
                 leading: Icon(Icons.catching_pokemon),
                 onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon.copyWith(), false) : null,

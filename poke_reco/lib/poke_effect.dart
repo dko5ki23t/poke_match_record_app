@@ -245,11 +245,11 @@ class TurnEffect {
     Party opponentParty,
     PokemonState opponentPokemonState,
     PhaseState state,
-    PokeDB pokeData,
     TurnEffect? prevAction,
     int continuousCount,
   )
   {
+    final pokeData = PokeDB();
     List<String> ret = [];
     if (!isValid()) return ret;
 
@@ -828,7 +828,7 @@ class TurnEffect {
             case 291:   // はんすう
               ret.addAll(Item.processEffect(
                 extraArg1, playerType, myParty, myPokemonIndex, myState,
-                yourParty, yourPokemonIndex, yourState, state, pokeData,
+                yourParty, yourPokemonIndex, yourState, state,
                 extraArg2, 0, prevAction,
               ));
               break;
@@ -863,7 +863,7 @@ class TurnEffect {
       case EffectType.item:
         ret.addAll(Item.processEffect(
           effectId, playerType, myParty, myPokemonIndex, myState,
-          yourParty, yourPokemonIndex, yourState, state, pokeData,
+          yourParty, yourPokemonIndex, yourState, state,
           extraArg1, extraArg2, prevAction,
         ));
         break;
@@ -873,7 +873,7 @@ class TurnEffect {
           if (myState.teraType != null) {
             move!.teraType = myState.teraType!;
           }
-          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount, pokeData));
+          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount));
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
           if (move!.type.id == TurnMoveType.change) {
             if (playerType.id == PlayerType.me) isOwnChanged = true;
@@ -1021,10 +1021,11 @@ class TurnEffect {
 
   // 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
   static List<TurnEffect> getPossibleEffects(
-    PokeDB pokeData, AbilityTiming timing, PlayerType playerType,
+    AbilityTiming timing, PlayerType playerType,
     EffectType type, Pokemon? pokemon, PokemonState? pokemonState, PhaseState phaseState,
     PlayerType attacker, TurnMove turnMove, Turn currentTurn)
   {
+    final pokeData = PokeDB();
     List<TurnEffect> ret = [];
     List<int> retAbilityIDs = [];
     List<int> retItemIDs = [];
@@ -1338,7 +1339,8 @@ class TurnEffect {
     return ret;
   }
 
-  String getDisplayName(PokeDB pokeData) {
+  String get displayName {
+    final pokeData = PokeDB();
     switch (effect.id) {
       case EffectType.ability:
         return pokeData.abilities[effectId]!.displayName;
@@ -1357,7 +1359,7 @@ class TurnEffect {
     }
   }
 
-  String getEditingControllerText1(PokeDB pokeData) {
+  String getEditingControllerText1() {
     switch (timing.id) {
       case AbilityTiming.action:
       case AbilityTiming.continuousMove:
@@ -1366,13 +1368,14 @@ class TurnEffect {
       case AbilityTiming.afterMove:
       case AbilityTiming.pokemonAppear:
       case AbilityTiming.everyTurnEnd:
-        return getDisplayName(pokeData);
+        return displayName;
       default:
         return '';
     }
   }
 
-  String getEditingControllerText2(PokeDB pokeData, PhaseState state) {
+  String getEditingControllerText2(PhaseState state) {
+    final pokeData = PokeDB();
     switch (timing.id) {
       case AbilityTiming.action:
       case AbilityTiming.continuousMove:
@@ -1482,7 +1485,7 @@ class TurnEffect {
     return '';
   }
 
-  String getEditingControllerText3(PokeDB pokeData, PhaseState state) {
+  String getEditingControllerText3(PhaseState state) {
     switch (timing.id) {
       case AbilityTiming.action:
       case AbilityTiming.continuousMove:
@@ -1610,7 +1613,6 @@ class TurnEffect {
             children: [
               Flexible(
                 child: TypeDropdownButton(
-                  appState.pokeData,
                   '変化後のタイプ',
                   (value) {
                     extraArg1 = value;

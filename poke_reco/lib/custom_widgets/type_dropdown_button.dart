@@ -7,7 +7,6 @@ class TypeDropdownButton extends DropdownButtonFormField {
   );
 
   TypeDropdownButton(
-    PokeDB pokeData,
     String? labelText,
     void Function(dynamic)? onChanged,
     int? value,
@@ -24,7 +23,7 @@ class TypeDropdownButton extends DropdownButtonFormField {
       
     ),
     items: <DropdownMenuItem>[
-      for (var type in pokeData.types)
+      for (var type in PokeDB().types)
         DropdownMenuItem(
           value: type.id,
           child: FittedBox(

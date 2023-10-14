@@ -8,7 +8,6 @@ class BattleFirstPokemonListView extends ListView {
     void Function() setState,
     Battle battle,
     ThemeData theme,
-    PokeDB pokeData,
     CheckedPokemons checkedPokemons,
   ) : 
   super(
@@ -45,7 +44,7 @@ class BattleFirstPokemonListView extends ListView {
                     child: battle.ownParty.pokemons[i] != null ?
                     PokemonMiniTile(
                       battle.ownParty.pokemons[i]!,
-                      theme, pokeData,
+                      theme,
                       onTap: () {checkedPokemons.own = i+1; setState();},
                       selected: checkedPokemons.own == i+1,
                       selectedTileColor: Colors.black26,
@@ -57,7 +56,7 @@ class BattleFirstPokemonListView extends ListView {
                     child: battle.opponentParty.pokemons[i] != null ?
                     PokemonMiniTile(
                       battle.opponentParty.pokemons[i]!,
-                      theme, pokeData,
+                      theme,
                       onTap: () {checkedPokemons.opponent = i+1; setState();},
                       selected: checkedPokemons.opponent == i+1,
                       selectedTileColor: Colors.black26,

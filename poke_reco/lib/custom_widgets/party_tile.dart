@@ -5,7 +5,6 @@ class PartyTile extends ListTile {
   PartyTile(
     Party party,
     ThemeData theme,
-    PokeDB pokeData,
     {
       leading,
       trailing,

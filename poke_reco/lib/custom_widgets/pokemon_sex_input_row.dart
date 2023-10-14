@@ -6,7 +6,6 @@ import 'package:poke_reco/tool.dart';
 class PokemonSexInputRow extends Row {
   PokemonSexInputRow(
     String? labelPokemonText,
-    PokeDB pokeData,
     List<PokeBase?> removalPokemons,
     TextEditingController pokemonController,
     void Function(PokeBase) onPokemonSuggestionSelected,
@@ -41,8 +40,8 @@ class PokemonSexInputRow extends Row {
             autoFlipDirection: true,
             suggestionsCallback: (pattern) async {
               List<PokeBase> matches = [];
-              matches.addAll(pokeData.pokeBase.values);
-              matches.remove(pokeData.pokeBase[0]);
+              matches.addAll(PokeDB().pokeBase.values);
+              matches.remove(PokeDB().pokeBase[0]);
               matches.retainWhere((s){
                 return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
               });

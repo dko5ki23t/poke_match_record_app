@@ -6,7 +6,6 @@ import 'package:poke_reco/poke_move.dart';
 
 class BattleContinuousMoveInputColumn extends Column {
   BattleContinuousMoveInputColumn(
-    PokeDB pokeData,
     PhaseState prevState,       // 直前までの状態
     PhaseState currentState,
     Pokemon ownPokemon,         // 行動直前でのポケモン(ポケモン交代する場合は、交代前ポケモン)
@@ -117,7 +116,7 @@ class BattleContinuousMoveInputColumn extends Column {
             ..playerType = refMove.playerType
             ..isAdding = false;
             hpControllerList[phaseIdx].text =
-              turn.phases[phaseIdx].getEditingControllerText2(pokeData, currentState);
+              turn.phases[phaseIdx].getEditingControllerText2(currentState);
             onFocus(phaseIdx+1);
           },
         child: Container(

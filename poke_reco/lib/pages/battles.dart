@@ -68,7 +68,6 @@ class BattlesPageState extends State<BattlesPage> {
               BattleTile(
                 battles[i],
                 theme,
-                pokeData,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
                   value: checkList![i],
@@ -89,7 +88,6 @@ class BattlesPageState extends State<BattlesPage> {
               BattleTile(
                 battle,
                 theme,
-                pokeData,
                 leading: Icon(Icons.list_alt),
                 onLongPress: () => widget.onAdd(battle.copyWith(), false),
               ),

@@ -169,7 +169,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       },
                       'もちもの${i+1}',
                       itemController[i],
-                      pokeData,
                       [for (int j = 0; j < 6; j++) i != j ? widget.party.items[j] : null, pokeData.items[0]],
                       (suggestion) {
                         itemController[i].text = suggestion.displayName;
