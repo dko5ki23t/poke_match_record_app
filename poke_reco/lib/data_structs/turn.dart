@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/field.dart';
@@ -8,27 +9,45 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 
 class Turn {
-  int initialOwnPokemonIndex = 0;         // 0は無効値
-  int initialOpponentPokemonIndex = 0;    // 0は無効値
-  List<PokemonState> initialOwnPokemonStates = [];
-  List<PokemonState> initialOpponentPokemonStates = [];
+  List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
+  List<List<PokemonState>> _initialPokemonStates = [[], []];
   Weather initialWeather = Weather(0);
   Field initialField = Field(0);
   List<TurnEffect> phases = [];
 
-  PokemonState get initialOwnPokemonState => initialOwnPokemonStates[initialOwnPokemonIndex-1];
-  PokemonState get initialOpponentPokemonState => initialOpponentPokemonStates[initialOpponentPokemonIndex-1];
+  PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
+  PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
+
+  int getInitialPokemonIndex(PlayerType player) {
+    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
+    return player.id == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
+  }
+
+  void setInitialPokemonIndex(PlayerType player, int index) {
+    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
+    if (player.id == PlayerType.me) {
+      _initialPokemonIndexes[0] = index;
+    }
+    else {
+      _initialPokemonIndexes[1] = index;
+    }
+  }
+
+  List<PokemonState> getInitialPokemonStates(PlayerType player) {
+    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
+    return player.id == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
+  }
+
 
   Turn copyWith() =>
     Turn()
-    ..initialOwnPokemonIndex = initialOwnPokemonIndex
-    ..initialOpponentPokemonIndex = initialOpponentPokemonIndex
-    ..initialOwnPokemonStates = [
-      for (final state in initialOwnPokemonStates)
+    .._initialPokemonIndexes = [..._initialPokemonIndexes]
+    .._initialPokemonStates[0] = [
+      for (final state in _initialPokemonStates[0])
       state.copyWith()
     ]
-    ..initialOpponentPokemonStates = [
-      for (final state in initialOpponentPokemonStates)
+    .._initialPokemonStates[1] = [
+      for (final state in _initialPokemonStates[1])
       state.copyWith()
     ]
     ..initialWeather = initialWeather.copyWith()
@@ -40,16 +59,18 @@ class Turn {
 
   PhaseState copyInitialState() {
     var ret = PhaseState()
-    ..ownPokemonIndex = initialOwnPokemonIndex
-    ..opponentPokemonIndex = initialOpponentPokemonIndex
-    ..ownPokemonStates = [
-      for (final state in initialOwnPokemonStates)
+    ..setPokemonIndex(PlayerType(PlayerType.me), _initialPokemonIndexes[0])
+    ..setPokemonIndex(PlayerType(PlayerType.opponent), _initialPokemonIndexes[1]);
+    ret.getPokemonStates(PlayerType(PlayerType.me)).clear();
+    ret.getPokemonStates(PlayerType(PlayerType.me)).addAll([
+      for (final state in _initialPokemonStates[0])
       state.copyWith()
-    ]
-    ..opponentPokemonStates = [
-      for (final state in initialOpponentPokemonStates)
+    ]);
+    ret.getPokemonStates(PlayerType(PlayerType.opponent)).clear();
+    ret.getPokemonStates(PlayerType(PlayerType.opponent)).addAll([
+      for (final state in _initialPokemonStates[1])
       state.copyWith()
-    ];
+    ]);
     ret.forceSetWeather(initialWeather.copyWith());
     ret.forceSetField(initialField.copyWith());
     return ret;
@@ -70,21 +91,23 @@ class Turn {
   }
 
   void setInitialState(PhaseState state) {
-    initialOwnPokemonIndex = state.ownPokemonIndex;
-    initialOpponentPokemonIndex = state.opponentPokemonIndex;
-    initialOwnPokemonStates = [
-      for (final s in state.ownPokemonStates)
+    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType(PlayerType.me));
+    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType(PlayerType.opponent));
+    _initialPokemonStates[0] = [
+      for (final s in state.getPokemonStates(PlayerType(PlayerType.me)))
       s.copyWith()
     ];
-    initialOpponentPokemonStates = [
-      for (final s in state.opponentPokemonStates)
+    _initialPokemonStates[1] = [
+      for (final s in state.getPokemonStates(PlayerType(PlayerType.opponent)))
       s.copyWith()
     ];
     // ひるみ状態は自動的に解除
-    var idx = initialOwnPokemonStates[initialOwnPokemonIndex-1].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
-    if (idx >= 0) initialOwnPokemonStates[initialOwnPokemonIndex-1].ailmentsRemoveAt(idx);
-    idx = initialOpponentPokemonStates[initialOpponentPokemonIndex-1].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
-    if (idx >= 0) initialOpponentPokemonStates[initialOpponentPokemonIndex-1].ailmentsRemoveAt(idx);
+    // TODO これするなら他にも？
+    for (var id in [PlayerType.me, PlayerType.opponent]) {
+      var pokeIdx = getInitialPokemonIndex(PlayerType(id)) - 1;
+      var idx = getInitialPokemonStates(PlayerType(id))[pokeIdx].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
+      if (idx >= 0) getInitialPokemonStates(PlayerType(id))[pokeIdx].ailmentsRemoveAt(idx);
+    }
     initialWeather = state.weather;
     initialField = state.field;
   }
@@ -110,9 +133,9 @@ class Turn {
       }
       effect.processEffect(
         ownParty,
-        ret.ownPokemonState,
+        ret.getPokemonState(PlayerType(PlayerType.me)),
         opponentParty,
-        ret.opponentPokemonState,
+        ret.getPokemonState(PlayerType(PlayerType.opponent)),
         ret, lastAction, continousCount,
       );
     }
@@ -122,32 +145,36 @@ class Turn {
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
     dynamic str, String split1, String split2,
-    String split3, String split4, String split5,)
+    String split3, String split4, String split5, String split6)
   {
     Turn ret = Turn();
     final turnElements = str.split(split1);
-    // initialOwnPokemonIndex
-    ret.initialOwnPokemonIndex = int.parse(turnElements[0]);
-    // initialOpponentPokemonIndex
-    ret.initialOpponentPokemonIndex = int.parse(turnElements[1]);
-    // initialOwnPokemonStates
-    var states = turnElements[2].split(split2);
-    for (final state in states) {
-      if (state == '') break;
-      ret.initialOwnPokemonStates.add(PokemonState.deserialize(state, split3, split4, split5));
+    // _initialPokemonIndexes
+    var indexes = turnElements[0].split(split2);
+    ret._initialPokemonIndexes.clear();
+    for (final index in indexes) {
+      if (index == '') break;
+      ret._initialPokemonIndexes.add(int.parse(index));
     }
-    // initialOpponentPokemonStates
-    states = turnElements[3].split(split2);
-    for (final state in states) {
-      if (state == '') break;
-      ret.initialOpponentPokemonStates.add(PokemonState.deserialize(state, split3, split4, split5));
+    // _initialPokemonStates
+    var pokeStates = turnElements[1].split(split2);
+    ret._initialPokemonStates.clear();
+    for (final pokeState in pokeStates) {
+      if (pokeState == '') break;
+      var states = pokeState.split(split3);
+      List<PokemonState> adding = [];
+      for (final state in states) {
+        if (state == '') break;
+        adding.add(PokemonState.deserialize(state, split4, split5, split6));
+      }
+      ret._initialPokemonStates.add(adding);
     }
     // initialWeather
-    ret.initialWeather = Weather.deserialize(turnElements[4], split2);
+    ret.initialWeather = Weather.deserialize(turnElements[2], split2);
     // initialField
-    ret.initialField = Field.deserialize(turnElements[5], split2);
+    ret.initialField = Field.deserialize(turnElements[3], split2);
     // phases
-    var turnEffects = turnElements[6].split(split2);
+    var turnEffects = turnElements[4].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
       ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
@@ -157,23 +184,20 @@ class Turn {
   }
 
   // SQL保存用の文字列に変換
-  String serialize(String split1, String split2, String split3, String split4, String split5) {
+  String serialize(String split1, String split2, String split3, String split4, String split5, String split6) {
     String ret = '';
-    // initialOwnPokemonIndex
-    ret += initialOwnPokemonIndex.toString();
-    ret += split1;
-    // initialOpponentPokemonIndex
-    ret += initialOpponentPokemonIndex.toString();
-    ret += split1;
-    // initialOwnPokemonStates
-    for (final state in initialOwnPokemonStates) {
-      ret += state.serialize(split3, split4, split5);
+    // _initialOwnPokemonIndexes
+    for (final index in _initialPokemonIndexes) {
+      ret += index.toString();
       ret += split2;
     }
     ret += split1;
-    // initialOpponentPokemonStates
-    for (final state in initialOpponentPokemonStates) {
-      ret += state.serialize(split3, split4, split5);
+    // _initialPokemonStates
+    for (final states in _initialPokemonStates) {
+      for (final state in states) {
+        ret += state.serialize(split4, split5, split6);
+        ret += split3;
+      }
       ret += split2;
     }
     ret += split1;

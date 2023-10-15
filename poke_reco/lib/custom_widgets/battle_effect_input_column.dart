@@ -121,12 +121,12 @@ class BattleEffectInputColumn extends Column {
                               _myDropDown(
                                 _getEffectCandidates(timing, battle, PlayerType(PlayerType.me), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
                                 PlayerType.me,
-                                '${battle.ownParty.pokemons[sameTimingList[i].phaseState.ownPokemonIndex-1]!.name}/あなた',
+                                '${battle.getParty(PlayerType(PlayerType.me)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.me))-1]!.name}/あなた',
                               ),
                               _myDropDown(
                                 _getEffectCandidates(timing, battle, PlayerType(PlayerType.opponent), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
                                 PlayerType.opponent,
-                                '${battle.opponentParty.pokemons[sameTimingList[i].phaseState.opponentPokemonIndex-1]!.name}/${battle.opponentName}',
+                                '${battle.getParty(PlayerType(PlayerType.opponent)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.opponent))-1]!.name}/${battle.opponentName}',
                               ),
                               _myDropDown(
                                 _getEffectCandidates(timing, battle, PlayerType(PlayerType.entireField), null, sameTimingList[i], attacker, turnMove, turn).isNotEmpty,
@@ -272,10 +272,10 @@ class BattleEffectInputColumn extends Column {
                     ),
                     turn.phases[firstIdx+i].extraInputWidget(
                       () => onFocus(firstIdx+i+1),
-                      battle.ownParty.pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).ownPokemonIndex-1]!,
-                      battle.opponentParty.pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonIndex-1]!,
-                      _getPrevState(prevState, firstIdx, i, sameTimingList).ownPokemonState,
-                      _getPrevState(prevState, firstIdx, i, sameTimingList).opponentPokemonState,
+                      battle.getParty(PlayerType(PlayerType.me)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.me))-1]!,
+                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.opponent))-1]!,
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me)),
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent)),
                       textEditControllerList2[firstIdx+i], textEditControllerList3[firstIdx+i],
                       appState, firstIdx+i),
                     SizedBox(height: 10),
@@ -356,10 +356,9 @@ class BattleEffectInputColumn extends Column {
     Turn turn,
   ) {
     return TurnEffect.getPossibleEffects(timing, playerType, effectType,
-    playerType.id == PlayerType.me ? battle.ownParty.pokemons[sameTiming.phaseState.ownPokemonIndex-1] :
-    playerType.id == PlayerType.opponent ? battle.opponentParty.pokemons[sameTiming.phaseState.opponentPokemonIndex-1] : null,
-    playerType.id == PlayerType.me ? sameTiming.phaseState.ownPokemonState :
-    playerType.id == PlayerType.opponent ? sameTiming.phaseState.opponentPokemonState : null,
+    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? 
+      battle.getParty(playerType).pokemons[sameTiming.phaseState.getPokemonIndex(playerType)-1] : null,
+    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? sameTiming.phaseState.getPokemonState(playerType) : null,
     sameTiming.phaseState, attacker, turnMove, turn);
   }
 

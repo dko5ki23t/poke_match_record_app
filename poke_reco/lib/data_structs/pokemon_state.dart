@@ -21,7 +21,6 @@ class PokemonState {
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   Ability currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい(バトル中にとくせいが変わることあるので)
-  List<IndividualField> fields = [];        // 場(天気やフィールドを含まない、かべ等)
   Ailments _ailments = Ailments();   // 状態異常
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
@@ -44,7 +43,6 @@ class PokemonState {
     .._statChanges = [..._statChanges]
     ..buffDebuffs = [for (final e in buffDebuffs) e.copyWith()]
     ..currentAbility = currentAbility.copyWith()
-    ..fields = [for (final e in fields) e.copyWith()]
     .._ailments = _ailments.copyWith()
     ..minStats = [...minStats]        // TODO:よい？
     ..maxStats = [...maxStats]        // TODO:よい？
@@ -63,7 +61,7 @@ class PokemonState {
   }
 
   // 地面にいるかどうかの判定
-  bool get isGround {
+  bool isGround(List<IndividualField> fields) {
     if (ailmentsWhere((e) => e.id == Ailment.ingrain || e.id == Ailment.antiAir).isNotEmpty ||
         fields.where((e) => e.id == IndividualField.gravity).isNotEmpty ||
         holdingItem?.id == 255) {
@@ -116,7 +114,6 @@ class PokemonState {
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
-    fields.clear();
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
       int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
@@ -769,47 +766,41 @@ class PokemonState {
     }
     // currentAbility
     pokemonState.currentAbility = Ability.deserialize(stateElements[10], split2);
-    // fields
-    final fieldElements = stateElements[11].split(split2);
-    for (final field in fieldElements) {
-      if (field == '') break;
-      pokemonState.fields.add(IndividualField.deserialize(field, split3));
-    }
     // ailments
-    pokemonState._ailments = Ailments.deserialize(stateElements[12], split2, split3);
+    pokemonState._ailments = Ailments.deserialize(stateElements[11], split2, split3);
     // minStats
-    final minStatElements = stateElements[13].split(split2);
+    final minStatElements = stateElements[12].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.minStats[i] = SixParams.deserialize(minStatElements[i], split3);
     }
     // maxStats
-    final maxStatElements = stateElements[14].split(split2);
+    final maxStatElements = stateElements[13].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.maxStats[i] = SixParams.deserialize(maxStatElements[i], split3);
     }
     // possibleAbilities
-    final abilities = stateElements[15].split(split2);
+    final abilities = stateElements[14].split(split2);
     for (var ability in abilities) {
       if (ability == '') break;
       pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
     }
     // impossibleItems
-    final items = stateElements[16].split(split2);
+    final items = stateElements[15].split(split2);
     for (var item in items) {
       if (item == '') break;
       pokemonState.impossibleItems.add(pokeData.items[int.parse(item)]!);
     }
     // moves
-    final moves = stateElements[17].split(split2);
+    final moves = stateElements[16].split(split2);
     for (var move in moves) {
       if (move == '') break;
       pokemonState.moves.add(pokeData.moves[int.parse(move)]!);
     }
     // type1
-    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[18]));
+    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[17]));
     // type2
-    if (stateElements[19] != '') {
-      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[19]));
+    if (stateElements[18] != '') {
+      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[18]));
     }
 
     return pokemonState;
@@ -861,12 +852,6 @@ class PokemonState {
     ret += split1;
     // currentAbility
     ret += currentAbility.serialize(split2);
-    ret += split1;
-    // fields
-    for (final field in fields) {
-      ret += field.serialize(split3);
-      ret += split2;
-    }
     ret += split1;
     // ailments
     ret += _ailments.serialize(split2, split3);

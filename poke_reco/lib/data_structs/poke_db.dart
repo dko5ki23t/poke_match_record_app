@@ -2,21 +2,13 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/battle.dart';
-import 'package:poke_reco/data_structs/buff_debuff.dart';
-import 'package:poke_reco/data_structs/field.dart';
-import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/phase_state.dart';
-import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
-import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/tool.dart';
@@ -177,6 +169,7 @@ const String sqlSplit3 = '_';
 const String sqlSplit4 = '*';
 const String sqlSplit5 = '!';
 const String sqlSplit6 = '}';
+const String sqlSplit7 = '{';
 
 /*
 pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
@@ -238,6 +231,11 @@ class PlayerType {
   static const int entireField = 3; // 全体の場(両者に影響あり)
 
   const PlayerType(this.id);
+
+  PlayerType get opposite {
+    assert(id == me || id == opponent);
+    return id == me ? PlayerType(opponent) : PlayerType(me);
+  }
 
   final int id;
 }
@@ -1046,7 +1044,7 @@ class PokeDB {
 
     //////////// 登録した対戦
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
-    // await deleteDatabase(battleDBPath);
+    //await deleteDatabase(battleDBPath);
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {
@@ -1079,15 +1077,15 @@ class PokeDB {
           ..name = map[battleColumnName]
           ..type = BattleType.createFromId(map[battleColumnTypeId])
           //..datetime = map[battleColumnDate]    // TODO
-          ..ownParty = parties.where((element) => element.id == map[battleColumnOwnPartyId]).first
+          ..setParty(PlayerType(PlayerType.me), parties.where((element) => element.id == map[battleColumnOwnPartyId]).first)
           ..opponentName = map[battleColumnOpponentName]
-          ..opponentParty = parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first
+          ..setParty(PlayerType(PlayerType.opponent), parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first)
         );
         // turns
         final turns = map[battleColumnTurns].split(sqlSplit1);
         for (final turn in turns) {
           if (turn == '') break;
-          battles.last.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6));
+          battles.last.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
         }
         battleIDs.add(map[battleColumnId]);
       }
@@ -1357,7 +1355,7 @@ class PokeDB {
       // 各対戦に、削除したパーティが含まれているか調べる
       List<int> battleIDs = [];
       for (final e in battles) {
-        if (ids.contains(e.ownParty.id) || ids.contains(e.opponentParty.id)) {
+        if (ids.contains(e.getParty(PlayerType(PlayerType.me)).id) || ids.contains(e.getParty(PlayerType(PlayerType.opponent)).id)) {
           battleIDs.add(e.id);
           break;
         }
@@ -1418,13 +1416,13 @@ class PokeDB {
     // 既存対戦の上書きなら、対戦内パーティの被参照カウントをデクリメント
     int index = battles.indexWhere((element) => element.id == battle.id);
     if (index >= 0) {
-      battles[index].ownParty.refCount--;
-      battles[index].opponentParty.refCount--;
+      battles[index].getParty(PlayerType(PlayerType.me)).refCount--;
+      battles[index].getParty(PlayerType(PlayerType.opponent)).refCount--;
     }
 
     // 対戦内パーティの被参照カウントをインクリメント
-    battle.ownParty.refCount++;
-    battle.opponentParty.refCount++;
+    battle.getParty(PlayerType(PlayerType.me)).refCount++;
+    battle.getParty(PlayerType(PlayerType.opponent)).refCount++;
 
     // DBのIDリストを更新
     battleIDs.add(battle.id);
@@ -1462,14 +1460,12 @@ class PokeDB {
     for (final e in ids) {
       final battleIdx = battles.indexWhere((element) => element.id == e);
       // 対戦内パーティおよびポケモンの被参照カウントをデクリメント
-      for (int j = 0; j < battles[battleIdx].ownParty.pokemonNum; j++) {
-        battles[battleIdx].ownParty.pokemons[j]!.refCount--;
+      for (final player in [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)]) {
+        for (int j = 0; j < battles[battleIdx].getParty(player).pokemonNum; j++) {
+          battles[battleIdx].getParty(player).pokemons[j]!.refCount--;
+        }
+        battles[battleIdx].getParty(player).refCount--;
       }
-      battles[battleIdx].ownParty.refCount--;
-      for (int j = 0; j < battles[battleIdx].opponentParty.pokemonNum; j++) {
-        battles[battleIdx].opponentParty.pokemons[j]!.refCount--;
-      }
-      battles[battleIdx].opponentParty.refCount--;
       battles.removeAt(battleIdx);
     }
 

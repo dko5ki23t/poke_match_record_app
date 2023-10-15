@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/pokemon_mini_tile.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/register_battle.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 
@@ -41,9 +42,9 @@ class BattleFirstPokemonListView extends ListView {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: battle.ownParty.pokemons[i] != null ?
+                    child: battle.getParty(PlayerType(PlayerType.me)).pokemons[i] != null ?
                     PokemonMiniTile(
-                      battle.ownParty.pokemons[i]!,
+                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
                       theme,
                       onTap: () {checkedPokemons.own = i+1; setState();},
                       selected: checkedPokemons.own == i+1,
@@ -53,9 +54,9 @@ class BattleFirstPokemonListView extends ListView {
                   SizedBox(width: 10),
                   Expanded(
                     flex: 5,
-                    child: battle.opponentParty.pokemons[i] != null ?
+                    child: battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
                     PokemonMiniTile(
-                      battle.opponentParty.pokemons[i]!,
+                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!,
                       theme,
                       onTap: () {checkedPokemons.opponent = i+1; setState();},
                       selected: checkedPokemons.opponent == i+1,

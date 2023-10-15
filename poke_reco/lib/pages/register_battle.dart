@@ -97,8 +97,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     // エイリアス
     List<Turn> turns = widget.battle.turns;
-    Party ownParty = widget.battle.ownParty;
-    Party opponentParty = widget.battle.opponentParty;
+    Party ownParty = widget.battle.getParty(PlayerType(PlayerType.me));
+    Party opponentParty = widget.battle.getParty(PlayerType(PlayerType.opponent));
 
     battleNameController.text = widget.battle.name;
     opponentNameController.text = widget.battle.opponentName;
@@ -193,8 +193,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           checkedPokemons.own = 0;
           checkedPokemons.opponent = 0;
           if (turns.isNotEmpty) {
-            checkedPokemons.own = turns[0].initialOwnPokemonIndex;
-            checkedPokemons.opponent = turns[0].initialOpponentPokemonIndex;
+            checkedPokemons.own = turns[0].getInitialPokemonIndex(PlayerType(PlayerType.me));
+            checkedPokemons.opponent = turns[0].getInitialPokemonIndex(PlayerType(PlayerType.opponent));
           }
           setState(() {});
           break;
@@ -203,14 +203,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           assert(checkedPokemons.opponent != 0);
           if (turns.isEmpty) {
             Turn turn = Turn()
-            ..initialOwnPokemonIndex = checkedPokemons.own
-            ..initialOpponentPokemonIndex = checkedPokemons.opponent;
+            ..setInitialPokemonIndex(PlayerType(PlayerType.me), checkedPokemons.own) 
+            ..setInitialPokemonIndex(PlayerType(PlayerType.opponent), checkedPokemons.opponent);
             // 初期状態設定ここから
             for (int i = 0; i < ownParty.pokemonNum; i++) {
-              turn.initialOwnPokemonStates.add(PokemonState()
+              turn.getInitialPokemonStates(PlayerType(PlayerType.me)).add(PokemonState()
                 ..pokemon = ownParty.pokemons[i]!
                 ..remainHP = ownParty.pokemons[i]!.h.real
-                ..isBattling = i+1 == turn.initialOwnPokemonIndex
+                ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.me))
                 ..holdingItem = ownParty.items[i]
                 ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
                 ..currentAbility = ownParty.pokemons[i]!.ability
@@ -232,7 +232,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SixParams.getRealABCDS(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort, 1.1));
               final state = PokemonState()
                 ..pokemon = poke
-                ..isBattling = i+1 == turn.initialOpponentPokemonIndex
+                ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.opponent))
                 ..minStats = [
                   for (int j = 0; j < StatIndex.size.index; j++)
                   SixParams(poke.stats[j].race, 0, 0, minReals[j])]
@@ -245,7 +245,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
                 state.currentAbility = state.possibleAbilities[0];
               }
-              turn.initialOpponentPokemonStates.add(state);
+              turn.getInitialPokemonStates(PlayerType(PlayerType.opponent)).add(state);
             }
             turn.initialOwnPokemonState.processEnterEffect(true, turn.initialWeather, turn.initialField, turn.initialOpponentPokemonState);
             turn.initialOpponentPokemonState.processEnterEffect(false, turn.initialWeather, turn.initialField, turn.initialOwnPokemonState);
@@ -428,16 +428,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         Expanded(
                           child: Row(children: [
                             Icon(Icons.catching_pokemon),
-                            Text(_focusingOwnPokemon(focusState!).name),
-                            _focusingOwnPokemon(focusState).sex.displayIcon,
+                            Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name),
+                            _focusingPokemon(PlayerType(PlayerType.me), focusState).sex.displayIcon,
                           ],),
                         ),
                         SizedBox(width: 10,),
                         Expanded(
                           child: Row(children: [
                             Icon(Icons.catching_pokemon),
-                            Text(_focusingOpponentPokemon(focusState).name),
-                            _focusingOpponentPokemon(focusState).sex.displayIcon,
+                            Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name),
+                            _focusingPokemon(PlayerType(PlayerType.opponent), focusState).sex.displayIcon,
                           ],),
                         ),
                         IconButton(
@@ -454,11 +454,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       children: [
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text(_focusingOwnAbilityName(focusState)),
+                          child: Text(_focusingAbilityName(PlayerType(PlayerType.me), focusState)),
                         ),
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text(_focusingOpponentAbilityName(focusState)),
+                          child: Text(_focusingAbilityName(PlayerType(PlayerType.opponent), focusState)),
                         ),
                       ],
                     ),
@@ -468,23 +468,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       children: [
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text(_focusingOwnItemName(focusState)),
+                          child: Text(_focusingItemName(PlayerType(PlayerType.me), focusState)),
                         ),
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text(_focusingOpponentItemName(focusState)),
+                          child: Text(_focusingItemName(PlayerType(PlayerType.opponent), focusState)),
                         ),
                       ],
                     ),
                     SizedBox(height: 5),
                     // HP
-                    _HPBarRow(focusState.ownPokemonState.remainHP, _focusingOwnPokemon(focusState).h.real, focusState.opponentPokemonState.remainHPPercent),
+                    _HPBarRow(
+                      focusState.getPokemonState(PlayerType(PlayerType.me)).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
+                      focusState.getPokemonState(PlayerType(PlayerType.opponent)).remainHPPercent),
                     SizedBox(height: 5),
                     // 各ステータス(ABCDSE)の変化
                     for (int i = 0; i < 7; i++)
                       _StatChangeViewRow(
-                        statAlphabets[i], focusState.ownPokemonState.statChanges(i),
-                        focusState.opponentPokemonState.statChanges(i)
+                        statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me)).statChanges(i),
+                        focusState.getPokemonState(PlayerType(PlayerType.opponent)).statChanges(i)
                       ),
                     SizedBox(height: 5),
                     // すばやさ実数値
@@ -492,7 +494,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       children: [
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text('すばやさ実数値：${_focusingOwnSpeed(focusState)}'),
+                          child: Text('すばやさ実数値：${_focusingSpeed(PlayerType(PlayerType.me), focusState)}'),
                         ),
                         SizedBox(width: 10,),
                         Expanded(
@@ -502,10 +504,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     ),
                     SizedBox(height: 5),
                     // 状態異常・その他補正・場
-                    for (int i = 0; i < max(focusState.ownPokemonState.ailmentsLength, focusState.opponentPokemonState.ailmentsLength); i++)
-                    _AilmentsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i),
-                    for (int i = 0; i < max(focusState.ownPokemonState.buffDebuffs.length, focusState.opponentPokemonState.buffDebuffs.length); i++)
-                    _BuffDebuffsRow(focusState.ownPokemonState, focusState.opponentPokemonState, i),
+                    for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me)).ailmentsLength, focusState.getPokemonState(PlayerType(PlayerType.opponent)).ailmentsLength); i++)
+                    _AilmentsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
+                    for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me)).buffDebuffs.length, focusState.getPokemonState(PlayerType(PlayerType.opponent)).buffDebuffs.length); i++)
+                    _BuffDebuffsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
                     _WeatherFieldRow(focusState)
                   ],
                 ),
@@ -518,14 +520,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(_focusingOwnPokemon(focusState!).name),
+                      Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name),
                     ],),
                   ),
                   SizedBox(width: 10,),
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(_focusingOpponentPokemon(focusState).name),
+                      Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name),
                     ],),
                   ),
                   IconButton(
@@ -542,8 +544,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               child: BattleTurnListView(
                 () {setState(() {});},
                 widget.battle, turnNum, theme, 
-                ownParty.pokemons[turns[turnNum-1].initialOwnPokemonIndex-1]!,
-                opponentParty.pokemons[turns[turnNum-1].initialOpponentPokemonIndex-1]!,
+                ownParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType(PlayerType.me))-1]!,
+                opponentParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType(PlayerType.opponent))-1]!,
                 textEditingControllerList1,
                 textEditingControllerList2,
                 textEditingControllerList3,
@@ -1352,10 +1354,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
 
       final guide = phases[i].processEffect(
-        widget.battle.ownParty,
-        currentState.ownPokemonState,
-        widget.battle.opponentParty,
-        currentState.opponentPokemonState,
+        widget.battle.getParty(PlayerType(PlayerType.me)),
+        currentState.getPokemonState(PlayerType(PlayerType.me)),
+        widget.battle.getParty(PlayerType(PlayerType.opponent)),
+        currentState.getPokemonState(PlayerType(PlayerType.opponent)),
         currentState, lastAction, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
@@ -1414,16 +1416,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     return ret;
   }
 
-  Pokemon _focusingOwnPokemon(PhaseState focusState) {
-    return widget.battle.ownParty.pokemons[focusState.ownPokemonIndex-1]!;
+  Pokemon _focusingPokemon(PlayerType player, PhaseState focusState) {
+    return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player)-1]!;
   }
 
-  Pokemon _focusingOpponentPokemon(PhaseState focusState) {
-    return widget.battle.opponentParty.pokemons[focusState.opponentPokemonIndex-1]!;
-  }
-
-  String _focusingOwnItemName(PhaseState focusState) {
-    final item = focusState.ownPokemonState.holdingItem;
+  String _focusingItemName(PlayerType player, PhaseState focusState) {
+    final item = focusState.getPokemonState(player).holdingItem;
     if (item == null) {
       return 'なし';
     }
@@ -1435,21 +1433,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  String _focusingOpponentItemName(PhaseState focusState) {
-    final item = focusState.opponentPokemonState.holdingItem;
-    if (item == null) {
-      return 'なし';
-    }
-    else if (item.id == 0) {
-      return '？';
-    }
-    else {
-      return item.displayName;
-    }
-  }
-
-  String _focusingOwnAbilityName(PhaseState focusState) {
-    final ability = focusState.ownPokemonState.currentAbility;
+  String _focusingAbilityName(PlayerType player, PhaseState focusState) {
+    final ability = focusState.getPokemonState(player).currentAbility;
     if (ability.id == 0) {
       return '？';
     }
@@ -1458,27 +1443,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  String _focusingOpponentAbilityName(PhaseState focusState) {
-    final ability = focusState.opponentPokemonState.currentAbility;
-    if (ability.id == 0) {
-      return '？';
-    }
-    else {
-      return ability.displayName;
-    }
-  }
-
-  int _focusingOwnSpeed(PhaseState focusState) {
-    int ret = widget.battle.ownParty.pokemons[focusState.ownPokemonIndex-1]!.s.real;
-    final item = focusState.ownPokemonState.holdingItem;
-    final ability = focusState.ownPokemonState.currentAbility;
+  int _focusingSpeed(PlayerType player, PhaseState focusState) {
+    int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player)-1]!.s.real;
+    final item = focusState.getPokemonState(player).holdingItem;
+    final ability = focusState.getPokemonState(player).currentAbility;
     final weather = focusState.weather;
-    final ownState = focusState.ownPokemonState;
-    final fields = focusState.ownPokemonState.fields;
+    final ownState = focusState.getPokemonState(player);
+    final fields = focusState.ownFields;
     bool ignoreParalysis = false;
     
     // ステータス変化
-    int rank = focusState.ownPokemonState.statChanges(4);
+    int rank = focusState.getPokemonState(player).statChanges(4);
     if (rank >= 0) {
       ret = (ret * (2 + rank) / 2).floor();
     }

@@ -41,8 +41,8 @@ class BattleTurnListView extends ListView {
               sameTimingList[i],
               textEditControllerList1, textEditControllerList2, textEditControllerList3,
               _getPrevPhase(battle.turns[turnNum-1], i, sameTimingList),
-              _getPrevPhaseOwnPokemon(battle, battle.turns[turnNum-1], i, sameTimingList),
-              _getPrevPhaseOpponentPokemon(battle, battle.turns[turnNum-1], i, sameTimingList),
+              _getPrevPhasePokemon(PlayerType.me, battle, battle.turns[turnNum-1], i, sameTimingList),
+              _getPrevPhasePokemon(PlayerType.opponent, battle, battle.turns[turnNum-1], i, sameTimingList),
               _getRefMove(sameTimingList, i, battle.turns[turnNum-1]),
               _getContinuousCount(sameTimingList, i, battle.turns[turnNum-1]),
               _getActionCount(sameTimingList, i),
@@ -55,24 +55,14 @@ class BattleTurnListView extends ListView {
     ],
   );
 
-  static Pokemon _getPrevPhaseOwnPokemon(
-    Battle battle, Turn turn, int i,
+  static Pokemon _getPrevPhasePokemon(
+    int playerID, Battle battle, Turn turn, int i,
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
-      return battle.ownParty.pokemons[turn.initialOwnPokemonIndex-1]!;
+      return battle.getParty(PlayerType(playerID)).pokemons[turn.getInitialPokemonIndex(PlayerType(playerID))-1]!;
     }
-    return battle.ownParty.pokemons[sameTimingList[i-1].last.phaseState.ownPokemonIndex-1]!;
-  }
-
-  static Pokemon _getPrevPhaseOpponentPokemon(
-    Battle battle, Turn turn, int i,
-    List<List<TurnEffectAndStateAndGuide>> sameTimingList,
-  ) {
-    if (i <= 0 || i > sameTimingList.length) {
-      return battle.opponentParty.pokemons[turn.initialOpponentPokemonIndex-1]!;
-    }
-    return battle.opponentParty.pokemons[sameTimingList[i-1].last.phaseState.opponentPokemonIndex-1]!;
+    return battle.getParty(PlayerType(playerID)).pokemons[sameTimingList[i-1].last.phaseState.getPokemonIndex(PlayerType(playerID))-1]!;
   }
 
   static PhaseState _getPrevPhase(

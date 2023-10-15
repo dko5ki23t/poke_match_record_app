@@ -1,6 +1,5 @@
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 
 enum BattleType {
@@ -29,11 +28,8 @@ class Battle {
   String name = '';
   BattleType type = BattleType.rankmatch;
   DateTime datetime = DateTime.now();
-  Party ownParty = Party();
-  List<PokemonState> ownPokemonStates = [];     // TODO:必要？現在、使わずに実装してる
+  List<Party> _parties = [Party(), Party()];
   String opponentName = '';
-  Party opponentParty = Party();
-  List<PokemonState> opponentPokemonStates = [];  // TODO:必要？現在、使わずに実装してる
   List<Turn> turns = [];
 
   Battle copyWith() =>
@@ -42,17 +38,9 @@ class Battle {
     ..name = name
     ..type = type
     ..datetime = datetime
-    ..ownParty = ownParty.copyWith()
-    ..ownPokemonStates = [
-      for (final state in ownPokemonStates)
-      state.copyWith()
-    ]
+    .._parties[0] = _parties[0].copyWith()
+    .._parties[1] = _parties[1].copyWith()
     ..opponentName = opponentName
-    ..opponentParty = opponentParty.copyWith()
-    ..opponentPokemonStates = [
-      for (final state in opponentPokemonStates)
-      state.copyWith()
-    ]
     ..turns = [
       for (final turn in turns)
       turn.copyWith()
@@ -63,16 +51,31 @@ class Battle {
     // TODO
     return
       name != '' &&
-      ownParty.isValid &&
+      _parties[0].isValid &&
       opponentName != '' &&
-      opponentParty.pokemon1.name != '';
+      _parties[1].pokemon1.name != '';
+  }
+
+  Party getParty(PlayerType player) {
+    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
+    return player.id == PlayerType.me ? _parties[0] : _parties[1];
+  }
+
+  void setParty(PlayerType player, Party party) {
+    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
+    if (player.id == PlayerType.me) {
+      _parties[0] = party;
+    }
+    else {
+      _parties[1] = party;
+    }
   }
 
   // SQLite保存用
   Map<String, dynamic> toMap() {
     String turnsStr = '';
     for (final turn in turns) {
-      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6);
+      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7);
       turnsStr += sqlSplit1;
     }
     return {
@@ -80,9 +83,9 @@ class Battle {
       battleColumnName: name,
       battleColumnTypeId: type.id,
       battleColumnDate: 0,      // TODO
-      battleColumnOwnPartyId: ownParty.id,
+      battleColumnOwnPartyId: _parties[0].id,
       battleColumnOpponentName: opponentName,
-      battleColumnOpponentPartyId: opponentParty.id,
+      battleColumnOpponentPartyId: _parties[1].id,
       battleColumnTurns: turnsStr,
     };
   }

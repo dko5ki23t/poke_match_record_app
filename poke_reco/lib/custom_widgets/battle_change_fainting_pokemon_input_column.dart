@@ -119,30 +119,18 @@ class BattleChangeFaintingPokemonInputColumn extends Column {
                         border: UnderlineInputBorder(),
                         labelText: '交代先ポケモン',
                       ),
-                      items: turn.phases[phaseIdx].playerType.id == PlayerType.me ?
+                      items: 
                         <DropdownMenuItem>[
-                          for (int i = 0; i < battle.ownParty.pokemonNum; i++)
-                            DropdownMenuItem(
-                              value: i+1,
-                              enabled: prevState.isPossibleOwnBattling(i) && !prevState.ownPokemonStates[i].isFainting,
-                              child: Text(
-                                battle.ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: prevState.isPossibleOwnBattling(i) && !prevState.ownPokemonStates[i].isFainting ?
-                                  Colors.black : Colors.grey),
-                                ),
-                            ),
-                        ] :
-                        <DropdownMenuItem>[
-                          for (int i = 0; i < battle.opponentParty.pokemonNum; i++)
-                            DropdownMenuItem(
-                              value: i+1,
-                              enabled: prevState.isPossibleOpponentBattling(i) && !prevState.opponentPokemonStates[i].isFainting,
-                              child: Text(
-                                battle.opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: prevState.isPossibleOpponentBattling(i) && !prevState.opponentPokemonStates[i].isFainting ?
-                                  Colors.black : Colors.grey),
-                                ),
-                            ),
+                        for (int i = 0; i < battle.getParty(turn.phases[phaseIdx].playerType).pokemonNum; i++)
+                          DropdownMenuItem(
+                            value: i+1,
+                            enabled: prevState.isPossibleBattling(turn.phases[phaseIdx].playerType, i) && !prevState.getPokemonStates(turn.phases[phaseIdx].playerType)[i].isFainting,
+                            child: Text(
+                              battle.getParty(turn.phases[phaseIdx].playerType).pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                              style: TextStyle(color: prevState.isPossibleBattling(turn.phases[phaseIdx].playerType, i) && !prevState.getPokemonStates(turn.phases[phaseIdx].playerType)[i].isFainting ?
+                                Colors.black : Colors.grey),
+                              ),
+                          ),
                         ],
                       value: turn.phases[phaseIdx].effectId == 0 ? null : turn.phases[phaseIdx].effectId,
                       onChanged: (value) {
