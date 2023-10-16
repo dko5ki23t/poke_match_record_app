@@ -16,6 +16,7 @@ import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
 
 // ダメージ
@@ -2251,7 +2252,7 @@ class TurnMove {
     }
 
     // わざ確定
-    var tmp = opponentPokemonState.moves.where(
+    var tmp = myState.moves.where(
           (element) => element.id != 0 && element.id == move.id
         );
     if (move.id != 165 &&     // わるあがきは除外
@@ -2262,6 +2263,13 @@ class TurnMove {
     ) {
       opponentPokemonState.moves.add(move);
       ret.add('わざの1つを${move.displayName}で確定しました。');
+    }
+
+    // わざPP消費
+    int moveIdx = myState.moves.indexWhere((element) => element.id != 0 && element.id == move.id);
+    if (moveIdx >= 0) {
+      myState.usedPPs[moveIdx]++;
+      if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
     }
 
     return ret;
@@ -2280,6 +2288,7 @@ class TurnMove {
     TextEditingController hpController,
     MyAppState appState,
     int phaseIdx,
+    TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   )
   {
     final pokeData = PokeDB();
@@ -2465,6 +2474,9 @@ class TurnMove {
               onSuggestionSelected: (suggestion) {
                 moveController.text = suggestion.displayName;
                 move = suggestion;
+                turnEffectAndStateAndGuide.guides = processMove(
+                  ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
+                  opponentPokemonState.copyWith(), state.copyWith(), 0);
                 moveAdditionalEffects[0] = MoveEffect(move.effect.id);
                 moveEffectivenesses[0] = PokeType.effectiveness(
                     myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
@@ -3719,7 +3731,15 @@ class TurnMove {
                   ),
                   playerType.id == PlayerType.me ?
                   Flexible(child: Text('% /100%')) :
-                  Flexible(child: Text('/${ownPokemon.h.real}'))
+                  Flexible(child: Text('/${ownPokemon.h.real}')),
+                  SizedBox(width: 10,),
+                  playerType.id == PlayerType.me ?
+                    percentDamage[continuousCount] >= 0 ?
+                    Flexible(child: Text('= ダメージ ${percentDamage[continuousCount]}%')) :
+                    Flexible(child: Text('= 回復 ${-percentDamage[continuousCount]}%')) :
+                    realDamage[continuousCount] >= 0 ?
+                    Flexible(child: Text('= ダメージ ${realDamage[continuousCount]}')) :
+                    Flexible(child: Text('= 回復 ${-realDamage[continuousCount]}')),
                 ],
               ),
               SizedBox(height: 10,),

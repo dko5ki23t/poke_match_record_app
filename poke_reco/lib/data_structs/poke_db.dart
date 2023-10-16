@@ -233,7 +233,6 @@ class PlayerType {
   const PlayerType(this.id);
 
   PlayerType get opposite {
-    assert(id == me || id == opponent);
     return id == me ? PlayerType(opponent) : PlayerType(me);
   }
 

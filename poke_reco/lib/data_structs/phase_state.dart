@@ -36,7 +36,6 @@ class PhaseState {
   }
 
   int getPokemonIndex(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     if (player.id == PlayerType.me) {
       return _pokemonIndexes[0];
     }
@@ -56,7 +55,6 @@ class PhaseState {
   }
 
   List<PokemonState> getPokemonStates(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     if (player.id == PlayerType.me) {
       return _pokemonStates[0];
     }
@@ -66,7 +64,6 @@ class PhaseState {
   }
 
   PokemonState getPokemonState(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     if (player.id == PlayerType.me) {
       return _pokemonStates[0][_pokemonIndexes[0]-1];
     }

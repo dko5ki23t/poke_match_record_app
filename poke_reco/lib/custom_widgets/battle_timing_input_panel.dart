@@ -132,7 +132,7 @@ class BattleTimingInputPanel extends Column {
       timing, textEditControllerList1,
       textEditControllerList2,
       textEditControllerList3,
-      sameTimingList.first.guides,
+      sameTimingList.first,
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(

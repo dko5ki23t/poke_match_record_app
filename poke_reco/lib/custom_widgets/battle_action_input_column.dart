@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 
 class BattleActionInputColumn extends Column {
   BattleActionInputColumn(
@@ -25,7 +26,7 @@ class BattleActionInputColumn extends Column {
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
-    List<String> guides,
+    TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -138,7 +139,7 @@ class BattleActionInputColumn extends Column {
                 prevState.getPokemonState(PlayerType(PlayerType.me)),
                 prevState.getPokemonState(PlayerType(PlayerType.opponent)),
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
-                appState, phaseIdx,
+                appState, phaseIdx, turnEffectAndStateAndGuide
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.terastalInputWidget(
@@ -160,7 +161,7 @@ class BattleActionInputColumn extends Column {
                 appState, phaseIdx, 0,
               ),
               SizedBox(height: 10,),
-              for (final e in guides)
+              for (final e in turnEffectAndStateAndGuide.guides)
               Row(
                 children: [
                   Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),

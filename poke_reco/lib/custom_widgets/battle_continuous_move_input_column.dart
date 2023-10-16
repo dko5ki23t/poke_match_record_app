@@ -96,8 +96,8 @@ class BattleContinuousMoveInputColumn extends Column {
               for (final e in guides)
               Row(
                 children: [
-                  Icon(Icons.info, color: Colors.lightGreen,),
-                  Text(e, overflow: TextOverflow.ellipsis,),
+                  Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
+                  Expanded(flex: 10, child: Text(e)),
                 ],
               ),
             ],

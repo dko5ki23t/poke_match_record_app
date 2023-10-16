@@ -1374,9 +1374,10 @@ class TurnEffect {
           if (move!.playerType.id == PlayerType.me) {
             return state.getPokemonState(playerType.opposite).remainHPPercent.toString();
           }
-          else {
+          else if (move!.playerType.id == PlayerType.opponent) {
             return state.getPokemonState(playerType.opposite).remainHP.toString();
           }
+          return '';
         }
       default:
         {
@@ -1484,9 +1485,10 @@ class TurnEffect {
           if (move!.playerType.id == PlayerType.me) {
             return state.getPokemonState(playerType).remainHP.toString();
           }
-          else {
+          else if (move!.playerType.id == PlayerType.opponent) {
             return state.getPokemonState(playerType).remainHPPercent.toString();
           }
+          return '';
         }
       default:
         {

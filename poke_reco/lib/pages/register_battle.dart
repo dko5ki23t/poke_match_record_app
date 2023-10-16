@@ -71,6 +71,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   int turnNum = 1;
   int focusPhaseIdx = 0;                        // 0は無効
   List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
+  int viewMode = 0;     // 0:ランク 1:ステータス 2:ステータス(補正後)
 
   bool isNewTurn = false;
   bool openStates = false;
@@ -93,6 +94,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
+    const statusAlphabets = ['H ', 'A ', 'B ', 'C ', 'D ', 'S '];
     PhaseState? focusState;
 
     // エイリアス
@@ -290,17 +292,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           Turn prevTurn = turns[turnNum-1];
           turnNum++;
           if (turns.length < turnNum) {
-            PhaseState initialState =
-              prevTurn.getProcessedStates(
-                prevTurn.phases.length-1,
-                ownParty, opponentParty);
-            // 前ターンの最終状態を初期状態とする
-            Turn turn = Turn()
-            ..setInitialState(initialState);
-            turns.add(turn);
+            turns.add(Turn());
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum-1];
+          PhaseState initialState =
+            prevTurn.getProcessedStates(
+              prevTurn.phases.length-1,
+              ownParty, opponentParty);
+          // 前ターンの最終状態を初期状態とする
+          currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
           appState.editingPhase = List.generate(
             currentTurn.phases.length, (index) => false
@@ -449,6 +450,39 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ],
                     ),
                     SizedBox(height: 5),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              viewMode++;
+                              viewMode %= 3;
+                            });
+                          },
+                          child: Row(children: [
+                            Icon(Icons.sync),
+                            SizedBox(width: 10),
+                            viewMode == 0 ?
+                            Text('ステータス') :
+                            viewMode == 1 ?
+                            Text('ステータス(補正後)') : Text('ランク'),
+                          ]),
+                        ),
+                        SizedBox(width: 10,),
+                        TextButton(
+                          onPressed: () {
+                            
+                          },
+                          child: Row(children: [
+                            Icon(Icons.edit),
+                            SizedBox(width: 10),
+                            Text('編集'),
+                          ]),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 5),
                     // とくせい
                     Row(
                       children: [
@@ -482,25 +516,29 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       focusState.getPokemonState(PlayerType(PlayerType.me)).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
                       focusState.getPokemonState(PlayerType(PlayerType.opponent)).remainHPPercent),
                     SizedBox(height: 5),
-                    // 各ステータス(ABCDSE)の変化
+                    // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
+                    // TODO
                     for (int i = 0; i < 7; i++)
+                      viewMode == 0 ?
                       _StatChangeViewRow(
                         statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me)).statChanges(i),
                         focusState.getPokemonState(PlayerType(PlayerType.opponent)).statChanges(i)
-                      ),
+                      ) :
+                        i < 6 ?
+                        _StatStatusViewRow(
+                          statusAlphabets[i],
+                          focusState.getPokemonState(PlayerType(PlayerType.me)).minStats[i].real,
+                          focusState.getPokemonState(PlayerType(PlayerType.me)).maxStats[i].real,
+                          focusState.getPokemonState(PlayerType(PlayerType.opponent)).minStats[i].real,
+                          focusState.getPokemonState(PlayerType(PlayerType.opponent)).maxStats[i].real,
+                        ) : Container(),
                     SizedBox(height: 5),
-                    // すばやさ実数値
-                    Row(
-                      children: [
-                        SizedBox(width: 10,),
-                        Expanded(
-                          child: Text('すばやさ実数値：${_focusingSpeed(PlayerType(PlayerType.me), focusState)}'),
-                        ),
-                        SizedBox(width: 10,),
-                        Expanded(
-                          child: Text(''),
-                        ),
-                      ],
+                    // わざ
+                    for (int i = 0; i < 4; i++)
+                    _MoveViewRow(
+                      focusState.getPokemonState(PlayerType(PlayerType.me)),
+                      focusState.getPokemonState(PlayerType(PlayerType.opponent)),
+                      i,
                     ),
                     SizedBox(height: 5),
                     // 状態異常・その他補正・場
@@ -1443,7 +1481,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  int _focusingSpeed(PlayerType player, PhaseState focusState) {
+  int _correctedSpeed(PlayerType player, PhaseState focusState) {
     int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player)-1]!.s.real;
     final item = focusState.getPokemonState(player).holdingItem;
     final ability = focusState.getPokemonState(player).currentAbility;
@@ -1529,6 +1567,66 @@ class _StatChangeViewRow extends Row {
             Icon(Icons.minimize, color: Colors.grey),
         ],),
       ),
+    ],
+  );
+}
+
+class _StatStatusViewRow extends Row {
+  _StatStatusViewRow(
+    String label,
+    int ownStatusMin,
+    int ownStatusMax,
+    int opponentStatusMin,
+    int opponentStatusMax,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          ownStatusMin == ownStatusMax ?
+          Text(ownStatusMin.toString()) :
+          Text('$ownStatusMin～$ownStatusMax'),
+        ],),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          opponentStatusMin == opponentStatusMax ?
+          Text(opponentStatusMin.toString()) :
+          Text('$opponentStatusMin～$opponentStatusMax'),
+        ],),
+      ),
+    ],
+  );
+}
+
+class _MoveViewRow extends Row {
+  _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          ownState.moves.length > idx ?
+          Text(ownState.moves[idx].displayName) : Text(''),
+        ],),
+      ),
+      ownState.moves.length > idx && ownState.usedPPs.length > idx ?
+      Text(ownState.usedPPs[idx].toString()) : Text(''),
+      SizedBox(width: 10,),
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          opponentState.moves.length > idx ?
+          Text(opponentState.moves[idx].displayName) : Text(''),
+        ],),
+      ),
+      opponentState.moves.length > idx && opponentState.usedPPs.length > idx ?
+      Text(opponentState.usedPPs[idx].toString()) : Text(''),
+      SizedBox(width: 10,),
     ],
   );
 }
