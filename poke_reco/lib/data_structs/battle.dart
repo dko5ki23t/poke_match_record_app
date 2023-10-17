@@ -31,6 +31,8 @@ class Battle {
   List<Party> _parties = [Party(), Party()];
   String opponentName = '';
   List<Turn> turns = [];
+  bool isMyWin = false;
+  bool isYourWin = false;
 
   Battle copyWith() =>
     Battle()
@@ -44,7 +46,9 @@ class Battle {
     ..turns = [
       for (final turn in turns)
       turn.copyWith()
-    ];
+    ]
+    ..isMyWin = isMyWin
+    ..isYourWin = isYourWin;
 
   // getter
   bool get isValid {
@@ -87,6 +91,8 @@ class Battle {
       battleColumnOpponentName: opponentName,
       battleColumnOpponentPartyId: _parties[1].id,
       battleColumnTurns: turnsStr,
+      battleColumnIsMyWin: isMyWin ? 1 : 0,
+      battleColumnIsYourWin: isYourWin ? 1 : 0,
     };
   }
 }

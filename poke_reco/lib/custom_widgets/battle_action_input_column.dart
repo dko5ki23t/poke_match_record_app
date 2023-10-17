@@ -49,14 +49,22 @@ class BattleActionInputColumn extends Column {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children:[
-                    appState.editingPhase[phaseIdx] ?
+                    // 編集中でなければ並べ替えボタン
+                    !appState.editingPhase[phaseIdx] ?
+                    IconButton(
+                      icon: Icon(Icons.swap_vert),
+                      onPressed: () {
+                        appState.requestActionSwap = true;
+                        onFocus(phaseIdx+1);
+                      },
+                    ) :
                     IconButton(
                       icon: Icon(Icons.check),
                       onPressed: turn.phases[phaseIdx].move!.isValid() ? () {
                         appState.editingPhase[phaseIdx] = false;
                         onFocus(phaseIdx+1);
                       } : null,
-                    ) : Container(),
+                    ),
                     IconButton(
                       icon: Icon(Icons.close),
                       onPressed: () {

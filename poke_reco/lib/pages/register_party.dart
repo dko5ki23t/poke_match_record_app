@@ -52,7 +52,26 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
         Navigator.pop(context);
       }
     }
+
+    void onTabChange (void Function() func) {
+      if (widget.party.pokemon1.no != 0) {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return DeleteEditingCheckDialog(
+              'パーティ',
+              () => func(),
+            );
+          }
+        );
+      }
+      else {
+        func();
+      }
+    }
+
     appState.onBackKeyPushed = onBack;
+    appState.onTabChange = onTabChange;
 
     partyNameController.text = widget.party.name;
     for (int i = 0; i < 6; i++) {

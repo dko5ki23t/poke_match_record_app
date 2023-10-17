@@ -93,7 +93,26 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
         Navigator.pop(context);
       }
     }
+
+    void onTabChange (void Function() func) {
+      if (widget.myPokemon.no != 0) {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return DeleteEditingCheckDialog(
+              'ポケモン',
+              () => func(),
+            );
+          }
+        );
+      }
+      else {
+        func();
+      }
+    }
+
     appState.onBackKeyPushed = onBack;
+    appState.onTabChange = onTabChange;
 
     pokeNameController.text = widget.myPokemon.name;
     pokeNickNameController.text = widget.myPokemon.nickname;

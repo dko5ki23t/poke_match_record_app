@@ -35,6 +35,7 @@ class BattlesPageState extends State<BattlesPage> {
     var battles = appState.battles;
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
+    appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
 

@@ -14,6 +14,27 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 
+enum TabItem {
+  battles,
+  pokemons,
+  parties,
+  settings,
+}
+
+const Map<TabItem, String> tabName = {
+  TabItem.battles: '対戦',
+  TabItem.pokemons: 'ポケモン',
+  TabItem.parties: 'パーティ',
+  TabItem.settings: '設定',
+};
+
+const Map<TabItem, IconData> tabIcon = {
+  TabItem.battles: Icons.list,
+  TabItem.pokemons: Icons.catching_pokemon,
+  TabItem.parties: Icons.groups,
+  TabItem.settings: Icons.settings,
+};
+
 void main() {
   // TODO
 //  Intl.defaultLocale = 'ja_JP';
@@ -49,13 +70,18 @@ class MyAppState extends ChangeNotifier {
   List<Party> parties = [];
   List<Battle> battles = [];
   void Function() onBackKeyPushed = (){};
+  void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
+  void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ
   bool needAdjustPhases = false;
+  // 行動順入れ替え要求フラグ
+  bool requestActionSwap = false;
 
   MyAppState(BuildContext context) {
+    changeTab = (func) {onTabChange(func);};
     fetchPokeData();
   }
 
@@ -75,19 +101,23 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var _currentTab = TabItem.battles;
+  Widget page = Container();
   final _navigatorKeys = {
     TabItem.battles: GlobalKey<NavigatorState>(),
     TabItem.pokemons: GlobalKey<NavigatorState>(),
     TabItem.parties: GlobalKey<NavigatorState>(),
   };
 
-  void _selectTab(TabItem tabItem) {
-    setState(() => _currentTab = tabItem);
+  void _selectTab(TabItem tabItem) async {
+    //TODO
+    var appState = context.read<MyAppState>();
+    appState.changeTab(() {
+      setState(() => _currentTab = tabItem);
+    },);
   }
 
   @override
   Widget build(BuildContext context) {
-    Widget page;
     switch (_currentTab) {
       case TabItem.battles:
         page = BattleTabNavigator(
@@ -106,6 +136,9 @@ class _MyHomePageState extends State<MyHomePage> {
           navigatorKey: _navigatorKeys[TabItem.parties],
           tabItem: TabItem.parties,
         );
+        break;
+      case TabItem.settings:
+        page = Container();
         break;
       default:
         throw UnimplementedError('no widget');

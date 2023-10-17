@@ -1017,7 +1017,6 @@ class TurnEffect {
     final pokeData = PokeDB();
     List<TurnEffect> ret = [];
     List<int> retAbilityIDs = [];
-    List<int> retItemIDs = [];
     List<int> timingIDs = [...allTimingIDs];
     List<int> attackerTimingIDs = [...allTimingIDs];
     List<int> defenderTimingIDs = [...allTimingIDs];
@@ -1037,6 +1036,8 @@ class TurnEffect {
       case AbilityTiming.pokemonAppear:   // ポケモンを繰り出すとき
         {
           timingIDs.addAll(pokemonAppearTimingIDs);
+          attackerTimingIDs.clear();
+          defenderTimingIDs.clear();
           if (phaseState.weather.id != Weather.rainy) timingIDs.add(61);      // ポケモン登場時(天気が雨でない)
           if (phaseState.weather.id != Weather.sandStorm) timingIDs.add(66);  // ポケモン登場時(天気がすなあらしでない)
           if (phaseState.weather.id != Weather.sunny) timingIDs.add(71);      // ポケモン登場時(天気が晴れでない)
@@ -1051,6 +1052,8 @@ class TurnEffect {
       case AbilityTiming.everyTurnEnd:           // 毎ターン終了時
         {
           timingIDs.addAll(everyTurnEndTimingIDs);
+          attackerTimingIDs.clear();
+          defenderTimingIDs.clear();
           if (currentTurn.getInitialPokemonIndex(playerType) == phaseState.getPokemonIndex(playerType)) {
             timingIDs.add(19);     // 1度でも行動した後毎ターン終了時
           }
@@ -1088,6 +1091,8 @@ class TurnEffect {
       case AbilityTiming.afterActionDecision:    // 行動決定直後
         {
           timingIDs.addAll(afterActionDecisionTimingIDs);
+          attackerTimingIDs.clear();
+          defenderTimingIDs.clear();
         }
         break;
       case AbilityTiming.afterMove:     // わざ使用後
@@ -1102,8 +1107,8 @@ class TurnEffect {
           if (turnMove.move.damageClass.id == 1) defenderTimingIDs.addAll([113]);
           // こうげきしたとき/うけたとき
           if (turnMove.move.damageClass.id >= 2) {
-            defenderTimingIDs.addAll([62, 82]);
-            attackerTimingIDs.addAll([2]);
+            defenderTimingIDs.addAll([62, 82, 157]);
+            attackerTimingIDs.addAll([60, 2]);
             // ノーマルタイプのこうげきをした時
             if (turnMove.move.type.id == 1) attackerTimingIDs.addAll([130]);
             // あくタイプのこうげきを受けた時

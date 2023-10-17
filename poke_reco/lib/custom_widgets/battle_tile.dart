@@ -15,7 +15,17 @@ class BattleTile extends ListTile {
   super(
     isThreeLine: true,
     leading: leading,
-    title: Text(battle.name),
+    title: Row(
+      children: [
+        Expanded(
+          child: Text(battle.name, overflow: TextOverflow.ellipsis,),
+        ),
+        SizedBox(width: 10,),
+        battle.isMyWin && !battle.isYourWin ? Text('WIN!') :
+        !battle.isMyWin && battle.isYourWin ? Text('LOSE...') :
+        battle.isMyWin && battle.isYourWin ? Text('DRAW') : Text(''),
+      ],
+    ),
     subtitle: Column(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       mainAxisSize: MainAxisSize.min,

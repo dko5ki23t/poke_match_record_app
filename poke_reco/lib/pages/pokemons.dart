@@ -67,6 +67,7 @@ class PokemonsPageState extends State<PokemonsPage> {
       filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.temper.id)).toList();
     }
     appState.onBackKeyPushed = (){};
+    appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
 

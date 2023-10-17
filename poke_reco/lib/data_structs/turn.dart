@@ -19,12 +19,10 @@ class Turn {
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
 
   int getInitialPokemonIndex(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     return player.id == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
   }
 
   void setInitialPokemonIndex(PlayerType player, int index) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     if (player.id == PlayerType.me) {
       _initialPokemonIndexes[0] = index;
     }
@@ -34,7 +32,6 @@ class Turn {
   }
 
   List<PokemonState> getInitialPokemonStates(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
     return player.id == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
   }
 

@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
 
 // ある時点(ターン内のフェーズ)での状態
 class PhaseState {
@@ -179,6 +180,10 @@ class PhaseState {
               }
               // こうげきわざを受けた後
               defenderTimingIDList.add(AbilityTiming.attackedHitted);
+              // ばけたすがたでこうげきを受けた後
+              if (defenderState.buffDebuffs.where((element) => element.id == BuffDebuff.transedForm).isNotEmpty) {
+                defenderTimingIDList.add(AbilityTiming.attackedHittedWithBake);
+              }
               // こうげきわざを受けてひんしになったとき
               if (defenderState.isFainting) {
                 defenderTimingIDList.add(AbilityTiming.attackedFainting);
@@ -324,6 +329,9 @@ class PhaseState {
             }
             if (defenderState.currentAbility.id == 106) {   // ゆうばく
                 extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 4).floor() : 25;
+            }
+            if (defenderState.currentAbility.id == 209) {   // ばけのかわ
+                extraArg1 = defenderPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 8).floor() : 12;
             }
             ret.add(TurnEffect()
               ..playerType = PlayerType(defenderPlayerTypeId)

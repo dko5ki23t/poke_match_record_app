@@ -151,6 +151,8 @@ const String battleColumnOwnPartyId = 'ownParty';
 const String battleColumnOpponentName = 'opponentName';
 const String battleColumnOpponentPartyId = 'opponentParty';
 const String battleColumnTurns = 'turns';
+const String battleColumnIsMyWin = 'isMyWin';
+const String battleColumnIsYourWin = 'isYourWin';
 
 // 今後変更されないとも限らない
 const int pokemonMinLevel = 1;
@@ -180,24 +182,6 @@ pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
     'special-defense' : 4,
     'speed' : 5,
 }*/
-
-enum TabItem {
-  battles,
-  pokemons,
-  parties,
-}
-
-const Map<TabItem, String> tabName = {
-  TabItem.battles: '対戦',
-  TabItem.pokemons: 'ポケモン',
-  TabItem.parties: 'パーティ',
-};
-
-const Map<TabItem, IconData> tabIcon = {
-  TabItem.battles: Icons.list,
-  TabItem.pokemons: Icons.catching_pokemon,
-  TabItem.parties: Icons.groups,
-};
 
 enum Sex {
   none(0, 'なし', Icon(Icons.minimize, color: Colors.grey)),
@@ -1043,7 +1027,7 @@ class PokeDB {
 
     //////////// 登録した対戦
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
-    //await deleteDatabase(battleDBPath);
+    await deleteDatabase(battleDBPath);
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {
@@ -1066,7 +1050,7 @@ class PokeDB {
           battleColumnId, battleColumnName, battleColumnTypeId,
           battleColumnDate, battleColumnOwnPartyId,
           battleColumnOpponentName, battleColumnOpponentPartyId,
-          battleColumnTurns,
+          battleColumnTurns, battleColumnIsMyWin, battleColumnIsYourWin,
         ],
       );
 
@@ -1079,6 +1063,8 @@ class PokeDB {
           ..setParty(PlayerType(PlayerType.me), parties.where((element) => element.id == map[battleColumnOwnPartyId]).first)
           ..opponentName = map[battleColumnOpponentName]
           ..setParty(PlayerType(PlayerType.opponent), parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first)
+          ..isMyWin = map[battleColumnIsMyWin] == 1
+          ..isYourWin = map[battleColumnIsYourWin] == 1
         );
         // turns
         final turns = map[battleColumnTurns].split(sqlSplit1);
@@ -1601,7 +1587,9 @@ class PokeDB {
             '$battleColumnOwnPartyId INTEGER, '
             '$battleColumnOpponentName TEXT, '
             '$battleColumnOpponentPartyId INTEGER, '
-            '$battleColumnTurns TEXT)';
+            '$battleColumnTurns TEXT, '
+            '$battleColumnIsMyWin INTEGER, '
+            '$battleColumnIsYourWin INTEGER)';
 
     // SQLiteのDB作成
     if (kIsWeb) {

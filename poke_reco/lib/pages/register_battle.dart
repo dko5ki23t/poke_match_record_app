@@ -76,15 +76,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   bool isNewTurn = false;
   bool openStates = false;
 
-  static pingpongTextEditingController(TextEditingController controller) {
-    if (controller.text == 'ping') {
-      controller.text = 'pong';
-    }
-    else {
-      controller.text = 'ping';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -120,6 +111,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         isNewTurn = false;
         appState.needAdjustPhases = false;
       }
+      if (appState.requestActionSwap) {
+        _onlySwapActionPhases();
+        appState.requestActionSwap = false;
+      }
     }
 
     // TODO
@@ -136,7 +131,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
       );
     }
+
+    void onTabChange(void Function() func) {
+      showDialog(
+        context: context,
+        builder: (_) {
+          return DeleteEditingCheckDialog(
+            '対戦記録',
+            () => func(),
+          );
+        }
+      );
+    }
+
     appState.onBackKeyPushed = onBack;
+    appState.onTabChange = onTabChange;
 
     Widget lists;
     Widget title;
@@ -145,6 +154,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
+      var battle = widget.battle;
+      if (battle.turns.isNotEmpty) {
+        if (battle.turns.last.phases.where((e) => e.isMyWin).isNotEmpty) battle.isMyWin = true;
+        if (battle.turns.last.phases.where((e) => e.isYourWin).isNotEmpty) battle.isYourWin = true;
+        // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
+      }
       if (widget.isNew) {
         // 相手のパーティ、ポケモンも登録
         for (int i = 0; i < opponentParty.pokemonNum; i++) {
@@ -158,8 +173,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         parties.add(opponentParty);
         await pokeData.addParty(opponentParty);
 
-        widget.battle.id = pokeData.getUniqueBattleID();
-        battles.add(widget.battle);
+        battle.id = pokeData.getUniqueBattleID();
+        battles.add(battle);
       }
       else {
         int index = 0;
@@ -181,10 +196,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         parties[index] = opponentParty;
         await pokeData.addParty(opponentParty);
 
-        index = battles.indexWhere((element) => element.id == widget.battle.id);
-        battles[index] = widget.battle;
+        index = battles.indexWhere((element) => element.id == battle.id);
+        battles[index] = battle;
       }
-      await pokeData.addBattle(widget.battle);
+      await pokeData.addBattle(battle);
       widget.onFinish();
     }
 
@@ -610,25 +625,31 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         break;
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: title,
-        actions: [
-          TextButton(
-            onPressed: backPressed,
-            child: Text('前へ'),
-          ),
-          TextButton(
-            onPressed: nextPressed,
-            child: Text('次へ'),
-          ),
-          TextButton(
-            onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
-            child: Text('完了'),
-          ),
-        ],
+    return WillPopScope(
+      onWillPop: () async {
+        onBack();
+        return false;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: title,
+          actions: [
+            TextButton(
+              onPressed: backPressed,
+              child: Text('前へ'),
+            ),
+            TextButton(
+              onPressed: nextPressed,
+              child: Text('次へ'),
+            ),
+            TextButton(
+              onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
+              child: Text('完了'),
+            ),
+          ],
+        ),
+        body: lists,
       ),
-      body: lists,
     );
   }
 
@@ -1435,7 +1456,57 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       i++;
     }
 
+/*
+    if (appState.requestActionSwap) {
+      int action1BeginPhasesIdx = -1;
+      int action1EndPhasesIdx = -1;
+      int action2BeginPhasesIdx = -1;
+      int action2EndPhasesIdx = -1;
+      for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
+        if (turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action) {
+          if (action1BeginPhasesIdx < 0) {
+            action1BeginPhasesIdx = i;
+          }
+          else {
+            assert(i >= 1);
+            action1EndPhasesIdx = i-1;
+            action2BeginPhasesIdx = i;
+          }
+        }
+        else if (turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.everyTurnEnd) {
+          assert(i >= 1);
+          action2EndPhasesIdx = i-1;
+        }
+      }
+      // 行動を交換
+      if (action1BeginPhasesIdx >= 0 && action1EndPhasesIdx >= 0 &&
+          action2BeginPhasesIdx >= 0 && action2EndPhasesIdx >= 0
+      ) {
+        List<TurnEffect> removedPhases1 = [];
+        List<TurnEffectAndStateAndGuide> removedStates1 = [];
+        for (int i = 0; i < action1EndPhasesIdx-action1BeginPhasesIdx+1; i++) {
+          removedPhases1.add(phases.removeAt(action1BeginPhasesIdx));
+          removedStates1.add(turnEffectAndStateAndGuides.removeAt(action1BeginPhasesIdx));
+        }
+        List<TurnEffect> removedPhases2 = [];
+        List<TurnEffectAndStateAndGuide> removedStates2 = [];
+        int id = action2BeginPhasesIdx - (action1EndPhasesIdx-action1BeginPhasesIdx+1);
+        for (int i = 0; i < action2EndPhasesIdx-action2BeginPhasesIdx+1; i++) {
+          removedPhases2.add(phases.removeAt(id));
+          removedStates2.add(turnEffectAndStateAndGuides.removeAt(id));
+        }
+        phases.insertAll(action1BeginPhasesIdx, removedPhases2);
+        turnEffectAndStateAndGuides.insertAll(action1BeginPhasesIdx, removedStates2);
+        id = action1BeginPhasesIdx + action2EndPhasesIdx - action1EndPhasesIdx;
+        phases.insertAll(id, removedPhases1);
+        turnEffectAndStateAndGuides.insertAll(id, removedStates1);
+      }
+      appState.requestActionSwap = false;
+    }
+*/
+
     for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
+      turnEffectAndStateAndGuides[i].phaseIdx = i;
       if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
           turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
           turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
@@ -1452,6 +1523,97 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
     }
     return ret;
+  }
+
+  void _onlySwapActionPhases() {
+    int action1BeginIdx = -1;
+    int action1EndIdx = -1;
+    int action2BeginIdx = -1;
+    int action2EndIdx = -1;
+    var phases = widget.battle.turns[turnNum-1].phases;
+    for (int i = 0; i < phases.length; i++) {
+      if (phases[i].timing.id == AbilityTiming.action) {
+        if (action1BeginIdx < 0) {
+          action1BeginIdx = i;
+        }
+        else {
+          assert(i >= 1);
+          action1EndIdx = i-1;
+          action2BeginIdx = i;
+        }
+      }
+      else if (phases[i].timing.id == AbilityTiming.everyTurnEnd) {
+        assert(i >= 1);
+        action2EndIdx = i-1;
+      }
+    }
+    // 行動を交換
+    if (action1BeginIdx >= 0 && action1EndIdx >= 0 &&
+        action2BeginIdx >= 0 && action2EndIdx >= 0
+    ) {
+      List<TurnEffect> removedPhases1 = [];
+      for (int i = 0; i < action1EndIdx-action1BeginIdx+1; i++) {
+        removedPhases1.add(phases.removeAt(action1BeginIdx));
+      }
+      List<TurnEffect> removedPhases2 = [];
+      int id = action2BeginIdx - (action1EndIdx-action1BeginIdx+1);
+      for (int i = 0; i < action2EndIdx-action2BeginIdx+1; i++) {
+        removedPhases2.add(phases.removeAt(id));
+      }
+      phases.insertAll(action1BeginIdx, removedPhases2);
+      id = action1BeginIdx + action2EndIdx - action1EndIdx;
+      phases.insertAll(id, removedPhases1);
+
+      List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
+      PhaseState currentState = widget.battle.turns[turnNum-1].copyInitialState();
+      int continuousCount = 0;
+      TurnEffect? lastAction;
+
+      for (int i = 0; i < phases.length; i++) {
+        if (phases[i].timing.id == AbilityTiming.action) {
+          lastAction = phases[i];
+          continuousCount = 0;
+        }
+        else if (phases[i].timing.id == AbilityTiming.continuousMove) {
+          lastAction = phases[i];
+          continuousCount++;
+        }
+
+        final guide = phases[i].processEffect(
+          widget.battle.getParty(PlayerType(PlayerType.me)),
+          currentState.getPokemonState(PlayerType(PlayerType.me)),
+          widget.battle.getParty(PlayerType(PlayerType.opponent)),
+          currentState.getPokemonState(PlayerType(PlayerType.opponent)),
+          currentState, lastAction, continuousCount);
+        turnEffectAndStateAndGuides.add(
+          TurnEffectAndStateAndGuide()
+          ..phaseIdx = i
+          ..turnEffect = phases[i]
+          ..phaseState = currentState.copyWith()
+          ..guides = guide
+        );
+        // フォームの内容を変える
+        textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
+        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
+        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
+      }
+
+      sameTimingList.clear();
+      int timingId = turnEffectAndStateAndGuides.first.turnEffect.timing.id;
+      int beginIdx = 0;
+      for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
+        if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
+            turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
+            turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
+        ) {
+          sameTimingList.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
+          beginIdx = i;
+          timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
+        }
+      }
+
+      sameTimingList.add(turnEffectAndStateAndGuides.sublist(beginIdx, turnEffectAndStateAndGuides.length));
+    }
   }
 
   Pokemon _focusingPokemon(PlayerType player, PhaseState focusState) {

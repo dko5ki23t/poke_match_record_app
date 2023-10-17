@@ -344,22 +344,24 @@ class TurnMove {
         break;
       case 15:    // すべての味方
         targetStates.clear();
-        targetIndiFields = [myFields];
+        targetIndiFields.clear();
         targetPlayerTypeIDs.clear();
         for (int i = 0; i < state.getPokemonStates(playerType).length; i++) {
           if (i != state.getPokemonIndex(playerType)-1) {
             targetStates.add(state.getPokemonStates(playerType)[i]);
+            targetIndiFields.add(myFields);
             targetPlayerTypeIDs.add(myPlayerTypeID);
           }
         }
         break;
       case 16:    // ひんしの(味方)ポケモン
         targetStates.clear();
-        targetIndiFields = [myFields];
+        targetIndiFields.clear();
         targetPlayerTypeIDs.clear();  // 使わない
         for (int i = 0; i < state.getPokemonStates(playerType).length; i++) {
           if (i != state.getPokemonIndex(playerType)-1 && state.getPokemonStates(playerType)[i].isFainting) {
             targetStates.add(state.getPokemonStates(playerType)[i]);
+            targetIndiFields.add(myFields);
             targetPlayerTypeIDs.add(myPlayerTypeID);
           }
         }
@@ -2119,6 +2121,14 @@ class TurnMove {
           myState.addStatChanges(true, 1, -1, targetState, moveId: move.id);
           myState.addStatChanges(true, 4, 1, targetState, moveId: move.id);
           break;
+        case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
+                    // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
+          if (myState.teraType != null) {
+            moveType = myState.teraType!;
+          }
+          showDamageCalc = false;
+          //TODO
+          break;
         // TODO:SVで新登場わざの効果がない
         default:
           break;
@@ -2266,10 +2276,12 @@ class TurnMove {
     }
 
     // わざPP消費
-    int moveIdx = myState.moves.indexWhere((element) => element.id != 0 && element.id == move.id);
-    if (moveIdx >= 0) {
-      myState.usedPPs[moveIdx]++;
-      if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
+    if (continuousCount == 0) {
+      int moveIdx = myState.moves.indexWhere((element) => element.id != 0 && element.id == move.id);
+      if (moveIdx >= 0) {
+        myState.usedPPs[moveIdx]++;
+        if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
+      }
     }
 
     return ret;
@@ -3895,11 +3907,11 @@ class TurnMove {
     }
     // changePokemonIndex
     if (turnMoveElements[13] != '') {
-      turnMove.changePokemonIndex = int.parse(turnMoveElements[11]);
+      turnMove.changePokemonIndex = int.parse(turnMoveElements[13]);
     }
     // targetMyPokemonIndex
     if (turnMoveElements[14] != '') {
-      turnMove.targetMyPokemonIndex = int.parse(turnMoveElements[12]);
+      turnMove.targetMyPokemonIndex = int.parse(turnMoveElements[14]);
     }
 
     return turnMove;

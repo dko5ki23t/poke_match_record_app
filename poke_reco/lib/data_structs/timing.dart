@@ -158,6 +158,7 @@ class AbilityTiming {
   static const int afterActionDecisionHP025 = 154;  // HPが1/4以下で行動決定後
   static const int chargeMoving = 155;          // ためわざを使うとき
   static const int changedIgnoredAbility = 156; // とくせいを変更される、無効化される、無視されるとき
+  static const int attackedHittedWithBake = 157;  // ばけたすがたでこうげきを受けたとき
 
   const AbilityTiming(this.id);
 

@@ -31,6 +31,7 @@ class PartiesPageState extends State<PartiesPage> {
     var filteredParties = parties.where((element) => element.owner == Owner.mine).toList();
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
+    appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
 
     // データ読み込みで待つ
