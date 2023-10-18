@@ -22,6 +22,9 @@ pokeBaseColumnStats = [
   's',
 ]
 pokeBaseColumnType = 'type'
+pokeBaseColumnHeight = 'height'
+pokeBaseColumnWeight = 'weight'
+pokeBaseColumnEggGroup = 'eggGroup'
 
 # SQLiteでintの配列をvalueにした場合の変換方法
 IntList = list
@@ -50,6 +53,24 @@ pokemonsStatCSVBaseStatColumn = 'base_stat'
 pokemonsTypeCSVPokemonIDColumn = 'pokemon_id'
 pokemonsTypeCSVTypeIDColumn = 'type_id'
 
+pokemonsVersionCSVPokemonIDColumn = 'pokemon_id'
+pokemonsVersionCSVVersionIDColumn = 'version_id'
+
+allpokemonsCSVPokemonIDColumn = 'id'
+allpokemonsCSVSpeciesIDColumn = 'species_id'
+allpokemonsCSVHeightColumn = 'height'
+allpokemonsCSVWeightColumn = 'weight'
+
+pokemonFormsCSVPokemonIDColumn = 'pokemon_id'
+pokemonFormsCSVPokemonFormIDColumn = 'id'
+
+formLangCSVPokemonIDColumn = 'pokemon_form_id'
+formLangCSVLangIDColumn = 'local_language_id'
+formLangCSVNameColumn = 'form_name'
+
+pokemonEggGroupsCSVPokemonIDColumn = 'species_id'
+pokemonEggGroupsCSVEggGroupIDColumn = 'egg_group_id'
+
 # CSVファイル(PokeAPI)の列インデックス
 pokeBaseCSVpokemonIDIndex = 1
 pokeBaseCSVevolvesFromIDIndex = 4
@@ -73,6 +94,11 @@ def set_argparse():
     parser.add_argument('pokemon_move', help='各ポケモンが覚えるわざの情報が記載されたCSVファイル(pokemon_moves.csv)')
     parser.add_argument('pokemon_stat', help='各ポケモンの種族値が記載されたCSVファイル(pokemon_stats.csv)')
     parser.add_argument('pokemon_type', help='各ポケモンのタイプが記載されたCSVファイル(pokemon_types.csv)')
+    parser.add_argument('pokemon_version', help='各ポケモンの登場ゲームが記載されたCSVファイル(pokemon_game_indices.csv)')
+    parser.add_argument('pokemon_all', help='リージョンフォーム等のすべてのポケモンが記載されたCSVファイル(pokemon.csv)')
+    parser.add_argument('pokemon_forms', help='リージョンフォーム等ポケモンのフォームIDと各ポケモンIDの情報が記載されたCSVファイル(pokemon_forms.csv)')
+    parser.add_argument('form_lang', help='リージョンフォーム等ポケモンと各言語での名称の情報が記載されたCSVファイル(pokemon_form_names.csv)')
+    parser.add_argument('pokemon_egg_group', help='各ポケモンIDとそのタマゴグループが記載されたCSVファイル(pokemon_egg_groups.csv)')
     args = parser.parse_args()
     return args
 
@@ -102,23 +128,55 @@ def main():
         move_df = pd.read_csv(args.pokemon_move)
         stat_df = pd.read_csv(args.pokemon_stat)
         type_df = pd.read_csv(args.pokemon_type)
+        version_df = pd.read_csv(args.pokemon_version)
+        allpokemon_df = pd.read_csv(args.pokemon_all)
+        forms_df = pd.read_csv(args.pokemon_forms)
+        form_lang_df = pd.read_csv(args.form_lang)
+        egg_group_df = pd.read_csv(args.pokemon_egg_group)
         # 欠損値は値0に置換
         pokemon_df = pokemon_df.fillna(0)
         for row in pokemon_df.itertuples():
             id = row[pokeBaseCSVpokemonIDIndex]
+            # SV、SVのDLC登場ポケモンのみにフィルタリング
+            versions = version_df[version_df[pokemonsVersionCSVPokemonIDColumn] == id][pokemonsVersionCSVVersionIDColumn].tolist()
+            if svVersionID not in versions:
+                continue
+
             evolves_from = row[pokeBaseCSVevolvesFromIDIndex]
             evolves_evolves = pokemon_df[pokemon_df[pokemonSpeciesCSVIDColumn] == evolves_from][pokemonSpeciesCSVEvolvesFromIDColumn]
             # 祖先も祖先を持ってる場合
             if len(evolves_evolves) > 0:
                 evolves_from = evolves_evolves.iloc[0]
             female_rate = row[pokeBaseCSVfemaleRate]
+            egg_groups = egg_group_df[egg_group_df[pokemonEggGroupsCSVPokemonIDColumn] == id][pokemonEggGroupsCSVEggGroupIDColumn].tolist()
+
+            # リージョンフォーム等がないかチェック
+            form = []
+            form_check = allpokemon_df[allpokemon_df[allpokemonsCSVSpeciesIDColumn] == id][allpokemonsCSVPokemonIDColumn]
+            for pokemon_id in form_check:
+                form.append(pokemon_id)
+
             name = ''
-            form = ['0']    # TODO:いつか実装する？
-            
+            base_name = ''
             # 日本語名取得
             names = lang_df[(lang_df[pokemonsLangCSVPokemonIDColumn] == id) & (lang_df[pokemonsLangCSVLangIDColumn] == japaneseID)][pokemonsLangCSVNameColumn]
             if len(names) > 0:
-                name = names.iloc[0]
+                base_name = names.iloc[0]
+            if len(form) > 1:
+                # フォームID取得
+                tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == id][pokemonFormsCSVPokemonFormIDColumn]
+                if len(tmp) > 0:
+                    poke_form_id = tmp.iloc[0]
+                    # 日本語名取得
+                    names = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == japaneseID)][formLangCSVNameColumn]
+                    if len(names) > 0:
+                        name = base_name + f'({names.iloc[0]})'
+                    else:
+                        name = base_name
+                else:
+                    name = base_name
+            else:
+                name = base_name
             # とくせい取得
             abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == id][pokemonsAbilityCSVAbilityIDColumn].to_list()
             # 重複削除
@@ -148,8 +206,69 @@ def main():
             for i in range(len(types)):
                 if types[i] > 10000:    # 特殊なタイプ
                     types[i] = 0
+            # たかさ取得
+            height = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVHeightColumn].iloc[0])
+            # おもさ取得
+            weight = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVWeightColumn].iloc[0])
 
-            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types))
+            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups))
+
+            for form_id in form:
+                if form_id == id:
+                    continue
+                # SV、SVのDLC登場ポケモンのみにフィルタリング
+                versions = version_df[version_df[pokemonsVersionCSVPokemonIDColumn] == form_id][pokemonsVersionCSVVersionIDColumn].tolist()
+                if svVersionID not in versions:
+                    continue
+                form_name = ''
+                # フォームID取得
+                tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == id][pokemonFormsCSVPokemonFormIDColumn]
+                if len(tmp) > 0:
+                    poke_form_id = tmp.iloc[0]
+                    # 日本語名取得
+                    names = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == japaneseID)][formLangCSVNameColumn]
+                    if len(names) > 0:
+                        form_name = f'{base_name}({names.iloc[0]})'
+                        if names.iloc[0] == 'メスのすがた':
+                            female_rate = 8
+                else:
+                    form_name = base_name
+                    print(form_id, form_name)
+                # とくせい取得
+                form_abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == form_id][pokemonsAbilityCSVAbilityIDColumn].to_list()
+                # 重複削除
+                form_abilities = list(set(form_abilities))
+                # わざ取得
+                form_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == form_id) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                # たまごわざ取得
+                if evolves_from is not None:
+                    egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                    form_moves = form_moves + egg_moves
+                # 重複削除
+                form_moves = list(set(form_moves))
+                # HP取得
+                form_h = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == HPID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # こうげき取得
+                form_a = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == attackID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # ぼうぎょ取得
+                form_b = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == defenseID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # とくこう取得
+                form_c = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == specialAttackID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # とくぼう取得
+                form_d = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == specialDefenseID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # すばやさ取得
+                form_s = int(stat_df[(stat_df[pokemonsStatCSVPokemonIDColumn] == form_id) & (stat_df[pokemonsStatCSVStatIDColumn] == speedID)][pokemonsStatCSVBaseStatColumn].iloc[0])
+                # タイプ取得
+                form_types = type_df[type_df[pokemonsTypeCSVPokemonIDColumn] == form_id][pokemonsTypeCSVTypeIDColumn].to_list()
+                for i in range(len(types)):
+                    if types[i] > 10000:    # 特殊なタイプ
+                        types[i] = 0
+                # たかさ取得
+                form_height = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == form_id][allpokemonsCSVHeightColumn].iloc[0])
+                # おもさ取得
+                form_weight = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == form_id][allpokemonsCSVWeightColumn].iloc[0])
+
+                pokemons_list.append((form_id, form_name, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups))
 
 
         # 作成(存在してたら作らない)
@@ -166,7 +285,10 @@ def main():
             f'  {pokeBaseColumnFemaleRate} integer, '
             f'  {pokeBaseColumnMove} IntList,' +
             statsColumn +
-            f'  {pokeBaseColumnType} IntList)'
+            f'  {pokeBaseColumnType} IntList, '
+            f'  {pokeBaseColumnHeight} integer, '
+            f'  {pokeBaseColumnWeight} integer, '
+            f'  {pokeBaseColumnEggGroup} IntList)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -179,8 +301,11 @@ def main():
         try:
             con.executemany(
                 f'INSERT INTO {pokeBaseDBTable} ('
-                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, {pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, {statsColumn}, {pokeBaseColumnType}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, '
+                f'{pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, '
+                f'{statsColumn}, {pokeBaseColumnType}, {pokeBaseColumnHeight}, '
+                f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 pokemons_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

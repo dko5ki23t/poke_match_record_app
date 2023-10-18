@@ -45,6 +45,11 @@ const String temperColumnName = 'name';
 const String temperColumnDe = 'decreased_stat';
 const String temperColumnIn = 'increased_stat';
 
+const String eggGroupDBFile = 'EggGroup.db';
+const String eggGroupDBTable = 'eggGroupDB';
+const String eggGroupColumnId = 'id';
+const String eggGroupColumnName = 'name';
+
 const String itemDBFile = 'Items.db';
 const String itemDBTable = 'itemDB';
 const String itemColumnId = 'id';
@@ -82,6 +87,9 @@ const List<String> pokeBaseColumnStats = [
   's',
 ];
 const String pokeBaseColumnType = 'type';
+const String pokeBaseColumnHeight = 'height';
+const String pokeBaseColumnWeight = 'weight';
+const String pokeBaseColumnEggGroup = 'eggGroup';
 
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
@@ -355,6 +363,13 @@ class SixParams {
   }
 }
 
+class EggGroup {
+  final int id;
+  final String displayName;
+
+  const EggGroup(this.id, this.displayName);
+}
+
 
 // 対象
 class Target {
@@ -623,13 +638,15 @@ class PokeDB {
   List<PokeType> types = [
     for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
   ];
+  Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')};  // 無効なタマゴグループ
+  late Database eggGroupDb;
   Map<int, PokeBase> pokeBase = {   // 無効なポケモン
     0: PokeBase(
       name: '',
       sex: [Sex.createFromId(0)],
       no: 0, type1: PokeType.createFromId(0),
       type2: null, h: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
-      ability: [], move: []),
+      ability: [], move: [], height: 0, weight: 0, eggGroups: [],),
   };
   late Database pokeBaseDb;
   List<Pokemon> pokemons = [];
@@ -784,6 +801,20 @@ class PokeDB {
     }
 
 
+    //////////// タマゴグループ
+    eggGroupDb = await openAssetDatabase(eggGroupDBFile);
+    // 内部データに変換
+    maps = await eggGroupDb.query(eggGroupDBTable,
+      columns: [eggGroupColumnId, eggGroupColumnName],
+    );
+    for (var map in maps) {
+      eggGroups[map[eggGroupColumnId]] = EggGroup(
+        map[eggGroupColumnId],
+        map[eggGroupColumnName],
+      );
+    }
+
+
     //////////// もちもの
     itemDb = await openAssetDatabase(itemDBFile);
     // 内部データに変換
@@ -829,13 +860,15 @@ class PokeDB {
         pokeBaseColumnId, pokeBaseColumnName, pokeBaseColumnAbility,
         pokeBaseColumnForm, pokeBaseColumnFemaleRate, pokeBaseColumnMove,
         for (var e in pokeBaseColumnStats) e,
-        pokeBaseColumnType],
+        pokeBaseColumnType, pokeBaseColumnHeight,
+        pokeBaseColumnWeight, pokeBaseColumnEggGroup],
     );
 
     for (var map in maps) {
       final pokeTypes = parseIntList(map[pokeBaseColumnType]);
       final pokeAbilities = parseIntList(map[pokeBaseColumnAbility]);
       final pokeMoves = parseIntList(map[pokeBaseColumnMove]);
+      final pokeEggGroups = parseIntList(map[pokeBaseColumnEggGroup]);
       List<Sex> sexList = [];
       if (map[pokeBaseColumnFemaleRate] == -1) {
         sexList = [Sex.none];
@@ -863,6 +896,9 @@ class PokeDB {
         s: map[pokeBaseColumnStats[5]],
         ability: [for (var e in pokeAbilities) abilities[e]!],
         move: [for (var e in pokeMoves) moves[e]!],
+        height: map[pokeBaseColumnHeight],
+        weight: map[pokeBaseColumnWeight],
+        eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!]
       );
     }
 
@@ -966,7 +1002,7 @@ class PokeDB {
 
     //////////// 登録したパーティ
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
-    //await deleteDatabase(partyDBPath);
+    await deleteDatabase(partyDBPath);
     exists = await databaseExists(partyDBPath);
 
     if (!exists) {
@@ -1027,7 +1063,7 @@ class PokeDB {
 
     //////////// 登録した対戦
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
-    await deleteDatabase(battleDBPath);
+    //await deleteDatabase(battleDBPath);
     exists = await databaseExists(battleDBPath);
 
     if (!exists) {

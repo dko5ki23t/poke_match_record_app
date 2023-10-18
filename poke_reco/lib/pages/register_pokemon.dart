@@ -84,6 +84,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
               'ポケモン',
               () {
                 Navigator.pop(context);
+                appState.onTabChange = (func) => func();
               },
             );
           }
@@ -91,6 +92,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
       else {
         Navigator.pop(context);
+        appState.onTabChange = (func) => func();
       }
     }
 

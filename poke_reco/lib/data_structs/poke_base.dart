@@ -15,6 +15,9 @@ class PokeBase {    // 各ポケモンの種族ごとの値
   final int s;                    // すばやさ(種族値)
   final List<Ability> ability;    // とくせいの種類
   final List<Move> move;          // おぼえるわざ
+  final int height;               // たかさ(*10)(m)
+  final int weight;               // おもさ(*10)(kg)
+  final List<EggGroup> eggGroups; // タマゴグループ
 
   PokeBase({
     required this.name,
@@ -30,6 +33,9 @@ class PokeBase {    // 各ポケモンの種族ごとの値
     required this.s,
     required this.ability,
     required this.move,
+    required this.height,
+    required this.weight,
+    required this.eggGroups,
   });
 
   // TODO:しんかのきせきが適用できるかどうか

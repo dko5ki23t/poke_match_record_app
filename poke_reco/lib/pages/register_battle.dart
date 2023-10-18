@@ -126,6 +126,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             '対戦記録',
             () {
               Navigator.pop(context);
+              appState.onTabChange = (func) => func();
             },
           );
         }

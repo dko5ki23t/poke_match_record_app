@@ -43,6 +43,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
               'パーティ',
               () {
                 Navigator.pop(context);
+                appState.onTabChange = (func) => func();
               },
             );
           }
@@ -50,6 +51,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       }
       else {
         Navigator.pop(context);
+        appState.onTabChange = (func) => func();
       }
     }
 
