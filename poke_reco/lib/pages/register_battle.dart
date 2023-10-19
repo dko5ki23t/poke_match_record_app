@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 //import 'package:intl/intl.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
@@ -54,14 +55,15 @@ class RegisterBattlePage extends StatefulWidget {
 
 class RegisterBattlePageState extends State<RegisterBattlePage> {
   RegisterBattlePageType pageType = RegisterBattlePageType.basePage;
-//  final battleDatetimeController = TextEditingController(text: DateFormat('yyyy/MM/dd HH:mm', "ja_JP").format(DateTime.now()));
   final opponentPokemonController = List.generate(6, (i) => TextEditingController());
   final battleNameController = TextEditingController();
   final opponentNameController = TextEditingController();
+  final dateController = TextEditingController();
 
   List<TextEditingController> textEditingControllerList1 = [];
   List<TextEditingController> textEditingControllerList2 = [];
   List<TextEditingController> textEditingControllerList3 = [];
+  TextEditingController ownAbilityController = TextEditingController();
 
   final beforeMoveExpandController = ExpandableController(initialExpanded: true);
   final moveExpandController = ExpandableController(initialExpanded: true);
@@ -71,10 +73,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   int turnNum = 1;
   int focusPhaseIdx = 0;                        // 0は無効
   List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
-  int viewMode = 0;     // 0:ランク 1:ステータス 2:ステータス(補正後)
+  int viewMode = 0;     // 0:ランク 1:ステータス(補正前) 2:ステータス(補正後)
+  bool isEditMode = false;
 
   bool isNewTurn = false;
   bool openStates = false;
+  bool firstBuild = true;
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +102,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = 0; i < opponentParty.pokemonNum; i++) {
       opponentPokemonController[i].text = opponentParty.pokemons[i]!.name;
     }
+    dateController.text = widget.battle.formattedDateTime;
     
     if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage
@@ -145,8 +150,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       );
     }
 
-    appState.onBackKeyPushed = onBack;
-    appState.onTabChange = onTabChange;
+    if (firstBuild) {
+      appState.onBackKeyPushed = onBack;
+      appState.onTabChange = onTabChange;
+      firstBuild = false;
+    }
 
     Widget lists;
     Widget title;
@@ -229,7 +237,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..pokemon = ownParty.pokemons[i]!
                 ..remainHP = ownParty.pokemons[i]!.h.real
                 ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.me))
-                ..holdingItem = ownParty.items[i]
+                ..setHoldingItemNoEffect(ownParty.items[i])
                 ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
                 ..currentAbility = ownParty.pokemons[i]!.ability
                 ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
@@ -413,10 +421,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       case RegisterBattlePageType.basePage:
         title = Text('バトル基本情報');
         lists = BattleBasicListView(
+          context,
           () {setState(() {});},
           widget.battle, parties,
           theme, battleNameController,
           opponentNameController,
+          dateController,
           opponentPokemonController);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
@@ -445,7 +455,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         Expanded(
                           child: Row(children: [
                             Icon(Icons.catching_pokemon),
-                            Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name),
+                            Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
                             _focusingPokemon(PlayerType(PlayerType.me), focusState).sex.displayIcon,
                           ],),
                         ),
@@ -453,7 +463,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         Expanded(
                           child: Row(children: [
                             Icon(Icons.catching_pokemon),
-                            Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name),
+                            Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
                             _focusingPokemon(PlayerType(PlayerType.opponent), focusState).sex.displayIcon,
                           ],),
                         ),
@@ -480,22 +490,35 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             Icon(Icons.sync),
                             SizedBox(width: 10),
                             viewMode == 0 ?
-                            Text('ステータス') :
+                            Text('ステータス(補正前)') :
                             viewMode == 1 ?
                             Text('ステータス(補正後)') : Text('ランク'),
                           ]),
                         ),
+/*
                         SizedBox(width: 10,),
                         TextButton(
                           onPressed: () {
-                            
+                            setState(() {
+                              isEditMode = !isEditMode;
+                              if (isEditMode) {
+                                ownAbilityController.text = focusState!.getPokemonState(PlayerType(PlayerType.me)).currentAbility.displayName;
+                              }
+                            });
                           },
-                          child: Row(children: [
-                            Icon(Icons.edit),
-                            SizedBox(width: 10),
-                            Text('編集'),
-                          ]),
+                          child: isEditMode ?
+                            Row(children: [
+                              Icon(Icons.check),
+                              SizedBox(width: 10),
+                              Text('完了'),
+                            ]) :
+                            Row(children: [
+                              Icon(Icons.edit),
+                              SizedBox(width: 10),
+                              Text('編集'),
+                            ]),
                         ),
+*/
                       ],
                     ),
                     SizedBox(height: 5),
@@ -504,7 +527,36 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       children: [
                         SizedBox(width: 10,),
                         Expanded(
-                          child: Text(_focusingAbilityName(PlayerType(PlayerType.me), focusState)),
+                          child: isEditMode ?
+                            TypeAheadField(
+                              textFieldConfiguration: TextFieldConfiguration(
+                                controller: ownAbilityController,
+                                /*decoration: const InputDecoration(
+                                  border: UnderlineInputBorder(),
+                                  labelText: 'とくせい',
+                                ),*/
+                              ),
+                              autoFlipDirection: true,
+                              suggestionsCallback: (pattern) async {
+                                List<Ability> matches = pokeData.abilities.values.toList();
+                                matches.retainWhere((s){
+                                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                });
+                                return matches;
+                              },
+                              itemBuilder: (context, suggestion) {
+                                return ListTile(
+                                  title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                );
+                              },
+                              onSuggestionSelected: (suggestion) {
+                                setState(() {
+                                  ownAbilityController.text = suggestion.displayName;
+                                  focusState!.getPokemonState(PlayerType(PlayerType.me)).currentAbility = suggestion;
+                                });
+                              },
+                             ) :
+                            Text(_focusingAbilityName(PlayerType(PlayerType.me), focusState)),
                         ),
                         SizedBox(width: 10,),
                         Expanded(
@@ -574,14 +626,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name),
+                      Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
                     ],),
                   ),
                   SizedBox(width: 10,),
                   Expanded(
                     child: Row(children: [
                       Icon(Icons.catching_pokemon),
-                      Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name),
+                      Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
                     ],),
                   ),
                   IconButton(

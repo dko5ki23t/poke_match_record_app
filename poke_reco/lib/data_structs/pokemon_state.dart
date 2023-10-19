@@ -60,6 +60,11 @@ class PokemonState {
     _holdingItem = item;
   }
 
+  // 効果等を起こさずもちものをセット
+  void setHoldingItemNoEffect(Item? item) {
+    _holdingItem = item;
+  }
+
   // 地面にいるかどうかの判定
   bool isGround(List<IndividualField> fields) {
     if (ailmentsWhere((e) => e.id == Ailment.ingrain || e.id == Ailment.antiAir).isNotEmpty ||
@@ -112,6 +117,7 @@ class PokemonState {
     // 退場後も継続するフォルム以外をクリア
     var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
+    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm));
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
     // 場にいると両者にバフ/デバフがかかる場合
@@ -378,7 +384,10 @@ class PokemonState {
         buffDebuffs.add(BuffDebuff(BuffDebuff.singleForm));
         break;
       case 209:   // ばけのかわ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
+        {
+          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm);
+          if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
+        }
         break;
       case 217:   // バッテリー
         buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
@@ -745,7 +754,7 @@ class PokemonState {
     // isBattling
     pokemonState.isBattling = int.parse(stateElements[5]) != 0;
     // holdingItem
-    pokemonState.holdingItem = stateElements[6] == '' ? null : pokeData.items[int.parse(stateElements[6])];
+    pokemonState.setHoldingItemNoEffect(stateElements[6] == '' ? null : pokeData.items[int.parse(stateElements[6])]);
     // usedPPs
     pokemonState.usedPPs.clear();
     final pps = stateElements[7].split(split2);

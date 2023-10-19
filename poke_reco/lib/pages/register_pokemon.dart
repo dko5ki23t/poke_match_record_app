@@ -50,6 +50,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final statsLabelTexts = ['HP', 'こうげき', 'ぼうぎょ', 'とくこう', 'とくぼう', 'すばやさ'];
   final statNames = ['', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
 
+  bool firstBuild = true;
+
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
     widget.myPokemon.updateRealStats();
@@ -113,8 +115,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
     }
 
-    appState.onBackKeyPushed = onBack;
-    appState.onTabChange = onTabChange;
+    if (firstBuild) {
+      appState.onBackKeyPushed = onBack;
+      appState.onTabChange = onTabChange;
+      firstBuild = false;
+    }
 
     pokeNameController.text = widget.myPokemon.name;
     pokeNickNameController.text = widget.myPokemon.nickname;

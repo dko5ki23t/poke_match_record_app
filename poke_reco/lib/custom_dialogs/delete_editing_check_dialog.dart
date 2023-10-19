@@ -12,7 +12,7 @@ class DeleteEditingCheckDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('編集中の$editingNameを削除してもいいですか？'),
+      title: Text('変更を破棄してもいいですか？'),
       actions: <Widget>[
         GestureDetector(
           child: Text('いいえ'),

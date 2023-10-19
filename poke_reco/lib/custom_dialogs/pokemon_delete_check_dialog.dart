@@ -23,7 +23,7 @@ class PokemonDeleteCheckDialogState extends State<PokemonDeleteCheckDialog> {
     return AlertDialog(
       title: isSecondDialog ?
         Text('関連するパーティ・対戦記録を削除しますか？') :
-        Text('ポケモンのデータを削除してもいいですか？'),
+        Text('変更を破棄してもいいですか？'),
       content: isSecondDialog ?
         Text('残した場合、該当のパーティ・対戦記録は編集不可となります') :
         widget.containedParty ?

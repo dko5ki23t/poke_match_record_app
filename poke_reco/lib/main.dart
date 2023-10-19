@@ -109,11 +109,12 @@ class _MyHomePageState extends State<MyHomePage> {
   };
 
   void _selectTab(TabItem tabItem) async {
-    //TODO
-    var appState = context.read<MyAppState>();
-    appState.changeTab(() {
-      setState(() => _currentTab = tabItem);
-    },);
+    if (_currentTab != tabItem) {
+      var appState = context.read<MyAppState>();
+      appState.changeTab(() {
+        setState(() => _currentTab = tabItem);
+      },);
+    }
   }
 
   @override

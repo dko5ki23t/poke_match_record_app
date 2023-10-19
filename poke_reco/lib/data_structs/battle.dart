@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/turn.dart';
@@ -34,6 +35,8 @@ class Battle {
   bool isMyWin = false;
   bool isYourWin = false;
 
+  static DateFormat outputFormat = DateFormat('yyyy-MM-dd HH:mm');
+
   Battle copyWith() =>
     Battle()
     ..id = id
@@ -58,6 +61,28 @@ class Battle {
       _parties[0].isValid &&
       opponentName != '' &&
       _parties[1].pokemon1.name != '';
+  }
+
+  String get formattedDateTime {
+    return outputFormat.format(datetime);
+  }
+
+  set date(DateTime t) {
+    DateFormat dateFormat = DateFormat('yyyy-MM-dd');
+    DateFormat timeFormat = DateFormat('HH:mm');
+    String p = '${dateFormat.format(t)} ${timeFormat.format(datetime)}';
+    datetime = outputFormat.parse(p);
+  }
+
+  set time(DateTime t) {
+    DateFormat dateFormat = DateFormat('yyyy-MM-dd');
+    DateFormat timeFormat = DateFormat('HH:mm');
+    String p = '${dateFormat.format(datetime)} ${timeFormat.format(t)}';
+    datetime = outputFormat.parse(p);
+  }
+
+  set datetimeFromStr(String s) {
+    datetime = outputFormat.parse(s);
   }
 
   Party getParty(PlayerType player) {
@@ -86,7 +111,7 @@ class Battle {
       battleColumnId: id,
       battleColumnName: name,
       battleColumnTypeId: type.id,
-      battleColumnDate: 0,      // TODO
+      battleColumnDate: formattedDateTime,
       battleColumnOwnPartyId: _parties[0].id,
       battleColumnOpponentName: opponentName,
       battleColumnOpponentPartyId: _parties[1].id,

@@ -1160,7 +1160,25 @@ class TurnMove {
           //TODO
           break;
         case 197:   // 相手のおもさによって威力が変わる
-          // TODO
+          int weight = pokeData.pokeBase[targetState.pokemon.no]!.weight;
+          if (weight <= 99) {
+            movePower = 20;
+          }
+          else if (weight <= 249) {
+            movePower = 40;
+          }
+          else if (weight <= 499) {
+            movePower = 60;
+          }
+          else if (weight <= 999) {
+            movePower = 80;
+          }
+          else if (weight <= 1999) {
+            movePower = 100;
+          }
+          else {
+            movePower = 120;
+          }
           break;
         case 198:   // 地形に応じた追加効果を与える
           //TODO

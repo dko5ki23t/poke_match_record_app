@@ -5,15 +5,18 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 
 class BattleBasicListView extends ListView {
   BattleBasicListView(
+    BuildContext context,
     void Function() setState,
     Battle battle,
     List<Party> parties,
     ThemeData theme,
     TextEditingController battleNameController,
     TextEditingController opponentNameController,
+    TextEditingController dateController,
     List<TextEditingController> opponentPokemonController,
   ) : 
   super(
@@ -48,37 +51,35 @@ class BattleBasicListView extends ListView {
               children: [
                 Flexible(
                   child: TextFormField(
+                    controller: dateController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
                       labelText: '対戦日'
                     ),
-/*
                     onTap: () {
                       // キーボードが出ないようにする
                       FocusScope.of(context).requestFocus(FocusNode());
-                      DatePicker.showDatePicker(
-                        context,
+                      DatePicker.showDatePicker(context,
                         showTitleActions: true,
                         minTime: DateTime(2000, 1, 1),
                         maxTime: DateTime(2200, 12, 31),
-                        onChanged: (date) {
-                          print('change $date');
-                        },
                         onConfirm: (date) {
-                          print('confirm $date');
+                          battle.date = date;
+                          DatePicker.showTimePicker(context,
+                            showTitleActions: true,
+                            showSecondsColumn: false,
+                            onConfirm: (time) {
+                              battle.time = time;
+                              dateController.text = battle.formattedDateTime;
+                            },
+                            currentTime: battle.datetime,
+                            locale: LocaleType.jp,
+                          );
                         },
-                        currentTime: DateTime.now(),
-                        locale: LocaleType.jp,
+                        currentTime: battle.datetime,
+                        locale: LocaleType.jp
                       );
                     },
-*/
-                    onChanged: (value) {
-                      battle.datetime = DateTime.parse(value);
-//                            widget.battle.updateIsValid();
-//                            setState(() {});
-                    },
-                    initialValue: battle.datetime.toIso8601String(),
-//                      controller: battleDatetimeController,
                   ),
                 ),
                 SizedBox(width: 10),

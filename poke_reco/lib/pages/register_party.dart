@@ -29,6 +29,8 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
   final pokemonController = List.generate(6, (i) => TextEditingController(text: 'ポケモン選択'));
   final itemController = List.generate(6, (i) => TextEditingController());
 
+  bool firstBuild = true;
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -72,8 +74,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       }
     }
 
-    appState.onBackKeyPushed = onBack;
-    appState.onTabChange = onTabChange;
+    if (firstBuild) {
+      appState.onBackKeyPushed = onBack;
+      appState.onTabChange = onTabChange;
+      firstBuild = false;
+    }
 
     partyNameController.text = widget.party.name;
     for (int i = 0; i < 6; i++) {

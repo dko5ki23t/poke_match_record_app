@@ -1002,7 +1002,7 @@ class PokeDB {
 
     //////////// 登録したパーティ
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
-    await deleteDatabase(partyDBPath);
+    //await deleteDatabase(partyDBPath);
     exists = await databaseExists(partyDBPath);
 
     if (!exists) {
@@ -1095,7 +1095,7 @@ class PokeDB {
           ..id = map[battleColumnId]
           ..name = map[battleColumnName]
           ..type = BattleType.createFromId(map[battleColumnTypeId])
-          //..datetime = map[battleColumnDate]    // TODO
+          ..datetimeFromStr = map[battleColumnDate]
           ..setParty(PlayerType(PlayerType.me), parties.where((element) => element.id == map[battleColumnOwnPartyId]).first)
           ..opponentName = map[battleColumnOpponentName]
           ..setParty(PlayerType(PlayerType.opponent), parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first)

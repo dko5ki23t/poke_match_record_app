@@ -23,7 +23,7 @@ class PartyDeleteCheckDialogState extends State<PartyDeleteCheckDialog> {
     return AlertDialog(
       title: isSecondDialog ?
         Text('関連する対戦記録を削除しますか？') :
-        Text('パーティのデータを削除してもいいですか？'),
+        Text('変更を破棄してもいいですか？'),
       content: isSecondDialog ?
         Text('残した場合、該当の対戦記録は編集不可となります') :
         widget.containedParty ?
