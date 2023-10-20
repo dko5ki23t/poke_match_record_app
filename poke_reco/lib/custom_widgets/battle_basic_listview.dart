@@ -54,7 +54,7 @@ class BattleBasicListView extends ListView {
                     controller: dateController,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: '対戦日'
+                      labelText: '対戦日時'
                     ),
                     onTap: () {
                       // キーボードが出ないようにする

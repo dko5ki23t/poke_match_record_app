@@ -1,4 +1,6 @@
 // 各々の場
+import 'package:flutter/material.dart';
+
 class IndividualField {
   static const int none = 0;
   static const int toxicSpikes = 1;       // どくびし
@@ -41,7 +43,7 @@ class IndividualField {
     9: 'はめつのねがい',
     10: 'ねがいごと',
     11: 'グラスフィールドによる回復',
-    12: 'ねをはる',
+    12: 'リフレクター',
     13: 'ひかりのかべ',
     14: 'しんぴのまもり',
     15: 'しろいきり',
@@ -58,6 +60,36 @@ class IndividualField {
     26: 'フェアリーロック',
   };
 
+  static const _bgColorMap = {
+    0:  Colors.black,
+    1:  Colors.green,
+    2:  Colors.green,
+    3:  Colors.green,
+    4:  Colors.green,
+    5:  Colors.green,
+    6:  Colors.green,
+    7:  Colors.green,
+    8:  Colors.green,
+    9:  Colors.green,
+    10:  Colors.green,
+    11:  Colors.green,
+    12:  Colors.green,
+    13:  Colors.green,
+    14:  Colors.green,
+    15:  Colors.green,
+    16:  Colors.green,
+    17:  Colors.green,
+    18:  Colors.green,
+    19:  Colors.green,
+    20:  Colors.green,
+    21:  Colors.green,
+    22:  Colors.green,
+    23:  Colors.green,
+    24:  Colors.green,
+    25:  Colors.green,
+    26:  Colors.green,
+  };
+
   final int id;
   int turns = 0;        // 経過ターン
   int extraArg1 = 0;    // 
@@ -70,6 +102,7 @@ class IndividualField {
     ..extraArg1 = extraArg1;
 
   String get displayName => _displayNameMap[id]!;
+  Color get bgColor => _bgColorMap[id]!;
   
   // SQLに保存された文字列からIndividualFieldをパース
   static IndividualField deserialize(dynamic str, String split1) {

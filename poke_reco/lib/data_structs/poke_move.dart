@@ -286,17 +286,20 @@ class TurnMove {
     }
 
     // わざの対象決定
-    // TODO:相手のちゅうもくのまと状態によって変化？
     List<PokemonState> targetStates = [yourState];
     List<List<IndividualField>> targetIndiFields = [yourFields];
     List<int> targetPlayerTypeIDs = [yourPlayerTypeID];
     PhaseState? targetField;
     switch (move.target.id) {
-      case 1:     // TODO:わざによって異なる？
+      case 1:     // 不定、わざによって異なる
+        // TODO
         break;
-      case 2:     // 選択した自分以外の場にいるポケモン(TODO:10との違い？)
-        break;
-      case 3:     // 味方(存在する場合)
+      case 2:     // 選択した自分以外の場にいるポケモン
+                  // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
+      case 3:     // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+        targetStates = [];
+        targetIndiFields = [];
+        targetPlayerTypeIDs = [];
         break;
       case 4:     // 使用者の場
         targetStates = [myState];
@@ -2319,6 +2322,7 @@ class TurnMove {
     MyAppState appState,
     int phaseIdx,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
+    ThemeData theme,
   )
   {
     final pokeData = PokeDB();
@@ -2354,6 +2358,9 @@ class TurnMove {
        (yourState.currentAbility.id == 71 && myState.isGround(myFields))                  // 相手がありじごく＆自身が地面にいる
       );
     bool canChange = count >= 1 && !isShadowTag;
+    ButtonStyle pressedStyle = ButtonStyle(
+      backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
+    );
 
     // 行動失敗時
     if (!isSuccess) {
@@ -2428,136 +2435,147 @@ class TurnMove {
     }
     // 行動成功時
     else {
-      return Row(
+      return Column(
         children: [
-          Expanded(
-            flex: 5,
-            child: DropdownButtonFormField(
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: '行動の種類',
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              TextButton(
+                onPressed: playerType.id != PlayerType.none ?
+                () {
+                  type = TurnMoveType(TurnMoveType.move);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                } : null,
+                style: type.id == TurnMoveType.move ? pressedStyle : null,
+                child: Text('わざ'),
               ),
-              items: <DropdownMenuItem<int>>[
-                DropdownMenuItem(
-                  value: TurnMoveType.move,
-                  child: Text('わざ', overflow: TextOverflow.ellipsis,),
-                ),
-                DropdownMenuItem(
-                  enabled: canChange,
-                  value: TurnMoveType.change,
-                  child: Text('ポケモン交代', overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: canChange ? Colors.black : Colors.grey),),
-                ),
-                DropdownMenuItem(
-                  value: TurnMoveType.surrender,
-                  child: Text('こうさん', overflow: TextOverflow.ellipsis,),
-                ),
-              ],
-              value: type.id == TurnMoveType.none ? null : type.id,
-              onChanged: playerType.id != PlayerType.none ? (value) {
-                type = TurnMoveType(value as int);
-                appState.editingPhase[phaseIdx] = true;
-                onFocus();
-              } : null,
-            ),
+              SizedBox(width: 10),
+              TextButton(
+                onPressed: playerType.id != PlayerType.none ?
+                () {
+                  type = TurnMoveType(TurnMoveType.change);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                } : null,
+                style: type.id == TurnMoveType.change ? pressedStyle : null,
+                child: Text('ポケモン交代'),
+              ),
+              SizedBox(width: 10,),
+              TextButton(
+                onPressed: playerType.id != PlayerType.none ?
+                () {
+                  type = TurnMoveType(TurnMoveType.surrender);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                } : null,
+                style: type.id == TurnMoveType.surrender ? pressedStyle : null,
+                child: Text('こうさん'),
+              ),
+            ],
           ),
-          SizedBox(width: 10,),
+          SizedBox(height: 10,),
           type.id == TurnMoveType.move ?     // 行動がわざの場合
-          Expanded(
-            flex: 5,
-            child: TypeAheadField(
-              textFieldConfiguration: TextFieldConfiguration(
-                controller: moveController,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: 'わざ',
+          Row(
+            children: [
+              Expanded(
+                child: TypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: moveController,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: 'わざ',
+                    ),
+                    enabled: playerType.id != PlayerType.none,
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Move> matches = [];
+                    if (playerType.id == PlayerType.me) {
+                      matches.add(ownPokemon.move1);
+                      if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
+                      if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
+                      if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
+                    }
+                    else if (opponentPokemonState.moves.length == 4) {  //　わざがすべて判明している場合
+                      matches.addAll(opponentPokemonState.moves);
+                    }
+                    else {
+                      matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
+                    }
+                    matches.add(pokeData.moves[165]!);    // わるあがき
+                    matches.retainWhere((s){
+                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(suggestion.displayName),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    moveController.text = suggestion.displayName;
+                    move = suggestion;
+                    turnEffectAndStateAndGuide.guides = processMove(
+                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
+                      opponentPokemonState.copyWith(), state.copyWith(), 0);
+                    moveAdditionalEffects[0] = MoveEffect(move.effect.id);
+                    moveEffectivenesses[0] = PokeType.effectiveness(
+                        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+                        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                        move.type, yourState);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
                 ),
-                enabled: playerType.id != PlayerType.none,
               ),
-              autoFlipDirection: true,
-              suggestionsCallback: (pattern) async {
-                List<Move> matches = [];
-                if (playerType.id == PlayerType.me) {
-                  matches.add(ownPokemon.move1);
-                  if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
-                  if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
-                  if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
-                }
-                else if (opponentPokemonState.moves.length == 4) {  //　わざがすべて判明している場合
-                  matches.addAll(opponentPokemonState.moves);
-                }
-                else {
-                  matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
-                }
-                matches.add(pokeData.moves[165]!);    // わるあがき
-                matches.retainWhere((s){
-                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
-                });
-                return matches;
-              },
-              itemBuilder: (context, suggestion) {
-                return ListTile(
-                  title: Text(suggestion.displayName),
-                );
-              },
-              onSuggestionSelected: (suggestion) {
-                moveController.text = suggestion.displayName;
-                move = suggestion;
-                turnEffectAndStateAndGuide.guides = processMove(
-                  ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                  opponentPokemonState.copyWith(), state.copyWith(), 0);
-                moveAdditionalEffects[0] = MoveEffect(move.effect.id);
-                moveEffectivenesses[0] = PokeType.effectiveness(
-                    myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
-                    yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                    move.type, yourState);
-                appState.editingPhase[phaseIdx] = true;
-                onFocus();
-              },
-            ),
+            ],
           ) :
           type.id == TurnMoveType.change ?     // 行動が交代の場合
-          Expanded(
-            flex: 5,
-            child: DropdownButtonFormField(
-              isExpanded: true,
-              decoration: const InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: '交代先ポケモン',
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '交代先ポケモン',
+                  ),
+                  items: playerType.id == PlayerType.me ?
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < ownParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
+                          child: Text(
+                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ] :
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < opponentParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
+                          child: Text(
+                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ],
+                  value: changePokemonIndex,
+                  onChanged: (value) {
+                    changePokemonIndex = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
               ),
-              items: playerType.id == PlayerType.me ?
-                <DropdownMenuItem>[
-                  for (int i = 0; i < ownParty.pokemonNum; i++)
-                    DropdownMenuItem(
-                      value: i+1,
-                      enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
-                      child: Text(
-                        ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
-                          Colors.black : Colors.grey),
-                        ),
-                    ),
-                ] :
-                <DropdownMenuItem>[
-                  for (int i = 0; i < opponentParty.pokemonNum; i++)
-                    DropdownMenuItem(
-                      value: i+1,
-                      enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
-                      child: Text(
-                        opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
-                          Colors.black : Colors.grey),
-                        ),
-                    ),
-                ],
-              value: changePokemonIndex,
-              onChanged: (value) {
-                changePokemonIndex = value;
-                appState.editingPhase[phaseIdx] = true;
-                onFocus();
-              },
-            ),
+            ],
           ) :
           // 行動がにげる/こうさんのとき
           Container(),
@@ -3620,39 +3638,84 @@ class TurnMove {
       }
 
       switch (move.target.id) {
-        case 7:   // 自分自身 -> 成功/失敗
-          return Row(
+        case 1:   // TODO:不定、わざによって異なる のろいとかカウンターとか
+        case 2:   // 選択した自分以外の場にいるポケモン(TODO:10との違い？)
+                  // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
+        case 4:   // 使用者の場
+        case 5:   // 使用者もしくは味方
+        case 6:   // 相手の場
+        case 7:   // 自分自身
+        case 12:  // 全体の場
+        case 13:  // 使用者と味方(手持ち含む)
+        case 14:  // 場にいるすべてのポケモン
+        case 15:  // すべての味方
+          return Column(
             children: [
-              Expanded(
-                child: DropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '成否',
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '成否',
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: true,
+                          child: Text('成功'),
+                        ),
+                        DropdownMenuItem(
+                          value: false,
+                          child: Text('うまくきまらなかった！'),
+                        ),
+                      ],
+                      value: isSuccess,
+                      onChanged: (value) {
+                        isSuccess = value;
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
                   ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: true,
-                      child: Text('成功'),
-                    ),
-                    DropdownMenuItem(
+                ],
+              ),
+              SizedBox(height: 10,),
+              effectInputRow,
+              SizedBox(height: 10,),
+              effectInputRow2,
+            ],
+          );
+        case 3:   // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+          return Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '成否',
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: false,
+                          child: Text('うまくきまらなかった！'),
+                        ),
+                      ],
                       value: false,
-                      child: Text('うまくきまらなかった！'),
+                      onChanged: null,
                     ),
-                  ],
-                  value: isSuccess,
-                  onChanged: (value) {
-                    isSuccess = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
+                  ),
+                ],
               ),
             ],
           );
         case 8:       // ランダムな相手1体
         case 9:       // 場の他のポケモン全員
         case 10:      // 選択した相手
+        case 11:      // 場にいる相手側の全ポケモン
           return Column(
             children: [
               Row(

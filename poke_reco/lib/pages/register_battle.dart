@@ -444,38 +444,37 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         title = Text('$turnNumターン目');
         lists = Column(
           children: [
+            Row(
+              children: [
+                SizedBox(width: 10,),
+                Expanded(
+                  child: Row(children: [
+                    Icon(Icons.catching_pokemon),
+                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
+                    _focusingPokemon(PlayerType(PlayerType.me), focusState).sex.displayIcon,
+                  ],),
+                ),
+                SizedBox(width: 10,),
+                Expanded(
+                  child: Row(children: [
+                    Icon(Icons.catching_pokemon),
+                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
+                    _focusingPokemon(PlayerType(PlayerType.opponent), focusState).sex.displayIcon,
+                  ],),
+                ),
+                IconButton(
+                  icon: Icon(openStates ? Icons.keyboard_double_arrow_up : Icons.keyboard_double_arrow_down),
+                  onPressed: () {
+                    setState(() {openStates = !openStates;});
+                  },
+                ),
+              ],
+            ),
             openStates ?
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   children: [
-                    Row(
-                      children: [
-                        SizedBox(width: 10,),
-                        Expanded(
-                          child: Row(children: [
-                            Icon(Icons.catching_pokemon),
-                            Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
-                            _focusingPokemon(PlayerType(PlayerType.me), focusState).sex.displayIcon,
-                          ],),
-                        ),
-                        SizedBox(width: 10,),
-                        Expanded(
-                          child: Row(children: [
-                            Icon(Icons.catching_pokemon),
-                            Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
-                            _focusingPokemon(PlayerType(PlayerType.opponent), focusState).sex.displayIcon,
-                          ],),
-                        ),
-                        IconButton(
-                          icon: Icon(Icons.keyboard_double_arrow_up),
-                          onPressed: () {
-                            setState(() {openStates = false;});
-                          },
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 5),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -487,12 +486,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             });
                           },
                           child: Row(children: [
-                            Icon(Icons.sync),
-                            SizedBox(width: 10),
                             viewMode == 0 ?
                             Text('ステータス(補正前)') :
                             viewMode == 1 ?
                             Text('ステータス(補正後)') : Text('ランク'),
+                            SizedBox(width: 10),
+                            Icon(Icons.sync),
                           ]),
                         ),
 /*
@@ -614,37 +613,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     _AilmentsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
                     for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me)).buffDebuffs.length, focusState.getPokemonState(PlayerType(PlayerType.opponent)).buffDebuffs.length); i++)
                     _BuffDebuffsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
+                    for (int i = 0; i < max(focusState.ownFields.length, focusState.opponentFields.length); i++)
+                    _IndiFieldRow(focusState, i),
                     _WeatherFieldRow(focusState)
                   ],
                 ),
               ),
-            ) :
-            Expanded(
-              child: Row(
-                children: [
-                  SizedBox(width: 10,),
-                  Expanded(
-                    child: Row(children: [
-                      Icon(Icons.catching_pokemon),
-                      Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
-                    ],),
-                  ),
-                  SizedBox(width: 10,),
-                  Expanded(
-                    child: Row(children: [
-                      Icon(Icons.catching_pokemon),
-                      Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
-                    ],),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.keyboard_double_arrow_down),
-                    onPressed: () {
-                      setState(() {openStates = true;});
-                    },
-                  ),
-                ],
-              ),
-            ),
+            ) : Container(),
             Expanded(
               flex: openStates ? 1 : 10,
               child: BattleTurnListView(
@@ -1989,6 +1964,41 @@ class _BuffDebuffsRow extends Row {
             Container(
               color: opponentPokemonState.buffDebuffs[index].bgColor,
               child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
+      ),
+    ],
+  );
+}
+
+class _IndiFieldRow extends Row {
+  _IndiFieldRow(
+    PhaseState state,
+    int index,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Flexible(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            state.ownFields.length > index ?
+            Container(
+              color: state.ownFields[index].bgColor,
+              child: Text(state.ownFields[index].displayName, style: TextStyle(color: Colors.white)),
+            ) : Container(),
+        ),
+      ),
+      SizedBox(width: 10,),
+      Flexible(
+        child: ClipRRect(
+          borderRadius: BorderRadius.all(Radius.circular(5.0)),
+          child:
+            state.opponentFields.length > index ?
+            Container(
+              color: state.opponentFields[index].bgColor,
+              child: Text(state.opponentFields[index].displayName, style: TextStyle(color: Colors.white)),
             ) : Container(),
         ),
       ),

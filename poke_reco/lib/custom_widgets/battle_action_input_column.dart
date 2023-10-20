@@ -101,6 +101,7 @@ class BattleActionInputColumn extends Column {
                         turn.phases[phaseIdx].playerType = PlayerType(value);
                         turn.phases[phaseIdx].move!.clear();
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
+                        turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
                         moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =
                           turn.phases[phaseIdx].getEditingControllerText2(currentState);
@@ -147,7 +148,7 @@ class BattleActionInputColumn extends Column {
                 prevState.getPokemonState(PlayerType(PlayerType.me)),
                 prevState.getPokemonState(PlayerType(PlayerType.opponent)),
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
-                appState, phaseIdx, turnEffectAndStateAndGuide
+                appState, phaseIdx, turnEffectAndStateAndGuide, theme
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.terastalInputWidget(
