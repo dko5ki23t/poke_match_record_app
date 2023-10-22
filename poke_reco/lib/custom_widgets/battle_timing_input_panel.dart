@@ -27,6 +27,7 @@ class BattleTimingInputPanel extends Column {
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,
+    List<TextEditingController> textEditControllerList4,
     PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
@@ -47,7 +48,8 @@ class BattleTimingInputPanel extends Column {
           setState, theme, battle,
           turn, appState, focusPhaseIdx,
           (phaseIdx) => onFocus(phaseIdx), sameTimingList,
-          textEditControllerList1, textEditControllerList2, textEditControllerList3,
+          textEditControllerList1, textEditControllerList2,
+          textEditControllerList3, textEditControllerList4,
           prevState, prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount, attacker, turnMove,
         ),
@@ -111,6 +113,7 @@ class BattleTimingInputPanel extends Column {
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,
+    List<TextEditingController> textEditControllerList4,
     PhaseState prevState,
     Pokemon prevOwnPokemon,
     Pokemon prevOpponentPokemon,
@@ -132,6 +135,7 @@ class BattleTimingInputPanel extends Column {
       timing, textEditControllerList1,
       textEditControllerList2,
       textEditControllerList3,
+      textEditControllerList4,
       sameTimingList.first,
     ) :
     timing.id == AbilityTiming.continuousMove ?
@@ -146,8 +150,9 @@ class BattleTimingInputPanel extends Column {
       timing, textEditControllerList1,
       textEditControllerList2,
       textEditControllerList3,
+      textEditControllerList4,
       refMove!, continuousCount,
-      sameTimingList.first.guides,
+      sameTimingList.first,
     ) :
     timing.id == AbilityTiming.changeFaintingPokemon ?
     BattleChangeFaintingPokemonInputColumn(
@@ -172,7 +177,8 @@ class BattleTimingInputPanel extends Column {
       prevState, sameTimingList,
       sameTimingList.first.phaseIdx,
       timing, textEditControllerList1, textEditControllerList2,
-      textEditControllerList3, attacker, turnMove,
+      textEditControllerList3, textEditControllerList4,
+      attacker, turnMove,
     );
   }
 }

@@ -207,8 +207,14 @@ class Ailment {
 
   String get displayName {
     final pokeData = PokeDB();
-    if (id == Ailment.disable) return '${_displayNameMap[id]!}(${pokeData.moves[extraArg1]!.displayName})';
-    return _displayNameMap[id]!;
+    String extraStr = '';
+    switch (id) {
+      case Ailment.disable:
+      case Ailment.encore:
+        extraStr = '(${pokeData.moves[extraArg1]!.displayName})';
+        break;
+    }
+    return _displayNameMap[id]! + extraStr;
   }
   Color get bgColor => _bgColor[id]!;
 

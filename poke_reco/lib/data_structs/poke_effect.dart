@@ -1546,6 +1546,18 @@ class TurnEffect {
     return '';
   }
 
+  String getEditingControllerText4(PhaseState state) {
+    switch (timing.id) {
+      case AbilityTiming.action:
+      case AbilityTiming.continuousMove:
+        if (move == null) break;
+        return move!.getEditingControllerText4(state);
+      default:
+        break;
+    }
+    return '';
+  }
+
   Widget extraInputWidget(
     void Function() onFocus,
     Pokemon ownPokemon,

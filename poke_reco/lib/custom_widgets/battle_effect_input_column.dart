@@ -25,6 +25,7 @@ class BattleEffectInputColumn extends Column {
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,
+    List<TextEditingController> textEditControllerList4,
     PlayerType attacker,
     TurnMove turnMove,
   ) :
@@ -90,6 +91,7 @@ class BattleEffectInputColumn extends Column {
                                 textEditControllerList1[firstIdx+i].text = '';
                                 textEditControllerList2[firstIdx+i].text = '';
                                 textEditControllerList3[firstIdx+i].text = '';
+                                textEditControllerList4[firstIdx+i].text = '';
                                 appState.needAdjustPhases = true;
                                 onFocus(0);   // フォーカスリセット
                               }
@@ -99,6 +101,7 @@ class BattleEffectInputColumn extends Column {
                                 textEditControllerList1.removeAt(firstIdx+i);
                                 textEditControllerList2.removeAt(firstIdx+i);
                                 textEditControllerList3.removeAt(firstIdx+i);
+                                textEditControllerList4.removeAt(firstIdx+i);
                                 onFocus(0);   // フォーカスリセット
                               }
                             },

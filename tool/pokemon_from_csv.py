@@ -167,8 +167,6 @@ def main():
                 battle_only = True
                 for f in form:
                     tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == f][pokemonFormsCSVIsBattleOnlyColumn]
-                    if len(tmp) > 0:
-                        print(tmp.iloc[0], base_name)
                     if f != id and len(tmp) > 0 and tmp.iloc[0] == 0:
                         battle_only = False
                 if not battle_only:
@@ -233,7 +231,7 @@ def main():
                     continue
                 form_name = ''
                 # フォームID取得
-                tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == id][pokemonFormsCSVPokemonFormIDColumn]
+                tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == form_id][pokemonFormsCSVPokemonFormIDColumn]
                 if len(tmp) > 0:
                     poke_form_id = tmp.iloc[0]
                     # 日本語名取得

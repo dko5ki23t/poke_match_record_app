@@ -26,6 +26,7 @@ class BattleActionInputColumn extends Column {
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
+    List<TextEditingController> textEditingControllerList4,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   ) :
   super(
@@ -69,6 +70,11 @@ class BattleActionInputColumn extends Column {
                       icon: Icon(Icons.close),
                       onPressed: () {
                         turn.phases[phaseIdx].move!.clear();
+                        moveControllerList[phaseIdx].text = '';
+                        hpControllerList[phaseIdx].text = '';
+                        textEditingControllerList3[phaseIdx].text = '';
+                        textEditingControllerList4[phaseIdx].text = '';
+                        turnEffectAndStateAndGuide.guides.clear();
                         onFocus(phaseIdx+1);
                       },
                     ),
@@ -148,7 +154,7 @@ class BattleActionInputColumn extends Column {
                 prevState.getPokemonState(PlayerType(PlayerType.me)),
                 prevState.getPokemonState(PlayerType(PlayerType.opponent)),
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
-                appState, phaseIdx, turnEffectAndStateAndGuide, theme
+                appState, phaseIdx, 0, turnEffectAndStateAndGuide, theme
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.terastalInputWidget(
@@ -167,7 +173,8 @@ class BattleActionInputColumn extends Column {
                 prevState,
                 hpControllerList[phaseIdx],
                 textEditingControllerList3[phaseIdx],
-                appState, phaseIdx, 0,
+                textEditingControllerList4[phaseIdx],
+                appState, phaseIdx, 0, turnEffectAndStateAndGuide,
               ),
               SizedBox(height: 10,),
               for (final e in turnEffectAndStateAndGuide.guides)

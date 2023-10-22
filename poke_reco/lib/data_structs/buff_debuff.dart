@@ -183,6 +183,7 @@ class BuffDebuff {
   static const int punchNotDirect1_1 = 178;   // パンチわざ非接触化・威力1.1倍
   static const int voiceForm = 179;       // ボイスフォルム
   static const int stepForm = 180;        // ステップフォルム
+  static const int copiedMove = 181;      // わざ「ものまね」のコピーしたわざ(隠しステータス)
 
   static const _displayNameMap = {
     0:  '',
@@ -366,6 +367,7 @@ class BuffDebuff {
     178: 'パンチわざ非接触化・威力1.1倍',
     179: 'ボイスフォルム',
     180: 'ステップフォルム',
+    181: '',
   };
 
   static const _bgColorMap = {
@@ -549,6 +551,7 @@ class BuffDebuff {
     178: Colors.red,
     179: Colors.orange,
     180: Colors.orange,
+    181: Colors.black,
   };
 
   final int id;

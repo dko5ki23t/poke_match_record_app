@@ -26,9 +26,10 @@ class BattleContinuousMoveInputColumn extends Column {
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
+    List<TextEditingController> textEditingControllerList4,
     TurnMove refMove,
     int continuousCount,
-    List<String> guides,
+    TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -72,6 +73,8 @@ class BattleContinuousMoveInputColumn extends Column {
                         appState.editingPhase.removeAt(phaseIdx);
                         moveControllerList.removeAt(phaseIdx);
                         hpControllerList.removeAt(phaseIdx);
+                        textEditingControllerList3.removeAt(phaseIdx);
+                        textEditingControllerList4.removeAt(phaseIdx);
                         onFocus(0); // フォーカスリセット
                       },
                     ),
@@ -90,10 +93,11 @@ class BattleContinuousMoveInputColumn extends Column {
                 prevState,
                 hpControllerList[phaseIdx],
                 textEditingControllerList3[phaseIdx],
-                appState, phaseIdx, continuousCount,
+                textEditingControllerList4[phaseIdx],
+                appState, phaseIdx, continuousCount, turnEffectAndStateAndGuide
               ),
               SizedBox(height: 10,),
-              for (final e in guides)
+              for (final e in turnEffectAndStateAndGuide.guides)
               Row(
                 children: [
                   Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
@@ -113,6 +117,7 @@ class BattleContinuousMoveInputColumn extends Column {
             refMove.moveAdditionalEffects.add(MoveEffect(refMove.move.effect.id));
             refMove.extraArg1.add(0);
             refMove.extraArg2.add(0);
+            refMove.extraArg3.add(0);
             refMove.realDamage.add(0);
             refMove.percentDamage.add(0);
             turn.phases[phaseIdx]

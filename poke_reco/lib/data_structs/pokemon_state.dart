@@ -20,15 +20,17 @@ class PokemonState {
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
+  List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
   Ability currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態異常
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
   List<Ability> possibleAbilities = [];     // 候補のとくせい
   List<Item> impossibleItems = [];          // 候補から外れたもちもの(他ポケモンが持ってる等)
-  List<Move> moves = [];         // 判明しているわざ
+  List<Move> moves = [];        // 判明しているわざ
   PokeType type1 = PokeType.createFromId(0);  // ポケモンのタイプ1(対戦中変わることもある)
-  PokeType? type2;                // ポケモンのタイプ2
+  PokeType? type2;              // ポケモンのタイプ2
+  Move? lastMove;               // 最後に使用した(PP消費した)わざ
 
   PokemonState copyWith() =>
     PokemonState()
@@ -42,6 +44,7 @@ class PokemonState {
     ..usedPPs = [...usedPPs]
     .._statChanges = [..._statChanges]
     ..buffDebuffs = [for (final e in buffDebuffs) e.copyWith()]
+    ..hiddenBuffs = [for (final e in hiddenBuffs) e.copyWith()]
     ..currentAbility = currentAbility.copyWith()
     .._ailments = _ailments.copyWith()
     ..minStats = [...minStats]        // TODO:よい？
@@ -50,7 +53,8 @@ class PokemonState {
     ..impossibleItems = [for (final e in impossibleItems) e.copyWith()]
     ..moves = [...moves]
     ..type1 = type1
-    ..type2 = type2;
+    ..type2 = type2
+    ..lastMove = lastMove?.copyWith();
 
   Item? get holdingItem => _holdingItem;
 
@@ -120,6 +124,7 @@ class PokemonState {
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm));
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
+    hiddenBuffs.clear();
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
       int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
@@ -773,43 +778,53 @@ class PokemonState {
       if (buffDebuff == '') break;
       pokemonState.buffDebuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
     }
+    // hiddenBuffs
+    final hiddenBuffElements = stateElements[10].split(split2);
+    for (final buffDebuff in hiddenBuffElements) {
+      if (buffDebuff == '') break;
+      pokemonState.hiddenBuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
+    }
     // currentAbility
-    pokemonState.currentAbility = Ability.deserialize(stateElements[10], split2);
+    pokemonState.currentAbility = Ability.deserialize(stateElements[11], split2);
     // ailments
-    pokemonState._ailments = Ailments.deserialize(stateElements[11], split2, split3);
+    pokemonState._ailments = Ailments.deserialize(stateElements[12], split2, split3);
     // minStats
-    final minStatElements = stateElements[12].split(split2);
+    final minStatElements = stateElements[13].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.minStats[i] = SixParams.deserialize(minStatElements[i], split3);
     }
     // maxStats
-    final maxStatElements = stateElements[13].split(split2);
+    final maxStatElements = stateElements[14].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.maxStats[i] = SixParams.deserialize(maxStatElements[i], split3);
     }
     // possibleAbilities
-    final abilities = stateElements[14].split(split2);
+    final abilities = stateElements[15].split(split2);
     for (var ability in abilities) {
       if (ability == '') break;
       pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
     }
     // impossibleItems
-    final items = stateElements[15].split(split2);
+    final items = stateElements[16].split(split2);
     for (var item in items) {
       if (item == '') break;
       pokemonState.impossibleItems.add(pokeData.items[int.parse(item)]!);
     }
     // moves
-    final moves = stateElements[16].split(split2);
+    final moves = stateElements[17].split(split2);
     for (var move in moves) {
       if (move == '') break;
       pokemonState.moves.add(pokeData.moves[int.parse(move)]!);
     }
     // type1
-    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[17]));
+    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[18]));
     // type2
-    if (stateElements[18] != '') {
-      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[18]));
+    if (stateElements[19] != '') {
+      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[19]));
+    }
+    // lastMove
+    if (stateElements[20] != '') {
+      pokemonState.lastMove = pokeData.moves[int.parse(stateElements[20])];
     }
 
     return pokemonState;
@@ -859,6 +874,12 @@ class PokemonState {
       ret += split2;
     }
     ret += split1;
+    // hiddenBuffs
+    for (final buffDebuff in hiddenBuffs) {
+      ret += buffDebuff.serialize(split3);
+      ret += split2;
+    }
+    ret += split1;
     // currentAbility
     ret += currentAbility.serialize(split2);
     ret += split1;
@@ -901,6 +922,11 @@ class PokemonState {
     // type2
     if (type2 != null) {
       ret += type2!.id.toString();
+    }
+    ret += split1;
+    // lastMove
+    if (lastMove != null) {
+      ret += lastMove!.id.toString();
     }
 
     return ret;

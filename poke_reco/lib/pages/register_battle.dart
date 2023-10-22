@@ -63,6 +63,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   List<TextEditingController> textEditingControllerList1 = [];
   List<TextEditingController> textEditingControllerList2 = [];
   List<TextEditingController> textEditingControllerList3 = [];
+  List<TextEditingController> textEditingControllerList4 = [];
   TextEditingController ownAbilityController = TextEditingController();
 
   final beforeMoveExpandController = ExpandableController(initialExpanded: true);
@@ -309,6 +310,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               )
             )
           );
+          textEditingControllerList4 = List.generate(
+            currentTurn.phases.length,
+            (index) => TextEditingController(text:
+              currentTurn.phases[index].getEditingControllerText4(
+                currentTurn.getProcessedStates(
+                  index, ownParty, opponentParty
+                )
+              )
+            )
+          );
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
@@ -353,6 +364,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   index, ownParty, opponentParty
                 )
               )
+            )
+          );
+          textEditingControllerList4 = List.generate(
+            currentTurn.phases.length,
+            (index) => TextEditingController(text:
+              /*currentTurn.phases[index].getEditingControllerText3(
+                currentTurn.getProcessedStates(
+                  index, ownParty, opponentParty
+                )
+              )*/ ''
             )
           );
           pageType = RegisterBattlePageType.turnPage;
@@ -403,6 +424,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     index, ownParty, opponentParty
                   )
                 )
+              )
+            );
+            textEditingControllerList4 = List.generate(
+              currentTurn.phases.length,
+              (index) => TextEditingController(text:
+                /*currentTurn.phases[index].getEditingControllerText3(
+                  currentTurn.getProcessedStates(
+                    index, ownParty, opponentParty
+                  )
+                )*/ ''
               )
             );
             pageType = RegisterBattlePageType.turnPage;
@@ -630,6 +661,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 textEditingControllerList1,
                 textEditingControllerList2,
                 textEditingControllerList3,
+                textEditingControllerList4,
                 appState, focusPhaseIdx,
                 (phaseIdx) {
                   focusPhaseIdx = phaseIdx;
@@ -689,6 +721,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList1.insert(index, TextEditingController());
     textEditingControllerList2.insert(index, TextEditingController());
     textEditingControllerList3.insert(index, TextEditingController());
+    textEditingControllerList4.insert(index, TextEditingController());
   }
 
   void _removeAtPhase(int index, MyAppState appState) {
@@ -697,6 +730,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList1.removeAt(index);
     textEditingControllerList2.removeAt(index);
     textEditingControllerList3.removeAt(index);
+    textEditingControllerList4.removeAt(index);
   }
 
   void _removeRangePhase(int begin, int end, MyAppState appState) {
@@ -705,6 +739,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList1.removeRange(begin, end);
     textEditingControllerList2.removeRange(begin, end);
     textEditingControllerList3.removeRange(begin, end);
+    textEditingControllerList4.removeRange(begin, end);
   }
 
   // 追加用のフェーズを削除
@@ -1458,6 +1493,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
         textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
         textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
+        textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
       }
 
       if (s1 != end &&
@@ -1624,6 +1660,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
         textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
         textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
+        textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
       }
 
       sameTimingList.clear();
