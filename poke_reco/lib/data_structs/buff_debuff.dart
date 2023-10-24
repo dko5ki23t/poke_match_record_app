@@ -184,6 +184,8 @@ class BuffDebuff {
   static const int voiceForm = 179;       // ボイスフォルム
   static const int stepForm = 180;        // ステップフォルム
   static const int copiedMove = 181;      // わざ「ものまね」のコピーしたわざ(隠しステータス)
+  static const int chargingMove = 182;    // 溜める系わざの溜め状態(隠しステータス)
+  static const int recoiling = 183;       // わざの反動で動けない状態(隠しステータス)
 
   static const _displayNameMap = {
     0:  '',
@@ -368,6 +370,8 @@ class BuffDebuff {
     179: 'ボイスフォルム',
     180: 'ステップフォルム',
     181: '',
+    182: '',
+    183: '',
   };
 
   static const _bgColorMap = {
@@ -551,7 +555,9 @@ class BuffDebuff {
     178: Colors.red,
     179: Colors.orange,
     180: Colors.orange,
-    181: Colors.black,
+    181: Colors.white,
+    182: Colors.white,
+    183: Colors.white,
   };
 
   final int id;

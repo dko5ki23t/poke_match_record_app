@@ -133,6 +133,7 @@ class BattleBasicListView extends ListView {
                       for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
                       }
                       setState();
                     },

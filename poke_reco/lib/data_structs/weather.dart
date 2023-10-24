@@ -2,6 +2,31 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
+// 天気による効果(TurnEffectのeffectIdに使用する定数を提供)
+class WeatherEffect {
+  static const int none = 0;
+  static const int sunnyEnd = 1;          // 晴れ終了
+  static const int rainyEnd = 2;          // あめ終了
+  static const int sandStormEnd = 3;      // すなあらし終了
+  static const int snowyEnd = 4;          // ゆき終了
+  static const int sandStormDamage = 5;   // すなあらしダメージ
+
+  static const _displayNameMap = {
+    0: '',
+    1: '晴れ終了',
+    2: 'あめ終了',
+    3: 'すなあらし終了',
+    4: 'ゆき終了',
+    5: 'すなあらしによるダメージ',
+  };
+
+  const WeatherEffect(this.id);
+
+  String get displayName => _displayNameMap[id]!;
+
+  final int id;
+}
+
 // 天気
 class Weather {
   static const int none = 0;

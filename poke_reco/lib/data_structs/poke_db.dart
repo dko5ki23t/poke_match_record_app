@@ -55,6 +55,7 @@ const String itemDBTable = 'itemDB';
 const String itemColumnId = 'id';
 const String itemColumnName = 'name';
 const String itemColumnTiming = 'timing';
+const String itemColumnIsBerry = 'is_berry';
 
 const String moveDBFile = 'Moves.db';
 const String moveDBTable = 'moveDB';
@@ -567,6 +568,58 @@ class Move {
     return 1;
   }
 
+  // 必ず追加効果が起こるかどうかを返す
+  bool isSurelyEffect() {
+    switch (effect.id) {
+      case 3:     // どくにする(確率)
+      case 78:    // 2回こうげき、どくにする(確率)
+      case 210:   // どくにする(確率)。急所に当たりやすい
+      case 5:     // やけどにする(確率)
+      case 201:   // やけどにする(確率)。急所に当たりやすい
+      case 6:     // こおりにする(確率)
+      case 261:   // こおりにする(確率)。天気がゆきのときは必中
+      case 7:     // まひにする(確率)
+      case 153:   // まひにする(確率)。天気があめなら必中、はれなら命中率が下がる。そらをとぶ状態でも命中する
+      case 372:   // まひにする(確率)
+      case 140:   // 使用者のこうげきを1段階上げる(確率)
+      case 139:   // 使用者のぼうぎょを1段階上げる(確率)
+      case 277:   // 使用者のとくこうを1段階上げる(確率)
+      case 69:    // こうげきを1段階下げる(確率)
+      case 70:    // ぼうぎょを1段階下げる(確率)
+      case 71:    // すばやさを1段階下げる(確率)
+      case 74:    // めいちゅうを1段階下げる(確率)
+      case 32:    // ひるませる(確率)
+      case 93:    // ひるませる(確率)。ねむり状態のときのみ成功
+      case 203:   // もうどくにする(確率)
+      case 37:    // やけど・こおり・まひのいずれかにする(確率)
+      case 77:    // こんらんさせる(確率)
+      case 268:   // こんらんさせる(確率)
+      case 334:   // こんらんさせる(確率)。そらをとぶ状態の相手にも当たる。天気があめだと必中、はれだと命中率50になる
+      case 359:   // 使用者のぼうぎょを2段階上げる(確率)
+      case 272:   // とくぼうを2段階下げる(確率)
+      case 72:    // とくこうを1段階下げる(確率)
+      case 73:    // とくぼうを1段階下げる(確率)
+      case 141:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさを1段階上げる(確率)
+      case 227:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
+      case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
+      case 263:   // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
+      case 264:   // 使用者はそらをとぶ状態になり、次のターンにこうげきする。相手をまひ状態にする(確率)
+      case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
+      case 275:   // 相手をこおり状態にする(確率)。相手をひるませる(確率)。
+      case 276:   // 相手をまひ状態にする(確率)。相手をひるませる(確率)。
+      case 330:   // ねむり状態にする(確率)。メロエッタのフォルムが変わる
+      case 332:   // 1ターン目にため、2ターン目でこうげきする。まひ状態にする(確率)
+      case 333:   // 1ターン目にため、2ターン目でこうげきする。やけど状態にする(確率)
+      case 380:   // こおりにする(確率)。みずタイプのポケモンに対しても効果ばつぐんとなる
+        if (effectChance < 100) {
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  }
+
 /*
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
@@ -631,7 +684,7 @@ class PokeDB {
   late Database abilityDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
-  Map<int, Item> items = {0: Item(0, '', AbilityTiming(0))};  // 無効なもちもの
+  Map<int, Item> items = {0: Item(0, '', AbilityTiming(0), false)};  // 無効なもちもの
   late Database itemDb;
   Map<int, Move> moves = {0: Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
@@ -819,13 +872,14 @@ class PokeDB {
     itemDb = await openAssetDatabase(itemDBFile);
     // 内部データに変換
     maps = await itemDb.query(itemDBTable,
-      columns: [itemColumnId, itemColumnName, itemColumnTiming],
+      columns: [itemColumnId, itemColumnName, itemColumnTiming, itemColumnIsBerry],
     );
     for (var map in maps) {
       items[map[itemColumnId]] = Item(
         map[itemColumnId],
         map[itemColumnName],
-        AbilityTiming(map[itemColumnTiming])
+        AbilityTiming(map[itemColumnTiming]),
+        map[itemColumnIsBerry] == 1
       );
     }
 
@@ -982,7 +1036,7 @@ class PokeDB {
             map[myPokemonColumnEffort[5]],
             0)
           ..ability = abilities[map[myPokemonColumnAbility]]!
-          ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '', AbilityTiming(0)) : null   // TODO 消す
+          ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '', AbilityTiming(0), false) : null   // TODO 消す
           ..move1 = moves[map[myPokemonColumnMove1]]!
           ..pp1 = map[myPokemonColumnPP1]
           ..move2 = map[myPokemonColumnMove2] != null ? moves[map[myPokemonColumnMove2]]! : null

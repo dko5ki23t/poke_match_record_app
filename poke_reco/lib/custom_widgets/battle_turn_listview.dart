@@ -12,6 +12,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 
 class BattleTurnListView extends ListView {
   BattleTurnListView(
+    ScrollController controller,
     void Function() setState,
     Battle battle,
     int turnNum,
@@ -28,6 +29,7 @@ class BattleTurnListView extends ListView {
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) : 
   super(
+    controller: controller,
     children: [
       Container(
         padding: const EdgeInsets.all(10),

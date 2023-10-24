@@ -210,6 +210,7 @@ class TurnEffect {
   bool isOpponentFainting = false;
   bool isMyWin = false;   // 自身の勝利（両方勝利の場合は引き分け）
   bool isYourWin = false;
+  int? changePokemonIndex;  // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -224,7 +225,8 @@ class TurnEffect {
     ..isOwnFainting = isOwnFainting
     ..isOpponentFainting = isOpponentFainting
     ..isMyWin = isMyWin
-    ..isYourWin = isYourWin;
+    ..isYourWin = isYourWin
+    ..changePokemonIndex;
 
   bool isValid() {
     return
@@ -827,7 +829,7 @@ class TurnEffect {
               ret.addAll(Item.processEffect(
                 extraArg1, playerType, myParty, myPokemonIndex, myState,
                 yourParty, yourPokemonIndex, yourState, state,
-                extraArg2, 0, prevAction,
+                extraArg2, 0, changePokemonIndex, prevAction,
               ));
               break;
             case 293:   // そうだいしょう
@@ -858,11 +860,62 @@ class TurnEffect {
           ret.add('とくせいを${myState.currentAbility.displayName}で確定しました。');
         }
         break;
+      case EffectType.individualField:
+        {
+          switch (effectId) {
+            case IndividualField.futureAttack:    // みらいにこうげき
+              if (playerType.id == PlayerType.me) {
+                ownPokemonState.remainHP -= extraArg1;
+              }
+              else {
+                opponentPokemonState.remainHPPercent -= extraArg1;
+              }
+              break;
+            case IndividualField.healingWish:     // いやしのねがい
+              if (playerType.id == PlayerType.me) {
+                ownPokemonState.remainHP = ownPokemonState.pokemon.h.real;
+              }
+              else {
+                opponentPokemonState.remainHPPercent = 100;
+              }
+              state.getPokemonState(playerType).ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
+              break;
+            case IndividualField.lunarDance:      // みかづきのまい
+              if (playerType.id == PlayerType.me) {
+                ownPokemonState.remainHP = ownPokemonState.pokemon.h.real;
+              }
+              else {
+                opponentPokemonState.remainHPPercent = 100;
+              }
+              state.getPokemonState(playerType).ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
+              for (int i = 0; i < state.getPokemonState(playerType).usedPPs.length; i++) {
+                state.getPokemonState(playerType).usedPPs[i] = 0;
+              }
+              break;
+          }
+        }
+        break;      
+      case EffectType.weather:
+        {
+          switch (effectId) {
+            case WeatherEffect.sunnyEnd:
+            case WeatherEffect.rainyEnd:
+            case WeatherEffect.sandStormEnd:
+            case WeatherEffect.snowyEnd:
+              state.weather = Weather(Weather.none);
+              break;
+            case WeatherEffect.sandStormDamage:
+              ownPokemonState.remainHP -= extraArg1;
+              opponentPokemonState.remainHPPercent -= extraArg2;
+              break;
+          }
+        }
+        break;
       case EffectType.item:
         ret.addAll(Item.processEffect(
           effectId, playerType, myParty, myPokemonIndex, myState,
           yourParty, yourPokemonIndex, yourState, state,
-          extraArg1, extraArg2, prevAction,
+          extraArg1, extraArg2, changePokemonIndex, prevAction,
         ));
         break;
       case EffectType.move:
@@ -1022,7 +1075,7 @@ class TurnEffect {
     List<int> defenderTimingIDs = [...allTimingIDs];
     List<int> individualFieldIDs = [];
     List<int> ailmentIDs = [];
-    List<int> weatherIDs = [];
+    List<int> weatherEffectIDs = [];
     List<int> fieldIDs = [];
 
     // 全タイミング共通
@@ -1064,12 +1117,18 @@ class TurnEffect {
           }
           if (phaseState.weather.id == Weather.sunny) { // 天気が晴れのとき、毎ターン終了時
             timingIDs.addAll([50, 73]);
+            weatherEffectIDs.add(WeatherEffect.sunnyEnd);
           }
           if (phaseState.weather.id == Weather.rainy) { // 天気があめのとき、毎ターン終了時
             timingIDs.addAll([65, 50, 72]);
+            weatherEffectIDs.add(WeatherEffect.rainyEnd);
           }
           if (phaseState.weather.id == Weather.snowy) { // 天気がゆきのとき、毎ターン終了時
             timingIDs.addAll([79]);
+            weatherEffectIDs.add(WeatherEffect.snowyEnd);
+          }
+          if (phaseState.weather.id == Weather.sandStorm) { // 天気がすなあらしのとき、毎ターン終了時
+            weatherEffectIDs.addAll([WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
           }
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {   // どく/もうどく状態のとき
             timingIDs.add(52);
@@ -1084,7 +1143,6 @@ class TurnEffect {
           }
           individualFieldIDs = [...everyTurnEndIndividualFieldIDs];
           ailmentIDs = [...everyTurnEndAilmentIDs];
-          weatherIDs = [...everyTurnEndWeatherIDs];
           fieldIDs = [...everyTurnEndFieldIDs];
         }
         break;
@@ -1315,11 +1373,11 @@ class TurnEffect {
     }
 
     if (playerType.id == PlayerType.entireField) {
-      if (weatherIDs.contains(phaseState.weather.id)) {
+      for (var e in weatherEffectIDs) {
         ret.add(TurnEffect()
           ..playerType = PlayerType(PlayerType.entireField)
           ..effect = EffectType(EffectType.weather)
-          ..effectId = phaseState.weather.id
+          ..effectId = e
         );
       }
       if (fieldIDs.contains(phaseState.field.id)) {
@@ -1344,7 +1402,7 @@ class TurnEffect {
       case EffectType.individualField:
         return IndividualField(effectId).displayName;
       case EffectType.weather:
-        return Weather(effectId).displayName;
+        return WeatherEffect(effectId).displayName;
       case EffectType.field:
         return Field(effectId).displayName;
       case EffectType.move:
@@ -1475,6 +1533,12 @@ class TurnEffect {
                   return pokeData.moves[extraArg1 % 10000]!.displayName;
               }
               break;
+            case EffectType.weather:
+              switch (effectId) {
+                case WeatherEffect.sandStormDamage:
+                  return state.getPokemonState(PlayerType(PlayerType.me)).remainHP.toString();
+              }
+              break;
           }
         }
     }
@@ -1540,6 +1604,12 @@ class TurnEffect {
                   break;
               }
               break;
+            case EffectType.weather:
+              switch (effectId) {
+                case WeatherEffect.sandStormDamage:
+                  return state.getPokemonState(PlayerType(PlayerType.opponent)).remainHPPercent.toString();
+              }
+              break;
           }
         }
     }
@@ -1564,6 +1634,9 @@ class TurnEffect {
     Pokemon opponentPokemon,
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
     TextEditingController controller,
     TextEditingController controller2,
     MyAppState appState,
@@ -2456,8 +2529,150 @@ class TurnEffect {
               Flexible(child: Text('/${ownPokemon.h.real}')),
             ],
           );
+        case 585:     // レッドカード
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '交代先ポケモン',
+                  ),
+                  items: playerType.id == PlayerType.opponent ?
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < ownParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
+                          child: Text(
+                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ] :
+                    <DropdownMenuItem>[
+                      for (int i = 0; i < opponentParty.pokemonNum; i++)
+                        DropdownMenuItem(
+                          value: i+1,
+                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
+                          child: Text(
+                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                              Colors.black : Colors.grey),
+                            ),
+                        ),
+                    ],
+                  value: changePokemonIndex,
+                  onChanged: (value) {
+                    changePokemonIndex = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+            ],
+          );
         default:
           break;
+      }
+    }
+    else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
+      switch (effectId) {
+        case IndividualField.futureAttack:      // みらいにこうげき
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: playerType.id == PlayerType.me ? 
+                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('/${ownPokemon.h.real}')) :
+              Flexible(child: Text('% /100%')),
+            ],
+          );
+      }
+    }
+    else if (effect.id == EffectType.weather) {   // 天気による効果
+      switch (effectId) {
+        case WeatherEffect.sandStormDamage:   // すなあらしによるダメージ
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${ownPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  Flexible(child: Text('/${ownPokemon.h.real}')),
+                ],
+              ),
+              SizedBox(height: 10,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller2,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${opponentPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  Flexible(child: Text('% /100%')),
+                ],
+              ),
+            ],
+          );
       }
     }
 
@@ -2497,6 +2712,10 @@ class TurnEffect {
     effect.isMyWin = int.parse(effectElements[10]) != 0;
     // isYourWin
     effect.isYourWin = int.parse(effectElements[11]) != 0;
+    // changePokemonIndex
+    if (effectElements[12] != '') {
+      effect.changePokemonIndex = int.parse(effectElements[12]);
+    }
 
     return effect;
   }
@@ -2539,6 +2758,9 @@ class TurnEffect {
     ret += split1;
     // isYourWin
     ret += isYourWin ? '1' : '0';
+    ret += split1;
+    // changePokemonIndex
+    ret += changePokemonIndex == null ? '' : changePokemonIndex.toString();
 
     return ret;
   }

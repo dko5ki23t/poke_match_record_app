@@ -48,9 +48,9 @@ class Ailment {
   static const int stock1 = 42;             // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
   static const int stock2 = 43;             // たくわえる(2)
   static const int stock3 = 44;             // たくわえる(3)
-  static const int attention = 45;          // ちゅうもくのまと
+  static const int attention = 45;          // ちゅうもくのまと   // TODO
   static const int helpHand = 46;           // てだすけ
-  static const int imprison = 47;           // ふういん
+  static const int imprison = 47;           // ふういん         // TODO(わざを確定できそう)
   static const int grudge = 48;             // おんねん
   static const int roost = 49;              // はねやすめ
   static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
@@ -64,6 +64,7 @@ class Ailment {
   static const int throatChop = 58;         // じごくづき
   static const int tarShot = 59;            // タールショット
   static const int octoLock = 60;           // たこがため
+  static const int protect = 61;            // まもる     // TODO
 
   static const _displayNameMap = {
     0: '',
@@ -127,6 +128,7 @@ class Ailment {
     58: 'じごくづき',
     59: 'タールショット',
     60: 'たこがため',
+    61: 'まもる',
   };
 
   // TODO:
@@ -192,6 +194,7 @@ class Ailment {
     58: Colors.black,
     59: Colors.black,
     60: Colors.black,
+    61: Colors.black,
   };
 
   final int id;

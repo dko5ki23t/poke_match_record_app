@@ -16,13 +16,13 @@ class PokemonState {
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
-  Item? _holdingItem = Item(0, '', AbilityTiming(0));  // 持っているもちもの(失えばnullにする)
+  Item? _holdingItem = Item(0, '', AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
   Ability currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい(バトル中にとくせいが変わることあるので)
-  Ailments _ailments = Ailments();   // 状態異常
+  Ailments _ailments = Ailments();   // 状態変化
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
   List<Ability> possibleAbilities = [];     // 候補のとくせい
@@ -110,6 +110,18 @@ class PokemonState {
     else {
       return type1.id == typeId || type2?.id == typeId;
     }
+  }
+
+  // すなあらしダメージを受けるか判定
+  bool isSandstormDamaged() {
+    if (isTypeContain(5) || isTypeContain(6) || isTypeContain(9)) return false;
+    if (holdingItem?.id == 690) return false;   // ぼうじんゴーグル
+    if (currentAbility.id == 146 || currentAbility.id == 8 ||       // すなかき/すながくれ
+        currentAbility.id == 159 || currentAbility.id == 98 ||      // すなのちから/マジックガード
+        currentAbility.id == 142) return false;                     // ぼうじん
+    if (ailmentsWhere(        // あなをほる/ダイビング状態
+      (e) => e.id == Ailment.digging || e.id == Ailment.diving).isNotEmpty) return false;
+    return true;
   }
 
   // ポケモン交代やひんしにより退場する場合の処理
@@ -522,6 +534,33 @@ class PokemonState {
         if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
       }
     }
+  }
+
+  // ターン終了時に行う処理
+  void processTurnEnd() {
+    // 状態変化の経過ターンインクリメント
+    for (var e in _ailments.iterable) {
+      e.turns++;
+    }
+    // まもる状態は解除
+    ailmentsRemoveWhere((e) => e.id == Ailment.protect);
+    // はねやすめ解除＆ひこうタイプ復活
+    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.roost);
+    if (findIdx >= 0) {
+      if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.createFromId(3);
+      if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.createFromId(3);
+      ailmentsRemoveAt(findIdx);
+    }
+    // その他の補正の経過ターンインクリメント
+    for (var e in buffDebuffs) {
+      e.turns++;
+    }
+    // 隠れ補正の経過ターンインクリメント
+    for (var e in hiddenBuffs) {
+      e.turns++;
+    }
+    // わざの反動で動けない状態は2ターンエンド経過で削除
+    hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.recoiling && e.turns >= 2);
   }
 
   // 状態異常に関する関数群ここから

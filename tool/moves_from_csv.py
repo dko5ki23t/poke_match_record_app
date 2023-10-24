@@ -81,6 +81,9 @@ def main():
             effect_chance = row[movesCSVeffectChanceIndex]
             pp = row[movesCSVPPIndex]
 
+            if id == 863:
+                print(effect, 'OK')
+
             if pokeType > 10000:    # 特殊なタイプ
                 pokeType = 0
             

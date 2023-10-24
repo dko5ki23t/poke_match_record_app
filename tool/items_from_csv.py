@@ -16,6 +16,7 @@ itemDBTable = 'itemDB'
 itemColumnId = 'id'
 itemColumnName = 'name'
 itemColumnTiming = 'timing'
+itemColumnIsBerry = 'is_berry'
 
 # CSVファイル(PokeAPI)の列名
 itemsCSVItemIDColumn = 'id'
@@ -26,6 +27,7 @@ itemLangCSVNameColumn = 'name'
 # CSVファイル(PokeAPI+独自)の列インデックス
 itemCSVitemIDIndex = 1
 itemCSVtimingIDIndex = 7
+itemCSVisBerryIndex = 8
 
 # CSVファイル(PokeAPI)で必要となる各ID
 validItemIDs = [i for i in range(1, 8)]       # バトルでポケモンに持たせられるアイテムの種類
@@ -65,13 +67,14 @@ def main():
         for row in item_df.itertuples():
             id = row[itemCSVitemIDIndex]
             timing = row[itemCSVtimingIDIndex]
+            is_berry = row[itemCSVisBerryIndex]
             # 日本語名取得
             names = lang_df[(lang_df[itemLangCSVItemIDColumn] == id) & (lang_df[itemLangCSVLangIDColumn] == japaneseID)][itemLangCSVNameColumn]
             if len(names) > 0:
                 # 属性について
                 #att = [a for a in flags_df[flags_df['item_id'] == id]['item_flag_id']]
                 #if len(att) > 0:
-                    items_list.append((id, names.iloc[0], timing))
+                    items_list.append((id, names.iloc[0], timing, is_berry))
 
         # 作成(存在してたら作らない)
         try:
@@ -79,7 +82,8 @@ def main():
             f'CREATE TABLE IF NOT EXISTS {itemDBTable} ('
             f'  {itemColumnId} integer primary key,'
             f'  {itemColumnName} text not null,'
-            f'  {itemColumnTiming} integer)'
+            f'  {itemColumnTiming} integer,'
+            f'  {itemColumnIsBerry} integer)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -87,7 +91,7 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnTiming}) VALUES ( ?, ?, ? )',
+                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnTiming}, {itemColumnIsBerry}) VALUES ( ?, ?, ?, ? )',
                 items_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/battle.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 class BattleTile extends ListTile {
   BattleTile(
@@ -21,41 +22,22 @@ class BattleTile extends ListTile {
           child: Text(battle.name, overflow: TextOverflow.ellipsis,),
         ),
         SizedBox(width: 10,),
-        battle.isMyWin && !battle.isYourWin ? Text('WIN!') :
-        !battle.isMyWin && battle.isYourWin ? Text('LOSE...') :
-        battle.isMyWin && battle.isYourWin ? Text('DRAW') : Text(''),
+        battle.isMyWin && !battle.isYourWin ? Text('WIN!', style: TextStyle(color: Colors.red,)) :
+        !battle.isMyWin && battle.isYourWin ? Text('LOSE...', style: TextStyle(color: Colors.blue,)) :
+        battle.isMyWin && battle.isYourWin ? Text('DRAW', style: TextStyle(color: Colors.green[800],)) : Text(''),
       ],
     ),
-    subtitle: Column(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      mainAxisSize: MainAxisSize.min,
+    subtitle: Row(
       children: [
-/*
-        Row(children:
-          [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  TextSpan(text: party.pokemon1.name),
-                  party.pokemon2 != null ? TextSpan(text: '/${party.pokemon2!.name}') : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null ? TextSpan(text: '/${party.pokemon3!.name}') : TextSpan(),
-                ],
-              ),
-            ),
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null ? TextSpan(text: '/${party.pokemon4!.name}') : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null ? TextSpan(text: '/${party.pokemon5!.name}') : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null && party.pokemon6 != null ? TextSpan(text: '/${party.pokemon6!.name}') : TextSpan(),
-                ],
-              ),
-            ),
-          ],
+        Expanded(
+          child: Text('vs ${battle.opponentName}'),
         ),
-*/
+        Expanded(
+          child: Text(battle.getParty(PlayerType(PlayerType.me)).name),
+        ),
+        Expanded(
+          child: Text(battle.formattedDateTime),
+        ),
       ],
     ),
     onTap: onTap,

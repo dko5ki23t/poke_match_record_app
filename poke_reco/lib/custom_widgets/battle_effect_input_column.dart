@@ -261,12 +261,14 @@ class BattleEffectInputColumn extends Column {
                             },
                             onSuggestionSelected: (suggestion) {
                               textEditControllerList1[firstIdx+i].text = suggestion.displayName;
+                              // 発動主が天気やフィールドの場合はEffectTypeも決まっていないため、ここで決定する
+                              turn.phases[firstIdx+i].effect = suggestion.effect;
                               turn.phases[firstIdx+i].effectId = suggestion.effectId;
-                              appState.editingPhase[firstIdx+i] = true;
                               textEditControllerList2[firstIdx+i].text =
                                 turn.phases[firstIdx+i].getEditingControllerText2(sameTimingList[i].phaseState);
                               textEditControllerList3[firstIdx+i].text =
                                 turn.phases[firstIdx+i].getEditingControllerText3(sameTimingList[i].phaseState);
+                              appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             },
                           ),
@@ -279,6 +281,9 @@ class BattleEffectInputColumn extends Column {
                       battle.getParty(PlayerType(PlayerType.opponent)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.opponent))-1]!,
                       _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me)),
                       _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent)),
+                      battle.getParty(PlayerType(PlayerType.me)),
+                      battle.getParty(PlayerType(PlayerType.opponent)),
+                      _getPrevState(prevState, firstIdx, i, sameTimingList),
                       textEditControllerList2[firstIdx+i], textEditControllerList3[firstIdx+i],
                       appState, firstIdx+i),
                     SizedBox(height: 10),

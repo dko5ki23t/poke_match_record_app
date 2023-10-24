@@ -70,6 +70,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       pokeStatEffortController[i].text = widget.myPokemon.stats[i].effort.toString();
       pokeStatIndiController[i].text = widget.myPokemon.stats[i].indi.toString();
     }
+    // notify
+    setState(() {});
   }
 
   @override

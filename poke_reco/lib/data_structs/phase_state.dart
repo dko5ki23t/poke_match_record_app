@@ -118,6 +118,24 @@ class PhaseState {
     return getPokemonStates(player)[i].isBattling;
   }
 
+  // ターン終了時処理
+  void processTurnEnd() {
+    // 各々の場のターン経過
+    for (var e in ownFields) {
+      e.turns++;
+    }
+    for (var e in opponentFields) {
+      e.turns++;
+    }
+    // 各々のポケモンの状態のターン経過
+    getPokemonState(PlayerType(PlayerType.me)).processTurnEnd();
+    getPokemonState(PlayerType(PlayerType.opponent)).processTurnEnd();
+    // 天気のターン経過
+    _weather.turns++;
+    // フィールドのターン経過
+    _field.turns++;
+  }
+
   // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
   List<TurnEffect> getDefaultEffectList(
     Turn currentTurn, AbilityTiming timing, bool changedOwn, bool changedOpponent,
@@ -375,31 +393,31 @@ class PhaseState {
         break;
       case AbilityTiming.everyTurnEnd:   // 毎ターン終了時
         {
-          var playerTimingIDs = [[], []];
           // 自分/相手ごとにforループ
           for (int i = 0; i < 2; i++) {
+            var playerTimingIDs = [];
             var player = players[i];
 
             // 毎ターン終了時には無条件で発動する効果
-            playerTimingIDs[i] = [AbilityTiming.everyTurnEnd];
+            playerTimingIDs = [AbilityTiming.everyTurnEnd];
             // 1度でも行動した後毎ターン終了時
-            if (currentTurn.getInitialPokemonIndex(player) == getPokemonIndex(player)) playerTimingIDs[i].add(AbilityTiming.afterActedEveryTurnEnd);
+            if (currentTurn.getInitialPokemonIndex(player) == getPokemonIndex(player)) playerTimingIDs.add(AbilityTiming.afterActedEveryTurnEnd);
             if (weather.id == Weather.rainy) {
-              playerTimingIDs[i].addAll([65,50]);   // 天気があめのとき、毎ターン終了時
-              if (getPokemonState(player).ailmentsWhere((element) => element.id <= Ailment.sleep).isNotEmpty) playerTimingIDs[i].add(72);       // かつ状態異常のとき
+              playerTimingIDs.addAll([65,50]);   // 天気があめのとき、毎ターン終了時
+              if (getPokemonState(player).ailmentsWhere((element) => element.id <= Ailment.sleep).isNotEmpty) playerTimingIDs.add(72);       // かつ状態異常のとき
             }
-            if (weather.id == Weather.sunny) playerTimingIDs[i].addAll([50, 73]);   // 天気が晴れのとき、毎ターン終了時
-            if (weather.id == Weather.sunny) playerTimingIDs[i].addAll([79]);        // 天気がゆきのとき、毎ターン終了時
+            if (weather.id == Weather.sunny) playerTimingIDs.addAll([50, 73]);   // 天気が晴れのとき、毎ターン終了時
+            if (weather.id == Weather.sunny) playerTimingIDs.addAll([79]);        // 天気がゆきのとき、毎ターン終了時
             if (getPokemonState(player).ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {  // どく/もうどく状態
-              playerTimingIDs[i].add(52);
+              playerTimingIDs.add(52);
             }
             if (getPokemonState(player).teraType == null || getPokemonState(player).teraType!.id == 0) {  // テラスタルしていない
-              playerTimingIDs[i].add(116);
+              playerTimingIDs.add(116);
             }
-            if (getPokemonState(player).ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs[i].add(152);             // 状態異常でない毎ターン終了時
+            if (getPokemonState(player).ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
 
             // とくせい
-            if (playerTimingIDs[i].contains(getPokemonState(player).currentAbility.timing.id)) {
+            if (playerTimingIDs.contains(getPokemonState(player).currentAbility.timing.id)) {
               int extraArg1 = 0;
               int currentAbilityID = getPokemonState(player).currentAbility.id;
               bool isMe = player.id == PlayerType.me;
@@ -427,7 +445,7 @@ class PhaseState {
             }
 
             // もちもの
-            if (getPokemonState(player).holdingItem != null && playerTimingIDs[i].contains(getPokemonState(player).holdingItem!.timing.id)) {
+            if (getPokemonState(player).holdingItem != null && playerTimingIDs.contains(getPokemonState(player).holdingItem!.timing.id)) {
               int extraArg1 = 0;
               bool isMe = player.id == PlayerType.me;
               switch (getPokemonState(player).holdingItem!.id) {
@@ -470,8 +488,52 @@ class PhaseState {
                 ..effectId = getPokemonState(player).holdingItem!.id
                 ..extraArg1 = extraArg1
               );
+
+              // 各ポケモンの場の効果
+              var fields = player.id == PlayerType.me ? ownFields : opponentFields;
+              var findIdx = fields.indexWhere((e) => e.id == IndividualField.futureAttack && e.turns == 2);
+              if (findIdx >= 0) {
+                ret.add(TurnEffect()
+                  ..playerType = player
+                  ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                  ..effect = EffectType(EffectType.individualField)
+                  ..effectId = IndividualField.futureAttack
+                );
+              }
             }
           }
+
+          // 両者に効果があるもの
+          var weatherEffectIDs = [];
+          if (weather.id == Weather.sandStorm) {
+            if (getPokemonState(PlayerType(PlayerType.me)).isSandstormDamaged() ||
+                getPokemonState(PlayerType(PlayerType.opponent)).isSandstormDamaged())
+            {
+              weatherEffectIDs.add(WeatherEffect.sandStormDamage);
+            }
+          }
+
+          // 天気
+          for (var e in weatherEffectIDs) {
+            int extraArg1 = 0;
+            int extraArg2 = 0;
+            if (e == WeatherEffect.sandStormDamage) {
+              if (getPokemonState(PlayerType(PlayerType.me)).isSandstormDamaged()) {    // すなあらしによるダメージ
+                extraArg1 = (getPokemonState(PlayerType(PlayerType.me)).pokemon.h.real / 16).floor();
+              }
+              if (getPokemonState(PlayerType(PlayerType.opponent)).isSandstormDamaged()) {
+                extraArg2 = 6;
+              }
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(PlayerType.entireField)
+              ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+              ..effect = EffectType(EffectType.weather)
+              ..effectId = e
+              ..extraArg1 = extraArg1
+              ..extraArg2 = extraArg2
+            );
+          }          
         }
         break;
     }

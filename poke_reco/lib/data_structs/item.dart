@@ -11,11 +11,12 @@ class Item {
   final int id;
   final String displayName;
   final AbilityTiming timing;
+  final bool isBerry;
 
-  const Item(this.id, this.displayName, this.timing,);
+  const Item(this.id, this.displayName, this.timing, this.isBerry);
 
   Item copyWith() =>
-    Item(id, displayName, timing);
+    Item(id, displayName, timing, isBerry);
 
   static List<String> processEffect(
     int itemID,
@@ -29,6 +30,7 @@ class Item {
     PhaseState state,
     int extraArg1,
     int extraArg2,
+    int? changePokemonIndex,
     TurnEffect? prevAction,
   ) {
     final pokeData = PokeDB();
@@ -58,7 +60,6 @@ class Item {
       case 177:     // ホズのみ
       case 187:     // イバンのみ
       case 248:     // パワフルハーブ
-      case 585:     // レッドカード
       case 590:     // だっしゅつボタン
       case 1177:    // だっしゅつパック
         // ダメージ軽減効果はユーザ入力に任せる
@@ -270,6 +271,15 @@ class Item {
           yourState.remainHP -= extraArg1;
         }
         myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 585:     // レッドカード
+        if (changePokemonIndex != null) {
+          yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState);
+          state.setPokemonIndex(playerType.opposite, changePokemonIndex!);
+          PokemonState newState;
+          newState = state.getPokemonState(playerType.opposite);
+          newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state.weather, state.field, myState);
+        }
         break;
       case 1179:  // からぶりほけん
         myState.addStatChanges(true, 4, 2, yourState, itemId: itemID);
