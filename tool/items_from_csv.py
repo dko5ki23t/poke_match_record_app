@@ -15,6 +15,8 @@ itemDBFile = 'Items.db'
 itemDBTable = 'itemDB'
 itemColumnId = 'id'
 itemColumnName = 'name'
+itemColumnFlingPower = 'fling_power'
+itemColumnFlingEffect = 'fling_effect'
 itemColumnTiming = 'timing'
 itemColumnIsBerry = 'is_berry'
 
@@ -26,6 +28,8 @@ itemLangCSVNameColumn = 'name'
 
 # CSVファイル(PokeAPI+独自)の列インデックス
 itemCSVitemIDIndex = 1
+itemCSVFlingPowerIndex = 5
+itemCSVFlingEffectIDIndex = 6
 itemCSVtimingIDIndex = 7
 itemCSVisBerryIndex = 8
 
@@ -64,8 +68,11 @@ def main():
         flags_df = pd.read_csv(args.item_flag_map)
         # アイテム一覧ファイル読み込み
         item_df = pd.read_csv(args.items)
+        item_df = item_df.fillna(0)
         for row in item_df.itertuples():
             id = row[itemCSVitemIDIndex]
+            fling_power = row[itemCSVFlingPowerIndex]
+            fling_effect = row[itemCSVFlingEffectIDIndex]
             timing = row[itemCSVtimingIDIndex]
             is_berry = row[itemCSVisBerryIndex]
             # 日本語名取得
@@ -74,7 +81,7 @@ def main():
                 # 属性について
                 #att = [a for a in flags_df[flags_df['item_id'] == id]['item_flag_id']]
                 #if len(att) > 0:
-                    items_list.append((id, names.iloc[0], timing, is_berry))
+                    items_list.append((id, names.iloc[0], fling_power, fling_effect, timing, is_berry,))
 
         # 作成(存在してたら作らない)
         try:
@@ -82,6 +89,8 @@ def main():
             f'CREATE TABLE IF NOT EXISTS {itemDBTable} ('
             f'  {itemColumnId} integer primary key,'
             f'  {itemColumnName} text not null,'
+            f'  {itemColumnFlingPower} integer,'
+            f'  {itemColumnFlingEffect} integer,'
             f'  {itemColumnTiming} integer,'
             f'  {itemColumnIsBerry} integer)'
             )
@@ -91,7 +100,7 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnTiming}, {itemColumnIsBerry}) VALUES ( ?, ?, ?, ? )',
+                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}) VALUES ( ?, ?, ?, ?, ?, ? )',
                 items_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

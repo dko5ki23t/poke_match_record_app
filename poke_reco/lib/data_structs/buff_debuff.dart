@@ -186,6 +186,7 @@ class BuffDebuff {
   static const int copiedMove = 181;      // わざ「ものまね」のコピーしたわざ(隠しステータス)
   static const int chargingMove = 182;    // 溜める系わざの溜め状態(隠しステータス)
   static const int recoiling = 183;       // わざの反動で動けない状態(隠しステータス)
+  static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍    // TODO
 
   static const _displayNameMap = {
     0:  '',
@@ -372,6 +373,7 @@ class BuffDebuff {
     181: '',
     182: '',
     183: '',
+    184: '相手わざ必中・ダメージ2倍',
   };
 
   static const _bgColorMap = {
@@ -558,6 +560,7 @@ class BuffDebuff {
     181: Colors.white,
     182: Colors.white,
     183: Colors.white,
+    184: Colors.blue,
   };
 
   final int id;

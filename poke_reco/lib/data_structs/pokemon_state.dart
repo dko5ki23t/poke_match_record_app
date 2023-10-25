@@ -16,7 +16,7 @@ class PokemonState {
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
-  Item? _holdingItem = Item(0, '', AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
+  Item? _holdingItem = Item(0, '', 0, 0, AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)

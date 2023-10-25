@@ -827,9 +827,9 @@ class TurnEffect {
               break;
             case 291:   // はんすう
               ret.addAll(Item.processEffect(
-                extraArg1, playerType, myParty, myPokemonIndex, myState,
-                yourParty, yourPokemonIndex, yourState, state,
-                extraArg2, 0, changePokemonIndex, prevAction,
+                extraArg1, playerType, myState,
+                yourState, state,
+                extraArg2, 0, changePokemonIndex,
               ));
               break;
             case 293:   // そうだいしょう
@@ -913,9 +913,9 @@ class TurnEffect {
         break;
       case EffectType.item:
         ret.addAll(Item.processEffect(
-          effectId, playerType, myParty, myPokemonIndex, myState,
-          yourParty, yourPokemonIndex, yourState, state,
-          extraArg1, extraArg2, changePokemonIndex, prevAction,
+          effectId, playerType, myState,
+          yourState, state,
+          extraArg1, extraArg2, changePokemonIndex,
         ));
         break;
       case EffectType.move:
@@ -1446,38 +1446,7 @@ class TurnEffect {
         {
           switch (effect.id) {
             case EffectType.item:
-              switch (effectId) {    
-                case 247:     // いのちのたま
-                case 265:     // くっつきバリ
-                case 258:     // くろいヘドロ
-                case 211:     // たべのこし
-                case 132:     // オレンのみ
-                case 135:     // オボンのみ
-                case 136:     // フィラのみ
-                case 137:     // ウイのみ
-                case 138:     // マゴのみ
-                case 139:     // バンジのみ
-                case 140:     // イアのみ
-                case 185:     // ナゾのみ
-                case 230:     // かいがらのすず
-                case 43:      // きのみジュース
-                  if (playerType.id == PlayerType.me) {
-                    return state.getPokemonState(playerType).remainHP.toString();
-                  }
-                  else {
-                    return state.getPokemonState(playerType).remainHPPercent.toString();
-                  }
-                case 583:     // ゴツゴツメット
-                case 188:     // ジャポのみ
-                case 189:     // レンブのみ
-                  if (playerType.id == PlayerType.me) {
-                    return state.getPokemonState(playerType.opposite).remainHPPercent.toString();
-                  }
-                  else {
-                    return state.getPokemonState(playerType.opposite).remainHP.toString();
-                  }
-              }
-              break;
+              return pokeData.items[effectId]!.getEditingControllerText2(playerType, state);
             case EffectType.ability:
               switch (effectId) {
                 case 10:    // ちくでん
@@ -2342,242 +2311,26 @@ class TurnEffect {
       }
     }
     else if (effect.id == EffectType.item) {   // もちものによる効果
-      switch (effectId) {
-        case 184:     // スターのみ
-          return Row(
-            children: [
-              Flexible(
-                child: DropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text('こうげき'),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('ぼうぎょ'),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text('とくこう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text('とくぼう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 4,
-                      child: Text('すばやさ'),
-                    ),
-                  ],
-                  value: extraArg1,
-                  onChanged: (value) {
-                    extraArg1 = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              Text('があがった'),
-            ],
-          );
-        case 247:     // いのちのたま
-        case 265:     // くっつきバリ
-        case 258:     // くろいヘドロ
-        case 211:     // たべのこし
-        case 132:     // オレンのみ
-        case 135:     // オボンのみ
-        case 185:     // ナゾのみ
-        case 230:     // かいがらのすず
-        case 43:      // きのみジュース
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: playerType.id == PlayerType.me ? 
-                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-            ],
-          );
-        case 136:     // フィラのみ
-        case 137:     // ウイのみ
-        case 138:     // マゴのみ
-        case 139:     // バンジのみ
-        case 140:     // イアのみ
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: DropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text('HPが回復した'),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('こんらんした'),
-                    ),
-                  ],
-                  value: extraArg2,
-                  onChanged: (value) {
-                    extraArg2 = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
-              extraArg2 == 0 ?
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: playerType.id == PlayerType.me ? 
-                          '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                        }
-                        else {
-                          extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                        }
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  playerType.id == PlayerType.me ?
-                  Flexible(child: Text('/${ownPokemon.h.real}')) :
-                  Flexible(child: Text('% /100%')),
-                ],
-              ) : Container(),
-            ],
-          );
-        case 583:     // ゴツゴツメット
-        case 188:     // ジャポのみ
-        case 189:     // レンブのみ
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: playerType.id == PlayerType.me ? 
-                      '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('% /100%')) :
-              Flexible(child: Text('/${ownPokemon.h.real}')),
-            ],
-          );
-        case 585:     // レッドカード
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: DropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
-                  ),
-                  items: playerType.id == PlayerType.opponent ?
-                    <DropdownMenuItem>[
-                      for (int i = 0; i < ownParty.pokemonNum; i++)
-                        DropdownMenuItem(
-                          value: i+1,
-                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                          child: Text(
-                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
-                        ),
-                    ] :
-                    <DropdownMenuItem>[
-                      for (int i = 0; i < opponentParty.pokemonNum; i++)
-                        DropdownMenuItem(
-                          value: i+1,
-                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                          child: Text(
-                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
-                        ),
-                    ],
-                  value: changePokemonIndex,
-                  onChanged: (value) {
-                    changePokemonIndex = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-            ],
-          );
-        default:
-          break;
-      }
+      return appState.pokeData.items[effectId]!.extraInputWidget(
+        onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState,
+        opponentPokemonState, ownParty, opponentParty, state,
+        controller, extraArg1, extraArg2, changePokemonIndex,
+        (value) {
+          extraArg1 = value;
+          appState.editingPhase[phaseIdx] = true;
+          onFocus();
+        },
+        (value) {
+          extraArg2 = value;
+          appState.editingPhase[phaseIdx] = true;
+          onFocus();
+        },
+        (value) {
+          changePokemonIndex = value;
+          appState.editingPhase[phaseIdx] = true;
+          onFocus();
+        },
+      );
     }
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
       switch (effectId) {

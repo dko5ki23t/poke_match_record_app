@@ -1,44 +1,60 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 
+// なげつけたときの効果
+class FlingItemEffect {
+  static const int badPoison = 1;       // もうどくにする
+  static const int burn = 2;            // やけどにする
+  static const int berry = 3;           // きのみの効果を発動
+  static const int herb = 4;            // ハーブの効果を発動
+  static const int paralysis = 5;       // まひにする
+  static const int poison = 6;          // どくにする
+  static const int flinch = 7;          // ひるませる
+}
+
 class Item {
   final int id;
   final String displayName;
+  final int flingPower;
+  final int flingEffectId;
   final AbilityTiming timing;
   final bool isBerry;
 
-  const Item(this.id, this.displayName, this.timing, this.isBerry);
+  const Item(this.id, this.displayName, this.flingPower, this.flingEffectId, this.timing, this.isBerry);
 
   Item copyWith() =>
-    Item(id, displayName, timing, isBerry);
+    Item(id, displayName, flingPower, flingEffectId, timing, isBerry);
 
   static List<String> processEffect(
     int itemID,
     PlayerType playerType,
-    Party myParty,
-    int myPokemonIndex,
     PokemonState myState,
-    Party yourParty,
-    int yourPokemonIndex,
     PokemonState yourState,
     PhaseState state,
     int extraArg1,
     int extraArg2,
     int? changePokemonIndex,
-    TurnEffect? prevAction,
+    {
+      bool autoConsume = true,
+    }
+//    TurnEffect? prevAction,
   ) {
     final pokeData = PokeDB();
     List<String> ret = [];
+    /*
     if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
       myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
       ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
     }
+    */
     switch (itemID) {
       case 161:     // オッカのみ
       case 162:     // イトケのみ
@@ -63,7 +79,7 @@ class Item {
       case 590:     // だっしゅつボタン
       case 1177:    // だっしゅつパック
         // ダメージ軽減効果はユーザ入力に任せる
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 194:     // せんせいのツメ
         myState.holdingItem = pokeData.items[itemID];
@@ -72,20 +88,20 @@ class Item {
       case 589:     // じゅうでんち
       case 689:     // ゆきだま
         myState.addStatChanges(true, 0, 1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 179:     // リュガのみ
       case 724:     // アッキのみ
       case 898:     // エレキシード
       case 901:     // グラスシード
         myState.addStatChanges(true, 1, 1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 181:     // ヤタピのみ
       case 588:     // きゅうこん
       case 1176:    // のどスプレー
         myState.addStatChanges(true, 2, 1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 182:     // ズアのみ
       case 725:     // タラプのみ
@@ -93,24 +109,24 @@ class Item {
       case 899:     // サイコシード
       case 900:     // ミストシード
         myState.addStatChanges(true, 3, 1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 180:     // カムラのみ
       case 883:     // ビビリだま
         myState.addStatChanges(true, 4, 1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 183:     // サンのみ
         myState.addVitalRank(1);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 184:     // スターのみ
         myState.addStatChanges(true, extraArg1, 2, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 186:     // ミクルのみ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceAccuracy1_2));
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 188:   // ジャポのみ
       case 189:   // レンブのみ
@@ -120,16 +136,16 @@ class Item {
         else {
           yourState.remainHP -= extraArg1;
         }
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 191:     // しろいハーブ
         myState.resetDownedStatChanges();
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 682:     // じゃくてんほけん
         myState.addStatChanges(true, 0, 2, yourState, itemId: itemID);
         myState.addStatChanges(true, 2, 2, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 247:     // いのちのたま
       case 265:     // くっつきバリ
@@ -142,7 +158,7 @@ class Item {
         else {
           myState.remainHPPercent -= extraArg1;
         }
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 132:     // オレンのみ
       case 43:      // きのみジュース
@@ -154,7 +170,7 @@ class Item {
         else {
           myState.remainHPPercent -= extraArg1;
         }
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 136:     // フィラのみ
       case 137:     // ウイのみ
@@ -172,55 +188,55 @@ class Item {
         else {
           myState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
         }
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 126:   // クラボのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.paralysis);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 127:   // カゴのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.sleep);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 128:   // モモンのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 129:   // チーゴのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.burn);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 130:   // ナナシのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.freeze);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 133:   // キーのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.confusion);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 134:   // ラムのみ
         {
           int findIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.confusion);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 196:   // メンタルハーブ
@@ -230,20 +246,20 @@ class Item {
             e.id == Ailment.torment || e.id == Ailment.disable ||
             e.id == Ailment.taunt || e.id == Ailment.healBlock);
           if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
-          myState.holdingItem = null;   // アイテム消費
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 249:   // どくどくだま
         myState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 250:   // かえんだま
         myState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 257:   // あかいいと
         yourState.ailmentsAdd(Ailment(Ailment.infatuation), state.weather, state.field);
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 207:   // きあいのハチマキ
         if (playerType.id == PlayerType.me) {
@@ -252,7 +268,7 @@ class Item {
         else {
           myState.remainHPPercent == 1;
         }
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 252:   // きあいのタスキ
         if (playerType.id == PlayerType.me) {
@@ -261,7 +277,7 @@ class Item {
         else {
           myState.remainHPPercent == 1;
         }
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 583:   // ゴツゴツメット
         if (playerType.id == PlayerType.me) {
@@ -270,29 +286,64 @@ class Item {
         else {
           yourState.remainHP -= extraArg1;
         }
-        myState.holdingItem = pokeData.items[itemID];
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 585:     // レッドカード
         if (changePokemonIndex != null) {
           yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState);
-          state.setPokemonIndex(playerType.opposite, changePokemonIndex!);
+          state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite);
           newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state.weather, state.field, myState);
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 1179:  // からぶりほけん
         myState.addStatChanges(true, 4, 2, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 1180:  // ルームサービス
         myState.addStatChanges(true, 4, -1, yourState, itemId: itemID);
-        myState.holdingItem = null;   // アイテム消費
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       default:
         break;
     }
     return ret;
+  }
+
+  void processFlingEffect(
+    PlayerType playerType,
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    int extraArg1,
+    int extraArg2,
+    int? changePokemonIndex,
+  ) {
+    switch (flingEffectId) {
+      case FlingItemEffect.badPoison:
+        yourState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+        break;
+      case FlingItemEffect.burn:
+        yourState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+        break;
+      case FlingItemEffect.berry:
+      case FlingItemEffect.herb:
+        processEffect(id, playerType, yourState, myState, state, extraArg1, extraArg2, changePokemonIndex, autoConsume: false);
+        break;
+      case FlingItemEffect.paralysis:
+        yourState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+        break;
+      case FlingItemEffect.poison:
+        yourState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+        break;
+      case FlingItemEffect.flinch:
+        yourState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+        break;
+      default:
+        break;
+    }
   }
 
   void processPassiveEffect(/*bool isOwn, Weather weather, Field field,*/ PokemonState myState, /*PokemonState yourState*/) {
@@ -847,6 +898,273 @@ class Item {
         }
         break;
     }
+  }
+
+  String getEditingControllerText2(PlayerType playerType, PhaseState state) {
+    switch (id) {
+      case 247:     // いのちのたま
+      case 265:     // くっつきバリ
+      case 258:     // くろいヘドロ
+      case 211:     // たべのこし
+      case 132:     // オレンのみ
+      case 135:     // オボンのみ
+      case 136:     // フィラのみ
+      case 137:     // ウイのみ
+      case 138:     // マゴのみ
+      case 139:     // バンジのみ
+      case 140:     // イアのみ
+      case 185:     // ナゾのみ
+      case 230:     // かいがらのすず
+      case 43:      // きのみジュース
+        if (playerType.id == PlayerType.me) {
+          return state.getPokemonState(playerType).remainHP.toString();
+        }
+        else {
+          return state.getPokemonState(playerType).remainHPPercent.toString();
+        }
+      case 583:     // ゴツゴツメット
+      case 188:     // ジャポのみ
+      case 189:     // レンブのみ
+        if (playerType.id == PlayerType.me) {
+          return state.getPokemonState(playerType.opposite).remainHPPercent.toString();
+        }
+        else {
+          return state.getPokemonState(playerType.opposite).remainHP.toString();
+        }
+    }
+    return '';
+  }
+
+  Widget extraInputWidget(
+    void Function() onFocus,
+    PlayerType playerType,
+    Pokemon ownPokemon,
+    Pokemon opponentPokemon,
+    PokemonState ownPokemonState,
+    PokemonState opponentPokemonState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    int extraArg1, int extraArg2, int? changePokemonIndex,
+    void Function(int) extraArg1ChangeFunc,
+    void Function(int) extraArg2ChangeFunc,
+    void Function(int?) changePokemonIndexChangeFunc,
+  ) {
+    switch (id) {
+      case 184:     // スターのみ
+        return Row(
+          children: [
+            Flexible(
+              child: DropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('こうげき'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('ぼうぎょ'),
+                  ),
+                  DropdownMenuItem(
+                    value: 2,
+                    child: Text('とくこう'),
+                  ),
+                  DropdownMenuItem(
+                    value: 3,
+                    child: Text('とくぼう'),
+                  ),
+                  DropdownMenuItem(
+                    value: 4,
+                    child: Text('すばやさ'),
+                  ),
+                ],
+                value: extraArg1,
+                onChanged: (value) => extraArg1ChangeFunc(value),
+              ),
+            ),
+            Text('があがった'),
+          ],
+        );
+      case 247:     // いのちのたま
+      case 265:     // くっつきバリ
+      case 258:     // くろいヘドロ
+      case 211:     // たべのこし
+      case 132:     // オレンのみ
+      case 135:     // オボンのみ
+      case 185:     // ナゾのみ
+      case 230:     // かいがらのすず
+      case 43:      // きのみジュース
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: TextFormField(
+                controller: controller,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: playerType.id == PlayerType.me ? 
+                    '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onTap: () => onFocus(),
+                onChanged: (value) {
+                  int val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                  if (playerType.id == PlayerType.opponent) {
+                    val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  extraArg1ChangeFunc(val);
+                }
+              ),
+            ),
+            playerType.id == PlayerType.me ?
+            Flexible(child: Text('/${ownPokemon.h.real}')) :
+            Flexible(child: Text('% /100%')),
+          ],
+        );
+      case 136:     // フィラのみ
+      case 137:     // ウイのみ
+      case 138:     // マゴのみ
+      case 139:     // バンジのみ
+      case 140:     // イアのみ
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: DropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('HPが回復した'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('こんらんした'),
+                  ),
+                ],
+                value: extraArg2,
+                onChanged: (value) => extraArg2ChangeFunc(value),
+              ),
+            ),
+            extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
+            extraArg2 == 0 ?
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: controller,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: playerType.id == PlayerType.me ? 
+                        '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                    ),
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    onTap: () => onFocus(),
+                    onChanged: (value) {
+                      int val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                      if (playerType.id == PlayerType.opponent) {
+                        val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                      }
+                      extraArg1ChangeFunc(val);
+                    },
+                  ),
+                ),
+                playerType.id == PlayerType.me ?
+                Flexible(child: Text('/${ownPokemon.h.real}')) :
+                Flexible(child: Text('% /100%')),
+              ],
+            ) : Container(),
+          ],
+        );
+      case 583:     // ゴツゴツメット
+      case 188:     // ジャポのみ
+      case 189:     // レンブのみ
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: TextFormField(
+                controller: controller,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: playerType.id == PlayerType.me ? 
+                    '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onTap: () => onFocus(),
+                onChanged: (value) {
+                  int val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                  if (playerType.id == PlayerType.opponent) {
+                    val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                  }
+                  extraArg1ChangeFunc(val);
+                },
+              ),
+            ),
+            playerType.id == PlayerType.me ?
+            Flexible(child: Text('% /100%')) :
+            Flexible(child: Text('/${ownPokemon.h.real}')),
+          ],
+        );
+      case 585:     // レッドカード
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: DropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: '交代先ポケモン',
+                ),
+                items: playerType.id == PlayerType.opponent ?
+                  <DropdownMenuItem>[
+                    for (int i = 0; i < ownParty.pokemonNum; i++)
+                      DropdownMenuItem(
+                        value: i+1,
+                        enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
+                        child: Text(
+                          ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                            Colors.black : Colors.grey),
+                          ),
+                      ),
+                  ] :
+                  <DropdownMenuItem>[
+                    for (int i = 0; i < opponentParty.pokemonNum; i++)
+                      DropdownMenuItem(
+                        value: i+1,
+                        enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
+                        child: Text(
+                          opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                            Colors.black : Colors.grey),
+                          ),
+                      ),
+                  ],
+                value: changePokemonIndex,
+                onChanged: (value) => changePokemonIndexChangeFunc(value),
+              ),
+            ),
+          ],
+        );
+    }
+    return Container();
   }
 
   Map<String, Object?> toMap() {

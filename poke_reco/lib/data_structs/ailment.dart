@@ -55,7 +55,7 @@ class Ailment {
   static const int roost = 49;              // はねやすめ
   static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
   static const int powerTrick = 51;         // パワートリック
-  static const int abilityNoEffect = 52;    // とくせいなし
+  static const int abilityNoEffect = 52;    // とくせいなし   //TODO
   static const int aquaRing = 53;           // アクアリング
   static const int diving = 54;             // ダイビング
   static const int shadowForcing = 55;      // シャドーダイブ(姿を消した状態)
@@ -65,6 +65,7 @@ class Ailment {
   static const int tarShot = 59;            // タールショット
   static const int octoLock = 60;           // たこがため
   static const int protect = 61;            // まもる     // TODO
+  static const int candyCandy = 62;         // あめまみれ     // TODO
 
   static const _displayNameMap = {
     0: '',
@@ -129,6 +130,7 @@ class Ailment {
     59: 'タールショット',
     60: 'たこがため',
     61: 'まもる',
+    62: 'あめまみれ',
   };
 
   // TODO:
@@ -195,6 +197,7 @@ class Ailment {
     59: Colors.black,
     60: Colors.black,
     61: Colors.black,
+    62: Colors.black,
   };
 
   final int id;

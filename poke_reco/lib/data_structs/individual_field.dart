@@ -25,8 +25,8 @@ class IndividualField {
   static const int trickRoom = 20;        // トリックルーム
   static const int waterSport = 21;       // みずあそび
   static const int mudSport = 22;         // どろあそび
-  static const int wonderRoom = 23;       // ワンダールーム
-  static const int magicRoom = 24;        // マジックルーム
+  static const int wonderRoom = 23;       // ワンダールーム   // TODO
+  static const int magicRoom = 24;        // マジックルーム   // TODO
   static const int ionDeluge = 25;        // プラズマシャワー(わざタイプ：ノーマル→でんき)
   static const int fairyLock = 26;        // フェアリーロック
 
