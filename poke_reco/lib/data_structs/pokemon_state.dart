@@ -127,6 +127,7 @@ class PokemonState {
   // ポケモン交代やひんしにより退場する場合の処理
   void processExitEffect(bool isOwn, PokemonState yourState) {
     resetStatChanges();
+    resetRealSixParams();
     currentAbility = pokemon.ability;
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
     if (isFainting) ailmentsClear();
@@ -776,7 +777,85 @@ class PokemonState {
       if (_statChanges[i] < 0) _statChanges[i] = 0;
     }
   }
+
+  // ランク補正込みのHABCDSを返す
+  int rankedMaxStat(StatIndex statIdx) {
+    if (statIdx == StatIndex.H) {
+      return maxStats[StatIndex.H.index].real;
+    }
+    switch (statChanges(statIdx.index-1)) {
+      case -6:
+        return (maxStats[statIdx.index].real * 2 / 8).floor();
+      case -5:
+        return (maxStats[statIdx.index].real * 2 / 7).floor();
+      case -4:
+        return (maxStats[statIdx.index].real * 2 / 6).floor();
+      case -3:
+        return (maxStats[statIdx.index].real * 2 / 5).floor();
+      case -2:
+        return (maxStats[statIdx.index].real * 2 / 4).floor();
+      case -1:
+        return (maxStats[statIdx.index].real * 2 / 3).floor();
+      case 1:
+        return (maxStats[statIdx.index].real * 3 / 2).floor();
+      case 2:
+        return (maxStats[statIdx.index].real * 4 / 2).floor();
+      case 3:
+        return (maxStats[statIdx.index].real * 5 / 2).floor();
+      case 4:
+        return (maxStats[statIdx.index].real * 6 / 2).floor();
+      case 5:
+        return (maxStats[statIdx.index].real * 7 / 2).floor();
+      case 6:
+        return (maxStats[statIdx.index].real * 8 / 2).floor();
+      default:
+        return maxStats[statIdx.index].real;
+    }
+  }
+  int rankedMinStat(StatIndex statIdx) {
+    if (statIdx == StatIndex.H) {
+      return minStats[StatIndex.H.index].real;
+    }
+    switch (statChanges(statIdx.index-1)) {
+      case -6:
+        return (minStats[statIdx.index].real * 2 / 8).floor();
+      case -5:
+        return (minStats[statIdx.index].real * 2 / 7).floor();
+      case -4:
+        return (minStats[statIdx.index].real * 2 / 6).floor();
+      case -3:
+        return (minStats[statIdx.index].real * 2 / 5).floor();
+      case -2:
+        return (minStats[statIdx.index].real * 2 / 4).floor();
+      case -1:
+        return (minStats[statIdx.index].real * 2 / 3).floor();
+      case 1:
+        return (minStats[statIdx.index].real * 3 / 2).floor();
+      case 2:
+        return (minStats[statIdx.index].real * 4 / 2).floor();
+      case 3:
+        return (minStats[statIdx.index].real * 5 / 2).floor();
+      case 4:
+        return (minStats[statIdx.index].real * 6 / 2).floor();
+      case 5:
+        return (minStats[statIdx.index].real * 7 / 2).floor();
+      case 6:
+        return (minStats[statIdx.index].real * 8 / 2).floor();
+      default:
+        return minStats[statIdx.index].real;
+    }
+  }
+
   // ランク変化に関する関数群ここまで
+
+  // ガードシェア等によって変更された実数値を元に戻す
+  void resetRealSixParams() {
+    SixParams.getRealH(pokemon.level, maxStats[StatIndex.H.index].race, maxStats[StatIndex.H.index].indi, maxStats[StatIndex.H.index].effort);
+    final temperBiases = Temper.getTemperBias(pokemon.temper);
+    for (int i = StatIndex.A.index; i < StatIndex.size.index; i++) {
+      SixParams.getRealABCDS(pokemon.level, maxStats[i].race, maxStats[i].indi, maxStats[i].effort, temperBiases[i-1]);
+    }
+  }
 
   // SQLに保存された文字列からPokemonStateをパース
   static PokemonState deserialize(dynamic str, String split1, String split2, String split3) {

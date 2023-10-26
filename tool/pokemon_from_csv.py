@@ -86,6 +86,7 @@ specialAttackID = 4
 specialDefenseID = 5
 speedID = 6
 svVersionID = 25
+svVersionID2 = 26
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='TODO')
@@ -191,7 +192,7 @@ def main():
             # 重複削除
             abilities = list(set(abilities))
             # わざ取得
-            moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == id) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+            moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == id) & ((move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID) | (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID2))][pokemonsMoveCSVMoveIDColumn].to_list()
             # たまごわざ取得
             if evolves_from is not None:
                 egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()

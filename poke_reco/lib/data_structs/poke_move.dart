@@ -310,11 +310,26 @@ class TurnMove {
     PokeType moveType = PokeType.createFromId(0);
     // ダメージ計算式文字列
     String? damageCalc;
-    bool moveReplace = true;    // わざの内容が変わる場合
+    // 最終ダメージが2倍になるか
+    bool mTwice = false;
+    // 相手のとくぼうでなくぼうぎょでダメージ計算するか
+    bool invDeffense = false;
+    // 相手のこうげきとランク補正でダメージ計算するか
+    bool isFoulPlay = false;
+    // 相手のランク補正を無視してダメージ計算するか
+    bool ignoreTargetRank = false;
+    // 相手のとくせいを無視してダメージ計算するか
+    bool ignoreAbility = false;
+    // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージ計算するか
+    bool defenseAltAttack = false;
+    // ダメージ計算をぶつりわざ/とくしゅわざのどちらとして行うか
+    int moveDamageClassID = 0;
+    // はれによるダメージ補正率が0.5倍→1.5倍
+    bool isSunny1_5 = false;
 
-    while (moveReplace) {
-      moveReplace = false;
+    {
       Move replacedMove = getReplacedMove(move, continuousCount, myState);   // 必要に応じてわざの内容変更
+      moveDamageClassID = replacedMove.damageClass.id;
 
       // わざの対象決定
       List<PokemonState> targetStates = [yourState];
@@ -384,7 +399,7 @@ class TurnMove {
       // ダメージ計算式文字列
       damageCalc = null;
 
-      switch (replacedMove.damageClass.id) {
+      switch (moveDamageClassID) {
         case 1:     // へんか
           break;
         case 2:     // ぶつり
@@ -914,7 +929,7 @@ class TurnMove {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
             }
             break;
-          case 127:   // 威力がランダムで10,30,50,70,90,110,150のいずれかになる。グラスフィールドの影響を受ける相手には威力半減
+          case 127:   // 威力がランダムで10,30,50,70,90,110,150のいずれかになる。あなをほる状態の対象にも当たり、ダメージ2倍。グラスフィールドの影響を受ける相手には威力半減
             showDamageCalc = false;
             break;
           case 128:   // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
@@ -1012,10 +1027,8 @@ class TurnMove {
               movePower *= 2;
             }
             break;
-          case 148:   // あなをほる状態でも命中し、その場合威力が2倍。グラスフィールドの影響を受けている相手には威力が半減
-            if (targetState.ailmentsWhere((e) => e.id == Ailment.digging).isNotEmpty) {
-              movePower *= 2;
-            }
+          case 148:   // あなをほる状態でも命中し、その場合ダメージが2倍。グラスフィールドの影響を受けている相手には威力が半減
+            if (targetState.ailmentsWhere((e) => e.id == Ailment.digging).isNotEmpty) mTwice = true;
             if (targetState.isGround(targetIndiField) && state.field.id == Field.grassyTerrain) {
               movePower = (movePower / 2).floor();
             }
@@ -1029,13 +1042,11 @@ class TurnMove {
               movePower *= 2;
             }
             break;
-          case 151:   // ひるませる(確率)。ちいさくなる状態に対して必中、その場合威力が2倍
+          case 151:   // ひるませる(確率)。ちいさくなる状態に対して必中、その場合ダメージ2倍
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
             }
-            if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) {
-              movePower *= 2;
-            }
+            if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             break;
           case 152:   // 1ターン目にため、2ターン目でこうげきする。1ターン目の天気がはれ→ためずにこうげき。攻撃時天気が雨、すなあらし、ゆきなら威力半減
             {
@@ -1565,10 +1576,8 @@ class TurnMove {
               }
             }
             break;
-          case 258:   // ダイビング状態でも命中し、その場合威力が2倍
-            if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) {
-              movePower *= 2;
-            }
+          case 258:   // ダイビング状態でも命中し、その場合ダメージ2倍
+            if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) mTwice = true;
             break;
           case 259:   // かいひを1段階下げる。相手のひかりのかべ・リフレクター・オーロラベール・しんぴのまもり・しろいきりを消す
                       // 使用者・相手の場にあるまきびし・どくびし・とがった岩・ねばねばネットを取り除く。フィールドを解除する
@@ -1589,8 +1598,9 @@ class TurnMove {
               targetIndiField.removeAt(findIdx);
             }
             break;
-          case 262:   // バインド状態にする。ダイビング中の相手にはダメージ2倍(TODO:のちのダメージ計算時)
+          case 262:   // バインド状態にする。ダイビング中の相手にはダメージ2倍
             targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state.weather, state.field);
+            if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) mTwice = true;
             break;
           case 263:   // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
             if (extraArg1[continuousCount] != 0) {
@@ -1741,12 +1751,36 @@ class TurnMove {
           case 279:   // そのターンの間、複数のポケモンが対象になるわざから守る
             break;
           case 280:   // 相手と使用者のぼうぎょ・とくぼうをそれぞれ平均値にする
-            // TODO
-            //相手のぼうぎょ・とくぼう次第になるので難しい。pokemonState.maxstat,minstatを変更する？
+            {
+              int maxAvg = ((myState.maxStats[StatIndex.B.index].real + targetState.maxStats[StatIndex.B.index].real) / 2).floor();
+              int minAvg = ((myState.minStats[StatIndex.B.index].real + targetState.minStats[StatIndex.B.index].real) / 2).floor();
+              myState.maxStats[StatIndex.B.index].real = maxAvg;
+              myState.minStats[StatIndex.B.index].real = minAvg;
+              targetState.maxStats[StatIndex.B.index].real = maxAvg;
+              targetState.minStats[StatIndex.B.index].real = minAvg;
+              maxAvg = ((myState.maxStats[StatIndex.D.index].real + targetState.maxStats[StatIndex.D.index].real) / 2).floor();
+              minAvg = ((myState.minStats[StatIndex.D.index].real + targetState.minStats[StatIndex.D.index].real) / 2).floor();
+              myState.maxStats[StatIndex.D.index].real = maxAvg;
+              myState.minStats[StatIndex.D.index].real = minAvg;
+              targetState.maxStats[StatIndex.D.index].real = maxAvg;
+              targetState.minStats[StatIndex.D.index].real = minAvg;
+            }
             break;
           case 281:   // 相手と使用者のこうげき・とくこうをそれぞれ平均値にする
-            // TODO
-            //相手のこうげき・とくこう次第になるので難しい。pokemonState.maxstat,minstatを変更する？
+            {
+              int maxAvg = ((myState.maxStats[StatIndex.A.index].real + targetState.maxStats[StatIndex.A.index].real) / 2).floor();
+              int minAvg = ((myState.minStats[StatIndex.A.index].real + targetState.minStats[StatIndex.A.index].real) / 2).floor();
+              myState.maxStats[StatIndex.A.index].real = maxAvg;
+              myState.minStats[StatIndex.A.index].real = minAvg;
+              targetState.maxStats[StatIndex.A.index].real = maxAvg;
+              targetState.minStats[StatIndex.A.index].real = minAvg;
+              maxAvg = ((myState.maxStats[StatIndex.C.index].real + targetState.maxStats[StatIndex.C.index].real) / 2).floor();
+              minAvg = ((myState.minStats[StatIndex.C.index].real + targetState.minStats[StatIndex.C.index].real) / 2).floor();
+              myState.maxStats[StatIndex.C.index].real = maxAvg;
+              myState.minStats[StatIndex.C.index].real = minAvg;
+              targetState.maxStats[StatIndex.C.index].real = maxAvg;
+              targetState.minStats[StatIndex.C.index].real = minAvg;
+            }
             break;
           case 282:   //場をワンダールームにする/解除する
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.wonderRoom);
@@ -1758,7 +1792,7 @@ class TurnMove {
             }
             break;
           case 283:   // 相手のとくぼうではなくぼうぎょでダメージ計算する
-            // TODO
+            invDeffense = true;
             break;
           case 284:   // 相手がどく・もうどく状態のとき威力2倍
             if (targetState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {
@@ -1811,7 +1845,7 @@ class TurnMove {
               else {
                 movePower = 40;
               }
-              // TODO ちいさくなる状態に対してダメージ2倍
+              if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             }
             break;
           case 293:   // 使用者と同じタイプを持つポケモンに対してのみ有効
@@ -1829,8 +1863,8 @@ class TurnMove {
           case 467:   // 使用者のすばやさを1段階上げる。急所に当たりやすい
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
-          case 298:   // 使用者のこうげきとランク補正ではなく相手ののこうげきとランク補正でダメージ計算する
-            // TODO
+          case 298:   // 使用者のこうげきとランク補正ではなく相手のこうげきとランク補正でダメージ計算する
+            isFoulPlay = true;
             break;
           case 299:   // 相手のとくせいをたんじゅんに変える
             targetState.currentAbility = pokeData.abilities[86]!;
@@ -1848,7 +1882,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 304:   // 相手のランク補正を無視してダメージを与える
-            // TODO
+            ignoreTargetRank = true;
             break;
           case 305:   // 相手の能力ランクを0にする
             targetState.resetStatChanges();
@@ -2004,6 +2038,7 @@ class TurnMove {
             break;
           case 338:   // わざのタイプにひこうタイプの2つの相性を組み合わせてダメージ計算する。ちいさくなる状態の相手に必中し、その場合はダメージ2倍
             //TODO
+            if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             break;
           case 339:   // 戦闘中にきのみを食べた場合のみ使用可能
             break;
@@ -2124,7 +2159,6 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.powder), state.weather, state.field);
             break;
           case 380:   // こおりにする(確率)。みずタイプのポケモンに対しても効果ばつぐんとなる
-            // TODO
             targetState.ailmentsAdd(Ailment(Ailment.freeze), state.weather, state.field);
             break;
           case 384:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手をどく状態にする
@@ -2177,7 +2211,12 @@ class TurnMove {
             }
             break;
           case 399:   // 使用者と相手のすばやさ実数値を入れ替える
-            //TODO
+            int tmpMax = myState.maxStats[StatIndex.S.index].real;
+            int tmpMin = myState.minStats[StatIndex.S.index].real;
+            myState.maxStats[StatIndex.S.index].real = targetState.maxStats[StatIndex.S.index].real;
+            myState.minStats[StatIndex.S.index].real = targetState.minStats[StatIndex.S.index].real;
+            targetState.maxStats[StatIndex.S.index].real = tmpMax;
+            targetState.minStats[StatIndex.S.index].real = tmpMin;
             break;
           case 400:   // 相手の状態異常を治し、使用者のHPを最大HP半分だけ回復する(SV使用不可のため処理なし)
             break;
@@ -2216,7 +2255,7 @@ class TurnMove {
             }
             break;
           case 411:   // 相手のとくせいを無視してこうげきする
-            // TODO
+            ignoreAbility = true;
             break;
           case 412:   // 相手のこうげき・とくこう1段階ずつ下げる。相手の回避率、まもるに関係なく必ず当たる
             //TODO
@@ -2315,7 +2354,7 @@ class TurnMove {
             myState.remainHPPercent -= extraArg2[continuousCount];
             break;
           case 434:   // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージを計算する
-            // TODO
+            defenseAltAttack = true;
             break;
           case 435:   // こうげき・とくこうを2段階ずつ上げる
             targetState.addStatChanges(targetState == myState, 0, 2, myState, moveId: replacedMove.id);
@@ -2339,8 +2378,17 @@ class TurnMove {
             if (myState.teraType != null) {
               moveType = myState.teraType!;
             }
-            showDamageCalc = false;
-            //TODO
+            // ステータスが確定している場合
+            if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
+                myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
+            ) {
+              if (myState.rankedMaxStat(StatIndex.A) > myState.rankedMaxStat(StatIndex.C)) {
+                moveDamageClassID = 2;  // ぶつりわざに変更
+              }
+            }
+            else {
+              showDamageCalc = false;
+            }
             break;
           case 445:   // ひんし状態のポケモンを最大HPの1/2を回復して復活させる
             {
@@ -2379,7 +2427,17 @@ class TurnMove {
             }
             break;
           case 449:   // ぶつりわざであるときの方がダメージが大きい場合は物理技になる。どく状態にする(確率)
-            // TODO
+            // ステータスが確定している場合
+            if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
+                myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
+            ) {
+              if (myState.rankedMaxStat(StatIndex.A) > myState.rankedMaxStat(StatIndex.C)) {
+                moveDamageClassID = 2;  // ぶつりわざに変更
+              }
+            }
+            else {
+              showDamageCalc = false;
+            }
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
             }
@@ -2579,7 +2637,7 @@ class TurnMove {
             }
             break;
           case 490:   // はれによるダメージ補正率が0.5倍→1.5倍。使用者・対象のこおり状態を治す
-            // TODO
+            isSunny1_5 = true;
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             break;
@@ -2684,10 +2742,18 @@ class TurnMove {
           // TODO: targetStates(リスト)
           // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
           // TODO パワートリック等で、実際にmaxStatsとかの値を入れ替えたほうが良さそう
-          int calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.maxStats[1].real : myState.maxStats[2].real;
-          int calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.minStats[1].real : myState.minStats[2].real;
-          int attackVmax = move.damageClass.id == 2 ? calcMaxAttack : myState.maxStats[3].real;
-          int attackVmin = move.damageClass.id == 2 ? calcMinAttack : myState.minStats[3].real;
+          int calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMaxStat(StatIndex.A) : myState.rankedMaxStat(StatIndex.B);
+          int calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMinStat(StatIndex.A) : myState.rankedMinStat(StatIndex.B);
+          if (isFoulPlay) {
+            calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].rankedMaxStat(StatIndex.A) : targetStates[0].rankedMaxStat(StatIndex.B);
+            calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].rankedMinStat(StatIndex.A) : targetStates[0].rankedMinStat(StatIndex.B);
+          }
+          else if (defenseAltAttack) {
+            calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMaxStat(StatIndex.B) : myState.rankedMaxStat(StatIndex.A);
+            calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMinStat(StatIndex.B) : myState.rankedMinStat(StatIndex.A);
+          }
+          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.rankedMaxStat(StatIndex.C);
+          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.rankedMaxStat(StatIndex.C);
           String attackStr = '';
           if (attackVmax == attackVmin) {
             attackStr = attackVmax.toString();
@@ -2695,11 +2761,20 @@ class TurnMove {
           else {
             attackStr = '$attackVmin～$attackVmax';
           }
-          attackStr += move.damageClass.id == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
-          int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].maxStats[2].real : targetStates[0].maxStats[1].real;
-          int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].minStats[2].real : targetStates[0].minStats[1].real;
-          int defenseVmax = move.damageClass.id == 2 ? calcMaxDefense : targetStates[0].maxStats[4].real;
-          int defenseVmin = move.damageClass.id == 2 ? calcMinDefense : targetStates[0].minStats[4].real;
+          if (isFoulPlay) {
+            attackStr += '(対象者のこうげき)';
+          }
+          else {
+            attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
+          }
+          int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
+                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].rankedMaxStat(StatIndex.B) :
+                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].rankedMaxStat(StatIndex.A);
+          int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].rankedMinStat(StatIndex.B) :
+                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].rankedMinStat(StatIndex.A);
+          int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense : ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].rankedMaxStat(StatIndex.D);
+          int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense : ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].rankedMinStat(StatIndex.D);
           String defenseStr = '';
           if (defenseVmax == defenseVmin) {
             defenseStr = defenseVmax.toString();
@@ -2707,11 +2782,16 @@ class TurnMove {
           else {
             defenseStr = '$defenseVmin～$defenseVmax';
           }
-          defenseStr += move.damageClass.id == 2 ? '(対象者のぼうぎょ)' : '(対象者のとくぼう)';
+          if (invDeffense) {
+            defenseStr += '(対象者のぼうぎょ)';
+          }
+          else {
+            defenseStr += moveDamageClassID == 2 ? '(対象者のぼうぎょ)' : '(対象者のとくぼう)';
+          }
           int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmax / defenseVmin)).floor() / 50 + 2).floor();
           int damageVmin = ((((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmin / defenseVmax)).floor() / 50 + 2).floor() * 0.85).floor();
           damageCalc = 'ダメージ計算：${myState.pokemon.level}(わざ使用者レベル)×2÷5+2 ×$movePower(威力)×$attackStr÷$defenseStr ÷50+2 ×0.85～1.00(乱数) ';
-          // 天気補正
+          // 天気補正(五捨五超入)
           if (targetStates[0].holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
             if (state.weather.id == Weather.sunny) {
               if (moveType.id == 10) {   // はれ下ほのおわざ
@@ -2720,9 +2800,16 @@ class TurnMove {
                 damageCalc += '*1.5(天気) ';
               }
               else if (moveType.id == 11) {   // はれ下みずわざ
-                damageVmax = roundOff5(damageVmax * 0.5);
-                damageVmin = roundOff5(damageVmin * 0.5);
-                damageCalc += '*0.5(天気) ';
+                if (isSunny1_5) {
+                  damageVmax = roundOff5(damageVmax * 1.5);
+                  damageVmin = roundOff5(damageVmin * 1.5);
+                  damageCalc += '*1.5(天気) ';
+                }
+                else {
+                  damageVmax = roundOff5(damageVmax * 0.5);
+                  damageVmin = roundOff5(damageVmin * 0.5);
+                  damageCalc += '*0.5(天気) ';
+                }
               }
             }
             else if (state.weather.id == Weather.rainy) {
@@ -2738,50 +2825,123 @@ class TurnMove {
               }
             }
           }
-          // 急所補正
+          // 急所補正(五捨五超入)
           if (moveHits[continuousCount].id == MoveHit.critical) {
             damageVmax = roundOff5(damageVmax * 1.5);
             damageVmin = roundOff5(damageVmin * 1.5);
             damageCalc += '*1.5(急所) ';
           }
-          // 乱数補正
-          damageVmax = roundOff5(damageVmax * 100 / 100);
-          damageVmin = roundOff5(damageVmin * 85 / 100);
+          // 乱数補正(切り捨て)
+          damageVmax = (damageVmax * 100 / 100).floor();
+          damageVmin = (damageVmin * 85 / 100).floor();
           damageCalc += '*85～100÷100(乱数) ';
-          // タイプ一致補正
+          // タイプ一致補正(五捨五超入)
           if (myState.isTypeContain(moveType.id)) {
             var rate = myState.currentAbility.id == 91 ? 2.0 : 1.5;   // てきおうりょくなら2倍
             damageVmax = roundOff5(damageVmax * rate);
             damageVmin = roundOff5(damageVmin * rate);
             damageCalc += '*$rate(タイプ一致) ';
           }
-          // 相性補正
+          // 相性補正(切り捨て)
           var rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
             targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
-          damageVmax = roundOff5(damageVmax * rate);
-          damageVmin = roundOff5(damageVmin * rate);
+          damageVmax = (damageVmax * rate).floor();
+          damageVmin = (damageVmin * rate).floor();
           damageCalc += '*$rate(相性) ';
-          // やけど補正
-          if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && move.damageClass.id == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
+          // やけど補正(五捨五超入)
+          if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && moveDamageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
             damageVmax = roundOff5(damageVmax * 0.5);
             damageVmin = roundOff5(damageVmin * 0.5);
             damageCalc += '*0.5(やけど) ';
           }
-          // M
+          // M(五捨五超入)
           {
-            //TODO
             double tmpMax = damageVmax.toDouble();
             double tmpMin = damageVmin.toDouble();
+            // 壁補正
+            if (
+              (moveDamageClassID == 2 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
+              (moveDamageClassID == 3 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty)
+            ) {
+              tmpMax *= 0.5;
+              tmpMin *= 0.5;
+            }
+            // ブレインフォース補正
+            if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.great &&
+                myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_25).isNotEmpty
+            ) {
+              tmpMax *= 1.25;
+              tmpMin *= 1.25;
+            }
+            // スナイパー補正
+            if (moveHits[continuousCount].id == MoveHit.critical &&
+                myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
+            ) {
+              tmpMax *= 1.5;
+              tmpMin *= 1.5;
+            }
+            // いろめがね補正
+            if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood &&
+                myState.buffDebuffs.where((e) => e.id == BuffDebuff.notGoodType2).isNotEmpty
+            ) {
+              tmpMax *= 2;
+              tmpMin *= 2;
+            }
+            // もふもふほのお補正
+            if (!ignoreAbility && (moveDamageClassID == 2 || moveDamageClassID == 3) &&
+                moveType.id == 10 &&
+                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
+            ) {
+              tmpMax *= 2;
+              tmpMin *= 2;
+            }
+            // Mhalf
+            if (!ignoreAbility &&
+              // こおりのりんぷん
+              (moveDamageClassID == 3 &&
+               targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.specialDamaged0_5).isNotEmpty) ||
+              // パンクロック
+              (replacedMove.isSound && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.soundedDamage0_5).isNotEmpty) ||
+              // ファントムガード
+              // マルチスケイル
+              ((targetStates[0].remainHP >= targetStates[0].pokemon.h.real || targetStates[0].remainHPPercent >= 100) &&
+                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty ||
+              // もふもふ直接こうげき
+               replacedMove.isDirect && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty)
+            ) {
+              tmpMax *= 0.5;
+              tmpMin *= 0.5;
+            }
+            // Mfilter
+            if (!ignoreAbility &&
+              // ハードロック
+              // フィルター
+              // プリズムアーマー
+              moveEffectivenesses[continuousCount].id == MoveEffectiveness.great &&
+              targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
+            ) {
+              tmpMax *= 0.75;
+              tmpMin *= 0.75;
+            }
+            // Mtwice
+            if (mTwice || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
+              tmpMax *= 2;
+              tmpMin *= 2;
+            }
+            
             damageVmax = roundOff5(tmpMax);
             damageVmin = roundOff5(tmpMin);
           }
+          // Mprotect(五捨五超入)
+          // ダイマックスわざに関する計算のため、SVでは不要
+          { }
           damageCalc += '= $damageVmin～$damageVmax';
         }
 
         ret.add(damageCalc);
       }
 
-      switch (replacedMove.damageClass.id) {
+      switch (moveDamageClassID) {
         case 1:     // へんか
           break;
         case 2:     // ぶつり
