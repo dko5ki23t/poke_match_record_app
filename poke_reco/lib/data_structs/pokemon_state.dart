@@ -14,7 +14,7 @@ class PokemonState {
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
-  bool isFainting = false;      // ひんしかどうか
+  bool _isFainting = false;      // ひんしかどうか
   bool isBattling = false;      // バトルに参加しているかどうか
   Item? _holdingItem = Item(0, '', 0, 0, AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
@@ -38,7 +38,7 @@ class PokemonState {
     ..remainHP = remainHP
     ..remainHPPercent = remainHPPercent
     ..teraType = teraType
-    ..isFainting = isFainting
+    .._isFainting = _isFainting
     ..isBattling = isBattling
     .._holdingItem = _holdingItem?.copyWith()
     ..usedPPs = [...usedPPs]
@@ -57,11 +57,18 @@ class PokemonState {
     ..lastMove = lastMove?.copyWith();
 
   Item? get holdingItem => _holdingItem;
+  bool get isFainting => _isFainting;
 
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
     _holdingItem = item;
+  }
+
+  set isFainting(bool t) {
+    // テラスタル解除
+    if (t) teraType = null;
+    _isFainting = t;
   }
 
   // 効果等を起こさずもちものをセット
@@ -130,7 +137,7 @@ class PokemonState {
     resetRealSixParams();
     currentAbility = pokemon.ability;
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
-    if (isFainting) ailmentsClear();
+    if (_isFainting) ailmentsClear();
     // 退場後も継続するフォルム以外をクリア
     var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
@@ -167,10 +174,10 @@ class PokemonState {
     // にげられない状態の解除
     yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway);
     // 退場することで自身に効果がある場合
-    if (!isFainting && currentAbility.id == 30) { // しぜんかいふく
+    if (!_isFainting && currentAbility.id == 30) { // しぜんかいふく
       ailmentsClear();
     }
-    if (!isFainting && currentAbility.id == 144) { // さいせいりょく
+    if (!_isFainting && currentAbility.id == 144) { // さいせいりょく
       if (isOwn) {
         remainHP += (pokemon.h.real / 3).floor();
       }
@@ -777,76 +784,99 @@ class PokemonState {
       if (_statChanges[i] < 0) _statChanges[i] = 0;
     }
   }
+  // ランク変化に関する関数群ここまで
 
-  // ランク補正込みのHABCDSを返す
-  int rankedMaxStat(StatIndex statIdx) {
+  // ランク補正等込みのHABCDSを返す
+  int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState) {
     if (statIdx == StatIndex.H) {
       return maxStats[StatIndex.H.index].real;
     }
-    switch (statChanges(statIdx.index-1)) {
-      case -6:
-        return (maxStats[statIdx.index].real * 2 / 8).floor();
-      case -5:
-        return (maxStats[statIdx.index].real * 2 / 7).floor();
-      case -4:
-        return (maxStats[statIdx.index].real * 2 / 6).floor();
-      case -3:
-        return (maxStats[statIdx.index].real * 2 / 5).floor();
-      case -2:
-        return (maxStats[statIdx.index].real * 2 / 4).floor();
-      case -1:
-        return (maxStats[statIdx.index].real * 2 / 3).floor();
-      case 1:
-        return (maxStats[statIdx.index].real * 3 / 2).floor();
-      case 2:
-        return (maxStats[statIdx.index].real * 4 / 2).floor();
-      case 3:
-        return (maxStats[statIdx.index].real * 5 / 2).floor();
-      case 4:
-        return (maxStats[statIdx.index].real * 6 / 2).floor();
-      case 5:
-        return (maxStats[statIdx.index].real * 7 / 2).floor();
-      case 6:
-        return (maxStats[statIdx.index].real * 8 / 2).floor();
-      default:
-        return maxStats[statIdx.index].real;
-    }
+    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState);
   }
-  int rankedMinStat(StatIndex statIdx) {
+  
+  int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState) {
     if (statIdx == StatIndex.H) {
       return minStats[StatIndex.H.index].real;
     }
-    switch (statChanges(statIdx.index-1)) {
-      case -6:
-        return (minStats[statIdx.index].real * 2 / 8).floor();
-      case -5:
-        return (minStats[statIdx.index].real * 2 / 7).floor();
-      case -4:
-        return (minStats[statIdx.index].real * 2 / 6).floor();
-      case -3:
-        return (minStats[statIdx.index].real * 2 / 5).floor();
-      case -2:
-        return (minStats[statIdx.index].real * 2 / 4).floor();
-      case -1:
-        return (minStats[statIdx.index].real * 2 / 3).floor();
-      case 1:
-        return (minStats[statIdx.index].real * 3 / 2).floor();
-      case 2:
-        return (minStats[statIdx.index].real * 4 / 2).floor();
-      case 3:
-        return (minStats[statIdx.index].real * 5 / 2).floor();
-      case 4:
-        return (minStats[statIdx.index].real * 6 / 2).floor();
-      case 5:
-        return (minStats[statIdx.index].real * 7 / 2).floor();
-      case 6:
-        return (minStats[statIdx.index].real * 8 / 2).floor();
-      default:
-        return minStats[statIdx.index].real;
-    }
+    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState);
   }
 
-  // ランク変化に関する関数群ここまで
+  int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState) {
+    if (statIdx == StatIndex.H) {
+      return val;
+    }
+    double ret = val.toDouble();
+    // ランク補正
+    switch (statChanges(statIdx.index-1)) {
+      case -6:
+        ret = ret * 2 / 8;
+        break;
+      case -5:
+        ret = ret * 2 / 7;
+        break;
+      case -4:
+        ret = ret * 2 / 6;
+        break;
+      case -3:
+        ret = ret * 2 / 5;
+        break;
+      case -2:
+        ret = ret * 2 / 4;
+        break;
+      case -1:
+        ret = ret * 2 / 3;
+        break;
+      case 1:
+        ret = ret * 3 / 2;
+        break;
+      case 2:
+        ret = ret * 4 / 2;
+        break;
+      case 3:
+        ret = ret * 5 / 2;
+        break;
+      case 4:
+        ret = ret * 6 / 2;
+        break;
+      case 5:
+        ret = ret * 7 / 2;
+        break;
+      case 6:
+        ret = ret * 8 / 2;
+        break;
+      default:
+        break;
+    }
+    // バフ等の補正
+    switch (statIdx) {
+      case StatIndex.A:
+        {
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_3) >= 0) ret *= 1.3;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack2) >= 0) ret *= 2;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackSpeed0_5) >= 0) ret *= 0.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist) >= 0) ret *= 0.5;
+          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
+          if (type.id == 9 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelWorker) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu) >= 0) ret *= 1.5;
+          if (type.id == 13 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electric1_3) >= 0) ret *= 1.3;
+          if (type.id == 16 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragon1_5) >= 0) ret *= 1.5;
+          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
+          if (type.id == 8 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >= 0) ret *= 0.5;          
+          if (type.id == 6 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rock1_5) >= 0) ret *= 1.5;
+          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack0_75) >= 0) ret *= 0.75;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_33) >= 0) ret *= 1.33;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >= 0) ret *= 2;
+        }
+        break;
+      default:
+        break;
+    }
+
+    return ret.floor();
+  }
 
   // ガードシェア等によって変更された実数値を元に戻す
   void resetRealSixParams() {
@@ -872,8 +902,8 @@ class PokemonState {
     if (stateElements[3] != '') {
       pokemonState.teraType = PokeType.createFromId(int.parse(stateElements[3]));
     }
-    // isFainting
-    pokemonState.isFainting = int.parse(stateElements[4]) != 0;
+    // _isFainting
+    pokemonState._isFainting = int.parse(stateElements[4]) != 0;
     // isBattling
     pokemonState.isBattling = int.parse(stateElements[5]) != 0;
     // holdingItem
@@ -965,8 +995,8 @@ class PokemonState {
       ret += teraType!.id.toString();
     }
     ret += split1;
-    // isFainting
-    ret += isFainting ? '1' : '0';
+    // _isFainting
+    ret += _isFainting ? '1' : '0';
     ret += split1;
     // isBattling
     ret += isBattling ? '1' : '0';

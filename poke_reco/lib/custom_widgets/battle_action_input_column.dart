@@ -107,6 +107,10 @@ class BattleActionInputColumn extends Column {
                         turn.phases[phaseIdx].playerType = PlayerType(value);
                         turn.phases[phaseIdx].move!.clear();
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
+                        var myState = prevState.getPokemonState(PlayerType(value));
+                        if (myState.teraType != null) {
+                          turn.phases[phaseIdx].move!.teraType = myState.teraType!;
+                        }
                         turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
                         moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =

@@ -270,6 +270,12 @@ class TurnMove {
     // テラスタル
     if (teraType.id != 0) {
       myState.teraType ??= teraType;
+      if (playerType.id == PlayerType.me) {
+        state.hasOwnTerastal = true;
+      }
+      else {
+        state.hasOpponentTerastal = true;
+      }
     }
 
     // ポケモン交代
@@ -1067,10 +1073,10 @@ class TurnMove {
             break;
           case 154:   // 控えのポケモンと交代する
           case 229:   // 控えのポケモンと交代する
-            if (extraArg1[continuousCount] != 0) {
+            if (changePokemonIndex != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, extraArg1[continuousCount]);
+              state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
             }
@@ -2382,7 +2388,9 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.rankedMaxStat(StatIndex.A) > myState.rankedMaxStat(StatIndex.C)) {
+              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState) >
+                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState)
+            ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
             }
@@ -2431,7 +2439,9 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.rankedMaxStat(StatIndex.A) > myState.rankedMaxStat(StatIndex.C)) {
+              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState) >
+                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState)
+              ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
             }
@@ -2739,21 +2749,100 @@ class TurnMove {
             movePower *= 2;
             myState.ailmentsRemoveAt(findIdx);
           }
+
+          // とくせい等によるわざタイプの変更
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) moveType = PokeType.createFromId(15);
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) moveType = PokeType.createFromId(18);
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) moveType = PokeType.createFromId(3);
+          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) moveType = PokeType.createFromId(11);
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) moveType = PokeType.createFromId(13);
+          
+          // とくせい等による威力変動
+          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) movePower = (movePower * 1.5).floor();
+          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) movePower = (movePower * 1.5).floor();
+          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) movePower = (movePower * 1.5).floor();
+          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) movePower = (movePower * 1.5).floor();
+          if (myState.pokemon.sex.id != 0 && targetStates[0].pokemon.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
+            if (myState.pokemon.sex.id != targetStates[0].pokemon.sex.id) {
+              movePower = (movePower * 1.25).floor();
+            }
+            else {
+              movePower = (movePower * 0.75).floor();
+            }
+          }
+          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) movePower = (movePower * 1.5).floor();
+          if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) movePower = (movePower * 1.5).floor();
+          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) movePower = (movePower * 1.5).floor();
+          // TODO : 最後の行動なら威力1.3倍 if (?? && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) movePower = (movePower * 1.3).floor();
+          if ((moveType.id == 5 || moveType.id == 6 || moveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) movePower = (movePower * 1.3).floor();
+          if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) movePower = (movePower * 1.5).floor();
+          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) movePower = (movePower * 1.33).floor();
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) movePower = (movePower * 1.33).floor();
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) movePower = (movePower * 0.75).floor();
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) movePower = (movePower * 0.75).floor();
+          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) movePower = (movePower * 1.2).floor();
+          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) movePower = (movePower * 1.3).floor();
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) movePower = (movePower * 1.3).floor();
+          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) movePower = (movePower * 1.5).floor();
+          if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) movePower = (movePower * 1.5).floor();
+          int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+          if (myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50) >= 0) {
+            movePower = (movePower * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1)).floor();
+          }
+          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) movePower = (movePower * 1.1).floor();
+          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) movePower = (movePower * 1.1).floor();
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) movePower = (movePower * 1.3).floor();
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
+          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) movePower = (movePower * 1.1).floor();
+
+          if (moveType.id == 10 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) movePower = (movePower * 1.25).floor();
+
           // TODO: targetStates(リスト)
           // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
           // TODO パワートリック等で、実際にmaxStatsとかの値を入れ替えたほうが良さそう
-          int calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMaxStat(StatIndex.A) : myState.rankedMaxStat(StatIndex.B);
-          int calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMinStat(StatIndex.A) : myState.rankedMinStat(StatIndex.B);
+          int calcMaxAttack =
+            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0]) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0]);
+          int calcMinAttack =
+            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0]) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0]);
           if (isFoulPlay) {
-            calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].rankedMaxStat(StatIndex.A) : targetStates[0].rankedMaxStat(StatIndex.B);
-            calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? targetStates[0].rankedMinStat(StatIndex.A) : targetStates[0].rankedMinStat(StatIndex.B);
+            calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0]) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0]);
+            calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0]) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0]);
           }
           else if (defenseAltAttack) {
-            calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMaxStat(StatIndex.B) : myState.rankedMaxStat(StatIndex.A);
-            calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? myState.rankedMinStat(StatIndex.B) : myState.rankedMinStat(StatIndex.A);
+            calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0]) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0]);
+            calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0]) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0]);
           }
-          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.rankedMaxStat(StatIndex.C);
-          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.rankedMaxStat(StatIndex.C);
+          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0]);
+          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0]);
           String attackStr = '';
           if (attackVmax == attackVmin) {
             attackStr = attackVmax.toString();
@@ -2768,13 +2857,15 @@ class TurnMove {
             attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
           }
           int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].rankedMaxStat(StatIndex.B) :
-                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].rankedMaxStat(StatIndex.A);
+                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0]) :
+                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0]);
           int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].rankedMinStat(StatIndex.B) :
-                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].rankedMinStat(StatIndex.A);
-          int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense : ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].rankedMaxStat(StatIndex.D);
-          int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense : ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].rankedMinStat(StatIndex.D);
+                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0]) :
+                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0]);
+          int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense :
+                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0]);
+          int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense :
+                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0]);
           String defenseStr = '';
           if (defenseVmax == defenseVmin) {
             defenseStr = defenseVmax.toString();
@@ -2797,18 +2888,18 @@ class TurnMove {
               if (moveType.id == 10) {   // はれ下ほのおわざ
                 damageVmax = roundOff5(damageVmax * 1.5);
                 damageVmin = roundOff5(damageVmin * 1.5);
-                damageCalc += '*1.5(天気) ';
+                damageCalc += '×1.5(天気) ';
               }
               else if (moveType.id == 11) {   // はれ下みずわざ
                 if (isSunny1_5) {
                   damageVmax = roundOff5(damageVmax * 1.5);
                   damageVmin = roundOff5(damageVmin * 1.5);
-                  damageCalc += '*1.5(天気) ';
+                  damageCalc += '×1.5(天気) ';
                 }
                 else {
                   damageVmax = roundOff5(damageVmax * 0.5);
                   damageVmin = roundOff5(damageVmin * 0.5);
-                  damageCalc += '*0.5(天気) ';
+                  damageCalc += '×0.5(天気) ';
                 }
               }
             }
@@ -2816,12 +2907,12 @@ class TurnMove {
               if (moveType.id == 11) {   // 雨下みずわざ
                 damageVmax = roundOff5(damageVmax * 1.5);
                 damageVmin = roundOff5(damageVmin * 1.5);
-                damageCalc += '*1.5(天気) ';
+                damageCalc += '×1.5(天気) ';
               }
               else if (moveType.id == 10) {   // 雨下ほのおわざ
                 damageVmax = roundOff5(damageVmax * 0.5);
                 damageVmin = roundOff5(damageVmin * 0.5);
-                damageCalc += '*0.5(天気) ';
+                damageCalc += '×0.5(天気) ';
               }
             }
           }
@@ -2829,30 +2920,32 @@ class TurnMove {
           if (moveHits[continuousCount].id == MoveHit.critical) {
             damageVmax = roundOff5(damageVmax * 1.5);
             damageVmin = roundOff5(damageVmin * 1.5);
-            damageCalc += '*1.5(急所) ';
+            damageCalc += '×1.5(急所) ';
           }
           // 乱数補正(切り捨て)
           damageVmax = (damageVmax * 100 / 100).floor();
           damageVmin = (damageVmin * 85 / 100).floor();
-          damageCalc += '*85～100÷100(乱数) ';
+          damageCalc += '×85～100÷100(乱数) ';
           // タイプ一致補正(五捨五超入)
           if (myState.isTypeContain(moveType.id)) {
             var rate = myState.currentAbility.id == 91 ? 2.0 : 1.5;   // てきおうりょくなら2倍
             damageVmax = roundOff5(damageVmax * rate);
             damageVmin = roundOff5(damageVmin * rate);
-            damageCalc += '*$rate(タイプ一致) ';
+            damageCalc += '×$rate(タイプ一致) ';
           }
           // 相性補正(切り捨て)
           var rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
             targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
           damageVmax = (damageVmax * rate).floor();
           damageVmin = (damageVmin * rate).floor();
-          damageCalc += '*$rate(相性) ';
+          damageCalc += '×$rate(相性) ';
           // やけど補正(五捨五超入)
           if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && moveDamageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
-            damageVmax = roundOff5(damageVmax * 0.5);
-            damageVmin = roundOff5(damageVmin * 0.5);
-            damageCalc += '*0.5(やけど) ';
+            if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
+              damageVmax = roundOff5(damageVmax * 0.5);
+              damageVmin = roundOff5(damageVmin * 0.5);
+              damageCalc += '×0.5(やけど) ';
+            }
           }
           // M(五捨五超入)
           {
@@ -2865,6 +2958,7 @@ class TurnMove {
             ) {
               tmpMax *= 0.5;
               tmpMin *= 0.5;
+              damageCalc += '×0.5(壁) ';
             }
             // ブレインフォース補正
             if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.great &&
@@ -2872,6 +2966,7 @@ class TurnMove {
             ) {
               tmpMax *= 1.25;
               tmpMin *= 1.25;
+              damageCalc += '×1.25(ブレインフォース) ';
             }
             // スナイパー補正
             if (moveHits[continuousCount].id == MoveHit.critical &&
@@ -2879,6 +2974,7 @@ class TurnMove {
             ) {
               tmpMax *= 1.5;
               tmpMin *= 1.5;
+              damageCalc += '×1.5(スナイパー) ';
             }
             // いろめがね補正
             if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood &&
@@ -2886,6 +2982,7 @@ class TurnMove {
             ) {
               tmpMax *= 2;
               tmpMin *= 2;
+              damageCalc += '×2(いろめがね) ';
             }
             // もふもふほのお補正
             if (!ignoreAbility && (moveDamageClassID == 2 || moveDamageClassID == 3) &&
@@ -2894,6 +2991,7 @@ class TurnMove {
             ) {
               tmpMax *= 2;
               tmpMin *= 2;
+              damageCalc += '×2(もふもふ) ';
             }
             // Mhalf
             if (!ignoreAbility &&
@@ -2911,6 +3009,7 @@ class TurnMove {
             ) {
               tmpMax *= 0.5;
               tmpMin *= 0.5;
+              damageCalc += '×0.5(とくせい) ';
             }
             // Mfilter
             if (!ignoreAbility &&
@@ -2922,11 +3021,13 @@ class TurnMove {
             ) {
               tmpMax *= 0.75;
               tmpMin *= 0.75;
+              damageCalc += '×0.75(とくせい) ';
             }
             // Mtwice
             if (mTwice || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
               tmpMax *= 2;
               tmpMin *= 2;
+              damageCalc += '×2(その他補正) ';
             }
             
             damageVmax = roundOff5(tmpMax);
@@ -3253,6 +3354,7 @@ class TurnMove {
                   onChanged: (value) {
                     changePokemonIndex = value;
                     appState.editingPhase[phaseIdx] = true;
+                    appState.needAdjustPhases = true;
                     onFocus();
                   },
                 ),
@@ -3333,7 +3435,7 @@ class TurnMove {
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   )
   {
-    if (playerType.id != PlayerType.none && type.id == TurnMoveType.move) {
+    if (playerType.id != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
       // 追加効果
       Row effectInputPrevRow = Row();
       bool insertPrevRow = false;

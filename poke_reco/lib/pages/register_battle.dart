@@ -1439,6 +1439,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加リストに載っているものがあればリストから除外
                   delAssistList.add(phases[i]);
                   isAssisting = true;
+
+                  if (phases[i].changePokemonIndex != null) {   // 効果によりポケモン交代が生じた場合
+                    changingState = true;
+                    if (continuousCount < allowedContinuous) {
+                      s1 = 5;    // 連続わざ状態へ
+                    }
+                    else if (actionCount == 2) {
+                      s1 = 8;    // ターン終了状態へ
+                    }
+                    else {
+                      s1 = 2;     // 行動選択状態へ
+                    }
+                  }
                 }
                 break;
               case 5:         // 連続わざ状態
@@ -1591,9 +1604,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         s1 = 9;     // 試合終了状態へ
       }
       else {
-        if (s1 != end && (!isInserted || isAssisting) && i < phases.length && phases[i].changePokemonIndex != null) {   // 効果によりポケモン交代が生じた場合
-          changingState = true;
-        }
         if (s1 != end && (!isInserted || isAssisting) && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
           if (phases[i].isOwnFainting) isOwnFainting = true;
           if (phases[i].isOpponentFainting) isOpponentFainting = true;

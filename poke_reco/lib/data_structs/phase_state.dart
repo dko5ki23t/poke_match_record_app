@@ -19,6 +19,8 @@ class PhaseState {
   List<IndividualField> opponentFields = [];        // 場(天気やフィールドを含まない、かべ等)
   Weather _weather = Weather(0);
   Field _field = Field(0);
+  bool hasOwnTerastal = false;        // これまでのフェーズでテラスタルをしたことがあるか
+  bool hasOpponentTerastal = false;
 
   Weather get weather => _weather;
   Field get field => _field;
@@ -94,12 +96,14 @@ class PhaseState {
     ..ownFields = [for (final e in ownFields) e.copyWith()]
     ..opponentFields = [for (final e in opponentFields) e.copyWith()]
     ..weather = weather.copyWith()
-    ..field = field.copyWith();
+    ..field = field.copyWith()
+    ..hasOwnTerastal = hasOwnTerastal
+    ..hasOpponentTerastal = hasOpponentTerastal;
   
   //PokemonState get ownPokemonState => _pokemonStates[0][_pokemonIndexes[0]-1];
   //PokemonState get opponentPokemonState => _pokemonStates[1][_pokemonIndexes[1]-1];
-  bool get hasOwnTerastal => _pokemonStates[0].where((element) => element.teraType != null).isNotEmpty;
-  bool get hasOpponentTerastal => _pokemonStates[1].where((element) => element.teraType != null).isNotEmpty;
+  //bool get hasOwnTerastal => _pokemonStates[0].where((element) => element.teraType != null).isNotEmpty;
+  //bool get hasOpponentTerastal => _pokemonStates[1].where((element) => element.teraType != null).isNotEmpty;
   bool get isMyWin {
     var n = _pokemonStates[1].where((element) => element.isFainting).length;
     return n >= 3 || n >= _pokemonStates[1].length;

@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
@@ -11,12 +12,18 @@ import 'package:poke_reco/data_structs/timing.dart';
 class Turn {
   List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
   List<List<PokemonState>> _initialPokemonStates = [[], []];
+  List<List<IndividualField>> _initialIndiFields = [[], []];
   Weather initialWeather = Weather(0);
   Field initialField = Field(0);
+  List<bool> _initialHasTerastal = [false, false];
   List<TurnEffect> phases = [];
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
+  List<IndividualField> get initialOwnIndiField => _initialIndiFields[0];
+  List<IndividualField> get initialOpponentIndiField => _initialIndiFields[1];
+  bool get initialOwnHasTerastal => _initialHasTerastal[0];
+  bool get initialOpponentHasTerastal => _initialHasTerastal[1];
 
   int getInitialPokemonIndex(PlayerType player) {
     return player.id == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
@@ -47,8 +54,17 @@ class Turn {
       for (final state in _initialPokemonStates[1])
       state.copyWith()
     ]
+    .._initialIndiFields[0] = [
+      for (final field in _initialIndiFields[0])
+      field.copyWith()
+    ]
+    .._initialIndiFields[1] = [
+      for (final field in _initialIndiFields[1])
+      field.copyWith()
+    ]
     ..initialWeather = initialWeather.copyWith()
     ..initialField = initialField.copyWith()
+    .._initialHasTerastal = [..._initialHasTerastal]
     ..phases = [
       for (final phase in phases)
       phase.copyWith()
@@ -57,7 +73,11 @@ class Turn {
   PhaseState copyInitialState() {
     var ret = PhaseState()
     ..setPokemonIndex(PlayerType(PlayerType.me), _initialPokemonIndexes[0])
-    ..setPokemonIndex(PlayerType(PlayerType.opponent), _initialPokemonIndexes[1]);
+    ..setPokemonIndex(PlayerType(PlayerType.opponent), _initialPokemonIndexes[1])
+    ..ownFields = [for (final field in _initialIndiFields[0]) field.copyWith()]
+    ..opponentFields = [for (final field in _initialIndiFields[1]) field.copyWith()]
+    ..hasOwnTerastal = _initialHasTerastal[0]
+    ..hasOpponentTerastal = _initialHasTerastal[1];
     ret.getPokemonStates(PlayerType(PlayerType.me)).clear();
     ret.getPokemonStates(PlayerType(PlayerType.me)).addAll([
       for (final state in _initialPokemonStates[0])
@@ -98,6 +118,14 @@ class Turn {
       for (final s in state.getPokemonStates(PlayerType(PlayerType.opponent)))
       s.copyWith()
     ];
+    _initialIndiFields[0] = [
+      for (final f in state.ownFields)
+      f.copyWith()
+    ];
+    _initialIndiFields[1] = [
+      for (final f in state.opponentFields)
+      f.copyWith()
+    ];
     // ひるみ状態は自動的に解除
     // TODO これするなら他にも？
     for (var id in [PlayerType.me, PlayerType.opponent]) {
@@ -107,6 +135,8 @@ class Turn {
     }
     initialWeather = state.weather;
     initialField = state.field;
+    _initialHasTerastal[0] = state.hasOwnTerastal;
+    _initialHasTerastal[1] = state.hasOpponentTerastal;
   }
 
   // とある時点(フェーズ)での状態を取得
@@ -166,12 +196,32 @@ class Turn {
       }
       ret._initialPokemonStates.add(adding);
     }
+    // _initialIndiFields
+    var indiFields = turnElements[2].split(split2);
+    ret._initialIndiFields = [[], []];
+    for (int i = 0; i < indiFields.length; i++) {
+      if (indiFields[i] == '') break;
+      var fields = indiFields[i].split(split3);
+      List<IndividualField> adding = [];
+      for (final field in fields) {
+        if (field == '') break;
+        adding.add(IndividualField.deserialize(field, split4));
+      }
+      ret._initialIndiFields[i] = adding;
+    }
     // initialWeather
-    ret.initialWeather = Weather.deserialize(turnElements[2], split2);
+    ret.initialWeather = Weather.deserialize(turnElements[3], split2);
     // initialField
-    ret.initialField = Field.deserialize(turnElements[3], split2);
+    ret.initialField = Field.deserialize(turnElements[4], split2);
+    // _initialHasTerastal
+    var hasTerastals = turnElements[5].split(split2);
+    ret._initialHasTerastal.clear();
+    for (final hasTerastal in hasTerastals) {
+      if (hasTerastal == '') break;
+      ret._initialHasTerastal.add(hasTerastal == '1');
+    }
     // phases
-    var turnEffects = turnElements[4].split(split2);
+    var turnEffects = turnElements[6].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
       ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
@@ -198,11 +248,26 @@ class Turn {
       ret += split2;
     }
     ret += split1;
+    // _initialIndiFields
+    for (final fields in _initialIndiFields) {
+      for (final field in fields) {
+        ret += field.serialize(split4);
+        ret += split3;
+      }
+      ret += split2;
+    }
+    ret += split1;
     // initialWeather
     ret += initialWeather.serialize(split2);
     ret += split1;
     // initialField
     ret += initialField.serialize(split2);
+    ret += split1;
+    // _initialHasTerastal
+    for (final hasTerastal in _initialHasTerastal) {
+      ret += hasTerastal ? '1' : '0';
+      ret += split2;
+    }
     ret += split1;
     // phases
     for (final turnEffect in phases) {

@@ -52,7 +52,7 @@ class BuffDebuff {
   static const int recoil1_2 = 47;        // 反動わざ威力1.2倍
   static const int negaForm = 48;         // チェリムのネガフォルム
   static const int posiForm = 49;         // チェリムのポジフォルム
-  static const int sheerForce = 50;       // わざの追加効果なし・威力1.3倍
+  static const int sheerForce = 50;       // わざの追加効果なし・威力1.3倍    // TODO
   static const int defeatist = 51;        // こうげき・とくこう半減(よわきによる)、重複不可
   static const int heavy2 = 52;           // おもさ2倍
   static const int heavy0_5 = 53;         // おもさ0.5倍

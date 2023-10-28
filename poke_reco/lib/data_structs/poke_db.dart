@@ -546,6 +546,27 @@ class Move {
     return danceMoveIDs.contains(id);
   }
 
+  // TODO
+  bool get isRecoil {  // 反動わざかどうか
+    const recoilMoveIDs = [
+    ];
+    return recoilMoveIDs.contains(id);
+  }
+
+  // TODO
+  bool get isBite {  // かみつきわざかどうか
+    const biteMoveIDs = [
+    ];
+    return biteMoveIDs.contains(id);
+  }
+
+  // TODO
+  bool get isCut {  // 切るわざかどうか
+    const cutMoveIDs = [
+    ];
+    return cutMoveIDs.contains(id);
+  }
+
   Move(
     this.id, this.displayName, this.type, this.power,
     this.accuracy, this.priority, this.target,

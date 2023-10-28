@@ -148,7 +148,10 @@ def main():
             evolves_evolves = pokemon_df[pokemon_df[pokemonSpeciesCSVIDColumn] == evolves_from][pokemonSpeciesCSVEvolvesFromIDColumn]
             # 祖先も祖先を持ってる場合
             if len(evolves_evolves) > 0:
-                evolves_from = evolves_evolves.iloc[0]
+                if evolves_evolves.iloc[0] != 0:
+                    evolves_from = evolves_evolves.iloc[0]
+            if id == 700:
+                print(evolves_from)
             female_rate = row[pokeBaseCSVfemaleRate]
             egg_groups = egg_group_df[egg_group_df[pokemonEggGroupsCSVPokemonIDColumn] == id][pokemonEggGroupsCSVEggGroupIDColumn].tolist()
 
