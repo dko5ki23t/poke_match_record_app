@@ -75,8 +75,8 @@ class MyAppState extends ChangeNotifier {
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
-  // ターン内のフェーズ更新要求フラグ
-  bool needAdjustPhases = false;
+  // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
+  int needAdjustPhases = -1;
   // 行動順入れ替え要求フラグ
   bool requestActionSwap = false;
 

@@ -92,7 +92,7 @@ class BattleEffectInputColumn extends Column {
                                 textEditControllerList2[firstIdx+i].text = '';
                                 textEditControllerList3[firstIdx+i].text = '';
                                 textEditControllerList4[firstIdx+i].text = '';
-                                appState.needAdjustPhases = true;
+                                appState.needAdjustPhases = 0;
                                 onFocus(0);   // フォーカスリセット
                               }
                               else {

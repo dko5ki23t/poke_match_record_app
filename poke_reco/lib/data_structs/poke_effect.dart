@@ -1168,17 +1168,17 @@ class TurnEffect {
             defenderTimingIDs.addAll([62, 82, 157]);
             attackerTimingIDs.addAll([60, 2]);
             // ノーマルタイプのこうげきをした時
-            if (turnMove.move.type.id == 1) attackerTimingIDs.addAll([130]);
+            if (turnMove.moveType.id == 1) attackerTimingIDs.addAll([130]);
             // あくタイプのこうげきを受けた時
-            if (turnMove.move.type.id == 17) defenderTimingIDs.addAll([86]);
+            if (turnMove.moveType.id == 17) defenderTimingIDs.addAll([86]);
             // みずタイプのこうげきを受けた時
-            if (turnMove.move.type.id == 11) defenderTimingIDs.addAll([92, 104]);
+            if (turnMove.moveType.id == 11) defenderTimingIDs.addAll([92, 104]);
             // ほのおタイプのこうげきを受けた時
-            if (turnMove.move.type.id == 10) defenderTimingIDs.addAll([104, 107]);
+            if (turnMove.moveType.id == 10) defenderTimingIDs.addAll([104, 107]);
             // でんきタイプのこうげきを受けた時
-            if (turnMove.move.type.id == 13) defenderTimingIDs.addAll([118]);
+            if (turnMove.moveType.id == 13) defenderTimingIDs.addAll([118]);
             // こおりタイプのこうげきを受けた時
-            if (turnMove.move.type.id == 15) defenderTimingIDs.addAll([119]);
+            if (turnMove.moveType.id == 15) defenderTimingIDs.addAll([119]);
             // こうげきによりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(96);
           }
@@ -1199,53 +1199,53 @@ class TurnEffect {
           }
           if (turnMove.move.isDrain) defenderTimingIDs.add(40);  // HP吸収わざを受けた時
           if (turnMove.move.isDance) defenderTimingIDs.add(97);  // おどり技を受けた時
-          if (turnMove.move.type.id == 1) {  // ノーマルタイプのわざを受けた時
+          if (turnMove.moveType.id == 1) {  // ノーマルタイプのわざを受けた時
             defenderTimingIDs.addAll([148]);
           }
-          if (turnMove.move.type.id == 13) {  // でんきタイプのわざを受けた時
+          if (turnMove.moveType.id == 13) {  // でんきタイプのわざを受けた時
             defenderTimingIDs.addAll([10, 26]);
           }
-          if (turnMove.move.type.id == 11) {  // みずタイプのわざを受けた時
+          if (turnMove.moveType.id == 11) {  // みずタイプのわざを受けた時
             defenderTimingIDs.addAll([11, 50, 78]);
           }
-          if (turnMove.move.type.id == 10) {  // ほのおタイプのわざを受けた時
+          if (turnMove.moveType.id == 10) {  // ほのおタイプのわざを受けた時
             defenderTimingIDs.addAll([17, 50]);
           }
-          if (turnMove.move.type.id == 12) {  // くさタイプのわざを受けた時
+          if (turnMove.moveType.id == 12) {  // くさタイプのわざを受けた時
             defenderTimingIDs.addAll([88]);
           }
-          if (turnMove.move.type.id == 5) {   // じめんタイプのわざを受けた時
+          if (turnMove.moveType.id == 5) {   // じめんタイプのわざを受けた時
             defenderTimingIDs.addAll([115]);
           }
           if (PokeType.effectiveness(
               attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
               defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-              turnMove.move.type, pokemonState!
+              turnMove.moveType, pokemonState!
             ).id == MoveEffectiveness.great
           ) {
             defenderTimingIDs.add(120);  // 効果ばつぐんのタイプのこうげきざわを受けた時
-            if (turnMove.move.type.id == 10) defenderTimingIDs.add(131);
-            if (turnMove.move.type.id == 11) defenderTimingIDs.add(132);
-            if (turnMove.move.type.id == 13) defenderTimingIDs.add(133);
-            if (turnMove.move.type.id == 12) defenderTimingIDs.add(134);
-            if (turnMove.move.type.id == 15) defenderTimingIDs.add(135);
-            if (turnMove.move.type.id == 2) defenderTimingIDs.add(136);
-            if (turnMove.move.type.id == 4) defenderTimingIDs.add(137);
-            if (turnMove.move.type.id == 5) defenderTimingIDs.add(138);
-            if (turnMove.move.type.id == 3) defenderTimingIDs.add(139);
-            if (turnMove.move.type.id == 14) defenderTimingIDs.add(140);
-            if (turnMove.move.type.id == 7) defenderTimingIDs.add(141);
-            if (turnMove.move.type.id == 6) defenderTimingIDs.add(142);
-            if (turnMove.move.type.id == 8) defenderTimingIDs.add(143);
-            if (turnMove.move.type.id == 16) defenderTimingIDs.add(144);
-            if (turnMove.move.type.id == 17) defenderTimingIDs.add(145);
-            if (turnMove.move.type.id == 9) defenderTimingIDs.add(146);
-            if (turnMove.move.type.id == 18) defenderTimingIDs.add(147);
+            if (turnMove.moveType.id == 10) defenderTimingIDs.add(131);
+            if (turnMove.moveType.id == 11) defenderTimingIDs.add(132);
+            if (turnMove.moveType.id == 13) defenderTimingIDs.add(133);
+            if (turnMove.moveType.id == 12) defenderTimingIDs.add(134);
+            if (turnMove.moveType.id == 15) defenderTimingIDs.add(135);
+            if (turnMove.moveType.id == 2) defenderTimingIDs.add(136);
+            if (turnMove.moveType.id == 4) defenderTimingIDs.add(137);
+            if (turnMove.moveType.id == 5) defenderTimingIDs.add(138);
+            if (turnMove.moveType.id == 3) defenderTimingIDs.add(139);
+            if (turnMove.moveType.id == 14) defenderTimingIDs.add(140);
+            if (turnMove.moveType.id == 7) defenderTimingIDs.add(141);
+            if (turnMove.moveType.id == 6) defenderTimingIDs.add(142);
+            if (turnMove.moveType.id == 8) defenderTimingIDs.add(143);
+            if (turnMove.moveType.id == 16) defenderTimingIDs.add(144);
+            if (turnMove.moveType.id == 17) defenderTimingIDs.add(145);
+            if (turnMove.moveType.id == 9) defenderTimingIDs.add(146);
+            if (turnMove.moveType.id == 18) defenderTimingIDs.add(147);
           }
           else {
             defenderTimingIDs.add(21);  // 効果ばつぐん以外のタイプのこうげきざわを受けた時
           }
-          if (turnMove.move.type.id == 5) {
+          if (turnMove.moveType.id == 5) {
             if (turnMove.move.id != 28 && turnMove.move.id != 614) {  // すなかけ/サウザンアローではない
               defenderTimingIDs.add(22);  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
             }

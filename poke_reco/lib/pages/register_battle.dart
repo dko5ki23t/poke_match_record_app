@@ -110,10 +110,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       focusState = turns[turnNum-1].
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases) {
+      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
         sameTimingList = _adjustPhases(appState, isNewTurn);
         isNewTurn = false;
-        appState.needAdjustPhases = false;
+        appState.needAdjustPhases = -1;
       }
       if (appState.requestActionSwap) {
         _onlySwapActionPhases();
@@ -1340,6 +1340,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           phases[i].getEditingControllerText1();
                         textEditingControllerList2[i].text =
                           phases[i].getEditingControllerText2(currentState);
+                        textEditingControllerList3[i].text =
+                          phases[i].getEditingControllerText3(currentState);
+                        textEditingControllerList4[i].text =
+                          phases[i].getEditingControllerText4(currentState);
                       }
                       else {
                         tmp = TurnMove()..playerType = PlayerType(PlayerType.opponent)..type = TurnMoveType(TurnMoveType.move);
@@ -1351,6 +1355,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             phases[i].getEditingControllerText1();
                           textEditingControllerList2[i].text =
                             phases[i].getEditingControllerText2(currentState);
+                          textEditingControllerList3[i].text =
+                            phases[i].getEditingControllerText3(currentState);
+                          textEditingControllerList4[i].text =
+                            phases[i].getEditingControllerText4(currentState);
                         }
                       }
                     }
@@ -1366,6 +1374,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         phases[i].getEditingControllerText1();
                       textEditingControllerList2[i].text =
                         phases[i].getEditingControllerText2(currentState);
+                      textEditingControllerList3[i].text =
+                        phases[i].getEditingControllerText3(currentState);
+                      textEditingControllerList4[i].text =
+                        phases[i].getEditingControllerText4(currentState);
                     }
                   }
                   lastAction = phases[i];
@@ -1586,8 +1598,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         ..phaseState = currentState.copyWith()
         ..guides = guide
       );
+      // 更新要求インデックス以降はフォームの内容を変える
       // 追加されたフェーズのフォームの内容を変える
-      if (isInserted) {
+      if (isInserted || (appState.needAdjustPhases >= 0 && appState.needAdjustPhases <= i)) {
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
         textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
         textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);

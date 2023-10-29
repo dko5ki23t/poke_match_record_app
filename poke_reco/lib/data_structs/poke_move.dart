@@ -141,6 +141,7 @@ class TurnMove {
   List<int> extraArg2 = [0];
   List<int> extraArg3 = [0];
   int? changePokemonIndex;
+  PokeType moveType = PokeType.createFromId(0);
 
   TurnMove copyWith() =>
     TurnMove()
@@ -158,7 +159,8 @@ class TurnMove {
     ..extraArg1 = [...extraArg1]
     ..extraArg2 = [...extraArg2]
     ..extraArg3 = [...extraArg3]
-    ..changePokemonIndex = changePokemonIndex;
+    ..changePokemonIndex = changePokemonIndex
+    ..moveType = moveType;
 
   // わざが成功＆ヒットしたかどうか
   // へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
@@ -312,8 +314,6 @@ class TurnMove {
     bool showDamageCalc = false;
     // わざの威力(わざによっては変動するため)
     int movePower = 0;
-    // わざのタイプ(わざによっては変動するため)
-    PokeType moveType = PokeType.createFromId(0);
     // ダメージ計算式文字列
     String? damageCalc;
     // 最終ダメージが2倍になるか
@@ -3354,7 +3354,7 @@ class TurnMove {
                   onChanged: (value) {
                     changePokemonIndex = value;
                     appState.editingPhase[phaseIdx] = true;
-                    appState.needAdjustPhases = true;
+                    appState.needAdjustPhases = phaseIdx+1;
                     onFocus();
                   },
                 ),
@@ -5453,6 +5453,7 @@ class TurnMove {
     extraArg2 = [0];
     extraArg3 = [0];
     changePokemonIndex = null;
+    moveType = PokeType.createFromId(0);
   }
 
   // SQLに保存された文字列からTurnMoveをパース
@@ -5544,6 +5545,8 @@ class TurnMove {
     if (turnMoveElements[14] != '') {
       turnMove.changePokemonIndex = int.parse(turnMoveElements[14]);
     }
+    // moveType
+    turnMove.moveType = PokeType.createFromId(int.parse(turnMoveElements[15]));
 
     return turnMove;
   }
@@ -5653,6 +5656,9 @@ class TurnMove {
     if (changePokemonIndex != null) {
       ret += changePokemonIndex.toString();
     }
+    ret += split1;
+    // moveType
+    ret += moveType.id.toString();
 
     return ret;
   }
