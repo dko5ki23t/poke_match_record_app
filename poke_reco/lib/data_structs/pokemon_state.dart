@@ -893,7 +893,7 @@ class PokemonState {
     PokemonState pokemonState = PokemonState();
     final stateElements = str.split(split1);
     // pokemon
-    pokemonState.pokemon = pokeData.pokemons.where((element) => element.id == int.parse(stateElements[0])).first;
+    pokemonState.pokemon = pokeData.pokemons[int.parse(stateElements[0])]!;
     // remainHP
     pokemonState.remainHP = int.parse(stateElements[1]);
     // remainHPPercent

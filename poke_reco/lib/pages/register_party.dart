@@ -98,12 +98,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
 
     void onComplete() async {
       if (widget.isNew) {
-        parties.add(widget.party);
         widget.party.id = pokeData.getUniquePartyID();
+        parties[widget.party.id] = widget.party;
       }
       else {
-        final index = parties.indexWhere((element) => element.id == widget.party.id);
-        parties[index] = widget.party;
+        parties[widget.party.id] = widget.party;
       }
       await pokeData.addParty(widget.party);
       widget.onFinish();
@@ -120,7 +119,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
           actions: [
             TextButton(
               onPressed: (widget.party.isValid) ? () => onComplete() : null,
-              child: Text('完了'),
+              child: Text('保存'),
             ),
           ],
         ),

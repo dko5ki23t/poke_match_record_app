@@ -29,7 +29,7 @@ class PokemonsPage extends StatefulWidget {
 
 class PokemonsPageState extends State<PokemonsPage> {
   bool isEditMode = false;
-  List<bool>? checkList;
+  Map<int, bool>? checkList;
   Pokemon? selectedPokemon;
 
   final increaseStateStyle = TextStyle(
@@ -51,20 +51,20 @@ class PokemonsPageState extends State<PokemonsPage> {
     var abilityFilter = pokeData.pokemonsAbilityFilter;
     var temperFilter = pokeData.pokemonsTemperFilter;
     var pokemons = appState.pokemons;
-    var filteredPokemons = pokemons.where((element) => ownerFilter.contains(element.owner)).toList();
-    filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.type1.id) || typeFilter.contains(element.type2?.id)).toList();
-    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.teraType.id)).toList();
+    var filteredPokemons = pokemons.entries.where((element) => ownerFilter.contains(element.value.owner));
+    filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
+    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
     if (moveFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) =>
-        moveFilter.contains(element.move1.id) || moveFilter.contains(element.move2?.id) ||
-        moveFilter.contains(element.move3?.id) || moveFilter.contains(element.move4?.id)).toList();
+        moveFilter.contains(element.value.move1.id) || moveFilter.contains(element.value.move2?.id) ||
+        moveFilter.contains(element.value.move3?.id) || moveFilter.contains(element.value.move4?.id));
     }
-    filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.sex)).toList();
+    filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.value.sex));
     if (abilityFilter.isNotEmpty) {
-      filteredPokemons = filteredPokemons.where((element) => abilityFilter.contains(element.ability.id)).toList();
+      filteredPokemons = filteredPokemons.where((element) => abilityFilter.contains(element.value.ability.id));
     }
     if (temperFilter.isNotEmpty) {
-      filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.temper.id)).toList();
+      filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.value.temper.id));
     }
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
@@ -82,10 +82,18 @@ class PokemonsPageState extends State<PokemonsPage> {
     }
 
     Widget lists;
-    checkList ??= List.generate(filteredPokemons.length, (i) => false);
+    if (checkList == null) {
+      checkList = {};
+      for (final e in filteredPokemons) {
+        checkList![e.key] = false;
+      }
+    }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
     if (checkList!.length != filteredPokemons.length) {
-      checkList = List.generate(filteredPokemons.length, (i) => false);
+      checkList = {};
+      for (final e in filteredPokemons) {
+        checkList![e.key] = false;
+      }
     }
     List<int?> partyPokemonsNo = [
       widget.party?.pokemon1.no,
@@ -105,15 +113,15 @@ class PokemonsPageState extends State<PokemonsPage> {
       if (isEditMode) {
         lists = ListView(
           children: [
-            for (int i = 0; i < filteredPokemons.length; i++)
+            for (final e in filteredPokemons)
               PokemonTile(
-                filteredPokemons[i], theme,
+                e.value, theme,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
-                  value: checkList![i],
+                  value: checkList![e.key],
                   onChanged: (isCheck) {
                     setState(() {
-                      checkList![i] = isCheck ?? false;
+                      checkList![e.key] = isCheck ?? false;
                     });
                   },
                 ),
@@ -125,16 +133,16 @@ class PokemonsPageState extends State<PokemonsPage> {
       else {
         lists = ListView(
           children: [
-            for (var pokemon in filteredPokemons)
+            for (final e in filteredPokemons)
               PokemonTile(
-                pokemon,
+                e.value,
                 theme,
-                enabled: !partyPokemonsNo.contains(pokemon.no),
+                enabled: !partyPokemonsNo.contains(e.value.no),
                 leading: Icon(Icons.catching_pokemon),
-                onLongPress: !widget.selectMode ? () => widget.onAdd(pokemon.copyWith(), false) : null,
+                onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
                 onTap: widget.selectMode ? () {
-                  selectedPokemon = pokemon;
-                  widget.onSelect!(pokemon);} : null,
+                  selectedPokemon = e.value;
+                  widget.onSelect!(e.value);} : null,
               ),
             SizedBox(height: deviceHeight / 4),
           ],
@@ -233,17 +241,17 @@ class PokemonsPageState extends State<PokemonsPage> {
                             Text('すべて選択')
                           ]),
                           onPressed: () => setState(() {
-                            selectAll(checkList!);
+                            selectAllMap(checkList!);
                           }),
                         ),
                         SizedBox(width: 20),
                         TextButton(
-                          onPressed: (getSelectedNum(checkList!) > 0) ?
+                          onPressed: (getSelectedNumMap(checkList!) > 0) ?
                             () {
                               bool isContainedParty = false;
-                              for (int i = checkList!.length - 1; i >= 0; i--) {
-                                if (checkList![i]) {
-                                  if (filteredPokemons[i].refCount > 0) {
+                              for (final e in checkList!.keys) {
+                                if (checkList![e]!) {
+                                  if (filteredPokemons.where((element) => element.value.id == e).first.value.refCount > 0) {
                                     isContainedParty = true;
                                     break;
                                   }
@@ -256,16 +264,33 @@ class PokemonsPageState extends State<PokemonsPage> {
                                     isContainedParty,
                                     () async {
                                       List<int> deleteIDs = [];
-                                      for (int i = 0; i < checkList!.length; i++) {
-                                        if (checkList![i]) {
-                                          deleteIDs.add(filteredPokemons[i].id);
+                                      for (final e in checkList!.keys) {
+                                        if (checkList![e]!) {
+                                          deleteIDs.add(e);
                                         }
                                       }
                                       //pokeData.recreateMyPokemon(pokemons);
                                       await pokeData.deleteMyPokemon(deleteIDs, false);
                                       setState(() {
-                                        filteredPokemons = pokemons.where((element) => element.owner == Owner.mine).toList();
-                                        checkList = List.generate(filteredPokemons.length, (i) => false);
+                                        filteredPokemons = pokemons.entries.where((element) => ownerFilter.contains(element.value.owner));
+                                        filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
+                                        filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
+                                        if (moveFilter.isNotEmpty) {
+                                          filteredPokemons = filteredPokemons.where((element) =>
+                                            moveFilter.contains(element.value.move1.id) || moveFilter.contains(element.value.move2?.id) ||
+                                            moveFilter.contains(element.value.move3?.id) || moveFilter.contains(element.value.move4?.id));
+                                        }
+                                        filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.value.sex));
+                                        if (abilityFilter.isNotEmpty) {
+                                          filteredPokemons = filteredPokemons.where((element) => abilityFilter.contains(element.value.ability.id));
+                                        }
+                                        if (temperFilter.isNotEmpty) {
+                                          filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.value.temper.id));
+                                        }
+                                        checkList = {};
+                                        for (final e in filteredPokemons) {
+                                          checkList![e.key] = false;
+                                        }
                                       });
                                     },
                                     () {},    // TODO
@@ -283,19 +308,22 @@ class PokemonsPageState extends State<PokemonsPage> {
                         ),
                         SizedBox(width: 20,),
                         TextButton(
-                          onPressed: (getSelectedNum(checkList!) > 0) ?
+                          onPressed: (getSelectedNumMap(checkList!) > 0) ?
                             () async {
-                              for (int i = 0; i < checkList!.length; i++) {
-                                if (checkList![i]) {
-                                  Pokemon copiedPokemon = pokemons[i].copyWith();
+                              for (final e in checkList!.keys) {
+                                if (checkList![e]!) {
+                                  Pokemon copiedPokemon = pokemons[e]!.copyWith();
                                   copiedPokemon.id = pokeData.getUniqueMyPokemonID();
                                   copiedPokemon.refCount = 0;
-                                  pokemons.add(copiedPokemon);
+                                  pokemons[copiedPokemon.id] = copiedPokemon;
                                   await pokeData.addMyPokemon(copiedPokemon);
                                 }
                               }
                               setState(() {
-                                checkList = List.generate(pokemons.length, (i) => false);
+                                checkList = {};
+                                for (final e in filteredPokemons) {
+                                  checkList![e.key] = false;
+                                }
                               });
                             } : null,
                           child: Row(children: [

@@ -66,9 +66,9 @@ class MyApp extends StatelessWidget {
 
 class MyAppState extends ChangeNotifier {
   final pokeData = PokeDB();
-  List<Pokemon> pokemons = [];
-  List<Party> parties = [];
-  List<Battle> battles = [];
+  Map<int, Pokemon> pokemons = {};
+  Map<int, Party> parties = {};
+  Map<int, Battle> battles = {};
   void Function() onBackKeyPushed = (){};
   void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};

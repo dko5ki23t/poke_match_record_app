@@ -12,7 +12,7 @@ class BattleBasicListView extends ListView {
     BuildContext context,
     void Function() setState,
     Battle battle,
-    List<Party> parties,
+    Map<int, Party> parties,
     ThemeData theme,
     TextEditingController battleNameController,
     TextEditingController opponentNameController,
@@ -115,12 +115,12 @@ class BattleBasicListView extends ListView {
                     ),
                     selectedItemBuilder: (context) {
                       return [
-                        for (final party in parties.where((element) => element.owner == Owner.mine).toList())
+                        for (final party in parties.values.where((element) => element.owner == Owner.mine))
                           Text(party.name),
                       ];
                     },
                     items: <DropdownMenuItem>[
-                      for (final party in parties.where((element) => element.owner == Owner.mine).toList())
+                      for (final party in parties.values.where((element) => element.owner == Owner.mine))
                         DropdownMenuItem(
                           value: party.id,
                           child: PartyTile(party, theme,),
@@ -129,9 +129,9 @@ class BattleBasicListView extends ListView {
                     value: battle.getParty(PlayerType(PlayerType.me)).id == 0 ? null : battle.getParty(PlayerType(PlayerType.me)).id,
                     onChanged: (value) {
                       // 各ポケモンのレベルを50にするためコピー作成
-                      battle.setParty(PlayerType(PlayerType.me), parties.where((element) => element.id == value).first.copyWith());
+                      battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
                       for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                                                battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
                       }

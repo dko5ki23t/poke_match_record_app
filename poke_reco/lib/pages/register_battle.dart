@@ -173,39 +173,35 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         for (int i = 0; i < opponentParty.pokemonNum; i++) {
           opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
           opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-          pokemons.add(opponentParty.pokemons[i]!);
+          pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
           await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
         }
         opponentParty.id = pokeData.getUniquePartyID();
         opponentParty.owner = Owner.fromBattle;
-        parties.add(opponentParty);
+        parties[opponentParty.id] = opponentParty;
         await pokeData.addParty(opponentParty);
 
         battle.id = pokeData.getUniqueBattleID();
-        battles.add(battle);
+        battles[battle.id] = battle;
       }
       else {
-        int index = 0;
         for (int i = 0; i < opponentParty.pokemonNum; i++) {
           int pokemonID = opponentParty.pokemons[i]!.id;
           if (pokemonID == 0) {   // 編集時に追加したポケモン
             opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
             opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-            pokemons.add(opponentParty.pokemons[i]!);
+            pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
             await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
           }
           else {
-            index = pokemons.indexWhere((element) => element.id == pokemonID);
-            pokemons[index] = opponentParty.pokemons[i]!;
+            pokemons[pokemonID] = opponentParty.pokemons[i]!;
             await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
           }
         }
-        index = parties.indexWhere((element) => element.id == opponentParty.id);
-        parties[index] = opponentParty;
+        parties[opponentParty.id] = opponentParty;
         await pokeData.addParty(opponentParty);
 
-        index = battles.indexWhere((element) => element.id == battle.id);
-        battles[index] = battle;
+        battles[battle.id] = battle;
       }
       await pokeData.addBattle(battle);
       widget.onFinish();
@@ -710,7 +706,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ),
             TextButton(
               onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
-              child: Text('完了'),
+              child: Text('保存'),
             ),
           ],
         ),

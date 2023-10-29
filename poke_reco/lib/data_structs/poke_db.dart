@@ -721,11 +721,11 @@ class PokeDB {
       ability: [], move: [], height: 0, weight: 0, eggGroups: [],),
   };
   late Database pokeBaseDb;
-  List<Pokemon> pokemons = [];
+  Map<int, Pokemon> pokemons = {0: Pokemon()};
   late Database myPokemonDb;
-  List<Party> parties = [];
+  Map<int, Party> parties = {0: Party()};
   late Database partyDb;
-  List<Battle> battles = [];
+  Map<int, Battle> battles = {0: Battle()};
   late Database battleDb;
 
   // DBに使われているIDのリスト。常に降順に並び替えておく
@@ -1015,7 +1015,7 @@ class PokeDB {
 
       for (var map in maps) {
         int pokeNo = map[myPokemonColumnNo];
-        pokemons.add(Pokemon()
+        pokemons[map[myPokemonColumnId]] = Pokemon()
           ..id = map[myPokemonColumnId]
           ..name = pokeBase[pokeNo]!.name
           ..nickname = map[myPokemonColumnNickName]
@@ -1068,8 +1068,7 @@ class PokeDB {
           ..pp4 = map[myPokemonColumnPP4]
           ..owner = toOwner(map[myPokemonColumnOwnerID])
           ..refCount = map[myPokemonColumnRefCount]
-          ..updateRealStats()
-        );
+          ..updateRealStats();
         myPokemonIDs.add(map[myPokemonColumnId]);
       }
       myPokemonIDs.sort((a, b) => a.compareTo(b));
@@ -1109,28 +1108,27 @@ class PokeDB {
       );
 
       for (var map in maps) {
-        parties.add(Party()
+        parties[map[partyColumnId]] = Party()
           ..id = map[partyColumnId]
           ..name = map[partyColumnName]
-          ..pokemon1 = pokemons.where((element) => element.id == map[partyColumnPokemonId1]).first
+          ..pokemon1 = pokemons.values.where((element) => element.id == map[partyColumnPokemonId1]).first
           ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
           ..pokemon2 = map[partyColumnPokemonId2] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId2]).first : null
+              pokemons.values.where((element) => element.id == map[partyColumnPokemonId2]).first : null
           ..item2 = map[partyColumnPokemonItem2] != null ? items[map[partyColumnPokemonItem2]] : null
           ..pokemon3 = map[partyColumnPokemonId3] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId3]).first : null
+              pokemons.values.where((element) => element.id == map[partyColumnPokemonId3]).first : null
           ..item3 = map[partyColumnPokemonItem3] != null ? items[map[partyColumnPokemonItem3]] : null
           ..pokemon4 = map[partyColumnPokemonId4] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId4]).first : null
+              pokemons.values.where((element) => element.id == map[partyColumnPokemonId4]).first : null
           ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
           ..pokemon5 = map[partyColumnPokemonId5] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId5]).first : null
+              pokemons.values.where((element) => element.id == map[partyColumnPokemonId5]).first : null
           ..item5 = map[partyColumnPokemonItem5] != null ? items[map[partyColumnPokemonItem5]] : null
           ..pokemon6 = map[partyColumnPokemonId6] != null ?
-              pokemons.where((element) => element.id == map[partyColumnPokemonId6]).first : null
+              pokemons.values.where((element) => element.id == map[partyColumnPokemonId6]).first : null
           ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
-          ..owner = toOwner(map[partyColumnOwnerID])
-        );
+          ..owner = toOwner(map[partyColumnOwnerID]);
         partyIDs.add(map[partyColumnId]);
       }
       partyIDs.sort((a, b) => a.compareTo(b));
@@ -1166,22 +1164,21 @@ class PokeDB {
       );
 
       for (var map in maps) {
-        battles.add(Battle()
+        battles[map[battleColumnId]] = Battle()
           ..id = map[battleColumnId]
           ..name = map[battleColumnName]
           ..type = BattleType.createFromId(map[battleColumnTypeId])
           ..datetimeFromStr = map[battleColumnDate]
-          ..setParty(PlayerType(PlayerType.me), parties.where((element) => element.id == map[battleColumnOwnPartyId]).first)
+          ..setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == map[battleColumnOwnPartyId]).first)
           ..opponentName = map[battleColumnOpponentName]
-          ..setParty(PlayerType(PlayerType.opponent), parties.where((element) => element.id == map[battleColumnOpponentPartyId]).first)
+          ..setParty(PlayerType(PlayerType.opponent), parties.values.where((element) => element.id == map[battleColumnOpponentPartyId]).first)
           ..isMyWin = map[battleColumnIsMyWin] == 1
-          ..isYourWin = map[battleColumnIsYourWin] == 1
-        );
+          ..isYourWin = map[battleColumnIsYourWin] == 1;
         // turns
         final turns = map[battleColumnTurns].split(sqlSplit1);
         for (final turn in turns) {
           if (turn == '') break;
-          battles.last.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
+          battles[map[battleColumnId]]!.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
         }
         battleIDs.add(map[battleColumnId]);
       }
@@ -1296,7 +1293,7 @@ class PokeDB {
       
       // 登録ポケモンリストから削除
       for (final e in ids) {
-        pokemons.removeWhere((element) => element.id == e);
+        pokemons.remove(e);
       }
 
       // DBのIDリストから削除
@@ -1313,7 +1310,7 @@ class PokeDB {
 
       // 各パーティに、削除したポケモンが含まれているか調べる
       List<int> partyIDs = [];
-      for (final e in parties) {
+      for (final e in parties.values) {
         for (int i = 0; i < e.pokemonNum; i++) {
           if (ids.contains(e.pokemons[i]?.id)) {
             partyIDs.add(e.id);
@@ -1339,7 +1336,7 @@ class PokeDB {
 
     // SQLiteのDBを更新
     // TODO: for文なしで一文でできないかな？
-    for (final e in pokemons) {
+    for (final e in pokemons.values) {
       await myPokemonDb.update(
         myPokemonDBTable,
         {myPokemonColumnRefCount: e.refCount},
@@ -1375,10 +1372,9 @@ class PokeDB {
     }
 
     // 既存パーティの上書きなら、各ポケモンの被参照カウントをデクリメント
-    int index = parties.indexWhere((element) => element.id == party.id);
-    if (index >= 0) {
-      for (int i = 0; i < parties[index].pokemonNum; i++) {
-        parties[index].pokemons[i]!.refCount--;
+    if (parties.containsKey(party.id)) {
+      for (int i = 0; i < parties[party.id]!.pokemonNum; i++) {
+        parties[party.id]!.pokemons[i]!.refCount--;
       }
     }
 
@@ -1425,12 +1421,11 @@ class PokeDB {
 
       // 登録パーティリストから削除
       for (final e in ids) {
-        final partyIdx = parties.indexWhere((element) => element.id == e);
         // パーティ内ポケモンの被参照カウントをデクリメント
-        for (int j = 0; j < parties[partyIdx].pokemonNum; j++) {
-          parties[partyIdx].pokemons[j]!.refCount--;
+        for (int j = 0; j < parties[e]!.pokemonNum; j++) {
+          parties[e]!.pokemons[j]!.refCount--;
         }
-        parties.removeAt(partyIdx);
+        parties.remove(e);
       }
       
       // DBのIDリストから削除
@@ -1450,7 +1445,7 @@ class PokeDB {
 
       // 各対戦に、削除したパーティが含まれているか調べる
       List<int> battleIDs = [];
-      for (final e in battles) {
+      for (final e in battles.values) {
         if (ids.contains(e.getParty(PlayerType(PlayerType.me)).id) || ids.contains(e.getParty(PlayerType(PlayerType.opponent)).id)) {
           battleIDs.add(e.id);
           break;
@@ -1474,7 +1469,7 @@ class PokeDB {
 
     // SQLiteのDBを更新
     // TODO: for文なしで一文でできないかな？
-    for (final e in parties) {
+    for (final e in parties.values) {
       await partyDb.update(
         partyDBTable,
         {partyColumnRefCount: e.refCount},
@@ -1510,10 +1505,9 @@ class PokeDB {
     }
 
     // 既存対戦の上書きなら、対戦内パーティの被参照カウントをデクリメント
-    int index = battles.indexWhere((element) => element.id == battle.id);
-    if (index >= 0) {
-      battles[index].getParty(PlayerType(PlayerType.me)).refCount--;
-      battles[index].getParty(PlayerType(PlayerType.opponent)).refCount--;
+    if (battles.containsKey(battle.id)) {
+      battles[battle.id]!.getParty(PlayerType(PlayerType.me)).refCount--;
+      battles[battle.id]!.getParty(PlayerType(PlayerType.opponent)).refCount--;
     }
 
     // 対戦内パーティの被参照カウントをインクリメント
@@ -1554,15 +1548,14 @@ class PokeDB {
     
     // 登録対戦リストから削除
     for (final e in ids) {
-      final battleIdx = battles.indexWhere((element) => element.id == e);
       // 対戦内パーティおよびポケモンの被参照カウントをデクリメント
       for (final player in [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)]) {
-        for (int j = 0; j < battles[battleIdx].getParty(player).pokemonNum; j++) {
-          battles[battleIdx].getParty(player).pokemons[j]!.refCount--;
+        for (int j = 0; j < battles[e]!.getParty(player).pokemonNum; j++) {
+          battles[e]!.getParty(player).pokemons[j]!.refCount--;
         }
-        battles[battleIdx].getParty(player).refCount--;
+        battles[e]!.getParty(player).refCount--;
       }
-      battles.removeAt(battleIdx);
+      battles.remove(e);
     }
 
     // DBのIDリストから削除

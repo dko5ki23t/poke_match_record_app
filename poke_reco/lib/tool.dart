@@ -57,8 +57,23 @@ void selectAll(List<bool> checkList) {
   }
 }
 
+void selectAllMap(Map<int, bool> checkList) {
+  bool existFalse = false;
+  for (final e in checkList.values) {
+    if (!e) existFalse = true;
+  }
+
+  for (final e in checkList.keys) {
+    checkList[e] = existFalse;
+  }
+}
+
 int getSelectedNum(List<bool> checkList) {
   return checkList.where((bool val) => val).length;
+}
+
+int getSelectedNumMap(Map<int, bool> checkList) {
+  return checkList.values.where((bool val) => val).length;
 }
 
 void listShallowSwap(List list, int idx1, int idx2) {

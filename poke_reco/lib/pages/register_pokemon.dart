@@ -142,11 +142,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     void onComplete() async {
       if (widget.isNew) {
         widget.myPokemon.id = pokeData.getUniqueMyPokemonID();
-        pokemons.add(widget.myPokemon);
+        pokemons[widget.myPokemon.id] = widget.myPokemon;
       }
       else {
-        final index = pokemons.indexWhere((element) => element.id == widget.myPokemon.id);
-        pokemons[index] = widget.myPokemon;
+        pokemons[widget.myPokemon.id] = widget.myPokemon;
       }
       await pokeData.addMyPokemon(widget.myPokemon);
       widget.onFinish();
@@ -163,7 +162,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
           actions: [
             TextButton(
               onPressed: (widget.myPokemon.isValid) ? () => onComplete() : null,
-              child: Text('完了'),
+              child: Text('保存'),
             ),
           ]
         ),

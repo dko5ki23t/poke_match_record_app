@@ -20,7 +20,7 @@ class BattlesPage extends StatefulWidget {
 
 class BattlesPageState extends State<BattlesPage> {
   bool isEditMode = false;
-  List<bool>? checkList;
+  Map<int, bool>? checkList;
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -50,10 +50,18 @@ class BattlesPageState extends State<BattlesPage> {
     }
 
     Widget lists;
-    checkList ??= List.generate(battles.length, (i) => false);
+    if (checkList == null) {
+      checkList = {};
+      for (final e in battles.keys) {
+        checkList![e] = false;
+      }
+    }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
     if (checkList!.length != battles.length) {
-      checkList = List.generate(battles.length, (i) => false);
+      checkList = {};
+      for (final e in battles.keys) {
+        checkList![e] = false;
+      }
     }
 
     if (battles.isEmpty) {
@@ -65,16 +73,16 @@ class BattlesPageState extends State<BattlesPage> {
       if (isEditMode) {
         lists = ListView(
           children: [
-            for (int i = 0; i < battles.length; i++)
+            for (final e in battles.entries)
               BattleTile(
-                battles[i],
+                e.value,
                 theme,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
-                  value: checkList![i],
+                  value: checkList![e.key],
                   onChanged: (isCheck) {
                     setState(() {
-                      checkList![i] = isCheck ?? false;
+                      checkList![e.key] = isCheck ?? false;
                     });
                   },
                 ),
@@ -85,7 +93,7 @@ class BattlesPageState extends State<BattlesPage> {
       else {
         lists = ListView(
           children: [
-            for (var battle in battles)
+            for (final battle in battles.values)
               BattleTile(
                 battle,
                 theme,
@@ -148,12 +156,12 @@ class BattlesPageState extends State<BattlesPage> {
                           Text('すべて選択')
                         ]),
                         onPressed: () => setState(() {
-                          selectAll(checkList!);
+                          selectAllMap(checkList!);
                         }),
                       ),
                       SizedBox(width: 20),
                       TextButton(
-                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
                           () {
                             showDialog(
                               context: context,
@@ -161,15 +169,18 @@ class BattlesPageState extends State<BattlesPage> {
                                 return BattleDeleteCheckDialog(
                                   () async {
                                     List<int> deleteIDs = [];
-                                    for (int i = 0; i < checkList!.length; i++) {
-                                      if (checkList![i]) {
-                                        deleteIDs.add(battles[i].id);
+                                    for (final e in checkList!.keys) {
+                                      if (checkList![e]!) {
+                                        deleteIDs.add(e);
                                       }
                                     }
                                     //pokeData.recreateMyPokemon(pokemons);
                                     await pokeData.deleteBattle(deleteIDs);
                                     setState(() {
-                                      checkList = List.generate(battles.length, (i) => false);
+                                      checkList = {};
+                                      for (final e in battles.keys) {
+                                        checkList![e] = false;
+                                      }
                                     });
                                   },
                                 );
@@ -186,18 +197,21 @@ class BattlesPageState extends State<BattlesPage> {
                       ),
                       SizedBox(width: 20),
                       TextButton(
-                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
                           () async {
-                            for (int i = 0; i < checkList!.length; i++) {
-                              if (checkList![i]) {
-                                Battle copiedBattle = battles[i].copyWith();
+                            for (final e in checkList!.keys) {
+                              if (checkList![e]!) {
+                                Battle copiedBattle = battles[e]!.copyWith();
                                 copiedBattle.id = pokeData.getUniqueBattleID();
-                                battles.add(copiedBattle);
+                                battles[copiedBattle.id] = copiedBattle;
                                 await pokeData.addBattle(copiedBattle);
                               }
                             }
                             setState(() {
-                              checkList = List.generate(battles.length, (i) => false);
+                              checkList = {};
+                              for (final e in battles.keys) {
+                                checkList![e] = false;
+                              }
                             });
                           } : null,
                         child: Row(children: [

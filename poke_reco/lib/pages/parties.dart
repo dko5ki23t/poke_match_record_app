@@ -21,14 +21,14 @@ class PartiesPage extends StatefulWidget {
 
 class PartiesPageState extends State<PartiesPage> {
   bool isEditMode = false;
-  List<bool>? checkList;
+  Map<int, bool>? checkList;
   Party? selectedParty;
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
-    var filteredParties = parties.where((element) => element.owner == Owner.mine).toList();
+    var filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
@@ -45,10 +45,18 @@ class PartiesPageState extends State<PartiesPage> {
     }
 
     Widget lists;
-    checkList ??= List.generate(filteredParties.length, (i) => false);
+    if (checkList == null) {
+      checkList = {};
+      for (final e in filteredParties) {
+        checkList![e.key] = false;
+      }
+    }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
     if (checkList!.length != filteredParties.length) {
-      checkList = List.generate(filteredParties.length, (i) => false);
+      checkList = {};
+      for (final e in filteredParties) {
+        checkList![e.key] = false;
+      }
     }
 
     if (filteredParties.isEmpty) {
@@ -60,15 +68,15 @@ class PartiesPageState extends State<PartiesPage> {
       if (isEditMode) {
         lists = ListView(
           children: [
-            for (int i = 0; i < filteredParties.length; i++)
+            for (final e in filteredParties)
               PartyTile(
-                filteredParties[i], theme,
+                e.value, theme,
                 leading: Icon(Icons.drag_handle),
                 trailing: Checkbox(
-                  value: checkList![i],
+                  value: checkList![e.key],
                   onChanged: (isCheck) {
                     setState(() {
-                      checkList![i] = isCheck ?? false;
+                      checkList![e.key] = isCheck ?? false;
                     });
                   },
                 ),
@@ -79,11 +87,11 @@ class PartiesPageState extends State<PartiesPage> {
       else {
         lists = ListView(
           children: [
-            for (var party in filteredParties)
+            for (final party in filteredParties)
               PartyTile(
-                party, theme,
+                party.value, theme,
                 leading: Icon(Icons.group),
-                onLongPress: () => widget.onAdd(party.copyWith(), false),
+                onLongPress: () => widget.onAdd(party.value.copyWith(), false),
               )
           ],
         );
@@ -140,12 +148,12 @@ class PartiesPageState extends State<PartiesPage> {
                           Text('すべて選択')
                         ]),
                         onPressed: () => setState(() {
-                          selectAll(checkList!);
+                          selectAllMap(checkList!);
                         }),
                       ),
                       SizedBox(width: 20),
                       TextButton(
-                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
                           () {
                             bool isContainedBattle = false;
                             showDialog(
@@ -155,16 +163,19 @@ class PartiesPageState extends State<PartiesPage> {
                                   isContainedBattle,
                                   () async {
                                     List<int> deleteIDs = [];
-                                    for (int i = 0; i < checkList!.length; i++) {
-                                      if (checkList![i]) {
-                                        deleteIDs.add(filteredParties[i].id);
+                                    for (final e in checkList!.keys) {
+                                      if (checkList![e]!) {
+                                        deleteIDs.add(e);
                                       }
                                     }
                                     //pokeData.recreateParty(parties);
                                     await pokeData.deleteParty(deleteIDs, false);
                                     setState(() {
-                                      filteredParties = parties.where((element) => element.owner == Owner.mine).toList();
-                                      checkList = List.generate(filteredParties.length, (i) => false);
+                                      filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
+                                      checkList = {};
+                                      for (final e in filteredParties) {
+                                        checkList![e.key] = false;
+                                      }
                                     });
                                   },
                                   () {},        // TODO
@@ -182,20 +193,23 @@ class PartiesPageState extends State<PartiesPage> {
                       ),
                       SizedBox(width: 20,),
                       TextButton(
-                        onPressed: (getSelectedNum(checkList!) > 0) ?
+                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
                           () async {
-                            for (int i = 0; i < checkList!.length; i++) {
-                              if (checkList![i]) {
-                                Party copiedParty = filteredParties[i].copyWith();
+                            for (final e in checkList!.keys) {
+                              if (checkList![e]!) {
+                                Party copiedParty = parties[e]!.copyWith();
                                 copiedParty.id = pokeData.getUniquePartyID();
                                 copiedParty.refCount = 0;
-                                parties.add(copiedParty);
+                                parties[copiedParty.id] = copiedParty;
                                 await pokeData.addParty(copiedParty);
                               }
                             }
                             setState(() {
-                              filteredParties = parties.where((element) => element.owner == Owner.mine).toList();
-                              checkList = List.generate(filteredParties.length, (i) => false);
+                              filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
+                              checkList = {};
+                              for (final e in filteredParties) {
+                                checkList![e.key] = false;
+                              }
                             });
                           } : null,
                         child: Row(children: [

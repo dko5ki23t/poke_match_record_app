@@ -20,3 +20,7 @@ https://note.com/hatanowf/n/n7f6ef8b0ea7c
 https://zenn.dev/kyo9bo/articles/196e949cc9dd3a
 
 https://pub.dev/packages/flutter_launcher_icons
+
+## リリースビルドの方法
+
+https://enoiu.com/app-develop/flutter-release/
