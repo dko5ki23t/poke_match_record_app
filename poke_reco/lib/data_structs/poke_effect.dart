@@ -30,6 +30,7 @@ class EffectType {
   static const int field = 6;
   static const int move = 7;
   static const int changeFaintingPokemon = 8;
+  static const int terastal = 9;
 
   const EffectType(this.id);
 
@@ -165,7 +166,7 @@ const List<int> everyTurnEndWeatherIDs = [
 ];
 // ポケモンの場
 const List<int> everyTurnEndIndividualFieldIDs = [
-  IndividualField.sandStormDamage,    // すなあらしによるダメージ
+  //IndividualField.sandStormDamage,    // すなあらしによるダメージ
   IndividualField.futureAttack,       // みらいにこうげき
   IndividualField.futureAttackSteel,  // はめつのねがい
   IndividualField.grassFieldRecovery, // グラスフィールドによる回復
@@ -864,6 +865,7 @@ class TurnEffect {
         {
           switch (effectId) {
             case IndividualField.futureAttack:    // みらいにこうげき
+            case IndiFieldEffect.stealthRock:     // ステルスロック
               if (playerType.id == PlayerType.me) {
                 ownPokemonState.remainHP -= extraArg1;
               }
@@ -938,6 +940,15 @@ class TurnEffect {
         if (effectId != 0) {
           state.setPokemonIndex(playerType, effectId);
           state.getPokemonState(playerType).processEnterEffect(true, state.weather, state.field, yourState);
+        }
+        break;
+      case EffectType.terastal:
+        myState.teraType = PokeType.createFromId(effectId);
+        if (playerType.id == PlayerType.me) {
+          state.hasOwnTerastal = true;
+        }
+        else {
+          state.hasOpponentTerastal = true;
         }
         break;
       default:
@@ -1073,7 +1084,7 @@ class TurnEffect {
     List<int> timingIDs = [...allTimingIDs];
     List<int> attackerTimingIDs = [...allTimingIDs];
     List<int> defenderTimingIDs = [...allTimingIDs];
-    List<int> individualFieldIDs = [];
+    List<int> indiFieldEffectIDs = [];
     List<int> ailmentIDs = [];
     List<int> weatherEffectIDs = [];
     List<int> fieldIDs = [];
@@ -1099,7 +1110,11 @@ class TurnEffect {
           if (phaseState.field.id != Field.psychicTerrain) timingIDs.add(100);  // ポケモン登場時(サイコフィールドでない)
           if (phaseState.field.id != Field.mistyTerrain) timingIDs.add(101);    // ポケモン登場時(ミストフィールドでない)
           if (phaseState.field.id != Field.grassyTerrain) timingIDs.add(102);   // ポケモン登場時(グラスフィールドでない)
-          individualFieldIDs = [...pokemonAppearFieldIDs];
+          if ((playerType.id == PlayerType.me && phaseState.ownFields.where((e) => e.id == IndiFieldEffect.stealthRock).isNotEmpty) ||
+              (playerType.id == PlayerType.opponent && phaseState.opponentFields.where((e) => e.id == IndiFieldEffect.stealthRock).isNotEmpty)
+          ) {
+            indiFieldEffectIDs.add(IndiFieldEffect.stealthRock);
+          }
         }
         break;
       case AbilityTiming.everyTurnEnd:           // 毎ターン終了時
@@ -1141,7 +1156,6 @@ class TurnEffect {
               timingIDs.add(152);     // 状態異常でない毎ターン終了時
             }
           }
-          individualFieldIDs = [...everyTurnEndIndividualFieldIDs];
           ailmentIDs = [...everyTurnEndAilmentIDs];
           fieldIDs = [...everyTurnEndFieldIDs];
         }
@@ -1300,15 +1314,12 @@ class TurnEffect {
         }
       }
       if (type.id == EffectType.individualField) {
-        var fields = playerType.id == PlayerType.me ? phaseState.ownFields : phaseState.opponentFields;
-        for (final field in fields) {
-          if (individualFieldIDs.contains(field.id)) {
-            ret.add(TurnEffect()
-              ..playerType = playerType
-              ..effect = EffectType(EffectType.individualField)
-              ..effectId = field.id
-            );
-          }
+        for (var e in weatherEffectIDs) {
+          ret.add(TurnEffect()
+            ..playerType = playerType
+            ..effect = EffectType(EffectType.individualField)
+            ..effectId = e
+          );
         }
       }
       if (type.id == EffectType.ailment) {
@@ -1500,6 +1511,17 @@ class TurnEffect {
                   return pokeData.moves[extraArg1]!.displayName;
                 case 216:   // おどりこ
                   return pokeData.moves[extraArg1 % 10000]!.displayName;
+              }
+              break;
+            case EffectType.individualField:
+              switch (effectId) {
+                case IndiFieldEffect.stealthRock:
+                  if (playerType.id == PlayerType.me) {
+                    return state.getPokemonState(playerType).remainHP.toString();
+                  }
+                  else {
+                    return state.getPokemonState(playerType).remainHPPercent.toString();
+                  }
               }
               break;
             case EffectType.weather:
@@ -2335,6 +2357,7 @@ class TurnEffect {
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
       switch (effectId) {
         case IndividualField.futureAttack:      // みらいにこうげき
+        case IndiFieldEffect.stealthRock:       // ステルスロック
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

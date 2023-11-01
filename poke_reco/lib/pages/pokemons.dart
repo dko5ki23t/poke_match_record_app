@@ -51,7 +51,7 @@ class PokemonsPageState extends State<PokemonsPage> {
     var abilityFilter = pokeData.pokemonsAbilityFilter;
     var temperFilter = pokeData.pokemonsTemperFilter;
     var pokemons = appState.pokemons;
-    var filteredPokemons = pokemons.entries.where((element) => ownerFilter.contains(element.value.owner));
+    var filteredPokemons = pokemons.entries.where((element) => element.value.id != 0 && ownerFilter.contains(element.value.owner));
     filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
     filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
     if (moveFilter.isNotEmpty) {
@@ -272,7 +272,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                       //pokeData.recreateMyPokemon(pokemons);
                                       await pokeData.deleteMyPokemon(deleteIDs, false);
                                       setState(() {
-                                        filteredPokemons = pokemons.entries.where((element) => ownerFilter.contains(element.value.owner));
+                                        filteredPokemons = pokemons.entries.where((element) => element.value.id != 0 && ownerFilter.contains(element.value.owner));
                                         filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
                                         filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
                                         if (moveFilter.isNotEmpty) {

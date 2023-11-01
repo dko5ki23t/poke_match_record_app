@@ -2927,14 +2927,14 @@ class TurnMove {
           damageVmin = (damageVmin * 85 / 100).floor();
           damageCalc += '×85～100÷100(乱数) ';
           // タイプ一致補正(五捨五超入)
-          if (myState.isTypeContain(moveType.id)) {
-            var rate = myState.currentAbility.id == 91 ? 2.0 : 1.5;   // てきおうりょくなら2倍
+          var rate = myState.typeBonusRate(moveType.id, myState.currentAbility.id == 91);
+          if (rate > 1.0) {
             damageVmax = roundOff5(damageVmax * rate);
             damageVmin = roundOff5(damageVmin * rate);
             damageCalc += '×$rate(タイプ一致) ';
           }
           // 相性補正(切り捨て)
-          var rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
+          rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
             targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
           damageVmax = (damageVmax * rate).floor();
           damageVmin = (damageVmin * rate).floor();
@@ -3307,7 +3307,7 @@ class TurnMove {
                     moveEffectivenesses[0] = PokeType.effectiveness(
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                        move.type, yourState);
+                        getReplacedMoveType(move, continuousCount, myState, state), yourState);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -5339,6 +5339,7 @@ class TurnMove {
     var yourState = state.getPokemonState(playerType.opposite);
     final pokeData = PokeDB();
     bool ret = false;
+    bool isMoveChanged = false;
 
     // ひるみ
     if (myState.ailmentsWhere((e) => e.id == Ailment.flinch).isNotEmpty) {
@@ -5359,12 +5360,23 @@ class TurnMove {
       //turnEffectAndStateAndGuide.guides = processMove(
       //  ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
       //  opponentPokemonState.copyWith(), state.copyWith(), 0);
+      ret = true;
+      isMoveChanged = true;
+    }
+    // 溜めがあるこうげき
+    var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
+    if (findIdx >= 0) {
+      move = pokeData.moves[myState.hiddenBuffs[findIdx].extraArg1]!;
+      ret = true;
+      isMoveChanged = true;
+    }
+
+    if (isMoveChanged) {
       moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
       moveEffectivenesses[0] = PokeType.effectiveness(
-          myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
-          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-          move.type, yourState);
-      ret = true;
+        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+        move.type, yourState);
     }
 
     return ret;
@@ -5428,6 +5440,141 @@ class TurnMove {
       case 243:   // 最後に出されたわざを出す(相手のわざとは限らない)
         if (extraArg3[continuousCount] != 0) {
           ret = '${pokeData.moves[extraArg3[continuousCount]]!.displayName}(${move.displayName}';
+        }
+        break;
+      default:
+        break;
+    }
+
+    return ret;
+  }
+
+  PokeType getReplacedMoveType(Move move, int continuousCount, PokemonState myState, PhaseState state) {
+    // わざの内容変更
+    var replacedMove = getReplacedMove(move, continuousCount, myState);
+    var ret = replacedMove.type;
+    switch (replacedMove.effect.id) {
+      //case 136:   // 個体値によってわざのタイプが変わる
+      case 204:   // 天気が変わっていると威力2倍、タイプも変わる
+        switch (state.weather.id) {
+          case Weather.sunny:
+            ret = PokeType.createFromId(10);
+            break;
+          case Weather.rainy:
+            ret = PokeType.createFromId(11);
+            break;
+          case Weather.snowy:
+            ret = PokeType.createFromId(15);
+            break;
+          case Weather.sandStorm:
+            ret = PokeType.createFromId(6);
+            break;
+          default:
+            break;
+        }
+        break;
+      case 269:   // 持っているプレートに応じてわざのタイプが変わる
+        if (myState.holdingItem != null) {
+          switch (myState.holdingItem!.id) {
+            case 275:   // ひのたまプレート
+              ret = PokeType.createFromId(10);
+              break;
+            case 276:   // しずくプレート
+              ret = PokeType.createFromId(11);
+              break;
+            case 277:   // いかずちプレート
+              ret = PokeType.createFromId(13);
+              break;
+            case 278:   // みどりのプレート
+              ret = PokeType.createFromId(12);
+              break;
+            case 279:   // つららのプレート
+              ret = PokeType.createFromId(15);
+              break;
+            case 280:   // こぶしのプレート
+              ret = PokeType.createFromId(2);
+              break;
+            case 281:   // もうどくプレート
+              ret = PokeType.createFromId(4);
+              break;
+            case 282:   // だいちのプレート
+              ret = PokeType.createFromId(5);
+              break;
+            case 283:   // あおぞらプレート
+              ret = PokeType.createFromId(3);
+              break;
+            case 284:   // ふしぎのプレート
+              ret = PokeType.createFromId(14);
+              break;
+            case 285:   // たまむしプレート
+              ret = PokeType.createFromId(7);
+              break;
+            case 286:   // がんせきプレート
+              ret = PokeType.createFromId(6);
+              break;
+            case 287:   // もののけプレート
+              ret = PokeType.createFromId(8);
+              break;
+            case 288:   // りゅうのプレート
+              ret = PokeType.createFromId(16);
+              break;
+            case 289:   // こわもてプレート
+              ret = PokeType.createFromId(17);
+              break;
+            case 290:   // こつてつプレート
+              ret = PokeType.createFromId(9);
+              break;
+            case 684:   // せいれいプレート
+              ret = PokeType.createFromId(18);
+              break;
+            default:
+              break;
+          }
+        }
+        break;
+      case 401:   // わざのタイプが使用者のタイプ1のタイプになる
+        ret = myState.teraType != null ? myState.teraType! : myState.type1;
+        break;
+      case 437:   // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
+        if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.harapekoForm).isNotEmpty) {
+          ret = PokeType.createFromId(17);
+        }
+        break;
+      case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
+                  // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
+        if (myState.teraType != null) {
+          ret = myState.teraType!;
+        }
+        break;
+      case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
+        if (myState.isGround(playerType.id == PlayerType.me ? state.ownFields : state.opponentFields)) {
+          switch (state.field.id) {
+            case Field.electricTerrain:
+              ret = PokeType.createFromId(13);
+              break;
+            case Field.grassyTerrain:
+              ret = PokeType.createFromId(12);
+              break;
+            case Field.mistyTerrain:
+              ret = PokeType.createFromId(18);
+              break;
+            case Field.psychicTerrain:
+              ret = PokeType.createFromId(14);
+              break;
+          }
+        }
+        break;
+      case 487:   // 対象の場のリフレクター・ひかりのかべ・オーロラベールを解除してからこうげき。ケンタロスのフォルムによってわざのタイプが変化する
+        switch (myState.pokemon.no) {
+          case 10250:
+            ret = PokeType.createFromId(2);
+            break;
+          case 10251:
+            ret = PokeType.createFromId(10);
+            break;
+          case 10252:
+            ret = PokeType.createFromId(11);
+            break;
         }
         break;
       default:

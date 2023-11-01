@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -119,6 +120,33 @@ class PokemonState {
     }
   }
 
+  double typeBonusRate(int moveTypeId, bool isAdaptability) {
+    double rate = 1.0;
+    if (teraType != null) {
+      if (isAdaptability) {
+        if (teraType!.id == moveTypeId) rate += 1.0;
+        if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+          rate += 0.5;
+        }
+        if (rate > 2.25) rate = 2.25;
+      }
+      else {
+        if (teraType!.id == moveTypeId) rate += 0.5;
+        if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+          rate += 0.5;
+        }
+      }
+    }
+    else {
+      if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+        rate += 0.5;
+        if (isAdaptability) rate += 0.5;
+      }
+    }
+
+    return rate;
+  }
+
   // すなあらしダメージを受けるか判定
   bool isSandstormDamaged() {
     if (isTypeContain(5) || isTypeContain(6) || isTypeContain(9)) return false;
@@ -142,9 +170,27 @@ class PokemonState {
     var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
     unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm));
+    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm));
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
     hiddenBuffs.clear();
+    // ひんしでない退場で発動するフォルムチェンジ
+    if (!isFainting) {
+      int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.naiveForm);
+      if (findIdx >= 0) {
+        buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.mightyForm);   // マイティフォルム
+        // TODO この2行csvに移したい
+        maxStats[StatIndex.A.index].race = 160; maxStats[StatIndex.B.index].race = 97; maxStats[StatIndex.C.index].race = 106; maxStats[StatIndex.D.index].race = 87;
+        minStats[StatIndex.A.index].race = 160; minStats[StatIndex.B.index].race = 97; minStats[StatIndex.C.index].race = 106; minStats[StatIndex.D.index].race = 87;
+        for (int i = StatIndex.A.index; i <= StatIndex.D.index; i++) {
+          var biases = Temper.getTemperBias(pokemon.temper);
+          maxStats[StatIndex.A.index].real = SixParams.getRealABCDS(
+            pokemon.level, maxStats[StatIndex.A.index].race, maxStats[StatIndex.A.index].indi, maxStats[StatIndex.A.index].effort, biases[i-1]);
+          minStats[StatIndex.A.index].real = SixParams.getRealABCDS(
+            pokemon.level, minStats[StatIndex.A.index].race, minStats[StatIndex.A.index].indi, minStats[StatIndex.A.index].effort, biases[i-1]);
+        }
+      }
+    }
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
       int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
@@ -485,9 +531,6 @@ class PokemonState {
           if (findIdx < 0) {
             buffDebuffs.add(BuffDebuff(BuffDebuff.naiveForm));
           }
-          else {
-            buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.mightyForm);
-          }
         }
         break;
       case 284:   // わざわいのうつわ
@@ -545,15 +588,21 @@ class PokemonState {
   }
 
   // ターン終了時に行う処理
-  void processTurnEnd() {
+  void processTurnEnd(PhaseState state) {
     // 状態変化の経過ターンインクリメント
     for (var e in _ailments.iterable) {
       e.turns++;
     }
+    // ねむけ→ねむりに変化
+    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
+    if (findIdx >= 0) {
+      ailmentsRemoveAt(findIdx);
+      ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+    }
     // まもる状態は解除
     ailmentsRemoveWhere((e) => e.id == Ailment.protect);
     // はねやすめ解除＆ひこうタイプ復活
-    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.roost);
+    findIdx = ailmentsIndexWhere((e) => e.id == Ailment.roost);
     if (findIdx >= 0) {
       if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.createFromId(3);
       if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.createFromId(3);

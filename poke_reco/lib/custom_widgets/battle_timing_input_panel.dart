@@ -4,6 +4,7 @@ import 'package:poke_reco/custom_widgets/battle_change_fainting_pokemon_input_co
 import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
 import 'package:poke_reco/custom_widgets/battle_gameset_column.dart';
+import 'package:poke_reco/custom_widgets/battle_terastal_input.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -66,6 +67,8 @@ class BattleTimingInputPanel extends Column {
         return Text('ターン終了時');
       case AbilityTiming.afterActionDecision:
         return Text('行動決定直後');
+      case AbilityTiming.terastaling:
+        return Text('テラスタル');
       case AbilityTiming.action:
         return Text('行動${actionCount+1}');
       case AbilityTiming.continuousMove:
@@ -86,6 +89,7 @@ class BattleTimingInputPanel extends Column {
       case AbilityTiming.pokemonAppear:
       case AbilityTiming.everyTurnEnd:
       case AbilityTiming.afterActionDecision:
+      case AbilityTiming.terastaling:
       case AbilityTiming.action:
       case AbilityTiming.changeFaintingPokemon:
       case AbilityTiming.gameSet:
@@ -170,6 +174,15 @@ class BattleTimingInputPanel extends Column {
     BattleGamesetColumn(
       theme, sameTimingList.first.turnEffect,
       battle.opponentName) :
+    timing.id == AbilityTiming.terastaling ?
+    BattleTerastalInputColumn(
+      theme, battle, turn,
+      appState, focusPhaseIdx,
+      (phaseIdx) => onFocus(phaseIdx),
+      sameTimingList,
+      sameTimingList.first.phaseIdx,
+      timing, textEditControllerList1, textEditControllerList2,
+      textEditControllerList3, textEditControllerList4,) :
     BattleEffectInputColumn(
       theme, battle, turn,
       appState, focusPhaseIdx,

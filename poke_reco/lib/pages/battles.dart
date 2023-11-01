@@ -38,6 +38,7 @@ class BattlesPageState extends State<BattlesPage> {
     appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
+    var filteredBattles = battles.entries.where((element) => element.value.id != 0);
 
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
@@ -52,19 +53,19 @@ class BattlesPageState extends State<BattlesPage> {
     Widget lists;
     if (checkList == null) {
       checkList = {};
-      for (final e in battles.keys) {
-        checkList![e] = false;
+      for (final e in filteredBattles) {
+        checkList![e.key] = false;
       }
     }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
-    if (checkList!.length != battles.length) {
+    if (checkList!.length != filteredBattles.length) {
       checkList = {};
-      for (final e in battles.keys) {
-        checkList![e] = false;
+      for (final e in filteredBattles) {
+        checkList![e.key] = false;
       }
     }
 
-    if (battles.isEmpty) {
+    if (filteredBattles.isEmpty) {
       lists = Center(
         child: Text('表示できる対戦がありません。'),
       );
@@ -73,7 +74,7 @@ class BattlesPageState extends State<BattlesPage> {
       if (isEditMode) {
         lists = ListView(
           children: [
-            for (final e in battles.entries)
+            for (final e in filteredBattles)
               BattleTile(
                 e.value,
                 theme,
@@ -93,12 +94,12 @@ class BattlesPageState extends State<BattlesPage> {
       else {
         lists = ListView(
           children: [
-            for (final battle in battles.values)
+            for (final battle in filteredBattles)
               BattleTile(
-                battle,
+                battle.value,
                 theme,
                 leading: Icon(Icons.list_alt),
-                onLongPress: () => widget.onAdd(battle.copyWith(), false),
+                onLongPress: () => widget.onAdd(battle.value.copyWith(), false),
               ),
             SizedBox(height: deviceHeight / 4),
           ],
@@ -128,7 +129,7 @@ class BattlesPageState extends State<BattlesPage> {
                   child: Icon(Icons.sort),
                 ),
                 TextButton(
-                  onPressed: (battles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                  onPressed: (filteredBattles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                   child: Icon(Icons.edit),
                 ),
               ],
@@ -178,8 +179,8 @@ class BattlesPageState extends State<BattlesPage> {
                                     await pokeData.deleteBattle(deleteIDs);
                                     setState(() {
                                       checkList = {};
-                                      for (final e in battles.keys) {
-                                        checkList![e] = false;
+                                      for (final e in filteredBattles) {
+                                        checkList![e.key] = false;
                                       }
                                     });
                                   },
@@ -209,8 +210,8 @@ class BattlesPageState extends State<BattlesPage> {
                             }
                             setState(() {
                               checkList = {};
-                              for (final e in battles.keys) {
-                                checkList![e] = false;
+                              for (final e in filteredBattles) {
+                                checkList![e.key] = false;
                               }
                             });
                           } : null,

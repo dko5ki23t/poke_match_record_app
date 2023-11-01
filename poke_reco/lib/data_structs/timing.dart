@@ -159,6 +159,7 @@ class AbilityTiming {
   static const int chargeMoving = 155;          // ためわざを使うとき
   static const int changedIgnoredAbility = 156; // とくせいを変更される、無効化される、無視されるとき
   static const int attackedHittedWithBake = 157;  // ばけたすがたでこうげきを受けたとき
+  static const int terastaling = 158;           // テラスタル選択時
 
   const AbilityTiming(this.id);
 

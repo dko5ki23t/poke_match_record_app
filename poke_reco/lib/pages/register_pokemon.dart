@@ -146,6 +146,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
       else {
         pokemons[widget.myPokemon.id] = widget.myPokemon;
+        // 登録されているパーティのポケモン情報更新
+        var parties = appState.parties;
+        for (final party in parties.values) {
+          var target = party.pokemons.indexWhere((element) => element?.id == widget.myPokemon.id);
+          if (target >= 0) {
+            party.pokemons[target] = widget.myPokemon;
+          }
+        }
       }
       await pokeData.addMyPokemon(widget.myPokemon);
       widget.onFinish();

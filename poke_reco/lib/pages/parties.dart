@@ -28,7 +28,7 @@ class PartiesPageState extends State<PartiesPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
-    var filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
+    var filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
     var pokeData = appState.pokeData;
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
@@ -171,7 +171,7 @@ class PartiesPageState extends State<PartiesPage> {
                                     //pokeData.recreateParty(parties);
                                     await pokeData.deleteParty(deleteIDs, false);
                                     setState(() {
-                                      filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
+                                      filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
                                       checkList = {};
                                       for (final e in filteredParties) {
                                         checkList![e.key] = false;
@@ -205,7 +205,7 @@ class PartiesPageState extends State<PartiesPage> {
                               }
                             }
                             setState(() {
-                              filteredParties = parties.entries.where((element) => element.value.owner == Owner.mine);
+                              filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
                               checkList = {};
                               for (final e in filteredParties) {
                                 checkList![e.key] = false;

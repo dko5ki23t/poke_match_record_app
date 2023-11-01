@@ -72,7 +72,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   int turnNum = 1;
   int focusPhaseIdx = 0;                        // 0は無効
   List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
-  int viewMode = 0;     // 0:ランク 1:ステータス(補正前) 2:ステータス(補正後)
+  int viewMode = 0;     // 0:ランク 1:種族値 2:ステータス(補正前) 3:ステータス(補正後)
   bool isEditMode = false;
 
   bool isNewTurn = false;
@@ -222,7 +222,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         case RegisterBattlePageType.firstPokemonPage:
           assert(checkedPokemons.own != 0);
           assert(checkedPokemons.opponent != 0);
-          if (turns.isEmpty) {
+          if (turns.isEmpty ||
+              turns.first.getInitialPokemonIndex(PlayerType(PlayerType.me)) != checkedPokemons.own ||
+              turns.first.getInitialPokemonIndex(PlayerType(PlayerType.opponent)) != checkedPokemons.opponent
+          ) {
+            turns.clear();
             Turn turn = Turn()
             ..setInitialPokemonIndex(PlayerType(PlayerType.me), checkedPokemons.own) 
             ..setInitialPokemonIndex(PlayerType(PlayerType.opponent), checkedPokemons.opponent);
@@ -513,14 +517,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             onPressed: () {
                               setState(() {
                                 viewMode++;
-                                viewMode %= 3;
+                                viewMode %= 4;
                               });
                             },
                             child: Row(children: [
                               viewMode == 0 ?
-                              Text('ステータス(補正前)') :
+                              Text('ランク') :
                               viewMode == 1 ?
-                              Text('ステータス(補正後)') : Text('ランク'),
+                              Text('種族値') :
+                              viewMode == 2 ?
+                              Text('ステータス(補正前)') : Text('ステータス(補正後)'),
                               SizedBox(width: 10),
                               Icon(Icons.sync),
                             ]),
@@ -622,6 +628,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me)).statChanges(i),
                           focusState.getPokemonState(PlayerType(PlayerType.opponent)).statChanges(i)
                         ) :
+                        viewMode == 1 ?
+                          i < 6 ?
+                          _StatStatusViewRow(
+                            statusAlphabets[i],
+                            focusState.getPokemonState(PlayerType(PlayerType.me)).minStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.me)).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).minStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).maxStats[i].race,
+                          ) : Container() :
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
@@ -791,6 +806,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int end = 100;
     int i = 0;
     int actionCount = 0;
+    int terastalCount = 0;
+    int maxTerastal = 0;
+    if (!widget.battle.turns[turnNum-1].initialOwnHasTerastal) maxTerastal++;
+    if (!widget.battle.turns[turnNum-1].initialOpponentHasTerastal) maxTerastal++;
     int allowedContinuous = 0;
     int continuousCount = 0;
     bool isOwnFainting = false;
@@ -810,6 +829,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       7: AbilityTiming.changePokemonMove,
       8: AbilityTiming.everyTurnEnd,
       9: AbilityTiming.gameSet,
+      10: AbilityTiming.terastaling,
     };
     const Map<int, int> s2TimingMap = {
       1: AbilityTiming.afterMove,
@@ -1248,7 +1268,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       appState
                     );
                     isInserted = true;
-                    s1++; // 行動選択状態へ
+                    if (maxTerastal > 0) {
+                      s1 = 10;    // テラスタル処理状態へ
+                    }
+                    else {
+                      s1++; // 行動選択状態へ
+                    }
                     timingListIdx++;
                     isAssisting = false;
                   }
@@ -1257,6 +1282,37 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加リストに載っているものがあればリストから除外
                   delAssistList.add(phases[i]);
                   isAssisting = true;
+                }
+                break;
+              case 10:      // テラスタル処理状態
+                if (i >= phases.length || phases[i].timing.id != AbilityTiming.terastaling) {
+                  // TODO:自動追加
+                  /*
+                  if (assistList.isNotEmpty) {
+                    _insertPhase(i, assistList.first, appState);
+                    delAssistList.add(assistList.first);
+                    assistList.removeAt(0);
+                    isAssisting = true;
+                    isInserted = true;
+                  }
+                  else {*/
+                    _insertPhase(i, TurnEffect()
+                      ..timing = AbilityTiming(AbilityTiming.terastaling)
+                      ..effect = EffectType(EffectType.terastal)
+                      ..isAdding = true,
+                      appState
+                    );
+                    isInserted = true;
+                    s1 = 2; // 行動選択状態へ
+                    timingListIdx++;
+                    isAssisting = false;
+                  //}
+                }
+                terastalCount++;
+                if (terastalCount >= maxTerastal) {
+                  s1 = 2; // 行動選択状態へ
+                  timingListIdx++;
+                  isAssisting = false;
                 }
                 break;
               case 2:       // 行動選択状態

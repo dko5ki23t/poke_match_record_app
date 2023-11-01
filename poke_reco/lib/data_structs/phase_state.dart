@@ -132,8 +132,8 @@ class PhaseState {
       e.turns++;
     }
     // 各々のポケモンの状態のターン経過
-    getPokemonState(PlayerType(PlayerType.me)).processTurnEnd();
-    getPokemonState(PlayerType(PlayerType.opponent)).processTurnEnd();
+    getPokemonState(PlayerType(PlayerType.me)).processTurnEnd(this);
+    getPokemonState(PlayerType(PlayerType.opponent)).processTurnEnd(this);
     // 天気のターン経過
     _weather.turns++;
     // フィールドのターン経過
@@ -166,16 +166,36 @@ class PhaseState {
           for (final player in players) {
             bool changed = player.id == PlayerType.me ? changedOwn : changedOpponent;
             if (changed) {
-              if (timingIDs.contains(getPokemonState(player).currentAbility.timing.id)) {
+              var myState = getPokemonState(player);
+              if (timingIDs.contains(myState.currentAbility.timing.id)) {
                 int extraArg1 = 0;
-                if (getPokemonState(player).currentAbility.id == 36) {    // トレース
+                if (myState.currentAbility.id == 36) {    // トレース
                   extraArg1 = getPokemonState(player.opposite).currentAbility.id; 
                 }
                 ret.add(TurnEffect()
                   ..playerType = player
                   ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
                   ..effect = EffectType(EffectType.ability)
-                  ..effectId = getPokemonState(player).currentAbility.id
+                  ..effectId = myState.currentAbility.id
+                  ..extraArg1 = extraArg1
+                );
+              }
+              // 各ポケモンの場
+              var indiField = player.id == PlayerType.me ? ownFields : opponentFields;
+              // ステルスロック
+              if (indiField.where((e) => e.id == IndividualField.stealthRock).isNotEmpty &&
+                  myState.currentAbility.id != 98 &&    // マジックガード
+                  myState.holdingItem?.id != 1178       // あつぞこブーツ
+              ) {
+                var rate = PokeType.effectivenessRate(
+                  false, false, false, PokeType.createFromId(6), myState) / 8;
+                int extraArg1 = player.id == PlayerType.me ?
+                  (myState.pokemon.h.real * rate).floor() : (100 * rate).floor();
+                ret.add(TurnEffect()
+                  ..playerType = player
+                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..effect = EffectType(EffectType.individualField)
+                  ..effectId = IndiFieldEffect.stealthRock
                   ..extraArg1 = extraArg1
                 );
               }

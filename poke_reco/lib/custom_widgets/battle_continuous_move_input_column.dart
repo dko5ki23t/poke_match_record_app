@@ -8,6 +8,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/tool.dart';
 
 class BattleContinuousMoveInputColumn extends Column {
   BattleContinuousMoveInputColumn(
@@ -111,6 +112,7 @@ class BattleContinuousMoveInputColumn extends Column {
       // 連続こうげき追加ボタン
       TextButton(
         onPressed:
+          getSelectedNum(appState.editingPhase) == 0 ?
           () {
             refMove.moveHits.add(MoveHit(MoveHit.hit));
             refMove.moveEffectivenesses.add(MoveEffectiveness(MoveEffectiveness.normal));
@@ -128,7 +130,7 @@ class BattleContinuousMoveInputColumn extends Column {
             hpControllerList[phaseIdx].text =
               turn.phases[phaseIdx].getEditingControllerText2(currentState);
             onFocus(phaseIdx+1);
-          },
+          } : null,
         child: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(

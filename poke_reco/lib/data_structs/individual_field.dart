@@ -1,6 +1,33 @@
 // 各々の場
 import 'package:flutter/material.dart';
 
+// 各々の場による効果(TurnEffectのeffectIdに使用する定数を提供)
+class IndiFieldEffect {
+  static const int none = 0;
+  static const int toxicSpikes = 1;       // どくびし
+  static const int spikes = 2;            // まきびし
+  static const int stealthRock = 3;       // ステルスロック
+  static const int stickyWeb = 4;         // ねばねばネット
+  static const int healingWish = 5;       // いやしのねがい
+  static const int lunarDance = 6;        // みかづきのまい
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'どくびし',
+    2: 'まきびし',
+    3: 'ステルスロック',
+    4: 'ねばねばネット',
+    5: 'いやしのねがい',
+    6: 'みかづきのまい',
+  };
+
+  const IndiFieldEffect(this.id);
+
+  String get displayName => _displayNameMap[id]!;
+
+  final int id;
+}
+
 class IndividualField {
   static const int none = 0;
   static const int toxicSpikes = 1;       // どくびし
@@ -9,7 +36,7 @@ class IndividualField {
   static const int stickyWeb = 4;         // ねばねばネット
   static const int healingWish = 5;       // いやしのねがい
   static const int lunarDance = 6;        // みかづきのまい
-  static const int sandStormDamage = 7;   // すなあらしによるダメージ
+//  static const int sandStormDamage = 7;   // すなあらしによるダメージ
   static const int futureAttack = 8;      // みらいにこうげき
   static const int futureAttackSteel = 9; // はめつのねがい
   static const int wish = 10;             // ねがいごと
@@ -107,9 +134,9 @@ class IndividualField {
   // SQLに保存された文字列からIndividualFieldをパース
   static IndividualField deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return IndividualField(elements[0])
-      ..turns = elements[1]
-      ..extraArg1 = elements[2];
+    return IndividualField(int.parse(elements[0]))
+      ..turns = int.parse(elements[1])
+      ..extraArg1 = int.parse(elements[2]);
   }
 
   // SQL保存用の文字列に変換
