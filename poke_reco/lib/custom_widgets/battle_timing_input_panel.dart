@@ -37,6 +37,7 @@ class BattleTimingInputPanel extends Column {
     int actionCount,
     PlayerType attacker,
     TurnMove turnMove,
+    TurnEffectAndStateAndGuide? nextSameTimingFirst,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -53,6 +54,7 @@ class BattleTimingInputPanel extends Column {
           textEditControllerList3, textEditControllerList4,
           prevState, prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount, attacker, turnMove,
+          nextSameTimingFirst,
         ),
       ),
       SizedBox(height: 20,),
@@ -125,6 +127,7 @@ class BattleTimingInputPanel extends Column {
     int continuousCount,
     PlayerType attacker,
     TurnMove turnMove,
+    TurnEffectAndStateAndGuide? nextSameTimingFirst,
   ) {
     return 
     timing.id == AbilityTiming.action ?
@@ -141,6 +144,7 @@ class BattleTimingInputPanel extends Column {
       textEditControllerList3,
       textEditControllerList4,
       sameTimingList.first,
+      nextSameTimingFirst,
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveInputColumn(
@@ -157,6 +161,7 @@ class BattleTimingInputPanel extends Column {
       textEditControllerList4,
       refMove!, continuousCount,
       sameTimingList.first,
+      nextSameTimingFirst,
     ) :
     timing.id == AbilityTiming.changeFaintingPokemon ?
     BattleChangeFaintingPokemonInputColumn(

@@ -11,6 +11,7 @@ import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 
 class PokemonState {
+  PlayerType playerType = PlayerType(0);    // ポケモンの所有者
   Pokemon pokemon = Pokemon();  // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
@@ -35,6 +36,7 @@ class PokemonState {
 
   PokemonState copyWith() =>
     PokemonState()
+    ..playerType = playerType
     ..pokemon = pokemon
     ..remainHP = remainHP
     ..remainHPPercent = remainHPPercent
@@ -234,16 +236,16 @@ class PokemonState {
   }
 
   // ポケモン交代や死に出しにより登場する場合の処理
-  void processEnterEffect(bool isOwn, Weather weather, Field field, PokemonState yourState) {
+  void processEnterEffect(bool isOwn, PhaseState state, PokemonState yourState) {
     isBattling = true;
     currentAbility = pokemon.ability;
-    processPassiveEffect(isOwn, weather, field, yourState);   // パッシブ効果
-    Weather.processWeatherEffect(Weather(0), weather, isOwn ? this : null, isOwn ? null : this);  // 天気の影響
-    Field.processFieldEffect(Field(0), field, isOwn ? this : null, isOwn ? null : this);  // フィールドの影響
+    processPassiveEffect(isOwn, state, yourState);   // パッシブ効果
+    Weather.processWeatherEffect(Weather(0), state.weather, isOwn ? this : null, isOwn ? null : this);  // 天気の影響
+    Field.processFieldEffect(Field(0), state.field, isOwn ? this : null, isOwn ? null : this);  // フィールドの影響
   }
 
   // ポケモンのとくせい/もちもの等で常に働く効果を付与。ポケモン登場時に一度だけ呼ぶ
-  void processPassiveEffect(bool isOwn, Weather weather, Field field, PokemonState yourState) {
+  void processPassiveEffect(bool isOwn, PhaseState state, PokemonState yourState) {
     // ポケモン固有のフォルム等
     if (pokemon.no == 648) {  // メロエッタ
       buffDebuffs.add(BuffDebuff(BuffDebuff.voiceForm));
@@ -386,7 +388,7 @@ class PokemonState {
         buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreWall));
         break;
       case 156:  // マジックミラー
-        ailmentsAdd(Ailment(Ailment.magicCoat), weather, field);
+        ailmentsAdd(Ailment(Ailment.magicCoat), state);
         break;
       case 158:  // いたずらごころ
         buffDebuffs.add(BuffDebuff(BuffDebuff.prankster));
@@ -585,6 +587,12 @@ class PokemonState {
         if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
       }
     }
+
+    // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
+    var indiField = isOwn ? state.ownFields : state.opponentFields;
+    if (isGround(indiField) && isTypeContain(4)) {
+      indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
+    }
   }
 
   // ターン終了時に行う処理
@@ -597,7 +605,7 @@ class PokemonState {
     var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
     if (findIdx >= 0) {
       ailmentsRemoveAt(findIdx);
-      ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+      ailmentsAdd(Ailment(Ailment.sleep), state);
     }
     // まもる状態は解除
     ailmentsRemoveWhere((e) => e.id == Ailment.protect);
@@ -621,7 +629,7 @@ class PokemonState {
   }
 
   // 状態異常に関する関数群ここから
-  bool ailmentsAdd(Ailment ailment, Weather weather, Field field, {bool forceAdd = false}) {
+  bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
@@ -637,12 +645,16 @@ class PokemonState {
     if (currentAbility.id == 166 && isTypeContain(12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
     if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze)) return false;      // マグマのよろい<-こおり
-    if ((currentAbility.id == 102) && (weather.id == Weather.sunny) &&
+    if ((currentAbility.id == 102) && (state.weather.id == Weather.sunny) &&
         (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // 晴れ下リーフガード<-状態異常＋ねむけ
     if (currentAbility.id == 213 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // ぜったいねむり<-状態異常＋ねむけ
     // TODO:リミットシールド
     if (currentAbility.id == 213) return false;
-    if (field.id == Field.mistyTerrain) return false;
+    if (state.weather.id == Weather.sunny && ailment.id == Ailment.freeze) return false;
+    if (state.field.id == Field.electricTerrain &&
+        isGround(playerType.id == PlayerType.me ? state.ownFields : state.opponentFields) &&
+        ailment.id == Ailment.sleep) return false;
+    if (state.field.id == Field.mistyTerrain) return false;
 
     bool isAdded = _ailments.add(ailment);
 
@@ -836,21 +848,21 @@ class PokemonState {
   // ランク変化に関する関数群ここまで
 
   // ランク補正等込みのHABCDSを返す
-  int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState) {
+  int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
     if (statIdx == StatIndex.H) {
       return maxStats[StatIndex.H.index].real;
     }
-    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState);
+    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState, state);
   }
   
-  int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState) {
+  int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
     if (statIdx == StatIndex.H) {
       return minStats[StatIndex.H.index].real;
     }
-    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState);
+    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState, state);
   }
 
-  int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState) {
+  int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
     if (statIdx == StatIndex.H) {
       return val;
     }
@@ -906,18 +918,66 @@ class PokemonState {
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) >= 0) ret *= 1.5;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackSpeed0_5) >= 0) ret *= 0.5;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist) >= 0) ret *= 0.5;
+          if (type.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble1) >= 0) ret *= 0.5;
           if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
           if (type.id == 9 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelWorker) >= 0) ret *= 1.5;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu) >= 0) ret *= 1.5;
           if (type.id == 13 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electric1_3) >= 0) ret *= 1.3;
           if (type.id == 16 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragon1_5) >= 0) ret *= 1.5;
-          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
-          if (type.id == 8 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >= 0) ret *= 0.5;          
+          if (type.id == 8 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >= 0) ret *= 0.5;
           if (type.id == 6 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rock1_5) >= 0) ret *= 1.5;
-          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack0_75) >= 0) ret *= 0.75;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_33) >= 0) ret *= 1.33;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >= 0) ret *= 2;
+        }
+        break;
+      case StatIndex.B:
+        {
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_3) >= 0) ret *= 1.3;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.guard2) >= 0) ret *= 2.0;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.guard1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense0_75) >= 0) ret *= 0.75;
+          if (state.weather.id == Weather.snowy && isTypeContain(15)) ret * 1.5;
+        }
+        break;
+      case StatIndex.C:
+        {
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack1_3) >= 0) ret *= 1.3;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist) >= 0) ret *= 0.5;
+          if (type.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble1) >= 0) ret *= 0.5;
+          if (type.id == 11 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >= 0) ret *= 2;
+          if (type.id == 9 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelWorker) >= 0) ret *= 1.5;
+          if (type.id == 13 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electric1_3) >= 0) ret *= 1.3;
+          if (type.id == 16 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragon1_5) >= 0) ret *= 1.5;
+          if (type.id == 8 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >= 0) ret *= 0.5;
+          if (type.id == 6 && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rock1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack0_75) >= 0) ret *= 0.75;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack1_33) >= 0) ret *= 1.33;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceSpecs) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack2) >= 0) ret *= 2.0;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >= 0) ret *= 2.0;
+        }
+        break;
+      case StatIndex.D:
+        {
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense1_3) >= 0) ret *= 1.3;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense0_75) >= 0) ret *= 0.75;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense2) >= 0) ret *= 2.0;
+          if (state.weather.id == Weather.sandStorm && isTypeContain(6)) ret * 1.5;
+        }
+        break;
+      case StatIndex.S:
+        {
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed2) >= 0) ret *= 2.0;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unburden) >= 0) ret *= 2.0;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5IgnPara) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackSpeed0_5) >= 0) ret *= 0.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceScarf) >= 0) ret *= 1.5;
+          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed0_5) >= 0) ret *= 0.5;
         }
         break;
       default:

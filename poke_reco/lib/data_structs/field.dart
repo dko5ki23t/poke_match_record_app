@@ -3,6 +3,31 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
+// フィールドによる効果(TurnEffectのeffectIdに使用する定数を提供)
+class FieldEffect {
+  static const int none = 0;
+  static const int electricTerrainEnd = 1;  // エレキフィールド終了
+  static const int grassyTerrainEnd = 2;    // グラスフィールド終了
+  static const int mistyTerrainEnd = 3;     // ミストフィールド終了
+  static const int psychicTerrainEnd = 4;   // サイコフィールド終了
+  static const int grassHeal = 5;           // グラスフィールドによる回復
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'エレキフィールド終了',
+    2: 'グラスフィールド終了',
+    3: 'ミストフィールド終了',
+    4: 'サイコフィールド終了',
+    5: 'グラスフィールドによる回復',
+  };
+
+  const FieldEffect(this.id);
+
+  String get displayName => _displayNameMap[id]!;
+
+  final int id;
+}
+
 // フィールド
 class Field {
   static const int none = 0;

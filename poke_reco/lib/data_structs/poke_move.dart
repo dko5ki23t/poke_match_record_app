@@ -285,7 +285,7 @@ class TurnMove {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       myState.processExitEffect(true, yourState);
       state.setPokemonIndex(playerType, changePokemonIndex!);
-      state.getPokemonState(playerType).processEnterEffect(true, state.weather, state.field, yourState);
+      state.getPokemonState(playerType).processEnterEffect(true, state, yourState);
       return ret;
     }
 
@@ -296,19 +296,6 @@ class TurnMove {
     List<IndividualField> yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
     int myPlayerTypeID = playerType.id;
     int yourPlayerTypeID = playerType.id == PlayerType.me ? PlayerType.opponent : PlayerType.me;
-
-    // ミクルのみのこうかが残っていれば消費
-    int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
-    if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-    // ノーマルジュエル消費
-    if (myState.holdingItem?.id == 669 && move.damageClass.id >= 2 && move.type.id == 1) {
-      myState.holdingItem = null;
-    }
-    // くっつきバリ移動
-    if (move.isDirect && myState.holdingItem == null && yourState.holdingItem?.id == 265) {
-      myState.holdingItem = yourState.holdingItem;
-      yourState.holdingItem = null;
-    }
 
     // ダメージ計算式を表示するかどうか
     bool showDamageCalc = false;
@@ -435,13 +422,13 @@ class TurnMove {
             break;
           case 2:     // 眠らせる
           case 499:   // 眠らせる(確率)
-            targetState.ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
             break;
           case 3:     // どくにする(確率)
           case 67:    // どくにする
           case 78:    // 2回こうげき、どくにする(確率)
           case 210:   // どくにする(確率)。急所に当たりやすい
-            targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             break;
           case 4:     // 与えたダメージの半分だけHP回復
           case 9:     // ねむり状態の対象にのみダメージ、与えたダメージの半分だけHP回復
@@ -464,18 +451,18 @@ class TurnMove {
           case 168:   // やけどにする
           case 201:   // やけどにする(確率)。急所に当たりやすい
           case 472:   // やけどにする(確率)。天気があめの時は必中
-            targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             break;
           case 6:     // こおりにする(確率)
           case 261:   // こおりにする(確率)。天気がゆきのときは必中
-            targetState.ailmentsAdd(Ailment(Ailment.freeze), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             break;
           case 7:     // まひにする(確率)
           case 68:    // まひにする
           case 153:   // まひにする(確率)。天気があめなら必中、はれなら命中率が下がる。そらをとぶ状態でも命中する
           case 372:   // まひにする(確率)
           case 471:   // まひにする(確率)。天気があめの時は必中
-            targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             break;
           case 8:     // 使用者はひんしになる
             myState.remainHP = 0;
@@ -532,15 +519,15 @@ class TurnMove {
             targetState.resetStatChanges();
             break;
           case 27:    // 2ターン後の自身の行動までがまん状態になり、その間受けた合計ダメージの2倍を相手に返す(SV使用不可のため処理なし)
-            //myState.ailmentsAdd(Ailment(Ailment.bide), state.weather, state.field);
+            //myState.ailmentsAdd(Ailment(Ailment.bide), state);
             break;
           case 28:    // 2～3ターンの間あばれる状態になり、攻撃し続ける。攻撃終了後、自身がこんらん状態となる
-            myState.ailmentsAdd(Ailment(Ailment.thrash)..extraArg1 = replacedMove.id, state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.thrash)..extraArg1 = replacedMove.id, state);
             if (extraArg1[continuousCount] != 0) {
               // あばれるの解除
               myState.ailmentsRemoveWhere((e) => e.id == Ailment.thrash);
               // こんらんする
-              myState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+              myState.ailmentsAdd(Ailment(Ailment.confusion), state);
             }
             break;
           case 29:    // 相手ポケモンをランダムに交代させる
@@ -550,7 +537,7 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType.opposite, changePokemonIndex!);
               newState = state.getPokemonState(playerType.opposite);
-              newState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state.weather, state.field, myState);
+              newState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state, myState);
             }
             break;
           case 30:    // 2～5回連続でこうげきする
@@ -566,11 +553,11 @@ class TurnMove {
           case 32:    // ひるませる(確率)
           case 93:    // ひるませる(確率)。ねむり状態のときのみ成功
           case 159:   // ひるませる。場に出て最初の行動のときのみ成功
-            targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             break;
           case 34:    // もうどくにする
           case 203:   // もうどくにする(確率)
-            targetState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.badPoison), state);
             break;
           case 35:    // 戦闘後おかねを拾える
             break;
@@ -580,7 +567,7 @@ class TurnMove {
             break;
           case 37:    // やけど・こおり・まひのいずれかにする(確率)
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(extraArg1[continuousCount]), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(extraArg1[continuousCount]), state);
             }
             break;
           case 38:    // 使用者はHP満タン・状態異常を回復して2ターン眠る
@@ -592,7 +579,7 @@ class TurnMove {
             else {
               myState.remainHPPercent = 100;
             }
-            targetState.ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
             break;
           case 39:    // 一撃必殺
             targetState.remainHP = 0;
@@ -629,7 +616,7 @@ class TurnMove {
             damageCalc = 'ダメージ計算：40(固定ダメージ) = 40';
             break;
           case 43:    // バインド状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state);
             break;
           case 44:    // きゅうしょに当たりやすい
             break;
@@ -651,7 +638,7 @@ class TurnMove {
           case 200:   // こんらんさせる
           case 268:   // こんらんさせる(確率)
           case 334:   // こんらんさせる(確率)。そらをとぶ状態の相手にも当たる。天気があめだと必中、はれだと命中率50になる
-            targetState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 51:    // 使用者のこうげきを2段階上げる
             myState.addStatChanges(true, 0, 2, targetState, moveId: replacedMove.id);
@@ -711,7 +698,7 @@ class TurnMove {
               else {  // こうげきする
                 myState.hiddenBuffs.removeAt(findIdx);
                 if (extraArg1[continuousCount] != 0) {
-                  targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+                  targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
                 }
               }
             }
@@ -749,11 +736,11 @@ class TurnMove {
             // ユーザが、出たわざを選択していればここは通らない。処理なし
             break;
           case 85:    // やどりぎのタネ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.leechSeed), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.leechSeed), state);
             break;
           case 87:    // かなしばり状態にする
             if (targetState.lastMove != null) {
-              targetState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = targetState.lastMove!.id, state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = targetState.lastMove!.id, state);
             }
             break;
           case 88:    // 使用者のレベル分の固定ダメージ
@@ -767,11 +754,11 @@ class TurnMove {
             break;
           case 91:    // アンコール状態にする
             if (targetState.lastMove != null) {
-              targetState.ailmentsAdd(Ailment(Ailment.encore)..extraArg1 = targetState.lastMove!.id, state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.encore)..extraArg1 = targetState.lastMove!.id, state);
             }
             break;
           case 95:    // ロックオン状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.lockOn), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.lockOn), state);
             break;
           case 96:    // 相手が最後に使用したわざをコピーし、このわざがその代わりとなる(SV使用不可のため処理なし)
             break;
@@ -779,7 +766,7 @@ class TurnMove {
             // ユーザが、出たわざを選択していればここは通らない。処理なし
             break;
           case 99:    // 次の使用者の行動順までみちづれ状態になる。連続で使用すると失敗する
-            targetState.ailmentsAdd(Ailment(Ailment.destinyBond), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.destinyBond), state);
             break;
           case 100:   // 使用者の残りHPが少ないほど威力が大きくなる
             {
@@ -843,15 +830,15 @@ class TurnMove {
           case 374:   // にげられない状態にする
           case 385:   // にげられない状態にする
             if (!targetState.isTypeContain(8)) {
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
             }
             break;
           case 108:   // あくむ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.nightmare), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.nightmare), state);
             break;
           case 109:   // 使用者のかいひを2段階上げる。ちいさくなる状態になる
             myState.addStatChanges(true, 6, 2, targetState, moveId: replacedMove.id);
-            myState.ailmentsAdd(Ailment(Ailment.minimize), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.minimize), state);
             break;
           case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
             if (myState.isTypeContain(8)) {
@@ -867,7 +854,7 @@ class TurnMove {
           case 112:   // まもる状態になる
           case 307:   // まもる状態になる
           case 377:   // まもる状態になる。場に出て最初の行動の場合のみ成功
-            myState.ailmentsAdd(Ailment(Ailment.protect), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.protect), state);
             break;
           case 113:   // 相手の場に「まきびし」を発生させる
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.spikes);
@@ -880,10 +867,10 @@ class TurnMove {
             }
             break;
           case 114:   // みやぶられている状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.identify), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.identify), state);
             break;
           case 115:   // ほろびのうた状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.perishSong), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.perishSong), state);
             break;
           case 116:   // 天気をすなあらしにする
             targetField!.weather = Weather(Weather.sandStorm);
@@ -900,7 +887,7 @@ class TurnMove {
             break;
           case 119:   // こうげきを2段階上げ、こんらん状態にする
             targetState.addStatChanges(targetState == myState, 0, 2, myState, moveId: replacedMove.id);
-            targetState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 120:   // 当てるたびに威力が2倍ずつ増える。最大160
             if (myState.lastMove?.id == replacedMove.id) {
@@ -910,7 +897,7 @@ class TurnMove {
             break;
           case 121:   // 性別が異なる場合、メロメロ状態にする
             if (myState.pokemon.sex != Sex.none && targetState.pokemon.sex != Sex.none && myState.pokemon.sex != targetState.pokemon.sex) {
-              targetState.ailmentsAdd(Ailment(Ailment.infatuation), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.infatuation), state);
             }
             break;
           case 122:   // なつき度によって威力が変わる
@@ -932,7 +919,7 @@ class TurnMove {
           case 126:   // 使用者のこおり状態を消す。相手をやけど状態にする(確率)
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
           case 127:   // 威力がランダムで10,30,50,70,90,110,150のいずれかになる。あなをほる状態の対象にも当たり、ダメージ2倍。グラスフィールドの影響を受ける相手には威力半減
@@ -954,12 +941,12 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
+              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               for (int i = 0; i < 7; i++) {
                 newState.forceSetStatChanges(i, statChanges[i]);
               }
               for (var e in takeOverAilments) {
-                newState.ailmentsAdd(e, state.weather, state.field);
+                newState.ailmentsAdd(e, state);
               }
               newState.buffDebuffs.addAll(takeOverBuffDebuffs);
             }
@@ -1027,7 +1014,7 @@ class TurnMove {
             break;
           case 147:   // ひるませる(確率)。そらをとぶ状態でも命中し、その場合威力が2倍
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             if (targetState.ailmentsWhere((e) => e.id == Ailment.flying).isNotEmpty) {
               movePower *= 2;
@@ -1050,7 +1037,7 @@ class TurnMove {
             break;
           case 151:   // ひるませる(確率)。ちいさくなる状態に対して必中、その場合ダメージ2倍
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             break;
@@ -1078,7 +1065,7 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
+              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
             }
             break;
           case 155:   // 手持ちポケモン(ひんし、状態異常除く)の数だけ連続でこうげきする
@@ -1088,7 +1075,7 @@ class TurnMove {
             {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {
-                myState.ailmentsAdd(Ailment(Ailment.flying), state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               }
@@ -1100,10 +1087,10 @@ class TurnMove {
             break;
           case 157:   // 使用者のぼうぎょを1段階上げる。まるくなる状態になる
             myState.addStatChanges(true, 1, 1, targetState, moveId: replacedMove.id);
-            myState.ailmentsAdd(Ailment(Ailment.curl), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.curl), state);
             break;
           case 160:   // さわぐ状態になる
-            myState.ailmentsAdd(Ailment(Ailment.uproar), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.uproar), state);
             break;
           case 161:   // たくわえた回数を+1する。使用者のぼうぎょ・とくぼうが1段階上がる
             int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.stock3);
@@ -1120,10 +1107,10 @@ class TurnMove {
               findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.stock1 || e.id == Ailment.stock2);
               if (findIdx >= 0) {
                 var removed = myState.ailmentsRemoveAt(findIdx);
-                myState.ailmentsAdd(Ailment(removed.id + 1)..extraArg1 = removed.extraArg1 + plusPoint, state.weather, state.field);
+                myState.ailmentsAdd(Ailment(removed.id + 1)..extraArg1 = removed.extraArg1 + plusPoint, state);
               }
               else {
-                myState.ailmentsAdd(Ailment(Ailment.stock1)..extraArg1 = plusPoint, state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.stock1)..extraArg1 = plusPoint, state);
               }
             }
             break;
@@ -1146,11 +1133,11 @@ class TurnMove {
             //targetField!.weather = Weather(Weather.snowy);
             break;
           case 166:   // いちゃもん状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.torment), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.torment), state);
             break;
           case 167:   // とくこうを1段階上げ、こんらん状態にする
             targetState.addStatChanges(targetState == myState, 2, 1, myState, moveId: replacedMove.id);
-            targetState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 169:   // 使用者はひんしになる。相手のこうげき・とくこうを2段階ずつ下げる
             targetState.addStatChanges(targetState == myState, 0, -2, myState, moveId: replacedMove.id);
@@ -1177,19 +1164,19 @@ class TurnMove {
             }
             break;
           case 173:   // 使用者はちゅうもくのまと状態になる
-            myState.ailmentsAdd(Ailment(Ailment.attention), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.attention), state);
             break;
           case 174:   // 地形やフィールドによって出る技が変わる(SV使用不可のため処理なし)
             break;
           case 175:   // 使用者はじゅうでん状態になる。使用者のとくぼうを1段階上げる
-            myState.ailmentsAdd(Ailment(Ailment.charging), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.charging), state);
             myState.addStatChanges(true, 3, 1, targetState, moveId: replacedMove.id);
             break;
           case 176:   // ちょうはつ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.taunt), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.taunt), state);
             break;
           case 177:   // てだすけ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.helpHand), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.helpHand), state);
             break;
           case 178:   // 使用者ともちものを入れ替える
             opponentPokemonState.holdingItem = ownPokemonState.holdingItem;
@@ -1213,7 +1200,7 @@ class TurnMove {
           case 181:   // 使用者の手持ちポケモンの技をランダムに1つ使う(SV使用不可のため処理なし)
             break;
           case 182:   // 使用者はねをはる状態になる。
-            myState.ailmentsAdd(Ailment(Ailment.ingrain), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.ingrain), state);
             break;
           case 183:   // 使用者はこうげき・ぼうぎょが1段階下がる
             myState.addStatChanges(true, 0, -1, targetState, moveId: replacedMove.id);
@@ -1233,7 +1220,7 @@ class TurnMove {
             targetIndiField.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen || e.id == IndividualField.auroraVeil);
             break;
           case 188:   // ねむけ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.sleepy), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.sleepy), state);
             break;
           case 189:   // もちものを持っていれば失わせ、威力1.5倍
             // TODOもちもの確定
@@ -1259,14 +1246,14 @@ class TurnMove {
             }
             break;
           case 193:   // 使用者をふういん状態にする
-            myState.ailmentsAdd(Ailment(Ailment.imprison), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.imprison), state);
             break;
           case 194:   // 使用者のどく・もうどく・まひ・やけどを治す
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison ||
               e.id == Ailment.paralysis || e.id == Ailment.burn);
             break;
           case 195:   // 使用者をおんねん状態にする
-            myState.ailmentsAdd(Ailment(Ailment.grudge), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.grudge), state);
             break;
           case 196:   // そのターンに使われる、自身を対象にするへんかわざを横取りして代わりに自分に使う(SV使用不可のため処理なし)
             break;
@@ -1364,7 +1351,7 @@ class TurnMove {
               myState.type2 = null;
               lostFly = 2;
             }
-            myState.ailmentsAdd(Ailment(Ailment.roost)..extraArg1 = lostFly, state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.roost)..extraArg1 = lostFly, state);
             break;
           case 216:   // 場をじゅうりょく状態にする
             if (targetIndiField.where((e) => e.id == IndividualField.gravity).isEmpty) {
@@ -1372,7 +1359,7 @@ class TurnMove {
             }
             break;
           case 217:   // ミラクルアイ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.miracleEye), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.miracleEye), state);
             break;
           case 218:   // 相手がねむり状態なら威力2倍。相手のねむりを治す
             int findIdx = targetState.ailmentsIndexWhere((e) => e.id == Ailment.sleep);
@@ -1442,7 +1429,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 233:   // さしおさえ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.embargo), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.embargo), state);
             break;
           case 234:   // 使用者のもちものによって威力と追加効果が変わる
             if (extraArg1[continuousCount] != 0) {
@@ -1456,7 +1443,7 @@ class TurnMove {
             int targetIdx = targetState.ailmentsIndexWhere((e) => e.id <= Ailment.sleep);
             int myIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.sleep);
             if (targetIdx < 0 && myIdx >= 0) {
-              targetState.ailmentsAdd(Ailment(myState.ailments(myIdx).id), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(myState.ailments(myIdx).id), state);
             }
             myState.ailmentsRemoveAt(myIdx);
             break;
@@ -1464,7 +1451,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 237:   // かいふくふうじ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.healBlock), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.healBlock), state);
             break;
           case 238:   // 相手の残りHPが多いほど威力が高くなる(120×相手の残りHP/相手の最大HP)
             if (targetPlayerTypeID == PlayerType.me) {
@@ -1475,10 +1462,10 @@ class TurnMove {
             }
             break;
           case 239:   // 使用者をパワートリック状態にする
-            myState.ailmentsAdd(Ailment(Ailment.powerTrick), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.powerTrick), state);
             break;
           case 240:   // とくせいなし状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.abilityNoEffect), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.abilityNoEffect), state);
             break;
           case 241:   // 場におまじないを発生させる(SV使用不可のため処理なし)
             break;
@@ -1537,15 +1524,15 @@ class TurnMove {
             }
             break;
           case 252:   // 使用者をアクアリング状態にする
-            myState.ailmentsAdd(Ailment(Ailment.aquaRing), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.aquaRing), state);
             break;
           case 253:   // 使用者をでんじふゆう状態にする
-            myState.ailmentsAdd(Ailment(Ailment.magnetRise), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.magnetRise), state);
             break;
           case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             if (myPlayerTypeID == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
@@ -1558,7 +1545,7 @@ class TurnMove {
             {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {    // 溜め状態にする
-                myState.ailmentsAdd(Ailment(Ailment.diving), state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.diving), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               }
@@ -1572,7 +1559,7 @@ class TurnMove {
             {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {    // 溜め状態にする
-                myState.ailmentsAdd(Ailment(Ailment.digging), state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.digging), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               }
@@ -1605,12 +1592,12 @@ class TurnMove {
             }
             break;
           case 262:   // バインド状態にする。ダイビング中の相手にはダメージ2倍
-            targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state);
             if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) mTwice = true;
             break;
           case 263:   // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             }
             if (myPlayerTypeID == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
@@ -1623,7 +1610,7 @@ class TurnMove {
             {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {    // 溜め状態にする
-                myState.ailmentsAdd(Ailment(Ailment.flying), state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               }
@@ -1631,7 +1618,7 @@ class TurnMove {
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
                 myState.hiddenBuffs.removeAt(findIdx);
                 if (extraArg1[continuousCount] != 0) {
-                  targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+                  targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
               }
             }
@@ -1716,7 +1703,7 @@ class TurnMove {
             {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {    // 溜め状態にする
-                myState.ailmentsAdd(Ailment(Ailment.shadowForcing), state.weather, state.field);
+                myState.ailmentsAdd(Ailment(Ailment.shadowForcing), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               }
@@ -1728,26 +1715,26 @@ class TurnMove {
             break;
           case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             if (extraArg2[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 275:   // 相手をこおり状態にする(確率)。相手をひるませる(確率)。
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.freeze), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             }
             if (extraArg2[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 276:   // 相手をまひ状態にする(確率)。相手をひるませる(確率)。
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             }
             if (extraArg2[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 278:   // 使用者のこうげき・めいちゅうを1段階ずつ上げる
@@ -1808,7 +1795,7 @@ class TurnMove {
           case 285:   // 使用者のすばやさを2段階上げる。おもさが100kg軽くなる(SV使用不可のため処理なし)
             break;
           case 286:   // 相手をテレキネシス状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.telekinesis), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.telekinesis), state);
             break;
           case 287:   //場をマジックルームにする/解除する
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.magicRoom);
@@ -1821,7 +1808,7 @@ class TurnMove {
             break;
           case 288:   // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
           case 373:   // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
-            targetState.ailmentsAdd(Ailment(Ailment.antiAir), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.antiAir), state);
             break;
           case 289:   // かならず急所に当たる
             break;
@@ -1990,7 +1977,7 @@ class TurnMove {
             break;
           case 330:   // ねむり状態にする(確率)。メロエッタのフォルムが変わる
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.sleep), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
             }
             int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.voiceForm || e.id == BuffDebuff.stepForm);
             if (findIdx >= 0) {
@@ -2012,7 +1999,7 @@ class TurnMove {
               else {  // こうげきする
                 myState.hiddenBuffs.removeAt(findIdx);
                 if (extraArg1[continuousCount] != 0) {
-                  targetState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+                  targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
               }
             }
@@ -2027,7 +2014,7 @@ class TurnMove {
               else {  // こうげきする
                 myState.hiddenBuffs.removeAt(findIdx);
                 if (extraArg1[continuousCount] != 0) {
-                  targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+                  targetState.ailmentsAdd(Ailment(Ailment.burn), state);
                 }
               }
             }
@@ -2081,7 +2068,7 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
+              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
             }
             break;
           case 348:   // 相手の能力変化を逆にする
@@ -2100,7 +2087,7 @@ class TurnMove {
             targetField!.field = Field(Field.mistyTerrain);
             break;
           case 354:   // そうでん状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.electrify), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.electrify), state);
             break;
           case 355:   // 場をフェアリーロック状態にする
             if (targetIndiField.where((e) => e.id == IndividualField.fairyLock).isEmpty) {
@@ -2162,10 +2149,10 @@ class TurnMove {
             //TODO
             break;
           case 378:   // ふんじん状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.powder), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.powder), state);
             break;
           case 380:   // こおりにする(確率)。みずタイプのポケモンに対しても効果ばつぐんとなる
-            targetState.ailmentsAdd(Ailment(Ailment.freeze), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             break;
           case 384:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手をどく状態にする
             //TODO
@@ -2180,18 +2167,18 @@ class TurnMove {
             // TODO 相手のこうげき実数値が確定する場合あり
             break;
           case 389:   // 相手をちゅうもくのまと状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.attention), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.attention), state);
             break;
           case 390:   // 相手のすばやさを1段階下げ、どく状態する
             targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-            targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             break;
           case 391:   // 次のターンまで、使用者のこうげきが必ず急所に当たるようになる
             break;
           case 392:   // プラスまたはマイナスのとくせいを持つポケモンのこうげきととくこうを1段階上げる(SV使用不可のため処理なし)
             break;
           case 393:   // じごくづき状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.throatChop), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.throatChop), state);
             break;
           case 394:   // 対象が味方の場合のみ、最大HPの1/2を回復する
             break;
@@ -2230,7 +2217,7 @@ class TurnMove {
             moveType = myState.teraType != null ? myState.teraType! : myState.type1;
             break;
           case 402:   // そのターンですでに行動を終えた相手をとくせいなし状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.abilityNoEffect), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.abilityNoEffect), state);
             break;
           case 403:   // 対象が直前に使用したわざをもう一度使わせる
             break;
@@ -2298,8 +2285,8 @@ class TurnMove {
             break;
           case 423:   // 使用者と相手をにげられない状態にする
             if (!myState.isTypeContain(8) && !targetState.isTypeContain(8)) {
-              myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state.weather, state.field);
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state.weather, state.field);
+              myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
             }
             break;
           case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
@@ -2317,11 +2304,11 @@ class TurnMove {
             myState.addStatChanges(true, 2, 1, targetState, moveId: replacedMove.id);
             myState.addStatChanges(true, 3, 1, targetState, moveId: replacedMove.id);
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
-            myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state.weather, state.field);
+            myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
             break;
           case 426:   // すばやさを1段階下げる。タールショット状態にする
             targetState.addStatChanges(targetState == myState, 4, -1, myState, moveId: replacedMove.id);
-            targetState.ailmentsAdd(Ailment(Ailment.tarShot), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.tarShot), state);
             break;
           case 427:   // 相手のタイプをエスパー単タイプにする
             if (targetState.teraType == null) {
@@ -2337,8 +2324,8 @@ class TurnMove {
             break;
           case 430:   // にげられない状態とたこがため状態にする
             if (!targetState.isTypeContain(8)) {
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state.weather, state.field);
-              targetState.ailmentsAdd(Ailment(Ailment.octoLock), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
+              targetState.ailmentsAdd(Ailment(Ailment.octoLock), state);
             }
             break;
           case 431:   // まだ行動していないポケモンに対して使うと威力2倍
@@ -2388,8 +2375,8 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState) >
-                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState)
+              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState, state) >
+                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState, state)
             ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2439,8 +2426,8 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState) >
-                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState)
+              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState, state) >
+                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState, state)
               ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2449,7 +2436,7 @@ class TurnMove {
               showDamageCalc = false;
             }
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 450:   // 使用者はひんしになる。ミストフィールドの効果を受けているとき威力1.5倍
@@ -2511,7 +2498,7 @@ class TurnMove {
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
           case 461:   // 最大HP1/4回復、状態異常を治す
@@ -2531,7 +2518,7 @@ class TurnMove {
             break;
           case 464:   // どく・まひ・ねむりのいずれかにする(確率)
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(extraArg1[continuousCount]), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(extraArg1[continuousCount]), state);
             }
             break;
           case 465:   // 使用者のこうげき・ぼうぎょ・すばやさを1段階ずつ上げる
@@ -2544,7 +2531,7 @@ class TurnMove {
               movePower *= 2;
             }
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 468:   // 相手のぼうぎょを1段階下げる(確率)。相手をひるませる(確率)。急所に当たりやすい
@@ -2552,7 +2539,7 @@ class TurnMove {
               targetState.addStatChanges(targetState == myState, 1, 1, myState, moveId: replacedMove.id);
             }
             if (extraArg2[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 469:   // 対象が状態異常の場合威力2倍。やけど状態にする(確率)
@@ -2560,7 +2547,7 @@ class TurnMove {
               movePower *= 2;
             }
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
           case 473:   // 使用者のとくこう・とくぼうを1段階ずつ上げる。使用者の状態異常を回復する
@@ -2573,7 +2560,7 @@ class TurnMove {
             break;
           case 475:   // こんらんさせる(確率)。わざを外すと使用者に、使用者の最大HP1/2のダメージ
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             }
             if (myPlayerTypeID == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
@@ -2602,7 +2589,7 @@ class TurnMove {
             }
             break;
           case 482:   // しおづけ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.saltCure), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.saltCure), state);
             break;
           case 483:   // 3回連続でこうげきする
             break;
@@ -2612,7 +2599,7 @@ class TurnMove {
               e.id == IndividualField.stealthRock || e.id == IndividualField.stickyWeb
             );
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 485:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
@@ -2668,7 +2655,7 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
+              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
             }
             break;
@@ -2679,7 +2666,7 @@ class TurnMove {
               PokemonState newState;
               state.setPokemonIndex(playerType, changePokemonIndex!);
               newState = state.getPokemonState(playerType);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state.weather, state.field, yourState);
+              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
             }
             break;
@@ -2720,7 +2707,7 @@ class TurnMove {
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             if (myPlayerTypeID == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
@@ -2730,7 +2717,7 @@ class TurnMove {
             }
             break;
           case 501:   // あめまみれ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.candyCandy), state.weather, state.field);
+            targetState.ailmentsAdd(Ailment(Ailment.candyCandy), state);
             break;
           case 502:   // オーガポンのフォルムによってわざのタイプが変わる
             // TODO
@@ -2758,91 +2745,99 @@ class TurnMove {
           if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) moveType = PokeType.createFromId(13);
           
           // とくせい等による威力変動
-          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) movePower = (movePower * 1.5).floor();
-          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) movePower = (movePower * 1.5).floor();
-          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) movePower = (movePower * 1.5).floor();
-          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) movePower = (movePower * 1.5).floor();
+          double tmpPow = movePower.toDouble();
+          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
           if (myState.pokemon.sex.id != 0 && targetStates[0].pokemon.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
             if (myState.pokemon.sex.id != targetStates[0].pokemon.sex.id) {
-              movePower = (movePower * 1.25).floor();
+              tmpPow *= 1.25;
             }
             else {
-              movePower = (movePower * 0.75).floor();
+              tmpPow *= 0.75;
             }
           }
-          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) movePower = (movePower * 1.5).floor();
-          if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) movePower = (movePower * 1.5).floor();
-          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) movePower = (movePower * 1.5).floor();
-          // TODO : 最後の行動なら威力1.3倍 if (?? && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) movePower = (movePower * 1.3).floor();
-          if ((moveType.id == 5 || moveType.id == 6 || moveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) movePower = (movePower * 1.3).floor();
-          if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) movePower = (movePower * 1.5).floor();
-          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) movePower = (movePower * 1.33).floor();
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) movePower = (movePower * 1.33).floor();
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) movePower = (movePower * 0.75).floor();
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) movePower = (movePower * 0.75).floor();
-          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) movePower = (movePower * 1.2).floor();
-          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) movePower = (movePower * 1.3).floor();
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) movePower = (movePower * 1.3).floor();
-          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) movePower = (movePower * 1.5).floor();
-          if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) movePower = (movePower * 1.5).floor();
+          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) tmpPow *= 1.2;
+          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
+          if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) tmpPow *= 1.2;
+          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
+          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
+          // TODO : 最後の行動なら威力1.3倍 if (?? && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
+          if ((moveType.id == 5 || moveType.id == 6 || moveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
+          if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
+          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
+          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
+          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
+          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
+          if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
           int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
           if (myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50) >= 0) {
-            movePower = (movePower * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1)).floor();
+            tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
           }
-          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) movePower = (movePower * 1.1).floor();
-          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) movePower = (movePower * 1.1).floor();
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) movePower = (movePower * 1.3).floor();
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) movePower = (movePower * 1.2).floor();
-          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) movePower = (movePower * 1.1).floor();
+          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
+          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
+          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
+          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
+          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
 
-          if (moveType.id == 10 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) movePower = (movePower * 1.25).floor();
+          if (moveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+          if (moveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+          if (moveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+          if (moveType.id == 16 && targetStates[0].isGround(targetIndiFields[0]) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+          
+          if (moveType.id == 10 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
+
+          movePower = tmpPow.floor();
 
           // TODO: targetStates(リスト)
           // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
           // TODO パワートリック等で、実際にmaxStatsとかの値を入れ替えたほうが良さそう
           int calcMaxAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0]) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0]);
+              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state);
           int calcMinAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0]) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0]);
+              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state);
           if (isFoulPlay) {
             calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0]) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0]);
+                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state);
             calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0]) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0]);
+                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state);
           }
           else if (defenseAltAttack) {
             calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0]) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0]);
+                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state);
             calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0]) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0]);
+                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state);
           }
-          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0]);
-          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0]);
+          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state);
+          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state);
           String attackStr = '';
           if (attackVmax == attackVmin) {
             attackStr = attackVmax.toString();
@@ -2857,15 +2852,15 @@ class TurnMove {
             attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
           }
           int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0]) :
-                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0]);
+                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state) :
+                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state);
           int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0]) :
-                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0]);
+                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state) :
+                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state);
           int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense :
-                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0]);
+                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state);
           int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense :
-                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0]);
+                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state);
           String defenseStr = '';
           if (defenseVmax == defenseVmin) {
             defenseStr = defenseVmax.toString();
@@ -3040,6 +3035,23 @@ class TurnMove {
         }
 
         ret.add(damageCalc);
+      }
+
+      // ねごと系以外のわざを出しているならねむり解除とみなす
+      if (replacedMove.id != 173 && replacedMove.id != 214) {
+        myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
+      }
+      // ミクルのみのこうかが残っていれば消費
+      int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
+      if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+      // ノーマルジュエル消費
+      if (myState.holdingItem?.id == 669 && moveDamageClassID >= 2 && moveType.id == 1) {
+        myState.holdingItem = null;
+      }
+      // くっつきバリ移動
+      if (replacedMove.isDirect && myState.holdingItem == null && yourState.holdingItem?.id == 265) {
+        myState.holdingItem = yourState.holdingItem;
+        yourState.holdingItem = null;
       }
 
       switch (moveDamageClassID) {
@@ -3619,6 +3631,7 @@ class TurnMove {
         case 92:    // 自分と相手のHPを足して半々に分ける
         case 133:   // 使用者のHP回復。回復量は天気による
         case 163:   // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
+        case 199:   // 与えたダメージの33%を使用者も受ける
         case 255:   // 使用者は最大HP1/4の反動ダメージを受ける
         case 270:   // 与えたダメージの1/2を使用者も受ける
         case 346:   // 与えたダメージの半分だけHP回復
@@ -5341,8 +5354,14 @@ class TurnMove {
     bool ret = false;
     bool isMoveChanged = false;
 
+    // ねむり
+    if (myState.ailmentsWhere((e) => e.id == Ailment.sleep).isNotEmpty) {
+      isSuccess = false;
+      actionFailure = ActionFailure(ActionFailure.sleep);
+      ret = true;
+    }
     // ひるみ
-    if (myState.ailmentsWhere((e) => e.id == Ailment.flinch).isNotEmpty) {
+    else if (myState.ailmentsWhere((e) => e.id == Ailment.flinch).isNotEmpty) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.flinch);
       ret = true;

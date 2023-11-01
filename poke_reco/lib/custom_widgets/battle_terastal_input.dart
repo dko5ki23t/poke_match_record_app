@@ -119,12 +119,12 @@ class BattleTerastalInputColumn extends Column {
                             ),
                             items: <DropdownMenuItem>[
                               _myDropDown(
-                                !turn.initialOwnHasTerastal,
+                                !sameTimingList[i].phaseState.hasOwnTerastal,
                                 PlayerType.me,
                                 '${battle.getParty(PlayerType(PlayerType.me)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.me))-1]!.name}/あなた',
                               ),
                               _myDropDown(
-                                !turn.initialOpponentHasTerastal,
+                                !sameTimingList[i].phaseState.hasOpponentTerastal,
                                 PlayerType.opponent,
                                 '${battle.getParty(PlayerType(PlayerType.opponent)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.opponent))-1]!.name}/${battle.opponentName}',
                               ),

@@ -511,7 +511,7 @@ class Move {
     ];
     return (
       (damageClass.id == DamageClass.physical && !physicalButNot.contains(id)) ||
-      (damageClass.id == DamageClass.special && !specialButNot.contains(id))
+      (damageClass.id == DamageClass.special && specialButNot.contains(id))
     );
   }
 
@@ -1164,22 +1164,32 @@ class PokeDB {
       );
 
       for (var map in maps) {
-        battles[map[battleColumnId]] = Battle()
+        var battle = Battle()
           ..id = map[battleColumnId]
           ..name = map[battleColumnName]
           ..type = BattleType.createFromId(map[battleColumnTypeId])
           ..datetimeFromStr = map[battleColumnDate]
-          ..setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == map[battleColumnOwnPartyId]).first)
+          ..setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == map[battleColumnOwnPartyId]).first.copyWith())
           ..opponentName = map[battleColumnOpponentName]
-          ..setParty(PlayerType(PlayerType.opponent), parties.values.where((element) => element.id == map[battleColumnOpponentPartyId]).first)
+          ..setParty(PlayerType(PlayerType.opponent), parties.values.where((element) => element.id == map[battleColumnOpponentPartyId]).first.copyWith())
           ..isMyWin = map[battleColumnIsMyWin] == 1
           ..isYourWin = map[battleColumnIsYourWin] == 1;
+        // 各ポケモンのレベルを50に
+        for (var player in [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)]) {
+          for (int i = 0; i < battle.getParty(player).pokemonNum; i++) {
+            battle.getParty(player).pokemons[i] = battle.getParty(player).pokemons[i]!.copyWith();
+            battle.getParty(player).pokemons[i]!.level = 50;
+            battle.getParty(player).pokemons[i]!.updateRealStats();
+          }
+        }
         // turns
         final turns = map[battleColumnTurns].split(sqlSplit1);
         for (final turn in turns) {
           if (turn == '') break;
-          battles[map[battleColumnId]]!.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
+          battle.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
         }
+
+        battles[battle.id] = battle;
         battleIDs.add(map[battleColumnId]);
       }
       battleIDs.sort((a, b) => a.compareTo(b));

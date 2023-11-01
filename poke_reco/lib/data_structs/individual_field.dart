@@ -10,15 +10,17 @@ class IndiFieldEffect {
   static const int stickyWeb = 4;         // ねばねばネット
   static const int healingWish = 5;       // いやしのねがい
   static const int lunarDance = 6;        // みかづきのまい
+  static const int badToxicSpikes = 7;    // どくどくびし
 
   static const _displayNameMap = {
     0: '',
-    1: 'どくびし',
+    1: 'どくをあびた',
     2: 'まきびし',
     3: 'ステルスロック',
     4: 'ねばねばネット',
     5: 'いやしのねがい',
     6: 'みかづきのまい',
+    7: 'もうどくをあびた',
   };
 
   const IndiFieldEffect(this.id);

@@ -190,9 +190,13 @@ class Turn {
       if (pokeState == '') break;
       var states = pokeState.split(split3);
       List<PokemonState> adding = [];
+      int i = 0;
       for (final state in states) {
         if (state == '') break;
-        adding.add(PokemonState.deserialize(state, split4, split5, split6));
+        adding.add(
+          PokemonState.deserialize(state, split4, split5, split6)
+          ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
+        i++;
       }
       ret._initialPokemonStates.add(adding);
     }

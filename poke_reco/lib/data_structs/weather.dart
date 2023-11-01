@@ -53,7 +53,7 @@ class Weather {
     4: Colors.blue
   };
 
-  String get displayName => isValid ? _displayNameMap[id]! : '${_displayNameMap[id]!}(無効)';
+  String get displayName => isValid ? '${_displayNameMap[id]!}($turns/?)' : '${_displayNameMap[id]!}($turns/?)(無効)';
   Color get bgColor => isValid ? _bgColorMap[id]! : Colors.grey;
 
   int id;

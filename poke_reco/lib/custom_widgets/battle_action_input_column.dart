@@ -28,6 +28,7 @@ class BattleActionInputColumn extends Column {
     List<TextEditingController> textEditingControllerList3,
     List<TextEditingController> textEditingControllerList4,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
+    TurnEffectAndStateAndGuide? nextSameTimingFirst,
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -62,6 +63,7 @@ class BattleActionInputColumn extends Column {
                     IconButton(
                       icon: Icon(Icons.check),
                       onPressed: turn.phases[phaseIdx].move!.isValid() ? () {
+                        nextSameTimingFirst?.needAssist = true;
                         appState.editingPhase[phaseIdx] = false;
                         onFocus(phaseIdx+1);
                       } : null,

@@ -52,6 +52,7 @@ class BattleTurnListView extends ListView {
               _getActionCount(sameTimingList, i),
               i > 0 ? sameTimingList[i-1].first.turnEffect.playerType : PlayerType(PlayerType.none),  // わざ使用後の場合、そのわざの発動主を渡す
               i > 0 ? sameTimingList[i-1].first.turnEffect.move ?? TurnMove() : TurnMove(),
+              i+1 < sameTimingList.length ? sameTimingList[i+1].first : null
             )
           ],
         ),

@@ -143,7 +143,7 @@ class PhaseState {
   // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
   List<TurnEffect> getDefaultEffectList(
     Turn currentTurn, AbilityTiming timing, bool changedOwn, bool changedOpponent,
-    TurnEffect? prevAction, int continuousCount
+    PhaseState state, TurnEffect? prevAction, int continuousCount
   ) {
     List<TurnEffect> ret = [];
     var attackerState = prevAction != null ? getPokemonState(prevAction.playerType) : getPokemonState(PlayerType(PlayerType.me));
@@ -167,7 +167,8 @@ class PhaseState {
             bool changed = player.id == PlayerType.me ? changedOwn : changedOpponent;
             if (changed) {
               var myState = getPokemonState(player);
-              if (timingIDs.contains(myState.currentAbility.timing.id)) {
+              var myTimingIDs = [...timingIDs];
+              if (myTimingIDs.contains(myState.currentAbility.timing.id)) {
                 int extraArg1 = 0;
                 if (myState.currentAbility.id == 36) {    // トレース
                   extraArg1 = getPokemonState(player.opposite).currentAbility.id; 
@@ -197,6 +198,18 @@ class PhaseState {
                   ..effect = EffectType(EffectType.individualField)
                   ..effectId = IndiFieldEffect.stealthRock
                   ..extraArg1 = extraArg1
+                );
+              }
+              // どくびし/どくどくびし
+              var findIdx = indiField.indexWhere((e) => e.id == IndividualField.toxicSpikes);
+              if (findIdx >= 0 && myState.isGround(indiField) && myState.copyWith().ailmentsAdd(Ailment(Ailment.poison), state) &&
+                  myState.holdingItem?.id != 1178)
+              {
+                ret.add(TurnEffect()
+                  ..playerType = player
+                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..effect = EffectType(EffectType.individualField)
+                  ..effectId = indiField[findIdx].extraArg1 <= 1 ? IndiFieldEffect.toxicSpikes : IndiFieldEffect.badToxicSpikes
                 );
               }
             }
@@ -421,6 +434,7 @@ class PhaseState {
           for (int i = 0; i < 2; i++) {
             var playerTimingIDs = [];
             var player = players[i];
+            var myState = getPokemonState(player);
 
             // 毎ターン終了時には無条件で発動する効果
             playerTimingIDs = [AbilityTiming.everyTurnEnd];
@@ -428,36 +442,36 @@ class PhaseState {
             if (currentTurn.getInitialPokemonIndex(player) == getPokemonIndex(player)) playerTimingIDs.add(AbilityTiming.afterActedEveryTurnEnd);
             if (weather.id == Weather.rainy) {
               playerTimingIDs.addAll([65,50]);   // 天気があめのとき、毎ターン終了時
-              if (getPokemonState(player).ailmentsWhere((element) => element.id <= Ailment.sleep).isNotEmpty) playerTimingIDs.add(72);       // かつ状態異常のとき
+              if (myState.ailmentsWhere((element) => element.id <= Ailment.sleep).isNotEmpty) playerTimingIDs.add(72);       // かつ状態異常のとき
             }
             if (weather.id == Weather.sunny) playerTimingIDs.addAll([50, 73]);   // 天気が晴れのとき、毎ターン終了時
             if (weather.id == Weather.sunny) playerTimingIDs.addAll([79]);        // 天気がゆきのとき、毎ターン終了時
-            if (getPokemonState(player).ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {  // どく/もうどく状態
+            if (myState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {  // どく/もうどく状態
               playerTimingIDs.add(52);
             }
-            if (getPokemonState(player).teraType == null || getPokemonState(player).teraType!.id == 0) {  // テラスタルしていない
+            if (myState.teraType == null || myState.teraType!.id == 0) {  // テラスタルしていない
               playerTimingIDs.add(116);
             }
-            if (getPokemonState(player).ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
+            if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
 
             // とくせい
-            if (playerTimingIDs.contains(getPokemonState(player).currentAbility.timing.id)) {
+            if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
               int extraArg1 = 0;
-              int currentAbilityID = getPokemonState(player).currentAbility.id;
+              int currentAbilityID = myState.currentAbility.id;
               bool isMe = player.id == PlayerType.me;
               if (currentAbilityID == 44 || currentAbilityID == 115) {   // あめうけざら/アイスボディ
-                extraArg1 = isMe ? -((getPokemonState(player).pokemon.h.real / 16).floor()) : -6;
+                extraArg1 = isMe ? -((myState.pokemon.h.real / 16).floor()) : -6;
               }
               if (currentAbilityID == 94) {   // サンパワー
-                extraArg1 = isMe ? (getPokemonState(player).pokemon.h.real / 8).floor() : 12;
+                extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
               }
               if (currentAbilityID == 87 && weather.id == Weather.sunny) {   // かんそうはだ＆晴れ
-                extraArg1 = isMe ? (getPokemonState(player).pokemon.h.real / 8).floor() : 12;
+                extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
               }
               if ((currentAbilityID == 87 && weather.id == Weather.rainy) ||   // かんそうはだ＆雨
                   currentAbilityID == 90   // ポイズンヒール
               ) {
-                extraArg1 = isMe ? -((getPokemonState(player).pokemon.h.real / 8).floor()) : -12;
+                extraArg1 = isMe ? -((myState.pokemon.h.real / 8).floor()) : -12;
               }
               ret.add(TurnEffect()
                 ..playerType = player
@@ -469,12 +483,12 @@ class PhaseState {
             }
 
             // もちもの
-            if (getPokemonState(player).holdingItem != null && playerTimingIDs.contains(getPokemonState(player).holdingItem!.timing.id)) {
+            if (myState.holdingItem != null && playerTimingIDs.contains(myState.holdingItem!.timing.id)) {
               int extraArg1 = 0;
               bool isMe = player.id == PlayerType.me;
-              switch (getPokemonState(player).holdingItem!.id) {
+              switch (myState.holdingItem!.id) {
                 case 265:     // くっつきバリ
-                  extraArg1 = isMe ? (getPokemonState(player).pokemon.h.real / 8).floor() : 12;
+                  extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
                   break;
                 case 132:     // オレンのみ
                   if (isMe) extraArg1 = -10;
@@ -484,46 +498,58 @@ class PhaseState {
                   break;
                 case 135:     // オボンのみ
                 case 185:     // ナゾのみ
-                  extraArg1 = isMe ? -(getPokemonState(player).pokemon.h.real / 4).floor() : -25;
+                  extraArg1 = isMe ? -(myState.pokemon.h.real / 4).floor() : -25;
                   break;
                 case 136:     // フィラのみ
                 case 137:     // ウイのみ
                 case 138:     // マゴのみ
                 case 139:     // バンジのみ
                 case 140:     // イアのみ
-                  extraArg1 = isMe ? -(getPokemonState(player).pokemon.h.real / 3).floor() : -33;
+                  extraArg1 = isMe ? -(myState.pokemon.h.real / 3).floor() : -33;
                   break;
                 case 258:     // くろいヘドロ
-                  if (getPokemonState(player).isTypeContain(4)) {   // どくタイプか
-                    extraArg1 = isMe ? -(getPokemonState(player).pokemon.h.real / 16).floor() : -6;
+                  if (myState.isTypeContain(4)) {   // どくタイプか
+                    extraArg1 = isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
                   }
                   else {
-                    extraArg1 = isMe ? (getPokemonState(player).pokemon.h.real / 8).floor() : 12;
+                    extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
                   }
                   break;
                 case 211:     // たべのこし
-                  extraArg1 = isMe ? -(getPokemonState(player).pokemon.h.real / 16).floor() : -6;
+                  extraArg1 = isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
                   break;
               }
               ret.add(TurnEffect()
                 ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..timing = timing
                 ..effect = EffectType(EffectType.item)
-                ..effectId = getPokemonState(player).holdingItem!.id
+                ..effectId = myState.holdingItem!.id
                 ..extraArg1 = extraArg1
               );
+            }
 
-              // 各ポケモンの場の効果
-              var fields = player.id == PlayerType.me ? ownFields : opponentFields;
-              var findIdx = fields.indexWhere((e) => e.id == IndividualField.futureAttack && e.turns == 2);
-              if (findIdx >= 0) {
-                ret.add(TurnEffect()
-                  ..playerType = player
-                  ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                  ..effect = EffectType(EffectType.individualField)
-                  ..effectId = IndividualField.futureAttack
-                );
-              }
+            //  状態異常
+            if (myState.ailmentsWhere((e) => e.id == Ailment.sleepy && e.turns >= 1).isNotEmpty &&
+                myState.copyWith().ailmentsAdd(Ailment(Ailment.sleep), state)
+            ) {  // ねむけ状態のとき&ねむりになるとき
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.sleepy
+              );
+            }
+
+            // 各ポケモンの場の効果
+            var fields = player.id == PlayerType.me ? ownFields : opponentFields;
+            var findIdx = fields.indexWhere((e) => e.id == IndividualField.futureAttack && e.turns == 2);
+            if (findIdx >= 0) {
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.individualField)
+                ..effectId = IndividualField.futureAttack
+              );
             }
           }
 
@@ -534,6 +560,14 @@ class PhaseState {
                 getPokemonState(PlayerType(PlayerType.opponent)).isSandstormDamaged())
             {
               weatherEffectIDs.add(WeatherEffect.sandStormDamage);
+            }
+          }
+          var fieldEffectIDs = [];
+          if (field.id == Field.grassyTerrain) {
+            if (getPokemonState(PlayerType(PlayerType.me)).isGround(state.ownFields) ||
+                getPokemonState(PlayerType(PlayerType.opponent)).isGround(state.opponentFields))
+            {
+              fieldEffectIDs.add(FieldEffect.grassHeal);
             }
           }
 
@@ -557,10 +591,115 @@ class PhaseState {
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2
             );
-          }          
+          }
+          // フィールド
+          for (var e in fieldEffectIDs) {
+            int extraArg1 = 0;
+            int extraArg2 = 0;
+            if (e == FieldEffect.grassHeal) {
+              if (getPokemonState(PlayerType(PlayerType.me)).isGround(state.ownFields)) {   // グラスフィールドによる回復
+                extraArg1 = -(getPokemonState(PlayerType(PlayerType.me)).pokemon.h.real / 16).floor();
+              }
+              if (getPokemonState(PlayerType(PlayerType.opponent)).isGround(state.opponentFields)) {
+                extraArg2 = -6;
+              }
+            }
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(PlayerType.entireField)
+              ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+              ..effect = EffectType(EffectType.field)
+              ..effectId = e
+              ..extraArg1 = extraArg1
+              ..extraArg2 = extraArg2
+            );
+          }
         }
         break;
     }
+
+    // 各タイミング共通
+    // 自分/相手ごとにforループ
+    for (int i = 0; i < 2; i++) {
+      List<int> playerTimingIDs = [];
+      var player = players[i];
+      var myState = getPokemonState(player);
+      bool isMe = player.id == PlayerType.me;
+
+      if ((isMe && myState.remainHP <= myState.pokemon.h.real / 4) || (!isMe && myState.remainHPPercent <= 25)) {
+        playerTimingIDs.add(AbilityTiming.hp025);
+      }
+      if ((isMe && myState.remainHP <= myState.pokemon.h.real / 2) || (!isMe && myState.remainHPPercent <= 50)) {
+        playerTimingIDs.add(AbilityTiming.hp050);
+      }
+
+      // こだいかっせい/ブーストエナジー発動の余地がある場合
+      if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5).isEmpty) {
+        if (weather.id == Weather.sunny) playerTimingIDs.add(AbilityTiming.sunnyBoostEnergy);
+        if (field.id == Field.electricTerrain) playerTimingIDs.add(AbilityTiming.elecFieldBoostEnergy);
+        if (myState.holdingItem?.id == 1696) playerTimingIDs.addAll([111, 112]);
+      }
+
+      // とくせい
+      if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
+        int extraArg1 = 0;
+        if (myState.currentAbility.id == 36) {    // トレース
+          extraArg1 = getPokemonState(player.opposite).currentAbility.id; 
+        }
+        ret.add(TurnEffect()
+          ..playerType = player
+          ..timing = timing
+          ..effect = EffectType(EffectType.ability)
+          ..effectId = myState.currentAbility.id
+          ..extraArg1 = extraArg1
+        );
+      }
+      
+      // もちもの
+      if (myState.holdingItem != null && playerTimingIDs.contains(myState.holdingItem!.timing.id)) {
+        int extraArg1 = 0;
+        switch (myState.holdingItem!.id) {
+          case 265:     // くっつきバリ
+            extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+            break;
+          case 132:     // オレンのみ
+            if (isMe) extraArg1 = -10;
+            break;
+          case 43:      // きのみジュース
+            if (isMe) extraArg1 = -20;
+            break;
+          case 135:     // オボンのみ
+          case 185:     // ナゾのみ
+            extraArg1 = isMe ? -(myState.pokemon.h.real / 4).floor() : -25;
+            break;
+          case 136:     // フィラのみ
+          case 137:     // ウイのみ
+          case 138:     // マゴのみ
+          case 139:     // バンジのみ
+          case 140:     // イアのみ
+            extraArg1 = isMe ? -(myState.pokemon.h.real / 3).floor() : -33;
+            break;
+          case 258:     // くろいヘドロ
+            if (myState.isTypeContain(4)) {   // どくタイプか
+              extraArg1 = isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
+            }
+            else {
+              extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+            }
+            break;
+          case 211:     // たべのこし
+            extraArg1 = isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
+            break;
+        }
+        ret.add(TurnEffect()
+          ..playerType = player
+          ..timing = timing
+          ..effect = EffectType(EffectType.item)
+          ..effectId = myState.holdingItem!.id
+          ..extraArg1 = extraArg1
+        );
+      }
+    }
+
     return ret;
   }
 }

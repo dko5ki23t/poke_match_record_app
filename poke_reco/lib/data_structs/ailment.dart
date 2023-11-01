@@ -1,6 +1,111 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 
+// 状態変化による効果(TurnEffectのeffectIdに使用する定数を提供)
+class AilmentEffect {
+  static const int none = 0;
+  static const int burn = 1;                // やけど
+  static const int freeze = 2;              // こおり
+  static const int paralysis = 3;           // まひ
+  static const int poison = 4;              // どく
+  static const int badPoison = 5;           // もうどく
+  static const int sleep = 6;               // ねむり     ここまで、重複しない
+  static const int confusion = 7;           // こんらん
+  static const int curse = 8;               // のろい
+  static const int encore = 9;              // アンコール
+  static const int flinch = 10;             // ひるみ
+  static const int identify = 11;           // みやぶる
+  static const int infatuation = 12;        // メロメロ
+  static const int leechSeed = 13;          // やどりぎのタネ
+  static const int mindReader = 14;         // こころのめ
+  static const int lockOn = 15;             // ロックオン
+  static const int nightmare = 16;          // あくむ
+  static const int partiallyTrapped = 17;   // バインド(交代不可、毎ターンダメージ)
+  static const int perishSong = 18;         // ほろびのうた
+  static const int taunt = 19;              // ちょうはつ
+  static const int torment = 20;            // いちゃもん
+  static const int noBerry = 21;            // きのみを食べられない状態(きんちょうかん)
+  static const int saltCure = 22;           // しおづけ
+  static const int disable = 23;            // かなしばり
+  static const int magnetRise = 24;         // でんじふゆう
+  static const int telekinesis = 25;        // テレキネシス
+  static const int healBlock = 26;          // かいふくふうじ
+  static const int embargo = 27;            // さしおさえ
+  static const int sleepy = 28;             // ねむけ→ねむり
+
+  static const _displayNameMap = {
+    0: '',
+    1: 'やけど',
+    2: 'こおり',
+    3: 'まひ',
+    4: 'どく',
+    5: 'もうどく',
+    6: 'ねむり',
+    7: 'こんらん',
+    8: 'のろい',
+    9: 'アンコール',
+    10: 'ひるみ',
+    11: 'みやぶる',
+    12: 'メロメロ',
+    13: 'やどりぎのタネ',
+    14: 'こころのめ',
+    15: 'ロックオン',
+    16: 'あくむ',
+    17: 'バインド',
+    18: 'ほろびのうた',
+    19: 'ちょうはつ',
+    20: 'いちゃもん',
+    21: 'きのみを食べられない状態',
+    22: 'しおづけ',
+    23: 'かなしばり',
+    24: 'でんじふゆう',
+    25: 'テレキネシス',
+    26: 'かいふくふうじ',
+    27: 'さしおさえ',
+    28: 'ねむってしまった',
+    29: 'ねをはる',
+    30: 'さわぐ',
+    31: 'うちおとす',
+    32: 'マジックコート',
+    33: 'じゅうでん',
+    34: 'あばれる',
+    35: 'がまん',
+    36: 'みちづれ',
+    37: 'にげられない',
+    38: 'ちいさくなる',
+    39: 'そらをとぶ',
+    40: 'あなをほる',
+    41: 'まるくなる',
+    42: 'たくわえる(1)',
+    43: 'たくわえる(2)',
+    44: 'たくわえる(3)',
+    45: 'ちゅうもくのまと',
+    46: 'てだすけ',
+    47: 'ふういん',
+    48: 'おんねん',
+    49: 'はねやすめ',
+    50: 'ミラクルアイ',
+    51: 'パワートリック',
+    52: 'とくせいなし',
+    53: 'アクアリング',
+    54: 'ダイビング',
+    55: 'シャドーダイブ',
+    56: 'そうでん',
+    57: 'ふんじん',
+    58: 'じごくづき',
+    59: 'タールショット',
+    60: 'たこがため',
+    61: 'まもる',
+    62: 'あめまみれ',
+  };
+
+  const AilmentEffect(this.id);
+
+  String get displayName => _displayNameMap[id]!;
+
+  final int id;
+}
+
 // 状態変化
 class Ailment {
   static const int none = 0;

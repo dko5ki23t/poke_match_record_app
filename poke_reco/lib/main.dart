@@ -79,6 +79,8 @@ class MyAppState extends ChangeNotifier {
   int needAdjustPhases = -1;
   // 行動順入れ替え要求フラグ
   bool requestActionSwap = false;
+  // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
+  bool adjustPhaseByDelete = false;
 
   MyAppState(BuildContext context) {
     changeTab = (func) {onTabChange(func);};

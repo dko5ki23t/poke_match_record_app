@@ -135,7 +135,7 @@ const List<int> afterMoveDefenderTimingIDs = [
 
 // 毎ターン終了時
 // 状態異常
-const List<int> everyTurnEndAilmentIDs = [
+const List<int> everyTurnEndailmentEffectIDs = [
   Ailment.leechSeed,          // やどりぎのタネ
   Ailment.poison,             // どく
   Ailment.badPoison,          // もうどく
@@ -294,7 +294,7 @@ class TurnEffect {
         {
           switch (effectId) {
             case 1:     // あくしゅう
-              yourState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);  // ひるませる
+              yourState.ailmentsAdd(Ailment(Ailment.flinch), state);  // ひるませる
               break;
             case 2:     // あめふらし
               state.weather = Weather(Weather.rainy);
@@ -312,7 +312,7 @@ class TurnEffect {
               }
               break;
             case 9:     // せいでんき
-              yourState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
               break;
             case 10:    // ちくでん
             case 11:    // ちょすい
@@ -394,7 +394,7 @@ class TurnEffect {
               break;
             case 27:    // ほうし
               if (extraArg1 != 0) {
-                yourState.ailmentsAdd(Ailment(extraArg1), state.weather, state.field);
+                yourState.ailmentsAdd(Ailment(extraArg1), state);
               }
               break;
             case 28:    // シンクロ
@@ -403,7 +403,7 @@ class TurnEffect {
                 if (findIdx < 0) findIdx = myState.ailmentsIndexWhere((element) => element.id == Ailment.poison);
                 if (findIdx < 0) findIdx = myState.ailmentsIndexWhere((element) => element.id == Ailment.badPoison);
                 if (findIdx < 0) findIdx = myState.ailmentsIndexWhere((element) => element.id == Ailment.paralysis);
-                if (findIdx >= 0) yourState.ailmentsAdd(myState.ailments(findIdx), state.weather, state.field);
+                if (findIdx >= 0) yourState.ailmentsAdd(myState.ailments(findIdx), state);
               }
               break;
             case 31:    // ひらいしん
@@ -427,12 +427,12 @@ class TurnEffect {
                   yourState.currentAbility = yourState.pokemon.ability;   // とくせい確定
                   ret.add('とくせいを${yourState.currentAbility.displayName}で確定しました。');
                 }
-                myState.processPassiveEffect(myPlayerID == PlayerType.me, state.weather, state.field, yourState);
+                myState.processPassiveEffect(myPlayerID == PlayerType.me, state, yourState);
               }
               break;
             case 38:    // どくのトゲ
             case 143:   // どくしゅ
-              yourState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.poison), state);
               break;
             case 40:    // マグマのよろい
               {   // こおりになっていれば消す
@@ -452,14 +452,14 @@ class TurnEffect {
               state.weather = Weather(Weather.sandStorm);
               break;
             case 49:    // ほのおのからだ
-              yourState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.burn), state);
               break;
             case 53:    // ものひろい
             case 139:   // しゅうかく
               myState.holdingItem = pokeData.items[extraArg1];
               break;
             case 56:    // メロメロボディ
-              yourState.ailmentsAdd(Ailment(Ailment.infatuation), state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.infatuation), state);
               break;
             case 61:    // だっぴ
             case 93:    // うるおいボディ
@@ -519,7 +519,7 @@ class TurnEffect {
               yourState.holdingItem = null;
               break;
             case 130:     // のろわれボディ
-              yourState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = extraArg1, state.weather, state.field);
+              yourState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = extraArg1, state);
               break;
             case 133:     // くだけるよろい
               myState.addStatChanges(true, 1, -1, yourState, abilityId: effectId);
@@ -665,7 +665,7 @@ class TurnEffect {
                   else {
                     yourState.remainHPPercent -= extraArg2;
                   }
-                  myState.ailmentsAdd(Ailment(Ailment.thrash), state.weather, state.field);
+                  myState.ailmentsAdd(Ailment(Ailment.thrash), state);
                   break;
                 case 552:   // ほのおのまい
                 case 686:   // めざめるダンス
@@ -693,7 +693,7 @@ class TurnEffect {
                   yourState.addStatChanges(false, 0, -2, myState, moveId: extraArg1);
                   break;
                 case 298:   // フラフラダンス
-                  yourState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+                  yourState.ailmentsAdd(Ailment(Ailment.confusion), state);
                   break;
                 case 461:   // みかづきのまい
                   if (myPlayerID == PlayerType.me) {
@@ -765,8 +765,8 @@ class TurnEffect {
               yourFields.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen || e.id == IndividualField.auroraVeil);
               break;
             case 253:   // ほろびのボディ
-              myState.ailmentsAdd(Ailment(Ailment.perishSong), state.weather, state.field);
-              yourState.ailmentsAdd(Ailment(Ailment.perishSong), state.weather, state.field);
+              myState.ailmentsAdd(Ailment(Ailment.perishSong), state);
+              yourState.ailmentsAdd(Ailment(Ailment.perishSong), state);
               break;
             case 254:   // さまようたましい
               if (yourState.currentAbility.canExchange) {
@@ -801,7 +801,7 @@ class TurnEffect {
               break;
             case 277:   // ふうりょくでんき
             case 280:   // でんきにかえる
-              myState.ailmentsAdd(Ailment(Ailment.charging), state.weather, state.field);
+              myState.ailmentsAdd(Ailment(Ailment.charging), state);
               break;
             case 281:   // こだいかっせい
               myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
@@ -864,6 +864,12 @@ class TurnEffect {
       case EffectType.individualField:
         {
           switch (effectId) {
+            case IndiFieldEffect.toxicSpikes:     // どくびし
+              myState.ailmentsAdd(Ailment(Ailment.poison), state);
+              break;
+            case IndiFieldEffect.badToxicSpikes:  // どくどくびし
+              myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
+              break;
             case IndividualField.futureAttack:    // みらいにこうげき
             case IndiFieldEffect.stealthRock:     // ステルスロック
               if (playerType.id == PlayerType.me) {
@@ -913,6 +919,22 @@ class TurnEffect {
           }
         }
         break;
+      case EffectType.field:
+        {
+          switch (effectId) {
+            case FieldEffect.electricTerrainEnd:
+            case FieldEffect.grassyTerrainEnd:
+            case FieldEffect.mistyTerrainEnd:
+            case FieldEffect.psychicTerrainEnd:
+              state.field = Field(Field.none);
+              break;
+            case FieldEffect.grassHeal:
+              ownPokemonState.remainHP -= extraArg1;
+              opponentPokemonState.remainHPPercent -= extraArg2;
+              break;
+          }
+        }
+        break;
       case EffectType.item:
         ret.addAll(Item.processEffect(
           effectId, playerType, myState,
@@ -939,7 +961,7 @@ class TurnEffect {
         myState.processExitEffect(true, yourState);
         if (effectId != 0) {
           state.setPokemonIndex(playerType, effectId);
-          state.getPokemonState(playerType).processEnterEffect(true, state.weather, state.field, yourState);
+          state.getPokemonState(playerType).processEnterEffect(true, state, yourState);
         }
         break;
       case EffectType.terastal:
@@ -949,6 +971,14 @@ class TurnEffect {
         }
         else {
           state.hasOpponentTerastal = true;
+        }
+        break;
+      case EffectType.ailment:
+        switch (effectId) {
+          case AilmentEffect.sleepy:
+            myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleepy);
+            myState.ailmentsAdd(Ailment(Ailment.sleep), state);
+            break;
         }
         break;
       default:
@@ -1085,7 +1115,7 @@ class TurnEffect {
     List<int> attackerTimingIDs = [...allTimingIDs];
     List<int> defenderTimingIDs = [...allTimingIDs];
     List<int> indiFieldEffectIDs = [];
-    List<int> ailmentIDs = [];
+    List<int> ailmentEffectIDs = [];
     List<int> weatherEffectIDs = [];
     List<int> fieldIDs = [];
 
@@ -1112,8 +1142,19 @@ class TurnEffect {
           if (phaseState.field.id != Field.grassyTerrain) timingIDs.add(102);   // ポケモン登場時(グラスフィールドでない)
           if ((playerType.id == PlayerType.me && phaseState.ownFields.where((e) => e.id == IndiFieldEffect.stealthRock).isNotEmpty) ||
               (playerType.id == PlayerType.opponent && phaseState.opponentFields.where((e) => e.id == IndiFieldEffect.stealthRock).isNotEmpty)
-          ) {
+          ) {         // ステルスロックがあるとき
             indiFieldEffectIDs.add(IndiFieldEffect.stealthRock);
+          }
+          var findIdx = playerType.id == PlayerType.me ? phaseState.ownFields.indexWhere((e) => e.id == IndiFieldEffect.toxicSpikes) :
+                        playerType.id == PlayerType.opponent ? phaseState.opponentFields.indexWhere((e) => e.id == IndiFieldEffect.toxicSpikes) : -1;
+          var extraArg1 = findIdx >= 0 ? playerType.id == PlayerType.me ? phaseState.ownFields[findIdx].extraArg1 : phaseState.opponentFields[findIdx].extraArg1 : 0;
+          if (findIdx >= 0) {       // どくびしがあるとき
+            if (extraArg1 <= 1) {
+              indiFieldEffectIDs.add(IndiFieldEffect.toxicSpikes);
+            }
+            else {
+              indiFieldEffectIDs.add(IndiFieldEffect.badToxicSpikes);
+            }
           }
         }
         break;
@@ -1151,12 +1192,14 @@ class TurnEffect {
           if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.sleepy).isNotEmpty) {   // ねむけ状態のとき
+            ailmentEffectIDs.add(AilmentEffect.sleepy);
+          }
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
               timingIDs.add(152);     // 状態異常でない毎ターン終了時
             }
           }
-          ailmentIDs = [...everyTurnEndAilmentIDs];
           fieldIDs = [...everyTurnEndFieldIDs];
         }
         break;
@@ -1314,7 +1357,7 @@ class TurnEffect {
         }
       }
       if (type.id == EffectType.individualField) {
-        for (var e in weatherEffectIDs) {
+        for (var e in indiFieldEffectIDs) {
           ret.add(TurnEffect()
             ..playerType = playerType
             ..effect = EffectType(EffectType.individualField)
@@ -1323,14 +1366,12 @@ class TurnEffect {
         }
       }
       if (type.id == EffectType.ailment) {
-        for (final ailment in pokemonState!.ailmentsIterable) {
-          if (ailmentIDs.contains(ailment.id)) {
-            ret.add(TurnEffect()
-              ..playerType = playerType
-              ..effect = EffectType(EffectType.ailment)
-              ..effectId = ailment.id
-            );
-          }
+        for (var e in ailmentEffectIDs) {
+          ret.add(TurnEffect()
+            ..playerType = playerType
+            ..effect = EffectType(EffectType.ailment)
+            ..effectId = e
+          );
         }
       }
       if (type.id == EffectType.item) {
@@ -1410,12 +1451,14 @@ class TurnEffect {
         return pokeData.abilities[effectId]!.displayName;
       case EffectType.item:
         return pokeData.items[effectId]!.displayName;
+      case EffectType.ailment:
+        return AilmentEffect(effectId).displayName;
       case EffectType.individualField:
-        return IndividualField(effectId).displayName;
+        return IndiFieldEffect(effectId).displayName;
       case EffectType.weather:
         return WeatherEffect(effectId).displayName;
       case EffectType.field:
-        return Field(effectId).displayName;
+        return FieldEffect(effectId).displayName;
       case EffectType.move:
         return move!.move.displayName;
       default:
@@ -2395,6 +2438,65 @@ class TurnEffect {
     else if (effect.id == EffectType.weather) {   // 天気による効果
       switch (effectId) {
         case WeatherEffect.sandStormDamage:   // すなあらしによるダメージ
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${ownPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  Flexible(child: Text('/${ownPokemon.h.real}')),
+                ],
+              ),
+              SizedBox(height: 10,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller2,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${opponentPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  Flexible(child: Text('% /100%')),
+                ],
+              ),
+            ],
+          );
+      }
+    }
+    else if (effect.id == EffectType.field) {   // フィールドによる効果
+      switch (effectId) {
+        case FieldEffect.grassHeal:   // グラスフィールドによる回復
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [

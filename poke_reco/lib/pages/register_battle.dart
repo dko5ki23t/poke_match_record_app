@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:expandable/expandable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
@@ -114,6 +113,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         sameTimingList = _adjustPhases(appState, isNewTurn);
         isNewTurn = false;
         appState.needAdjustPhases = -1;
+        appState.adjustPhaseByDelete = false;
       }
       if (appState.requestActionSwap) {
         _onlySwapActionPhases();
@@ -233,6 +233,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             // 初期状態設定ここから
             for (int i = 0; i < ownParty.pokemonNum; i++) {
               turn.getInitialPokemonStates(PlayerType(PlayerType.me)).add(PokemonState()
+                ..playerType = PlayerType(PlayerType.me)
                 ..pokemon = ownParty.pokemons[i]!
                 ..remainHP = ownParty.pokemons[i]!.h.real
                 ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.me))
@@ -256,6 +257,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SixParams.getRealH(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort) :
                 SixParams.getRealABCDS(poke.level, races[index], pokemonMaxIndividual, pokemonMaxEffort, 1.1));
               final state = PokemonState()
+                ..playerType = PlayerType(PlayerType.opponent)
                 ..pokemon = poke
                 ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.opponent))
                 ..minStats = [
@@ -272,8 +274,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               turn.getInitialPokemonStates(PlayerType(PlayerType.opponent)).add(state);
             }
-            turn.initialOwnPokemonState.processEnterEffect(true, turn.initialWeather, turn.initialField, turn.initialOpponentPokemonState);
-            turn.initialOpponentPokemonState.processEnterEffect(false, turn.initialWeather, turn.initialField, turn.initialOwnPokemonState);
+            turn.initialOwnPokemonState.processEnterEffect(true, turn.copyInitialState(), turn.initialOpponentPokemonState);
+            turn.initialOpponentPokemonState.processEnterEffect(false, turn.copyInitialState(), turn.initialOwnPokemonState);
             // 初期状態設定ここまで
             turns.add(turn);
             isNewTurn = true;
@@ -852,7 +854,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     if (isNewTurn) {
       assistList = currentState.getDefaultEffectList(
         currentTurn, AbilityTiming(currentTimingID),
-        changeOwn, changeOpponent, lastAction, continuousCount,
+        changeOwn, changeOpponent, currentState, lastAction, continuousCount,
       );
     }
 
@@ -861,20 +863,26 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     while (s1 != end) {
       // 自動入力効果を作成
       currentTimingID = changingState ? AbilityTiming.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
-      if (timingListIdx >= sameTimingList.length ||
-          sameTimingList[timingListIdx].first.turnEffect.timing.id != currentTimingID ||
-          sameTimingList[timingListIdx].first.needAssist
+      if ((timingListIdx >= sameTimingList.length ||
+           sameTimingList[timingListIdx].first.turnEffect.timing.id != currentTimingID ||
+           sameTimingList[timingListIdx].first.needAssist) &&
+           !appState.adjustPhaseByDelete
       ) {
         assistList = currentState.getDefaultEffectList(
           currentTurn, AbilityTiming(currentTimingID),
-          changeOwn, changeOpponent, lastAction, continuousCount,
+          changeOwn, changeOpponent, currentState, lastAction, continuousCount,
         );
         for (var del in delAssistList) {
           int findIdx = assistList.indexWhere((element) => element.nearEqual(del));
           if (findIdx >= 0) assistList.removeAt(findIdx);
         }
-        changeOwn = false;
-        changeOpponent = false;
+        if (timingListIdx < sameTimingList.length) {
+          for (var e in sameTimingList[timingListIdx]) {
+            e.needAssist = false;
+          }
+        }
+        //changeOwn = false;
+        //changeOpponent = false;
       }
       else {
         assistList.clear();
@@ -1024,6 +1032,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 timingListIdx++;
                 isAssisting = false;
                 if (!isOpponentFainting) {
+                  changeOwn = false;
+                  changeOpponent = false;
                   s2 = 0;
                   s1 = 8;   // ターン終了状態へ
                 }
@@ -1120,6 +1130,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 timingListIdx++;
                 isAssisting = false;
                 if (!isOpponentFainting) {
+                  changeOwn = false;
+                  changeOpponent = false;
                   s2 = 0;
                 }
                 else {
@@ -1455,6 +1467,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     isInserted = true;
                     timingListIdx++;
                     isAssisting = false;
+                    changeOwn = false;
+                    changeOpponent = false;
                     if (actionCount == 2) {
                       s1 = 8;    // ターン終了状態へ
                     }
@@ -2146,7 +2160,7 @@ class _BuffDebuffsRow extends Row {
   super(
     children: [
       SizedBox(width: 10,),
-      Flexible(
+      Expanded(
         child: ClipRRect(
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
           child:
@@ -2158,7 +2172,7 @@ class _BuffDebuffsRow extends Row {
         ),
       ),
       SizedBox(width: 10,),
-      Flexible(
+      Expanded(
         child: ClipRRect(
           borderRadius: BorderRadius.all(Radius.circular(5.0)),
           child:

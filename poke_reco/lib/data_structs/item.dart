@@ -186,7 +186,7 @@ class Item {
           }
         }
         else {
-          myState.ailmentsAdd(Ailment(Ailment.confusion), state.weather, state.field);
+          myState.ailmentsAdd(Ailment(Ailment.confusion), state);
         }
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
@@ -250,15 +250,15 @@ class Item {
         }
         break;
       case 249:   // どくどくだま
-        myState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+        myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 250:   // かえんだま
-        myState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+        myState.ailmentsAdd(Ailment(Ailment.burn), state);
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 257:   // あかいいと
-        yourState.ailmentsAdd(Ailment(Ailment.infatuation), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.infatuation), state);
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 207:   // きあいのハチマキ
@@ -294,7 +294,7 @@ class Item {
           state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite);
-          newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state.weather, state.field, myState);
+          newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state, myState);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
@@ -323,23 +323,23 @@ class Item {
   ) {
     switch (flingEffectId) {
       case FlingItemEffect.badPoison:
-        yourState.ailmentsAdd(Ailment(Ailment.badPoison), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.badPoison), state);
         break;
       case FlingItemEffect.burn:
-        yourState.ailmentsAdd(Ailment(Ailment.burn), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.burn), state);
         break;
       case FlingItemEffect.berry:
       case FlingItemEffect.herb:
         processEffect(id, playerType, yourState, myState, state, extraArg1, extraArg2, changePokemonIndex, autoConsume: false);
         break;
       case FlingItemEffect.paralysis:
-        yourState.ailmentsAdd(Ailment(Ailment.paralysis), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
         break;
       case FlingItemEffect.poison:
-        yourState.ailmentsAdd(Ailment(Ailment.poison), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.poison), state);
         break;
       case FlingItemEffect.flinch:
-        yourState.ailmentsAdd(Ailment(Ailment.flinch), state.weather, state.field);
+        yourState.ailmentsAdd(Ailment(Ailment.flinch), state);
         break;
       default:
         break;
