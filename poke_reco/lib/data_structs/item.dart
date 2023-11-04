@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
@@ -293,7 +294,7 @@ class Item {
           yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState);
           state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
-          newState = state.getPokemonState(playerType.opposite);
+          newState = state.getPokemonState(playerType.opposite, null);
           newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state, myState);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
@@ -900,7 +901,7 @@ class Item {
     }
   }
 
-  String getEditingControllerText2(PlayerType playerType, PhaseState state) {
+  String getEditingControllerText2(PlayerType playerType, PokemonState myState, PokemonState yourState) {
     switch (id) {
       case 247:     // いのちのたま
       case 265:     // くっつきバリ
@@ -917,19 +918,19 @@ class Item {
       case 230:     // かいがらのすず
       case 43:      // きのみジュース
         if (playerType.id == PlayerType.me) {
-          return state.getPokemonState(playerType).remainHP.toString();
+          return myState.remainHP.toString();
         }
         else {
-          return state.getPokemonState(playerType).remainHPPercent.toString();
+          return myState.remainHPPercent.toString();
         }
       case 583:     // ゴツゴツメット
       case 188:     // ジャポのみ
       case 189:     // レンブのみ
         if (playerType.id == PlayerType.me) {
-          return state.getPokemonState(playerType.opposite).remainHPPercent.toString();
+          return yourState.remainHPPercent.toString();
         }
         else {
-          return state.getPokemonState(playerType.opposite).remainHP.toString();
+          return yourState.remainHP.toString();
         }
     }
     return '';
@@ -938,12 +939,12 @@ class Item {
   Widget extraInputWidget(
     void Function() onFocus,
     PlayerType playerType,
-    Pokemon ownPokemon,
-    Pokemon opponentPokemon,
-    PokemonState ownPokemonState,
-    PokemonState opponentPokemonState,
-    Party ownParty,
-    Party opponentParty,
+    Pokemon myPokemon,
+    Pokemon yourPokemon,
+    PokemonState myState,
+    PokemonState yourState,
+    Party myParty,
+    Party yourParty,
     PhaseState state,
     TextEditingController controller,
     int extraArg1, int extraArg2, int? changePokemonIndex,
@@ -1008,23 +1009,22 @@ class Item {
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: playerType.id == PlayerType.me ? 
-                    '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                  labelText: '${myPokemon.name}の残りHP',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onTap: () => onFocus(),
                 onChanged: (value) {
-                  int val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                  int val = myState.remainHP - (int.tryParse(value)??0);
                   if (playerType.id == PlayerType.opponent) {
-                    val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                    val = myState.remainHPPercent - (int.tryParse(value)??0);
                   }
                   extraArg1ChangeFunc(val);
                 }
               ),
             ),
             playerType.id == PlayerType.me ?
-            Flexible(child: Text('/${ownPokemon.h.real}')) :
+            Flexible(child: Text('/${myPokemon.h.real}')) :
             Flexible(child: Text('% /100%')),
           ],
         );
@@ -1067,23 +1067,22 @@ class Item {
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: playerType.id == PlayerType.me ? 
-                        '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
+                      labelText: '${myPokemon.name}の残りHP',
                     ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     onTap: () => onFocus(),
                     onChanged: (value) {
-                      int val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                      int val = myState.remainHP - (int.tryParse(value)??0);
                       if (playerType.id == PlayerType.opponent) {
-                        val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                        val = myState.remainHPPercent - (int.tryParse(value)??0);
                       }
                       extraArg1ChangeFunc(val);
                     },
                   ),
                 ),
                 playerType.id == PlayerType.me ?
-                Flexible(child: Text('/${ownPokemon.h.real}')) :
+                Flexible(child: Text('/${myPokemon.h.real}')) :
                 Flexible(child: Text('% /100%')),
               ],
             ) : Container(),
@@ -1101,16 +1100,15 @@ class Item {
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: playerType.id == PlayerType.me ? 
-                    '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
+                  labelText: '${yourPokemon.name}の残りHP',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onTap: () => onFocus(),
                 onChanged: (value) {
-                  int val = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                  int val = yourState.remainHPPercent - (int.tryParse(value)??0);
                   if (playerType.id == PlayerType.opponent) {
-                    val = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                    val = yourState.remainHP - (int.tryParse(value)??0);
                   }
                   extraArg1ChangeFunc(val);
                 },
@@ -1118,7 +1116,7 @@ class Item {
             ),
             playerType.id == PlayerType.me ?
             Flexible(child: Text('% /100%')) :
-            Flexible(child: Text('/${ownPokemon.h.real}')),
+            Flexible(child: Text('/${yourPokemon.h.real}')),
           ],
         );
       case 585:     // レッドカード
@@ -1132,31 +1130,18 @@ class Item {
                   border: UnderlineInputBorder(),
                   labelText: '交代先ポケモン',
                 ),
-                items: playerType.id == PlayerType.opponent ?
-                  <DropdownMenuItem>[
-                    for (int i = 0; i < ownParty.pokemonNum; i++)
-                      DropdownMenuItem(
-                        value: i+1,
-                        enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                        child: Text(
-                          ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                            Colors.black : Colors.grey),
-                          ),
-                      ),
-                  ] :
-                  <DropdownMenuItem>[
-                    for (int i = 0; i < opponentParty.pokemonNum; i++)
-                      DropdownMenuItem(
-                        value: i+1,
-                        enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                        child: Text(
-                          opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                            Colors.black : Colors.grey),
-                          ),
-                      ),
-                  ],
+                items: <DropdownMenuItem>[
+                  for (int i = 0; i < yourParty.pokemonNum; i++)
+                    DropdownMenuItem(
+                      value: i+1,
+                      enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
+                      child: Text(
+                        yourParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                          Colors.black : Colors.grey),
+                        ),
+                    ),
+                ],
                 value: changePokemonIndex,
                 onChanged: (value) => changePokemonIndexChangeFunc(value),
               ),

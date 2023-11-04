@@ -78,6 +78,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   bool openStates = false;
   bool firstBuild = true;
 
+  TurnEffect? _getPrevTimingEffect(int index) {
+    TurnEffect? ret;
+    var currentTurn = widget.battle.turns[turnNum-1];
+    AbilityTiming nowTiming = currentTurn.phases[index].timing;
+    for (int i = index-1; i >= 0; i--) {
+      if (currentTurn.phases[i].timing.id != nowTiming.id) {
+        ret = currentTurn.phases[i];
+        break;
+      }
+    }
+    return ret;
+  }
+
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
@@ -296,7 +309,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
                   index, ownParty, opponentParty
-                )
+                ),
+                _getPrevTimingEffect(index),
               )
             )
           );
@@ -306,7 +320,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
                   index, ownParty, opponentParty
-                )
+                ),
+                _getPrevTimingEffect(index),
               )
             )
           );
@@ -355,7 +370,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
                   index, ownParty, opponentParty
-                )
+                ),
+                _getPrevTimingEffect(index),
               )
             )
           );
@@ -365,7 +381,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
                   index, ownParty, opponentParty
-                )
+                ),
+                _getPrevTimingEffect(index),
               )
             )
           );
@@ -417,7 +434,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 currentTurn.phases[index].getEditingControllerText2(
                   currentTurn.getProcessedStates(
                     index, ownParty, opponentParty
-                  )
+                  ),
+                  _getPrevTimingEffect(index),
                 )
               )
             );
@@ -427,7 +445,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 currentTurn.phases[index].getEditingControllerText3(
                   currentTurn.getProcessedStates(
                     index, ownParty, opponentParty
-                  )
+                  ),
+                  _getPrevTimingEffect(index),
                 )
               )
             );
@@ -590,7 +609,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
                                     ownAbilityController.text = suggestion.displayName;
-                                    focusState!.getPokemonState(PlayerType(PlayerType.me)).currentAbility = suggestion;
+                                    focusState!.getPokemonState(PlayerType(PlayerType.me), null).currentAbility = suggestion;
                                   });
                                 },
                               ) :
@@ -619,48 +638,48 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       SizedBox(height: 5),
                       // HP
                       _HPBarRow(
-                        focusState.getPokemonState(PlayerType(PlayerType.me)).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
-                        focusState.getPokemonState(PlayerType(PlayerType.opponent)).remainHPPercent),
+                        focusState.getPokemonState(PlayerType(PlayerType.me), null).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
+                        focusState.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent),
                       SizedBox(height: 5),
                       // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
                       // TODO
                       for (int i = 0; i < 7; i++)
                         viewMode == 0 ?
                         _StatChangeViewRow(
-                          statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me)).statChanges(i),
-                          focusState.getPokemonState(PlayerType(PlayerType.opponent)).statChanges(i)
+                          statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me), null).statChanges(i),
+                          focusState.getPokemonState(PlayerType(PlayerType.opponent), null).statChanges(i)
                         ) :
                         viewMode == 1 ?
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType(PlayerType.me)).minStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.me)).maxStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).minStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.me), null).minStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.me), null).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).minStats[i].race,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).maxStats[i].race,
                           ) : Container() :
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType(PlayerType.me)).minStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.me)).maxStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).minStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent)).maxStats[i].real,
+                            focusState.getPokemonState(PlayerType(PlayerType.me), null).minStats[i].real,
+                            focusState.getPokemonState(PlayerType(PlayerType.me), null).maxStats[i].real,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).minStats[i].real,
+                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).maxStats[i].real,
                           ) : Container(),
                       SizedBox(height: 5),
                       // わざ
                       for (int i = 0; i < 4; i++)
                       _MoveViewRow(
-                        focusState.getPokemonState(PlayerType(PlayerType.me)),
-                        focusState.getPokemonState(PlayerType(PlayerType.opponent)),
+                        focusState.getPokemonState(PlayerType(PlayerType.me), null),
+                        focusState.getPokemonState(PlayerType(PlayerType.opponent), null),
                         i,
                       ),
                       SizedBox(height: 5),
                       // 状態異常・その他補正・場
-                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me)).ailmentsLength, focusState.getPokemonState(PlayerType(PlayerType.opponent)).ailmentsLength); i++)
-                      _AilmentsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
-                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me)).buffDebuffs.length, focusState.getPokemonState(PlayerType(PlayerType.opponent)).buffDebuffs.length); i++)
-                      _BuffDebuffsRow(focusState.getPokemonState(PlayerType(PlayerType.me)), focusState.getPokemonState(PlayerType(PlayerType.opponent)), i),
+                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me), null).ailmentsLength, focusState.getPokemonState(PlayerType(PlayerType.opponent), null).ailmentsLength); i++)
+                      _AilmentsRow(focusState.getPokemonState(PlayerType(PlayerType.me), null), focusState.getPokemonState(PlayerType(PlayerType.opponent), null), i),
+                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me), null).buffDebuffs.length, focusState.getPokemonState(PlayerType(PlayerType.opponent), null).buffDebuffs.length); i++)
+                      _BuffDebuffsRow(focusState.getPokemonState(PlayerType(PlayerType.me), null), focusState.getPokemonState(PlayerType(PlayerType.opponent), null), i),
                       for (int i = 0; i < max(focusState.ownFields.length, focusState.opponentFields.length); i++)
                       _IndiFieldRow(focusState, i),
                       _WeatherFieldRow(focusState)
@@ -1357,7 +1376,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       }
                     }
                     else if (phases[i].move!.type.id == TurnMoveType.move) {
-                      if (phases[i].move!.changePokemonIndex != null) {
+                      if (phases[i].move!.getChangePokemonIndex(phases[i].playerType) != null) {
                         allowedContinuous = phases[i].move!.move.maxMoveCount()-1;
                         continuousCount = 0;
                         // わざが失敗/命中していなければポケモン交代も発生しない
@@ -1379,7 +1398,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         s1 = 4;   // わざ使用後状態へ
                       }
                     }
-                    else if (phases[i].move!.changePokemonIndex != null) {
+                    else if (phases[i].move!.getChangePokemonIndex(phases[i].playerType) != null) {
                       s1++;   // ポケモン交代後状態へ
                       if (phases[i].playerType.id == PlayerType.me) {
                         changeOwn = true;
@@ -1403,9 +1422,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         textEditingControllerList1[i].text =
                           phases[i].getEditingControllerText1();
                         textEditingControllerList2[i].text =
-                          phases[i].getEditingControllerText2(currentState);
+                          phases[i].getEditingControllerText2(currentState, lastAction);
                         textEditingControllerList3[i].text =
-                          phases[i].getEditingControllerText3(currentState);
+                          phases[i].getEditingControllerText3(currentState, lastAction);
                         textEditingControllerList4[i].text =
                           phases[i].getEditingControllerText4(currentState);
                       }
@@ -1418,9 +1437,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           textEditingControllerList1[i].text =
                             phases[i].getEditingControllerText1();
                           textEditingControllerList2[i].text =
-                            phases[i].getEditingControllerText2(currentState);
+                            phases[i].getEditingControllerText2(currentState, lastAction);
                           textEditingControllerList3[i].text =
-                            phases[i].getEditingControllerText3(currentState);
+                            phases[i].getEditingControllerText3(currentState, lastAction);
                           textEditingControllerList4[i].text =
                             phases[i].getEditingControllerText4(currentState);
                         }
@@ -1437,9 +1456,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       textEditingControllerList1[i].text =
                         phases[i].getEditingControllerText1();
                       textEditingControllerList2[i].text =
-                        phases[i].getEditingControllerText2(currentState);
+                        phases[i].getEditingControllerText2(currentState, lastAction);
                       textEditingControllerList3[i].text =
-                        phases[i].getEditingControllerText3(currentState);
+                        phases[i].getEditingControllerText3(currentState, lastAction);
                       textEditingControllerList4[i].text =
                         phases[i].getEditingControllerText4(currentState);
                     }
@@ -1518,7 +1537,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   delAssistList.add(phases[i]);
                   isAssisting = true;
 
-                  if (phases[i].changePokemonIndex != null) {   // 効果によりポケモン交代が生じた場合
+                  if (phases[i].getChangePokemonIndex(PlayerType(PlayerType.me)) != null &&
+                      phases[i].getChangePokemonIndex(PlayerType(PlayerType.opponent)) != null
+                  ) {       // 効果によりポケモン交代が生じた場合
                     changingState = true;
                     if (continuousCount < allowedContinuous) {
                       s1 = 5;    // 連続わざ状態へ
@@ -1653,9 +1674,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
       final guide = phases[i].processEffect(
         widget.battle.getParty(PlayerType(PlayerType.me)),
-        currentState.getPokemonState(PlayerType(PlayerType.me)),
+        currentState.getPokemonState(PlayerType(PlayerType.me), null),
         widget.battle.getParty(PlayerType(PlayerType.opponent)),
-        currentState.getPokemonState(PlayerType(PlayerType.opponent)),
+        currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
         currentState, lastAction, continuousCount);
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
@@ -1668,8 +1689,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // 追加されたフェーズのフォームの内容を変える
       if (isInserted || (appState.needAdjustPhases >= 0 && appState.needAdjustPhases <= i)) {
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
-        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
-        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
+        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState, lastAction);
+        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState, lastAction);
         textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
       }
 
@@ -1824,9 +1845,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
         final guide = phases[i].processEffect(
           widget.battle.getParty(PlayerType(PlayerType.me)),
-          currentState.getPokemonState(PlayerType(PlayerType.me)),
+          currentState.getPokemonState(PlayerType(PlayerType.me), null),
           widget.battle.getParty(PlayerType(PlayerType.opponent)),
-          currentState.getPokemonState(PlayerType(PlayerType.opponent)),
+          currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
           currentState, lastAction, continuousCount);
         turnEffectAndStateAndGuides.add(
           TurnEffectAndStateAndGuide()
@@ -1837,8 +1858,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         // フォームの内容を変える
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
-        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState);
-        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState);
+        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState, lastAction);
+        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState, lastAction);
         textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
       }
 
@@ -1861,11 +1882,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   Pokemon _focusingPokemon(PlayerType player, PhaseState focusState) {
-    return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player)-1]!;
+    return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!;
   }
 
   String _focusingItemName(PlayerType player, PhaseState focusState) {
-    final item = focusState.getPokemonState(player).holdingItem;
+    final item = focusState.getPokemonState(player, null).holdingItem;
     if (item == null) {
       return 'なし';
     }
@@ -1878,7 +1899,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   String _focusingAbilityName(PlayerType player, PhaseState focusState) {
-    final ability = focusState.getPokemonState(player).currentAbility;
+    final ability = focusState.getPokemonState(player, null).currentAbility;
     if (ability.id == 0) {
       return '？';
     }
@@ -1888,16 +1909,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   int _correctedSpeed(PlayerType player, PhaseState focusState) {
-    int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player)-1]!.s.real;
-    final item = focusState.getPokemonState(player).holdingItem;
-    final ability = focusState.getPokemonState(player).currentAbility;
+    int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!.s.real;
+    final item = focusState.getPokemonState(player, null).holdingItem;
+    final ability = focusState.getPokemonState(player, null).currentAbility;
     final weather = focusState.weather;
-    final ownState = focusState.getPokemonState(player);
+    final ownState = focusState.getPokemonState(player, null);
     final fields = focusState.ownFields;
     bool ignoreParalysis = false;
     
     // ステータス変化
-    int rank = focusState.getPokemonState(player).statChanges(4);
+    int rank = focusState.getPokemonState(player, null).statChanges(4);
     if (rank >= 0) {
       ret = (ret * (2 + rank) / 2).floor();
     }

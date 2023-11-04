@@ -65,6 +65,7 @@ class BattleActionInputColumn extends Column {
                       onPressed: turn.phases[phaseIdx].move!.isValid() ? () {
                         nextSameTimingFirst?.needAssist = true;
                         appState.editingPhase[phaseIdx] = false;
+                        appState.needAdjustPhases = phaseIdx+1;
                         onFocus(phaseIdx+1);
                       } : null,
                     ),
@@ -109,14 +110,18 @@ class BattleActionInputColumn extends Column {
                         turn.phases[phaseIdx].playerType = PlayerType(value);
                         turn.phases[phaseIdx].move!.clear();
                         turn.phases[phaseIdx].move!.playerType = PlayerType(value);
-                        var myState = prevState.getPokemonState(PlayerType(value));
+                        var myState = prevState.getPokemonState(PlayerType(value), null);
                         if (myState.teraType != null) {
                           turn.phases[phaseIdx].move!.teraType = myState.teraType!;
                         }
                         turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
                         moveControllerList[phaseIdx].text = '';
                         hpControllerList[phaseIdx].text =
-                          turn.phases[phaseIdx].getEditingControllerText2(currentState);
+                          turn.phases[phaseIdx].getEditingControllerText2(currentState, null);
+                        textEditingControllerList3[phaseIdx].text =
+                          turn.phases[phaseIdx].getEditingControllerText3(currentState, null);
+                        textEditingControllerList4[phaseIdx].text =
+                          turn.phases[phaseIdx].getEditingControllerText4(currentState);
                         appState.editingPhase[phaseIdx] = true;
                         onFocus(phaseIdx+1);
                       },
@@ -157,8 +162,8 @@ class BattleActionInputColumn extends Column {
               turn.phases[phaseIdx].move!.extraInputWidget1(
                 () => onFocus(phaseIdx+1), battle.getParty(PlayerType(PlayerType.me)), 
                 battle.getParty(PlayerType(PlayerType.opponent)), prevState, ownPokemon, opponentPokemon,
-                prevState.getPokemonState(PlayerType(PlayerType.me)),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent)),
+                prevState.getPokemonState(PlayerType(PlayerType.me), null),
+                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
                 appState, phaseIdx, 0, turnEffectAndStateAndGuide, theme
               ),
@@ -174,8 +179,8 @@ class BattleActionInputColumn extends Column {
               turn.phases[phaseIdx].move!.extraInputWidget2(
                 () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
                 battle.getParty(PlayerType(PlayerType.me)), battle.getParty(PlayerType(PlayerType.opponent)),
-                prevState.getPokemonState(PlayerType(PlayerType.me)),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent)),
+                prevState.getPokemonState(PlayerType(PlayerType.me), null),
+                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
                 prevState.getPokemonStates(PlayerType(PlayerType.me)),
                 prevState.getPokemonStates(PlayerType(PlayerType.opponent)),
                 prevState,

@@ -24,9 +24,9 @@ class PartyTile extends ListTile {
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  TextSpan(text: party.pokemon1.name),
-                  party.pokemon2 != null ? TextSpan(text: '/${party.pokemon2!.name}') : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null ? TextSpan(text: '/${party.pokemon3!.name}') : TextSpan(),
+                  TextSpan(text: _removeFormName(party.pokemon1.name)),
+                  party.pokemon2 != null ? TextSpan(text: '/${_removeFormName(party.pokemon2!.name)}') : TextSpan(),
+                  party.pokemon3 != null ? TextSpan(text: '/${_removeFormName(party.pokemon3!.name)}') : TextSpan(),
                 ],
               ),
             ),
@@ -38,9 +38,9 @@ class PartyTile extends ListTile {
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null ? TextSpan(text: party.pokemon4!.name) : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null ? TextSpan(text: '/${party.pokemon5!.name}') : TextSpan(),
-                  party.pokemon2 != null && party.pokemon3 != null && party.pokemon4 != null && party.pokemon5 != null && party.pokemon6 != null ? TextSpan(text: '/${party.pokemon6!.name}') : TextSpan(),
+                  party.pokemon4 != null ? TextSpan(text: _removeFormName(party.pokemon4!.name)) : TextSpan(),
+                  party.pokemon5 != null ? TextSpan(text: '/${_removeFormName(party.pokemon5!.name)}') : TextSpan(),
+                  party.pokemon6 != null ? TextSpan(text: '/${_removeFormName(party.pokemon6!.name)}') : TextSpan(),
                 ],
               ),
             ),
@@ -52,4 +52,8 @@ class PartyTile extends ListTile {
     onLongPress: onLongPress,
     trailing: trailing,
   );
+
+  static String _removeFormName(String name) {
+    return name.replaceAll(RegExp(r'\(.*\)'), '');
+  }
 }

@@ -150,8 +150,6 @@ def main():
             if len(evolves_evolves) > 0:
                 if evolves_evolves.iloc[0] != 0:
                     evolves_from = evolves_evolves.iloc[0]
-            if id == 700:
-                print(evolves_from)
             female_rate = row[pokeBaseCSVfemaleRate]
             egg_groups = egg_group_df[egg_group_df[pokemonEggGroupsCSVPokemonIDColumn] == id][pokemonEggGroupsCSVEggGroupIDColumn].tolist()
 

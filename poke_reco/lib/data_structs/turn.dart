@@ -108,8 +108,8 @@ class Turn {
   }
 
   void setInitialState(PhaseState state) {
-    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType(PlayerType.me));
-    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType(PlayerType.opponent));
+    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType(PlayerType.me), null);
+    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType(PlayerType.opponent), null);
     _initialPokemonStates[0] = [
       for (final s in state.getPokemonStates(PlayerType(PlayerType.me)))
       s.copyWith()
@@ -160,9 +160,9 @@ class Turn {
       }
       effect.processEffect(
         ownParty,
-        ret.getPokemonState(PlayerType(PlayerType.me)),
+        ret.getPokemonState(PlayerType(PlayerType.me), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         opponentParty,
-        ret.getPokemonState(PlayerType(PlayerType.opponent)),
+        ret.getPokemonState(PlayerType(PlayerType.opponent), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         ret, lastAction, continousCount,
       );
     }

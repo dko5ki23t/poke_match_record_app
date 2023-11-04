@@ -67,7 +67,7 @@ class BattleTurnListView extends ListView {
     if (i <= 0 || i > sameTimingList.length) {
       return battle.getParty(PlayerType(playerID)).pokemons[turn.getInitialPokemonIndex(PlayerType(playerID))-1]!;
     }
-    return battle.getParty(PlayerType(playerID)).pokemons[sameTimingList[i-1].last.phaseState.getPokemonIndex(PlayerType(playerID))-1]!;
+    return battle.getParty(PlayerType(playerID)).pokemons[sameTimingList[i-1].last.phaseState.getPokemonIndex(PlayerType(playerID), null)-1]!;
   }
 
   static PhaseState _getPrevPhase(

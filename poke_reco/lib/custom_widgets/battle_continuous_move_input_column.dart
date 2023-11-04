@@ -89,8 +89,8 @@ class BattleContinuousMoveInputColumn extends Column {
                 () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
                 battle.getParty(PlayerType(PlayerType.me)),
                 battle.getParty(PlayerType(PlayerType.opponent)),
-                prevState.getPokemonState(PlayerType(PlayerType.me)),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent)),
+                prevState.getPokemonState(PlayerType(PlayerType.me), null),
+                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
                 prevState.getPokemonStates(PlayerType(PlayerType.me)),
                 prevState.getPokemonStates(PlayerType(PlayerType.opponent)),
                 prevState,
@@ -117,7 +117,7 @@ class BattleContinuousMoveInputColumn extends Column {
           getSelectedNum(appState.editingPhase) == 0 ?
           () {
             refMove.moveHits.add(MoveHit(MoveHit.hit));
-            refMove.moveEffectivenesses.add(MoveEffectiveness(MoveEffectiveness.normal));
+            refMove.moveEffectivenesses.add(refMove.moveEffectivenesses[0]);
             refMove.moveAdditionalEffects.add(MoveEffect(refMove.move.effect.id));
             refMove.extraArg1.add(0);
             refMove.extraArg2.add(0);
@@ -130,7 +130,11 @@ class BattleContinuousMoveInputColumn extends Column {
             ..playerType = refMove.playerType
             ..isAdding = false;
             hpControllerList[phaseIdx].text =
-              turn.phases[phaseIdx].getEditingControllerText2(currentState);
+              turn.phases[phaseIdx].getEditingControllerText2(currentState, null);
+            textEditingControllerList3[phaseIdx].text =
+              turn.phases[phaseIdx].getEditingControllerText3(currentState, null);
+            textEditingControllerList4[phaseIdx].text =
+              turn.phases[phaseIdx].getEditingControllerText4(currentState);
             onFocus(phaseIdx+1);
           } : null,
         child: Container(

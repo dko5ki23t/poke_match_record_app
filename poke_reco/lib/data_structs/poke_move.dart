@@ -140,7 +140,7 @@ class TurnMove {
   List<int> extraArg1 = [0];
   List<int> extraArg2 = [0];
   List<int> extraArg3 = [0];
-  int? changePokemonIndex;
+  List<int?> _changePokemonIndexes = [null, null];
   PokeType moveType = PokeType.createFromId(0);
 
   TurnMove copyWith() =>
@@ -159,8 +159,22 @@ class TurnMove {
     ..extraArg1 = [...extraArg1]
     ..extraArg2 = [...extraArg2]
     ..extraArg3 = [...extraArg3]
-    ..changePokemonIndex = changePokemonIndex
+    .._changePokemonIndexes = [..._changePokemonIndexes]
     ..moveType = moveType;
+
+  int? getChangePokemonIndex(PlayerType player) {
+    if (player.id == PlayerType.me) return _changePokemonIndexes[0];
+    return _changePokemonIndexes[1];
+  }
+
+  void setChangePokemonIndex(PlayerType player, int? val) {
+    if (player.id == PlayerType.me) {
+      _changePokemonIndexes[0] = val;
+    }
+    else {
+      _changePokemonIndexes[1] = val;
+    }
+  }
 
   // わざが成功＆ヒットしたかどうか
   // へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
@@ -284,8 +298,8 @@ class TurnMove {
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       myState.processExitEffect(true, yourState);
-      state.setPokemonIndex(playerType, changePokemonIndex!);
-      state.getPokemonState(playerType).processEnterEffect(true, state, yourState);
+      state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
+      state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
       return ret;
     }
 
@@ -371,7 +385,7 @@ class TurnMove {
           targetIndiFields.clear();
           targetPlayerTypeIDs.clear();  // 使わない
           for (int i = 0; i < state.getPokemonStates(playerType).length; i++) {
-            if (i != state.getPokemonIndex(playerType)-1 && state.getPokemonStates(playerType)[i].isFainting) {
+            if (i != state.getPokemonIndex(playerType, null)-1 && state.getPokemonStates(playerType)[i].isFainting) {
               targetStates.add(state.getPokemonStates(playerType)[i]);
               targetIndiFields.add(myFields);
               targetPlayerTypeIDs.add(myPlayerTypeID);
@@ -408,6 +422,7 @@ class TurnMove {
         var targetState = targetStates[i];
         var targetIndiField = targetIndiFields[i];
         var targetPlayerTypeID = targetPlayerTypeIDs[i];
+        bool isSubstitute = targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty;
         switch (moveAdditionalEffects[continuousCount].id) {
           case 1:     // 追加効果なし
           case 104:   // 追加効果なし
@@ -532,11 +547,11 @@ class TurnMove {
             break;
           case 29:    // 相手ポケモンをランダムに交代させる
           case 314:   // 相手ポケモンをランダムに交代させる
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(targetPlayerTypeID)) != null) {
               targetState.processExitEffect(targetPlayerTypeID == PlayerType.me, myState);
               PokemonState newState;
-              state.setPokemonIndex(playerType.opposite, changePokemonIndex!);
-              newState = state.getPokemonState(playerType.opposite);
+              state.setPokemonIndex(playerType.opposite, getChangePokemonIndex(PlayerType(targetPlayerTypeID))!);
+              newState = state.getPokemonState(playerType.opposite, null);
               newState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state, myState);
             }
             break;
@@ -926,7 +941,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 128:   // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               List<int> statChanges = List.generate(7, (i) => myState.statChanges(i));
               var takeOverAilments = myState.ailmentsWhere((e) => e.id == Ailment.confusion ||
                 e.id == Ailment.leechSeed || e.id == Ailment.curse || e.id == Ailment.perishSong ||
@@ -939,8 +954,8 @@ class TurnMove {
               );
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, changePokemonIndex!);
-              newState = state.getPokemonState(playerType);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               for (int i = 0; i < 7; i++) {
                 newState.forceSetStatChanges(i, statChanges[i]);
@@ -1060,11 +1075,11 @@ class TurnMove {
             break;
           case 154:   // 控えのポケモンと交代する
           case 229:   // 控えのポケモンと交代する
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, changePokemonIndex!);
-              newState = state.getPokemonState(playerType);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
             }
             break;
@@ -1400,7 +1415,7 @@ class TurnMove {
               Item.processEffect(
                 usingItem.id, PlayerType(myPlayerTypeID),
                 myState, targetState,
-                state, extraArg2[continuousCount], 0, changePokemonIndex);
+                state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
               myState.holdingItem = mySavingItem;
             }
             break;
@@ -1435,7 +1450,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               var flingItem = pokeData.items[extraArg1[continuousCount]]!;
               movePower = flingItem.flingPower;
-              flingItem.processFlingEffect(playerType, myState, yourState, state, extraArg2[continuousCount], 0, changePokemonIndex);
+              flingItem.processFlingEffect(playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
               myState.holdingItem = null;
             }
             break;
@@ -2063,11 +2078,11 @@ class TurnMove {
           case 347:   // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
             targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
             targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, changePokemonIndex!);
-              newState = state.getPokemonState(playerType);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
             }
             break;
@@ -2292,7 +2307,7 @@ class TurnMove {
           case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
             if (extraArg1[continuousCount] != 0) {
               Item.processEffect(
-                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0, changePokemonIndex);
+                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState, moveId: replacedMove.id);
             }
@@ -2650,22 +2665,22 @@ class TurnMove {
           case 492:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, changePokemonIndex!);
-              newState = state.getPokemonState(playerType);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
             }
             break;
           case 493:   // 天気をゆきにして控えと交代
             state.weather = Weather(Weather.snowy);
-            if (changePokemonIndex != null) {
+            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
-              state.setPokemonIndex(playerType, changePokemonIndex!);
-              newState = state.getPokemonState(playerType);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
             }
@@ -2746,6 +2761,9 @@ class TurnMove {
           
           // とくせい等による威力変動
           double tmpPow = movePower.toDouble();
+          // テクニシャン補正は一番最初
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
+
           if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
           if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
           if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
@@ -3062,8 +3080,15 @@ class TurnMove {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              targetState.remainHP -= realDamage[continuousCount];
-              targetState.remainHPPercent -= percentDamage[continuousCount];
+              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty) {
+                targetState.remainHP -= realDamage[continuousCount];
+                targetState.remainHPPercent -= percentDamage[continuousCount];
+              }
+              else {
+                if (realDamage[continuousCount] > 0) {
+                  targetState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.substitute);
+                }
+              }
             }
           }
           break;
@@ -3315,7 +3340,7 @@ class TurnMove {
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
-                    moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[0] = move.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(move.effect.id) : MoveEffect(0);
                     moveEffectivenesses[0] = PokeType.effectiveness(
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
@@ -3362,9 +3387,9 @@ class TurnMove {
                             ),
                         ),
                     ],
-                  value: changePokemonIndex,
+                  value: getChangePokemonIndex(playerType),
                   onChanged: (value) {
-                    changePokemonIndex = value;
+                    setChangePokemonIndex(playerType, value);
                     appState.editingPhase[phaseIdx] = true;
                     appState.needAdjustPhases = phaseIdx+1;
                     onFocus();
@@ -3447,6 +3472,10 @@ class TurnMove {
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
   )
   {
+    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+
     if (playerType.id != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
       // 追加効果
       Row effectInputPrevRow = Row();
@@ -3485,7 +3514,7 @@ class TurnMove {
                   onSuggestionSelected: (suggestion) {
                     preMoveController.text = suggestion.displayName;
                     extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
@@ -3541,7 +3570,7 @@ class TurnMove {
                   onSuggestionSelected: (suggestion) {
                     preMoveController.text = suggestion.displayName;
                     extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
@@ -3839,9 +3868,9 @@ class TurnMove {
                             ),
                         ),
                     ],
-                  value: changePokemonIndex,
+                  value: getChangePokemonIndex(playerType.opposite),
                   onChanged: (value) {
-                    changePokemonIndex = value;
+                    setChangePokemonIndex(playerType.opposite, value);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4140,9 +4169,9 @@ class TurnMove {
                             ),
                         ),
                     ],
-                  value: changePokemonIndex,
+                  value: getChangePokemonIndex(playerType),
                   onChanged: (value) {
-                    changePokemonIndex = value;
+                    setChangePokemonIndex(playerType, value);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4492,7 +4521,7 @@ class TurnMove {
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
-            state, preMoveController, extraArg2[continuousCount], 0, changePokemonIndex,
+            state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
               appState.editingPhase[phaseIdx] = true;
@@ -4500,7 +4529,7 @@ class TurnMove {
             },
             (value) {},
             (value) {
-              changePokemonIndex = value;
+              setChangePokemonIndex(playerType, value);
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
@@ -4633,7 +4662,7 @@ class TurnMove {
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
-            state, preMoveController, extraArg2[continuousCount], 0, changePokemonIndex,
+            state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
               appState.editingPhase[phaseIdx] = true;
@@ -4641,7 +4670,7 @@ class TurnMove {
             },
             (value) {},
             (value) {
-              changePokemonIndex = value;
+              setChangePokemonIndex(playerType, value);
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
@@ -4958,7 +4987,7 @@ class TurnMove {
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
-            state, preMoveController, extraArg2[continuousCount], 0, changePokemonIndex,
+            state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
               appState.editingPhase[phaseIdx] = true;
@@ -4966,7 +4995,7 @@ class TurnMove {
             },
             (value) {},
             (value) {
-              changePokemonIndex = value;
+              setChangePokemonIndex(playerType, value);
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
@@ -5047,9 +5076,9 @@ class TurnMove {
                             ),
                         ),
                     ],
-                  value: changePokemonIndex,
+                  value: getChangePokemonIndex(playerType),
                   onChanged: (value) {
-                    changePokemonIndex = value;
+                    setChangePokemonIndex(playerType, value);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -5294,6 +5323,7 @@ class TurnMove {
                   SizedBox(height: 10,),
                   effectInputRow,
                   SizedBox(height: 10,),
+                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ?
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -5334,6 +5364,36 @@ class TurnMove {
                         Flexible(child: Text('= ダメージ ${realDamage[continuousCount]}')) :
                         Flexible(child: Text('= 回復 ${-realDamage[continuousCount]}')),
                     ],
+                  ) :
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField(
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            border: UnderlineInputBorder(),
+                            labelText: 'みがわり',
+                          ),
+                          items: <DropdownMenuItem>[
+                            DropdownMenuItem(
+                              value: 0,
+                              child: Text('みがわりはのこった', overflow: TextOverflow.ellipsis,),
+                            ),
+                            DropdownMenuItem(
+                              value: 1,
+                              child: Text('みがわりはこわれてしまった', overflow: TextOverflow.ellipsis,),
+                            ),
+                          ],
+                          value: realDamage[continuousCount],
+                          onChanged: (value) {
+                            realDamage[continuousCount] = value;
+                            appState.editingPhase[phaseIdx] = true;
+                            onFocus();
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 10,),
                   effectInputRow2,
@@ -5348,8 +5408,8 @@ class TurnMove {
 
   // 行動が確定するなら自動で設定する。自動で設定した場合はtrueを返す
   bool fillAuto(PhaseState state) {
-    var myState = state.getPokemonState(playerType);
-    var yourState = state.getPokemonState(playerType.opposite);
+    var myState = state.getPokemonState(playerType, null);
+    var yourState = state.getPokemonState(playerType.opposite, null);
     final pokeData = PokeDB();
     bool ret = false;
     bool isMoveChanged = false;
@@ -5391,7 +5451,7 @@ class TurnMove {
     }
 
     if (isMoveChanged) {
-      moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
+      moveAdditionalEffects[0] = move.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(move.effect.id) : MoveEffect(0);
       moveEffectivenesses[0] = PokeType.effectiveness(
         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
@@ -5618,7 +5678,7 @@ class TurnMove {
     extraArg1 = [0];
     extraArg2 = [0];
     extraArg3 = [0];
-    changePokemonIndex = null;
+    _changePokemonIndexes = [null, null];
     moveType = PokeType.createFromId(0);
   }
 
@@ -5707,9 +5767,15 @@ class TurnMove {
       if (e == '') break;
       turnMove.extraArg3.add(int.parse(e));
     }
-    // changePokemonIndex
-    if (turnMoveElements[14] != '') {
-      turnMove.changePokemonIndex = int.parse(turnMoveElements[14]);
+    // _changePokemonIndexes
+    var changePokemonIndexes = turnMoveElements[14].split(split2);
+    for (int i = 0; i < 2; i++) {
+      if (changePokemonIndexes[i] == '') {
+        turnMove._changePokemonIndexes[i] = null;
+      }
+      else {
+        turnMove._changePokemonIndexes[i] = int.parse(changePokemonIndexes[i]);
+      }
     }
     // moveType
     turnMove.moveType = PokeType.createFromId(int.parse(turnMoveElements[15]));
@@ -5818,9 +5884,10 @@ class TurnMove {
       ret += split2;
     }
     ret += split1;
-    // changePokemonIndex
-    if (changePokemonIndex != null) {
-      ret += changePokemonIndex.toString();
+    // _changePokemonIndex
+    for (int i = 0; i < 2; i++) {
+      if (_changePokemonIndexes[i] != null) ret += _changePokemonIndexes[i].toString();
+      ret += split2;
     }
     ret += split1;
     // moveType
@@ -5839,7 +5906,7 @@ class TurnMove {
         playerType.id != PlayerType.none &&
         move.id != 0;
       case TurnMoveType.change:
-        return changePokemonIndex != null;
+        return getChangePokemonIndex(playerType) != null;
       case TurnMoveType.surrender:
         return true;
       default:

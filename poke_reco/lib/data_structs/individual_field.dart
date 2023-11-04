@@ -11,6 +11,13 @@ class IndiFieldEffect {
   static const int healingWish = 5;       // いやしのねがい
   static const int lunarDance = 6;        // みかづきのまい
   static const int badToxicSpikes = 7;    // どくどくびし
+  static const int reflectorEnd = 12;     // リフレクター終了
+  static const int lightScreenEnd = 13;   // ひかりのかべ終了
+  //static const int safeGuard = 14;        // しんぴのまもり
+  //static const int mist = 15;             // しろいきり
+  static const int tailwindEnd = 16;      // おいかぜ終了
+  //static const int luckyChant = 17;       // おまじない
+  static const int auroraVeilEnd = 18;    // オーロラベール終了
 
   static const _displayNameMap = {
     0: '',
@@ -21,6 +28,10 @@ class IndiFieldEffect {
     5: 'いやしのねがい',
     6: 'みかづきのまい',
     7: 'もうどくをあびた',
+    12: 'リフレクターがなくなった',
+    13: 'ひかりのかべがなくなった',
+    16: 'おいかぜがやんだ',
+    18: 'オーロラベールがなくなった',
   };
 
   const IndiFieldEffect(this.id);
@@ -89,6 +100,36 @@ class IndividualField {
     26: 'フェアリーロック',
   };
 
+  static const _displayTurnMap = {
+    0: false,
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false,
+    6: false,
+    7: false,
+    8: false,
+    9: false,
+    10: false,
+    11: false,
+    12: true,
+    13: true,
+    14: false,
+    15: false,
+    16: false,
+    17: false,
+    18: true,
+    19: false,
+    20: false,
+    21: false,
+    22: false,
+    23: false,
+    24: false,
+    25: false,
+    26: false,
+  };
+
   static const _bgColorMap = {
     0:  Colors.black,
     1:  Colors.green,
@@ -130,7 +171,7 @@ class IndividualField {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName => _displayTurnMap[id]! ? '${_displayNameMap[id]!} ($turns/?)' : _displayNameMap[id]!;
   Color get bgColor => _bgColorMap[id]!;
   
   // SQLに保存された文字列からIndividualFieldをパース

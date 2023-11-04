@@ -121,18 +121,18 @@ class BattleTerastalInputColumn extends Column {
                               _myDropDown(
                                 !sameTimingList[i].phaseState.hasOwnTerastal,
                                 PlayerType.me,
-                                '${battle.getParty(PlayerType(PlayerType.me)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.me))-1]!.name}/あなた',
+                                '${sameTimingList[i].phaseState.getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/あなた',
                               ),
                               _myDropDown(
                                 !sameTimingList[i].phaseState.hasOpponentTerastal,
                                 PlayerType.opponent,
-                                '${battle.getParty(PlayerType(PlayerType.opponent)).pokemons[sameTimingList[i].phaseState.getPokemonIndex(PlayerType(PlayerType.opponent))-1]!.name}/${battle.opponentName}',
+                                '${sameTimingList[i].phaseState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
                               ),
                             ],
                             value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
-                              var teraType = sameTimingList[i].phaseState.getPokemonState(turn.phases[firstIdx+i].playerType).pokemon.teraType;
+                              var teraType = sameTimingList[i].phaseState.getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType;
                               if (teraType.id != 0) {
                                 turn.phases[firstIdx+i].effectId = teraType.id;
                               }
