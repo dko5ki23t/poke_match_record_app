@@ -279,7 +279,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           // 新規作成
           return RegisterPartyPage(
             onFinish: () => _pop(context),
-            onSelectPokemon: (party) => _pushSelectPokemonPage(context, party),
+            onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
             party: party,
             isNew: isNew,
           );
@@ -288,7 +288,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
     ).then((value) {setState(() {});});
   }
 
-  Future<Pokemon?> _pushSelectPokemonPage(BuildContext context, Party party) async {
+  Future<Pokemon?> _pushSelectPokemonPage(BuildContext context, Party party, int selectingPokemonIdx) async {
     var result =
       await Navigator.push(
         context,
@@ -300,6 +300,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
               onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
               selectMode: true,
               party: party,
+              selectingPokemonIdx: selectingPokemonIdx,
             );
           },
         ),
@@ -332,7 +333,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 // 新規作成
                 return RegisterPartyPage(
                   onFinish: () => _pop(context),
-                  onSelectPokemon: (party) => _pushSelectPokemonPage(context, party),
+                  onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
                   party: Party(),
                   isNew: true,
                 );

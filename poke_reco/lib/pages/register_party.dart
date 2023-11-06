@@ -16,7 +16,7 @@ class RegisterPartyPage extends StatefulWidget {
   }) : super(key: key);
 
   final void Function() onFinish;
-  final Future<Pokemon?> Function(Party party) onSelectPokemon;
+  final Future<Pokemon?> Function(Party party, int selectingPokemonIdx) onSelectPokemon;
   final Party party;
   final bool isNew;
 
@@ -161,7 +161,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       () async {
                         // キーボードが出ないようにする
                         FocusScope.of(context).requestFocus(FocusNode());
-                        var pokemon = await widget.onSelectPokemon(widget.party);
+                        var pokemon = await widget.onSelectPokemon(widget.party, i+1);
                         if (pokemon != null) {
                           widget.party.pokemons[i] = pokemon;
                           pokemonController[i].text =

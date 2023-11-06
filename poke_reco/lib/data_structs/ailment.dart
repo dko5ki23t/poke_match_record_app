@@ -144,7 +144,7 @@ class Ailment {
   static const int charging = 33;           // じゅうでん
   static const int thrash = 34;             // あばれる
   static const int bide = 35;               // がまん
-  static const int destinyBond = 36;        // みちづれ     // TODO
+  static const int destinyBond = 36;        // みちづれ
   static const int cannotRunAway = 37;      // にげられない
   static const int minimize = 38;           // ちいさくなる
   static const int flying = 39;             // そらをとぶ
@@ -169,7 +169,12 @@ class Ailment {
   static const int throatChop = 58;         // じごくづき
   static const int tarShot = 59;            // タールショット
   static const int octoLock = 60;           // たこがため
-  static const int protect = 61;            // まもる     // TODO
+  static const int protect = 61;            // まもる extraArg1 =
+                                            // 588:キングシールド(直接攻撃してきた相手のこうげき1段階DOWN)
+                                            // 596:ニードルガード(直接攻撃してきた相手に最大HP1/8ダメージ)
+                                            // 661:トーチカ(直接攻撃してきた相手をどく状態にする)
+                                            // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
+                                            // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
   static const int candyCandy = 62;         // あめまみれ     // TODO
 
   static const _displayNameMap = {

@@ -160,7 +160,17 @@ class BattleActionInputColumn extends Column {
               ),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraInputWidget1(
-                () => onFocus(phaseIdx+1), battle.getParty(PlayerType(PlayerType.me)), 
+                () => onFocus(phaseIdx+1),
+                () {
+                  hpControllerList[phaseIdx].text =
+                    turn.phases[phaseIdx].getEditingControllerText2(currentState, null);
+                  textEditingControllerList3[phaseIdx].text =
+                    turn.phases[phaseIdx].getEditingControllerText3(currentState, null);
+                  textEditingControllerList4[phaseIdx].text =
+                    turn.phases[phaseIdx].getEditingControllerText4(currentState);
+                  onFocus(phaseIdx+1);
+                },
+                battle.getParty(PlayerType(PlayerType.me)), 
                 battle.getParty(PlayerType(PlayerType.opponent)), prevState, ownPokemon, opponentPokemon,
                 prevState.getPokemonState(PlayerType(PlayerType.me), null),
                 prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
@@ -175,7 +185,8 @@ class BattleActionInputColumn extends Column {
                   prevState.hasOwnTerastal : prevState.hasOpponentTerastal,
               ),
 */
-              SizedBox(height: 10,),
+              SizedBox(height: turn.phases[phaseIdx].move!.isSuccess ? 10 : 0,),
+              turn.phases[phaseIdx].move!.isSuccess ?
               turn.phases[phaseIdx].move!.extraInputWidget2(
                 () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
                 battle.getParty(PlayerType(PlayerType.me)), battle.getParty(PlayerType(PlayerType.opponent)),
@@ -188,7 +199,7 @@ class BattleActionInputColumn extends Column {
                 textEditingControllerList3[phaseIdx],
                 textEditingControllerList4[phaseIdx],
                 appState, phaseIdx, 0, turnEffectAndStateAndGuide,
-              ),
+              ) : Container(),
               SizedBox(height: 10,),
               for (final e in turnEffectAndStateAndGuide.guides)
               Row(

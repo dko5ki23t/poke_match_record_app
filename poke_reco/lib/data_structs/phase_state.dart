@@ -233,6 +233,41 @@ class PhaseState {
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
           int variedExtraArg1 = 0;
+          // 直接こうげきをまもる系統のわざで防がれたとき
+          if (prevAction != null && prevAction.move!.move.isDirect &&
+              !(prevAction.move!.move.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+              attackerState.currentAbility.id != 203    // とくせいがえんかくでない
+          ) {
+            var findIdx = defenderState.ailmentsIndexWhere((e) => e.id == Ailment.protect);
+            if (findIdx >= 0 && defenderState.ailments(findIdx).extraArg1 != 0) {
+              var id = defenderState.ailments(findIdx).extraArg1;
+              int extraArg1 = 0;
+              if (id == 596) {
+                if (attackerPlayerTypeId == PlayerType.me) {
+                  extraArg1 = (attackerState.pokemon.h.real / 8).floor();
+                }
+                else {
+                  extraArg1 = 12;
+                }
+              }
+              ret.add(TurnEffect()
+                ..playerType = PlayerType(attackerPlayerTypeId)
+                ..timing = AbilityTiming(AbilityTiming.afterMove)
+                ..effect = EffectType(EffectType.afterMove)
+                ..effectId = id
+                ..extraArg1 = extraArg1
+              );
+            }
+          }
+          // みちづれ状態の相手をひんしにしたとき
+          if (prevAction != null && defenderState.isFainting && defenderState.ailmentsWhere((e) => e.id == Ailment.destinyBond).isNotEmpty) {
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.afterMove)
+              ..effectId = 194
+            );
+          }
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount)) {  // わざ成功時
             if (prevAction.move!.move.damageClass.id == 1) {
               // へんかわざを受けた後
@@ -447,6 +482,7 @@ class PhaseState {
             var playerTimingIDs = [];
             var player = players[i];
             var myState = getPokemonState(player, null);
+            bool isMe = player.id == PlayerType.me;
 
             // 毎ターン終了時には無条件で発動する効果
             playerTimingIDs = [AbilityTiming.everyTurnEnd];
@@ -470,7 +506,6 @@ class PhaseState {
             if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
               int extraArg1 = 0;
               int currentAbilityID = myState.currentAbility.id;
-              bool isMe = player.id == PlayerType.me;
               if (currentAbilityID == 44 || currentAbilityID == 115) {   // あめうけざら/アイスボディ
                 extraArg1 = isMe ? -((myState.pokemon.h.real / 16).floor()) : -6;
               }
@@ -497,7 +532,6 @@ class PhaseState {
             // もちもの
             if (myState.holdingItem != null && playerTimingIDs.contains(myState.holdingItem!.timing.id)) {
               int extraArg1 = 0;
-              bool isMe = player.id == PlayerType.me;
               switch (myState.holdingItem!.id) {
                 case 265:     // くっつきバリ
                   extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12;
@@ -549,6 +583,44 @@ class PhaseState {
                 ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.sleepy
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty) {    // やけど
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.burn
+                ..extraArg1 = isMe ? (myState.pokemon.h.real / 16).floor() : 6
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.poison).isNotEmpty) {    // どく
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.poison
+                ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.badPoison).isNotEmpty) { // もうどく
+              int turns = (myState.ailmentsWhere((e) => e.id == Ailment.badPoison).first.turns + 1).clamp(1, 15);
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.badPoison
+                ..extraArg1 = isMe ? (myState.pokemon.h.real * turns / 16).floor() : (100 * turns / 16).floor()
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {    // しおづけ
+              int bunbo = myState.isTypeContain(9) || myState.isTypeContain(11) ? 4 : 8;
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.saltCure
+                ..extraArg1 = isMe ? (myState.pokemon.h.real / bunbo).floor() : (100 / bunbo).floor()
               );
             }
 

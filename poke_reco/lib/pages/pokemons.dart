@@ -17,11 +17,13 @@ class PokemonsPage extends StatefulWidget {
     required this.selectMode,
     required this.onSelect,
     this.party,
+    this.selectingPokemonIdx,
   }) : super(key: key);
   final void Function(Pokemon myPokemon, bool isNew) onAdd;
   final void Function(Pokemon selectedPokemon)? onSelect;
   final bool selectMode;
   final Party? party;
+  final int? selectingPokemonIdx;
 
   @override
   PokemonsPageState createState() => PokemonsPageState();
@@ -96,12 +98,9 @@ class PokemonsPageState extends State<PokemonsPage> {
       }
     }
     List<int?> partyPokemonsNo = [
-      widget.party?.pokemon1.no,
-      widget.party?.pokemon2?.no,
-      widget.party?.pokemon3?.no,
-      widget.party?.pokemon4?.no,
-      widget.party?.pokemon5?.no,
-      widget.party?.pokemon6?.no,
+      for (int i = 0; i < 6; i++)
+      widget.selectingPokemonIdx != null && i != widget.selectingPokemonIdx!-1 ?
+        widget.party?.pokemons[i]?.no : null,
     ];
 
     if (filteredPokemons.isEmpty) {

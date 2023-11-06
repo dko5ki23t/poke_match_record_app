@@ -31,6 +31,7 @@ class EffectType {
   static const int move = 7;
   static const int changeFaintingPokemon = 8;
   static const int terastal = 9;
+  static const int afterMove = 10;
 
   const EffectType(this.id);
 
@@ -1028,6 +1029,46 @@ class TurnEffect {
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleepy);
             myState.ailmentsAdd(Ailment(Ailment.sleep), state);
             break;
+          case AilmentEffect.burn:
+          case AilmentEffect.poison:
+          case AilmentEffect.badPoison:
+          case AilmentEffect.saltCure:
+            if (playerType.id == PlayerType.me) {
+              myState.remainHP -= extraArg1;
+            }
+            else {
+              myState.remainHPPercent -= extraArg1;
+            }
+            break;
+        }
+        break;
+      case EffectType.afterMove:
+        switch (effectId) {
+          case 194:   // みちづれ
+            myState.remainHP = 0;
+            myState.remainHPPercent = 0;
+            myState.isFainting = true;
+            break;
+          case 588:   // キングシールド
+            myState.addStatChanges(false, 0, -1, yourState, moveId: effectId);
+            break;
+          case 596:   // ニードルガード
+            if (playerType.id == PlayerType.me) {
+              myState.remainHP -= extraArg1;
+            }
+            else {
+              myState.remainHPPercent -= extraArg1;
+            }
+            break;
+          case 661:   // トーチカ
+            myState.ailmentsAdd(Ailment(Ailment.poison), state);
+            break;
+          case 792:   // ブロッキング
+            myState.addStatChanges(false, 1, -2, yourState, moveId: effectId);
+            break;
+          case 852:   // スレッドトラップ
+            myState.addStatChanges(false, 4, -1, yourState, moveId: effectId);
+            break;
         }
         break;
       default:
@@ -1235,14 +1276,25 @@ class TurnEffect {
           if (phaseState.weather.id == Weather.sandStorm) { // 天気がすなあらしのとき、毎ターン終了時
             weatherEffectIDs.addAll([WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
           }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {   // どく/もうどく状態のとき
-            timingIDs.add(52);
-          }
           if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.sleepy).isNotEmpty) {   // ねむけ状態のとき
             ailmentEffectIDs.add(AilmentEffect.sleepy);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison).isNotEmpty) {   // どく状態のとき
+            ailmentEffectIDs.add(AilmentEffect.poison);
+            timingIDs.add(52);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.badPoison).isNotEmpty) {  // もうどく状態のとき
+            ailmentEffectIDs.add(AilmentEffect.badPoison);
+            timingIDs.add(52);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty) {     // やけど状態のとき
+            ailmentEffectIDs.add(AilmentEffect.burn);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {   // しおづけ状態のとき
+            ailmentEffectIDs.add(AilmentEffect.saltCure);
           }
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
@@ -1312,6 +1364,23 @@ class TurnEffect {
             if (attackerState.pokemon.sex != defenderState.pokemon.sex && attackerState.pokemon.sex != Sex.none) defenderTimingIDs.add(69);
             // 直接攻撃によりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(75);
+            // まもる系統のわざ相手に直接攻撃したとき
+            var findIdx = defenderState.ailmentsIndexWhere((e) => e.id == Ailment.protect && e.extraArg1 != 0);
+            if (findIdx >= 0 && attacker.id == playerType.id) {
+              ret.add(TurnEffect()
+                ..playerType = playerType
+                ..effect = EffectType(EffectType.afterMove)
+                ..effectId = defenderState.ailments(findIdx).extraArg1
+              );
+            }
+            // みちづれ状態の相手にこうげきしてひんしにしたとき
+            if (defenderState.isFainting && defenderState.ailmentsWhere((e) => e.id == Ailment.destinyBond).isNotEmpty) {
+              ret.add(TurnEffect()
+                ..playerType = playerType
+                ..effect = EffectType(EffectType.afterMove)
+                ..effectId = 194
+              );
+            }
           }
           if (turnMove.move.isSound) {
             attackerTimingIDs.add(123);  // 音技を使ったとき
@@ -1524,6 +1593,8 @@ class TurnEffect {
         return FieldEffect(effectId).displayName;
       case EffectType.move:
         return move!.move.displayName;
+      case EffectType.afterMove:
+        return pokeData.moves[effectId]!.displayName;
       default:
         return '';
     }
@@ -1621,6 +1692,20 @@ class TurnEffect {
                   return pokeData.moves[extraArg1 % 10000]!.displayName;
               }
               break;
+            case EffectType.ailment:
+              switch (effectId) {
+                case AilmentEffect.burn:        // やけど
+                case AilmentEffect.poison:      // どく
+                case AilmentEffect.badPoison:   // もうどく
+                case AilmentEffect.saltCure:    // しおづけ
+                  if (playerType.id == PlayerType.me) {
+                    return myState.remainHP.toString();
+                  }
+                  else {
+                    return myState.remainHPPercent.toString();
+                  }
+              }
+              break;
             case EffectType.individualField:
               switch (effectId) {
                 case IndiFieldEffect.stealthRock:
@@ -1652,13 +1737,32 @@ class TurnEffect {
       case AbilityTiming.continuousMove:
         {
           if (move == null) return '';
-          if (move!.playerType.id == PlayerType.me) {
-            return myState.remainHP.toString();
+          switch (move!.moveAdditionalEffects[0].id) {
+            case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
+            case 106:   // もちものを盗む
+            case 178:   // 使用者ともちものを入れ替える
+            case 179:   // 相手と同じとくせいになる
+            case 185:   // 戦闘中自分が最後に使用したもちものを復活させる
+            case 324:   // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
+            case 456:   // 対象にもちものがあるときのみ成功
+            case 457:   // 対象のもちものを消失させる
+            case 189:   // もちものを持っていれば失わせ、威力1.5倍
+            case 192:   // 使用者ととくせいを入れ替える
+            case 225:   // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
+            case 234:   // 使用者のもちものによって威力と追加効果が変わる
+            case 300:   // 相手のとくせいを使用者のとくせいと同じにする
+            case 315:   // 相手のきのみ・ノーマルジュエルを失わせる
+            case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
+              return '';
+            default:
+              if (move!.playerType.id == PlayerType.me) {
+                return myState.remainHP.toString();
+              }
+              else if (move!.playerType.id == PlayerType.opponent) {
+                return myState.remainHPPercent.toString();
+              }
+              return '';
           }
-          else if (move!.playerType.id == PlayerType.opponent) {
-            return myState.remainHPPercent.toString();
-          }
-          return '';
         }
       default:
         {
@@ -2515,6 +2619,45 @@ class TurnEffect {
           );
       }
     }
+    else if (effect.id == EffectType.ailment) {   // 状態変化による効果
+      switch (effectId) {
+        case AilmentEffect.poison:    // どく
+        case AilmentEffect.badPoison: // もうどく
+        case AilmentEffect.burn:      // やけど
+        case AilmentEffect.saltCure:  // しおづけ
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '${myPokemon.name}の残りHP',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('/${myPokemon.h.real}')) :
+              Flexible(child: Text('% /100%')),
+            ],
+          );
+      }
+    }
     else if (effect.id == EffectType.weather) {   // 天気による効果
       switch (effectId) {
         case WeatherEffect.sandStormDamage:   // すなあらしによるダメージ
@@ -2629,6 +2772,42 @@ class TurnEffect {
                   Flexible(child: Text('% /100%')),
                 ],
               ),
+            ],
+          );
+      }
+    }
+    else if (effect.id == EffectType.afterMove) {   // わざによる効果
+      switch (effectId) {
+        case 596:   // ニードルガード
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Flexible(
+                child: TextFormField(
+                  controller: controller,
+                  textAlign: TextAlign.center,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '${myPokemon.name}の残りHP',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  onTap: () => onFocus(),
+                  onChanged: (value) {
+                    if (playerType.id == PlayerType.me) {
+                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+                    }
+                    else {
+                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+                    }
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                ),
+              ),
+              playerType.id == PlayerType.me ?
+              Flexible(child: Text('/${myPokemon.h.real}')) :
+              Flexible(child: Text('% /100%')),
             ],
           );
       }

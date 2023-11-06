@@ -61,6 +61,7 @@ class BattleContinuousMoveInputColumn extends Column {
                       onPressed: turn.phases[phaseIdx].move!.isValid() ? () {
                         nextSameTimingFirst?.needAssist = true;
                         appState.editingPhase[phaseIdx] = false;
+                        appState.needAdjustPhases = phaseIdx+1;
                         onFocus(phaseIdx+1);
                       } : null,
                     ) : Container(),

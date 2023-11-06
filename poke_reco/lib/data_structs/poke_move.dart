@@ -93,8 +93,9 @@ class ActionFailure {
   static const int confusion = 15;    // こんらんにより自傷
   static const int paralysis = 16;    // まひ
   static const int infatuation = 17;  // メロメロ
-  static const int other = 18;        // その他
-  static const int size = 19;
+  static const int protected = 18;    // 相手にこうげきを防がれた
+  static const int other = 19;        // その他
+  static const int size = 20;
 
   static const _displayNameMap = {
     0: '',
@@ -115,7 +116,8 @@ class ActionFailure {
     15: 'こんらん',
     16: 'まひ',
     17: 'メロメロ',
-    18: 'その他',
+    18: '相手にこうげきを防がれた',
+    19: 'その他',
   };
 
   String get displayName => _displayNameMap[id]!;
@@ -2110,7 +2112,7 @@ class TurnMove {
             }
             break;
           case 356:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手のこうげきを1段階下げる。シールドフォルムにフォルムチェンジする
-            //TODO
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bladeForm);
             if (findIdx >= 0) {
               myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.shieldForm);
@@ -2122,7 +2124,7 @@ class TurnMove {
           case 360:   // 必中。まもる系統の状態を除外してこうげきする。みがわり状態を無視する
             break;
           case 362:   // そのターンに受けるわざを無効化し、直接攻撃を使用した相手のHPを最大HP1/8分減らす
-            //TODO
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 363:   // とくぼうを1段階上げる
             targetState.addStatChanges(targetState == myState, 3, 1, myState, moveId: replacedMove.id);
@@ -2170,7 +2172,7 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             break;
           case 384:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手をどく状態にする
-            //TODO
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 386:   // やけど状態を治す
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
@@ -2375,7 +2377,7 @@ class TurnMove {
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
           case 442:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手のぼうぎょを2段階下げる
-            // TODO
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 443:   // 2～5回連続でこうげきする。使用者のぼうぎょが1段階下がり、すばやさが1段階上がる
             myState.addStatChanges(true, 1, -1, targetState, moveId: replacedMove.id);
@@ -2571,7 +2573,7 @@ class TurnMove {
             myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
             break;
           case 474:   // そのターンに受けるわざを無効化し、直接攻撃を使用した相手のすばやさを1段階下げる
-            //TODO
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 475:   // こんらんさせる(確率)。わざを外すと使用者に、使用者の最大HP1/2のダメージ
             if (extraArg1[continuousCount] != 0) {
@@ -3129,6 +3131,7 @@ class TurnMove {
 
   Widget extraInputWidget1(
     void Function() onFocus,
+    void Function() onFocusTextUpdate,
     Party ownParty,
     Party opponentParty,
     PhaseState state,
@@ -3340,13 +3343,13 @@ class TurnMove {
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
-                    moveAdditionalEffects[0] = move.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(move.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
                     moveEffectivenesses[0] = PokeType.effectiveness(
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
                     appState.editingPhase[phaseIdx] = true;
-                    onFocus();
+                    onFocusTextUpdate();
                   },
                 ),
               ),
@@ -3514,7 +3517,7 @@ class TurnMove {
                   onSuggestionSelected: (suggestion) {
                     preMoveController.text = suggestion.displayName;
                     extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
@@ -3570,7 +3573,7 @@ class TurnMove {
                   onSuggestionSelected: (suggestion) {
                     preMoveController.text = suggestion.displayName;
                     extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
+                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
@@ -5382,7 +5385,7 @@ class TurnMove {
                             ),
                             DropdownMenuItem(
                               value: 1,
-                              child: Text('みがわりはこわれてしまった', overflow: TextOverflow.ellipsis,),
+                              child: Text('みがわりは消えてしまった', overflow: TextOverflow.ellipsis,),
                             ),
                           ],
                           value: realDamage[continuousCount],
@@ -5426,6 +5429,18 @@ class TurnMove {
       actionFailure = ActionFailure(ActionFailure.flinch);
       ret = true;
     }
+    // そのターンに先にちょうはつを使われた
+    if (myState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty && getReplacedMove(move, 0, myState).damageClass.id == 1) {
+      isSuccess = false;
+      actionFailure = ActionFailure(ActionFailure.taunt);
+      ret = true;
+    }
+    // まもる系統のわざを使われた
+    if (myState.ailmentsWhere((e) => e.id == Ailment.protect).isNotEmpty && getReplacedMove(move, 0, myState).damageClass.id >= 2) {
+      isSuccess = false;
+      actionFailure = ActionFailure(ActionFailure.protected);
+      ret = true;
+    }
     // わざの反動で動けない
     if (myState.hiddenBuffs.where((e) => e.id == BuffDebuff.recoiling).isNotEmpty) {
       isSuccess = false;
@@ -5451,7 +5466,7 @@ class TurnMove {
     }
 
     if (isMoveChanged) {
-      moveAdditionalEffects[0] = move.isSurelyEffect() && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ? MoveEffect(move.effect.id) : MoveEffect(0);
+      moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
       moveEffectivenesses[0] = PokeType.effectiveness(
         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,

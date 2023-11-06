@@ -809,6 +809,7 @@ class PokemonState {
     {int? moveId, int? abilityId, int? itemId, bool lastMirror = false}
   ) {
     int change = num;
+    if (!isMyEffect && buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty && num < 0) return false;   // みがわり
     if (!isMyEffect && holdingItem?.id == 1698 && num < 0) return false;    // クリアチャーム
     if (!isMyEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
     if (!isMyEffect && abilityId == 22 &&        // いかくに対する

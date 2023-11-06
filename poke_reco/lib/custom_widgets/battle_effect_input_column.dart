@@ -181,7 +181,50 @@ class BattleEffectInputColumn extends Column {
                               border: UnderlineInputBorder(),
                               labelText: '種別',
                             ),
-                            items: <DropdownMenuItem<int>>[
+                            items: timing.id == AbilityTiming.afterMove ?
+                            <DropdownMenuItem<int>>[
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.afterMove), sameTimingList[i],
+                                  attacker, turnMove, turn, sameTimingList,
+                                ).isNotEmpty,
+                                EffectType.afterMove, 'わざ',
+                              ),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ability), sameTimingList[i],
+                                  attacker, turnMove, turn, sameTimingList,
+                                ).isNotEmpty,
+                                EffectType.ability, 'とくせい',
+                              ),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.item), sameTimingList[i],
+                                  attacker, turnMove, turn, sameTimingList,
+                                ).isNotEmpty,
+                                EffectType.item, 'もちもの',
+                              ),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.individualField), sameTimingList[i],
+                                  attacker, turnMove, turn, sameTimingList,
+                                ).isNotEmpty,
+                                EffectType.individualField, '場',
+                              ),
+                              _myDropDown(
+                                _getEffectCandidates(
+                                  timing, battle, turn.phases[firstIdx+i].playerType,
+                                  EffectType(EffectType.ailment), sameTimingList[i],
+                                  attacker, turnMove, turn, sameTimingList,
+                                ).isNotEmpty,
+                                EffectType.ailment, '状態異常',
+                              ),
+                            ] :
+                            <DropdownMenuItem<int>>[
                               _myDropDown(
                                 _getEffectCandidates(
                                   timing, battle, turn.phases[firstIdx+i].playerType,
