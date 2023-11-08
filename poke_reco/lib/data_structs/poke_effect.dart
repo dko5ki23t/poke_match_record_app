@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -135,50 +136,6 @@ const List<int> afterMoveDefenderTimingIDs = [
 ];
 
 // 毎ターン終了時
-// 状態異常
-const List<int> everyTurnEndailmentEffectIDs = [
-  Ailment.leechSeed,          // やどりぎのタネ
-  Ailment.poison,             // どく
-  Ailment.badPoison,          // もうどく
-  Ailment.burn,               // やけど
-  Ailment.nightmare,          // あくむ
-  Ailment.curse,              // のろい
-  Ailment.partiallyTrapped,   // バインド
-  Ailment.saltCure,           // しおづけ
-  Ailment.taunt,              // ちょうはつ終了
-  Ailment.torment,            // いちゃもん終了
-  Ailment.encore,             // アンコール終了
-  Ailment.disable,            // かなしばり終了
-  Ailment.magnetRise,         // でんじふゆう終了
-  Ailment.telekinesis,        // テレキネシス終了
-  Ailment.healBlock,          // かいふくふうじ終了
-  Ailment.embargo,            // さしおさえ終了
-  Ailment.sleepy,             // ねむけによるねむり
-  Ailment.perishSong,         // ほろびのうた
-  Ailment.ingrain,            // ねをはる
-  Ailment.uproar,             // さわぐ終了
-];
-// 天気
-const List<int> everyTurnEndWeatherIDs = [
-  Weather.sunny,            // 晴れ終了
-  Weather.rainy,            // あめ終了
-  Weather.sandStorm,        // すなあらし終了
-  Weather.snowy,            // ゆき終了
-];
-// ポケモンの場
-const List<int> everyTurnEndIndividualFieldIDs = [
-  //IndividualField.sandStormDamage,    // すなあらしによるダメージ
-  IndividualField.futureAttack,       // みらいにこうげき
-  IndividualField.futureAttackSteel,  // はめつのねがい
-  IndividualField.grassFieldRecovery, // グラスフィールドによる回復
-  IndividualField.reflector,          // リフレクター終了
-  IndividualField.lightScreen,        // ひかりのかべ終了
-  IndividualField.safeGuard,          // しんぴのまもり
-  IndividualField.mist,               // しろいきり終了
-  IndividualField.tailwind,           // おいかぜ終了
-  IndividualField.luckyChant,         // おまじない終了
-  IndividualField.auroraVeil,         // オーロラベール終了
-];
 // フィールド
 const List<int> everyTurnEndFieldIDs = [
 //  Field.trickRoom,      // トリックルーム終了
@@ -197,6 +154,8 @@ const List<int> everyTurnEndTimingIDs = [
   4,      // 毎ターン終了時
   70,     // 毎ターン終了時（確率）
   94,     // ポケモン登場時と毎ターン終了時（ともに条件あり）
+  159,    // HPが満タンでない毎ターン終了時
+  160,    // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
 ];
 
 class TurnEffect {
@@ -214,6 +173,7 @@ class TurnEffect {
   bool isYourWin = false;
   List<int?> _changePokemonIndexes = [null, null];    // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
   List<int> _prevPokemonIndexes = [0, 0];             // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
+  UserForces userForces = UserForces();     // ユーザによる手動修正
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -230,7 +190,8 @@ class TurnEffect {
     ..isMyWin = isMyWin
     ..isYourWin = isYourWin
     .._changePokemonIndexes = [..._changePokemonIndexes]
-    .._prevPokemonIndexes = [..._prevPokemonIndexes];
+    .._prevPokemonIndexes = [..._prevPokemonIndexes]
+    ..userForces = userForces.copyWith();
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player.id == PlayerType.me) return _changePokemonIndexes[0];
@@ -1011,7 +972,7 @@ class TurnEffect {
         myState.processExitEffect(true, yourState);
         if (effectId != 0) {
           state.setPokemonIndex(playerType, effectId);
-          state.getPokemonState(playerType, prevAction).processEnterEffect(true, state, yourState);
+          state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
         }
         break;
       case EffectType.terastal:
@@ -1033,11 +994,22 @@ class TurnEffect {
           case AilmentEffect.poison:
           case AilmentEffect.badPoison:
           case AilmentEffect.saltCure:
+          case AilmentEffect.curse:
             if (playerType.id == PlayerType.me) {
               myState.remainHP -= extraArg1;
             }
             else {
               myState.remainHPPercent -= extraArg1;
+            }
+            break;
+          case AilmentEffect.leechSeed:
+            if (playerType.id == PlayerType.me) {
+              myState.remainHP -= extraArg1;
+              yourState.remainHPPercent -= extraArg2;
+            }
+            else {
+              myState.remainHPPercent -= extraArg1;
+              yourState.remainHP -= extraArg2;
             }
             break;
         }
@@ -1074,6 +1046,10 @@ class TurnEffect {
       default:
         break;
     }
+
+    // ユーザ手動入力による修正
+    userForces.processEffect(ownParty, state.getPokemonState(PlayerType(PlayerType.me), null), opponentParty,
+                              state.getPokemonState(PlayerType(PlayerType.opponent), null), state, prevAction, continuousCount);
 
     // HP 満タン判定
     for (var player in [PlayerType.me, PlayerType.opponent]) {
@@ -1295,6 +1271,12 @@ class TurnEffect {
           }
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {   // しおづけ状態のとき
             ailmentEffectIDs.add(AilmentEffect.saltCure);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.curse).isNotEmpty) {      // のろい状態のとき
+            ailmentEffectIDs.add(AilmentEffect.curse);
+          }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) {  // やどりぎのタネ状態のとき
+            ailmentEffectIDs.add(AilmentEffect.leechSeed);
           }
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
@@ -1698,6 +1680,14 @@ class TurnEffect {
                 case AilmentEffect.poison:      // どく
                 case AilmentEffect.badPoison:   // もうどく
                 case AilmentEffect.saltCure:    // しおづけ
+                case AilmentEffect.curse:       // のろい
+                  if (playerType.id == PlayerType.me) {
+                    return myState.remainHP.toString();
+                  }
+                  else {
+                    return myState.remainHPPercent.toString();
+                  }
+                case AilmentEffect.leechSeed:   // やどりぎのタネ
                   if (playerType.id == PlayerType.me) {
                     return myState.remainHP.toString();
                   }
@@ -1807,6 +1797,17 @@ class TurnEffect {
                       }
                   }
                   break;
+              }
+              break;
+            case EffectType.ailment:
+              switch (effectId) {
+                case AilmentEffect.leechSeed:   // やどりぎのタネ
+                  if (playerType.id == PlayerType.me) {
+                    return yourState.remainHPPercent.toString();
+                  }
+                  else {
+                    return yourState.remainHP.toString();
+                  }
               }
               break;
             case EffectType.weather:
@@ -2625,6 +2626,7 @@ class TurnEffect {
         case AilmentEffect.badPoison: // もうどく
         case AilmentEffect.burn:      // やけど
         case AilmentEffect.saltCure:  // しおづけ
+        case AilmentEffect.curse:     // のろい
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2654,6 +2656,75 @@ class TurnEffect {
               playerType.id == PlayerType.me ?
               Flexible(child: Text('/${myPokemon.h.real}')) :
               Flexible(child: Text('% /100%')),
+            ],
+          );
+        case AilmentEffect.leechSeed:   // やどりぎのタネ
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${myPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        if (playerType.id == PlayerType.me) {
+                          extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+                        }
+                        else {
+                          extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+                        }
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  playerType.id == PlayerType.me ?
+                  Flexible(child: Text('/${myPokemon.h.real}')) :
+                  Flexible(child: Text('% /100%')),
+                ],
+              ),
+              SizedBox(height: 10,),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: TextFormField(
+                      controller: controller2,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '${yourPokemon.name}の残りHP',
+                      ),
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onTap: () => onFocus(),
+                      onChanged: (value) {
+                        if (playerType.id == PlayerType.me) {
+                          extraArg2 = yourState.remainHPPercent - (int.tryParse(value)??0);
+                        }
+                        else {
+                          extraArg2 = yourState.remainHP - (int.tryParse(value)??0);
+                        }
+                        appState.editingPhase[phaseIdx] = true;
+                        onFocus();
+                      },
+                    ),
+                  ),
+                  playerType.id == PlayerType.me ?
+                  Flexible(child: Text('% /100%')) :
+                  Flexible(child: Text('/${yourPokemon.h.real}')),
+                ],
+              ),
             ],
           );
       }
@@ -2864,11 +2935,13 @@ class TurnEffect {
     for (int i = 0; i < 2; i++) {
       effect._prevPokemonIndexes[i] = int.parse(prevPokemonIndexes[i]);
     }
+    // userForces
+    effect.userForces = UserForces.deserialize(effectElements[14], split2, split3);
 
     return effect;
   }
 
-   // SQL保存用の文字列に変換
+  // SQL保存用の文字列に変換
   String serialize(String split1, String split2, String split3) {
     String ret = '';
     // playerType
@@ -2918,6 +2991,9 @@ class TurnEffect {
       ret += _prevPokemonIndexes[i].toString();
       ret += split2;
     }
+    ret += split1;
+    // userForces
+    ret += userForces.serialize(split2, split3);
 
     return ret;
   }

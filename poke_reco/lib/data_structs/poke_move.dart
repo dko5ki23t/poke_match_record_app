@@ -861,6 +861,7 @@ class TurnMove {
             if (myState.isTypeContain(8)) {
               myState.remainHP -= extraArg1[continuousCount];
               myState.remainHPPercent -= extraArg2[continuousCount];
+              yourState.ailmentsAdd(Ailment(Ailment.curse), state);
             }
             else {
               myState.addStatChanges(true, 0, 1, targetState, moveId: replacedMove.id);
@@ -945,15 +946,15 @@ class TurnMove {
           case 128:   // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               List<int> statChanges = List.generate(7, (i) => myState.statChanges(i));
-              var takeOverAilments = myState.ailmentsWhere((e) => e.id == Ailment.confusion ||
+              var takeOverAilments = [...myState.ailmentsWhere((e) => e.id == Ailment.confusion ||
                 e.id == Ailment.leechSeed || e.id == Ailment.curse || e.id == Ailment.perishSong ||
                 e.id == Ailment.ingrain || e.id == Ailment.healBlock || e.id == Ailment.embargo ||
                 e.id == Ailment.magnetRise || e.id == Ailment.telekinesis || e.id == Ailment.abilityNoEffect ||
                 e.id == Ailment.aquaRing || e.id == Ailment.powerTrick
-              );
-              var takeOverBuffDebuffs = myState.buffDebuffs.where((e) => e.id == BuffDebuff.vital1 ||
+              )];
+              var takeOverBuffDebuffs = [...myState.buffDebuffs.where((e) => e.id == BuffDebuff.vital1 ||
                 e.id == BuffDebuff.vital2 || e.id == BuffDebuff.vital3 || e.id == BuffDebuff.substitute
-              );
+              )];
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
@@ -3082,7 +3083,7 @@ class TurnMove {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty) {
+              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound) {
                 targetState.remainHP -= realDamage[continuousCount];
                 targetState.remainHPPercent -= percentDamage[continuousCount];
               }
@@ -3664,6 +3665,7 @@ class TurnMove {
         case 133:   // 使用者のHP回復。回復量は天気による
         case 163:   // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
         case 199:   // 与えたダメージの33%を使用者も受ける
+        case 215:   // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
         case 255:   // 使用者は最大HP1/4の反動ダメージを受ける
         case 270:   // 与えたダメージの1/2を使用者も受ける
         case 346:   // 与えたダメージの半分だけHP回復
@@ -4222,6 +4224,9 @@ class TurnMove {
                       }
                       matches.add(Item(0, 'なし', 0, 0, AbilityTiming(0), false));
                     }
+                    matches.retainWhere((s){
+                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    });
                     return matches;
                   },
                   itemBuilder: (context, suggestion) {
@@ -5326,7 +5331,7 @@ class TurnMove {
                   SizedBox(height: 10,),
                   effectInputRow,
                   SizedBox(height: 10,),
-                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ?
+                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound ?
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

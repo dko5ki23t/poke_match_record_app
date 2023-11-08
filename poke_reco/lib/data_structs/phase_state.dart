@@ -269,7 +269,7 @@ class PhaseState {
             );
           }
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount)) {  // わざ成功時
-            if (prevAction.move!.move.damageClass.id == 1) {
+            if (prevAction.move!.move.damageClass.id == 1 && prevAction.move!.move.isTargetYou) {
               // へんかわざを受けた後
               defenderTimingIDList.add(AbilityTiming.statused);
             }
@@ -501,6 +501,16 @@ class PhaseState {
               playerTimingIDs.add(116);
             }
             if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
+            if ((isMe && myState.remainHP < myState.pokemon.h.real && myState.remainHP > 0) ||
+                (!isMe && myState.remainHPPercent <= 100 && myState.remainHPPercent > 0)
+            ) {
+              // HPが満タンでない毎ターン終了時
+              playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull);
+              // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
+              if (myState.isTypeContain(4)) playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull2);
+            }
+            // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
+            if (!myState.isTypeContain(4)) playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull2);
 
             // とくせい
             if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
@@ -621,6 +631,24 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.saltCure
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / bunbo).floor() : (100 / bunbo).floor()
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.curse).isNotEmpty) {     // のろい
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.curse
+                ..extraArg1 = isMe ? (myState.pokemon.h.real / 4).floor() : 25
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) { // やどりぎのタネ
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.leechSeed
+                ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
               );
             }
 

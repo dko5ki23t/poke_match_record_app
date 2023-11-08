@@ -160,6 +160,8 @@ class AbilityTiming {
   static const int changedIgnoredAbility = 156; // とくせいを変更される、無効化される、無視されるとき
   static const int attackedHittedWithBake = 157;  // ばけたすがたでこうげきを受けたとき
   static const int terastaling = 158;           // テラスタル選択時
+  static const int everyTurnEndHPNotFull = 159; // HPが満タンでない毎ターン終了時
+  static const int everyTurnEndHPNotFull2 = 160;  // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
 
   const AbilityTiming(this.id);
 

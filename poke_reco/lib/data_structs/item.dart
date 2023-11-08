@@ -77,8 +77,6 @@ class Item {
       case 177:     // ホズのみ
       case 187:     // イバンのみ
       case 248:     // パワフルハーブ
-      case 590:     // だっしゅつボタン
-      case 1177:    // だっしゅつパック
         // ダメージ軽減効果はユーザ入力に任せる
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
@@ -289,6 +287,10 @@ class Item {
         }
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
+      case 584:     // ふうせん
+        // 画面に表示されるだけ
+        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
+        break;
       case 585:     // レッドカード
         if (changePokemonIndex != null) {
           yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState);
@@ -296,6 +298,17 @@ class Item {
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite, null);
           newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state, myState);
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        }
+        break;
+      case 1177:    // だっしゅつパック
+      case 590:     // だっしゅつボタン
+        if (changePokemonIndex != null) {
+          myState.processExitEffect(playerType.id == PlayerType.me, yourState);
+          state.setPokemonIndex(playerType, changePokemonIndex);
+          PokemonState newState;
+          newState = state.getPokemonState(playerType, null);
+          newState.processEnterEffect(playerType.id == PlayerType.me, state, yourState);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
@@ -1138,6 +1151,36 @@ class Item {
                       child: Text(
                         yourParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
+                          Colors.black : Colors.grey),
+                        ),
+                    ),
+                ],
+                value: changePokemonIndex,
+                onChanged: (value) => changePokemonIndexChangeFunc(value),
+              ),
+            ),
+          ],
+        );
+      case 1177:    // だっしゅつパック
+      case 590:     // だっしゅつボタン
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: DropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: '交代先ポケモン',
+                ),
+                items: <DropdownMenuItem>[
+                  for (int i = 0; i < myParty.pokemonNum; i++)
+                    DropdownMenuItem(
+                      value: i+1,
+                      enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
+                      child: Text(
+                        myParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
                           Colors.black : Colors.grey),
                         ),
                     ),

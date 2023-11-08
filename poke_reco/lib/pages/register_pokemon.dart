@@ -79,6 +79,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
+    var theme = Theme.of(context);
     void onBack () {
       if (widget.myPokemon.no != 0) {
         showDialog(
@@ -394,7 +395,16 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           },
                           itemBuilder: (context, suggestion) {
                             return ListTile(
-                              title: Text(suggestion.displayName),
+                              title: RichText(
+                                text: TextSpan(
+                                  style: theme.textTheme.bodyMedium,
+                                  children: [
+                                    TextSpan(text: suggestion.displayName),
+                                    suggestion.increasedAlphabet != '' ? TextSpan(style: TextStyle(color: Colors.red,), text: ' ${suggestion.increasedAlphabet}') : TextSpan(),
+                                    suggestion.decreasedAlphabet != '' ? TextSpan(style: TextStyle(color: Colors.blue,), text: ' ${suggestion.decreasedAlphabet}') : TextSpan(),
+                                  ],
+                                ),
+                              ),
                             );
                           },
                           onSuggestionSelected: (suggestion) {

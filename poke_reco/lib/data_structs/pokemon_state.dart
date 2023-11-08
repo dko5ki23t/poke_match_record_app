@@ -195,29 +195,23 @@ class PokemonState {
     }
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
     }
     if (currentAbility.id == 187 && yourState.currentAbility.id == 187) { // フェアリーオーラ
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura || element.id == BuffDebuff.antiFairyAura);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura || element.id == BuffDebuff.antiFairyAura);
     }
     // 場にいると相手にバフ/デバフがかかる場合
     if (currentAbility.id == 284) { // わざわいのうつわ
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack0_75);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.removeWhere((element) => element.id == BuffDebuff.specialAttack0_75);
     }
     if (currentAbility.id == 285) { // わざわいのつるぎ
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.defense0_75);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.removeWhere((element) => element.id == BuffDebuff.defense0_75);
     }
     if (currentAbility.id == 286) { // わざわいのおふだ
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.attack0_75);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.removeWhere((element) => element.id == BuffDebuff.attack0_75);
     }
     if (currentAbility.id == 287) { // わざわいのたま
-      int findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialDefense0_75);
-      if (findIdx >= 0) yourState.buffDebuffs.removeAt(findIdx);
+      yourState.buffDebuffs.removeWhere((element) => element.id == BuffDebuff.specialDefense0_75);
     }
     // にげられない状態の解除
     yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway);
@@ -643,6 +637,7 @@ class PokemonState {
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
     if ((currentAbility.id == 41 || currentAbility.id == 199 || currentAbility.id == 270) && (ailment.id == Ailment.burn)) return false;    // みずのベール/ねつこうかん<-やけど
     if (currentAbility.id == 166 && isTypeContain(12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
+    if (currentAbility.id == 272 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // きよめのしお
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
     if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze)) return false;      // マグマのよろい<-こおり
     if ((currentAbility.id == 102) && (state.weather.id == Weather.sunny) &&

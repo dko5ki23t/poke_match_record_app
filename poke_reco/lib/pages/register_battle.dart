@@ -1,12 +1,15 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 //import 'package:intl/intl.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
+import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/user_force.dart';
 //import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -64,6 +67,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   List<TextEditingController> textEditingControllerList3 = [];
   List<TextEditingController> textEditingControllerList4 = [];
   TextEditingController ownAbilityController = TextEditingController();
+  TextEditingController opponentAbilityController = TextEditingController();
+  TextEditingController ownItemController = TextEditingController();
+  TextEditingController opponentItemController = TextEditingController();
+  TextEditingController ownHPController = TextEditingController();
+  TextEditingController opponentHPController = TextEditingController();
 
   final turnScrollController = ScrollController();
 
@@ -472,6 +480,42 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
+    void userForceAdd(int focusPhaseIdx, UserForce force) {
+      if (focusPhaseIdx > 0) {
+        turns[turnNum-1].phases[focusPhaseIdx-1].userForces.add(force);
+      }
+      else {
+        var pokeData = PokeDB();
+        switch (force.typeId) {
+          case UserForce.ability:
+            if (force.playerType.id == PlayerType.me) {
+              turns[turnNum-1].initialOwnPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+            }
+            else if (force.playerType.id == PlayerType.opponent) {
+              turns[turnNum-1].initialOpponentPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+            }
+            break;
+          case UserForce.item:
+            var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
+            if (force.playerType.id == PlayerType.me) {
+              turns[turnNum-1].initialOwnPokemonState.holdingItem = item;
+            }
+            else if (force.playerType.id == PlayerType.opponent) {
+              turns[turnNum-1].initialOpponentPokemonState.holdingItem = item;
+            }
+            break;
+          case UserForce.hp:
+            if (force.playerType.id == PlayerType.me) {
+              turns[turnNum-1].initialOwnPokemonState.remainHP = force.arg1;
+            }
+            else if (force.playerType.id == PlayerType.opponent) {
+              turns[turnNum-1].initialOpponentPokemonState.remainHPPercent = force.arg1;
+            }
+            break;
+        }
+      }
+    }
+
     switch (pageType) {
       case RegisterBattlePageType.basePage:
         title = Text('バトル基本情報');
@@ -552,14 +596,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               Icon(Icons.sync),
                             ]),
                           ),
-  /*
                           SizedBox(width: 10,),
                           TextButton(
                             onPressed: () {
                               setState(() {
                                 isEditMode = !isEditMode;
                                 if (isEditMode) {
-                                  ownAbilityController.text = focusState!.getPokemonState(PlayerType(PlayerType.me)).currentAbility.displayName;
+                                  ownAbilityController.text = _abilityNameWithNull(focusState!.getPokemonState(PlayerType(PlayerType.me), null).currentAbility);
+                                  opponentAbilityController.text = _abilityNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).currentAbility);
+                                  ownItemController.text = _itemNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem);
+                                  opponentItemController.text = _itemNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem);
+                                  ownHPController.text = focusState.getPokemonState(PlayerType(PlayerType.me), null).remainHP.toString();
+                                  opponentHPController.text = focusState.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent.toString();
                                 }
                               });
                             },
@@ -575,7 +623,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 Text('編集'),
                               ]),
                           ),
-  */
                         ],
                       ),
                       SizedBox(height: 5),
@@ -588,28 +635,24 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: ownAbilityController,
-                                  /*decoration: const InputDecoration(
-                                    border: UnderlineInputBorder(),
-                                    labelText: 'とくせい',
-                                  ),*/
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
                                   List<Ability> matches = pokeData.abilities.values.toList();
                                   matches.retainWhere((s){
-                                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
                                 itemBuilder: (context, suggestion) {
                                   return ListTile(
-                                    title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
-                                    ownAbilityController.text = suggestion.displayName;
-                                    focusState!.getPokemonState(PlayerType(PlayerType.me), null).currentAbility = suggestion;
+                                    ownAbilityController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.me), UserForce.ability, suggestion.id));
                                   });
                                 },
                               ) :
@@ -617,7 +660,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           ),
                           SizedBox(width: 10,),
                           Expanded(
-                            child: Text(_focusingAbilityName(PlayerType(PlayerType.opponent), focusState)),
+                            child: isEditMode ?
+                              TypeAheadField(
+                                textFieldConfiguration: TextFieldConfiguration(
+                                  controller: opponentAbilityController,
+                                ),
+                                autoFlipDirection: true,
+                                suggestionsCallback: (pattern) async {
+                                  List<Ability> matches = pokeData.abilities.values.toList();
+                                  matches.retainWhere((s){
+                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                  });
+                                  return matches;
+                                },
+                                itemBuilder: (context, suggestion) {
+                                  return ListTile(
+                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                  );
+                                },
+                                onSuggestionSelected: (suggestion) {
+                                  setState(() {
+                                    opponentAbilityController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.opponent), UserForce.ability, suggestion.id));
+                                  });
+                                },
+                              ) :
+                              Text(_focusingAbilityName(PlayerType(PlayerType.opponent), focusState)),
                           ),
                         ],
                       ),
@@ -627,16 +695,72 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         children: [
                           SizedBox(width: 10,),
                           Expanded(
-                            child: Text(_focusingItemName(PlayerType(PlayerType.me), focusState)),
+                            child: isEditMode ?
+                              TypeAheadField(
+                                textFieldConfiguration: TextFieldConfiguration(
+                                  controller: ownItemController,
+                                ),
+                                autoFlipDirection: true,
+                                suggestionsCallback: (pattern) async {
+                                  List<Item> matches = pokeData.items.values.toList();
+                                  matches.add(Item(-1, 'なし', 0, 0, AbilityTiming(0), false));
+                                  matches.retainWhere((s){
+                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                  });
+                                  return matches;
+                                },
+                                itemBuilder: (context, suggestion) {
+                                  return ListTile(
+                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                  );
+                                },
+                                onSuggestionSelected: (suggestion) {
+                                  setState(() {
+                                    ownItemController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.me), UserForce.item, suggestion.id));
+                                  });
+                                },
+                              ) :
+                              Text(_focusingItemName(PlayerType(PlayerType.me), focusState)),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
-                            child: Text(_focusingItemName(PlayerType(PlayerType.opponent), focusState)),
+                            child: isEditMode ?
+                              TypeAheadField(
+                                textFieldConfiguration: TextFieldConfiguration(
+                                  controller: opponentItemController,
+                                ),
+                                autoFlipDirection: true,
+                                suggestionsCallback: (pattern) async {
+                                  List<Item> matches = pokeData.items.values.toList();
+                                  matches.add(Item(-1, 'なし', 0, 0, AbilityTiming(0), false));
+                                  matches.retainWhere((s){
+                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                  });
+                                  return matches;
+                                },
+                                itemBuilder: (context, suggestion) {
+                                  return ListTile(
+                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                  );
+                                },
+                                onSuggestionSelected: (suggestion) {
+                                  setState(() {
+                                    opponentItemController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.opponent), UserForce.item, suggestion.id));
+                                  });
+                                },
+                              ) :
+                              Text(_focusingItemName(PlayerType(PlayerType.opponent), focusState)),
                           ),
                         ],
                       ),
                       SizedBox(height: 5),
                       // HP
+                      isEditMode ?
+                      _HPInputRow(
+                        ownHPController, opponentHPController,
+                        (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
                       _HPBarRow(
                         focusState.getPokemonState(PlayerType(PlayerType.me), null).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
                         focusState.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent),
@@ -827,6 +951,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int end = 100;
     int i = 0;
     int actionCount = 0;
+    bool ownActioned = false;
+    bool opponentActioned = false;
     int terastalCount = 0;
     int maxTerastal = 0;
     if (!widget.battle.turns[turnNum-1].initialOwnHasTerastal) maxTerastal++;
@@ -981,7 +1107,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isInserted = true;
                   if (!isOpponentFainting) {
                     s2 = 0;
-                    s1 = 8;   // ターン終了状態へ
+                    if (actionCount == 2) {
+                      s1 = 8;    // ターン終了状態へ
+                    }
+                    else {
+                      s1 = 2;    // 行動選択状態へ
+                    }
                   }
                   else {
                     s2 = 6;   // わざでひんし交代状態(2匹目)へ
@@ -997,7 +1128,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   );
                   isInserted = true;
                   s2 = 0;
-                  s1 = 8;   // ターン終了状態へ
+                  if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;    // 行動選択状態へ
+                  }
                 }
               }
               else {
@@ -1021,7 +1157,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 else {
                   if (!isOpponentFainting) {
                     s2 = 0;
-                    s1 = 8;   // ターン終了状態へ
+                    if (actionCount == 2) {
+                      s1 = 8;    // ターン終了状態へ
+                    }
+                    else {
+                      s1 = 2;    // 行動選択状態へ
+                    }
                   }
                   else {
                     s2 = 6;   // わざでひんし交代状態(2匹目)へ
@@ -1054,7 +1195,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   changeOwn = false;
                   changeOpponent = false;
                   s2 = 0;
-                  s1 = 8;   // ターン終了状態へ
+                  if (actionCount == 2) {
+                    s1 = 8;    // ターン終了状態へ
+                  }
+                  else {
+                    s1 = 2;    // 行動選択状態へ
+                  }
                 }
                 else {
                   s2 = 2;   // わざでひんし交代状態へ
@@ -1367,6 +1513,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     }
                   }
                   else {
+                    if (phases[i].playerType.id == PlayerType.me) ownActioned = true;
+                    if (phases[i].playerType.id == PlayerType.opponent) opponentActioned = true;
                     if (!phases[i].isValid() || phases[i].move!.type.id == TurnMoveType.surrender) {
                       if (actionCount == 2) {
                         s1 = 8;    // ターン終了状態へ
@@ -1708,7 +1856,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           if (phases[i].isOwnFainting) isOwnFainting = true;
           if (phases[i].isOpponentFainting) isOpponentFainting = true;
           if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
-            actionCount = 2;
+            if ((isOwnFainting && !isOpponentFainting && phases[i].playerType.id == PlayerType.me) ||
+                (isOpponentFainting && !isOwnFainting && phases[i].playerType.id == PlayerType.opponent)
+            ) {}
+            else {      // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
+              actionCount = 2;
+            }
             s2 = 1;     // わざでひんし状態へ
           }
           else {
@@ -1885,8 +2038,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!;
   }
 
-  String _focusingItemName(PlayerType player, PhaseState focusState) {
-    final item = focusState.getPokemonState(player, null).holdingItem;
+  String _itemNameWithNull(Item? item) {
     if (item == null) {
       return 'なし';
     }
@@ -1898,14 +2050,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  String _focusingAbilityName(PlayerType player, PhaseState focusState) {
-    final ability = focusState.getPokemonState(player, null).currentAbility;
+  String _focusingItemName(PlayerType player, PhaseState focusState) {
+    return _itemNameWithNull(focusState.getPokemonState(player, null).holdingItem);
+  }
+
+  String _abilityNameWithNull(Ability ability) {
     if (ability.id == 0) {
       return '？';
     }
     else {
       return ability.displayName;
     }
+  }
+
+  String _focusingAbilityName(PlayerType player, PhaseState focusState) {
+    return _abilityNameWithNull(focusState.getPokemonState(player, null).currentAbility);
   }
 
   int _correctedSpeed(PlayerType player, PhaseState focusState) {
@@ -2130,6 +2289,42 @@ class _HPBarRow extends Row {
               ),
             ),
           ],
+        ),
+      ),
+    ],
+  );
+}
+
+class _HPInputRow extends Row {
+  _HPInputRow(
+    TextEditingController ownHPController,
+    TextEditingController opponentHPController,
+    void Function(UserForce) addFunc,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: TextFormField(
+          controller: ownHPController,
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (value) {
+            addFunc(UserForce(PlayerType(PlayerType.me), UserForce.hp, (int.tryParse(value)??0)));
+          },
+        ),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: TextFormField(
+          controller: opponentHPController,
+          textAlign: TextAlign.center,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          onChanged: (value) {
+            addFunc(UserForce(PlayerType(PlayerType.opponent), UserForce.hp, (int.tryParse(value)??0)));
+          },
         ),
       ),
     ],

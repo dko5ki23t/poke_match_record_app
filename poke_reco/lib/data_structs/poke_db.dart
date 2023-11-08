@@ -242,6 +242,14 @@ class Temper {
 
   const Temper(this.id, this.displayName, this.decreasedStat, this.increasedStat);
 
+  static const Map<String, String> statNameToAlphabet = {
+    'attack' : 'A',
+    'defense' : 'B',
+    'special-attack' : 'C',
+    'special-defense' : 'D',
+    'speed' : 'S',
+  };
+
   static List<double> getTemperBias(Temper temper) {
     const Map<String, int> statNameToIdx = {
       'attack' : 0,
@@ -261,6 +269,14 @@ class Temper {
     }
 
     return ret;
+  }
+
+  String get increasedAlphabet {
+    return statNameToAlphabet.containsKey(increasedStat) ? statNameToAlphabet[increasedStat]! : '';
+  }
+
+  String get decreasedAlphabet {
+    return statNameToAlphabet.containsKey(decreasedStat) ? statNameToAlphabet[decreasedStat]! : '';
   }
 
   Map<String, Object?> toMap() {
@@ -495,6 +511,10 @@ class Move {
   MoveEffect effect;
   int effectChance;
   final int pp;
+
+  bool get isTargetYou {  // 相手を対象に含むかどうか
+    return target.id == 6 || (8 <= target.id && target.id <= 12) || target.id == 14; 
+  }
 
   bool get isDirect {   // 直接攻撃かどうか
     const physicalButNot = [
