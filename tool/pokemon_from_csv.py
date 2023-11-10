@@ -157,6 +157,10 @@ def main():
             form = []
             form_check = allpokemon_df[allpokemon_df[allpokemonsCSVSpeciesIDColumn] == id][allpokemonsCSVPokemonIDColumn]
             for pokemon_id in form_check:
+                # SV、SVのDLC登場ポケモンのみにフィルタリング
+                versions = version_df[version_df[pokemonsVersionCSVPokemonIDColumn] == pokemon_id][pokemonsVersionCSVVersionIDColumn].tolist()
+                if svVersionID not in versions:
+                    continue
                 form.append(pokemon_id)
 
             name = ''
@@ -226,10 +230,6 @@ def main():
 
             for form_id in form:
                 if form_id == id:
-                    continue
-                # SV、SVのDLC登場ポケモンのみにフィルタリング
-                versions = version_df[version_df[pokemonsVersionCSVPokemonIDColumn] == form_id][pokemonsVersionCSVVersionIDColumn].tolist()
-                if svVersionID not in versions:
                     continue
                 form_name = ''
                 # フォームID取得
