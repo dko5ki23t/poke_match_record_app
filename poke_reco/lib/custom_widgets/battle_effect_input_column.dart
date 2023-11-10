@@ -317,7 +317,7 @@ class BattleEffectInputColumn extends Column {
                                   turn.phases[firstIdx+i].effect, sameTimingList[i],
                                   attacker, turnMove, turn, sameTimingList);
                               matches.retainWhere((s){
-                                return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                               });
                               return matches;
                             },

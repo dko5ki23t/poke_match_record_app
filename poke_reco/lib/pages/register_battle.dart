@@ -640,7 +640,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 suggestionsCallback: (pattern) async {
                                   List<Ability> matches = pokeData.abilities.values.toList();
                                   matches.retainWhere((s){
-                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
@@ -669,7 +669,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 suggestionsCallback: (pattern) async {
                                   List<Ability> matches = pokeData.abilities.values.toList();
                                   matches.retainWhere((s){
-                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
@@ -705,7 +705,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(-1, 'なし', 0, 0, AbilityTiming(0), false));
                                   matches.retainWhere((s){
-                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
@@ -735,7 +735,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(-1, 'なし', 0, 0, AbilityTiming(0), false));
                                   matches.retainWhere((s){
-                                    return toKatakana(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },

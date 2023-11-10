@@ -22,7 +22,7 @@ class AilmentEffect {
   static const int nightmare = 16;          // あくむ
   static const int partiallyTrapped = 17;   // バインド(交代不可、毎ターンダメージ)
   static const int perishSong = 18;         // ほろびのうた
-  static const int taunt = 19;              // ちょうはつ
+  static const int tauntEnd = 19;           // ちょうはつ終了
   static const int torment = 20;            // いちゃもん
   static const int noBerry = 21;            // きのみを食べられない状態(きんちょうかん)
   static const int saltCure = 22;           // しおづけ
@@ -53,7 +53,7 @@ class AilmentEffect {
     16: 'あくむ',
     17: 'バインド',
     18: 'ほろびのうた',
-    19: 'ちょうはつ',
+    19: 'ちょうはつ終了',   // 挑発の効果が解けた
     20: 'いちゃもん',
     21: 'きのみを食べられない状態',
     22: 'しおづけ',

@@ -306,7 +306,22 @@ class TurnMove {
     }
 
     if (move.id == 0) return ret;
-    if (!isSuccess) return ret;
+
+    // わざ確定(失敗時でも確定はできる)
+    var tmp = myState.moves.where(
+          (element) => element.id != 0 && element.id == move.id
+        );
+    if (move.id != 165 &&     // わるあがきは除外
+        playerType.id == PlayerType.opponent &&
+        type.id == TurnMoveType.move &&
+        opponentPokemonState.moves.length < 4 &&
+        tmp.isEmpty
+    ) {
+      opponentPokemonState.moves.add(move);
+      ret.add('わざの1つを${move.displayName}で確定しました。');
+    }
+
+    if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
 
     List<IndividualField> myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     List<IndividualField> yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
@@ -512,25 +527,25 @@ class TurnMove {
           case 69:    // こうげきを1段階下げる(確率)
           case 365:   // こうげきを1段階下げる
           case 396:   // こうげきを1段階下げる
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 20:    // ぼうぎょを1段階下げる
           case 70:    // ぼうぎょを1段階下げる(確率)
           case 397:   // ぼうぎょを1段階下げる
-            targetState.addStatChanges(targetState == myState, 1, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 1, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 21:    // すばやさを1段階下げる
           case 71:    // すばやさを1段階下げる(確率)
           case 331:   // すばやさを1段階下げる
           case 470:   // すばやさを1段階下げる(確率)。天気があめの時は必中
-            targetState.addStatChanges(targetState == myState, 4, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 4, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 24:    // めいちゅうを1段階下げる
           case 74:    // めいちゅうを1段階下げる(確率)
-            targetState.addStatChanges(targetState == myState, 5, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 5, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 25:    // かいひを1段階下げる
-            targetState.addStatChanges(targetState == myState, 6, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 6, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 26:    // すべての能力ランクを0にリセットする
             targetState.resetStatChanges();
@@ -588,15 +603,14 @@ class TurnMove {
             }
             break;
           case 38:    // 使用者はHP満タン・状態異常を回復して2ターン眠る
-            int findIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.sleep);
-            if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+            myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
             if (myPlayerTypeID == PlayerType.me) {
               myState.remainHP = myState.pokemon.h.real;
             }
             else {
               myState.remainHPPercent = 100;
             }
-            targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
+            myState.ailmentsAdd(Ailment(Ailment.sleep), state);
             break;
           case 39:    // 一撃必殺
             targetState.remainHP = 0;
@@ -677,21 +691,21 @@ class TurnMove {
             // TODO
             break;
           case 59:    // こうげきを2段階下げる
-            targetState.addStatChanges(targetState == myState, 0, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 60:    // ぼうぎょを2段階下げる
-            targetState.addStatChanges(targetState == myState, 1, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 1, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 61:    // すばやさを2段階下げる
-            targetState.addStatChanges(targetState == myState, 4, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 4, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 62:    // とくこうを2段階下げる
-            targetState.addStatChanges(targetState == myState, 2, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 63:    // とくぼうを2段階下げる
           case 272:   // とくぼうを2段階下げる(確率)
           case 297:   // とくぼうを2段階下げる
-            targetState.addStatChanges(targetState == myState, 3, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 3, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 66:    // 場に「リフレクター」を発生させる
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.reflector);
@@ -699,11 +713,11 @@ class TurnMove {
             break;
           case 72:    // とくこうを1段階下げる(確率)
           case 358:   // とくこうを1段階下げる
-            targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 73:    // とくぼうを1段階下げる(確率)
           case 440:   // とくぼうを1段階下げる
-            targetState.addStatChanges(targetState == myState, 3, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 3, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 76:    // 1ターン目は攻撃せず、2ターン目に攻撃。ひるませる(確率)
             {
@@ -904,7 +918,7 @@ class TurnMove {
             }
             break;
           case 119:   // こうげきを2段階上げ、こんらん状態にする
-            targetState.addStatChanges(targetState == myState, 0, 2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, 2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 120:   // 当てるたびに威力が2倍ずつ増える。最大160
@@ -1154,12 +1168,12 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.torment), state);
             break;
           case 167:   // とくこうを1段階上げ、こんらん状態にする
-            targetState.addStatChanges(targetState == myState, 2, 1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, 1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 169:   // 使用者はひんしになる。相手のこうげき・とくこうを2段階ずつ下げる
-            targetState.addStatChanges(targetState == myState, 0, -2, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 2, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             myState.remainHP = 0;
             myState.remainHPPercent = 0;
             myState.isFainting = true;
@@ -1329,8 +1343,8 @@ class TurnMove {
             myState.addStatChanges(true, 2, -2, targetState, moveId: replacedMove.id);
             break;
           case 206:   // こうげき・ぼうぎょを1段階ずつ下げる
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 1, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 1, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 207:   // 使用者はぼうぎょ・とくぼうが1段階ずつ上がる
             myState.addStatChanges(true, 1, 1, targetState, moveId: replacedMove.id);
@@ -1592,7 +1606,7 @@ class TurnMove {
             break;
           case 259:   // かいひを1段階下げる。相手のひかりのかべ・リフレクター・オーロラベール・しんぴのまもり・しろいきりを消す
                       // 使用者・相手の場にあるまきびし・どくびし・とがった岩・ねばねばネットを取り除く。フィールドを解除する
-            targetState.addStatChanges(targetState == myState, 6, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 6, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetIndiField.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen ||
               e.id == IndividualField.auroraVeil || e.id == IndividualField.safeGuard || e.id == IndividualField.mist ||
               e.id == IndividualField.spikes || e.id == IndividualField.toxicSpikes || e.id == IndividualField.stealthRock || e.id == IndividualField.stickyWeb);
@@ -1643,7 +1657,7 @@ class TurnMove {
             break;
           case 266:   // 性別が異なる場合、相手のとくこうを2段階下げる
             if (myState.pokemon.sex != Sex.none && targetState.pokemon.sex != Sex.none && myState.pokemon.sex != targetState.pokemon.sex) {
-              targetState.addStatChanges(targetState == myState, 2, -2, myState, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 2, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             }
             break;
           case 267:   // 場にとがった岩を発生させる
@@ -2070,8 +2084,8 @@ class TurnMove {
             //TODO
             break;
           case 344:   // こうげき・とくこうを1段階ずつ下げる
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 345:   // 場をプラズマシャワー状態にする
             if (targetIndiField.where((e) => e.id == IndividualField.ionDeluge).isEmpty) {
@@ -2079,8 +2093,8 @@ class TurnMove {
             }
             break;
           case 347:   // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
               PokemonState newState;
@@ -2120,7 +2134,7 @@ class TurnMove {
             }
             break;
           case 357:   // こうげきを1段階下げる。まもる・みがわり状態を無視する
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 360:   // 必中。まもる系統の状態を除外してこうげきする。みがわり状態を無視する
             break;
@@ -2128,13 +2142,13 @@ class TurnMove {
             myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 363:   // とくぼうを1段階上げる
-            targetState.addStatChanges(targetState == myState, 3, 1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 3, 1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 364:   // こうげき・とくこう・すばやさを1段階下げる。相手がどく/もうどく状態でないと失敗する
             if (targetState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {
-              targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-              targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
-              targetState.addStatChanges(targetState == myState, 4, -1, myState, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 4, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             }
             break;
           case 366:   // 1ターンためて、2ターン目に使用者のとくこう・とくぼう・すばやさをそれぞれ2段階ずつ上げる
@@ -2154,8 +2168,8 @@ class TurnMove {
             break;
           case 367:   // とくせいがプラスかマイナスのポケモンのぼうぎょ・とくぼうを1段階ずつ上げる
             if (targetState.currentAbility.id == 57 || targetState.currentAbility.id == 58) {
-              targetState.addStatChanges(targetState == myState, 1, 1, myState, moveId: replacedMove.id);
-              targetState.addStatChanges(targetState == myState, 3, 1, myState, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 1, 1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 3, 1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             }
             break;
           case 368:   // トレーナー戦後にもらえる賞金が2倍になる
@@ -2179,7 +2193,7 @@ class TurnMove {
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
             break;
           case 388:   // 相手のこうげきを1段階下げ、下げる前のこうげき実数値と同じ値だけ使用者のHPを回復する
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             // TODO 相手のこうげき実数値が確定する場合あり
@@ -2188,7 +2202,7 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.attention), state);
             break;
           case 390:   // 相手のすばやさを1段階下げ、どく状態する
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             break;
           case 391:   // 次のターンまで、使用者のこうげきが必ず急所に当たるようになる
@@ -2270,8 +2284,8 @@ class TurnMove {
             break;
           case 412:   // 相手のこうげき・とくこう1段階ずつ下げる。相手の回避率、まもるに関係なく必ず当たる
             //TODO
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 2, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           // このへんからZわざ
           case 413:   // 相手の残りHP3/4の固定ダメージ
@@ -2325,7 +2339,7 @@ class TurnMove {
             myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
             break;
           case 426:   // すばやさを1段階下げる。タールショット状態にする
-            targetState.addStatChanges(targetState == myState, 4, -1, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 4, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.ailmentsAdd(Ailment(Ailment.tarShot), state);
             break;
           case 427:   // 相手のタイプをエスパー単タイプにする
@@ -2368,8 +2382,8 @@ class TurnMove {
             defenseAltAttack = true;
             break;
           case 435:   // こうげき・とくこうを2段階ずつ上げる
-            targetState.addStatChanges(targetState == myState, 0, 2, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 2, 2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, 2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 2, 2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 437:   // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
             if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.harapekoForm).isNotEmpty) {
@@ -2381,8 +2395,10 @@ class TurnMove {
             myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 443:   // 2～5回連続でこうげきする。使用者のぼうぎょが1段階下がり、すばやさが1段階上がる
-            myState.addStatChanges(true, 1, -1, targetState, moveId: replacedMove.id);
-            myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
+            if (continuousCount == 0) {
+              myState.addStatChanges(true, 1, -1, targetState, moveId: replacedMove.id);
+              myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
+            }
             break;
           case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
                       // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
@@ -2554,7 +2570,7 @@ class TurnMove {
             break;
           case 468:   // 相手のぼうぎょを1段階下げる(確率)。相手をひるませる(確率)。急所に当たりやすい
             if (extraArg1[continuousCount] != 0) {
-              targetState.addStatChanges(targetState == myState, 1, 1, myState, moveId: replacedMove.id);
+              targetState.addStatChanges(targetState == myState, 1, 1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             }
             if (extraArg2[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
@@ -2593,8 +2609,8 @@ class TurnMove {
           case 477:   // ヘイラッシャがシャリタツを飲み込んでいた場合、使用者の能力を上げる
             break;
           case 478:   // 対象のこうげきを2段階上げ、ぼうぎょを2段階下げる
-            targetState.addStatChanges(targetState == myState, 0, 2, myState, moveId: replacedMove.id);
-            targetState.addStatChanges(targetState == myState, 1, -2, myState, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 0, 2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            targetState.addStatChanges(targetState == myState, 1, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             break;
           case 479:   // 使用者のすばやさを2段階下げる
             myState.addStatChanges(true, 4, -2, targetState, moveId: replacedMove.id);
@@ -2685,7 +2701,6 @@ class TurnMove {
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
-              newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
             }
             break;
           case 494:   // 両者のみがわり、設置技を解除。使用者のこうげき・すばやさを1段階ずつ上げる
@@ -3059,7 +3074,7 @@ class TurnMove {
       }
 
       // ねごと系以外のわざを出しているならねむり解除とみなす
-      if (replacedMove.id != 173 && replacedMove.id != 214) {
+      if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
         myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
       }
       // ミクルのみのこうかが残っていれば消費
@@ -3098,20 +3113,6 @@ class TurnMove {
         default:
           break;
       }
-    }
-
-    // わざ確定
-    var tmp = myState.moves.where(
-          (element) => element.id != 0 && element.id == move.id
-        );
-    if (move.id != 165 &&     // わるあがきは除外
-        playerType.id == PlayerType.opponent &&
-        type.id == TurnMoveType.move &&
-        opponentPokemonState.moves.length < 4 &&
-        tmp.isEmpty
-    ) {
-      opponentPokemonState.moves.add(move);
-      ret.add('わざの1つを${move.displayName}で確定しました。');
     }
 
     // わざPP消費
@@ -3237,7 +3238,7 @@ class TurnMove {
                   matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
                 }
                 matches.retainWhere((s){
-                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                  return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                 });
                 return matches;
               },
@@ -3329,7 +3330,7 @@ class TurnMove {
                     }
                     matches.add(pokeData.moves[165]!);    // わるあがき
                     matches.retainWhere((s){
-                      return toKatakana(getReplacedMoveName(s, continuousCount, myState).toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(getReplacedMoveName(s, continuousCount, myState).toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -3506,7 +3507,7 @@ class TurnMove {
                     List<Move> matches = appState.pokeData.moves.values.toList();
                     matches.removeWhere((e) => e.id == 0);
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -3562,7 +3563,7 @@ class TurnMove {
                     matches.add(appState.pokeData.moves[165]!);    // わるあがき
                     matches.removeWhere((e) => e.id == 0);
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -3741,7 +3742,7 @@ class TurnMove {
                     }
                     matches.add(appState.pokeData.moves[165]!);    // わるあがき
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4032,7 +4033,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4225,7 +4226,7 @@ class TurnMove {
                       matches.add(Item(0, 'なし', 0, 0, AbilityTiming(0), false));
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4272,7 +4273,7 @@ class TurnMove {
                       matches.add(ownPokemonState.currentAbility);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4387,7 +4388,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4429,7 +4430,7 @@ class TurnMove {
                       matches.addAll(opponentPokemonState.possibleAbilities);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4507,7 +4508,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4648,7 +4649,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4838,7 +4839,7 @@ class TurnMove {
                       matches.add(ownPokemonState.currentAbility);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4919,7 +4920,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -4973,7 +4974,7 @@ class TurnMove {
                       matches = [ownPokemonState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },

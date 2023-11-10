@@ -274,7 +274,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   matches.addAll(widget.pokeData.moves.values);
                   matches.removeWhere((element) => element.id == 0);
                   matches.retainWhere((s){
-                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                   });
                   return matches;
                 },
@@ -384,7 +384,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   matches.addAll(widget.pokeData.abilities.values);
                   matches.removeWhere((element) => element.id == 0);
                   matches.retainWhere((s){
-                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                   });
                   return matches;
                 },
@@ -455,7 +455,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   matches.addAll(widget.pokeData.tempers.values);
                   matches.removeWhere((element) => element.id == 0);
                   matches.retainWhere((s){
-                    return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                    return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                   });
                   return matches;
                 },

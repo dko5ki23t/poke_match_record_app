@@ -52,7 +52,7 @@ class MoveInputRow extends Row {
             List<Move> matches = [];
             matches.addAll(PokeDB().pokeBase[pokemon.no]!.move);
             matches.retainWhere((s){
-              return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+              return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
             });
             for (final move in removalMoves) {
               matches.remove(move);

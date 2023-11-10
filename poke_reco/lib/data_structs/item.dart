@@ -56,6 +56,8 @@ class Item {
       ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
     }
     */
+    myState.holdingItem = pokeData.items[itemID];
+
     switch (itemID) {
       case 161:     // オッカのみ
       case 162:     // イトケのみ
@@ -285,10 +287,6 @@ class Item {
         else {
           yourState.remainHP -= extraArg1;
         }
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
-        break;
-      case 584:     // ふうせん
-        // 画面に表示されるだけ
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 585:     // レッドカード

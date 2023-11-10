@@ -44,7 +44,7 @@ class PokemonSexInputRow extends Row {
               matches.addAll(PokeDB().pokeBase.values);
               matches.remove(PokeDB().pokeBase[0]);
               matches.retainWhere((s){
-                return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                return toKatakana50(s.name.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
               });
               for (final pokemon in removalPokemons) {
                 matches.remove(pokemon);

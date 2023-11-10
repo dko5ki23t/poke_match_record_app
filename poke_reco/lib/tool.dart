@@ -88,6 +88,52 @@ String toKatakana(String str) {
     (Match m) => String.fromCharCode(m.group(0)!.codeUnitAt(0) + 0x60));
 }
 
+// カタカナの50音に変換(小文字や濁点半濁点を消す)
+String toKatakana50(String str) {
+  String ret = toKatakana(str);
+  return ret.replaceAllMapped(RegExp("[ァ-ヴ]"),
+    (Match m) => String.fromCharCode(toKatakana50Code(m.group(0)!.codeUnitAt(0))));
+}
+
+int toKatakana50Code(int code) {
+  int ret = code;
+  if (code < 'ァ'.codeUnitAt(0) || code > 'ヴ'.codeUnitAt(0)) return 0; // invalid
+  if (code <= 'オ'.codeUnitAt(0)) {
+    if (code % 2 == 1) ret += 1;
+  }
+  else if (code <= 'ヂ'.codeUnitAt(0)) {
+    if (code % 2 == 0) ret -= 1;
+  }
+  else if (code <= 'ヅ'.codeUnitAt(0)) {
+    ret = 'ツ'.codeUnitAt(0);
+  }
+  else if (code <= 'ド'.codeUnitAt(0)) {
+    if (code % 2 == 1) ret -= 1;
+  }
+  else if (code <= 'ノ'.codeUnitAt(0)) {
+    // nop
+  }
+  else if (code <= 'ポ'.codeUnitAt(0)) {
+    ret = 'ハ'.codeUnitAt(0) + ((code-'ハ'.codeUnitAt(0)) ~/ 3) * 3;
+  }
+  else if (code <= 'モ'.codeUnitAt(0)) {
+    // nop
+  }
+  else if (code <= 'ヨ'.codeUnitAt(0)) {
+    if (code % 2 == 1) ret += 1;
+  }
+  else if (code <= 'ロ'.codeUnitAt(0)) {
+    // nop
+  }
+  else if (code <= 'ワ'.codeUnitAt(0)) {
+    if (code % 2 == 0) ret += 1;
+  }
+  else {
+    // nop
+  }
+  return ret;
+}
+
 // 五捨五超入
 int roundOff5(double a) {
   int ret = a.floor();

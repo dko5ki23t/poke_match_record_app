@@ -167,6 +167,9 @@ class PokemonState {
     resetRealSixParams();
     currentAbility = pokemon.ability;
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
+    // もうどくはターン数をリセット(ターン数をもとにダメージを計算するため)
+    var badPoison = ailmentsWhere((e) => e.id == Ailment.badPoison);
+    if (badPoison.isNotEmpty) badPoison.first.turns = 0;
     if (_isFainting) ailmentsClear();
     // 退場後も継続するフォルム以外をクリア
     var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
@@ -801,10 +804,14 @@ class PokemonState {
   // とくせい等によって変化できなかった場合はfalseが返る
   bool addStatChanges(
     bool isMyEffect, int index, int num, PokemonState yourState,
-    {int? moveId, int? abilityId, int? itemId, bool lastMirror = false}
+    {
+     int? moveId, int? abilityId, int? itemId, bool lastMirror = false,
+     List<IndividualField>? myFields, List<IndividualField>? yourFields,
+    }
   ) {
     int change = num;
     if (!isMyEffect && buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty && num < 0) return false;   // みがわり
+    if (!isMyEffect && myFields!.where((e) => e.id == IndividualField.mist).isNotEmpty && num < 0) return false;       // しろいきり
     if (!isMyEffect && holdingItem?.id == 1698 && num < 0) return false;    // クリアチャーム
     if (!isMyEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
     if (!isMyEffect && abilityId == 22 &&        // いかくに対する
@@ -817,7 +824,7 @@ class PokemonState {
     if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
     if (!isMyEffect && currentAbility.id == 166 && isTypeContain(12) && num < 0) return false;   // フラワーベール
     if (!isMyEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
-      yourState.addStatChanges(isMyEffect, index, num, this, lastMirror: true);
+      yourState.addStatChanges(isMyEffect, index, num, this, myFields: yourFields, yourFields: myFields, lastMirror: true);
       return false;
     }
     if (!isMyEffect && abilityId == 22 && currentAbility.id == 275) num = 1;   // いかくに対するばんけん

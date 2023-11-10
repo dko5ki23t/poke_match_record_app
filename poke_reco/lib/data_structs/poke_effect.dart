@@ -377,7 +377,7 @@ class TurnEffect {
               }
               break;
             case 22:    // いかく
-              yourState.addStatChanges(false, 0, -1, myState, abilityId: effectId);
+              yourState.addStatChanges(false, 0, -1, myState, myFields: yourFields, yourFields: myFields, abilityId: effectId);
               break;
             case 24:    // さめはだ
             case 106:   // ゆうばく
@@ -577,7 +577,7 @@ class TurnEffect {
               break;
             case 183:   // ぬめぬめ
             case 238:   // わたげ
-              yourState.addStatChanges(false, 4, -1, myState, abilityId: effectId);
+              yourState.addStatChanges(false, 4, -1, myState, myFields: yourFields, yourFields: myFields, abilityId: effectId);
               break;
             case 176:   // バトルスイッチ
               {
@@ -689,7 +689,7 @@ class TurnEffect {
                   myState.addStatChanges(true, 0, 2, yourState, moveId: extraArg1);
                   break;
                 case 297:   // フェザーダンス
-                  yourState.addStatChanges(false, 0, -2, myState, moveId: extraArg1);
+                  yourState.addStatChanges(false, 0, -2, myState, myFields: yourFields, yourFields: myFields, moveId: extraArg1);
                   break;
                 case 298:   // フラフラダンス
                   yourState.ailmentsAdd(Ailment(Ailment.confusion), state);
@@ -899,6 +899,11 @@ class TurnEffect {
                 myState.usedPPs[i] = 0;
               }
               break;
+            case IndiFieldEffect.stickyWeb:       // ねばねばネット
+              if (myState.isGround(myFields) && myState.holdingItem?.id != 1178) {
+                myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields);
+              }
+              break;
             case IndiFieldEffect.reflectorEnd:
               myFields.removeWhere((e) => e.id == IndividualField.reflector);
               break;
@@ -910,6 +915,10 @@ class TurnEffect {
               break;
             case IndiFieldEffect.auroraVeilEnd:
               myFields.removeWhere((e) => e.id == IndividualField.auroraVeil);
+              break;
+            case IndiFieldEffect.trickRoomEnd:
+              myFields.removeWhere((e) => e.id == IndividualField.trickRoom);
+              yourFields.removeWhere((e) => e.id == IndividualField.trickRoom);
               break;
           }
         }
@@ -1012,6 +1021,9 @@ class TurnEffect {
               yourState.remainHP -= extraArg2;
             }
             break;
+          case AilmentEffect.tauntEnd:
+            myState.ailmentsRemoveWhere((e) => e.id == Ailment.taunt);
+            break;
         }
         break;
       case EffectType.afterMove:
@@ -1022,7 +1034,7 @@ class TurnEffect {
             myState.isFainting = true;
             break;
           case 588:   // キングシールド
-            myState.addStatChanges(false, 0, -1, yourState, moveId: effectId);
+            myState.addStatChanges(false, 0, -1, yourState, myFields: myFields, yourFields: yourFields, moveId: effectId);
             break;
           case 596:   // ニードルガード
             if (playerType.id == PlayerType.me) {
@@ -1036,10 +1048,10 @@ class TurnEffect {
             myState.ailmentsAdd(Ailment(Ailment.poison), state);
             break;
           case 792:   // ブロッキング
-            myState.addStatChanges(false, 1, -2, yourState, moveId: effectId);
+            myState.addStatChanges(false, 1, -2, yourState, myFields: myFields, yourFields: yourFields, moveId: effectId);
             break;
           case 852:   // スレッドトラップ
-            myState.addStatChanges(false, 4, -1, yourState, moveId: effectId);
+            myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields, moveId: effectId);
             break;
         }
         break;
@@ -1065,8 +1077,8 @@ class TurnEffect {
         }
       }
       else {
-        if (pokeState.currentAbility.id == 136) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.damaged0_5)); // マルチスケイル
-        if (pokeState.currentAbility.id == 177) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.galeWings));  // はやてのつばさ
+        if (pokeState.currentAbility.id == 136) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.damaged0_5); // マルチスケイル
+        if (pokeState.currentAbility.id == 177) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.galeWings);  // はやてのつばさ
       }
     }
 
@@ -1222,6 +1234,11 @@ class TurnEffect {
               indiFieldEffectIDs.add(IndiFieldEffect.badToxicSpikes);
             }
           }
+          if ((playerType.id == PlayerType.me && phaseState.ownFields.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty) ||
+              (playerType.id == PlayerType.opponent && phaseState.opponentFields.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty)
+          ) {         // ねばねばネットがあるとき
+            indiFieldEffectIDs.add(IndiFieldEffect.stickyWeb);
+          }
         }
         break;
       case AbilityTiming.everyTurnEnd:           // 毎ターン終了時
@@ -1278,6 +1295,9 @@ class TurnEffect {
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) {  // やどりぎのタネ状態のとき
             ailmentEffectIDs.add(AilmentEffect.leechSeed);
           }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty) {      // ちょうはつ状態のとき
+            ailmentEffectIDs.add(AilmentEffect.tauntEnd);
+          }
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
               timingIDs.add(152);     // 状態異常でない毎ターン終了時
@@ -1296,6 +1316,9 @@ class TurnEffect {
           }
           if (myFields.where((e) => e.id == IndividualField.tailwind).isNotEmpty) {       // おいかぜがあるとき
             indiFieldEffectIDs.add(IndiFieldEffect.tailwindEnd);
+          }
+          if (myFields.where((e) => e.id == IndividualField.trickRoom).isNotEmpty) {      // トリックルーム中
+            indiFieldEffectIDs.add(IndiFieldEffect.trickRoomEnd);
           }
           fieldIDs = [...everyTurnEndFieldIDs];
         }
@@ -2026,7 +2049,7 @@ class TurnEffect {
                       matches.add(yourState.currentAbility);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -2062,7 +2085,7 @@ class TurnEffect {
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = appState.pokeData.items.values.toList();
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -2137,7 +2160,7 @@ class TurnEffect {
                       if (yourPokemon.move4 != null) matches.add(yourPokemon.move4!);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -2188,7 +2211,7 @@ class TurnEffect {
                       matches = [yourState.holdingItem!];
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
@@ -2444,7 +2467,7 @@ class TurnEffect {
                       matches.add(appState.pokeData.moves[i]!);
                     }
                     matches.retainWhere((s){
-                      return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },

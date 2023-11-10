@@ -202,7 +202,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             matches.addAll(pokeData.pokeBase.values);
                             matches.remove(pokeData.pokeBase[0]);
                             matches.retainWhere((s){
-                              return toKatakana(s.name.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                              return toKatakana50(s.name.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                             });
                             return matches;
                           },
@@ -389,7 +389,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             matches.addAll(pokeData.tempers.values);
                             matches.remove(pokeData.tempers[0]);
                             matches.retainWhere((s){
-                              return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                              return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                             });
                             return matches;
                           },

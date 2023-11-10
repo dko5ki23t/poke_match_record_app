@@ -65,7 +65,7 @@ class PokemonItemInputRow extends Row {
                 List<Item> matches = [];
                 matches.addAll(PokeDB().items.values);
                 matches.retainWhere((s){
-                  return toKatakana(s.displayName.toLowerCase()).contains(toKatakana(pattern.toLowerCase()));
+                  return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                 });
                 for (final item in removalItems) {
                   matches.remove(item);

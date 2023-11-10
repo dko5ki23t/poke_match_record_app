@@ -218,6 +218,18 @@ class PhaseState {
                   ..effectId = indiField[findIdx].extraArg1 <= 1 ? IndiFieldEffect.toxicSpikes : IndiFieldEffect.badToxicSpikes
                 );
               }
+              // ねばねばネット
+              if (indiField.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty &&
+                  myState.isGround(indiField) &&
+                  myState.holdingItem?.id != 1178       // あつぞこブーツ
+              ) {
+                ret.add(TurnEffect()
+                  ..playerType = player
+                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..effect = EffectType(EffectType.individualField)
+                  ..effectId = IndiFieldEffect.stickyWeb
+                );
+              }
             }
           }
         }

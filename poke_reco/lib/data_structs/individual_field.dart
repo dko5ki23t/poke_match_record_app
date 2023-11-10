@@ -18,6 +18,14 @@ class IndiFieldEffect {
   static const int tailwindEnd = 16;      // おいかぜ終了
   //static const int luckyChant = 17;       // おまじない
   static const int auroraVeilEnd = 18;    // オーロラベール終了
+  //static const int gravity = 19;          // じゅうりょく
+  static const int trickRoomEnd = 20;       // トリックルーム終了
+  //static const int waterSport = 21;       // みずあそび
+  //static const int mudSport = 22;         // どろあそび
+  //static const int wonderRoom = 23;       // ワンダールーム   // TODO
+  //static const int magicRoom = 24;        // マジックルーム   // TODO
+  //static const int ionDeluge = 25;        // プラズマシャワー(わざタイプ：ノーマル→でんき)
+  //static const int fairyLock = 26;        // フェアリーロック
 
   static const _displayNameMap = {
     0: '',
@@ -32,6 +40,7 @@ class IndiFieldEffect {
     13: 'ひかりのかべがなくなった',
     16: 'おいかぜがやんだ',
     18: 'オーロラベールがなくなった',
+    20: 'トリックルーム終了',   // ゆがんだ時空がもとにもどった
   };
 
   const IndiFieldEffect(this.id);

@@ -580,9 +580,10 @@ class Move {
     return biteMoveIDs.contains(id);
   }
 
-  // TODO
   bool get isCut {  // 切るわざかどうか
     const cutMoveIDs = [
+      895, 15, 314, 403, 830, 781, 163, 440, 427, 875, 534, 404,
+      548, 533, 669, 400, 332, 869, 860, 75, 845, 891, 348, 210,
     ];
     return cutMoveIDs.contains(id);
   }
