@@ -162,6 +162,7 @@ class AbilityTiming {
   static const int terastaling = 158;           // テラスタル選択時
   static const int everyTurnEndHPNotFull = 159; // HPが満タンでない毎ターン終了時
   static const int everyTurnEndHPNotFull2 = 160;  // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
+  static const int pokemonAppearAttacked = 161;   // ポケモン登場時・こうげきを受けたとき
 
   const AbilityTiming(this.id);
 

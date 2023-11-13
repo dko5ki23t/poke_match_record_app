@@ -66,34 +66,38 @@ class PartiesPageState extends State<PartiesPage> {
     }
     else {
       if (isEditMode) {
-        lists = ListView(
-          children: [
-            for (final e in filteredParties)
-              PartyTile(
-                e.value, theme,
-                leading: Icon(Icons.drag_handle),
-                trailing: Checkbox(
-                  value: checkList![e.key],
-                  onChanged: (isCheck) {
-                    setState(() {
-                      checkList![e.key] = isCheck ?? false;
-                    });
-                  },
-                ),
-              )
-          ],
+        lists = Scrollbar(
+          child: ListView(
+            children: [
+              for (final e in filteredParties)
+                PartyTile(
+                  e.value, theme,
+                  leading: Icon(Icons.drag_handle),
+                  trailing: Checkbox(
+                    value: checkList![e.key],
+                    onChanged: (isCheck) {
+                      setState(() {
+                        checkList![e.key] = isCheck ?? false;
+                      });
+                    },
+                  ),
+                )
+            ],
+          ),
         );
       }
       else {
-        lists = ListView(
-          children: [
-            for (final party in filteredParties)
-              PartyTile(
-                party.value, theme,
-                leading: Icon(Icons.group),
-                onLongPress: () => widget.onAdd(party.value.copyWith(), false),
-              )
-          ],
+        lists = Scrollbar(
+          child: ListView(
+            children: [
+              for (final party in filteredParties)
+                PartyTile(
+                  party.value, theme,
+                  leading: Icon(Icons.group),
+                  onLongPress: () => widget.onAdd(party.value.copyWith(), false),
+                )
+            ],
+          ),
         );
       }
     }

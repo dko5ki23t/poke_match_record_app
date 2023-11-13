@@ -21,6 +21,16 @@ class BattleFirstPokemonListView extends ListView {
             Row(
               children: [
                 Expanded(
+                  child: Align(
+                    alignment: Alignment.center,
+                    child: Text('あなたの選出ポケモン3匹と相手の先頭ポケモンを選んでください。',),
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
                   flex: 5,
                   child: Align(
                     alignment: Alignment.center,
@@ -43,12 +53,26 @@ class BattleFirstPokemonListView extends ListView {
                   Expanded(
                     flex: 5,
                     child: battle.getParty(PlayerType(PlayerType.me)).pokemons[i] != null ?
-                    PokemonMiniTile(
-                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
-                      theme,
-                      onTap: () {checkedPokemons.own = i+1; setState();},
-                      selected: checkedPokemons.own == i+1,
-                      selectedTileColor: Colors.black26,
+                    Badge(
+                      smallSize: 0,
+                      offset: Offset(-10, 0),
+                      //textStyle: TextStyle(fontSize: 20),
+                      label: checkedPokemons.own.indexWhere((e) => e == i+1) >= 0 ? Text('${checkedPokemons.own.indexWhere((e) => e == i+1)+1}') : null,
+                      child: PokemonMiniTile(
+                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
+                        theme,
+                        onTap: () {
+                          if (checkedPokemons.own.contains(i+1)) {
+                            checkedPokemons.own.removeWhere((e) => e == i+1);
+                          }
+                          else if (checkedPokemons.own.length < 3) {
+                            checkedPokemons.own.add(i+1);
+                          }
+                          setState();
+                        },
+                        selected: checkedPokemons.own.contains(i+1),
+                        selectedTileColor: Colors.black26,
+                      ),
                     ) : Text(''),
                   ),
                   SizedBox(width: 10),

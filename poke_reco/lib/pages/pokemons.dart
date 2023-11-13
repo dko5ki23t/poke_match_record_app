@@ -110,41 +110,45 @@ class PokemonsPageState extends State<PokemonsPage> {
     }
     else {
       if (isEditMode) {
-        lists = ListView(
-          children: [
-            for (final e in filteredPokemons)
-              PokemonTile(
-                e.value, theme,
-                leading: Icon(Icons.drag_handle),
-                trailing: Checkbox(
-                  value: checkList![e.key],
-                  onChanged: (isCheck) {
-                    setState(() {
-                      checkList![e.key] = isCheck ?? false;
-                    });
-                  },
+        lists = Scrollbar(
+          child: ListView(
+            children: [
+              for (final e in filteredPokemons)
+                PokemonTile(
+                  e.value, theme,
+                  leading: Icon(Icons.drag_handle),
+                  trailing: Checkbox(
+                    value: checkList![e.key],
+                    onChanged: (isCheck) {
+                      setState(() {
+                        checkList![e.key] = isCheck ?? false;
+                      });
+                    },
+                  ),
+                  showWarning: true,
                 ),
-                showWarning: true,
-              ),
-          ],
+            ],
+          ),
         );
       }
       else {
-        lists = ListView(
-          children: [
-            for (final e in filteredPokemons)
-              PokemonTile(
-                e.value,
-                theme,
-                enabled: !partyPokemonsNo.contains(e.value.no),
-                leading: Icon(Icons.catching_pokemon),
-                onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
-                onTap: widget.selectMode ? () {
-                  selectedPokemon = e.value;
-                  widget.onSelect!(e.value);} : null,
-              ),
-            SizedBox(height: deviceHeight / 4),
-          ],
+        lists = Scrollbar(
+          child: ListView(
+            children: [
+              for (final e in filteredPokemons)
+                PokemonTile(
+                  e.value,
+                  theme,
+                  enabled: !partyPokemonsNo.contains(e.value.no),
+                  leading: Icon(Icons.catching_pokemon),
+                  onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
+                  onTap: widget.selectMode ? () {
+                    selectedPokemon = e.value;
+                    widget.onSelect!(e.value);} : null,
+                ),
+              SizedBox(height: deviceHeight / 4),
+            ],
+          ),
         );
       }
     }

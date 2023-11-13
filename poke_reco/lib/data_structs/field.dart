@@ -54,7 +54,7 @@ class Field {
     // TODO
   };
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName => '${_displayNameMap[id]!} ($turns/5)';
   Color get bgColor => _bgColorMap[id]!;
 
   final int id;

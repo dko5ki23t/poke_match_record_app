@@ -440,8 +440,8 @@ class BattleEffectInputColumn extends Column {
   ) {
     return TurnEffect.getPossibleEffects(timing, playerType, effectType,
     playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? 
-      battle.getParty(playerType).pokemons[sameTiming.phaseState.getPokemonIndex(playerType, null)-1] : null,
-    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? sameTiming.phaseState.getPokemonState(playerType, null) : null,
+      battle.getParty(playerType).pokemons[sameTiming.phaseState.getPokemonIndex(playerType, prevAction)-1] : null,
+    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? sameTiming.phaseState.getPokemonState(playerType, prevAction) : null,
     sameTiming.phaseState, attacker, turnMove, turn, prevAction);
   }
 
@@ -456,7 +456,7 @@ class BattleEffectInputColumn extends Column {
     Turn turn,
     List<TurnEffectAndStateAndGuide> sameTimingList,
   ) {
-    TurnEffect? prevAction = sameTimingList.first.phaseIdx-1 >= 0 ? turn.phases[sameTimingList.first.phaseIdx-1] : null;
+    TurnEffect? prevAction = sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null;
     if (playerType.id == PlayerType.none) return [];
     if (playerType.id == PlayerType.entireField) {
       return _getEffectCandidatesWithEffectType(timing, battle, playerType, EffectType(EffectType.ability), sameTiming, attacker, turnMove, turn, prevAction);

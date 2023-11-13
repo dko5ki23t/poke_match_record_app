@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
-import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 
@@ -73,6 +70,7 @@ class BattleTerastalInputColumn extends Column {
                             icon: Icon(Icons.check),
                             onPressed: turn.phases[firstIdx+i].isValid() ? () {
                               appState.editingPhase[firstIdx+i] = false;
+                              appState.needAdjustPhases = firstIdx+i+1;
                               onFocus(firstIdx+i+1);
                             } : null,
                           ),

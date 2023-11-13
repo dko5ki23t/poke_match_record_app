@@ -271,6 +271,18 @@ class PhaseState {
               );
             }
           }
+          // とくせい「へんげんじざい」「リベロ」
+          if (prevAction != null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
+              (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
+          ) {
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.ability)
+              ..effectId = attackerState.currentAbility.id
+              ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
+            );
+          }
           // みちづれ状態の相手をひんしにしたとき
           if (prevAction != null && defenderState.isFainting && defenderState.ailmentsWhere((e) => e.id == Ailment.destinyBond).isNotEmpty) {
             ret.add(TurnEffect()
@@ -280,7 +292,9 @@ class PhaseState {
               ..effectId = 194
             );
           }
-          if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount)) {  // わざ成功時
+          if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
+              prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
+          ) {  // わざ成功時
             if (prevAction.move!.move.damageClass.id == 1 && prevAction.move!.move.isTargetYou) {
               // へんかわざを受けた後
               defenderTimingIDList.add(AbilityTiming.statused);
@@ -288,12 +302,16 @@ class PhaseState {
             if (prevAction.move!.move.damageClass.id >= 2) {
               // こうげきわざヒット後
               attackerTimingIDList.add(AbilityTiming.attackHitted);
+              // こうげきわざでひんしにした後
+              if (defenderState.isFainting) {
+                attackerTimingIDList.add(AbilityTiming.defeatOpponentWithAttack);
+              }
               // ぶつりこうげきを受けた時
               if (prevAction.move!.move.damageClass.id == DamageClass.physical) {
                 defenderTimingIDList.add(AbilityTiming.phisycalAttackedHitted);
               }
               // こうげきわざを受けた後
-              defenderTimingIDList.add(AbilityTiming.attackedHitted);
+              defenderTimingIDList.addAll([AbilityTiming.attackedHitted, AbilityTiming.pokemonAppearAttacked]);
               // ばけたすがたでこうげきを受けた後
               if (defenderState.buffDebuffs.where((element) => element.id == BuffDebuff.transedForm).isNotEmpty) {
                 defenderTimingIDList.add(AbilityTiming.attackedHittedWithBake);
@@ -356,6 +374,10 @@ class PhaseState {
             // 音技を受けた後
             if (prevAction.move!.move.isSound) {
               defenderTimingIDList.add(AbilityTiming.soundAttacked);
+            }
+            // 風の技を受けた後
+            if (prevAction.move!.move.isWind) {
+              defenderTimingIDList.add(AbilityTiming.winded);
             }
             // HP吸収わざを受けた後
             if (prevAction.move!.move.isDrain) {
@@ -425,7 +447,11 @@ class PhaseState {
               ..effectId = attackerState.currentAbility.id
             );
           }
-          if (defenderTimingIDList.contains(defenderState.currentAbility.timing.id)) {
+          // こうげきを受ける側のとくせいは、かたやぶり等によって発動しない場合あり
+          if (defenderTimingIDList.contains(defenderState.currentAbility.timing.id) &&
+              (!defenderState.currentAbility.canIgnored ||
+               attackerState.buffDebuffs.where((e) => e.id == BuffDebuff.noAbilityEffect || e.id == BuffDebuff.myceliumMight).isEmpty)
+          ) {
             int extraArg1 = 0;
             if (defenderState.currentAbility.id == 10 ||  // ちくでん
                 defenderState.currentAbility.id == 11     // ちょすい
@@ -476,6 +502,9 @@ class PhaseState {
             }
             if (defenderState.holdingItem!.id == 188 || defenderState.holdingItem!.id == 189) {   // ジャポのみ/レンブのみ
               extraArg1 = attackerPlayerTypeId == PlayerType.me ? (attackerState.pokemon.h.real / 8).floor() : 12;
+            }
+            if (defenderState.holdingItem!.id == 584) {   // ふうせん
+              extraArg1 = 1;
             }
             ret.add(TurnEffect()
               ..playerType = PlayerType(defenderPlayerTypeId)

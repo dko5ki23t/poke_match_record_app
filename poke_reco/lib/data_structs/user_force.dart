@@ -10,6 +10,13 @@ class UserForce {
   static const int ability = 1;
   static const int item = 2;
   static const int hp = 3;
+  static const int rankA = 4;
+  static const int rankB = 5;
+  static const int rankC = 6;
+  static const int rankD = 7;
+  static const int rankS = 8;
+  static const int rankAc = 9;
+  static const int rankEv = 10;
 
   final PlayerType playerType;
   final int typeId;
@@ -27,25 +34,9 @@ class UserForces {
     ..forces.addAll([...forces]);
 
   void add(UserForce force) {
-    switch (force.typeId) {
-      case UserForce.ability:
-        // とくせいの修正が既にある場合は、それを削除して上書き
-        forces.removeWhere((e) => e.playerType.id == force.playerType.id && e.typeId == UserForce.ability);
-        forces.add(force);
-        break;
-      case UserForce.item:
-        // もちものの修正が既にある場合は、それを削除して上書き
-        forces.removeWhere((e) => e.playerType.id == force.playerType.id && e.typeId == UserForce.item);
-        forces.add(force);
-        break;
-      case UserForce.hp:
-        // HPの修正が既にある場合は、それを削除して上書き
-        forces.removeWhere((e) => e.playerType.id == force.playerType.id && e.typeId == UserForce.hp);
-        forces.add(force);
-        break;
-      default:
-        break;
-    }
+    // 既に同じプレイヤー・種類の修正がある場合はそれを削除して上書き
+    forces.removeWhere((e) => e.playerType.id == force.playerType.id && e.typeId == force.typeId);
+    forces.add(force);
   }
 
   List<String> processEffect(
@@ -84,6 +75,20 @@ class UserForces {
           }
           else if (force.playerType.id == PlayerType.opponent) {
             opponentPokemonState.remainHPPercent = force.arg1;
+          }
+          break;
+        case UserForce.rankA:
+        case UserForce.rankB:
+        case UserForce.rankC:
+        case UserForce.rankD:
+        case UserForce.rankS:
+        case UserForce.rankAc:
+        case UserForce.rankEv:
+          if (force.playerType.id == PlayerType.me) {
+            ownPokemonState.forceSetStatChanges(force.typeId - UserForce.rankA, force.arg1);
+          }
+          else if (force.playerType.id == PlayerType.opponent) {
+            opponentPokemonState.forceSetStatChanges(force.typeId - UserForce.rankA, force.arg1);
           }
           break;
       }

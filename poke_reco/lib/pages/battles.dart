@@ -39,6 +39,8 @@ class BattlesPageState extends State<BattlesPage> {
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
     var filteredBattles = battles.entries.where((element) => element.value.id != 0);
+    var sortedBattles = filteredBattles.toList();
+    sortedBattles.sort((a, b) => a.key.compareTo(b.key),);
 
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
@@ -53,56 +55,60 @@ class BattlesPageState extends State<BattlesPage> {
     Widget lists;
     if (checkList == null) {
       checkList = {};
-      for (final e in filteredBattles) {
+      for (final e in sortedBattles) {
         checkList![e.key] = false;
       }
     }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
-    if (checkList!.length != filteredBattles.length) {
+    if (checkList!.length != sortedBattles.length) {
       checkList = {};
-      for (final e in filteredBattles) {
+      for (final e in sortedBattles) {
         checkList![e.key] = false;
       }
     }
 
-    if (filteredBattles.isEmpty) {
+    if (sortedBattles.isEmpty) {
       lists = Center(
         child: Text('表示できる対戦がありません。'),
       );
     }
     else {
       if (isEditMode) {
-        lists = ListView(
-          children: [
-            for (final e in filteredBattles)
-              BattleTile(
-                e.value,
-                theme,
-                leading: Icon(Icons.drag_handle),
-                trailing: Checkbox(
-                  value: checkList![e.key],
-                  onChanged: (isCheck) {
-                    setState(() {
-                      checkList![e.key] = isCheck ?? false;
-                    });
-                  },
+        lists = Scrollbar(
+           child: ListView(
+            children: [
+              for (final e in sortedBattles)
+                BattleTile(
+                  e.value,
+                  theme,
+                  leading: Icon(Icons.drag_handle),
+                  trailing: Checkbox(
+                    value: checkList![e.key],
+                    onChanged: (isCheck) {
+                      setState(() {
+                        checkList![e.key] = isCheck ?? false;
+                      });
+                    },
+                  ),
                 ),
-              ),
-          ],
+            ],
+           ),
         );
       }
       else {
-        lists = ListView(
-          children: [
-            for (final battle in filteredBattles)
-              BattleTile(
-                battle.value,
-                theme,
-                leading: Icon(Icons.list_alt),
-                onLongPress: () => widget.onAdd(battle.value.copyWith(), false),
-              ),
-            SizedBox(height: deviceHeight / 4),
-          ],
+        lists = Scrollbar(
+          child: ListView(
+            children: [
+              for (final battle in sortedBattles)
+                BattleTile(
+                  battle.value,
+                  theme,
+                  leading: Icon(Icons.list_alt),
+                  onLongPress: () => widget.onAdd(battle.value.copyWith(), false),
+                ),
+              SizedBox(height: deviceHeight / 4),
+            ],
+          ),
         );
       }
     }
@@ -129,7 +135,7 @@ class BattlesPageState extends State<BattlesPage> {
                   child: Icon(Icons.sort),
                 ),
                 TextButton(
-                  onPressed: (filteredBattles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                  onPressed: (sortedBattles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                   child: Icon(Icons.edit),
                 ),
               ],
@@ -179,7 +185,7 @@ class BattlesPageState extends State<BattlesPage> {
                                     await pokeData.deleteBattle(deleteIDs);
                                     setState(() {
                                       checkList = {};
-                                      for (final e in filteredBattles) {
+                                      for (final e in sortedBattles) {
                                         checkList![e.key] = false;
                                       }
                                     });
@@ -210,7 +216,7 @@ class BattlesPageState extends State<BattlesPage> {
                             }
                             setState(() {
                               checkList = {};
-                              for (final e in filteredBattles) {
+                              for (final e in sortedBattles) {
                                 checkList![e.key] = false;
                               }
                             });

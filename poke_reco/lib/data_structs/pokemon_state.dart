@@ -851,21 +851,21 @@ class PokemonState {
   // ランク変化に関する関数群ここまで
 
   // ランク補正等込みのHABCDSを返す
-  int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
+  int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
       return maxStats[StatIndex.H.index].real;
     }
-    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState, state);
+    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
   }
   
-  int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
+  int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
       return minStats[StatIndex.H.index].real;
     }
-    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState, state);
+    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
   }
 
-  int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state) {
+  int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
       return val;
     }
@@ -873,40 +873,40 @@ class PokemonState {
     // ランク補正
     switch (statChanges(statIdx.index-1)) {
       case -6:
-        ret = ret * 2 / 8;
+        if (!minusCut) ret = ret * 2 / 8;
         break;
       case -5:
-        ret = ret * 2 / 7;
+        if (!minusCut) ret = ret * 2 / 7;
         break;
       case -4:
-        ret = ret * 2 / 6;
+        if (!minusCut) ret = ret * 2 / 6;
         break;
       case -3:
-        ret = ret * 2 / 5;
+        if (!minusCut) ret = ret * 2 / 5;
         break;
       case -2:
-        ret = ret * 2 / 4;
+        if (!minusCut) ret = ret * 2 / 4;
         break;
       case -1:
-        ret = ret * 2 / 3;
+        if (!minusCut) ret = ret * 2 / 3;
         break;
       case 1:
-        ret = ret * 3 / 2;
+        if (!plusCut) ret = ret * 3 / 2;
         break;
       case 2:
-        ret = ret * 4 / 2;
+        if (!plusCut) ret = ret * 4 / 2;
         break;
       case 3:
-        ret = ret * 5 / 2;
+        if (!plusCut) ret = ret * 5 / 2;
         break;
       case 4:
-        ret = ret * 6 / 2;
+        if (!plusCut) ret = ret * 6 / 2;
         break;
       case 5:
-        ret = ret * 7 / 2;
+        if (!plusCut) ret = ret * 7 / 2;
         break;
       case 6:
-        ret = ret * 8 / 2;
+        if (!plusCut) ret = ret * 8 / 2;
         break;
       default:
         break;

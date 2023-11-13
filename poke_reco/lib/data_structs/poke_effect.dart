@@ -101,6 +101,7 @@ const List<int> pokemonAppearTimingIDs = [
   1,      // ポケモン登場時
   76,     // ポケモン登場時(確率/条件)
   94,     // ポケモン登場時と毎ターン終了時（ともに条件あり）
+  161,    // ポケモン登場時・こうげきを受けた時
 ];
 
 // 行動決定直後
@@ -138,12 +139,6 @@ const List<int> afterMoveDefenderTimingIDs = [
 // 毎ターン終了時
 // フィールド
 const List<int> everyTurnEndFieldIDs = [
-//  Field.trickRoom,      // トリックルーム終了
-//  Field.gravity,        // じゅうりょく終了
-//  Field.waterSport,     // みずあそび終了
-//  Field.mudSport,       // どろあそび終了
-//  Field.wonderRoom,     // ワンダールーム終了
-//  Field.magicRoom,      // マジックルーム終了
   Field.electricTerrain,// エレキフィールド終了
   Field.grassyTerrain,  // グラスフィールド終了
   Field.mistyTerrain,   // ミストフィールド終了
@@ -571,6 +566,7 @@ class TurnEffect {
             case 236:   // リベロ
               myState.type1 = PokeType.createFromId(extraArg1);
               myState.type2 = null;
+              myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
               break;
             case 172:   // かちき
               myState.addStatChanges(true, 2, 2, yourState, abilityId: effectId);
@@ -1195,7 +1191,7 @@ class TurnEffect {
     List<int> indiFieldEffectIDs = [];
     List<int> ailmentEffectIDs = [];
     List<int> weatherEffectIDs = [];
-    List<int> fieldIDs = [];
+    List<int> fieldEffectIDs = [];
 
     // 全タイミング共通
     if (phaseState.weather.id == Weather.sunny) { // 天気が晴れのとき
@@ -1254,21 +1250,44 @@ class TurnEffect {
           ) {
             timingIDs.add(68);     // 相手が道具を消費したターン終了時
           }
-          if (phaseState.weather.id == Weather.sunny) { // 天気が晴れのとき、毎ターン終了時
-            timingIDs.addAll([50, 73]);
-            weatherEffectIDs.add(WeatherEffect.sunnyEnd);
+          // 天気
+          switch (phaseState.weather.id) {
+            case Weather.sunny:   // 天気が晴れのとき、毎ターン終了時
+              timingIDs.addAll([50, 73]);
+              weatherEffectIDs.add(WeatherEffect.sunnyEnd);
+              break;
+            case Weather.rainy:   // 天気があめのとき、毎ターン終了時
+              timingIDs.addAll([65, 50, 72]);
+              weatherEffectIDs.add(WeatherEffect.rainyEnd);
+              break;
+            case Weather.snowy:   // 天気がゆきのとき、毎ターン終了時
+              timingIDs.addAll([79]);
+              weatherEffectIDs.add(WeatherEffect.snowyEnd);
+              break;
+            case Weather.sandStorm:   // 天気がすなあらしのとき、毎ターン終了時
+              weatherEffectIDs.addAll([WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
+              break;
+            default:
+              break;
           }
-          if (phaseState.weather.id == Weather.rainy) { // 天気があめのとき、毎ターン終了時
-            timingIDs.addAll([65, 50, 72]);
-            weatherEffectIDs.add(WeatherEffect.rainyEnd);
+          // フィールド
+          switch (phaseState.field.id) {
+            case Field.electricTerrain:
+              fieldEffectIDs.add(FieldEffect.electricTerrainEnd);
+              break;
+            case Field.grassyTerrain:
+              fieldEffectIDs.addAll([FieldEffect.grassHeal, FieldEffect.grassyTerrainEnd]);
+              break;
+            case Field.mistyTerrain:
+              fieldEffectIDs.add(FieldEffect.mistyTerrainEnd);
+              break;
+            case Field.psychicTerrain:
+              fieldEffectIDs.add(FieldEffect.psychicTerrainEnd);
+              break;
+            default:
+              break;
           }
-          if (phaseState.weather.id == Weather.snowy) { // 天気がゆきのとき、毎ターン終了時
-            timingIDs.addAll([79]);
-            weatherEffectIDs.add(WeatherEffect.snowyEnd);
-          }
-          if (phaseState.weather.id == Weather.sandStorm) { // 天気がすなあらしのとき、毎ターン終了時
-            weatherEffectIDs.addAll([WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
-          }
+          // 状態変化等
           if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
@@ -1320,7 +1339,6 @@ class TurnEffect {
           if (myFields.where((e) => e.id == IndividualField.trickRoom).isNotEmpty) {      // トリックルーム中
             indiFieldEffectIDs.add(IndiFieldEffect.trickRoomEnd);
           }
-          fieldIDs = [...everyTurnEndFieldIDs];
         }
         break;
       case AbilityTiming.afterActionDecision:    // 行動決定直後
@@ -1342,7 +1360,7 @@ class TurnEffect {
           if (turnMove.move.damageClass.id == 1) defenderTimingIDs.addAll([113]);
           // こうげきしたとき/うけたとき
           if (turnMove.move.damageClass.id >= 2) {
-            defenderTimingIDs.addAll([62, 82, 157]);
+            defenderTimingIDs.addAll([62, 82, 157, 161]);
             attackerTimingIDs.addAll([60, 2]);
             // ノーマルタイプのこうげきをした時
             if (turnMove.moveType.id == 1) attackerTimingIDs.addAll([130]);
@@ -1569,11 +1587,11 @@ class TurnEffect {
           ..effectId = e
         );
       }
-      if (fieldIDs.contains(phaseState.field.id)) {
+      for (var e in fieldEffectIDs) {
         ret.add(TurnEffect()
           ..playerType = PlayerType(PlayerType.entireField)
           ..effect = EffectType(EffectType.field)
-          ..effectId = phaseState.field.id
+          ..effectId = e
         );
       }
     }
@@ -1736,6 +1754,12 @@ class TurnEffect {
                   return state.getPokemonState(PlayerType(PlayerType.me), null).remainHP.toString();
               }
               break;
+            case EffectType.field:
+              switch (effectId) {
+                case FieldEffect.grassHeal:   // グラスフィールドによる回復
+                  return state.getPokemonState(PlayerType(PlayerType.me), null).remainHP.toString();
+              }
+              break;
           }
         }
     }
@@ -1836,6 +1860,12 @@ class TurnEffect {
             case EffectType.weather:
               switch (effectId) {
                 case WeatherEffect.sandStormDamage:
+                  return state.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent.toString();
+              }
+              break;
+            case EffectType.field:
+              switch (effectId) {
+                case FieldEffect.grassHeal:   // グラスフィールドによる回復
                   return state.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent.toString();
               }
               break;

@@ -80,6 +80,7 @@ class Item {
       case 187:     // イバンのみ
       case 248:     // パワフルハーブ
         // ダメージ軽減効果はユーザ入力に任せる
+      case 669:     // ノーマルジュエル
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 194:     // せんせいのツメ
@@ -288,6 +289,11 @@ class Item {
           yourState.remainHP -= extraArg1;
         }
         if (autoConsume) myState.holdingItem = pokeData.items[itemID];
+        break;
+      case 584:     // ふうせん
+        if (extraArg1 != 0) {   // ふうせんが割れたとき
+          if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        }
         break;
       case 585:     // レッドカード
         if (changePokemonIndex != null) {
@@ -1128,6 +1134,32 @@ class Item {
             playerType.id == PlayerType.me ?
             Flexible(child: Text('% /100%')) :
             Flexible(child: Text('/${yourPokemon.h.real}')),
+          ],
+        );
+      case 584:     // ふうせん
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: DropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('ふうせんで浮いている'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('ふうせんが割れた'),
+                  ),
+                ],
+                value: extraArg1,
+                onChanged: (value) => extraArg1ChangeFunc(value),
+              ),
+            ),
           ],
         );
       case 585:     // レッドカード

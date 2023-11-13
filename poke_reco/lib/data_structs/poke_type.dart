@@ -47,6 +47,7 @@ class PokeType {
   // タイプ相性
   static MoveEffectiveness effectiveness(
     bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState defenseState,
+    // きもったま, ねらいのまと, ミラクルアイ
   )
   {
     double rate = effectivenessRate(isScrappy, isRingTarget, isMiracleEye, attackType, defenseState);
@@ -100,7 +101,7 @@ class PokeType {
         case 5:
           if (type.id == 10 || type.id == 13 || type.id == 4 || type.id == 6 || type.id == 9) deg++;
           if (type.id == 12 || type.id == 7) deg--;
-          if (!isRingTarget && type.id == 3) return 0;
+          if (!isRingTarget && (type.id == 3 || state.holdingItem?.id == 584)) return 0;
           break;
         case 6:
           if (type.id == 10 || type.id == 3 || type.id == 15 || type.id == 7) deg++;

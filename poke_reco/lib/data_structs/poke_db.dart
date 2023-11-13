@@ -471,14 +471,38 @@ class Ability {
     return !ids.contains(id);
   }
 
-  // TODO
+  // 上書きできるとくせいかどうか
+  bool get canOverWrite {
+    const ids = [
+      225, 248, 241, 210, 208, 282, 281, 266, 211, 213,
+      161, 209, 176, 278, 121, 197,
+    ];
+    return !ids.contains(id);
+  }
+
   // コピー可能なとくせいかどうか
   bool get canCopy {
     const ids = [
-      225, 248, 149, 241, 256, 208, 266, 211, 161, 209,
-      176, 258, 25,
+      225, 248, 149, 241, 303, 223, 256, 150, 210, 208, 282,
+      281, 279, 266, 211, 213, 161, 59, 36, 209, 176, 258,
+      122, 278, 121, 197, 222,
     ];
     return !ids.contains(id);
+  }
+
+  // かたやぶり/きんしのちから/ターボブレイズ/テラボルテージで無視されるとくせいかどうか
+  bool get canIgnored {
+    const ids = [
+      248, 47, 126, 165, 188, 283, 52, 274, 4, 5, 87, 272,
+      21, 179, 29, 246, 273, 75, 6, 7, 214, 73, 299, 175,
+      199, 8, 51, 39, 157, 186, 85, 86, 10, 77, 11, 296,
+      140, 78, 109, 297, 12, 270, 60, 116, 209, 257, 35,
+      145, 244, 275, 219, 31, 169, 111, 187, 63, 25, 15,
+      26, 122, 166, 132, 134, 43, 142, 171, 20, 40, 156,
+      136, 41, 240, 147, 17, 218, 18, 72, 81, 114, 135,
+      102, 19,
+    ];
+    return ids.contains(id);
   }
 
   // SQLに保存された文字列からabilityをパース
@@ -513,7 +537,7 @@ class Move {
   final int pp;
 
   bool get isTargetYou {  // 相手を対象に含むかどうか
-    return target.id == 6 || (8 <= target.id && target.id <= 12) || target.id == 14; 
+    return target.id == 6 || (8 <= target.id && target.id <= 11) || target.id == 14; 
   }
 
   bool get isDirect {   // 直接攻撃かどうか
@@ -566,16 +590,17 @@ class Move {
     return danceMoveIDs.contains(id);
   }
 
-  // TODO
-  bool get isRecoil {  // 反動わざかどうか
+  bool get isRecoil {  // 反動わざかどうか(とくせい「すてみ」の対象)
     const recoilMoveIDs = [
+      543, 834, 452, 853, 66, 38, 36, 26, 136, 617, 394, 413,
+      344, 457, 528,
     ];
     return recoilMoveIDs.contains(id);
   }
 
-  // TODO
   bool get isBite {  // かみつきわざかどうか
     const biteMoveIDs = [
+      755, 242, 44, 422, 746, 423, 706, 305, 158, 424,
     ];
     return biteMoveIDs.contains(id);
   }
@@ -586,6 +611,13 @@ class Move {
       548, 533, 669, 400, 332, 869, 860, 75, 845, 891, 348, 210,
     ];
     return cutMoveIDs.contains(id);
+  }
+
+  bool get isWind { // 風わざかどうか
+    const windMoveIDs = [
+      314, 16, 847, 846, 196, 239, 848, 257, 572, 831, 18, 59, 542, 584,
+    ];
+    return windMoveIDs.contains(id);
   }
 
   Move(

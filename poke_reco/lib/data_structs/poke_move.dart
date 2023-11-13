@@ -340,8 +340,10 @@ class TurnMove {
     bool invDeffense = false;
     // 相手のこうげきとランク補正でダメージ計算するか
     bool isFoulPlay = false;
-    // 相手のランク補正を無視してダメージ計算するか
+    // 相手の不利ランク補正を無視してダメージ計算するか
     bool ignoreTargetRank = false;
+    // 自身にとって不利ランク補正＆壁を無視してダメージ計算するか
+    bool isCritical = moveHits[continuousCount].id == MoveHit.critical;
     // 相手のとくせいを無視してダメージ計算するか
     bool ignoreAbility = false;
     // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージ計算するか
@@ -2856,24 +2858,24 @@ class TurnMove {
           // TODO パワートリック等で、実際にmaxStatsとかの値を入れ替えたほうが良さそう
           int calcMaxAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state);
+              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
           int calcMinAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state);
+              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
           if (isFoulPlay) {
             calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state);
+                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
             calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state);
+                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
           }
           else if (defenseAltAttack) {
             calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state);
+                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical);
             calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state);
+                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical);
           }
-          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state);
-          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state);
+          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state, minusCut: isCritical);
+          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state, minusCut: isCritical);
           String attackStr = '';
           if (attackVmax == attackVmin) {
             attackStr = attackVmax.toString();
@@ -2888,15 +2890,15 @@ class TurnMove {
             attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
           }
           int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state) :
-                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state);
+                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
+                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
           int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state) :
-                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state);
+                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
+                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
           int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense :
-                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state);
+                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
           int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense :
-                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state);
+                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
           String defenseStr = '';
           if (defenseVmax == defenseVmin) {
             defenseStr = defenseVmax.toString();
@@ -2984,8 +2986,9 @@ class TurnMove {
             double tmpMin = damageVmin.toDouble();
             // 壁補正
             if (
+              !isCritical && (
               (moveDamageClassID == 2 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
-              (moveDamageClassID == 3 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty)
+              (moveDamageClassID == 3 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty))
             ) {
               tmpMax *= 0.5;
               tmpMin *= 0.5;

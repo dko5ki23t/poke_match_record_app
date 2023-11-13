@@ -187,6 +187,7 @@ class BuffDebuff {
   static const int chargingMove = 182;    // 溜める系わざの溜め状態(隠しステータス)
   static const int recoiling = 183;       // わざの反動で動けない状態(隠しステータス)
   static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍    // TODO
+  static const int protean = 185;         // へんげんじざい/リベロ発動済み(隠しステータス)
 
   static const _displayNameMap = {
     0:  '',
