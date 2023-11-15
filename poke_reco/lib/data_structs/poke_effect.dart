@@ -169,6 +169,7 @@ class TurnEffect {
   List<int?> _changePokemonIndexes = [null, null];    // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
   List<int> _prevPokemonIndexes = [0, 0];             // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
   UserForces userForces = UserForces();     // ユーザによる手動修正
+  bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -186,7 +187,8 @@ class TurnEffect {
     ..isYourWin = isYourWin
     .._changePokemonIndexes = [..._changePokemonIndexes]
     .._prevPokemonIndexes = [..._prevPokemonIndexes]
-    ..userForces = userForces.copyWith();
+    ..userForces = userForces.copyWith()
+    ..isAutoSet = isAutoSet;
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player.id == PlayerType.me) return _changePokemonIndexes[0];
@@ -1317,6 +1319,9 @@ class TurnEffect {
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty) {      // ちょうはつ状態のとき
             ailmentEffectIDs.add(AilmentEffect.tauntEnd);
           }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
+            ailmentEffectIDs.add(AilmentEffect.ingrain);
+          }
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
               timingIDs.add(152);     // 状態異常でない毎ターン終了時
@@ -1722,13 +1727,8 @@ class TurnEffect {
                 case AilmentEffect.badPoison:   // もうどく
                 case AilmentEffect.saltCure:    // しおづけ
                 case AilmentEffect.curse:       // のろい
-                  if (playerType.id == PlayerType.me) {
-                    return myState.remainHP.toString();
-                  }
-                  else {
-                    return myState.remainHPPercent.toString();
-                  }
                 case AilmentEffect.leechSeed:   // やどりぎのタネ
+                case AilmentEffect.ingrain:     // ねをはる
                   if (playerType.id == PlayerType.me) {
                     return myState.remainHP.toString();
                   }
@@ -2680,6 +2680,7 @@ class TurnEffect {
         case AilmentEffect.burn:      // やけど
         case AilmentEffect.saltCure:  // しおづけ
         case AilmentEffect.curse:     // のろい
+        case AilmentEffect.ingrain:   // ねをはる
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -2990,6 +2991,8 @@ class TurnEffect {
     }
     // userForces
     effect.userForces = UserForces.deserialize(effectElements[14], split2, split3);
+    // isAutoSet
+    effect.isAutoSet = int.parse(effectElements[15]) != 0;
 
     return effect;
   }
@@ -3047,6 +3050,9 @@ class TurnEffect {
     ret += split1;
     // userForces
     ret += userForces.serialize(split2, split3);
+    ret += split1;
+    // isAutoSet
+    ret += isAutoSet ? '1' : '0';
 
     return ret;
   }

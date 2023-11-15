@@ -1025,6 +1025,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
+  // 自動追加されたフェーズを削除
+  void _clearAutoSetPhase(MyAppState appState) {
+    List<int> removeIdxs = [];
+    var phases = widget.battle.turns[turnNum-1].phases;
+    for (int i = 0; i < phases.length; i++) {
+      if (phases[i].isAutoSet) {
+        removeIdxs.add(i);
+      }
+    }
+    // 削除インデックスリストの重複削除、ソート(念のため)
+    removeIdxs = removeIdxs.toSet().toList();
+    removeIdxs.sort();
+    for (int i = removeIdxs.length-1; i >= 0; i--) {
+      _removeAtPhase(removeIdxs[i], appState);
+    }
+  }
+
   // 不要なフェーズを削除
   void _clearInvalidPhase(MyAppState appState, int index, bool pokemonAppear, bool afterMove) {
     var phases = widget.battle.turns[turnNum-1].phases;
@@ -1043,6 +1060,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
+    //_clearAutoSetPhase(appState);     // 一旦、自動追加したフェーズは削除する
 
     int beginIdx = 0;
     int timingId = 0;
@@ -2442,27 +2460,37 @@ class _AilmentsRow extends Row {
   super(
     children: [
       SizedBox(width: 10,),
-      Flexible(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            ownPokemonState.ailmentsLength > index ?
-            Container(
-              color: ownPokemonState.ailments(index).bgColor,
-              child: Text(ownPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+      Expanded(
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                ownPokemonState.ailmentsLength > index ?
+                Container(
+                  color: ownPokemonState.ailments(index).bgColor,
+                  child: Text(ownPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+            Expanded(child: Container()),
+          ],
         ),
       ),
       SizedBox(width: 10,),
-      Flexible(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            opponentPokemonState.ailmentsLength > index ?
-            Container(
-              color: opponentPokemonState.ailments(index).bgColor,
-              child: Text(opponentPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+      Expanded(
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                opponentPokemonState.ailmentsLength > index ?
+                Container(
+                  color: opponentPokemonState.ailments(index).bgColor,
+                  child: Text(opponentPokemonState.ailments(index).displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+            Expanded(child: Container())
+          ],
         ),
       ),
     ],
@@ -2479,26 +2507,36 @@ class _BuffDebuffsRow extends Row {
     children: [
       SizedBox(width: 10,),
       Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            ownPokemonState.buffDebuffs.length > index ?
-            Container(
-              color: ownPokemonState.buffDebuffs[index].bgColor,
-              child: Text(ownPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                ownPokemonState.buffDebuffs.length > index ?
+                Container(
+                  color: ownPokemonState.buffDebuffs[index].bgColor,
+                  child: Text(ownPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+            Expanded(child: Container()),
+          ],
         ),
       ),
       SizedBox(width: 10,),
       Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            opponentPokemonState.buffDebuffs.length > index ?
-            Container(
-              color: opponentPokemonState.buffDebuffs[index].bgColor,
-              child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                opponentPokemonState.buffDebuffs.length > index ?
+                Container(
+                  color: opponentPokemonState.buffDebuffs[index].bgColor,
+                  child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+            Expanded(child: Container()),
+          ],
         ),
       ),
     ],
@@ -2513,27 +2551,36 @@ class _IndiFieldRow extends Row {
   super(
     children: [
       SizedBox(width: 10,),
-      Flexible(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            state.ownFields.length > index ?
-            Container(
-              color: state.ownFields[index].bgColor,
-              child: Text(state.ownFields[index].displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+      Expanded(
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                state.ownFields.length > index ?
+                Container(
+                  color: state.ownFields[index].bgColor,
+                  child: Text(state.ownFields[index].displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+            Expanded(child: Container(),),
+          ],
         ),
       ),
       SizedBox(width: 10,),
-      Flexible(
-        child: ClipRRect(
-          borderRadius: BorderRadius.all(Radius.circular(5.0)),
-          child:
-            state.opponentFields.length > index ?
-            Container(
-              color: state.opponentFields[index].bgColor,
-              child: Text(state.opponentFields[index].displayName, style: TextStyle(color: Colors.white)),
-            ) : Container(),
+      Expanded(
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.all(Radius.circular(5.0)),
+              child:
+                state.opponentFields.length > index ?
+                Container(
+                  color: state.opponentFields[index].bgColor,
+                  child: Text(state.opponentFields[index].displayName, style: TextStyle(color: Colors.white)),
+                ) : Container(),
+            ),
+          ],
         ),
       ),
     ],

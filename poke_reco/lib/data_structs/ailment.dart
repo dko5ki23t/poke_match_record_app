@@ -32,6 +32,45 @@ class AilmentEffect {
   static const int healBlock = 26;          // かいふくふうじ
   static const int embargo = 27;            // さしおさえ
   static const int sleepy = 28;             // ねむけ→ねむり
+  static const int ingrain = 29;            // ねをはる
+  static const int uproar = 30;             // さわぐ
+  static const int antiAir = 31;            // うちおとす
+  static const int magicCoat = 32;          // マジックコート
+  static const int charging = 33;           // じゅうでん
+  static const int thrash = 34;             // あばれる
+  static const int bide = 35;               // がまん
+  static const int destinyBond = 36;        // みちづれ
+  static const int cannotRunAway = 37;      // にげられない
+  static const int minimize = 38;           // ちいさくなる
+  static const int flying = 39;             // そらをとぶ
+  static const int digging = 40;            // あなをほる
+  static const int curl = 41;               // まるくなる(ころがる・アイスボールの威力2倍)
+  static const int stock1 = 42;             // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
+  static const int stock2 = 43;             // たくわえる(2)
+  static const int stock3 = 44;             // たくわえる(3)
+  static const int attention = 45;          // ちゅうもくのまと   // TODO
+  static const int helpHand = 46;           // てだすけ
+  static const int imprison = 47;           // ふういん         // TODO(わざを確定できそう)
+  static const int grudge = 48;             // おんねん
+  static const int roost = 49;              // はねやすめ
+  static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
+  static const int powerTrick = 51;         // パワートリック
+  static const int abilityNoEffect = 52;    // とくせいなし   //TODO
+  static const int aquaRing = 53;           // アクアリング
+  static const int diving = 54;             // ダイビング
+  static const int shadowForcing = 55;      // シャドーダイブ(姿を消した状態)
+  static const int electrify = 56;          // そうでん
+  static const int powder = 57;             // ふんじん
+  static const int throatChop = 58;         // じごくづき
+  static const int tarShot = 59;            // タールショット
+  static const int octoLock = 60;           // たこがため
+  static const int protect = 61;            // まもる extraArg1 =
+                                            // 588:キングシールド(直接攻撃してきた相手のこうげき1段階DOWN)
+                                            // 596:ニードルガード(直接攻撃してきた相手に最大HP1/8ダメージ)
+                                            // 661:トーチカ(直接攻撃してきた相手をどく状態にする)
+                                            // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
+                                            // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
+  static const int candyCandy = 62;         // あめまみれ     // TODO
 
   static const _displayNameMap = {
     0: '',
