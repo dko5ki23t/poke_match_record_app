@@ -2,6 +2,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
+import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
+import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -23,12 +26,26 @@ const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
 
 const String configKeyPokemonsOwnerFilter = 'pokemonsOwnerFilter';
+const String configKeyPokemonsNoFilter = 'pokemonsNoFilter';
 const String configKeyPokemonsTypeFilter = 'pokemonsTypeFilter';
 const String configKeyPokemonsTeraTypeFilter = 'pokemonsTeraTypeFilter';
 const String configKeyPokemonsMoveFilter = 'pokemonsMoveFilter';
 const String configKeyPokemonsSexFilter = 'pokemonsSexFilter';
 const String configKeyPokemonsAbilityFilter = 'pokemonsAbilityFilter';
 const String configKeyPokemonsTemperFilter = 'pokemonsTemperFilter';
+
+const String configKeyPokemonsSort = 'pokemonsSort';
+
+const String configKeyPartiesWinRateMinFilter = 'partiesWinRateMinFilter';
+const String configKeyPartiesWinRateMaxFilter = 'partiesWinRateMaxFilter';
+const String configKeyPartiesPokemonNoFilter = 'partiesPokemonNoFilter';
+
+const String configKeyPartiesSort = 'partiesSort';
+
+const String configKeyBattlesWinFilter = 'partiesWinFilter';
+const String configKeyBattlesPartyIDFilter = 'partiesPartyIDFilter';
+
+const String configKeyBattlesSort = 'battlesSort';
 
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
@@ -97,6 +114,7 @@ const String pokeBaseColumnEggGroup = 'eggGroup';
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
 const String myPokemonColumnId = 'id';
+const String myPokemonColumnViewOrder = 'viewOrder';
 const String myPokemonColumnNo = 'no';
 const String myPokemonColumnNickName = 'nickname';
 const String myPokemonColumnTeraType = 'teratype';
@@ -136,6 +154,7 @@ const String myPokemonColumnRefCount = 'refCount';
 const String partyDBFile = 'parties.db';
 const String partyDBTable = 'partyDB';
 const String partyColumnId = 'id';
+const String partyColumnViewOrder = 'viewOrder';
 const String partyColumnName = 'name';
 const String partyColumnPokemonId1 = 'pokemonID1';
 const String partyColumnPokemonItem1 = 'pokemonItem1';
@@ -155,6 +174,7 @@ const String partyColumnRefCount = 'refCount';
 const String battleDBFile = 'battles.db';
 const String battleDBTable = 'battleDB';
 const String battleColumnId = 'id';
+const String battleColumnViewOrder = 'viewOrder';
 const String battleColumnName = 'name';
 const String battleColumnTypeId = 'battleType';
 const String battleColumnDate = 'date';
@@ -745,12 +765,23 @@ class PokeDB {
   // 設定等を保存する(端末の)ファイル
   late final File _saveDataFile;
   List<Owner> pokemonsOwnerFilter = [Owner.mine];
+  List<int> pokemonsNoFilter = [];
   List<int> pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
   List<int> pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
   List<int> pokemonsMoveFilter = [];
-  List<Sex> pokemonsSexFilter = Sex.values;
+  List<int> pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
   List<int> pokemonsAbilityFilter = [];
   List<int> pokemonsTemperFilter = [];
+  PokemonSort? pokemonsSort;
+
+  int partiesWinRateMinFilter = 0;
+  int partiesWinRateMaxFilter = 100;
+  List<int> partiesPokemonNoFilter = [];
+  PartySort? partiesSort;
+
+  List<int> battlesWinFilter = [for (int i = 1; i < 4; i++) i];  // 1: 勝敗未決 2:勝ち 3:負け
+  List<int> battlesPartyIDFilter = [];
+  BattleSort? battlesSort;
 
   Map<int, Ability> abilities = {0: Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
@@ -781,7 +812,7 @@ class PokeDB {
   Map<int, Battle> battles = {0: Battle()};
   late Database battleDb;
 
-  // DBに使われているIDのリスト。常に降順に並び替えておく
+  // DBに使われているIDのリスト。常に昇順に並び替えておく
   List<int> myPokemonIDs = [];
   List<int> partyIDs = [];
   List<int> battleIDs = [];
@@ -840,6 +871,10 @@ class PokeDB {
               break;
           }
         }
+        pokemonsNoFilter = [];
+        for (final e in configJson[configKeyPokemonsNoFilter]) {
+          pokemonsNoFilter.add(e as int);
+        }
         pokemonsTypeFilter = [];
         for (final e in configJson[configKeyPokemonsTypeFilter]) {
           pokemonsTypeFilter.add(e as int);
@@ -854,18 +889,7 @@ class PokeDB {
         }
         pokemonsSexFilter = [];
         for (final e in configJson[configKeyPokemonsSexFilter]) {
-          switch (e) {
-            case 1:
-              pokemonsSexFilter.add(Sex.male);
-              break;
-            case 2:
-              pokemonsSexFilter.add(Sex.female);
-              break;
-            case 0:
-            default:
-              pokemonsSexFilter.add(Sex.none);
-              break;
-          }
+          pokemonsSexFilter.add(e as int);
         }
         pokemonsAbilityFilter = [];
         for (final e in configJson[configKeyPokemonsAbilityFilter]) {
@@ -875,15 +899,46 @@ class PokeDB {
         for (final e in configJson[configKeyPokemonsTemperFilter]) {
           pokemonsTemperFilter.add(e as int);
         }
+        int sort = configJson[configKeyPokemonsSort] as int;
+        pokemonsSort = sort == 0 ? null : PokemonSort.createFromId(sort);
+
+        partiesWinRateMinFilter = configJson[configKeyPartiesWinRateMinFilter] as int;
+        partiesWinRateMaxFilter = configJson[configKeyPartiesWinRateMaxFilter] as int;
+        partiesPokemonNoFilter = [];
+        for (final e in configJson[configKeyPartiesPokemonNoFilter]) {
+          partiesPokemonNoFilter.add(e as int);
+        }
+        sort = configJson[configKeyPartiesSort] as int;
+        partiesSort = sort == 0 ? null : PartySort.createFromId(sort);
+        
+        battlesWinFilter = [];
+        for (final e in configJson[configKeyBattlesWinFilter]) {
+          battlesWinFilter.add(e as int);
+        }
+        battlesPartyIDFilter = [];
+        for (final e in configJson[configKeyBattlesPartyIDFilter]) {
+          battlesPartyIDFilter.add(e as int);
+        }
+        sort = configJson[configKeyBattlesSort] as int;
+        battlesSort = sort == 0 ? null : BattleSort.createFromId(sort);
       }
       catch (e) {
         pokemonsOwnerFilter = [Owner.mine];
+        pokemonsNoFilter = [];
         pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
         pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
         pokemonsMoveFilter = [];
-        pokemonsSexFilter = Sex.values;
+        pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
         pokemonsAbilityFilter = [];
         pokemonsTemperFilter = [];
+        pokemonsSort = null;
+        partiesWinRateMinFilter = 0;
+        partiesWinRateMaxFilter = 100;
+        partiesPokemonNoFilter = [];
+        partiesSort = null;
+        battlesWinFilter = [for (int i = 1; i < 4; i++) i];
+        battlesPartyIDFilter = [];
+        battlesSort = null;
         await saveConfig();
       }
     }
@@ -1052,7 +1107,8 @@ class PokeDB {
       // 内部データに変換
       maps = await myPokemonDb.query(myPokemonDBTable,
         columns: [
-          myPokemonColumnId, myPokemonColumnNo, myPokemonColumnNickName,
+          myPokemonColumnId, myPokemonColumnViewOrder,
+          myPokemonColumnNo, myPokemonColumnNickName,
           myPokemonColumnTeraType, myPokemonColumnLevel,
           myPokemonColumnSex, myPokemonColumnTemper,
           myPokemonColumnAbility, myPokemonColumnItem,
@@ -1070,6 +1126,7 @@ class PokeDB {
         int pokeNo = map[myPokemonColumnNo];
         pokemons[map[myPokemonColumnId]] = Pokemon()
           ..id = map[myPokemonColumnId]
+          ..viewOrder = map[myPokemonColumnViewOrder]
           ..name = pokeBase[pokeNo]!.name
           ..nickname = map[myPokemonColumnNickName]
           ..level = map[myPokemonColumnLevel]
@@ -1149,7 +1206,7 @@ class PokeDB {
       // 内部データに変換
       maps = await partyDb.query(partyDBTable,
         columns: [
-          partyColumnId, partyColumnName,
+          partyColumnId, partyColumnViewOrder, partyColumnName,
           partyColumnPokemonId1, partyColumnPokemonItem1,
           partyColumnPokemonId2, partyColumnPokemonItem2,
           partyColumnPokemonId3, partyColumnPokemonItem3,
@@ -1163,6 +1220,7 @@ class PokeDB {
       for (var map in maps) {
         parties[map[partyColumnId]] = Party()
           ..id = map[partyColumnId]
+          ..viewOrder = map[partyColumnViewOrder]
           ..name = map[partyColumnName]
           ..pokemon1 = pokemons.values.where((element) => element.id == map[partyColumnPokemonId1]).first
           ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
@@ -1209,8 +1267,8 @@ class PokeDB {
       // 内部データに変換
       maps = await battleDb.query(battleDBTable,
         columns: [
-          battleColumnId, battleColumnName, battleColumnTypeId,
-          battleColumnDate, battleColumnOwnPartyId,
+          battleColumnId, battleColumnViewOrder, battleColumnName,
+          battleColumnTypeId, battleColumnDate, battleColumnOwnPartyId,
           battleColumnOpponentName, battleColumnOpponentPartyId,
           battleColumnTurns, battleColumnIsMyWin, battleColumnIsYourWin,
         ],
@@ -1219,6 +1277,7 @@ class PokeDB {
       for (var map in maps) {
         var battle = Battle()
           ..id = map[battleColumnId]
+          ..viewOrder = map[battleColumnViewOrder]
           ..name = map[battleColumnName]
           ..type = BattleType.createFromId(map[battleColumnTypeId])
           ..datetimeFromStr = map[battleColumnDate]
@@ -1248,20 +1307,54 @@ class PokeDB {
       battleIDs.sort((a, b) => a.compareTo(b));
     }
 
+    // 各パーティの勝率算出
+    updatePartyWinRate();
+
 
     isLoaded = true;
+  }
+
+  void updatePartyWinRate() {
+    for (final party in parties.values) {
+      party.usedCount = 0;
+      party.winCount = 0;
+    }
+    for (final battle in battles.values) {
+      int partyID = battle.getParty(PlayerType(PlayerType.me)).id;
+      parties[partyID]!.usedCount++;
+      if (battle.isMyWin) parties[partyID]!.winCount++;
+    }
+    for (final party in parties.values) {
+      if (party.usedCount == 0) {
+        party.winRate = 0;
+      }
+      else {
+        party.winRate = (party.winCount / party.usedCount * 100).floor();
+      }
+    }
   }
 
   Future<void> saveConfig() async {
     String jsonText = jsonEncode(
       {
         configKeyPokemonsOwnerFilter: [for (final e in pokemonsOwnerFilter) e.index],
+        configKeyPokemonsNoFilter: [for (final e in pokemonsNoFilter) e],
         configKeyPokemonsTypeFilter: [for (final e in pokemonsTypeFilter) e],
         configKeyPokemonsTeraTypeFilter: [for (final e in pokemonsTeraTypeFilter) e],
         configKeyPokemonsMoveFilter: [for (final e in pokemonsMoveFilter) e],
-        configKeyPokemonsSexFilter: [for (final e in pokemonsSexFilter) e.index],
+        configKeyPokemonsSexFilter: [for (final e in pokemonsSexFilter) e],
         configKeyPokemonsAbilityFilter: [for (final e in pokemonsAbilityFilter) e],
         configKeyPokemonsTemperFilter: [for (final e in pokemonsTemperFilter) e],
+        configKeyPokemonsSort: pokemonsSort == null ? 0 : pokemonsSort!.id,
+
+        configKeyPartiesWinRateMinFilter: partiesWinRateMinFilter,
+        configKeyPartiesWinRateMaxFilter: partiesWinRateMaxFilter,
+        configKeyPartiesPokemonNoFilter: [for (final e in partiesPokemonNoFilter) e],
+        configKeyPartiesSort: partiesSort == null ? 0 : partiesSort!.id,
+
+        configKeyBattlesWinFilter: battlesWinFilter,
+        configKeyBattlesPartyIDFilter: battlesPartyIDFilter,
+        configKeyBattlesSort: battlesSort == null ? 0 : battlesSort!.id,
       }
     );
     await _saveDataFile.writeAsString(jsonText);
@@ -1269,30 +1362,33 @@ class PokeDB {
 
   int getUniqueMyPokemonID() {
     int ret = 1;
-    for (final e in myPokemonIDs) {
+    /*for (final e in myPokemonIDs) {
       if (e > ret) break;
       ret++;
-    }
+    }*/
+    if (myPokemonIDs.isNotEmpty) ret = myPokemonIDs.last+1;
     assert(ret <= 0xffffffff);
     return ret;
   }
 
   int getUniquePartyID() {
     int ret = 1;
-    for (final e in partyIDs) {
+    /*for (final e in partyIDs) {
       if (e > ret) break;
       ret++;
-    }
+    }*/
+    if (partyIDs.isNotEmpty) ret = partyIDs.last+1;
     assert(ret <= 0xffffffff);
     return ret;
   }
 
   int getUniqueBattleID() {
     int ret = 1;
-    for (final e in battleIDs) {
+    /*for (final e in battleIDs) {
       if (e > ret) break;
       ret++;
-    }
+    }*/
+    if (battleIDs.isNotEmpty) ret = battleIDs.last+1;
     assert(ret <= 0xffffffff);
     return ret;
   }
@@ -1491,6 +1587,11 @@ class PokeDB {
         parties.remove(e);
       }
       
+      // 参照している対戦用のフィルタから削除
+      for (final e in ids) {
+        battlesPartyIDFilter.remove(e);
+      }
+
       // DBのIDリストから削除
       for (final e in ids) {
         partyIDs.remove(e);
@@ -1581,6 +1682,9 @@ class PokeDB {
     battleIDs.add(battle.id);
     battleIDs.sort((a, b) => a.compareTo(b));
 
+    // パーティの勝率を更新
+    updatePartyWinRate();
+
     // SQLiteのDBに挿入
     await battleDb.insert(
       battleDBTable,
@@ -1641,6 +1745,7 @@ class PokeDB {
     final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
     var text = 'CREATE TABLE $myPokemonDBTable('
             '$myPokemonColumnId INTEGER PRIMARY KEY, '
+            '$myPokemonColumnViewOrder INTEGER, '
             '$myPokemonColumnNo INTEGER, '
             '$myPokemonColumnNickName TEXT, '
             '$myPokemonColumnTeraType INTEGER, '
@@ -1702,6 +1807,7 @@ class PokeDB {
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     var text = 'CREATE TABLE $partyDBTable('
             '$partyColumnId INTEGER PRIMARY KEY, '
+            '$partyColumnViewOrder INTEGER, '
             '$partyColumnName TEXT, '
             '$partyColumnPokemonId1 INTEGER, '
             '$partyColumnPokemonItem1 INTEGER, '
@@ -1748,9 +1854,10 @@ class PokeDB {
     final battleDBPath = join(await getDatabasesPath(), battleDBFile);
     var text = 'CREATE TABLE $battleDBTable('
             '$battleColumnId INTEGER PRIMARY KEY, '
+            '$battleColumnViewOrder INTEGER, '
             '$battleColumnName TEXT, '
             '$battleColumnTypeId INTEGER, '
-            '$battleColumnDate INTEGER, '     // TODO
+            '$battleColumnDate TEXT, '
             '$battleColumnOwnPartyId INTEGER, '
             '$battleColumnOpponentName TEXT, '
             '$battleColumnOpponentPartyId INTEGER, '

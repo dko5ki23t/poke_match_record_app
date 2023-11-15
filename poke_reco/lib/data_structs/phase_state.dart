@@ -126,10 +126,10 @@ class PhaseState {
   // 対戦に登場する3匹が確定していた場合、対象のポケモンが登場しているかどうか
   // 3匹が確定していない場合は常にtrue
   bool isPossibleBattling(PlayerType player, int i) {
-    if (getPokemonStates(player).where((element) => element.isBattling).length < 3) {
+    if (getPokemonStates(player).where((element) => element.battlingNum > 0).length < 3) {
       return true;
     }
-    return getPokemonStates(player)[i].isBattling;
+    return getPokemonStates(player)[i].battlingNum > 0;
   }
 
   // ターン終了時処理

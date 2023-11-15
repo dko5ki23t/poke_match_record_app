@@ -143,6 +143,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     void onComplete() async {
       if (widget.isNew) {
         widget.myPokemon.id = pokeData.getUniqueMyPokemonID();
+        widget.myPokemon.viewOrder = widget.myPokemon.id;
         pokemons[widget.myPokemon.id] = widget.myPokemon;
       }
       else {

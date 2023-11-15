@@ -15,6 +15,7 @@ class PartyTile extends ListTile {
   super(
     isThreeLine: true,
     leading: leading,
+    key: Key('${party.id}'),
     title: Text(party.name),
     subtitle: Column(
       children: [
@@ -44,6 +45,11 @@ class PartyTile extends ListTile {
                 ],
               ),
             ),
+          ],
+        ),
+        Row(
+          children: [
+            Text('勝率：${party.winRate}% ${party.winCount}/${party.usedCount}')
           ],
         ),
       ],

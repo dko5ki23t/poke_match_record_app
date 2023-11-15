@@ -26,6 +26,7 @@ class PokemonTile extends ListTile {
     enabled: enabled,
     isThreeLine: true,
     leading: leading,
+    key: Key('${pokemon.id}'),
     title: Row(
       children: [
         showWarning && pokemon.refCount > 0 ?

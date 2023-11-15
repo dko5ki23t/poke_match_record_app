@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/poke_move.dart';
 
 class Pokemon {
   int id = 0;    // データベースのプライマリーキー
+  int viewOrder = 0;      // 表示順
   String _name = '';       // ポケモン名
   String nickname = '';            // ニックネーム
   int _level = 50;                  // レベル
@@ -90,6 +91,7 @@ class Pokemon {
   Pokemon copyWith() =>
     Pokemon()
     ..id = id
+    ..viewOrder = viewOrder
     .._name = _name
     ..nickname = nickname
     .._level = _level
@@ -177,6 +179,7 @@ class Pokemon {
   Map<String, dynamic> toMap() {
     return {
       myPokemonColumnId: id,
+      myPokemonColumnViewOrder: viewOrder,
       myPokemonColumnNo: _no,
       myPokemonColumnNickName: nickname,
       myPokemonColumnTeraType: teraType.id,

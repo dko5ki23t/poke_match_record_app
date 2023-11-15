@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialogs/battle_delete_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/battle_filter_dialog.dart';
+import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_tile.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/tool.dart';
@@ -21,6 +24,7 @@ class BattlesPage extends StatefulWidget {
 class BattlesPageState extends State<BattlesPage> {
   bool isEditMode = false;
   Map<int, bool>? checkList;
+  List<MapEntry<int, Battle>> sortedBattles = [];
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -34,13 +38,13 @@ class BattlesPageState extends State<BattlesPage> {
     var appState = context.watch<MyAppState>();
     var battles = appState.battles;
     var pokeData = appState.pokeData;
+    var winFilter = pokeData.battlesWinFilter;
+    var partyIDFilter = pokeData.battlesPartyIDFilter;
+
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
     final double deviceHeight = MediaQuery.of(context).size.height;
-    var filteredBattles = battles.entries.where((element) => element.value.id != 0);
-    var sortedBattles = filteredBattles.toList();
-    sortedBattles.sort((a, b) => a.key.compareTo(b.key),);
 
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
@@ -51,6 +55,17 @@ class BattlesPageState extends State<BattlesPage> {
     else {
       EasyLoading.dismiss();
     }
+
+    var filteredBattles = battles.entries.where((element) => element.value.id != 0);
+    filteredBattles = filteredBattles.where(
+      (element) => winFilter.contains(element.value.isMyWin ? 2 : element.value.isYourWin ? 3: 1)
+    );
+    if (partyIDFilter.isNotEmpty) {
+      filteredBattles = filteredBattles.where((element) => partyIDFilter.contains(element.value.getParty(PlayerType(PlayerType.me)).id));
+    }
+    var sort = pokeData.battlesSort;
+    sortedBattles = filteredBattles.toList();
+    sortedBattles.sort((a, b) => a.value.viewOrder.compareTo(b.value.viewOrder),);
 
     Widget lists;
     if (checkList == null) {
@@ -75,7 +90,20 @@ class BattlesPageState extends State<BattlesPage> {
     else {
       if (isEditMode) {
         lists = Scrollbar(
-           child: ListView(
+           child: ReorderableListView(
+            onReorder: (int oldIndex, int newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final item = sortedBattles.removeAt(oldIndex);
+                sortedBattles.insert(newIndex, item);
+                for (int i = 0; i < sortedBattles.length; i++) {
+                  var battle = battles[sortedBattles[i].key]!;
+                  battle.viewOrder = i+1;
+                }
+              });
+            },
             children: [
               for (final e in sortedBattles)
                 BattleTile(
@@ -119,7 +147,18 @@ class BattlesPageState extends State<BattlesPage> {
         actions: [
           isEditMode ?
           TextButton(
-            onPressed: () => setState(() => isEditMode = false),
+            // TODO awaitで待ち発生しない？終わるまで操作不能とかにしたい
+            onPressed: () async {
+              for (int i = 0; i < sortedBattles.length; i++) {
+                var battle = battles[sortedBattles[i].key]!;
+                battle.viewOrder = i+1;
+                await pokeData.addBattle(battle);
+              }
+              pokeData.battlesSort = null;
+              setState(() {
+                isEditMode = false;
+              });
+            },
             child: Text('完了'),
           ) :
           Align(
@@ -127,11 +166,65 @@ class BattlesPageState extends State<BattlesPage> {
             child: Row(
               children: [
                 TextButton(
-                  onPressed: null,
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return BattleFilterDialog(
+                          pokeData,
+                          winFilter,
+                          partyIDFilter,
+                          (f1, f2) async {
+                            winFilter.clear();
+                            partyIDFilter.clear();
+                            winFilter.addAll(f1);
+                            partyIDFilter.addAll(f2);
+                            await pokeData.saveConfig();
+                            setState(() {});
+                          },
+                        );
+                      }
+                    );
+                  },
                   child: Icon(Icons.filter_alt),
                 ),
                 TextButton(
-                  onPressed: null,
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) {
+                      return BattleSortDialog(
+                        (battleSort) async {
+                          switch (battleSort) {
+                            case BattleSort.registerUp:
+                              sortedBattles.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                              break;
+                            case BattleSort.registerDown:
+                              sortedBattles.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                              break;
+                            case BattleSort.dateUp:
+                              sortedBattles.sort((a, b) => a.value.datetime.compareTo(b.value.datetime),);
+                              break;
+                            case BattleSort.dateDown:
+                              sortedBattles.sort((a, b) => -1 * a.value.datetime.compareTo(b.value.datetime),);
+                              break;
+                            default:
+                              break;
+                          }
+                          if (sort != battleSort && battleSort != null) {
+                            for (int i = 0; i < sortedBattles.length; i++) {
+                              var battle = battles[sortedBattles[i].key]!;
+                              battle.viewOrder = i+1;
+                              await pokeData.addBattle(battle);
+                            }
+                          }
+                          pokeData.battlesSort = battleSort;
+                          await pokeData.saveConfig();
+                          setState(() {});
+                        },
+                        sort
+                      );
+                    }
+                  ),
                   child: Icon(Icons.sort),
                 ),
                 TextButton(
@@ -210,6 +303,7 @@ class BattlesPageState extends State<BattlesPage> {
                               if (checkList![e]!) {
                                 Battle copiedBattle = battles[e]!.copyWith();
                                 copiedBattle.id = pokeData.getUniqueBattleID();
+                                copiedBattle.viewOrder = copiedBattle.id;
                                 battles[copiedBattle.id] = copiedBattle;
                                 await pokeData.addBattle(copiedBattle);
                               }

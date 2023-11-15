@@ -200,7 +200,7 @@ def main():
             moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == id) & ((move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID) | (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID2))][pokemonsMoveCSVMoveIDColumn].to_list()
             # たまごわざ取得
             if evolves_from is not None:
-                egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & ((move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID) | (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID2))][pokemonsMoveCSVMoveIDColumn].to_list()
                 moves = moves + egg_moves
             # 重複削除
             moves = list(set(moves))
@@ -250,10 +250,10 @@ def main():
                 # 重複削除
                 form_abilities = list(set(form_abilities))
                 # わざ取得
-                form_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == form_id) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                form_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == form_id) & ((move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID) | (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID2))][pokemonsMoveCSVMoveIDColumn].to_list()
                 # たまごわざ取得
                 if evolves_from is not None:
-                    egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID)][pokemonsMoveCSVMoveIDColumn].to_list()
+                    egg_moves = move_df[(move_df[pokemonsMoveCSVPokemonIDColumn] == evolves_from) & ((move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID) | (move_df[pokemonsMoveCSVVersionGroupIDColumn] == svVersionID2))][pokemonsMoveCSVMoveIDColumn].to_list()
                     form_moves = form_moves + egg_moves
                 # 重複削除
                 form_moves = list(set(form_moves))

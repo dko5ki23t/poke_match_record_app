@@ -99,6 +99,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     void onComplete() async {
       if (widget.isNew) {
         widget.party.id = pokeData.getUniquePartyID();
+        widget.party.viewOrder = widget.party.id;
         parties[widget.party.id] = widget.party;
       }
       else {

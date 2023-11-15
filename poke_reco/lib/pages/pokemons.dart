@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_filter_dialog.dart';
+import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
@@ -46,6 +46,7 @@ class PokemonsPageState extends State<PokemonsPage> {
     var appState = context.watch<MyAppState>();
     var pokeData = appState.pokeData;
     var ownerFilter = pokeData.pokemonsOwnerFilter;
+    var noFilter = pokeData.pokemonsNoFilter;
     var typeFilter = pokeData.pokemonsTypeFilter;
     var teraTypeFilter = pokeData.pokemonsTeraTypeFilter;
     var moveFilter = pokeData.pokemonsMoveFilter;
@@ -54,6 +55,9 @@ class PokemonsPageState extends State<PokemonsPage> {
     var temperFilter = pokeData.pokemonsTemperFilter;
     var pokemons = appState.pokemons;
     var filteredPokemons = pokemons.entries.where((element) => element.value.id != 0 && ownerFilter.contains(element.value.owner));
+    if (noFilter.isNotEmpty) {
+      filteredPokemons = filteredPokemons.where((element) => noFilter.contains(element.value.no));
+    }
     filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
     filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
     if (moveFilter.isNotEmpty) {
@@ -61,13 +65,17 @@ class PokemonsPageState extends State<PokemonsPage> {
         moveFilter.contains(element.value.move1.id) || moveFilter.contains(element.value.move2?.id) ||
         moveFilter.contains(element.value.move3?.id) || moveFilter.contains(element.value.move4?.id));
     }
-    filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.value.sex));
+    filteredPokemons = filteredPokemons.where((element) => sexFilter.contains(element.value.sex.id));
     if (abilityFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) => abilityFilter.contains(element.value.ability.id));
     }
     if (temperFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.value.temper.id));
     }
+    var sort = pokeData.pokemonsSort;
+    var sortedPokemons = filteredPokemons.toList();
+    sortedPokemons.sort((a, b) => a.value.viewOrder.compareTo(b.value.viewOrder));
+
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
@@ -86,14 +94,14 @@ class PokemonsPageState extends State<PokemonsPage> {
     Widget lists;
     if (checkList == null) {
       checkList = {};
-      for (final e in filteredPokemons) {
+      for (final e in sortedPokemons) {
         checkList![e.key] = false;
       }
     }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
-    if (checkList!.length != filteredPokemons.length) {
+    if (checkList!.length != sortedPokemons.length) {
       checkList = {};
-      for (final e in filteredPokemons) {
+      for (final e in sortedPokemons) {
         checkList![e.key] = false;
       }
     }
@@ -103,7 +111,7 @@ class PokemonsPageState extends State<PokemonsPage> {
         widget.party?.pokemons[i]?.no : null,
     ];
 
-    if (filteredPokemons.isEmpty) {
+    if (sortedPokemons.isEmpty) {
       lists = Center(
         child: Text('表示できるポケモンのデータがありません。'),
       );
@@ -111,9 +119,22 @@ class PokemonsPageState extends State<PokemonsPage> {
     else {
       if (isEditMode) {
         lists = Scrollbar(
-          child: ListView(
+          child: ReorderableListView(
+            onReorder: (int oldIndex, int newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final item = sortedPokemons.removeAt(oldIndex);
+                sortedPokemons.insert(newIndex, item);
+                for (int i = 0; i < sortedPokemons.length; i++) {
+                  var pokemon = pokemons[sortedPokemons[i].key]!;
+                  pokemon.viewOrder = i+1;
+                }
+              });
+            },
             children: [
-              for (final e in filteredPokemons)
+              for (final e in sortedPokemons)
                 PokemonTile(
                   e.value, theme,
                   leading: Icon(Icons.drag_handle),
@@ -135,7 +156,7 @@ class PokemonsPageState extends State<PokemonsPage> {
         lists = Scrollbar(
           child: ListView(
             children: [
-              for (final e in filteredPokemons)
+              for (final e in sortedPokemons)
                 PokemonTile(
                   e.value,
                   theme,
@@ -165,7 +186,10 @@ class PokemonsPageState extends State<PokemonsPage> {
             !widget.selectMode ?
               isEditMode ?
               TextButton(
-                onPressed: () => setState(() => isEditMode = false),
+                onPressed: () {
+                  setState(() => isEditMode = false);
+                  pokeData.pokemonsSort = null;
+                },
                 child: Text('完了'),
               ) :
               Align(
@@ -180,14 +204,16 @@ class PokemonsPageState extends State<PokemonsPage> {
                             return PokemonFilterDialog(
                               pokeData,
                               ownerFilter,
+                              noFilter,
                               typeFilter,
                               teraTypeFilter,
                               moveFilter,
                               sexFilter,
                               abilityFilter,
                               temperFilter,
-                              (f1, f2, f3, f4, f5, f6, f7) async {
+                              (f1, f2, f3, f4, f5, f6, f7, f8) async {
                                 ownerFilter.clear();
+                                noFilter.clear();
                                 typeFilter.clear();
                                 teraTypeFilter.clear();
                                 moveFilter.clear();
@@ -195,12 +221,13 @@ class PokemonsPageState extends State<PokemonsPage> {
                                 abilityFilter.clear();
                                 temperFilter.clear();
                                 ownerFilter.addAll(f1);
-                                typeFilter.addAll(f2);
-                                teraTypeFilter.addAll(f3);
-                                moveFilter.addAll(f4);
-                                sexFilter.addAll(f5);
-                                abilityFilter.addAll(f6);
-                                temperFilter.addAll(f7);
+                                noFilter.addAll(f2);
+                                typeFilter.addAll(f3);
+                                teraTypeFilter.addAll(f4);
+                                moveFilter.addAll(f5);
+                                sexFilter.addAll(f6);
+                                abilityFilter.addAll(f7);
+                                temperFilter.addAll(f8);
                                 await pokeData.saveConfig();
                                 setState(() {});
                               },
@@ -211,11 +238,52 @@ class PokemonsPageState extends State<PokemonsPage> {
                       child: Icon(Icons.filter_alt),
                     ),
                     TextButton(
-                      onPressed: null,
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) {
+                          return PokemonSortDialog(
+                            (pokemonSort) async {
+                              switch (pokemonSort) {
+                                case PokemonSort.registerUp:
+                                  sortedPokemons.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                                  break;
+                                case PokemonSort.registerDown:
+                                  sortedPokemons.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                                  break;
+                                case PokemonSort.nickNameUp:
+                                  sortedPokemons.sort((a, b) => a.value.nickname.compareTo(b.value.nickname),);
+                                  break;
+                                case PokemonSort.nickNameDown:
+                                  sortedPokemons.sort((a, b) => -1 * a.value.nickname.compareTo(b.value.nickname),);
+                                  break;
+                                case PokemonSort.nameUp:
+                                  sortedPokemons.sort((a, b) => a.value.name.compareTo(b.value.name),);
+                                  break;
+                                case PokemonSort.nameDown:
+                                  sortedPokemons.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
+                                  break;
+                                default:
+                                  break;
+                              }
+                              if (sort != pokemonSort && pokemonSort != null) {
+                                for (int i = 0; i < sortedPokemons.length; i++) {
+                                  var pokemon = pokemons[sortedPokemons[i].key]!;
+                                  pokemon.viewOrder = i+1;
+                                  await pokeData.addMyPokemon(pokemon);
+                                }
+                              }
+                              pokeData.pokemonsSort = pokemonSort;
+                              await pokeData.saveConfig();
+                              setState(() {});
+                            },
+                            sort
+                          );
+                        }
+                      ),
                       child: Icon(Icons.sort),
                     ),
                     TextButton(
-                      onPressed: (filteredPokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                      onPressed: (sortedPokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                       child: Icon(Icons.edit),
                     ),
                   ],
@@ -254,7 +322,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                               bool isContainedParty = false;
                               for (final e in checkList!.keys) {
                                 if (checkList![e]!) {
-                                  if (filteredPokemons.where((element) => element.value.id == e).first.value.refCount > 0) {
+                                  if (sortedPokemons.where((element) => element.value.id == e).first.value.refCount > 0) {
                                     isContainedParty = true;
                                     break;
                                   }
@@ -275,6 +343,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                       //pokeData.recreateMyPokemon(pokemons);
                                       await pokeData.deleteMyPokemon(deleteIDs, false);
                                       setState(() {
+                                        /*
                                         filteredPokemons = pokemons.entries.where((element) => element.value.id != 0 && ownerFilter.contains(element.value.owner));
                                         filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
                                         filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
@@ -293,7 +362,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                         checkList = {};
                                         for (final e in filteredPokemons) {
                                           checkList![e.key] = false;
-                                        }
+                                        }*/
                                       });
                                     },
                                     () {},    // TODO
@@ -317,6 +386,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                 if (checkList![e]!) {
                                   Pokemon copiedPokemon = pokemons[e]!.copyWith();
                                   copiedPokemon.id = pokeData.getUniqueMyPokemonID();
+                                  copiedPokemon.viewOrder = copiedPokemon.id;
                                   copiedPokemon.refCount = 0;
                                   pokemons[copiedPokemon.id] = copiedPokemon;
                                   await pokeData.addMyPokemon(copiedPokemon);
@@ -324,7 +394,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                               }
                               setState(() {
                                 checkList = {};
-                                for (final e in filteredPokemons) {
+                                for (final e in sortedPokemons) {
                                   checkList![e.key] = false;
                                 }
                               });

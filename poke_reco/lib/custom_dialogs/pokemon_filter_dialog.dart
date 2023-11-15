@@ -1,29 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 
 class PokemonFilterDialog extends StatefulWidget {
   final Future<void> Function (
     List<Owner> ownerFilter,
+    List<int> noFilter,
     List<int> typeFilter,
     List<int> teraTypeFilter,
     List<int> moveFilter,
-    List<Sex> sexFilter,
+    List<int> sexFilter,
     List<int> abilityFilter,
     List<int> temperFilter) onOK;
   final PokeDB pokeData;
   final List<Owner> ownerFilter;
+  final List<int> noFilter;
   final List<int> typeFilter;
   final List<int> teraTypeFilter;
   final List<int> moveFilter;
-  final List<Sex> sexFilter;
+  final List<int> sexFilter;
   final List<int> abilityFilter;
   final List<int> temperFilter;
 
   const PokemonFilterDialog(
     this.pokeData,
     this.ownerFilter,
+    this.noFilter,
     this.typeFilter,
     this.teraTypeFilter,
     this.moveFilter,
@@ -40,6 +44,7 @@ class PokemonFilterDialog extends StatefulWidget {
 class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   bool isFirstBuild = true;
   bool ownerExpanded = true;
+  bool pokemonExpanded = true;
   bool typeExpanded = true;
   bool teraTypeExpanded = true;
   bool moveExpanded = true;
@@ -47,12 +52,14 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   bool abilityExpanded = true;
   bool temperExpanded = true;
   List<Owner> ownerFilter = [];
+  List<int> noFilter = [];
   List<int> typeFilter = [];
   List<int> teraTypeFilter = [];
   List<int> moveFilter = [];
-  List<Sex> sexFilter = [];
+  List<int> sexFilter = [];
   List<int> abilityFilter = [];
   List<int> temperFilter = [];
+  TextEditingController pokemonController = TextEditingController();
   TextEditingController moveController = TextEditingController();
   TextEditingController abilityController = TextEditingController();
   TextEditingController temperController = TextEditingController();
@@ -61,6 +68,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   Widget build(BuildContext context) {
     if (isFirstBuild) {
       ownerFilter = [...widget.ownerFilter];
+      noFilter = [...widget.noFilter];
       typeFilter = [...widget.typeFilter];
       teraTypeFilter = [...widget.teraTypeFilter];
       moveFilter = [...widget.moveFilter];
@@ -128,6 +136,77 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                       ownerFilter.remove(Owner.fromBattle);
                     }
                   });
+                },
+              ),
+            ) : Container(),
+            GestureDetector(
+              onTap:() => setState(() {
+                pokemonExpanded = !pokemonExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('名前'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: pokemonExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            for (var no in noFilter)
+              pokemonExpanded ?
+              ListTile(
+                title: Text(widget.pokeData.pokeBase[no]!.name),
+                leading: Checkbox(
+                  value: noFilter.contains(no),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() {
+                      if (value == true) {
+                        noFilter.add(no);
+                      }
+                      else {
+                        noFilter.remove(no);
+                      }
+                    });
+                  },
+                ),
+              ) : Container(),
+            pokemonExpanded ?
+            ListTile(
+              title: TypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: pokemonController,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: 'ポケモン追加',
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<PokeBase> matches = [];
+                  matches.addAll(widget.pokeData.pokeBase.values);
+                  matches.removeWhere((element) => element.no == 0);
+                  matches.retainWhere((s){
+                    return toKatakana50(s.name.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(suggestion.name),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  pokemonController.text = '';
+                  noFilter.add(suggestion.no);
+                  setState(() {});
                 },
               ),
             ) : Container(),
@@ -315,15 +394,15 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               ListTile(
                 title: type.displayIcon,
                 leading: Checkbox(
-                  value: sexFilter.contains(type),
+                  value: sexFilter.contains(type.id),
                   onChanged: (value) {
                     if (value == null) return;
                     setState(() {
                       if (value == true) {
-                        sexFilter.add(type);
+                        sexFilter.add(type.id);
                       }
                       else {
-                        sexFilter.remove(type);
+                        sexFilter.remove(type.id);
                       }
                     });
                   },
@@ -487,7 +566,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
             onTap: () async {
               Navigator.pop(context);
               await widget.onOK(
-                ownerFilter, typeFilter, teraTypeFilter,
+                ownerFilter, noFilter, typeFilter, teraTypeFilter,
                 moveFilter, sexFilter, abilityFilter,
                 temperFilter,
               );

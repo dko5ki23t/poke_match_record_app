@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialogs/party_delete_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/party_filter_dialog.dart';
+import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -28,8 +30,25 @@ class PartiesPageState extends State<PartiesPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
-    var filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
     var pokeData = appState.pokeData;
+    var winRateMinFilter = pokeData.partiesWinRateMinFilter;
+    var winRateMaxFilter = pokeData.partiesWinRateMaxFilter;
+    var pokemonNoFilter = pokeData.partiesPokemonNoFilter;
+    var filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
+    filteredParties = filteredParties.where((element) => element.value.winRate >= winRateMinFilter);
+    filteredParties = filteredParties.where((element) => element.value.winRate <= winRateMaxFilter);
+    if (pokemonNoFilter.isNotEmpty) {
+      filteredParties = filteredParties.where((element) {
+        for (var pokemon in element.value.pokemons) {
+          if (pokemonNoFilter.contains(pokemon?.no)) return true;
+        }
+        return false;
+      });
+    }
+    var sort = pokeData.partiesSort;
+    var sortedParties = filteredParties.toList();
+    sortedParties.sort((a, b) => a.value.viewOrder.compareTo(b.value.viewOrder));
+
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
@@ -47,19 +66,19 @@ class PartiesPageState extends State<PartiesPage> {
     Widget lists;
     if (checkList == null) {
       checkList = {};
-      for (final e in filteredParties) {
+      for (final e in sortedParties) {
         checkList![e.key] = false;
       }
     }
     // データベースの読み込みタイミングによってはリストが0の場合があるため
-    if (checkList!.length != filteredParties.length) {
+    if (checkList!.length != sortedParties.length) {
       checkList = {};
-      for (final e in filteredParties) {
+      for (final e in sortedParties) {
         checkList![e.key] = false;
       }
     }
 
-    if (filteredParties.isEmpty) {
+    if (sortedParties.isEmpty) {
       lists = Center(
         child: Text('表示できるパーティがありません。'),
       );
@@ -67,9 +86,22 @@ class PartiesPageState extends State<PartiesPage> {
     else {
       if (isEditMode) {
         lists = Scrollbar(
-          child: ListView(
+          child: ReorderableListView(
+            onReorder: (int oldIndex, int newIndex) {
+              setState(() {
+                if (oldIndex < newIndex) {
+                  newIndex -= 1;
+                }
+                final item = sortedParties.removeAt(oldIndex);
+                sortedParties.insert(newIndex, item);
+                for (int i = 0; i < sortedParties.length; i++) {
+                  var party = parties[sortedParties[i].key]!;
+                  party.viewOrder = i+1;
+                }
+              });
+            },
             children: [
-              for (final e in filteredParties)
+              for (final e in sortedParties)
                 PartyTile(
                   e.value, theme,
                   leading: Icon(Icons.drag_handle),
@@ -90,7 +122,7 @@ class PartiesPageState extends State<PartiesPage> {
         lists = Scrollbar(
           child: ListView(
             children: [
-              for (final party in filteredParties)
+              for (final party in sortedParties)
                 PartyTile(
                   party.value, theme,
                   leading: Icon(Icons.group),
@@ -108,7 +140,10 @@ class PartiesPageState extends State<PartiesPage> {
         actions: [
           isEditMode ?
           TextButton(
-            onPressed: () => setState(() => isEditMode = false),
+            onPressed: () {
+              setState(() => isEditMode = false);
+              pokeData.partiesSort = null;
+            },
             child: Text('完了'),
           ) :
           Align(
@@ -116,15 +151,76 @@ class PartiesPageState extends State<PartiesPage> {
             child: Row(
               children: [
                 TextButton(
-                  onPressed: null,
+                  onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) {
+                            return PartyFilterDialog(
+                              pokeData,
+                              winRateMinFilter,
+                              winRateMaxFilter,
+                              pokemonNoFilter,
+                              (f1, f2, f3) async {
+                                pokemonNoFilter.clear();
+                                pokeData.partiesWinRateMinFilter = f1;
+                                pokeData.partiesWinRateMaxFilter = f2;
+                                pokemonNoFilter.addAll(f3);
+                                await pokeData.saveConfig();
+                                setState(() {});
+                              },
+                            );
+                          }
+                        );
+                      },
                   child: Icon(Icons.filter_alt),
                 ),
                 TextButton(
-                  onPressed: null,
+                  onPressed: () => showDialog(
+                    context: context,
+                    builder: (_) {
+                      return PartySortDialog(
+                        (partySort) async {
+                          switch (partySort) {
+                            case PartySort.registerUp:
+                              sortedParties.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                              break;
+                            case PartySort.registerDown:
+                              sortedParties.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                              break;
+                            case PartySort.nameUp:
+                              sortedParties.sort((a, b) => a.value.name.compareTo(b.value.name),);
+                              break;
+                            case PartySort.nameDown:
+                              sortedParties.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
+                              break;
+                            case PartySort.winRateUp:
+                              sortedParties.sort((a, b) => a.value.winRate.compareTo(b.value.winRate),);
+                              break;
+                            case PartySort.winRateDown:
+                              sortedParties.sort((a, b) => -1 * a.value.winRate.compareTo(b.value.winRate),);
+                              break;
+                            default:
+                              break;
+                          }
+                          if (sort != partySort && partySort != null) {
+                            for (int i = 0; i < sortedParties.length; i++) {
+                              var party = parties[sortedParties[i].key]!;
+                              party.viewOrder = i+1;
+                              await pokeData.addParty(party);
+                            }
+                          }
+                          pokeData.partiesSort = partySort;
+                          await pokeData.saveConfig();
+                          setState(() {});
+                        },
+                        sort
+                      );
+                    }
+                  ),
                   child: Icon(Icons.sort),
                 ),
                 TextButton(
-                  onPressed: (filteredParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                  onPressed: (sortedParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                   child: Icon(Icons.edit),
                 ),
               ],
@@ -175,9 +271,8 @@ class PartiesPageState extends State<PartiesPage> {
                                     //pokeData.recreateParty(parties);
                                     await pokeData.deleteParty(deleteIDs, false);
                                     setState(() {
-                                      filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
                                       checkList = {};
-                                      for (final e in filteredParties) {
+                                      for (final e in sortedParties) {
                                         checkList![e.key] = false;
                                       }
                                     });
@@ -203,15 +298,15 @@ class PartiesPageState extends State<PartiesPage> {
                               if (checkList![e]!) {
                                 Party copiedParty = parties[e]!.copyWith();
                                 copiedParty.id = pokeData.getUniquePartyID();
+                                copiedParty.viewOrder = copiedParty.id;
                                 copiedParty.refCount = 0;
                                 parties[copiedParty.id] = copiedParty;
                                 await pokeData.addParty(copiedParty);
                               }
                             }
                             setState(() {
-                              filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
                               checkList = {};
-                              for (final e in filteredParties) {
+                              for (final e in sortedParties) {
                                 checkList![e.key] = false;
                               }
                             });

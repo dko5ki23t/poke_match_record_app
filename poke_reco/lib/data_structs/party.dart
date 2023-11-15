@@ -4,11 +4,15 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 
 class Party {
   int id = 0;    // データベースのプライマリーキー
+  int viewOrder = 0;  // 無効値
   String name = '';
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
   List<Item?> _items = List.generate(6, (i) => null);
   Owner owner = Owner.mine;
   int refCount = 0;
+  int winCount = 0;
+  int usedCount = 0;
+  int winRate = 0;
 
   // getter
   Pokemon get pokemon1 => _pokemons[0]!;
@@ -54,6 +58,7 @@ class Party {
   Party copyWith() =>
     Party()
     ..id = id
+    ..viewOrder = viewOrder
     ..name = name
     .._pokemons = [..._pokemons]
     .._items = [..._items]
@@ -64,6 +69,7 @@ class Party {
   Map<String, dynamic> toMap() {
     return {
       partyColumnId: id,
+      partyColumnViewOrder: viewOrder,
       partyColumnName: name,
       partyColumnPokemonId1: pokemon1.id,
       partyColumnPokemonItem1: item1?.id,

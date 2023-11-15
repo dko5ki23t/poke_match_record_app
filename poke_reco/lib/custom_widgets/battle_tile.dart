@@ -16,6 +16,7 @@ class BattleTile extends ListTile {
   super(
     isThreeLine: true,
     leading: leading,
+    key: Key('${battle.id}'),
     title: Row(
       children: [
         Expanded(

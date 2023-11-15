@@ -26,6 +26,7 @@ enum BattleType {
 
 class Battle {
   int id = 0; // 無効値
+  int viewOrder = 0;  // 無効値
   String name = '';
   BattleType type = BattleType.rankmatch;
   DateTime datetime = DateTime.now();
@@ -40,6 +41,7 @@ class Battle {
   Battle copyWith() =>
     Battle()
     ..id = id
+    ..viewOrder = viewOrder
     ..name = name
     ..type = type
     ..datetime = datetime
@@ -55,7 +57,6 @@ class Battle {
 
   // getter
   bool get isValid {
-    // TODO
     return
       name != '' &&
       _parties[0].isValid &&
@@ -109,6 +110,7 @@ class Battle {
     }
     return {
       battleColumnId: id,
+      battleColumnViewOrder: viewOrder,
       battleColumnName: name,
       battleColumnTypeId: type.id,
       battleColumnDate: formattedDateTime,

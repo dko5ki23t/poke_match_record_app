@@ -196,16 +196,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // 相手のパーティ、ポケモンも登録
         for (int i = 0; i < opponentParty.pokemonNum; i++) {
           opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+          opponentParty.pokemons[i]!.viewOrder = opponentParty.pokemons[i]!.id;
           opponentParty.pokemons[i]!.owner = Owner.fromBattle;
           pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
           await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
         }
         opponentParty.id = pokeData.getUniquePartyID();
+        opponentParty.viewOrder = opponentParty.id;
         opponentParty.owner = Owner.fromBattle;
         parties[opponentParty.id] = opponentParty;
         await pokeData.addParty(opponentParty);
 
         battle.id = pokeData.getUniqueBattleID();
+        battle.viewOrder = battle.id;
         battles[battle.id] = battle;
       }
       else {
@@ -213,6 +216,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           int pokemonID = opponentParty.pokemons[i]!.id;
           if (pokemonID == 0) {   // 編集時に追加したポケモン
             opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
+            opponentParty.pokemons[i]!.viewOrder = opponentParty.pokemons[i]!.id;
             opponentParty.pokemons[i]!.owner = Owner.fromBattle;
             pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
             await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
@@ -238,7 +242,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           checkedPokemons.own = [];
           checkedPokemons.opponent = 0;
           if (turns.isNotEmpty) {
-            checkedPokemons.own.add(turns[0].getInitialPokemonIndex(PlayerType(PlayerType.me)));
+            checkedPokemons.own = [0, 0, 0];
+            var states = turns.first.getInitialPokemonStates(PlayerType(PlayerType.me));
+            for (int i = 0; i < states.length; i++) {
+              if (states[i].battlingNum != 0) {
+                checkedPokemons.own[states[i].battlingNum-1] = i+1;
+              }
+            }
+            checkedPokemons.own.removeWhere((element) => element == 0);
             checkedPokemons.opponent = turns[0].getInitialPokemonIndex(PlayerType(PlayerType.opponent));
           }
           setState(() {});
@@ -250,11 +261,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           if (turns.isNotEmpty) {
             var states = turns.first.getInitialPokemonStates(PlayerType(PlayerType.me));
             for (int i = 0; i < states.length; i++) {
-              if (states[i].isBattling && !checkedPokemons.own.contains(i+1)) {
+              if (states[i].battlingNum != checkedPokemons.own.indexWhere((e) => e == i+1)+1) {
                 battlingCheck = false;
                 break;
               }
             }
+            states = turns.first.getInitialPokemonStates(PlayerType(PlayerType.opponent));
           }
           if (turns.isEmpty ||
               turns.first.getInitialPokemonIndex(PlayerType(PlayerType.me)) != checkedPokemons.own[0] ||
@@ -271,7 +283,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..playerType = PlayerType(PlayerType.me)
                 ..pokemon = ownParty.pokemons[i]!
                 ..remainHP = ownParty.pokemons[i]!.h.real
-                ..isBattling = checkedPokemons.own.contains(i+1)
+                ..battlingNum = checkedPokemons.own.indexWhere((e) => e == i+1) + 1
                 ..setHoldingItemNoEffect(ownParty.items[i])
                 ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
                 ..currentAbility = ownParty.pokemons[i]!.ability
@@ -294,7 +306,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               final state = PokemonState()
                 ..playerType = PlayerType(PlayerType.opponent)
                 ..pokemon = poke
-                ..isBattling = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.opponent))
+                ..battlingNum = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.opponent)) ? 1 : 0
                 ..minStats = [
                   for (int j = 0; j < StatIndex.size.index; j++)
                   SixParams(poke.stats[j].race, 0, 0, minReals[j])]

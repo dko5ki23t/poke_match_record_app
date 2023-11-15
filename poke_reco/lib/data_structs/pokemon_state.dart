@@ -16,8 +16,8 @@ class PokemonState {
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
-  bool _isFainting = false;      // ひんしかどうか
-  bool isBattling = false;      // バトルに参加しているかどうか
+  bool _isFainting = false;     // ひんしかどうか
+  int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
   Item? _holdingItem = Item(0, '', 0, 0, AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
@@ -42,7 +42,7 @@ class PokemonState {
     ..remainHPPercent = remainHPPercent
     ..teraType = teraType
     .._isFainting = _isFainting
-    ..isBattling = isBattling
+    ..battlingNum = battlingNum
     .._holdingItem = _holdingItem?.copyWith()
     ..usedPPs = [...usedPPs]
     .._statChanges = [..._statChanges]
@@ -234,7 +234,7 @@ class PokemonState {
 
   // ポケモン交代や死に出しにより登場する場合の処理
   void processEnterEffect(bool isOwn, PhaseState state, PokemonState yourState) {
-    isBattling = true;
+    if (battlingNum < 1) battlingNum = 1;
     currentAbility = pokemon.ability;
     processPassiveEffect(isOwn, state, yourState);   // パッシブ効果
     Weather.processWeatherEffect(Weather(0), state.weather, isOwn ? this : null, isOwn ? null : this);  // 天気の影響
@@ -1016,8 +1016,8 @@ class PokemonState {
     }
     // _isFainting
     pokemonState._isFainting = int.parse(stateElements[4]) != 0;
-    // isBattling
-    pokemonState.isBattling = int.parse(stateElements[5]) != 0;
+    // battlingNum
+    pokemonState.battlingNum = int.parse(stateElements[5]);
     // holdingItem
     pokemonState.setHoldingItemNoEffect(stateElements[6] == '' ? null : pokeData.items[int.parse(stateElements[6])]);
     // usedPPs
@@ -1110,8 +1110,8 @@ class PokemonState {
     // _isFainting
     ret += _isFainting ? '1' : '0';
     ret += split1;
-    // isBattling
-    ret += isBattling ? '1' : '0';
+    // battlingNum
+    ret += battlingNum.toString();
     ret += split1;
     // holdingItem
     ret += holdingItem != null ? holdingItem!.id.toString() : '';
