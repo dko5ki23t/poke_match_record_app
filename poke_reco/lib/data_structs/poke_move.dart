@@ -321,6 +321,15 @@ class TurnMove {
       ret.add('わざの1つを${move.displayName}で確定しました。');
     }
 
+    // わざPP消費
+    if (continuousCount == 0 && isSuccess) {
+      int moveIdx = myState.moves.indexWhere((element) => element.id != 0 && element.id == move.id);
+      if (moveIdx >= 0) {
+        myState.usedPPs[moveIdx]++;
+        if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
+      }
+    }
+
     if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
 
     List<IndividualField> myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
@@ -3118,15 +3127,6 @@ class TurnMove {
       }
     }
 
-    // わざPP消費
-    if (continuousCount == 0) {
-      int moveIdx = myState.moves.indexWhere((element) => element.id != 0 && element.id == move.id);
-      if (moveIdx >= 0) {
-        myState.usedPPs[moveIdx]++;
-        if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
-      }
-    }
-
     // 最後に使用した(PP消費した)わざセット
     // TODO:replacedMove?
     myState.lastMove = move;
@@ -5193,21 +5193,25 @@ class TurnMove {
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '成否',
+                            labelText: '命中',
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
-                              value: true,
+                              value: MoveHit.hit,
                               child: Text('成功'),
                             ),
                             DropdownMenuItem(
-                              value: false,
-                              child: Text('うまくきまらなかった！'),
+                              value: MoveHit.notHit,
+                              child: Text('当たらなかった'),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveHit.fail,
+                              child: Text('うまく決まらなかった'),
                             ),
                           ],
-                          value: isSuccess,
+                          value: moveHits[continuousCount].id,
                           onChanged: (value) {
-                            isSuccess = value;
+                            moveHits[continuousCount] = MoveHit(value);
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
@@ -5242,7 +5246,7 @@ class TurnMove {
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: false,
-                              child: Text('うまくきまらなかった！'),
+                              child: Text('うまく決まらなかった！'),
                             ),
                           ],
                           value: false,

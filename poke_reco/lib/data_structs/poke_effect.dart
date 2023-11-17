@@ -1002,6 +1002,7 @@ class TurnEffect {
           case AilmentEffect.badPoison:
           case AilmentEffect.saltCure:
           case AilmentEffect.curse:
+          case AilmentEffect.ingrain:
             if (playerType.id == PlayerType.me) {
               myState.remainHP -= extraArg1;
             }

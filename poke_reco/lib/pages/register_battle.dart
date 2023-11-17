@@ -187,9 +187,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
       var battle = widget.battle;
-      if (battle.turns.isNotEmpty) {
-        if (battle.turns.last.phases.where((e) => e.isMyWin).isNotEmpty) battle.isMyWin = true;
-        if (battle.turns.last.phases.where((e) => e.isYourWin).isNotEmpty) battle.isYourWin = true;
+      if (turns.isNotEmpty) {
+        if (turns.last.phases.where((e) => e.isMyWin).isNotEmpty) battle.isMyWin = true;
+        if (turns.last.phases.where((e) => e.isYourWin).isNotEmpty) battle.isYourWin = true;
+        for (var phase in turns[turnNum-1].phases) {
+          phase.isAutoSet = false;
+        }
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
       if (widget.isNew) {
@@ -376,6 +379,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // 表示のスクロール位置をトップに
           turnScrollController.jumpTo(0);
           Turn prevTurn = turns[turnNum-1];
+          for (var phase in prevTurn.phases) {
+            phase.isAutoSet = false;
+          }
           turnNum++;
           if (turns.length < turnNum) {
             turns.add(Turn());
@@ -448,6 +454,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         case RegisterBattlePageType.turnPage:
           // 表示のスクロール位置をトップに
           turnScrollController.jumpTo(0);
+          for (var phase in turns[turnNum-1].phases) {
+            phase.isAutoSet = false;
+          }
           turnNum--;
           if (turnNum == 0) {
             turnNum = 1;
@@ -487,11 +496,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             textEditingControllerList4 = List.generate(
               currentTurn.phases.length,
               (index) => TextEditingController(text:
-                /*currentTurn.phases[index].getEditingControllerText3(
+                currentTurn.phases[index].getEditingControllerText4(
                   currentTurn.getProcessedStates(
                     index, ownParty, opponentParty
-                  )
-                )*/ ''
+                  ),
+                ),
               )
             );
             pageType = RegisterBattlePageType.turnPage;
@@ -1026,10 +1035,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   }
 
   // 自動追加されたフェーズを削除
-  void _clearAutoSetPhase(MyAppState appState) {
+  void _clearAutoSetPhase(MyAppState appState, int targetIdx) {
     List<int> removeIdxs = [];
     var phases = widget.battle.turns[turnNum-1].phases;
-    for (int i = 0; i < phases.length; i++) {
+    for (int i = targetIdx; i < phases.length; i++) {
       if (phases[i].isAutoSet) {
         removeIdxs.add(i);
       }
@@ -1060,7 +1069,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
-    //_clearAutoSetPhase(appState);     // 一旦、自動追加したフェーズは削除する
 
     int beginIdx = 0;
     int timingId = 0;
@@ -1126,33 +1134,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var phases = widget.battle.turns[turnNum-1].phases;
 
     while (s1 != end) {
-      // 自動入力効果を作成
       currentTimingID = changingState ? AbilityTiming.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
-      if ((timingListIdx >= sameTimingList.length ||
-           sameTimingList[timingListIdx].first.turnEffect.timing.id != currentTimingID ||
-           sameTimingList[timingListIdx].first.needAssist) &&
-           !appState.adjustPhaseByDelete
-      ) {
-        assistList = currentState.getDefaultEffectList(
-          currentTurn, AbilityTiming(currentTimingID),
-          changeOwn, changeOpponent, currentState, lastAction, continuousCount,
-        );
-        for (var del in delAssistList) {
-          int findIdx = assistList.indexWhere((element) => element.nearEqual(del));
-          if (findIdx >= 0) assistList.removeAt(findIdx);
-        }
-        if (timingListIdx < sameTimingList.length) {
-          for (var e in sameTimingList[timingListIdx]) {
-            e.needAssist = false;
-          }
-        }
-        //changeOwn = false;
-        //changeOpponent = false;
-      }
-      else {
-        assistList.clear();
-        delAssistList.clear();
-      }
       bool isInserted = false;
       if (changingState) {    // ポケモン交代後状態
         if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
@@ -1653,6 +1635,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           s1 = 4;   // わざ使用後状態へ
                         }
                         else {
+                          changeOwn = phases[i].move!.getChangePokemonIndex(PlayerType(PlayerType.me)) != null;
+                          changeOpponent = phases[i].move!.getChangePokemonIndex(PlayerType(PlayerType.opponent)) != null;
                           s1 = 6;   // 交代わざ使用後状態へ
                         }
                       }
@@ -1954,10 +1938,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // 更新要求インデックス以降はフォームの内容を変える
       // 追加されたフェーズのフォームの内容を変える
       if (isInserted || (appState.needAdjustPhases >= 0 && appState.needAdjustPhases <= i)) {
-        textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
-        textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState, lastAction);
-        textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState, lastAction);
-        textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
+        if (!phases[i].isAdding) {
+          textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
+          textEditingControllerList2[i].text = phases[i].getEditingControllerText2(currentState, lastAction);
+          textEditingControllerList3[i].text = phases[i].getEditingControllerText3(currentState, lastAction);
+          textEditingControllerList4[i].text = phases[i].getEditingControllerText4(currentState);
+        }
       }
 
       if (s1 != end &&
@@ -1989,6 +1975,54 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
 
       i++;
+
+      // 自動入力効果を作成
+      // 前回までと違うタイミング、かつ更新要求インデックス以降のとき作成
+      if (s1 != end) {
+        var nextTimingID = changingState ? AbilityTiming.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+        if (/*(timingListIdx >= sameTimingList.length ||
+            sameTimingList[timingListIdx].first.turnEffect.timing.id != nextTimingID ||*/
+            ((currentTimingID != nextTimingID)/*||
+            sameTimingList[timingListIdx].first.needAssist*/) &&
+            appState.needAdjustPhases <= i &&
+            !appState.adjustPhaseByDelete
+        ) {
+          assistList = currentState.getDefaultEffectList(
+            currentTurn, AbilityTiming(nextTimingID),
+            changeOwn, changeOpponent, currentState, lastAction, continuousCount,
+          );
+          // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
+          // それ以外で入力済みの自動入力は削除
+          List<int> removeIdxs = [];
+          for (int j = i; j < phases.length; j++) {
+            if (phases[j].timing.id != nextTimingID) break;
+            int findIdx = assistList.indexWhere((element) => element.nearEqual(phases[j]));
+            if (findIdx >= 0) {
+              assistList.removeAt(findIdx);
+            }
+            else if (phases[j].isAutoSet) {
+              removeIdxs.add(j);
+            }
+          }
+          // 削除インデックスリストの重複削除、ソート(念のため)
+          removeIdxs = removeIdxs.toSet().toList();
+          removeIdxs.sort();
+          for (int i = removeIdxs.length-1; i >= 0; i--) {
+            _removeAtPhase(removeIdxs[i], appState);
+          }
+          if (timingListIdx < sameTimingList.length) {
+            for (var e in sameTimingList[timingListIdx]) {
+              e.needAssist = false;
+            }
+          }
+          //changeOwn = false;
+          //changeOpponent = false;
+        }
+        else if (currentTimingID != nextTimingID) {
+          assistList.clear();
+          delAssistList.clear();
+        }
+      }
     }
 
 /*

@@ -184,7 +184,7 @@ class BattleTimingInputPanel extends Column {
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
-      sameTimingList,
+      prevState, sameTimingList,
       sameTimingList.first.phaseIdx,
       timing, textEditControllerList1, textEditControllerList2,
       textEditControllerList3, textEditControllerList4,) :

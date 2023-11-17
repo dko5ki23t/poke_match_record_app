@@ -820,7 +820,9 @@ class PhaseState {
       }
 
       // こだいかっせい/ブーストエナジー発動の余地がある場合
-      if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5).isEmpty) {
+      if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5).isEmpty &&
+          ((isMe && !changedOwn) || (!isMe && !changedOpponent))    // 交代で手持ちに戻るときでないなら
+      ) {
         if (weather.id == Weather.sunny) playerTimingIDs.add(AbilityTiming.sunnyBoostEnergy);
         if (field.id == Field.electricTerrain) playerTimingIDs.add(AbilityTiming.elecFieldBoostEnergy);
         if (myState.holdingItem?.id == 1696) playerTimingIDs.addAll([111, 112]);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -16,6 +17,7 @@ class BattleTerastalInputColumn extends Column {
     MyAppState appState,
     int focusPhaseIdx,
     void Function(int) onFocus,
+    PhaseState prevState,       // 直前までの状態
     List<TurnEffectAndStateAndGuide> sameTimingList,
     int firstIdx,
     AbilityTiming timing,
@@ -54,6 +56,7 @@ class BattleTerastalInputColumn extends Column {
                             onPressed: i != 0 ? () {
                               TurnEffect.swap(turn.phases, firstIdx+i-1, firstIdx+i);
                               listShallowSwap(appState.editingPhase, firstIdx+i-1, firstIdx+i);
+                              appState.needAdjustPhases = firstIdx+i-1;
                               onFocus(firstIdx+i);
                             }: null,
                           ) : Container(),
@@ -63,6 +66,7 @@ class BattleTerastalInputColumn extends Column {
                             onPressed: i < sameTimingList.length-1 && !sameTimingList[i+1].turnEffect.isAdding ? () {
                               TurnEffect.swap(turn.phases, firstIdx+i, firstIdx+i+1);
                               listShallowSwap(appState.editingPhase, firstIdx+i, firstIdx+i+1);
+                              appState.needAdjustPhases = firstIdx+i;
                               onFocus(firstIdx+i+2);
                             } : null,
                           ) :
@@ -117,20 +121,20 @@ class BattleTerastalInputColumn extends Column {
                             ),
                             items: <DropdownMenuItem>[
                               _myDropDown(
-                                !sameTimingList[i].phaseState.hasOwnTerastal,
+                                !_getPrevState(prevState, i, sameTimingList).hasOwnTerastal,
                                 PlayerType.me,
-                                '${sameTimingList[i].phaseState.getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/あなた',
+                                '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/あなた',
                               ),
                               _myDropDown(
-                                !sameTimingList[i].phaseState.hasOpponentTerastal,
+                                !_getPrevState(prevState, i, sameTimingList).hasOpponentTerastal,
                                 PlayerType.opponent,
-                                '${sameTimingList[i].phaseState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
+                                '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
                               ),
                             ],
                             value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
-                              var teraType = sameTimingList[i].phaseState.getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType;
+                              var teraType = _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType;
                               if (teraType.id != 0) {
                                 turn.phases[firstIdx+i].effectId = teraType.id;
                               }
@@ -188,6 +192,14 @@ class BattleTerastalInputColumn extends Column {
         ),
     ],
   );
+
+  static PhaseState _getPrevState(
+    PhaseState prevState, int i,
+    List<TurnEffectAndStateAndGuide> sameTimingList)
+  {
+    if (i==0) return prevState;
+    return sameTimingList[i-1].phaseState;
+  }
 
   static DropdownMenuItem<int> _myDropDown(bool enabled, int value, String label) {
     return DropdownMenuItem(
