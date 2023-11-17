@@ -8,6 +8,7 @@ import 'package:poke_reco/pages/register_party.dart';
 import 'package:poke_reco/pages/register_pokemon.dart';
 import 'package:poke_reco/pages/pokemons.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/pages/settings.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -141,7 +142,10 @@ class _MyHomePageState extends State<MyHomePage> {
         );
         break;
       case TabItem.settings:
-        page = Container();
+        page = SettingTabNavigator(
+          navigatorKey: _navigatorKeys[TabItem.settings],
+          tabItem: TabItem.settings,
+        );
         break;
       default:
         throw UnimplementedError('no widget');
@@ -202,13 +206,24 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
   void _push(BuildContext context, Pokemon myPokemon, bool isNew) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) {
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
           // 新規作成
           return RegisterPokemonPage(
             onFinish: () => _pop(context),
             myPokemon: myPokemon,
             isNew: isNew,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final Offset begin = Offset(1.0, 0.0); // 右から左
+          const Offset end = Offset.zero;
+          final Animatable<Offset> tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final Animation<Offset> offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
           );
         },
       ),
@@ -416,6 +431,88 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
               default:
                 return BattlesPage(
                   onAdd: (battle, isNew) => _push(context, battle, isNew)
+                );
+            }
+          },
+        );
+      },
+    );
+  }
+}
+
+class SettingTabNavigatorRoutes {
+  static const String root = '/';
+  static const String reset = '/reset';
+  static const String license = '/license';
+}
+
+class SettingTabNavigator extends StatefulWidget {
+  const SettingTabNavigator({
+    Key? key,
+    required this.navigatorKey,
+    required this.tabItem,
+  }) : super(key: key);
+  final GlobalKey<NavigatorState>? navigatorKey;
+  final TabItem tabItem;
+
+  @override
+  State<SettingTabNavigator> createState() => _SettingTabNavigatorState();
+}
+
+class _SettingTabNavigatorState extends State<SettingTabNavigator> {
+  void _push(BuildContext context, String route) {
+    Widget pushPage = Container();
+    switch (route) {
+      case SettingTabNavigatorRoutes.reset:
+        pushPage = SettingResetPage();
+        break;
+      case SettingTabNavigatorRoutes.license:
+        pushPage = SettingLicensePage();
+        break;
+    }
+
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return pushPage;
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final Offset begin = Offset(1.0, 0.0); // 右から左
+          const Offset end = Offset.zero;
+          final Animatable<Offset> tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final Animation<Offset> offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pop(BuildContext context) {
+    Navigator.pop(
+      context,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      key: widget.navigatorKey,
+      initialRoute: SettingTabNavigatorRoutes.root,
+      onGenerateRoute: (routeSettings) {
+        return MaterialPageRoute(
+          builder: (context) {
+            switch (routeSettings.name) {
+              case SettingTabNavigatorRoutes.reset:
+                return SettingResetPage();
+              default:
+                return SettingsPage(
+                  onReset: () => _push(context, SettingTabNavigatorRoutes.reset),
+                  viewLicense: () => _push(context, SettingTabNavigatorRoutes.license),
                 );
             }
           },

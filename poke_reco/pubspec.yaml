@@ -91,6 +91,8 @@ flutter:
      - assets/Moves.db
      - assets/PokeBases.db
      - assets/EggGroup.db
+     - assets/licenses/LICENSE
+     - assets/licenses/OFL.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
