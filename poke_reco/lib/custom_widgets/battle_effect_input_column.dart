@@ -431,6 +431,8 @@ class BattleEffectInputColumn extends Column {
         return '行動決定直後';
       case AbilityTiming.afterMove:
         return 'わざ使用後';
+      case AbilityTiming.afterTerastal:
+        return 'テラスタル後';
       default:
         return '';
     }

@@ -848,6 +848,23 @@ class TurnEffect {
                 yourFields[findIdx].extraArg1 = 2;
               }
               break;
+            case 303:     // おもかげやどし
+              int statIdx = 4;    // みどりのめん->すばやさ
+              switch (myState.pokemon.no) {
+                case 10273:   // いどのめん->とくぼう
+                  statIdx = 3;
+                  break;
+                case 10274:   // かまどのめん->こうげき
+                  statIdx = 0;
+                  break;
+                case 10275:   // いしずえのめん->ぼうぎょ
+                  statIdx = 1;
+                  break;
+                default:
+                  break;
+              }
+              myState.addStatChanges(true, statIdx, 1, yourState, abilityId: effectId);
+              break;
             default:
               break;
           }
@@ -984,6 +1001,9 @@ class TurnEffect {
         break;
       case EffectType.terastal:
         myState.teraType = PokeType.createFromId(effectId);
+        if (pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID != 0) {   // テラスタルによってとくせいが変わる場合
+          myState.currentAbility = pokeData.abilities[pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!;
+        }
         if (playerType.id == PlayerType.me) {
           state.hasOwnTerastal = true;
         }
@@ -1478,6 +1498,22 @@ class TurnEffect {
           }
         }
         break;
+      case AbilityTiming.afterTerastal:   // テラスタル後
+        {
+          if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
+            bool isMe = playerType.id == PlayerType.me;
+            bool isTerastal = pokemonState!.teraType?.id != 0 && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
+
+            if (isTerastal && pokemonState.currentAbility.id == 303) {
+              ret.add(TurnEffect()
+                ..playerType = playerType
+                ..effect = EffectType(EffectType.ability)
+                ..effectId = 303
+              );
+            }
+          }
+        }
+        break;
       default:
         break;
     }
@@ -1638,6 +1674,7 @@ class TurnEffect {
       case AbilityTiming.afterMove:
       case AbilityTiming.pokemonAppear:
       case AbilityTiming.everyTurnEnd:
+      case AbilityTiming.afterTerastal:
         return displayName;
       default:
         return '';

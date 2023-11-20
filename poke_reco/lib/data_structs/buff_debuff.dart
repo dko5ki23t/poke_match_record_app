@@ -188,6 +188,7 @@ class BuffDebuff {
   static const int recoiling = 183;       // わざの反動で動けない状態(隠しステータス)
   static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍    // TODO
   static const int protean = 185;         // へんげんじざい/リベロ発動済み(隠しステータス)
+  static const int attack1_2 = 186;       // こうげきわざ威力1.2倍
 
   static const _displayNameMap = {
     0:  '',
@@ -375,6 +376,7 @@ class BuffDebuff {
     182: '',
     183: '',
     184: '相手わざ必中・ダメージ2倍',
+    186: 'こうげきわざ威力1.2倍',
   };
 
   static const _displayTurnMap = {

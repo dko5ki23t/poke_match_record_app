@@ -310,6 +310,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..playerType = PlayerType(PlayerType.opponent)
                 ..pokemon = poke
                 ..battlingNum = i+1 == turn.getInitialPokemonIndex(PlayerType(PlayerType.opponent)) ? 1 : 0
+                ..setHoldingItemNoEffect(pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
                 ..minStats = [
                   for (int j = 0; j < StatIndex.size.index; j++)
                   SixParams(poke.stats[j].race, 0, 0, minReals[j])]
@@ -1121,6 +1122,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       8: AbilityTiming.everyTurnEnd,
       9: AbilityTiming.gameSet,
       10: AbilityTiming.terastaling,
+      11: AbilityTiming.afterTerastal,
     };
     const Map<int, int> s2TimingMap = {
       1: AbilityTiming.afterMove,
@@ -1581,8 +1583,27 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 break;
               case 10:      // テラスタル処理状態
                 if (i >= phases.length || phases[i].timing.id != AbilityTiming.terastaling) {
-                  // TODO:自動追加
-                  /*
+                  _insertPhase(i, TurnEffect()
+                    ..timing = AbilityTiming(AbilityTiming.terastaling)
+                    ..effect = EffectType(EffectType.terastal)
+                    ..isAdding = true,
+                    appState
+                  );
+                  isInserted = true;
+                  s1 = 11;  // テラスタル後状態へ
+                  timingListIdx++;
+                  isAssisting = false;
+                }
+                terastalCount++;
+                if (terastalCount >= maxTerastal) {
+                  s1 = 11;  // テラスタル後状態へ
+                  timingListIdx++;
+                  isAssisting = false;
+                }
+                break;
+              case 11:      // テラスタル後状態
+                if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterTerastal) {
+                  // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
                     delAssistList.add(assistList.first);
@@ -1590,10 +1611,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     isAssisting = true;
                     isInserted = true;
                   }
-                  else {*/
+                  else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.terastaling)
-                      ..effect = EffectType(EffectType.terastal)
+                      ..timing = AbilityTiming(AbilityTiming.afterTerastal)
                       ..isAdding = true,
                       appState
                     );
@@ -1601,13 +1621,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     s1 = 2; // 行動選択状態へ
                     timingListIdx++;
                     isAssisting = false;
-                  //}
+                  }
                 }
-                terastalCount++;
-                if (terastalCount >= maxTerastal) {
-                  s1 = 2; // 行動選択状態へ
-                  timingListIdx++;
-                  isAssisting = false;
+                else {
+                  // 自動追加リストに載っているものがあればリストから除外
+                  delAssistList.add(phases[i]);
+                  isAssisting = true;
                 }
                 break;
               case 2:       // 行動選択状態

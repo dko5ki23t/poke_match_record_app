@@ -574,6 +574,21 @@ class Item {
       case 1696:  // パンチグローブ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.punchNotDirect1_1));
         break;
+      case 2106:  // いどのめん
+        if (myState.pokemon.no == 10273) {    // オーガポン
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
+        }
+        break;
+      case 2107:  // かまどのめん
+        if (myState.pokemon.no == 10274) {    // オーガポン
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
+        }
+        break;
+      case 2108:  // いしずえのめん
+        if (myState.pokemon.no == 10275) {    // オーガポン
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
+        }
+        break;
     }
   }
 
@@ -581,59 +596,43 @@ class Item {
     switch (id) {
       case 112:     // こんごうだま
         if (myState.pokemon.no == 483) {    // ディアルガ
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steelAttack1_2);
         }
         break;
       case 113:     // しらたま
         if (myState.pokemon.no == 484) {    // パルキア
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterAttack1_2);
         }
         break;
       case 442:     // はっきんだま
         if (myState.pokemon.no == 487) {    // ギラティナ
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
         }
         break;
       case 202:     // こころのしずく
         if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {   // ラティアス/ラティオス
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
         }
         break;
       case 190:   // ひかりのこな
       case 232:   // のんきのおこう
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.yourAccuracy0_9);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_9);
         break;
       case 197:   // こだわりハチマキ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.gorimuchu);
         break;
       case 213:   // でんきだま
         if (myState.pokemon.no == 25) {     // ピカチュウ
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attackMove2);
         }
         break;
       case 235:   // ふといホネ
         if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {   // カラカラ/ガラガラ
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack2);
         }
         break;
       case 233:   // ラッキーパンチ
@@ -648,14 +647,12 @@ class Item {
         break;
       case 203:   // しんかいのキバ
         if (myState.pokemon.no == 366) {    // パールル
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialAttack2);
         }
         break;
       case 204:   // しんかいのウロコ
         if (myState.pokemon.no == 366) {    // パールル
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialDefense2);
         }
         break;
       case 209:   // ピントレンズ
@@ -663,46 +660,25 @@ class Item {
         myState.addVitalRank(-1);
         break;
       case 242:   // こうかくレンズ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.accuracy1_1);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_1);
         break;
       case 243:   // ちからのハチマキ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_1);
         break;
       case 244:   // ものしりメガネ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_1);
         break;
       case 245:   // たつじんのおび
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.greatDamage1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.greatDamage1_2);
         break;
       case 247:   // いのちのたま
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.lifeOrb);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.lifeOrb);
         break;
       case 253:   // フォーカスレンズ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
         break;
       case 254:   // メトロノーム
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
         break;
       case 255:   // くろいてっきゅう
       case 192:   // きょうせいギプス
@@ -712,207 +688,131 @@ class Item {
       case 269:   // パワーバンド
       case 270:   // パワーアンクル
       case 271:   // パワーウエイト
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed0_5);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed0_5);
         break;
       case 264:   // こだわりスカーフ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceScarf);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.choiceScarf);
         break;
       case 274:   // こだわりメガネ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceSpecs);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.choiceSpecs);
         break;
       case 275:   // ひのたまプレート
       case 226:   // もくたん
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fireAttack1_2);
         break;
       case 276:   // しずくプレート
       case 220:   // しんぴのしずく
       case 231:   // うしおのおこう
       case 294:   // さざなみのおこう
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterAttack1_2);
         break;
       case 277:   // いかずちプレート
       case 219:   // じしゃく
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.electricAttack1_2);
         break;
       case 278:   // みどりのプレート
       case 216:   // きせきのタネ
       case 295:   // おはなのおこう
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.grassAttack1_2);
         break;
       case 279:   // つららのプレート
       case 223:   // とけないこおり
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.iceAttack1_2);
         break;
       case 280:   // こぶしのプレート
       case 218:   // くろおび
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fightAttack1_2);
         break;
       case 281:   // もうどくプレート
       case 222:   // どくバリ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.poisonAttack1_2);
         break;
       case 282:   // だいちのプレート
       case 214:   // やわらかいすな
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.groundAttack1_2);
         break;
       case 283:   // あおぞらプレート
       case 221:   // するどいくちばし
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.airAttack1_2);
         break;
       case 284:   // ふしぎのプレート
       case 225:   // まがったスプーン
       case 291:   // あやしいおこう
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
         break;
       case 285:   // たまむしプレート
       case 199:   // ぎんのこな
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bugAttack1_2);
         break;
       case 286:   // がんせきプレート
       case 215:   // かたいいし
       case 292:   // がんせきおこう
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.rockAttack1_2);
         break;
       case 287:   // もののけプレート
       case 224:   // のろいのおふだ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
         break;
       case 288:   // りゅうのプレート
       case 227:   // りゅうのキバ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
         break;
       case 289:   // こわもてプレート
       case 217:   // くろいメガネ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.evilAttack1_2);
         break;
       case 290:   // こうてつプレート
       case 210:   // メタルコート
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steelAttack1_2);
         break;
       case 684:   // せいれいプレート
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fairyAttack1_2);
         break;
       case 1664:  // レジェンドプレート
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.moveAttack1_2);
         break;
       case 581:   // しんかのきせき
-        if (myState.pokemon.isEvolvable) {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-          findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialDefense1_5);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialDefense1_5);
         break;
       case 587:   // しめつけバンド
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bindDamage1_6);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bindDamage1_6);
         break;
       case 669:   // ノーマルジュエル
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3);
         break;
       case 683:   // とつげきチョッキ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5);
         break;
       case 690:   // ぼうじんゴーグル
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignorePowder);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignorePowder);
         break;
       case 897:   // ぼうごパット
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignoreDirectAtackEffect);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreDirectAtackEffect);
         break;
       case 1178:  // あつぞこブーツ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ignoreInstallingEffect);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreInstallingEffect);
         break;
       case 1662:  // まっさらプレート
       case 228:   // シルクのスカーフ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
-        }
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.normalAttack1_2);
         break;
       case 1696:  // パンチグローブ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1);
-          if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.punchNotDirect1_1);
+        break;
+      case 2106:  // いどのめん
+        if (myState.pokemon.no == 10273) {    // オーガポン
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
+        }
+        break;
+      case 2107:  // かまどのめん
+        if (myState.pokemon.no == 10274) {    // オーガポン
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
+        }
+        break;
+      case 2108:  // いしずえのめん
+        if (myState.pokemon.no == 10275) {    // オーガポン
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
         }
         break;
     }

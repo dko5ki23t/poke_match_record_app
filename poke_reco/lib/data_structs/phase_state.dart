@@ -801,6 +801,27 @@ class PhaseState {
           }
         }
         break;
+      case AbilityTiming.afterTerastal:   // テラスタル後
+        {
+          // 自分/相手ごとにforループ
+          for (int i = 0; i < 2; i++) {
+            var player = players[i];
+            var myState = getPokemonState(player, null);
+            bool isMe = player.id == PlayerType.me;
+            bool isTerastal = myState.teraType?.id != 0 && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
+
+            if (isTerastal && myState.currentAbility.id == 303) {
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.afterTerastal)
+                ..effect = EffectType(EffectType.ability)
+                ..effectId = 303
+                ..isAutoSet = true
+              );
+            }
+          }
+        }
+        break;
     }
 
     // 各タイミング共通
