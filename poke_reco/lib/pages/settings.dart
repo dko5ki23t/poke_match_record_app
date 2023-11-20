@@ -3,15 +3,18 @@ import 'package:flutter/services.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/link.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
     Key? key,
     required this.onReset,
     required this.viewLicense,
+    required this.viewPolicy,
   }) : super(key: key);
   final void Function() onReset;
   final void Function() viewLicense;
+  final void Function() viewPolicy;
 
   @override
   SettingsPageState createState() => SettingsPageState();
@@ -41,6 +44,11 @@ class SettingsPageState extends State<SettingsPage> {
             title: Text('ライセンス情報'),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.viewLicense(),
+          ),
+          ListTile(
+            title: Text('プライバシーポリシー'),
+            trailing: Icon(Icons.chevron_right),
+            onTap: () => widget.viewPolicy(),
           ),
         ],
       ),
@@ -215,23 +223,35 @@ class SettingLicensePageState extends State<SettingLicensePage> {
               Text(fontLicense) : Container(),
             ],
           ),
-          /*child: RichText(
-            text: TextSpan(
-              style: theme.textTheme.bodyMedium,
-              children: [
-                TextSpan(
-                  style: theme.textTheme.headlineSmall,
-                  text: '本アプリOSSライセンス\n',
-                ),
-                TextSpan(text: ossLicense),
-                TextSpan(
-                  style: theme.textTheme.headlineSmall,
-                  text: '\n使用フォントライセンス\n',
-                ),
-                TextSpan(text: fontLicense),
-              ],
-            ),
-          ),*/
+        ),
+      ),
+    );
+  }
+}
+
+class SettingPolicyPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('プライバシーポリシー'),
+      ),
+      body: Container(
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Text('以下のURLからプライバシーポリシーをご確認ください。'),
+              Link(
+                uri: Uri.parse('https://dko5ki23t.wixsite.com/my-site'),
+                builder: (context, openLink) {
+                  return TextButton(
+                    onPressed: openLink,
+                    child: Text('Webサイト表示'),
+                  );
+                },),
+            ],
+          ),
         ),
       ),
     );

@@ -169,6 +169,10 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                             pokemon.nickname == '' ?
                               pokemon.name :
                               '${pokemon.nickname}/${pokemon.name}';
+                          if (pokeData.pokeBase[pokemon.no]!.fixedItemID != 0) {
+                            widget.party.items[i] = pokeData.items[pokeData.pokeBase[pokemon.no]!.fixedItemID]!;
+                            itemController[i].text = widget.party.items[i]!.displayName;
+                          }
                         }
                       },
                       widget.party.pokemons[i] != null && widget.party.pokemons[i]!.no != 0,
@@ -207,7 +211,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         setState(() {});
                       },
                       enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
-                      enabledItem: widget.party.pokemons[i] != null,
+                      enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
                     ),
                     SizedBox(height: 10),
                   SizedBox(height: 10),

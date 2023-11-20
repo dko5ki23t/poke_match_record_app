@@ -150,7 +150,8 @@ class BattleTerastalInputColumn extends Column {
                         Expanded(
                           child: TypeDropdownButton(
                             'タイプ',
-                            turn.phases[firstIdx+i].effectId == 0 || turn.phases[firstIdx+i].playerType.id == PlayerType.me ?
+                            turn.phases[firstIdx+i].effectId == 0 ||
+                            _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType.id != 0 ?
                               null : (val) {turn.phases[firstIdx+i].effectId = val;},
                             turn.phases[firstIdx+i].effectId == 0 ? null : turn.phases[firstIdx+i].effectId,
                           ),

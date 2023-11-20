@@ -184,7 +184,8 @@ class BattleBasicListView extends ListView {
                   ..b.race = suggestion.b
                   ..c.race = suggestion.c
                   ..d.race = suggestion.d
-                  ..s.race = suggestion.s;
+                  ..s.race = suggestion.s
+                  ..teraType = suggestion.fixedTeraType;
                   opponentPokemonController[i].text = suggestion.name;
                   setState();
                 },

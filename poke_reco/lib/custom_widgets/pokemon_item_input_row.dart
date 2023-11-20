@@ -80,6 +80,7 @@ class PokemonItemInputRow extends Row {
               onSuggestionSelected: onItemSuggestionSelected,
             ) :
             TextFormField(
+              controller: itemController,
               decoration: InputDecoration(
                 border: UnderlineInputBorder(),
                 labelText: labelItemText,

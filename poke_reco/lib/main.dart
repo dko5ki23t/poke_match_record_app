@@ -444,6 +444,7 @@ class SettingTabNavigatorRoutes {
   static const String root = '/';
   static const String reset = '/reset';
   static const String license = '/license';
+  static const String policy = '/policy';
 }
 
 class SettingTabNavigator extends StatefulWidget {
@@ -468,6 +469,9 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
         break;
       case SettingTabNavigatorRoutes.license:
         pushPage = SettingLicensePage();
+        break;
+      case SettingTabNavigatorRoutes.policy:
+        pushPage = SettingPolicyPage();
         break;
     }
 
@@ -513,6 +517,7 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
                 return SettingsPage(
                   onReset: () => _push(context, SettingTabNavigatorRoutes.reset),
                   viewLicense: () => _push(context, SettingTabNavigatorRoutes.license),
+                  viewPolicy: () => _push(context, SettingTabNavigatorRoutes.policy),
                 );
             }
           },

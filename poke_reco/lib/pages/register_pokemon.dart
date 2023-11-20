@@ -51,6 +51,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final statNames = ['', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
 
   bool firstBuild = true;
+  bool canChangeTeraType = true;
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
@@ -227,7 +228,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             ..b.race = suggestion.b
                             ..c.race = suggestion.c
                             ..d.race = suggestion.d
-                            ..s.race = suggestion.s;
+                            ..s.race = suggestion.s
+                            ..teraType = suggestion.fixedTeraType;
+                            canChangeTeraType = suggestion.fixedTeraType.id == 0;
                             pokeStatRaceController[0].text = 'H ${widget.myPokemon.h.race}';
                             pokeStatRaceController[1].text = 'A ${widget.myPokemon.a.race}';
                             pokeStatRaceController[2].text = 'B ${widget.myPokemon.b.race}';
@@ -310,9 +313,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       Flexible(
                         child: TypeDropdownButton(
                           'テラスタイプ',
-                          (value) {setState(() {
+                          canChangeTeraType ? (value) {setState(() {
                             widget.myPokemon.teraType = pokeData.types[value - 1];
-                          });},
+                          });} : null,
                           widget.myPokemon.teraType.id == 0 ? null : widget.myPokemon.teraType.id,
                           isError: widget.myPokemon.no != 0 && widget.myPokemon.teraType.id == 0,
                         ),

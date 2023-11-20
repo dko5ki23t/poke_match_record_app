@@ -722,6 +722,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: ownAbilityController,
+                                  decoration: InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: 'とくせい',
+                                  ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
@@ -751,6 +755,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: opponentAbilityController,
+                                  decoration: InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: 'とくせい',
+                                  ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
@@ -786,6 +794,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: ownItemController,
+                                  decoration: InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: 'もちもの',
+                                  ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
@@ -816,6 +828,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: opponentItemController,
+                                  decoration: InputDecoration(
+                                    border: UnderlineInputBorder(),
+                                    labelText: 'もちもの',
+                                  ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
@@ -2461,6 +2477,10 @@ class _HPInputRow extends Row {
       Expanded(
         child: TextFormField(
           controller: ownHPController,
+          decoration: InputDecoration(
+            border: UnderlineInputBorder(),
+            labelText: 'HP',
+          ),
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -2473,6 +2493,10 @@ class _HPInputRow extends Row {
       Expanded(
         child: TextFormField(
           controller: opponentHPController,
+          decoration: InputDecoration(
+            border: UnderlineInputBorder(),
+            labelText: 'HP',
+          ),
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],

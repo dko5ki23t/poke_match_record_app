@@ -40,4 +40,44 @@ class PokeBase {    // 各ポケモンの種族ごとの値
 
   // TODO:しんかのきせきが適用できるかどうか
   bool get isEvolvable => true;
+
+  // テラスタイプが固定ならそのタイプを返す
+  PokeType get fixedTeraType {
+    switch (no) {
+      case 1017:    // オーガポン(みどりのめん)->くさ
+        return PokeType.createFromId(12);
+      case 10273:   // オーガポン(いどのめん)->みず
+        return PokeType.createFromId(11);
+      case 10274:   // オーガポン(かまどのめん)->ほのお
+        return PokeType.createFromId(10);
+      case 10275:   // オーガポン(いしずえのめん)->いわ
+        return PokeType.createFromId(6);
+    }
+    return PokeType.createFromId(0);    // 固定テラスタイプなし
+  }
+
+  // 固定のもちものがあればそのもちもののIDを返す
+  int get fixedItemID {
+    switch (no) {
+      case 10273:   // オーガポン(いどのめん)->いどのめん
+        return 2106;
+      case 10274:   // オーガポン(かまどのめん)->かまどのめん
+        return 2107;
+      case 10275:   // オーガポン(いしずえのめん)->いしずえのめん
+        return 2108;
+    }
+    return 0;     // 固定もちものなし
+  }
+
+  // テラスタイプ後にとくせいが変化する場合はそのとくせいのIDを返す
+  int get teraTypedAbilityID {
+    switch (no) {
+      case 1017:    // オーガポン(みどりのめん)
+      case 10273:   // オーガポン(いどのめん)
+      case 10274:   // オーガポン(かまどのめん)
+      case 10275:   // オーガポン(いしずえのめん)
+        return 303; // おもかげやどし
+    }
+    return 0;   // 変化とくせいなし
+  }
 }
