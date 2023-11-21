@@ -8,6 +8,7 @@ import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 //import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
@@ -289,7 +290,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..battlingNum = checkedPokemons.own.indexWhere((e) => e == i+1) + 1
                 ..setHoldingItemNoEffect(ownParty.items[i])
                 ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
-                ..currentAbility = ownParty.pokemons[i]!.ability
+                ..setCurrentAbilityNoEffect(ownParty.pokemons[i]!.ability)
                 ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
                 ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
                 ..moves = [for (int j = 0; j < ownParty.pokemons[i]!.moveNum; j++) ownParty.pokemons[i]!.moves[j]!]
@@ -321,7 +322,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..type2 = poke.type2;
               if (state.possibleAbilities.length == 1) {    // 対象ポケモンのとくせいが1つしかあり得ないなら確定
                 opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
-                state.currentAbility = state.possibleAbilities[0];
+                state.setCurrentAbilityNoEffect(state.possibleAbilities[0]);
               }
               turn.getInitialPokemonStates(PlayerType(PlayerType.opponent)).add(state);
             }
@@ -522,30 +523,34 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
       else {
         var pokeData = PokeDB();
+        var ownState = turns[turnNum-1].initialOwnPokemonState;
+        var opponentState = turns[turnNum-1].initialOpponentPokemonState;
+        var state = turns[turnNum-1].copyInitialState();
         switch (force.typeId) {
           case UserForce.ability:
             if (force.playerType.id == PlayerType.me) {
-              turns[turnNum-1].initialOwnPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+              ownState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentState, true, state);
             }
             else if (force.playerType.id == PlayerType.opponent) {
-              turns[turnNum-1].initialOpponentPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+              opponentState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownState, false, state);
             }
+            turns[turnNum-1].setInitialState(state);
             break;
           case UserForce.item:
             var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
             if (force.playerType.id == PlayerType.me) {
-              turns[turnNum-1].initialOwnPokemonState.holdingItem = item;
+              ownState.holdingItem = item;
             }
             else if (force.playerType.id == PlayerType.opponent) {
-              turns[turnNum-1].initialOpponentPokemonState.holdingItem = item;
+              opponentState.holdingItem = item;
             }
             break;
           case UserForce.hp:
             if (force.playerType.id == PlayerType.me) {
-              turns[turnNum-1].initialOwnPokemonState.remainHP = force.arg1;
+              ownState.remainHP = force.arg1;
             }
             else if (force.playerType.id == PlayerType.opponent) {
-              turns[turnNum-1].initialOpponentPokemonState.remainHPPercent = force.arg1;
+              opponentState.remainHPPercent = force.arg1;
             }
             break;
         }

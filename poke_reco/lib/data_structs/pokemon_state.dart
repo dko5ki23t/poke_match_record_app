@@ -1,3 +1,5 @@
+import 'package:path/path.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -23,7 +25,7 @@ class PokemonState {
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0)); // 現在のとくせい(バトル中にとくせいが変わることあるので)
+  Ability _currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態変化
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
@@ -48,7 +50,7 @@ class PokemonState {
     .._statChanges = [..._statChanges]
     ..buffDebuffs = [for (final e in buffDebuffs) e.copyWith()]
     ..hiddenBuffs = [for (final e in hiddenBuffs) e.copyWith()]
-    ..currentAbility = currentAbility.copyWith()
+    .._currentAbility = _currentAbility.copyWith()
     .._ailments = _ailments.copyWith()
     ..minStats = [...minStats]        // TODO:よい？
     ..maxStats = [...maxStats]        // TODO:よい？
@@ -60,12 +62,23 @@ class PokemonState {
     ..lastMove = lastMove?.copyWith();
 
   Item? get holdingItem => _holdingItem;
+  Ability get currentAbility => _currentAbility;
   bool get isFainting => _isFainting;
 
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
     _holdingItem = item;
+  }
+
+  void setCurrentAbility(Ability ability, PokemonState yourState, bool isOwn, PhaseState state) {
+    _currentAbility.clearPassiveEffect(this, yourState, isOwn, state);
+    ability.processPassiveEffect(this, yourState, isOwn, state);
+    _currentAbility = ability;
+    // TODO:これでいいかは要確認
+    if (pokemon.ability.id == 0 && PokeDB().pokeBase[pokemon.no]!.ability.where((e) => e.id == ability.id).isNotEmpty) {
+      pokemon.ability = ability;
+    }
   }
 
   set isFainting(bool t) {
@@ -77,6 +90,11 @@ class PokemonState {
   // 効果等を起こさずもちものをセット
   void setHoldingItemNoEffect(Item? item) {
     _holdingItem = item;
+  }
+
+  // 効果等を起こさずとくせいをセット
+  void setCurrentAbilityNoEffect(Ability ability) {
+    _currentAbility = ability;
   }
 
   // 地面にいるかどうかの判定
@@ -97,6 +115,7 @@ class PokemonState {
   void addVitalRank(int i) {
     int findIdx = buffDebuffs.indexWhere((element) => BuffDebuff.vital1 <= element.id && element.id <= BuffDebuff.vital3);
     if (findIdx < 0) {
+      if (i <= 0) return;
       int vitalRank = (BuffDebuff.vital1 + (i-1)).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
       buffDebuffs.add(BuffDebuff(vitalRank));
     }
@@ -165,7 +184,7 @@ class PokemonState {
   void processExitEffect(bool isOwn, PokemonState yourState) {
     resetStatChanges();
     resetRealSixParams();
-    currentAbility = pokemon.ability;
+    setCurrentAbilityNoEffect(pokemon.ability);
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
     // もうどくはターン数をリセット(ターン数をもとにダメージを計算するため)
     var badPoison = ailmentsWhere((e) => e.id == Ailment.badPoison);
@@ -235,7 +254,7 @@ class PokemonState {
   // ポケモン交代や死に出しにより登場する場合の処理
   void processEnterEffect(bool isOwn, PhaseState state, PokemonState yourState) {
     if (battlingNum < 1) battlingNum = 1;
-    currentAbility = pokemon.ability;
+    setCurrentAbilityNoEffect(pokemon.ability);
     processPassiveEffect(isOwn, state, yourState);   // パッシブ効果
     Weather.processWeatherEffect(Weather(0), state.weather, isOwn ? this : null, isOwn ? null : this);  // 天気の影響
     Field.processFieldEffect(Field(0), state.field, isOwn ? this : null, isOwn ? null : this);  // フィールドの影響
@@ -248,343 +267,12 @@ class PokemonState {
       buffDebuffs.add(BuffDebuff(BuffDebuff.voiceForm));
     }
 
-    switch (currentAbility.id) {
-      case 14:  // ふくがん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
-        break;
-      case 32:  // てんのめぐみ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.additionalEffect2));
-        break;
-      case 37:  // ちからもち
-      case 74:  // ヨガパワー
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attack2));
-        break;
-      case 55:  // はりきり
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5));
-        buffDebuffs.add(BuffDebuff(BuffDebuff.physicalAccuracy0_8));
-        break;
-      case 59:  // てんきや
-        buffDebuffs.add(BuffDebuff(BuffDebuff.powalenNormal));
-        break;
-      case 62:  // こんじょう
-        if (ailmentsIndexWhere((e) => e.id <= Ailment.sleep && e.id != 0) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn));
-        }
-        break;
-      case 63:  // ふしぎなうろこ
-        if (ailmentsIndexWhere((e) => e.id <= Ailment.sleep && e.id != 0) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
-        }
-        break;
-      case 77:  // ちどりあし
-        if (ailmentsIndexWhere((e) => e.id == Ailment.confusion) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_5));
-        }
-        break;
-      case 79:  // とうそうしん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.opponentSex1_5));
-        break;
-      case 85:  // たいねつ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.heatproof));
-        break;
-      case 87:  // かんそうはだ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.drySkin));
-        break;
-      case 89:  // てつのこぶし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.punch1_2));
-        break;
-      case 91:  // てきおうりょく
-        buffDebuffs.add(BuffDebuff(BuffDebuff.typeBonus2));
-        break;
-      case 95:  // はやあし
-        if (ailmentsIndexWhere((e) => e.id <= Ailment.sleep && e.id != 0) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.speed1_5IgnPara));
-        }
-        break;
-      case 96:  // ノーマルスキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.normalize));
-        break;
-      case 97:  // スナイパー
-        buffDebuffs.add(BuffDebuff(BuffDebuff.sniper));
-        break;
-      case 98:  // マジックガード
-        buffDebuffs.add(BuffDebuff(BuffDebuff.magicGuard));
-        break;
-      case 99:  // ノーガード
-        buffDebuffs.add(BuffDebuff(BuffDebuff.noGuard));
-        break;
-      case 100: // あとだし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.stall));
-        break;
-      case 101: // テクニシャン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.technician));
-        break;
-      case 103: // ぶきよう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.noItemEffect));
-        break;
-      case 104: // かたやぶり
-      case 163: // ターボブレイズ
-      case 164: // テラボルテージ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.noAbilityEffect));
-        break;
-      case 105: // きょううん
-        addVitalRank(1);
-        break;
-      case 109: // てんねん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreRank));
-        break;
-      case 110: // いろめがね
-        buffDebuffs.add(BuffDebuff(BuffDebuff.notGoodType2));
-        break;
-      case 111: // フィルター
-      case 116: // ハードロック
-      case 232: // プリズムアーマー
-        buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamaged0_75));
-        break;
-      case 120: // すてみ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.recoil1_2));
-        break;
-      case 122: // フラワーギフト
-        buffDebuffs.add(BuffDebuff(BuffDebuff.negaForm));
-        break;
-      case 125: // ちからずく
-        buffDebuffs.add(BuffDebuff(BuffDebuff.sheerForce));
-        break;
-      case 134: // ヘヴィメタル
-        buffDebuffs.add(BuffDebuff(BuffDebuff.heavy2));
-        break;
-      case 135: // ライトメタル
-        buffDebuffs.add(BuffDebuff(BuffDebuff.heavy0_5));
-        break;
-      case 136: // マルチスケイル
-      case 231: // ファントムガード
-        if ((isOwn && remainHP == pokemon.h.real) || (!isOwn && remainHPPercent == 100)) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.damaged0_5));
-        }
-        break;
-      case 137:  // どくぼうそう
-        if (ailmentsIndexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_5));
-        }
-        break;
-      case 138:  // ねつぼうそう
-        if (ailmentsIndexWhere((e) => e.id == Ailment.burn) >= 0) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
-        }
-        break;
-      case 142:  // ぼうじん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.overcoat));
-        break;
-      case 147:  // ミラクルスキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.yourStatusAccuracy50));
-        break;
-      case 148:  // アナライズ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.analytic));
-        break;
-      case 151:  // すりぬけ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreWall));
-        break;
-      case 156:  // マジックミラー
-        ailmentsAdd(Ailment(Ailment.magicCoat), state);
-        break;
-      case 158:  // いたずらごころ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.prankster));
-        break;
-      case 159:   // すなのちから
-        buffDebuffs.add(BuffDebuff(BuffDebuff.rockGroundSteel1_3));
-        break;
-      case 162:   // しょうりのほし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_1));
-        break;
-      case 169:   // ファーコート
-        buffDebuffs.add(BuffDebuff(BuffDebuff.guard2));
-        break;
-      case 171:   // ぼうだん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.bulletProof));
-        break;
-      case 173:   // がんじょうあご
-        buffDebuffs.add(BuffDebuff(BuffDebuff.bite1_5));
-        break;
-      case 174:   // フリーズスキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.freezeSkin));
-        break;
-      case 176:   // バトルスイッチ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.shieldForm));
-        break;
-      case 177: // はやてのつばさ
-        if ((isOwn && remainHP == pokemon.h.real) || (!isOwn && remainHPPercent == 100)) {
-          buffDebuffs.add(BuffDebuff(BuffDebuff.galeWings));
-        }
-        break;
-      case 178:   // メガランチャー
-        buffDebuffs.add(BuffDebuff(BuffDebuff.wave1_5));
-        break;
-      case 181:   // かたいツメ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttack1_3));
-        break;
-      case 182:   // フェアリースキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.fairySkin));
-        break;
-      case 184:   // スカイスキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.airSkin));
-        break;
-      case 196:   // ひとでなし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.merciless));
-        break;
-      case 198:   // はりこみ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.change2));
-        break;
-      case 199:   // すいほう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.waterBubble1));
-        buffDebuffs.add(BuffDebuff(BuffDebuff.waterBubble2));
-        break;
-      case 200:   // はがねつかい
-        buffDebuffs.add(BuffDebuff(BuffDebuff.steelWorker));
-        break;
-      case 204:   // うるおいボイス
-        buffDebuffs.add(BuffDebuff(BuffDebuff.liquidVoice));
-        break;
-      case 205:   // ヒーリングシフト
-        buffDebuffs.add(BuffDebuff(BuffDebuff.healingShift));
-        break;
-      case 206:   // エレキスキン
-        buffDebuffs.add(BuffDebuff(BuffDebuff.electricSkin));
-        break;
-      case 208:   // ぎょぐん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.singleForm));
-        break;
-      case 209:   // ばけのかわ
-        {
-          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm);
-          if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
-        }
-        break;
-      case 217:   // バッテリー
-        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
-        break;
-      case 218:   // もふもふ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttackedDamage0_5));
-        buffDebuffs.add(BuffDebuff(BuffDebuff.fireAttackedDamage2));
-        break;
-      case 233:   // ブレインフォース
-        buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamage1_25));
-        break;
-      case 239:   // スクリューおびれ
-      case 242:   // すじがねいり
-        buffDebuffs.add(BuffDebuff(BuffDebuff.targetRock));
-        break;
-      case 244:   // パンクロック
-        buffDebuffs.add(BuffDebuff(BuffDebuff.sound1_3));
-        buffDebuffs.add(BuffDebuff(BuffDebuff.soundedDamage0_5));
-        break;
-      case 246:   // こおりのりんぷん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.specialDamaged0_5));
-        break;
-      case 247:   // じゅくせい
-        buffDebuffs.add(BuffDebuff(BuffDebuff.nuts2));
-        break;
-      case 248:   // アイスフェイス
-        {
-          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace);
-          if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.iceFace));
-        }
-        break;
-      case 249:   // パワースポット
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attackMove1_3));
-        break;
-      case 252:   // はがねのせいしん
-        buffDebuffs.add(BuffDebuff(BuffDebuff.steel1_5));
-        break;
-      case 255:   // ごりむちゅう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.gorimuchu));
-        break;
-      case 258:   // はらぺこスイッチ
-        if (teraType == null || teraType!.id == 0) {
-          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.harapekoForm || e.id == BuffDebuff.manpukuForm);
-          if (findIdx < 0) {
-            buffDebuffs.add(BuffDebuff(BuffDebuff.manpukuForm));
-          }
-          else {
-            buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.manpukuForm);
-          }
-        }
-        break;
-      case 260:   // ふかしのこぶし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.directAttackIgnoreGurad));
-        break;
-      case 262:   // トランジスタ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.electric1_3));
-        break;
-      case 263:   // りゅうのあぎと
-        buffDebuffs.add(BuffDebuff(BuffDebuff.dragon1_5));
-        break;
-      case 272:   // きよめのしお
-        buffDebuffs.add(BuffDebuff(BuffDebuff.ghosted0_5));
-        break;
-      case 276:   // いわはこび
-        buffDebuffs.add(BuffDebuff(BuffDebuff.rock1_5));
-        break;
-      case 278:   // マイティチェンジ
-        {
-          int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm);
-          if (findIdx < 0) {
-            buffDebuffs.add(BuffDebuff(BuffDebuff.naiveForm));
-          }
-        }
-        break;
-      case 284:   // わざわいのうつわ
-        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack0_75));
-        break;
-      case 285:   // わざわいのつるぎ
-        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.defense0_75));
-        break;
-      case 286:   // わざわいのおふだ
-        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack0_75));
-        break;
-      case 287:   // わざわいのたま
-        yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense0_75));
-        break;
-      case 292:   // きれあじ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.cut1_5));
-        break;
-      case 298:   // きんしのちから
-        buffDebuffs.add(BuffDebuff(BuffDebuff.myceliumMight));
-        break;
-    }
-    
+    // とくせいの効果を反映
+    currentAbility.processPassiveEffect(this, yourState, isOwn, state);
+ 
     // もちものの効果を反映
     holdingItem?.processPassiveEffect(this);
   
-    // 両者のバフ/デバフに関係する場合
-    if (currentAbility.id == 186 || yourState.currentAbility.id == 186) { // ダークオーラ
-      if (currentAbility.id == 188 || yourState.currentAbility.id == 188) { // オーラブレイク
-        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
-        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
-        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
-        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
-      }
-      else {
-        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura);
-        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
-        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura);
-        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
-      }
-    }
-    if (currentAbility.id == 187 || yourState.currentAbility.id == 187) { // フェアリーオーラ
-      if (currentAbility.id == 188 || yourState.currentAbility.id == 188) { // オーラブレイク
-        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
-        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
-        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
-        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
-      }
-      else {
-        int findIdx = buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura);
-        if (findIdx < 0) buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
-        findIdx = yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.fairyAura);
-        if (findIdx < 0) yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
-      }
-    }
-
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
     var indiField = isOwn ? state.ownFields : state.opponentFields;
     if (isGround(indiField) && isTypeContain(4)) {
@@ -1045,7 +733,7 @@ class PokemonState {
       pokemonState.hiddenBuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
     }
     // currentAbility
-    pokemonState.currentAbility = Ability.deserialize(stateElements[11], split2);
+    pokemonState.setCurrentAbilityNoEffect(Ability.deserialize(stateElements[11], split2));
     // ailments
     pokemonState._ailments = Ailments.deserialize(stateElements[12], split2, split3);
     // minStats

@@ -110,10 +110,6 @@ class PhaseState {
     ..hasOwnTerastal = hasOwnTerastal
     ..hasOpponentTerastal = hasOpponentTerastal;
   
-  //PokemonState get ownPokemonState => _pokemonStates[0][_pokemonIndexes[0]-1];
-  //PokemonState get opponentPokemonState => _pokemonStates[1][_pokemonIndexes[1]-1];
-  //bool get hasOwnTerastal => _pokemonStates[0].where((element) => element.teraType != null).isNotEmpty;
-  //bool get hasOpponentTerastal => _pokemonStates[1].where((element) => element.teraType != null).isNotEmpty;
   bool get isMyWin {
     var n = _pokemonStates[1].where((element) => element.isFainting).length;
     return n >= 3 || n >= _pokemonStates[1].length;

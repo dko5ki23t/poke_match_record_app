@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';

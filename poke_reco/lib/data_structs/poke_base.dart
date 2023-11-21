@@ -1,5 +1,6 @@
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 
 class PokeBase {    // 各ポケモンの種族ごとの値
   final String name;              // ポケモン名

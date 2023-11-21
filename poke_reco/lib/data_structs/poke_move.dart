@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -1232,7 +1233,7 @@ class TurnMove {
             break;
           case 179:   // 相手と同じとくせいになる
             if (extraArg1[continuousCount] != 0) {
-              myState.currentAbility = pokeData.abilities[extraArg1[continuousCount]]!;
+              myState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, yourState, playerType.id == PlayerType.me, state);
             }
             break;
           case 180:   // 使用者の場に「ねがいごと」を発生させる
@@ -1283,9 +1284,9 @@ class TurnMove {
             if (movePower == 0) movePower = 1;
             break;
           case 192:   // 使用者ととくせいを入れ替える
-            opponentPokemonState.currentAbility = ownPokemonState.currentAbility;
+            opponentPokemonState.setCurrentAbility(ownPokemonState.currentAbility, ownPokemonState, false, state);
             if (extraArg1[continuousCount] != 0) {
-              ownPokemonState.currentAbility = pokeData.abilities[extraArg1[continuousCount]]!;
+              ownPokemonState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, opponentPokemonState, true, state);
             }
             break;
           case 193:   // 使用者をふういん状態にする
@@ -1544,7 +1545,7 @@ class TurnMove {
           case 247:   // 他に覚えているわざをそれぞれ1回以上使っていないと失敗
             break;
           case 248:   // とくせいをふみんにする
-            targetState.currentAbility = pokeData.abilities[15]!;
+            targetState.setCurrentAbility(pokeData.abilities[15]!, myState, targetPlayerTypeID == PlayerType.me, state);
             break;
           case 249:   // 相手より先に発動し、相手がこうげきわざを選んでいる場合のみ成功
             break;
@@ -1903,11 +1904,11 @@ class TurnMove {
             isFoulPlay = true;
             break;
           case 299:   // 相手のとくせいをたんじゅんに変える
-            targetState.currentAbility = pokeData.abilities[86]!;
+            targetState.setCurrentAbility(pokeData.abilities[86]!, myState, targetPlayerTypeID == PlayerType.me, state);
             break;
           case 300:   // 相手のとくせいを使用者のとくせいと同じにする
             if (extraArg1[continuousCount] != 0) {
-              targetState.currentAbility = pokeData.abilities[extraArg1[continuousCount]]!;
+              targetState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, myState, targetPlayerTypeID == PlayerType.me, state);
             }
             break;
           case 301:   // 選択対象の行動順を、このわざの直後に変更する
@@ -3181,6 +3182,7 @@ class TurnMove {
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
     var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+    var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
     bool isShadowTag = !myState.isTypeContain(8) &&    // ゴーストタイプではない
       (yourState.currentAbility.id == 23 ||                                     // 相手がかげふみ
        (yourState.currentAbility.id == 42 && myState.isTypeContain(9)) ||       // 相手がじりょく＆自身がはがね
@@ -3344,8 +3346,9 @@ class TurnMove {
                     );
                   },
                   onSuggestionSelected: (suggestion) {
-                    moveController.text = getReplacedMoveName(suggestion, continuousCount, myState);
                     move = getReplacedMove(suggestion, continuousCount, myState);
+                    moveController.text = move.displayName;
+                    moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0);
@@ -5684,6 +5687,26 @@ class TurnMove {
             ret = PokeType.createFromId(11);
             break;
         }
+        break;
+      default:
+        break;
+    }
+
+    return ret;
+  }
+
+  // 主に確定急所の判定を行う
+  MoveHit getMoveHit(Move move, int continuousCount, PokemonState myState, PokemonState yourState, List<IndividualField> yourFields) {
+    MoveHit ret = MoveHit(MoveHit.hit);
+    var mA = myState.currentAbility.id;
+    var yA = yourState.currentAbility.id;
+    // (こうげき側がとくせいを無視できず、)ぼうぎょ側がカブトアーマー/シェルアーマー/おまじない(場)ならば急所に当たらない
+    if ((yourState.holdingItem?.id == 1697 || (mA != 104 && mA != 163 && mA != 164)) && (yA == 4 || yA == 75 || yourFields.where((e) => e.id == IndividualField.luckyChant).isNotEmpty)) return ret;
+    switch (move.effect.id) {
+      case 289:   // かならず急所に当たる
+      case 462:   // 3回連続でこうげきする。かならず急所に当たる
+      case 486:   // 必中かつ必ず急所に当たる
+        ret = MoveHit(MoveHit.critical);
         break;
       default:
         break;

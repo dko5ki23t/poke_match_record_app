@@ -117,7 +117,10 @@ class BattleContinuousMoveInputColumn extends Column {
         onPressed:
           getSelectedNum(appState.editingPhase) == 0 ?
           () {
-            refMove.moveHits.add(MoveHit(MoveHit.hit));
+            var myState = prevState.getPokemonState(refMove.playerType, null);
+            var yourState = prevState.getPokemonState(refMove.playerType.opposite, null);
+            var yourFields = refMove.playerType.id == PlayerType.me ? prevState.opponentFields : prevState.ownFields;
+            refMove.moveHits.add(refMove.getMoveHit(refMove.move, continuousCount, myState, yourState, yourFields));
             refMove.moveEffectivenesses.add(refMove.moveEffectivenesses[0]);
             refMove.moveAdditionalEffects.add(MoveEffect(refMove.move.effect.id));
             refMove.extraArg1.add(0);

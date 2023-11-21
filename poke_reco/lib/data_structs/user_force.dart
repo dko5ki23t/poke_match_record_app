@@ -54,10 +54,10 @@ class UserForces {
       switch (force.typeId) {
         case UserForce.ability:
           if (force.playerType.id == PlayerType.me) {
-            ownPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+            ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentPokemonState, true, state);
           }
           else if (force.playerType.id == PlayerType.opponent) {
-            opponentPokemonState.currentAbility = pokeData.abilities[force.arg1]!;
+            opponentPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
           }
           break;
         case UserForce.item:

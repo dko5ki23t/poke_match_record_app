@@ -14,6 +14,7 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -456,92 +457,6 @@ class MoveEffect {
   final int id;
 }
 
-class Ability {
-  final int id;
-  final String displayName;
-  final AbilityTiming timing;
-  final Target target;
-  final AbilityEffect effect;
-//  final int chance;               // 発動確率
-
-  const Ability(
-    this.id, this.displayName, this.timing, this.target, this.effect
-  );
-
-  Ability copyWith() =>
-    Ability(id, displayName, timing, target, effect);
-
-  Map<String, Object?> toMap() {
-    var map = <String, Object?>{
-      abilityColumnId: id,
-      abilityColumnName: displayName,
-      abilityColumnTiming: timing.id,
-      abilityColumnTarget: target.id,
-      abilityColumnEffect: effect.id,
-    };
-    return map;
-  }
-
-  // 交換可能なとくせいかどうか
-  bool get canExchange {
-    const ids = [
-      225, 248, 149, 241, 256, 208, 266, 211, 161, 209,
-      176, 258, 25,
-    ];
-    return !ids.contains(id);
-  }
-
-  // 上書きできるとくせいかどうか
-  bool get canOverWrite {
-    const ids = [
-      225, 248, 241, 210, 208, 282, 281, 266, 211, 213,
-      161, 209, 176, 278, 121, 197,
-    ];
-    return !ids.contains(id);
-  }
-
-  // コピー可能なとくせいかどうか
-  bool get canCopy {
-    const ids = [
-      225, 248, 149, 241, 303, 223, 256, 150, 210, 208, 282,
-      281, 279, 266, 211, 213, 161, 59, 36, 209, 176, 258,
-      122, 278, 121, 197, 222,
-    ];
-    return !ids.contains(id);
-  }
-
-  // かたやぶり/きんしのちから/ターボブレイズ/テラボルテージで無視されるとくせいかどうか
-  bool get canIgnored {
-    const ids = [
-      248, 47, 126, 165, 188, 283, 52, 274, 4, 5, 87, 272,
-      21, 179, 29, 246, 273, 75, 6, 7, 214, 73, 299, 175,
-      199, 8, 51, 39, 157, 186, 85, 86, 10, 77, 11, 296,
-      140, 78, 109, 297, 12, 270, 60, 116, 209, 257, 35,
-      145, 244, 275, 219, 31, 169, 111, 187, 63, 25, 15,
-      26, 122, 166, 132, 134, 43, 142, 171, 20, 40, 156,
-      136, 41, 240, 147, 17, 218, 18, 72, 81, 114, 135,
-      102, 19,
-    ];
-    return ids.contains(id);
-  }
-
-  // SQLに保存された文字列からabilityをパース
-  static Ability deserialize(dynamic str, String split1) {
-    final elements = str.split(split1);
-    return Ability(
-      int.parse(elements[0]),
-      elements[1],
-      AbilityTiming(int.parse(elements[2])),
-      Target(int.parse(elements[3])),
-      AbilityEffect(int.parse(elements[4]))
-    );
-  }
-
-  // SQL保存用の文字列に変換
-  String serialize(String split1) {
-    return '$id$split1$displayName$split1${timing.id}$split1${target.id}$split1${effect.id}';
-  }
-}
 
 class Move {
   final int id;

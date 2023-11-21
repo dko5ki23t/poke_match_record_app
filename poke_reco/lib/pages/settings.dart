@@ -24,7 +24,6 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var pokeData = appState.pokeData;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
@@ -73,7 +72,6 @@ class SettingResetPageState extends State<SettingResetPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var pokeData = appState.pokeData;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();

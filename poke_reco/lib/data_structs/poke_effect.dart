@@ -8,6 +8,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
@@ -271,22 +272,16 @@ class TurnEffect {
     var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
     var myParty = playerType.id == PlayerType.me ? ownParty : opponentParty;
-    /*var yourParty = opponentParty;
-    if (playerType.id == PlayerType.opponent) {
-      myParty = opponentParty;
-      yourParty = ownParty;
-    }*/
     var myPokemonIndex = state.getPokemonIndex(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
-    //var yourPokemonIndex = state.getPokemonIndex(playerType.opposite);
-    var myPlayerID = PlayerType.me;
-    var yourPlayerID = PlayerType.opponent;
-    if (playerType.id == PlayerType.opponent) {
-      myPlayerID = PlayerType.opponent;
-      yourPlayerID = PlayerType.me;
-    }
 
     switch (effect.id) {
       case EffectType.ability:
+        ret.addAll(Ability.processEffect(
+          effectId, playerType, myState, yourState, state,
+          myParty, myPokemonIndex, opponentPokemonState,
+          extraArg1, extraArg2, getChangePokemonIndex(playerType)
+        ));
+        /*
         {
           switch (effectId) {
             case 1:     // あくしゅう
@@ -873,7 +868,7 @@ class TurnEffect {
           myState.pokemon.ability = pokeData.abilities[effectId]!;
           myState.currentAbility = myState.pokemon.ability;   // とくせい確定
           ret.add('とくせいを${myState.currentAbility.displayName}で確定しました。');
-        }
+        }*/
         break;
       case EffectType.individualField:
         {
@@ -1002,7 +997,10 @@ class TurnEffect {
       case EffectType.terastal:
         myState.teraType = PokeType.createFromId(effectId);
         if (pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID != 0) {   // テラスタルによってとくせいが変わる場合
-          myState.currentAbility = pokeData.abilities[pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!;
+          myState.setCurrentAbility(
+            pokeData.abilities[pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!,
+            yourState, playerType.id == PlayerType.me, state
+          );
         }
         if (playerType.id == PlayerType.me) {
           state.hasOwnTerastal = true;
