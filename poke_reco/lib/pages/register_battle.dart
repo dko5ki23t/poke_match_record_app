@@ -522,10 +522,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         turns[turnNum-1].phases[focusPhaseIdx-1].userForces.add(force);
       }
       else {
-        var pokeData = PokeDB();
+        /*var pokeData = PokeDB();
         var ownState = turns[turnNum-1].initialOwnPokemonState;
-        var opponentState = turns[turnNum-1].initialOpponentPokemonState;
+        var opponentState = turns[turnNum-1].initialOpponentPokemonState;*/
         var state = turns[turnNum-1].copyInitialState();
+        turns[turnNum-1].initialUserForces.add(force);
+        turns[turnNum-1].setInitialState(state);
+        /*
         switch (force.typeId) {
           case UserForce.ability:
             if (force.playerType.id == PlayerType.me) {
@@ -553,7 +556,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               opponentState.remainHPPercent = force.arg1;
             }
             break;
-        }
+        }*/
       }
     }
 
@@ -1141,7 +1144,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int timingListIdx = 0;
     int currentTimingID = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
     List<TurnEffect> assistList = [];
-    List<TurnEffect> delAssistList = [];
+    //List<TurnEffect> delAssistList = [];
     PlayerType? firstActionPlayer;
     TurnEffect? lastAction;
     bool changingState = false;   // 効果によってポケモン交代した状態
@@ -1164,7 +1167,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // 自動追加
           if (assistList.isNotEmpty) {
             _insertPhase(i, assistList.first, appState);
-            delAssistList.add(assistList.first);
+            //delAssistList.add(assistList.first);
             assistList.removeAt(0);
             isAssisting = true;
             isInserted = true;
@@ -1183,7 +1186,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
         else {
           // 自動追加リストに載っているものがあればリストから除外
-          delAssistList.add(phases[i]);
+          //delAssistList.add(phases[i]);
           isAssisting = true;
         }
       }
@@ -1194,7 +1197,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
-                delAssistList.add(assistList.first);
+                //delAssistList.add(assistList.first);
                 assistList.removeAt(0);
                 isAssisting = true;
                 isInserted = true;
@@ -1213,7 +1216,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             else {
               // 自動追加リストに載っているものがあればリストから除外
-              delAssistList.add(phases[i]);
+              //delAssistList.add(phases[i]);
               isAssisting = true;
             }
             break;
@@ -1302,7 +1305,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
-                delAssistList.add(assistList.first);
+                //delAssistList.add(assistList.first);
                 assistList.removeAt(0);
                 isAssisting = true;
                 isInserted = true;
@@ -1334,7 +1337,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             else {
               // 自動追加リストに載っているものがあればリストから除外
-              delAssistList.add(phases[i]);
+              //delAssistList.add(phases[i]);
               isAssisting = true;
             }
             break;
@@ -1405,7 +1408,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
-                delAssistList.add(assistList.first);
+                //delAssistList.add(assistList.first);
                 assistList.removeAt(0);
                 isAssisting = true;
                 isInserted = true;
@@ -1431,7 +1434,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             else {
               // 自動追加リストに載っているものがあればリストから除外
-              delAssistList.add(phases[i]);
+              //delAssistList.add(phases[i]);
               isAssisting = true;
             }
             break;
@@ -1530,7 +1533,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1549,7 +1552,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -1558,7 +1561,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1582,7 +1585,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -1611,7 +1614,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1630,7 +1633,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -1762,7 +1765,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1788,7 +1791,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -1797,7 +1800,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1824,10 +1827,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
 
-                  if (phases[i].getChangePokemonIndex(PlayerType(PlayerType.me)) != null &&
+                  if (phases[i].getChangePokemonIndex(PlayerType(PlayerType.me)) != null ||
                       phases[i].getChangePokemonIndex(PlayerType(PlayerType.opponent)) != null
                   ) {       // 効果によりポケモン交代が生じた場合
                     changingState = true;
@@ -1883,7 +1886,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1902,7 +1905,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -1924,7 +1927,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
-                    delAssistList.add(assistList.first);
+                    //delAssistList.add(assistList.first);
                     assistList.removeAt(0);
                     isAssisting = true;
                     isInserted = true;
@@ -1943,7 +1946,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 else {
                   // 自動追加リストに載っているものがあればリストから除外
-                  delAssistList.add(phases[i]);
+                  //delAssistList.add(phases[i]);
                   isAssisting = true;
                 }
                 break;
@@ -2060,7 +2063,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
         else if (currentTimingID != nextTimingID) {
           assistList.clear();
-          delAssistList.clear();
+          //delAssistList.clear();
         }
       }
     }
@@ -2591,16 +2594,17 @@ class _BuffDebuffsRow extends Row {
       Expanded(
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(5.0)),
-              child:
-                ownPokemonState.buffDebuffs.length > index ?
-                Container(
-                  color: ownPokemonState.buffDebuffs[index].bgColor,
-                  child: Text(ownPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
-                ) : Container(),
+            Flexible(
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                child:
+                  ownPokemonState.buffDebuffs.length > index ?
+                  Container(
+                    color: ownPokemonState.buffDebuffs[index].bgColor,
+                    child: Text(ownPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+                  ) : Container(),
+              ),
             ),
-            Expanded(child: Container()),
           ],
         ),
       ),
@@ -2608,16 +2612,17 @@ class _BuffDebuffsRow extends Row {
       Expanded(
         child: Row(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.all(Radius.circular(5.0)),
-              child:
-                opponentPokemonState.buffDebuffs.length > index ?
-                Container(
-                  color: opponentPokemonState.buffDebuffs[index].bgColor,
-                  child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
-                ) : Container(),
+            Flexible(
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(5.0)),
+                child:
+                  opponentPokemonState.buffDebuffs.length > index ?
+                  Container(
+                    color: opponentPokemonState.buffDebuffs[index].bgColor,
+                    child: Text(opponentPokemonState.buffDebuffs[index].displayName, style: TextStyle(color: Colors.white)),
+                  ) : Container(),
+              ),
             ),
-            Expanded(child: Container()),
           ],
         ),
       ),

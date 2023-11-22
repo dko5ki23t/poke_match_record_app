@@ -1,7 +1,5 @@
-import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
 // ユーザが手動で変更した内容
@@ -40,13 +38,9 @@ class UserForces {
   }
 
   List<String> processEffect(
-    Party ownParty,
     PokemonState ownPokemonState,
-    Party opponentParty,
     PokemonState opponentPokemonState,
     PhaseState state,
-    TurnEffect? prevAction,
-    int continuousCount,
   )
   {
     var pokeData = PokeDB();

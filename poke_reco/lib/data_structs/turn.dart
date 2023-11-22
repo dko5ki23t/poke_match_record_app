@@ -8,6 +8,7 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/user_force.dart';
 
 class Turn {
   List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
@@ -16,6 +17,7 @@ class Turn {
   Weather initialWeather = Weather(0);
   Field initialField = Field(0);
   List<bool> _initialHasTerastal = [false, false];
+  UserForces initialUserForces = UserForces();
   List<TurnEffect> phases = [];
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
@@ -65,6 +67,7 @@ class Turn {
     ..initialWeather = initialWeather.copyWith()
     ..initialField = initialField.copyWith()
     .._initialHasTerastal = [..._initialHasTerastal]
+    ..initialUserForces = initialUserForces.copyWith()
     ..phases = [
       for (final phase in phases)
       phase.copyWith()
@@ -90,6 +93,10 @@ class Turn {
     ]);
     ret.forceSetWeather(initialWeather.copyWith());
     ret.forceSetField(initialField.copyWith());
+    initialUserForces.processEffect(
+      ret.getPokemonState(PlayerType(PlayerType.me), null),
+      ret.getPokemonState(PlayerType(PlayerType.opponent), null), ret,
+    );
     return ret;
   }
 
@@ -137,6 +144,10 @@ class Turn {
     initialField = state.field;
     _initialHasTerastal[0] = state.hasOwnTerastal;
     _initialHasTerastal[1] = state.hasOpponentTerastal;
+    initialUserForces.processEffect(
+      state.getPokemonState(PlayerType(PlayerType.me), null),
+      state.getPokemonState(PlayerType(PlayerType.opponent), null), state,
+    );
   }
 
   // とある時点(フェーズ)での状態を取得
@@ -224,8 +235,10 @@ class Turn {
       if (hasTerastal == '') break;
       ret._initialHasTerastal.add(hasTerastal == '1');
     }
+    // initialUserForces
+    ret.initialUserForces = UserForces.deserialize(turnElements[6], split2, split3);
     // phases
-    var turnEffects = turnElements[6].split(split2);
+    var turnEffects = turnElements[7].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
       ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
@@ -272,6 +285,9 @@ class Turn {
       ret += hasTerastal ? '1' : '0';
       ret += split2;
     }
+    ret += split1;
+    // initialUserForces
+    ret += initialUserForces.serialize(split2, split3);
     ret += split1;
     // phases
     for (final turnEffect in phases) {

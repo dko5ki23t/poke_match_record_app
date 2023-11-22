@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
-import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/tool.dart';
 
 class BattleFilterDialog extends StatefulWidget {
   final Future<void> Function (

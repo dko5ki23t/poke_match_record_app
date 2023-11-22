@@ -289,7 +289,100 @@ class PokemonsPageState extends State<PokemonsPage> {
                   ],
                 ),
               )
-            : Container(),
+            :
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (_) {
+                          return PokemonFilterDialog(
+                            pokeData,
+                            ownerFilter,
+                            noFilter,
+                            typeFilter,
+                            teraTypeFilter,
+                            moveFilter,
+                            sexFilter,
+                            abilityFilter,
+                            temperFilter,
+                            (f1, f2, f3, f4, f5, f6, f7, f8) async {
+                              ownerFilter.clear();
+                              noFilter.clear();
+                              typeFilter.clear();
+                              teraTypeFilter.clear();
+                              moveFilter.clear();
+                              sexFilter.clear();
+                              abilityFilter.clear();
+                              temperFilter.clear();
+                              ownerFilter.addAll(f1);
+                              noFilter.addAll(f2);
+                              typeFilter.addAll(f3);
+                              teraTypeFilter.addAll(f4);
+                              moveFilter.addAll(f5);
+                              sexFilter.addAll(f6);
+                              abilityFilter.addAll(f7);
+                              temperFilter.addAll(f8);
+                              await pokeData.saveConfig();
+                              setState(() {});
+                            },
+                          );
+                        }
+                      );
+                    },
+                    child: Icon(Icons.filter_alt),
+                  ),
+                  TextButton(
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) {
+                        return PokemonSortDialog(
+                          (pokemonSort) async {
+                            switch (pokemonSort) {
+                              case PokemonSort.registerUp:
+                                sortedPokemons.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                                break;
+                              case PokemonSort.registerDown:
+                                sortedPokemons.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                                break;
+                              case PokemonSort.nickNameUp:
+                                sortedPokemons.sort((a, b) => a.value.nickname.compareTo(b.value.nickname),);
+                                break;
+                              case PokemonSort.nickNameDown:
+                                sortedPokemons.sort((a, b) => -1 * a.value.nickname.compareTo(b.value.nickname),);
+                                break;
+                              case PokemonSort.nameUp:
+                                sortedPokemons.sort((a, b) => a.value.name.compareTo(b.value.name),);
+                                break;
+                              case PokemonSort.nameDown:
+                                sortedPokemons.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
+                                break;
+                              default:
+                                break;
+                            }
+                            if (sort != pokemonSort && pokemonSort != null) {
+                              for (int i = 0; i < sortedPokemons.length; i++) {
+                                var pokemon = pokemons[sortedPokemons[i].key]!;
+                                pokemon.viewOrder = i+1;
+                                await pokeData.addMyPokemon(pokemon);
+                              }
+                            }
+                            pokeData.pokemonsSort = pokemonSort;
+                            await pokeData.saveConfig();
+                            setState(() {});
+                          },
+                          sort
+                        );
+                      }
+                    ),
+                    child: Icon(Icons.sort),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         body: Stack(
