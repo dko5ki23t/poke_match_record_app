@@ -559,6 +559,11 @@ class PhaseState {
             }
             // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
             if (!myState.isTypeContain(4)) playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull2);
+            // こだいかっせい発動中に天気が晴れでなくなった場合
+            if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5 && e.extraArg1 == 0).isNotEmpty) {
+              if (weather.id != Weather.sunny) playerTimingIDs.add(AbilityTiming.sunnyBoostEnergy);
+              if (field.id != Field.electricTerrain) playerTimingIDs.add(AbilityTiming.elecFieldBoostEnergy);
+            }
 
             // とくせい
             if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
@@ -577,6 +582,9 @@ class PhaseState {
                   currentAbilityID == 90   // ポイズンヒール
               ) {
                 extraArg1 = isMe ? -((myState.pokemon.h.real / 8).floor()) : -12;
+              }
+              if (currentAbilityID == 281 || currentAbilityID == 282) {   // こだいかっせい/ブーストエナジー
+                extraArg1 = -1;
               }
               ret.add(TurnEffect()
                 ..playerType = player

@@ -134,15 +134,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       focusState = turns[turnNum-1].
                     getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
+      if (appState.requestActionSwap) {
+        _onlySwapActionPhases();
+        appState.requestActionSwap = false;
+      }
       if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
         sameTimingList = _adjustPhases(appState, isNewTurn);
         isNewTurn = false;
         appState.needAdjustPhases = -1;
         appState.adjustPhaseByDelete = false;
-      }
-      if (appState.requestActionSwap) {
-        _onlySwapActionPhases();
-        appState.requestActionSwap = false;
       }
     }
 

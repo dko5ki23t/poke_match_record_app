@@ -81,6 +81,7 @@ class BattleTerastalInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.close),
                             onPressed: () {
+                              appState.adjustPhaseByDelete = true;
                               if (i == 0) {
                                 var timing = turn.phases[firstIdx+i].timing;
                                 turn.phases[firstIdx+i] =

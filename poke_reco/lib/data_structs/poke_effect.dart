@@ -1808,6 +1808,10 @@ class TurnEffect {
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
+                      value: -1,
+                      child: Text('効果が切れた'),
+                    ),
+                    DropdownMenuItem(
                       value: 0,
                       child: Text('こうげき'),
                     ),
@@ -1836,7 +1840,7 @@ class TurnEffect {
                   },
                 ),
               ),
-              Text('があがった'),
+              extraArg1 >= 0 ? Text('が高まった') : Text(''),
             ],
           );
         case 290:     // びんじょう

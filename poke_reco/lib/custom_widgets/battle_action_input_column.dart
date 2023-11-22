@@ -46,7 +46,7 @@ class BattleActionInputColumn extends Column {
               Stack(
                 children: [
                 Center(child: Text(
-                  _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon)
+                  _getTitle(turn.phases[phaseIdx].move, ownPokemon, opponentPokemon)
                 )),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
@@ -215,25 +215,27 @@ class BattleActionInputColumn extends Column {
     ],
   );
 
-  static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent) {
-    switch (turnMove.type.id) {
-      case TurnMoveType.move:
-        if (turnMove.move.id != 0) {
-          String continous = turnMove.move.maxMoveCount() > 1 ? '【1回目】' : '';
-          if (turnMove.playerType.id == PlayerType.opponent) {
-            return '$continous${turnMove.move.displayName}-${opponent.name}';
+  static String _getTitle(TurnMove? turnMove, Pokemon own, Pokemon opponent) {
+    if (turnMove != null) {
+      switch (turnMove.type.id) {
+        case TurnMoveType.move:
+          if (turnMove.move.id != 0) {
+            String continous = turnMove.move.maxMoveCount() > 1 ? '【1回目】' : '';
+            if (turnMove.playerType.id == PlayerType.opponent) {
+              return '$continous${turnMove.move.displayName}-${opponent.name}';
+            }
+            else {
+              return '$continous${turnMove.move.displayName}-${own.name}';
+            }
           }
-          else {
-            return '$continous${turnMove.move.displayName}-${own.name}';
-          }
-        }
-        break;
-      case TurnMoveType.change:
-        return 'ポケモン交代';
-      case TurnMoveType.surrender:
-        return 'こうさん';
-      default:
-        break;
+          break;
+        case TurnMoveType.change:
+          return 'ポケモン交代';
+        case TurnMoveType.surrender:
+          return 'こうさん';
+        default:
+          break;
+      }
     }
 
     return '行動';

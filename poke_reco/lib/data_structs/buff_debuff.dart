@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 // その他の補正(フォルムとか)
 class BuffDebuff {
   static const int none = 0;
-  static const int attack1_3 = 1;         // こうげき1.3倍
+  static const int attack1_3 = 1;         // こうげき1.3倍(extraArg = 1なら、ブーストエナジー消費によって得られた効果↓)
   static const int defense1_3 = 2;        // ぼうぎょ1.3倍
   static const int specialAttack1_3 = 3;  // とくこう1.3倍
   static const int specialDefense1_3 = 4; // とくぼう1.3倍
-  static const int speed1_5 = 5;          // すばやさ1.5倍
+  static const int speed1_5 = 5;          // すばやさ1.5倍(extraArg = 1なら、ブーストエナジー消費によって得られた効果↑)
   static const int yourAccuracy0_8 = 6;   // 相手わざ命中率0.8倍
   static const int accuracy1_3 = 7;       // 命中率1.3倍
   static const int flashFired = 8;        // もらいび状態（ほのおわざ1.5倍）、重複不可

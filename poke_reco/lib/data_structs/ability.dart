@@ -614,23 +614,37 @@ class Ability {
         myState.ailmentsAdd(Ailment(Ailment.charging), state);
         break;
       case 281:   // こだいかっせい
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
-        if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
-          if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-            myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-            ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+        if (extraArg1 >= 0) {
+          int arg = 0;
+          if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
+            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
+              ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+            }
+            myState.holdingItem = null;   // アイテム消費
+            arg = 1;
           }
-          myState.holdingItem = null;   // アイテム消費
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1)..extraArg1 = arg);
+        }
+        else {
+          myState.buffDebuffs.removeWhere((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
         }
         break;
       case 282:   // クォークチャージ
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1));
-        if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
-          if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-            myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-            ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+        if (extraArg1 >= 0) {
+          int arg = 0;
+          if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
+            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
+              ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+            }
+            myState.holdingItem = null;   // アイテム消費
+            arg = 1;
           }
-          myState.holdingItem = null;   // アイテム消費
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_3+extraArg1)..extraArg1 = arg);
+        }
+        else {
+          myState.buffDebuffs.removeWhere((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
         }
         break;
       case 290:   // びんじょう
