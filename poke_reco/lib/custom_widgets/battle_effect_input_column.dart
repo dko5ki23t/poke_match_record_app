@@ -84,7 +84,6 @@ class BattleEffectInputColumn extends Column {
                           IconButton(
                             icon: Icon(Icons.close),
                             onPressed: () {
-                              appState.adjustPhaseByDelete = true;
                               if (i == 0) {
                                 var timing = turn.phases[firstIdx+i].timing;
                                 turn.phases[firstIdx+i] =
@@ -96,8 +95,6 @@ class BattleEffectInputColumn extends Column {
                                 textEditControllerList2[firstIdx+i].text = '';
                                 textEditControllerList3[firstIdx+i].text = '';
                                 textEditControllerList4[firstIdx+i].text = '';
-                                appState.needAdjustPhases = 0;
-                                onFocus(0);   // フォーカスリセット
                               }
                               else {
                                 turn.phases.removeAt(firstIdx+i);
@@ -106,8 +103,10 @@ class BattleEffectInputColumn extends Column {
                                 textEditControllerList2.removeAt(firstIdx+i);
                                 textEditControllerList3.removeAt(firstIdx+i);
                                 textEditControllerList4.removeAt(firstIdx+i);
-                                onFocus(0);   // フォーカスリセット
                               }
+                              appState.adjustPhaseByDelete = true;
+                              appState.needAdjustPhases = firstIdx+i;
+                              onFocus(0);   // フォーカスリセット
                             },
                           ),
                         ],
