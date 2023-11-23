@@ -67,6 +67,25 @@ class PokemonState {
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
+    if (item == null && _holdingItem?.id != 0) {
+      // 最後に消費したもちもの/きのみ更新
+      var lastLostItem = hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostItem);
+      if (lastLostItem.isEmpty) {
+        hiddenBuffs.add(BuffDebuff(BuffDebuff.lastLostItem)..extraArg1 = _holdingItem!.id);
+      }
+      else {
+        lastLostItem.first.extraArg1 = _holdingItem!.id;
+      }
+      if (_holdingItem!.isBerry) {
+        var lastLostBerry = hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
+        if (lastLostBerry.isEmpty) {
+          hiddenBuffs.add(BuffDebuff(BuffDebuff.lastLostBerry)..extraArg1 = _holdingItem!.id);
+        }
+        else {
+          lastLostBerry.first.extraArg1 = _holdingItem!.id;
+        }
+      }
+    }
     _holdingItem = item;
   }
 
@@ -184,19 +203,27 @@ class PokemonState {
     resetStatChanges();
     resetRealSixParams();
     setCurrentAbilityNoEffect(pokemon.ability);
+    type1 = pokemon.type1;
+    type2 = pokemon.type2;
     ailmentsRemoveWhere((e) => e.id > Ailment.sleep);   // 状態変化の回復
     // もうどくはターン数をリセット(ターン数をもとにダメージを計算するため)
     var badPoison = ailmentsWhere((e) => e.id == Ailment.badPoison);
     if (badPoison.isNotEmpty) badPoison.first.turns = 0;
     if (_isFainting) ailmentsClear();
     // 退場後も継続するフォルム以外をクリア
-    var unchangingForms = buffDebuffs.where((e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace).toList();
-    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm));
-    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm));
-    unchangingForms.addAll(buffDebuffs.where((e) => e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm));
+    var unchangingForms = buffDebuffs.where((e) =>
+      e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace ||
+      e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm ||
+      e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm ||
+      e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm
+    ).toList();
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
+    var unchangingHidden = hiddenBuffs.where((e) =>
+      e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry
+    ).toList();
     hiddenBuffs.clear();
+    hiddenBuffs.addAll(unchangingHidden);
     // ひんしでない退場で発動するフォルムチェンジ
     if (!isFainting) {
       int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.naiveForm);

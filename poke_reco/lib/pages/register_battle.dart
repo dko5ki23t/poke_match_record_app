@@ -1702,9 +1702,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     }
                   }
                   // 行動主の自動選択
-                  if (firstActionPlayer == null) {
-                    if (phases[i].playerType.id != PlayerType.none) {
+                  if (firstActionPlayer == null) {  // 1つ目の行動
+                    if (phases[i].playerType.id != PlayerType.none) {   // 1つ目の行動主が入力されているなら
                       firstActionPlayer = phases[i].playerType;
+                      if (!phases[i].isValid()) {     // 行動主が入力されているが、入力された行動がまだ有効でないとき
+                        // 自動補完
+                        phases[i].move!.fillAuto(currentState);
+                        textEditingControllerList1[i].text =
+                          phases[i].getEditingControllerText1();
+                        textEditingControllerList2[i].text =
+                          phases[i].getEditingControllerText2(currentState, lastAction);
+                        textEditingControllerList3[i].text =
+                          phases[i].getEditingControllerText3(currentState, lastAction);
+                        textEditingControllerList4[i].text =
+                          phases[i].getEditingControllerText4(currentState);
+                      }
                     }
                     else {
                       TurnMove tmp = TurnMove()..playerType = PlayerType(PlayerType.me)..type = TurnMoveType(TurnMoveType.move);
@@ -1739,12 +1751,26 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       }
                     }
                   }
-                  else if (phases[i].playerType.id == PlayerType.none) {
+                  else if (phases[i].playerType.id == PlayerType.none) {    // 2つ目の行動主が未入力の場合
                     phases[i].playerType = firstActionPlayer.opposite;
                     if (phases[i].move != null) {
                       phases[i].move!.clear();
                       phases[i].move!.playerType = firstActionPlayer.opposite;
                       phases[i].move!.type = TurnMoveType(TurnMoveType.move);
+                      phases[i].move!.fillAuto(currentState);
+                      textEditingControllerList1[i].text =
+                        phases[i].getEditingControllerText1();
+                      textEditingControllerList2[i].text =
+                        phases[i].getEditingControllerText2(currentState, lastAction);
+                      textEditingControllerList3[i].text =
+                        phases[i].getEditingControllerText3(currentState, lastAction);
+                      textEditingControllerList4[i].text =
+                        phases[i].getEditingControllerText4(currentState);
+                    }
+                  }
+                  else {
+                    if (!phases[i].isValid()) {     // 2つ目の行動主が入力されているが、入力された行動がまだ有効でないとき
+                      // 自動補完
                       phases[i].move!.fillAuto(currentState);
                       textEditingControllerList1[i].text =
                         phases[i].getEditingControllerText1();
@@ -2157,6 +2183,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       else if (phases[i].timing.id == AbilityTiming.everyTurnEnd) {
         assert(i >= 1);
         action2EndIdx = i-1;
+        break;
       }
     }
     // 行動を交換

@@ -153,6 +153,8 @@ class BattleEffectInputColumn extends Column {
                               if (candidates.length == 1) {       // 候補が1つだけなら
                                 turn.phases[firstIdx+i].effect = candidates.first.effect;
                                 turn.phases[firstIdx+i].effectId = candidates.first.effectId;
+                                turn.phases[firstIdx+i].extraArg1 = candidates.first.extraArg1;
+                                turn.phases[firstIdx+i].extraArg2 = candidates.first.extraArg2;
                               }
                               else {
                                 turn.phases[firstIdx+i].effect = EffectType(EffectType.none);
@@ -284,8 +286,9 @@ class BattleEffectInputColumn extends Column {
                                 _getPrevState(prevState, firstIdx, i, sameTimingList),
                               );
                               if (candidates.length == 1) {   // 候補が一つしかないならそれに決めてしまう
-                                
                                 turn.phases[firstIdx+i].effectId = candidates.first.effectId;
+                                turn.phases[firstIdx+i].extraArg1 = candidates.first.extraArg1;
+                                turn.phases[firstIdx+i].extraArg2 = candidates.first.extraArg2;
                               }
                               else {
                                 turn.phases[firstIdx+i].effectId = 0;
@@ -343,6 +346,8 @@ class BattleEffectInputColumn extends Column {
                               // 発動主が天気やフィールドの場合はEffectTypeも決まっていないため、ここで決定する
                               turn.phases[firstIdx+i].effect = suggestion.effect;
                               turn.phases[firstIdx+i].effectId = suggestion.effectId;
+                              turn.phases[firstIdx+i].extraArg1 = suggestion.extraArg1;
+                              turn.phases[firstIdx+i].extraArg2 = suggestion.extraArg2;
                               textEditControllerList2[firstIdx+i].text =
                                 turn.phases[firstIdx+i].getEditingControllerText2(
                                   sameTimingList[i].phaseState,

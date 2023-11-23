@@ -4,6 +4,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -815,6 +816,67 @@ class Item {
         }
         break;
     }
+  }
+
+  // TurnEffectのarg1が決定できる場合はその値を返す
+  static int getAutoArg1(
+    int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    bool isMe = player.id == PlayerType.me;
+
+    switch (itemID) {
+      case 247:       // いのちのたま
+        return isMe ? (myState.pokemon.h.real / 10).floor() : 10;
+      case 583:       // ゴツゴツメット
+        return !isMe ? (yourState.pokemon.h.real / 6).floor() : 16;
+      case 188:       // ジャポのみ
+      case 189:       // レンブのみ
+        return !isMe ? (yourState.pokemon.h.real / 8).floor() : 12;
+      case 584:       // ふうせん
+        if (timing.id != AbilityTiming.pokemonAppear) {
+          return 1;
+        }
+        break;
+      case 265:     // くっつきバリ
+        return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+      case 132:     // オレンのみ
+        if (isMe) return -10;
+        break;
+      case 43:      // きのみジュース
+        if (isMe) return -20;
+        break;
+      case 135:     // オボンのみ
+      case 185:     // ナゾのみ
+        return isMe ? -(myState.pokemon.h.real / 4).floor() : -25;
+      case 136:     // フィラのみ
+      case 137:     // ウイのみ
+      case 138:     // マゴのみ
+      case 139:     // バンジのみ
+      case 140:     // イアのみ
+        return isMe ? -(myState.pokemon.h.real / 3).floor() : -33;
+      case 258:     // くろいヘドロ
+        if (myState.isTypeContain(4)) {   // どくタイプか
+          return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
+        }
+        else {
+          return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+        }
+      case 211:     // たべのこし
+        return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
+      default:
+        break;
+    }
+
+    return 0;
+  }
+
+  // TurnEffectのarg2が決定できる場合はその値を返す
+  static int getAutoArg2(
+    int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    return 0;
   }
 
   String getEditingControllerText2(PlayerType playerType, PokemonState myState, PokemonState yourState) {

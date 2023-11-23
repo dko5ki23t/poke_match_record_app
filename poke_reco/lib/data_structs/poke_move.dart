@@ -300,7 +300,7 @@ class TurnMove {
     // ポケモン交代
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-      myState.processExitEffect(true, yourState);
+      myState.processExitEffect(playerType.id == PlayerType.me, yourState);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
       return ret;
@@ -447,7 +447,9 @@ class TurnMove {
       }
 
       // 追加効果
+      bool effectOnce = false;    // ターゲットが(便宜上)複数(==targetStates.length > 1)でも、処理は一回にしたい場合にtrueにする(さむいギャグなど)
       for (int i = 0; i < targetStates.length; i++) {
+        if (effectOnce) break;
         var targetState = targetStates[i];
         var targetIndiField = targetIndiFields[i];
         var targetPlayerTypeID = targetPlayerTypeIDs[i];
@@ -918,6 +920,7 @@ class TurnMove {
             break;
           case 116:   // 天気をすなあらしにする
             targetField!.weather = Weather(Weather.sandStorm);
+            effectOnce = true;
             break;
           case 117:   // ひんしダメージをHP1で耐える。連続使用で失敗しやすくなる
             break;
@@ -1015,9 +1018,11 @@ class TurnMove {
             break;
           case 137:   // 天気を雨にする
             targetField!.weather = Weather(Weather.rainy);
+            effectOnce = true;
             break;
           case 138:   // 天気をはれにする
             targetField!.weather = Weather(Weather.sunny);
+            effectOnce = true;
             break;
           case 141:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさを1段階上げる(確率)
             myState.addStatChanges(true, 0, 1, targetState, moveId: replacedMove.id);
@@ -1175,6 +1180,7 @@ class TurnMove {
             break;
           case 165:   // 天気をあられにする
             //targetField!.weather = Weather(Weather.snowy);
+            effectOnce = true;
             break;
           case 166:   // いちゃもん状態にする
             targetState.ailmentsAdd(Ailment(Ailment.torment), state);
@@ -2126,9 +2132,11 @@ class TurnMove {
             break;
           case 352:   // 場をグラスフィールドにする
             targetField!.field = Field(Field.grassyTerrain);
+            effectOnce = true;
             break;
           case 353:   // 場をミストフィールドにする
             targetField!.field = Field(Field.mistyTerrain);
+            effectOnce = true;
             break;
           case 354:   // そうでん状態にする
             targetState.ailmentsAdd(Ailment(Ailment.electrify), state);
@@ -2188,6 +2196,7 @@ class TurnMove {
             break;
           case 369:   // 場をエレキフィールドにする
             targetField!.field = Field(Field.electricTerrain);
+            effectOnce = true;
             break;
           case 376:   // 相手のタイプにくさを追加する
             //TODO
@@ -2229,6 +2238,7 @@ class TurnMove {
           case 395:   // 場をサイコフィールドにする
           case 415:   // 場をサイコフィールドにする
             targetField!.field = Field(Field.psychicTerrain);
+            effectOnce = true;
             break;
           case 398:   // 使用者がほのおタイプでないと失敗する。成功するとほのおタイプを失う。こおり状態を治す
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
@@ -2380,6 +2390,7 @@ class TurnMove {
             var tmp = myFields;
             myFields = targetIndiField;
             targetIndiField = tmp;
+            effectOnce = true;
             break;
           case 433:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
             myState.addStatChanges(true, 0, 1, targetState, moveId: replacedMove.id);
@@ -2714,6 +2725,7 @@ class TurnMove {
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
             }
+            effectOnce = true;
             break;
           case 494:   // 両者のみがわり、設置技を解除。使用者のこうげき・すばやさを1段階ずつ上げる
             myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.substitute);
@@ -2729,6 +2741,7 @@ class TurnMove {
             break;
           case 495:   // 天気をゆきにする
             state.weather = Weather(Weather.snowy);
+            effectOnce = true;
             break;
           case 496:   // その戦闘でこうげき技のダメージを受けるたびに威力+50。(最大350)
             // TODO
@@ -2991,6 +3004,9 @@ class TurnMove {
               damageCalc += '×0.5(やけど) ';
             }
           }
+          // タイプ相性を計算
+          double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
+            targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
           // M(五捨五超入)
           {
             double tmpMax = damageVmax.toDouble();
@@ -3006,7 +3022,7 @@ class TurnMove {
               damageCalc += '×0.5(壁) ';
             }
             // ブレインフォース補正
-            if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.great &&
+            if (typeRate >= 2.0 &&
                 myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_25).isNotEmpty
             ) {
               tmpMax *= 1.25;
@@ -3022,7 +3038,7 @@ class TurnMove {
               damageCalc += '×1.5(スナイパー) ';
             }
             // いろめがね補正
-            if (moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood &&
+            if (typeRate > 0.0 && typeRate < 1.0 &&
                 myState.buffDebuffs.where((e) => e.id == BuffDebuff.notGoodType2).isNotEmpty
             ) {
               tmpMax *= 2;
@@ -3061,13 +3077,28 @@ class TurnMove {
               // ハードロック
               // フィルター
               // プリズムアーマー
-              moveEffectivenesses[continuousCount].id == MoveEffectiveness.great &&
-              targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
+              typeRate >= 2.0 && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
             ) {
               tmpMax *= 0.75;
               tmpMin *= 0.75;
               damageCalc += '×0.75(とくせい) ';
             }
+            // たつじんのおび補正
+            if (typeRate >= 2.0 && myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_2).isNotEmpty
+            ) {
+              tmpMax *= 1.2;
+              tmpMin *= 1.2;
+              damageCalc += '×1.2(たつじんのおび) ';
+            }
+            // TODO:メトロノーム補正
+            // いのちのたま補正
+            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
+            {
+              tmpMax *= 1.3;
+              tmpMin *= 1.3;
+              damageCalc += '×1.3(いのちのたま) ';
+            }
+            // TODO:半減の実補正
             // Mtwice
             if (mTwice || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
               tmpMax *= 2;
@@ -3357,6 +3388,7 @@ class TurnMove {
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
+                    setAutoArgs(state, continuousCount);
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
                   },
@@ -3861,10 +3893,10 @@ class TurnMove {
                       for (int i = 0; i < ownParty.pokemonNum; i++)
                         DropdownMenuItem(
                           value: i+1,
-                          enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
+                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
                           child: Text(
                             ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
+                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
                               Colors.black : Colors.grey),
                             ),
                         ),
@@ -3873,10 +3905,10 @@ class TurnMove {
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
                         DropdownMenuItem(
                           value: i+1,
-                          enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
+                          enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
                           child: Text(
                             opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
+                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
                               Colors.black : Colors.grey),
                             ),
                         ),
@@ -5453,7 +5485,7 @@ class TurnMove {
       ret = true;
     }
     // まもる系統のわざを使われた
-    if (myState.ailmentsWhere((e) => e.id == Ailment.protect).isNotEmpty && getReplacedMove(move, 0, myState).damageClass.id >= 2) {
+    if (yourState.ailmentsWhere((e) => e.id == Ailment.protect).isNotEmpty && getReplacedMove(move, 0, myState).damageClass.id >= 2) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.protected);
       ret = true;
@@ -5504,6 +5536,63 @@ class TurnMove {
         break;
     }
     return '';
+  }
+
+  // わざに対応して、argsを自動でセット
+  void setAutoArgs(PhaseState state, int continuousCount) {
+    var myState = state.getPokemonState(playerType, null);
+    var yourState = state.getPokemonState(playerType.opposite, null);
+    var opponentState = state.getPokemonState(PlayerType(PlayerType.opponent), null);
+    
+    switch (moveAdditionalEffects[continuousCount].id) {
+      case 106:   // もちものを盗む
+      case 189:   // もちものを持っていれば失わせ、威力1.5倍
+        if (yourState.holdingItem?.id != 0) {
+          extraArg1[continuousCount] = yourState.holdingItem!.id;
+        }
+        break;
+      case 178:   // 使用者ともちものを入れ替える
+        if (opponentState.holdingItem?.id != 0) {
+          extraArg1[continuousCount] = opponentState.holdingItem!.id;
+        }
+        break;
+      case 185:   // 戦闘中自分が最後に使用したもちものを復活させる
+        // TODO
+        break;
+      case 225:   // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
+        if (yourState.holdingItem?.id != 0 && yourState.holdingItem!.isBerry) {
+          extraArg1[continuousCount] = yourState.holdingItem!.id;
+        }
+        break;
+      case 234:   // 使用者のもちものによって威力と追加効果が変わる
+      case 324:   // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
+        if (myState.holdingItem?.id != 0) {
+          extraArg1[continuousCount] = myState.holdingItem!.id;
+        }
+        break;
+      case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
+        if (myState.holdingItem?.id != 0 && myState.holdingItem!.isBerry) {
+          extraArg1[continuousCount] = myState.holdingItem!.id;
+        }
+        break;
+      case 179:   // 相手と同じとくせいになる
+        if (yourState.currentAbility.id != 0) {
+          extraArg1[continuousCount] = yourState.currentAbility.id;
+        }
+        break;
+      case 192:   // 使用者ととくせいを入れ替える
+        if (opponentState.currentAbility.id != 0) {
+          extraArg1[continuousCount] = opponentState.currentAbility.id;
+        }
+        break;
+      case 300:   // 相手のとくせいを使用者のとくせいと同じにする
+        if (myState.currentAbility.id != 0) {
+          extraArg1[continuousCount] = myState.currentAbility.id;
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   Move getReplacedMove(Move move, int continuousCount, PokemonState myState) {

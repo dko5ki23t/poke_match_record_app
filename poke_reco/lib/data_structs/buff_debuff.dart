@@ -189,6 +189,8 @@ class BuffDebuff {
   static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍    // TODO
   static const int protean = 185;         // へんげんじざい/リベロ発動済み(隠しステータス)
   static const int attack1_2 = 186;       // こうげきわざ威力1.2倍
+  static const int lastLostBerry = 187;   // 最後に消費したきのみ(隠しステータス)
+  static const int lastLostItem = 188;    // 最後に消費したもちもの(隠しステータス)
 
   static const _displayNameMap = {
     0:  '',

@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/weather.dart';
@@ -1329,6 +1330,76 @@ class Ability {
         yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
       }
     }
+  }
+
+  // TurnEffectのarg1が決定できる場合はその値を返す
+  static int getAutoArg1(
+    int abilityID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    bool isMe = player.id == PlayerType.me;
+
+    switch (abilityID) {
+      case 10:        // ちくでん
+      case 11:        // ちょすい
+        return isMe? -((myState.pokemon.h.real / 4).floor()) : -25;
+      case 87:        // かんそうはだ
+        if (prevAction?.move!.getReplacedMove(prevAction.move!.move, 0, myState).type.id == 11) {   // みずタイプのわざを受けた時
+          return isMe? -((myState.pokemon.h.real / 4).floor()) : -25;
+        }
+        else if (state.weather.id == Weather.sunny) { // 晴れの時
+          isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+        }
+        else if (state.weather.id == Weather.rainy) { // 雨の時
+          isMe ? -((myState.pokemon.h.real / 8).floor()) : -12;
+        }
+        break;
+      case 16:        // へんしょく
+        return prevAction!.move!.move.type.id;
+      case 24:        // さめはだ
+      case 160:       // てつのトゲ
+        return !isMe ? (yourState.pokemon.h.real / 8).floor() : 12;
+      case 106:       // ゆうばく
+        return !isMe ? (yourState.pokemon.h.real / 4).floor() : 25;
+      case 209:       // ばけのかわ
+      case 94:        // サンパワー
+        return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
+      case 168:       // へんげんじざい
+      case 236:       // リベロ
+        // TODO?
+        break;
+      case 44:        // あめうけざら
+      case 115:       // アイスボディ
+        return isMe ? -((myState.pokemon.h.real / 16).floor()) : -6;
+      case 90:        // ポイズンヒール
+        return isMe ? -((myState.pokemon.h.real / 8).floor()) : -12;
+      case 281:       // こだいかっせい
+      case 282:       // ブーストエナジー
+        if (timing.id == AbilityTiming.everyTurnEnd) {
+          return -1;
+        }
+        break;
+      case 36:        // トレース
+        return yourState.currentAbility.id;
+      case 139:   // しゅうかく
+        var lastLostBerry = myState.hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
+        if (lastLostBerry.isNotEmpty) {
+          return lastLostBerry.first.extraArg1;
+        }
+        break;
+      default:
+        break;
+    }
+
+    return 0;
+  }
+
+  // TurnEffectのarg2が決定できる場合はその値を返す
+  static int getAutoArg2(
+    int abilityID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    return 0;
   }
 
   // SQLに保存された文字列からabilityをパース

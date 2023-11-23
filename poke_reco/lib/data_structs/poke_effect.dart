@@ -1047,6 +1047,15 @@ class TurnEffect {
       }
     }
 
+    // argの自動セット
+    var myState = playerType.id != PlayerType.opponent ?
+      phaseState.getPokemonState(PlayerType(PlayerType.me), prevAction) : phaseState.getPokemonState(PlayerType(PlayerType.opponent), prevAction);
+    var yourState = playerType.id != PlayerType.opponent ?
+      phaseState.getPokemonState(PlayerType(PlayerType.opponent), prevAction) : phaseState.getPokemonState(PlayerType(PlayerType.me), prevAction);
+    for (var effect in ret) {
+      effect.setAutoArgs(myState, yourState, phaseState, prevAction);
+    }
+
     return ret;
   }
 
@@ -1071,6 +1080,22 @@ class TurnEffect {
         return pokeData.moves[effectId]!.displayName;
       default:
         return '';
+    }
+  }
+
+  // 効果に対応して、argsを自動でセット
+  void setAutoArgs(
+    PokemonState myState, PokemonState yourState, PhaseState state, TurnEffect? prevAction,
+  ) {
+    switch (effect.id) {
+      case EffectType.ability:
+        extraArg1 = Ability.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
+        extraArg2 = Ability.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
+        break;
+      case EffectType.item:
+        extraArg1 = Item.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
+        extraArg2 = Item.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
+        break;
     }
   }
 
@@ -1216,27 +1241,31 @@ class TurnEffect {
   String getEditingControllerText3(PhaseState state, TurnEffect? prevAction) {
     var myState = state.getPokemonState(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
     var yourState = state.getPokemonState(playerType.opposite, timing.id == AbilityTiming.afterMove ? prevAction : null);
+    var pokeData = PokeDB();
     switch (timing.id) {
       case AbilityTiming.action:
       case AbilityTiming.continuousMove:
         {
           if (move == null) return '';
           switch (move!.moveAdditionalEffects[0].id) {
-            case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
             case 106:   // もちものを盗む
             case 178:   // 使用者ともちものを入れ替える
-            case 179:   // 相手と同じとくせいになる
             case 185:   // 戦闘中自分が最後に使用したもちものを復活させる
-            case 324:   // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
-            case 456:   // 対象にもちものがあるときのみ成功
-            case 457:   // 対象のもちものを消失させる
             case 189:   // もちものを持っていれば失わせ、威力1.5倍
-            case 192:   // 使用者ととくせいを入れ替える
             case 225:   // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
             case 234:   // 使用者のもちものによって威力と追加効果が変わる
-            case 300:   // 相手のとくせいを使用者のとくせいと同じにする
-            case 315:   // 相手のきのみ・ノーマルジュエルを失わせる
+            case 324:   // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
             case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
+              return pokeData.items[move!.extraArg1[0]]!.displayName;
+            case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
+              return pokeData.moves[move!.extraArg3[0]]!.displayName;
+            case 179:   // 相手と同じとくせいになる
+            case 192:   // 使用者ととくせいを入れ替える
+            case 300:   // 相手のとくせいを使用者のとくせいと同じにする
+              return pokeData.abilities[move!.extraArg1[0]]!.displayName;
+            //TODO
+            case 456:   // 対象にもちものがあるときのみ成功
+            case 457:   // 対象のもちものを消失させる
               return '';
             default:
               if (move!.playerType.id == PlayerType.me) {
@@ -1291,6 +1320,8 @@ class TurnEffect {
                       }
                   }
                   break;
+                case 139:   // しゅうかく
+                  return pokeData.items[extraArg1]!.displayName;
               }
               break;
             case EffectType.ailment:
@@ -1561,6 +1592,7 @@ class TurnEffect {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = appState.pokeData.items.values.toList();
+                    matches.removeWhere((e) => e.id == 0);
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                     });
