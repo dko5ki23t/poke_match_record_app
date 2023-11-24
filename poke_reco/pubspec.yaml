@@ -92,6 +92,9 @@ flutter:
      - assets/Moves.db
      - assets/PokeBases.db
      - assets/EggGroup.db
+     - assets/AbilityFlavors.db
+     - assets/ItemFlavors.db
+     - assets/MoveFlavors.db
      - assets/licenses/LICENSE
      - assets/licenses/OFL.txt
 

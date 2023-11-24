@@ -56,6 +56,11 @@ const String abilityColumnTiming = 'timing';
 const String abilityColumnTarget = 'target';
 const String abilityColumnEffect = 'effect';
 
+const String abilityFlavorDBFile = 'AbilityFlavors.db';
+const String abilityFlavorDBTable = 'abilityFlavorDB';
+const String abilityFlavorColumnId = 'id';
+const String abilityFlavorColumnFlavor = 'flavor';
+
 const String temperDBFile = 'Tempers.db';
 const String temperDBTable = 'temperDB';
 const String temperColumnId = 'id';
@@ -77,6 +82,11 @@ const String itemColumnFlingEffect = 'fling_effect';
 const String itemColumnTiming = 'timing';
 const String itemColumnIsBerry = 'is_berry';
 
+const String itemFlavorDBFile = 'ItemFlavors.db';
+const String itemFlavorDBTable = 'itemFlavorDB';
+const String itemFlavorColumnId = 'id';
+const String itemFlavorColumnFlavor = 'flavor';
+
 const String moveDBFile = 'Moves.db';
 const String moveDBTable = 'moveDB';
 const String moveColumnId = 'id';
@@ -90,6 +100,11 @@ const String moveColumnDamageClass = 'damage_class';
 const String moveColumnEffect = 'effect';
 const String moveColumnEffectChance = 'effect_chance';
 const String moveColumnPP = 'PP';
+
+const String moveFlavorDBFile = 'MoveFlavors.db';
+const String moveFlavorDBTable = 'moveFlavorDB';
+const String moveFlavorColumnId = 'id';
+const String moveFlavorColumnFlavor = 'flavor';
 
 const String pokeBaseDBFile = 'PokeBases.db';
 const String pokeBaseDBTable = 'pokeBaseDB';
@@ -700,12 +715,18 @@ class PokeDB {
 
   Map<int, Ability> abilities = {0: Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
+  Map<int, String> abilityFlavors = {0: ''};  // 無効なとくせい
+  late Database abilityFlavorDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
   Map<int, Item> items = {0: Item(0, '', 0, 0, AbilityTiming(0), false)};  // 無効なもちもの
   late Database itemDb;
+  Map<int, String> itemFlavors = {0: ''};   // 無効なもちもの
+  late Database itemFlavorDb;
   Map<int, Move> moves = {0: Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
+  Map<int, String> moveFlavors = {0: ''};   // 無効なわざ
+  late Database moveFlavorDb;
   List<PokeType> types = [
     for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
   ];
@@ -880,6 +901,17 @@ class PokeDB {
     }
 
 
+    //////////// とくせいの説明
+    abilityFlavorDb = await openAssetDatabase(abilityFlavorDBFile);
+    // 内部データに変換
+    maps = await abilityFlavorDb.query(abilityFlavorDBTable,
+      columns: [abilityFlavorColumnId, abilityFlavorColumnFlavor,],
+    );
+    for (var map in maps) {
+      abilityFlavors[map[abilityFlavorColumnId]] = map[abilityFlavorColumnFlavor];
+    }
+
+
     //////////// せいかく
     temperDb = await openAssetDatabase(temperDBFile);
     // 内部データに変換
@@ -928,6 +960,17 @@ class PokeDB {
     }
 
 
+    //////////// もちものの説明
+    itemFlavorDb = await openAssetDatabase(itemFlavorDBFile);
+    // 内部データに変換
+    maps = await itemFlavorDb.query(itemFlavorDBTable,
+      columns: [itemFlavorColumnId, itemFlavorColumnFlavor,],
+    );
+    for (var map in maps) {
+      itemFlavors[map[itemFlavorColumnId]] = map[itemFlavorColumnFlavor];
+    }
+
+
     //////////// わざ
     moveDb = await openAssetDatabase(moveDBFile);
     // 内部データに変換
@@ -949,6 +992,18 @@ class PokeDB {
         map[moveColumnPP],
       );
     }
+
+
+    //////////// わざの説明
+    moveFlavorDb = await openAssetDatabase(moveFlavorDBFile);
+    // 内部データに変換
+    maps = await moveFlavorDb.query(moveFlavorDBTable,
+      columns: [moveFlavorColumnId, moveFlavorColumnFlavor,],
+    );
+    for (var map in maps) {
+      moveFlavors[map[moveFlavorColumnId]] = map[moveFlavorColumnFlavor];
+    }
+
 
     //////////// ポケモン図鑑
     pokeBaseDb = await openAssetDatabase(pokeBaseDBFile);
@@ -1224,7 +1279,6 @@ class PokeDB {
 
     // 各パーティの勝率算出
     updatePartyWinRate();
-
 
     isLoaded = true;
   }

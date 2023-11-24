@@ -56,7 +56,10 @@ class Item {
       ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
     }
     */
-    myState.holdingItem = pokeData.items[itemID];
+    // 既にもちものがわかっている場合は代入しない(代入によってbuffを追加してしまうから)
+    if (myState.holdingItem == null || myState.holdingItem?.id != itemID) {
+      myState.holdingItem = pokeData.items[itemID];
+    }
 
     switch (itemID) {
       case 161:     // オッカのみ
@@ -160,7 +163,6 @@ class Item {
         else {
           myState.remainHPPercent -= extraArg1;
         }
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 132:     // オレンのみ
       case 43:      // きのみジュース
@@ -253,15 +255,12 @@ class Item {
         break;
       case 249:   // どくどくだま
         myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 250:   // かえんだま
         myState.ailmentsAdd(Ailment(Ailment.burn), state);
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 257:   // あかいいと
         yourState.ailmentsAdd(Ailment(Ailment.infatuation), state);
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 207:   // きあいのハチマキ
         if (playerType.id == PlayerType.me) {
@@ -270,7 +269,6 @@ class Item {
         else {
           myState.remainHPPercent == 1;
         }
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 252:   // きあいのタスキ
         if (playerType.id == PlayerType.me) {
@@ -288,7 +286,6 @@ class Item {
         else {
           yourState.remainHP -= extraArg1;
         }
-        if (autoConsume) myState.holdingItem = pokeData.items[itemID];
         break;
       case 584:     // ふうせん
         if (extraArg1 != 0) {   // ふうせんが割れたとき

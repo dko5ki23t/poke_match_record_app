@@ -8,6 +8,7 @@ import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
+import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
@@ -756,7 +757,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   });
                                 },
                               ) :
-                              Text(_focusingAbilityName(PlayerType(PlayerType.me), focusState)),
+                              AbilityText(focusState.getPokemonState(PlayerType(PlayerType.me), null).currentAbility, showHatena: true,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
@@ -789,7 +790,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   });
                                 },
                               ) :
-                              Text(_focusingAbilityName(PlayerType(PlayerType.opponent), focusState)),
+                              AbilityText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).currentAbility, showHatena: true,),
                           ),
                         ],
                       ),
@@ -829,7 +830,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   });
                                 },
                               ) :
-                              Text(_focusingItemName(PlayerType(PlayerType.me), focusState)),
+                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
@@ -863,7 +864,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   });
                                 },
                               ) :
-                              Text(_focusingItemName(PlayerType(PlayerType.opponent), focusState)),
+                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true,),
                           ),
                         ],
                       ),
@@ -2285,10 +2286,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
-  String _focusingAbilityName(PlayerType player, PhaseState focusState) {
-    return _abilityNameWithNull(focusState.getPokemonState(player, null).currentAbility);
-  }
-
   int _correctedSpeed(PlayerType player, PhaseState focusState) {
     int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!.s.real;
     final item = focusState.getPokemonState(player, null).holdingItem;
@@ -2421,7 +2418,7 @@ class _MoveViewRow extends Row {
       Expanded(
         child: Row(children: [
           ownState.moves.length > idx ?
-          Text(ownState.moves[idx].displayName) : Text(''),
+          MoveText(ownState.moves[idx]) : Text(''),
         ],),
       ),
       ownState.moves.length > idx && ownState.usedPPs.length > idx ?
@@ -2431,7 +2428,7 @@ class _MoveViewRow extends Row {
       Expanded(
         child: Row(children: [
           opponentState.moves.length > idx ?
-          Text(opponentState.moves[idx].displayName) : Text(''),
+          MoveText(opponentState.moves[idx]) : Text(''),
         ],),
       ),
       opponentState.moves.length > idx && opponentState.usedPPs.length > idx ?
