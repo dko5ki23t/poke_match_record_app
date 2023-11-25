@@ -702,7 +702,30 @@ class TurnMove {
             myState.addStatChanges(true, 3, 2, targetState, moveId: replacedMove.id);
             break;
           case 58:    // へんしん状態となる
-            // TODO
+            if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute || e.id == BuffDebuff.transform).isEmpty &&
+                myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).isEmpty
+            ) {    // 対象がみがわり状態でない・お互いにへんしん状態でないなら
+              myState.type1 = targetState.type1;
+              myState.type2 = targetState.type2;
+              myState.setCurrentAbility(targetState.currentAbility, targetState, playerType.id == PlayerType.me, state);
+              for (int i = 0; i < targetState.moves.length; i++) {
+                if (i >= myState.moves.length) {
+                  myState.moves.add(targetState.moves[i]);
+                }
+                else {
+                  myState.moves[i] = targetState.moves[i];
+                }
+                myState.usedPPs[i] = 0;
+              }
+              for (int i = 0; i < StatIndex.size.index; i++) {    // HP以外のステータス実数値
+                myState.minStats[i].real = targetState.minStats[i].real;
+                myState.maxStats[i].real = targetState.maxStats[i].real;
+              }
+              for (int i = 0; i < 7; i++) {
+                myState.forceSetStatChanges(i, targetState.statChanges(i));
+              }
+              myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transform)..extraArg1 = targetState.pokemon.no..turns = targetState.pokemon.sex.id);
+            }
             break;
           case 59:    // こうげきを2段階下げる
             targetState.addStatChanges(targetState == myState, 0, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
@@ -943,7 +966,7 @@ class TurnMove {
             if (movePower > 160) movePower = 160;
             break;
           case 121:   // 性別が異なる場合、メロメロ状態にする
-            if (myState.pokemon.sex != Sex.none && targetState.pokemon.sex != Sex.none && myState.pokemon.sex != targetState.pokemon.sex) {
+            if (myState.sex != Sex.none && targetState.sex != Sex.none && myState.sex != targetState.sex) {
               targetState.ailmentsAdd(Ailment(Ailment.infatuation), state);
             }
             break;
@@ -1308,7 +1331,7 @@ class TurnMove {
           case 196:   // そのターンに使われる、自身を対象にするへんかわざを横取りして代わりに自分に使う(SV使用不可のため処理なし)
             break;
           case 197:   // 相手のおもさによって威力が変わる
-            int weight = pokeData.pokeBase[targetState.pokemon.no]!.weight;
+            int weight = targetState.weight;
             if (weight <= 99) {
               movePower = 20;
             }
@@ -1674,7 +1697,7 @@ class TurnMove {
             }
             break;
           case 266:   // 性別が異なる場合、相手のとくこうを2段階下げる
-            if (myState.pokemon.sex != Sex.none && targetState.pokemon.sex != Sex.none && myState.pokemon.sex != targetState.pokemon.sex) {
+            if (myState.sex != Sex.none && targetState.sex != Sex.none && myState.sex != targetState.sex) {
               targetState.addStatChanges(targetState == myState, 2, -2, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             }
             break;
@@ -1871,8 +1894,8 @@ class TurnMove {
             break;
           case 292:   // 使用者のおもさと相手のおもさの比率によって威力がかわる。ちいさくなる状態の相手に必中、その場合ダメージが2倍
             {
-              int myWeight = pokeData.pokeBase[myState.pokemon.no]!.weight;
-              int targetWeight = pokeData.pokeBase[targetState.pokemon.no]!.weight;
+              int myWeight = myState.weight;
+              int targetWeight = targetState.weight;
               if (targetWeight <= myWeight / 5) {
                 movePower = 120;
               }
@@ -2811,8 +2834,8 @@ class TurnMove {
           if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
           if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
           if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
-          if (myState.pokemon.sex.id != 0 && targetStates[0].pokemon.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
-            if (myState.pokemon.sex.id != targetStates[0].pokemon.sex.id) {
+          if (myState.sex.id != 0 && targetStates[0].sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
+            if (myState.sex.id != targetStates[0].sex.id) {
               tmpPow *= 1.25;
             }
             else {

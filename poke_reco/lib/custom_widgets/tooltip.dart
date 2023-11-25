@@ -13,7 +13,7 @@ class AbilityText extends Tooltip {
     }
   ) : 
   super(
-    message: PokeDB().abilityFlavors[ability.id],
+    message: PokeDB().abilityFlavors[ability.id] ?? '',
     child: Text(
       showHatena && ability.id == 0 ? '？' :
       ability.displayName
@@ -31,7 +31,7 @@ class ItemText extends Tooltip {
     }
   ) : 
   super(
-    message: PokeDB().itemFlavors[item?.id],
+    message: PokeDB().itemFlavors[item?.id] ?? '',
     child: Text(
       showNone && item == null ? 'なし' :
       showHatena && item?.id == 0 ? '？' :
@@ -55,7 +55,7 @@ class MoveText extends Tooltip {
       ),
       TextSpan(text: move.damageClass.id == 1 ? '　変化' : move.damageClass.id == 2 ? '　物理' : move.damageClass.id == 3 ? '　特殊' : '　？'),
       TextSpan(text: '　威力：${move.power}　命中：${move.accuracy}'),
-      TextSpan(text: '\n${PokeDB().moveFlavors[move.id]}'),
+      TextSpan(text: '\n${PokeDB().moveFlavors[move.id] ?? ''}'),
     ]),
     child: Text(move.displayName),
     showDuration: Duration(minutes: 1,),

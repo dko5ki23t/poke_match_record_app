@@ -74,6 +74,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   TextEditingController opponentItemController = TextEditingController();
   TextEditingController ownHPController = TextEditingController();
   TextEditingController opponentHPController = TextEditingController();
+  List<TextEditingController> ownStatusMinControllers = List.generate(6, (index) => TextEditingController());
+  List<TextEditingController> ownStatusMaxControllers = List.generate(6, (index) => TextEditingController());
+  List<TextEditingController> opponentStatusMinControllers = List.generate(6, (index) => TextEditingController());
+  List<TextEditingController> opponentStatusMaxControllers = List.generate(6, (index) => TextEditingController());
 
   final turnScrollController = ScrollController();
 
@@ -523,41 +527,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         turns[turnNum-1].phases[focusPhaseIdx-1].userForces.add(force);
       }
       else {
-        /*var pokeData = PokeDB();
-        var ownState = turns[turnNum-1].initialOwnPokemonState;
-        var opponentState = turns[turnNum-1].initialOpponentPokemonState;*/
         var state = turns[turnNum-1].copyInitialState();
         turns[turnNum-1].initialUserForces.add(force);
         turns[turnNum-1].setInitialState(state);
-        /*
-        switch (force.typeId) {
-          case UserForce.ability:
-            if (force.playerType.id == PlayerType.me) {
-              ownState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentState, true, state);
-            }
-            else if (force.playerType.id == PlayerType.opponent) {
-              opponentState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownState, false, state);
-            }
-            turns[turnNum-1].setInitialState(state);
-            break;
-          case UserForce.item:
-            var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
-            if (force.playerType.id == PlayerType.me) {
-              ownState.holdingItem = item;
-            }
-            else if (force.playerType.id == PlayerType.opponent) {
-              opponentState.holdingItem = item;
-            }
-            break;
-          case UserForce.hp:
-            if (force.playerType.id == PlayerType.me) {
-              ownState.remainHP = force.arg1;
-            }
-            else if (force.playerType.id == PlayerType.opponent) {
-              opponentState.remainHPPercent = force.arg1;
-            }
-            break;
-        }*/
       }
     }
 
@@ -595,7 +567,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   child: Row(children: [
                     Icon(Icons.catching_pokemon),
                     Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
-                    _focusingPokemon(PlayerType(PlayerType.me), focusState).sex.displayIcon,
+                    focusState.getPokemonState(PlayerType(PlayerType.me), null).sex.displayIcon,
                   ],),
                 ),
                 SizedBox(width: 10,),
@@ -603,7 +575,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   child: Row(children: [
                     Icon(Icons.catching_pokemon),
                     Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
-                    _focusingPokemon(PlayerType(PlayerType.opponent), focusState).sex.displayIcon,
+                    focusState.getPokemonState(PlayerType(PlayerType.opponent), null).sex.displayIcon,
                   ],),
                 ),
                 IconButton(
@@ -646,23 +618,27 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             onPressed: () {
                               setState(() {
                                 isEditMode = !isEditMode;
+                                var own = focusState!.getPokemonState(PlayerType(PlayerType.me), null);
+                                var opp = focusState.getPokemonState(PlayerType(PlayerType.opponent), null);
                                 if (isEditMode) {
-                                  ownAbilityController.text = _abilityNameWithNull(focusState!.getPokemonState(PlayerType(PlayerType.me), null).currentAbility);
-                                  opponentAbilityController.text = _abilityNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).currentAbility);
-                                  ownItemController.text = _itemNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem);
-                                  opponentItemController.text = _itemNameWithNull(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem);
-                                  ownHPController.text = focusState.getPokemonState(PlayerType(PlayerType.me), null).remainHP.toString();
-                                  opponentHPController.text = focusState.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent.toString();
-                                  var own = focusState.getPokemonState(PlayerType(PlayerType.me), null);
-                                  var opp = focusState.getPokemonState(PlayerType(PlayerType.opponent), null);
+                                  ownAbilityController.text = _abilityNameWithNull(own.currentAbility);
+                                  opponentAbilityController.text = _abilityNameWithNull(opp.currentAbility);
+                                  ownItemController.text = _itemNameWithNull(own.holdingItem);
+                                  opponentItemController.text = _itemNameWithNull(opp.holdingItem);
+                                  ownHPController.text = own.remainHP.toString();
+                                  opponentHPController.text = opp.remainHPPercent.toString();
                                   for (int i = 0; i < 7; i++) {
                                     ownStatChanges[i] = own.statChanges(i);
                                     opponentStatChanges[i] = opp.statChanges(i);
                                   }
+                                  for (int i = 0; i < 6; i++) {
+                                    ownStatusMinControllers[i].text = own.minStats[i].real.toString();
+                                    ownStatusMaxControllers[i].text = own.maxStats[i].real.toString();
+                                    opponentStatusMinControllers[i].text = opp.minStats[i].real.toString();
+                                    opponentStatusMaxControllers[i].text = opp.maxStats[i].real.toString();
+                                  }
                                 }
                                 else {
-                                  var own = focusState!.getPokemonState(PlayerType(PlayerType.me), null);
-                                  var opp = focusState.getPokemonState(PlayerType(PlayerType.opponent), null);
                                   for (int i = 0; i < 7; i++) {
                                     if (ownStatChanges[i] != own.statChanges(i)) {
                                       userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.me), UserForce.rankA+i, ownStatChanges[i]));
@@ -881,7 +857,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
                       // TODO
                       for (int i = 0; i < 7; i++)
-                        viewMode == 0 ?
+                        viewMode == 0 ?   // ランク表示
                         _StatChangeViewRow(
                           statAlphabets[i], isEditMode ? ownStatChanges[i] : focusState.getPokemonState(PlayerType(PlayerType.me), null).statChanges(i),
                           isEditMode ? opponentStatChanges[i] : focusState.getPokemonState(PlayerType(PlayerType.opponent), null).statChanges(i),
@@ -912,7 +888,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             }
                           }) : (idx) {},
                         ) :
-                        viewMode == 1 ?
+                        viewMode == 1 ?   // 種族値表示
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
@@ -921,7 +897,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             focusState.getPokemonState(PlayerType(PlayerType.opponent), null).minStats[i].race,
                             focusState.getPokemonState(PlayerType(PlayerType.opponent), null).maxStats[i].race,
                           ) : Container() :
+                          // ステータス(補正前/補正後)
                           i < 6 ?
+                          isEditMode ?
+                          _StatStatusInputRow(
+                            statusAlphabets[i],
+                            ownStatusMinControllers[i], ownStatusMaxControllers[i],
+                            opponentStatusMinControllers[i], opponentStatusMaxControllers[i],
+                            UserForce.statMinH+i, UserForce.statMaxH+i,
+                            (userForce) => userForceAdd(focusPhaseIdx, userForce),
+                          ) :
                           _StatStatusViewRow(
                             statusAlphabets[i],
                             focusState.getPokemonState(PlayerType(PlayerType.me), null).minStats[i].real,
@@ -2404,6 +2389,81 @@ class _StatStatusViewRow extends Row {
           opponentStatusMin == opponentStatusMax ?
           Text(opponentStatusMin.toString()) :
           Text('$opponentStatusMin～$opponentStatusMax'),
+        ],),
+      ),
+    ],
+  );
+}
+
+class _StatStatusInputRow extends Row {
+  _StatStatusInputRow(
+    String label,
+    TextEditingController ownStatusMinController,
+    TextEditingController ownStatusMaxController,
+    TextEditingController opponentStatusMinController,
+    TextEditingController opponentStatusMaxController,
+    int statMinTypeID,
+    int statMaxTypeID,
+    void Function(UserForce) addFunc,
+  ) :
+  super(
+    children: [
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          Expanded(
+            child: TextFormField(
+              controller: ownStatusMinController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                addFunc(UserForce(PlayerType(PlayerType.me), statMinTypeID, (int.tryParse(value)??0)));
+              },
+            ),
+          ),
+          Text('～'),
+          Expanded(
+            child: TextFormField(
+              controller: ownStatusMaxController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                addFunc(UserForce(PlayerType(PlayerType.me), statMaxTypeID, (int.tryParse(value)??0)));
+              },
+            ),
+          ),
+        ],),
+      ),
+      SizedBox(width: 10,),
+      Expanded(
+        child: Row(children: [
+          Text(label),
+          Expanded(
+            child: TextFormField(
+              controller: opponentStatusMinController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                addFunc(UserForce(PlayerType(PlayerType.opponent), statMinTypeID, (int.tryParse(value)??0)));
+              },
+            ),
+          ),
+          Text('～'),
+          Expanded(
+            child: TextFormField(
+              controller: opponentStatusMaxController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                addFunc(UserForce(PlayerType(PlayerType.opponent), statMaxTypeID, (int.tryParse(value)??0)));
+              },
+            ),
+          ),
         ],),
       ),
     ],

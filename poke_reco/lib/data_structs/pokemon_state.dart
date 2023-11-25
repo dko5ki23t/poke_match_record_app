@@ -63,6 +63,21 @@ class PokemonState {
   Item? get holdingItem => _holdingItem;
   Ability get currentAbility => _currentAbility;
   bool get isFainting => _isFainting;
+  // たかさ・おもさ・せいべつはメタモンのへんしん状態に応じて変化
+  int get weight {
+    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
+    return PokeDB().pokeBase[no]!.weight;
+  }
+  int get height {
+    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
+    return PokeDB().pokeBase[no]!.height;
+  }
+  Sex get sex {
+    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
+  }
 
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);

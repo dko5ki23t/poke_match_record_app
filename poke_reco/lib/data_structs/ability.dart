@@ -339,6 +339,32 @@ class Ability {
         myState.addStatChanges(true, extraArg1, 2, yourState, abilityId: abilityID);
         myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: abilityID);
         break;
+      case 150:   // かわりもの
+        if (yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute || e.id == BuffDebuff.transform).isEmpty &&
+            myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).isEmpty
+        ) {    // 対象がみがわり状態でない・お互いにへんしん状態でないなら
+          myState.type1 = yourState.type1;
+          myState.type2 = yourState.type2;
+          myState.setCurrentAbility(yourState.currentAbility, yourState, isOwn, state);
+          for (int i = 0; i < yourState.moves.length; i++) {
+            if (i >= myState.moves.length) {
+              myState.moves.add(yourState.moves[i]);
+            }
+            else {
+              myState.moves[i] = yourState.moves[i];
+            }
+            myState.usedPPs[i] = 0;
+          }
+          for (int i = 0; i < StatIndex.size.index; i++) {    // HP以外のステータス実数値
+            myState.minStats[i].real = yourState.minStats[i].real;
+            myState.maxStats[i].real = yourState.maxStats[i].real;
+          }
+          for (int i = 0; i < 7; i++) {
+            myState.forceSetStatChanges(i, yourState.statChanges(i));
+          }
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transform)..extraArg1 = yourState.pokemon.no..turns = yourState.pokemon.sex.id);
+        }
+        break;
       case 152:   // ミイラ
       case 268:   // とれないにおい
         yourState.setCurrentAbility(myState.currentAbility, myState, !isOwn, state);

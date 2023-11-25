@@ -191,6 +191,7 @@ class BuffDebuff {
   static const int attack1_2 = 186;       // こうげきわざ威力1.2倍
   static const int lastLostBerry = 187;   // 最後に消費したきのみ(隠しステータス)
   static const int lastLostItem = 188;    // 最後に消費したもちもの(隠しステータス)
+  static const int transform = 189;       // へんしん(extraArgに、へんしん対象のポケモンNo、turnsに、性別のid)
 
   static const _displayNameMap = {
     0:  '',
@@ -379,6 +380,7 @@ class BuffDebuff {
     183: '',
     184: '相手わざ必中・ダメージ2倍',
     186: 'こうげきわざ威力1.2倍',
+    189: 'へんしん',
   };
 
   static const _displayTurnMap = {

@@ -15,6 +15,18 @@ class UserForce {
   static const int rankS = 8;
   static const int rankAc = 9;
   static const int rankEv = 10;
+  static const int statMinH = 11;
+  static const int statMinA = 12;
+  static const int statMinB = 13;
+  static const int statMinC = 14;
+  static const int statMinD = 15;
+  static const int statMinS = 16;
+  static const int statMaxH = 17;
+  static const int statMaxA = 18;
+  static const int statMaxB = 19;
+  static const int statMaxC = 20;
+  static const int statMaxD = 21;
+  static const int statMaxS = 22;
 
   final PlayerType playerType;
   final int typeId;
@@ -83,6 +95,32 @@ class UserForces {
           }
           else if (force.playerType.id == PlayerType.opponent) {
             opponentPokemonState.forceSetStatChanges(force.typeId - UserForce.rankA, force.arg1);
+          }
+          break;
+        case UserForce.statMinH:
+        case UserForce.statMinA:
+        case UserForce.statMinB:
+        case UserForce.statMinC:
+        case UserForce.statMinD:
+        case UserForce.statMinS:
+          if (force.playerType.id == PlayerType.me) {
+            ownPokemonState.minStats[force.typeId-UserForce.statMinH].real = force.arg1;
+          }
+          else if (force.playerType.id == PlayerType.opponent) {
+            opponentPokemonState.minStats[force.typeId-UserForce.statMinH].real = force.arg1;
+          }
+          break;
+        case UserForce.statMaxH:
+        case UserForce.statMaxA:
+        case UserForce.statMaxB:
+        case UserForce.statMaxC:
+        case UserForce.statMaxD:
+        case UserForce.statMaxS:
+          if (force.playerType.id == PlayerType.me) {
+            ownPokemonState.maxStats[force.typeId-UserForce.statMaxH].real = force.arg1;
+          }
+          else if (force.playerType.id == PlayerType.opponent) {
+            opponentPokemonState.maxStats[force.typeId-UserForce.statMaxH].real = force.arg1;
           }
           break;
       }

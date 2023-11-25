@@ -819,7 +819,7 @@ class TurnEffect {
             defenderTimingIDs.add(63);  // 直接攻撃を受けた時
             attackerTimingIDs.add(84);  // 直接攻撃をあてたとき(確率)
             // 違う性別の相手から直接攻撃を受けた時（確率）
-            if (attackerState.pokemon.sex != defenderState.pokemon.sex && attackerState.pokemon.sex != Sex.none) defenderTimingIDs.add(69);
+            if (attackerState.sex != defenderState.sex && attackerState.sex != Sex.none) defenderTimingIDs.add(69);
             // 直接攻撃によりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(75);
             // まもる系統のわざ相手に直接攻撃したとき
