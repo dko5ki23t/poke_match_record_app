@@ -1001,6 +1001,10 @@ class Item {
             playerType.id == PlayerType.me ?
             Flexible(child: Text('/${myPokemon.h.real}')) :
             Flexible(child: Text('% /100%')),
+            SizedBox(width: 10,),
+            extraArg1 >= 0 ?
+            Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '' : '%'}')) :
+            Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '' : '%'}')),
           ],
         );
       case 136:     // フィラのみ
@@ -1059,6 +1063,9 @@ class Item {
                 playerType.id == PlayerType.me ?
                 Flexible(child: Text('/${myPokemon.h.real}')) :
                 Flexible(child: Text('% /100%')),
+                extraArg1 >= 0 ?
+                Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '' : '%'}')) :
+                Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '' : '%'}')),
               ],
             ) : Container(),
           ],
@@ -1092,6 +1099,9 @@ class Item {
             playerType.id == PlayerType.me ?
             Flexible(child: Text('% /100%')) :
             Flexible(child: Text('/${yourPokemon.h.real}')),
+            extraArg1 >= 0 ?
+            Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '%' : ''}')) :
+            Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '%' : ''}')),
           ],
         );
       case 584:     // ふうせん

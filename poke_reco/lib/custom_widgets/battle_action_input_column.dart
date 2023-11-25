@@ -177,14 +177,6 @@ class BattleActionInputColumn extends Column {
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
                 appState, phaseIdx, 0, turnEffectAndStateAndGuide, theme
               ),
-/*
-              SizedBox(height: 10,),
-              turn.phases[phaseIdx].move!.terastalInputWidget(
-                () => onFocus(phaseIdx+1),
-                ownPokemon, turn.phases[phaseIdx].playerType.id == PlayerType.me ?
-                  prevState.hasOwnTerastal : prevState.hasOpponentTerastal,
-              ),
-*/
               SizedBox(height: turn.phases[phaseIdx].move!.isSuccess ? 10 : 0,),
               turn.phases[phaseIdx].move!.isSuccess ?
               turn.phases[phaseIdx].move!.extraInputWidget2(

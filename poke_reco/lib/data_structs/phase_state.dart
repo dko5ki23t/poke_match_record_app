@@ -773,6 +773,9 @@ class PhaseState {
       }
       
       // もちもの
+      if (playerTimingIDs.contains(AbilityTiming.hp050) && myState.currentAbility.id == 82) {   // とくせいがくいしんぼうの場合はHP50%以下ならHP25%以下タイミングも併発
+        playerTimingIDs.add(AbilityTiming.hp025);
+      }
       if (myState.holdingItem != null && playerTimingIDs.contains(myState.holdingItem!.timing.id)) {
         var addingItem = TurnEffect()
           ..playerType = player

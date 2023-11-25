@@ -3472,53 +3472,6 @@ class TurnMove {
     }
   }
 
-  Widget terastalInputWidget(
-    void Function() onFocus,
-    Pokemon ownPokemon,
-    bool alreadyTerastal,
-  )
-  {
-    final pokeData = PokeDB();
-    if (playerType.id != PlayerType.none && type.id == TurnMoveType.move) {
-      // テラスタル有無
-      return Row(
-        children: [
-          Expanded(
-            child: CheckboxListTile(
-              title: Text('テラスタル'),
-              value: teraType.id != 0,
-              enabled: !alreadyTerastal,
-              onChanged: (value) {
-                if (value != null && value) {
-                  if (playerType.id == PlayerType.me) {
-                    teraType = ownPokemon.teraType;
-                  }
-                  else {
-                    teraType = pokeData.types[0];  // とりあえずノーマル
-                  }
-                }
-                else {
-                  teraType = PokeType.createFromId(0);
-                }
-                onFocus();
-              },
-            ),
-          ),
-          SizedBox(width: 10,),
-          Expanded(
-            child: TypeDropdownButton(
-              'タイプ',
-              teraType.id == 0 || alreadyTerastal || playerType.id == PlayerType.me ?
-                null : (val) {teraType = pokeData.types[val - 1];},
-              teraType.id == 0 ? null : teraType.id,
-            ),
-          ),
-        ],
-      );
-    }
-    return Container();
-  }
-
   Widget extraInputWidget2(
     void Function() onFocus,
     Pokemon ownPokemon,
@@ -3770,7 +3723,15 @@ class TurnMove {
               ),
               playerType.id == PlayerType.me ?
               Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%'))
+              Flexible(child: Text('% /100%')),
+              SizedBox(width: 10,),
+              playerType.id == PlayerType.me ?
+                extraArg1[continuousCount] >= 0 ?
+                Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
+                Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
+                extraArg2[continuousCount] >= 0 ?
+                Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
+                Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
             ],
           );
           break;
@@ -4032,7 +3993,15 @@ class TurnMove {
                 ),
                 playerType.id == PlayerType.me ?
                 Flexible(child: Text('/${ownPokemon.h.real}')) :
-                Flexible(child: Text('% /100%'))
+                Flexible(child: Text('% /100%')),
+                SizedBox(width: 10,),
+                playerType.id == PlayerType.me ?
+                  extraArg1[continuousCount] >= 0 ?
+                  Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
+                  Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
+                  extraArg2[continuousCount] >= 0 ?
+                  Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
+                  Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
               ],
             );
           }
@@ -4149,7 +4118,15 @@ class TurnMove {
                 ),
                 playerType.id == PlayerType.me ?
                 Flexible(child: Text('/${ownPokemon.h.real}')) :
-                Flexible(child: Text('% /100%'))
+                Flexible(child: Text('% /100%')),
+                SizedBox(width: 10,),
+                playerType.id == PlayerType.me ?
+                  extraArg1[continuousCount] >= 0 ?
+                  Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
+                  Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
+                  extraArg2[continuousCount] >= 0 ?
+                  Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
+                  Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
               ],
             );
           }
@@ -4810,7 +4787,11 @@ class TurnMove {
               ),
               playerType.id == PlayerType.me ?
               Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%'))
+              Flexible(child: Text('% /100%')),
+              SizedBox(width: 10,),
+              extraArg2[continuousCount] >= 0 ?
+              Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}${playerType.id == PlayerType.me ? '' : '%'}')) :
+              Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}${playerType.id == PlayerType.me ? '' : '%'}')),
             ],
           );
           break;
@@ -5186,7 +5167,15 @@ class TurnMove {
               ),
               playerType.id == PlayerType.me ?
               Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%'))
+              Flexible(child: Text('% /100%')),
+              SizedBox(width: 10,),
+              playerType.id == PlayerType.me ?
+                extraArg1[continuousCount] >= 0 ?
+                Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
+                Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
+                extraArg2[continuousCount] >= 0 ?
+                Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
+                Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
             ],
           );
           break;
