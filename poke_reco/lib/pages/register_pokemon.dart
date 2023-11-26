@@ -87,7 +87,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
           context: context,
           builder: (_) {
             return DeleteEditingCheckDialog(
-              'ポケモン',
+              null,
               () {
                 Navigator.pop(context);
                 appState.onTabChange = (func) => func();
@@ -108,7 +108,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
           context: context,
           builder: (_) {
             return DeleteEditingCheckDialog(
-              'ポケモン',
+              null,
               () => func(),
             );
           }
@@ -255,6 +255,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         ),
                       ),
                       SizedBox(width: 10),
+                      /*
                       Expanded(
                         flex: 3,
                         child:TextFormField(
@@ -269,6 +270,17 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           maxLength: 5,
                           controller: pokeNoController,
                           enabled: false,   // TODO:余裕があれば図鑑No変更→ポケモン名変更
+                        ),
+                      ),
+                      */
+                      Expanded(
+                        flex: 3,
+                        child: Image.network(
+                          pokeData.pokeBase[widget.myPokemon.no]!.imageUrl,
+                          //height: theme.buttonTheme.height,
+                          errorBuilder: (c, o, s) {
+                            return const Icon(Icons.catching_pokemon);
+                          },
                         ),
                       ),
                     ],

@@ -4,6 +4,7 @@ import 'package:poke_reco/custom_dialogs/battle_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_filter_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_tile.dart';
+import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/battle.dart';
@@ -134,7 +135,6 @@ class BattlesPageState extends State<BattlesPage> {
                   leading: Icon(Icons.list_alt),
                   onLongPress: () => widget.onAdd(battle.value.copyWith(), false),
                 ),
-              SizedBox(height: deviceHeight / 4),
             ],
           ),
         );
@@ -146,8 +146,9 @@ class BattlesPageState extends State<BattlesPage> {
         title: Text('対戦一覧'),
         actions: [
           isEditMode ?
-          TextButton(
+          MyIconButton(
             // TODO awaitで待ち発生しない？終わるまで操作不能とかにしたい
+            theme: theme,
             onPressed: () async {
               for (int i = 0; i < sortedBattles.length; i++) {
                 var battle = battles[sortedBattles[i].key]!;
@@ -159,13 +160,15 @@ class BattlesPageState extends State<BattlesPage> {
                 isEditMode = false;
               });
             },
-            child: Text('完了'),
+            icon: Icon(Icons.check),
+            tooltip: '完了',
           ) :
           Align(
             alignment: Alignment.centerRight,
             child: Row(
               children: [
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -186,9 +189,11 @@ class BattlesPageState extends State<BattlesPage> {
                       }
                     );
                   },
-                  child: Icon(Icons.filter_alt),
+                  icon: Icon(Icons.filter_alt),
+                  tooltip: 'フィルタ',
                 ),
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: () => showDialog(
                     context: context,
                     builder: (_) {
@@ -225,11 +230,14 @@ class BattlesPageState extends State<BattlesPage> {
                       );
                     }
                   ),
-                  child: Icon(Icons.sort),
+                  icon: Icon(Icons.sort),
+                  tooltip: '並べ替え',
                 ),
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: (sortedBattles.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
-                  child: Icon(Icons.edit),
+                  icon: Icon(Icons.edit),
+                  tooltip: '編集',
                 ),
               ],
             ),

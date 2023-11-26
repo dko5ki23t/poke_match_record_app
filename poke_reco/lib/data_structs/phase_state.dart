@@ -492,6 +492,9 @@ class PhaseState {
             var yourState = getPokemonState(player.opposite, null);
             bool isMe = player.id == PlayerType.me;
 
+            // 死に出しなら発動する効果はない
+            if (getPokemonStates(player)[currentTurn.getInitialPokemonIndex(player)-1].isFainting) continue;
+
             // 毎ターン終了時には無条件で発動する効果
             playerTimingIDs = [AbilityTiming.everyTurnEnd];
             // 1度でも行動した後毎ターン終了時

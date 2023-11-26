@@ -3,6 +3,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialogs/party_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_filter_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
+import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -139,18 +140,21 @@ class PartiesPageState extends State<PartiesPage> {
         title: Text('パーティ一覧'),
         actions: [
           isEditMode ?
-          TextButton(
+          MyIconButton(
+            theme: theme,
             onPressed: () {
               setState(() => isEditMode = false);
               pokeData.partiesSort = null;
             },
-            child: Text('完了'),
+            icon: Icon(Icons.check),
+            tooltip: '完了',
           ) :
           Align(
             alignment: Alignment.centerRight,
             child: Row(
               children: [
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: () {
                         showDialog(
                           context: context,
@@ -172,9 +176,11 @@ class PartiesPageState extends State<PartiesPage> {
                           }
                         );
                       },
-                  child: Icon(Icons.filter_alt),
+                  icon: Icon(Icons.filter_alt),
+                  tooltip: 'フィルタ',
                 ),
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: () => showDialog(
                     context: context,
                     builder: (_) {
@@ -217,11 +223,14 @@ class PartiesPageState extends State<PartiesPage> {
                       );
                     }
                   ),
-                  child: Icon(Icons.sort),
+                  icon: Icon(Icons.sort),
+                  tooltip: '並べ替え',
                 ),
-                TextButton(
+                MyIconButton(
+                  theme: theme,
                   onPressed: (sortedParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
-                  child: Icon(Icons.edit),
+                  icon: Icon(Icons.edit),
+                  tooltip: '編集',
                 ),
               ],
             ),

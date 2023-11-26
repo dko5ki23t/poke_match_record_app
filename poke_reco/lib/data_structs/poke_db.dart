@@ -22,6 +22,7 @@ import 'package:quiver/iterables.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:http/http.dart' as http;
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -738,7 +739,7 @@ class PokeDB {
       sex: [Sex.createFromId(0)],
       no: 0, type1: PokeType.createFromId(0),
       type2: null, h: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
-      ability: [], move: [], height: 0, weight: 0, eggGroups: [],),
+      ability: [], move: [], height: 0, weight: 0, eggGroups: [], imageUrl: '',),
   };
   late Database pokeBaseDb;
   Map<int, Pokemon> pokemons = {0: Pokemon()};
@@ -1035,6 +1036,11 @@ class PokeDB {
       else {
         sexList = [Sex.male, Sex.female];
       }
+      //final res = await http.get(Uri.parse('$pokeApiRoute/pokemon/${map[pokeBaseColumnId]}'));
+      String url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${map[pokeBaseColumnId]}.png';
+      /*if (res.statusCode == 200) {
+        url = jsonDecode(res.body)['sprites']['other']['official-artwork']['front_default'];
+      }*/
       pokeBase[map[pokeBaseColumnId]] = PokeBase(
         name: map[pokeBaseColumnName],
         sex: sexList,
@@ -1051,7 +1057,8 @@ class PokeDB {
         move: [for (var e in pokeMoves) moves[e]!],
         height: map[pokeBaseColumnHeight],
         weight: map[pokeBaseColumnWeight],
-        eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!]
+        eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!],
+        imageUrl: url,
       );
     }
 

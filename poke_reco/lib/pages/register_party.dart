@@ -42,7 +42,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
           context: context,
           builder: (_) {
             return DeleteEditingCheckDialog(
-              'パーティ',
+              null,
               () {
                 Navigator.pop(context);
                 appState.onTabChange = (func) => func();
@@ -63,7 +63,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
           context: context,
           builder: (_) {
             return DeleteEditingCheckDialog(
-              'パーティ',
+              null,
               () => func(),
             );
           }

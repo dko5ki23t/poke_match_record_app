@@ -8,6 +8,7 @@ import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
+import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -157,7 +158,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         context: context,
         builder: (_) {
           return DeleteEditingCheckDialog(
-            '対戦記録',
+            null,
             () {
               Navigator.pop(context);
               appState.onTabChange = (func) => func();
@@ -172,7 +173,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         context: context,
         builder: (_) {
           return DeleteEditingCheckDialog(
-            '対戦記録',
+            null,
             () => func(),
           );
         }
@@ -189,6 +190,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Widget title;
     void Function()? nextPressed;
     void Function()? backPressed;
+    void Function()? deletePressed;
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
@@ -522,6 +524,46 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
+    void onTurnDelete() {
+      switch (pageType) {
+        case RegisterBattlePageType.basePage:
+          showDialog(
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                '入力中の対戦記録の内容をすべて削除してもいいですか？\n（※現在の画面以降の入力もすべて削除されます。）',
+                () {
+                  widget.battle.clear();
+                  setState(() {});
+                },
+              );
+            }
+          );
+          break;
+        case RegisterBattlePageType.turnPage:
+          showDialog(
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                '入力中のターンの記録を削除してもいいですか？\n（※現在のターン以降の入力もすべて削除されます。）',
+                () {
+                  if (turnNum < turns.length) {
+                    widget.battle.turns.removeRange(turnNum, widget.battle.turns.length);
+                  }
+                  widget.battle.turns[turnNum-1].clearWithInitialState();
+                  setState(() {});
+                },
+              );
+            }
+          );
+          break;
+        case RegisterBattlePageType.firstPokemonPage:
+        default:
+          assert(false, 'invalid page move');
+          break;
+      }
+    }
+
     void userForceAdd(int focusPhaseIdx, UserForce force) {
       if (focusPhaseIdx > 0) {
         turns[turnNum-1].phases[focusPhaseIdx-1].userForces.add(force);
@@ -546,6 +588,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           opponentPokemonController);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
+        deletePressed = () => onTurnDelete();
         break;
       case RegisterBattlePageType.firstPokemonPage:
         title = Text('選出ポケモン');
@@ -555,6 +598,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           checkedPokemons);
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
+        deletePressed = null;
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('$turnNumターン目');
@@ -565,15 +609,27 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    Icon(Icons.catching_pokemon),
-                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
+                    Image.network(
+                      pokeData.pokeBase[focusState!.getPokemonState(PlayerType(PlayerType.me), null).pokemon.no]!.imageUrl,
+                      height: theme.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    ),
+                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState).name, overflow: TextOverflow.ellipsis,)),
                     focusState.getPokemonState(PlayerType(PlayerType.me), null).sex.displayIcon,
                   ],),
                 ),
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    Icon(Icons.catching_pokemon),
+                    Image.network(
+                      pokeData.pokeBase[focusState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.no]!.imageUrl,
+                      height: theme.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    ),
                     Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
                     focusState.getPokemonState(PlayerType(PlayerType.opponent), null).sex.displayIcon,
                   ],),
@@ -962,12 +1018,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
                        getSelectedNum(appState.editingPhase) == 0 && widget.battle.turns[turnNum-1].phases.last.timing.id != AbilityTiming.gameSet) ? () => onNext() : null;
         backPressed = () => onturnBack();
+        deletePressed = () => onTurnDelete();
         break;
       default:
         title = Text('バトル登録');
         lists = Center();
         nextPressed = null;
         backPressed = null;
+        deletePressed = null;
         break;
     }
 
@@ -980,17 +1038,35 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         appBar: AppBar(
           title: title,
           actions: [
-            TextButton(
+            MyIconButton(
+              theme: theme,
               onPressed: backPressed,
-              child: Text('前へ'),
+              tooltip: '前へ',
+              icon: Icon(Icons.navigate_before),
             ),
-            TextButton(
+            MyIconButton(
+              theme: theme,
               onPressed: nextPressed,
-              child: Text('次へ'),
+              tooltip: '次へ',
+              icon: Icon(Icons.navigate_next),
             ),
-            TextButton(
+            MyIconButton(
+              theme: theme,
+              onPressed: deletePressed,
+              tooltip: '削除',
+              icon: Icon(Icons.delete),
+            ),
+            SizedBox(
+              height: 20,
+              child: VerticalDivider(
+                thickness: 1,
+              ),
+            ),
+            MyIconButton(
+              theme: theme,
               onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
-              child: Text('保存'),
+              tooltip: '保存',
+              icon: Icon(Icons.save),
             ),
           ],
         ),

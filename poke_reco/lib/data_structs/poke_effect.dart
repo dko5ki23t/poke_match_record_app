@@ -778,7 +778,7 @@ class TurnEffect {
         break;
       case AbilityTiming.afterActionDecision:    // 行動決定直後
         {
-          timingIDs.addAll(afterActionDecisionTimingIDs);
+          timingIDs = afterActionDecisionTimingIDs;
           attackerTimingIDs.clear();
           defenderTimingIDs.clear();
         }
@@ -909,6 +909,9 @@ class TurnEffect {
         break;
       case AbilityTiming.afterTerastal:   // テラスタル後
         {
+          timingIDs.clear();
+          attackerTimingIDs.clear();
+          defenderTimingIDs.clear();
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             bool isMe = playerType.id == PlayerType.me;
             bool isTerastal = pokemonState!.teraType?.id != 0 && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_filter_dialog.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
+import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
@@ -161,13 +162,18 @@ class PokemonsPageState extends State<PokemonsPage> {
                   e.value,
                   theme,
                   enabled: !partyPokemonsNo.contains(e.value.no),
-                  leading: Icon(Icons.catching_pokemon),
+                  leading: Image.network(
+                    pokeData.pokeBase[e.value.no]!.imageUrl,
+                    height: theme.buttonTheme.height,
+                    errorBuilder: (c, o, s) {
+                      return const Icon(Icons.catching_pokemon);
+                    },
+                  ),
                   onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
                   onTap: widget.selectMode ? () {
                     selectedPokemon = e.value;
                     widget.onSelect!(e.value);} : null,
                 ),
-              SizedBox(height: deviceHeight / 4),
             ],
           ),
         );
@@ -185,18 +191,21 @@ class PokemonsPageState extends State<PokemonsPage> {
           actions: [
             !widget.selectMode ?
               isEditMode ?
-              TextButton(
+              MyIconButton(
+                theme: theme,
                 onPressed: () {
                   setState(() => isEditMode = false);
                   pokeData.pokemonsSort = null;
                 },
-                child: Text('完了'),
+                icon: Icon(Icons.check),
+                tooltip: '完了',
               ) :
               Align(
                 alignment: Alignment.centerRight,
                 child: Row(
                   children: [
-                    TextButton(
+                    MyIconButton(
+                      theme: theme,
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -235,9 +244,11 @@ class PokemonsPageState extends State<PokemonsPage> {
                           }
                         );
                       },
-                      child: Icon(Icons.filter_alt),
+                      icon: Icon(Icons.filter_alt),
+                      tooltip: 'フィルタ',
                     ),
-                    TextButton(
+                    MyIconButton(
+                      theme: theme,
                       onPressed: () => showDialog(
                         context: context,
                         builder: (_) {
@@ -280,11 +291,14 @@ class PokemonsPageState extends State<PokemonsPage> {
                           );
                         }
                       ),
-                      child: Icon(Icons.sort),
+                      icon: Icon(Icons.sort),
+                      tooltip: '並べ替え',
                     ),
-                    TextButton(
+                    MyIconButton(
+                      theme: theme,
                       onPressed: (sortedPokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
-                      child: Icon(Icons.edit),
+                      icon: Icon(Icons.edit),
+                      tooltip: '編集',
                     ),
                   ],
                 ),
@@ -294,7 +308,8 @@ class PokemonsPageState extends State<PokemonsPage> {
               alignment: Alignment.centerRight,
               child: Row(
                 children: [
-                  TextButton(
+                  MyIconButton(
+                    theme: theme,
                     onPressed: () {
                       showDialog(
                         context: context,
@@ -333,9 +348,11 @@ class PokemonsPageState extends State<PokemonsPage> {
                         }
                       );
                     },
-                    child: Icon(Icons.filter_alt),
+                    icon: Icon(Icons.filter_alt),
+                    tooltip: 'フィルタ',
                   ),
-                  TextButton(
+                  MyIconButton(
+                    theme: theme,
                     onPressed: () => showDialog(
                       context: context,
                       builder: (_) {
@@ -378,7 +395,8 @@ class PokemonsPageState extends State<PokemonsPage> {
                         );
                       }
                     ),
-                    child: Icon(Icons.sort),
+                    icon: Icon(Icons.sort),
+                    tooltip: '並べ替え',
                   ),
                 ],
               ),

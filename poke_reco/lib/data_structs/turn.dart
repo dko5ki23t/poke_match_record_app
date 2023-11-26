@@ -180,6 +180,18 @@ class Turn {
     return ret;
   }
 
+  // 初期状態のみ残してクリア
+  void clearWithInitialState() {
+    //_initialPokemonIndexes = [0, 0];    // 0は無効値
+    //_initialPokemonStates = [[], []];
+    //_initialIndiFields = [[], []];
+    //initialWeather = Weather(0);
+    //initialField = Field(0);
+    //_initialHasTerastal = [false, false];
+    initialUserForces = UserForces();
+    phases = [];
+  }
+
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
     dynamic str, String split1, String split2,

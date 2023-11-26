@@ -64,6 +64,17 @@ class Battle {
       _parties[1].pokemon1.name != '';
   }
 
+  void clear() {
+    name = '';
+    type = BattleType.rankmatch;
+    datetime = DateTime.now();
+    _parties = [Party(), Party()];
+    opponentName = '';
+    turns = [];
+    isMyWin = false;
+    isYourWin = false;
+  }
+
   String get formattedDateTime {
     return outputFormat.format(datetime);
   }

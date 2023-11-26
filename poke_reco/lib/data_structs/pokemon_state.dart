@@ -734,7 +734,10 @@ class PokemonState {
     PokemonState pokemonState = PokemonState();
     final stateElements = str.split(split1);
     // pokemon
-    pokemonState.pokemon = pokeData.pokemons[int.parse(stateElements[0])]!;
+    pokemonState.pokemon = pokeData.pokemons[int.parse(stateElements[0])]!.copyWith();
+    // ポケモンのレベルを50に
+    pokemonState.pokemon.level = 50;
+    pokemonState.pokemon.updateRealStats();
     // remainHP
     pokemonState.remainHP = int.parse(stateElements[1]);
     // remainHPPercent

@@ -397,6 +397,9 @@ class BattleEffectInputColumn extends Column {
           ],
         ) :
         // 処理追加ボタン
+        _getEffectCandidates(timing, battle, PlayerType(PlayerType.me), null, sameTimingList[i], attacker, turnMove, turn, sameTimingList, _getPrevState(prevState, firstIdx, i, sameTimingList),).isNotEmpty ||
+        _getEffectCandidates(timing, battle, PlayerType(PlayerType.opponent), null, sameTimingList[i], attacker, turnMove, turn, sameTimingList, _getPrevState(prevState, firstIdx, i, sameTimingList),).isNotEmpty ||
+        _getEffectCandidates(timing, battle, PlayerType(PlayerType.entireField), null, sameTimingList[i], attacker, turnMove, turn, sameTimingList, _getPrevState(prevState, firstIdx, i, sameTimingList),).isNotEmpty ?
         TextButton(
           onPressed: getSelectedNum(appState.editingPhase.sublist(firstIdx, firstIdx+sameTimingList.length)) == 0 ?
             () {
@@ -421,7 +424,7 @@ class BattleEffectInputColumn extends Column {
               ],
             ),
           ),
-        ),
+        ) : Container(),
     ],
   );
 
