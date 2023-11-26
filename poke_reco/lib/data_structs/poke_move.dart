@@ -5559,7 +5559,7 @@ class TurnMove {
     switch (moveAdditionalEffects[continuousCount].id) {
       case 106:   // もちものを盗む
       case 189:   // もちものを持っていれば失わせ、威力1.5倍
-        if (yourState.holdingItem?.id != 0) {
+        if (yourState.holdingItem != null && yourState.holdingItem!.id != 0) {
           extraArg1[continuousCount] = yourState.holdingItem!.id;
         }
         break;
@@ -5572,7 +5572,7 @@ class TurnMove {
         // TODO
         break;
       case 225:   // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
-        if (yourState.holdingItem?.id != 0 && yourState.holdingItem!.isBerry) {
+        if (yourState.holdingItem != null && yourState.holdingItem!.id != 0 && yourState.holdingItem!.isBerry) {
           extraArg1[continuousCount] = yourState.holdingItem!.id;
         }
         break;

@@ -348,6 +348,7 @@ class BattleEffectInputColumn extends Column {
                               turn.phases[firstIdx+i].effectId = suggestion.effectId;
                               turn.phases[firstIdx+i].extraArg1 = suggestion.extraArg1;
                               turn.phases[firstIdx+i].extraArg2 = suggestion.extraArg2;
+                              /*
                               textEditControllerList2[firstIdx+i].text =
                                 turn.phases[firstIdx+i].getEditingControllerText2(
                                   sameTimingList[i].phaseState,
@@ -358,6 +359,8 @@ class BattleEffectInputColumn extends Column {
                                   sameTimingList[i].phaseState,
                                   sameTimingList.first.phaseIdx-1 >= 0 ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                 );
+                              */
+                              appState.needAdjustPhases = firstIdx+i;
                               appState.editingPhase[firstIdx+i] = true;
                               onFocus(firstIdx+i+1);
                             },
@@ -436,6 +439,8 @@ class BattleEffectInputColumn extends Column {
         return 'ターン終了時';
       case AbilityTiming.afterActionDecision:
         return '行動決定直後';
+      case AbilityTiming.beforeMove:
+        return 'わざ使用前';
       case AbilityTiming.afterMove:
         return 'わざ使用後';
       case AbilityTiming.afterTerastal:

@@ -551,6 +551,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     widget.battle.turns.removeRange(turnNum, widget.battle.turns.length);
                   }
                   widget.battle.turns[turnNum-1].clearWithInitialState();
+                  focusPhaseIdx = 0;
                   setState(() {});
                 },
               );
@@ -1193,6 +1194,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       9: AbilityTiming.gameSet,
       10: AbilityTiming.terastaling,
       11: AbilityTiming.afterTerastal,
+      12: AbilityTiming.beforeMove,
     };
     const Map<int, int> s2TimingMap = {
       1: AbilityTiming.afterMove,
@@ -1301,7 +1303,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;    // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                   else {
@@ -1322,7 +1324,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     s1 = 8;    // ターン終了状態へ
                   }
                   else {
-                    s1 = 2;    // 行動選択状態へ
+                    s1 = 12;    // 行動選択前状態へ
                   }
                 }
               }
@@ -1351,7 +1353,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;    // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                   else {
@@ -1389,7 +1391,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     s1 = 8;    // ターン終了状態へ
                   }
                   else {
-                    s1 = 2;    // 行動選択状態へ
+                    s1 = 12;    // 行動選択前状態へ
                   }
                 }
                 else {
@@ -1639,7 +1641,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 10;    // テラスタル処理状態へ
                     }
                     else {
-                      s1++; // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                     timingListIdx++;
                     isAssisting = false;
@@ -1688,6 +1690,34 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       appState
                     );
                     isInserted = true;
+                    s1 = 12; // 行動選択前状態へ
+                    timingListIdx++;
+                    isAssisting = false;
+                  }
+                }
+                else {
+                  // 自動追加リストに載っているものがあればリストから除外
+                  //delAssistList.add(phases[i]);
+                  isAssisting = true;
+                }
+                break;
+              case 12:      // 行動選択前状態
+                if (i >= phases.length || phases[i].timing.id != AbilityTiming.beforeMove) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    _insertPhase(i, assistList.first, appState);
+                    //delAssistList.add(assistList.first);
+                    assistList.removeAt(0);
+                    isAssisting = true;
+                    isInserted = true;
+                  }
+                  else {
+                    _insertPhase(i, TurnEffect()
+                      ..timing = AbilityTiming(AbilityTiming.beforeMove)
+                      ..isAdding = true,
+                      appState
+                    );
+                    isInserted = true;
                     s1 = 2; // 行動選択状態へ
                     timingListIdx++;
                     isAssisting = false;
@@ -1716,7 +1746,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;    // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                   else {
@@ -1725,7 +1755,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         s1 = 8;    // ターン終了状態へ
                       }
                       else {
-                        s1 = 2;    // 行動選択状態へ
+                        s1 = 12;    // 行動選択前状態へ
                       }
                     }
                     else if (phases[i].move!.type.id == TurnMoveType.move) {
@@ -1873,7 +1903,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;     // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                 }
@@ -1909,7 +1939,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;     // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                 }
@@ -1929,7 +1959,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       s1 = 8;    // ターン終了状態へ
                     }
                     else {
-                      s1 = 2;     // 行動選択状態へ
+                      s1 = 12;    // 行動選択前状態へ
                     }
                   }
                 }
@@ -1947,7 +1977,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     s1 = 8;    // ターン終了状態へ
                   }
                   else {
-                    s1 = 2;    // 行動選択状態へ
+                    s1 = 12;    // 行動選択前状態へ
                   }
                 }
                 else if (!phases[i].isValid()) {
@@ -1955,7 +1985,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     s1 = 8;    // ターン終了状態へ
                   }
                   else {
-                    s1 = 2;    // 行動選択状態へ
+                    s1 = 12;    // 行動選択前状態へ
                   }
                 }
                 else {
@@ -2118,9 +2148,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             appState.needAdjustPhases <= i &&
             !appState.adjustPhaseByDelete
         ) {
+          var tmpAction = lastAction;
+          if (nextTimingID == AbilityTiming.beforeMove) {   // わざの先読みをする
+            for (int j = i; j < phases.length; j++) {
+              if (phases[j].timing.id == AbilityTiming.action && phases[j].isValid() && phases[j].move != null) {
+                tmpAction = phases[j];
+              }
+            }
+          }
           assistList = currentState.getDefaultEffectList(
             currentTurn, AbilityTiming(nextTimingID),
-            changeOwn, changeOpponent, currentState, lastAction, continuousCount,
+            changeOwn, changeOpponent, currentState, tmpAction, continuousCount,
           );
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
           // それ以外で入力済みの自動入力は削除

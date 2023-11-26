@@ -122,6 +122,14 @@ const List<int> afterActionDecisionTimingIDs = [
   154,    // HPが1/4以下で行動決定後
 ];
 
+// わざ使用前
+// タイミング
+const List<int> beforeMoveAttackerTimingIDs = [
+  164,    // わざ使用前(確率・条件)
+];
+const List<int> beforeMoveDefenderTimingIDs = [
+];
+
 // わざ使用後
 // タイミング
 const List<int> afterMoveAttackerTimingIDs = [
@@ -781,6 +789,13 @@ class TurnEffect {
           timingIDs = afterActionDecisionTimingIDs;
           attackerTimingIDs.clear();
           defenderTimingIDs.clear();
+        }
+        break;
+      case AbilityTiming.beforeMove:    // わざ使用前
+        {
+          timingIDs.clear();
+          attackerTimingIDs = beforeMoveAttackerTimingIDs;
+          defenderTimingIDs = beforeMoveDefenderTimingIDs;
         }
         break;
       case AbilityTiming.afterMove:     // わざ使用後

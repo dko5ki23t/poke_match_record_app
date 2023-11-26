@@ -73,14 +73,24 @@ class BattleTimingInputPanel extends Column {
         return Text('テラスタル');
       case AbilityTiming.action:
         return Text('行動${actionCount+1}');
-      case AbilityTiming.continuousMove:
-        return Container();
+      case AbilityTiming.beforeMove:
+        return Column(
+          children: [
+            Text('行動${actionCount+1}'),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            Text('わざ使用前'),
+          ],
+        );
       case AbilityTiming.afterMove:
         return Text('わざ使用後');
       case AbilityTiming.changeFaintingPokemon:
         return Text('ポケモン交代');
       case AbilityTiming.gameSet:
         return Text('対戦終了！');
+      case AbilityTiming.continuousMove:
       default:
         return Container();
     }
@@ -92,13 +102,14 @@ class BattleTimingInputPanel extends Column {
       case AbilityTiming.everyTurnEnd:
       case AbilityTiming.afterActionDecision:
       case AbilityTiming.terastaling:
-      case AbilityTiming.action:
       case AbilityTiming.changeFaintingPokemon:
       case AbilityTiming.gameSet:
         return const Divider(
           height: 10,
           thickness: 1,
         );
+      case AbilityTiming.beforeMove:
+      case AbilityTiming.action:
       case AbilityTiming.afterMove:
       case AbilityTiming.continuousMove:
       default:

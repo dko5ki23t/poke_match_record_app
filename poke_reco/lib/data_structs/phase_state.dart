@@ -232,6 +232,27 @@ class PhaseState {
           }
         }
         break;
+      case AbilityTiming.beforeMove:  // わざ使用前
+        var attackerState = prevAction != null ?
+          getPokemonState(prevAction.playerType, prevAction) : getPokemonState(PlayerType(PlayerType.me), prevAction);
+        var defenderState = prevAction != null ?
+          getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType(PlayerType.opponent), prevAction);
+        var attackerPlayerTypeId = prevAction != null ? prevAction.playerType.id : PlayerType.me;
+        var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
+        // とくせい「へんげんじざい」「リベロ」
+        if (prevAction != null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
+            (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
+        ) {
+          ret.add(TurnEffect()
+            ..playerType = PlayerType(attackerPlayerTypeId)
+            ..timing = AbilityTiming(AbilityTiming.beforeMove)
+            ..effect = EffectType(EffectType.ability)
+            ..effectId = attackerState.currentAbility.id
+            ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
+            ..isAutoSet = true
+          );
+        }
+        break;
       case AbilityTiming.afterMove:   // わざ使用後
         {
           var attackerState = prevAction != null ?
@@ -268,19 +289,6 @@ class PhaseState {
                 ..isAutoSet = true
               );
             }
-          }
-          // とくせい「へんげんじざい」「リベロ」
-          if (prevAction != null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
-              (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
-          ) {
-            ret.add(TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
-              ..timing = AbilityTiming(AbilityTiming.afterMove)
-              ..effect = EffectType(EffectType.ability)
-              ..effectId = attackerState.currentAbility.id
-              ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
-              ..isAutoSet = true
-            );
           }
           // みちづれ状態の相手をひんしにしたとき
           if (prevAction != null && defenderState.isFainting && defenderState.ailmentsWhere((e) => e.id == Ailment.destinyBond).isNotEmpty) {

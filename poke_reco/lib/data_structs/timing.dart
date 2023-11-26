@@ -164,6 +164,8 @@ class AbilityTiming {
   static const int everyTurnEndHPNotFull2 = 160;  // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
   static const int pokemonAppearAttacked = 161;   // ポケモン登場時・こうげきを受けたとき
   static const int afterTerastal = 162;         // テラスタル後
+  static const int beforeMove = 163;            // わざ使用前
+  static const int beforeMoveWithChance = 164;  // わざ使用前(確率・条件)
 
   const AbilityTiming(this.id);
 

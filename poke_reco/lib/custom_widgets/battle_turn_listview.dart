@@ -50,7 +50,10 @@ class BattleTurnListView extends ListView {
               _getRefMove(sameTimingList, i, battle.turns[turnNum-1]),
               _getContinuousCount(sameTimingList, i, battle.turns[turnNum-1]),
               _getActionCount(sameTimingList, i),
-              i > 0 ? sameTimingList[i-1].first.turnEffect.playerType : PlayerType(PlayerType.none),  // わざ使用後の場合、そのわざの発動主を渡す
+              sameTimingList[i].first.turnEffect.timing.id == AbilityTiming.beforeMove && i < sameTimingList.length-1 ?
+                sameTimingList[i+1].first.turnEffect.playerType :           // わざ使用前の場合、そのわざの発動主を渡す
+                i > 0 ? sameTimingList[i-1].first.turnEffect.playerType :   // わざ使用後の場合、そのわざの発動主を渡す
+                PlayerType(PlayerType.none),
               i > 0 ? sameTimingList[i-1].first.turnEffect.move ?? TurnMove() : TurnMove(),
               i+1 < sameTimingList.length ? sameTimingList[i+1].first : null
             )
@@ -112,7 +115,6 @@ class BattleTurnListView extends ListView {
   }
 
   static int _getActionCount(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i,) {
-    if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.action) return 0;
     int ret = 0;
     for (int j = 0; j < i; j++) {
       if (sameTimingList[j].first.turnEffect.timing.id == AbilityTiming.action) {
