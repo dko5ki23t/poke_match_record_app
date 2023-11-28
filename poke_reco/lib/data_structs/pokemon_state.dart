@@ -19,7 +19,9 @@ class PokemonState {
   PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
   bool _isFainting = false;     // ひんしかどうか
   int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
-  Item? _holdingItem = Item(0, '', 0, 0, AbilityTiming(0), false);  // 持っているもちもの(失えばnullにする)
+  Item? _holdingItem = Item(
+    id: 0, displayName: '', flingPower: 0, flingEffectId: 0,
+    timing: AbilityTiming(0), isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
@@ -322,10 +324,12 @@ class PokemonState {
   }
 
   // ターン終了時に行う処理
-  void processTurnEnd(PhaseState state) {
+  void processTurnEnd(PhaseState state, bool isFaintingChange,) {
     // 状態変化の経過ターンインクリメント
-    for (var e in _ailments.iterable) {
-      e.turns++;
+    if (!isFaintingChange) {
+      for (var e in _ailments.iterable) {
+        e.turns++;
+      }
     }
     // ねむけ→ねむりに変化
     var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
@@ -368,6 +372,7 @@ class PokemonState {
     if ((currentAbility.id == 17 || currentAbility.id == 257) && (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) return false;
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
     if ((currentAbility.id == 41 || currentAbility.id == 199 || currentAbility.id == 270) && (ailment.id == Ailment.burn)) return false;    // みずのベール/ねつこうかん<-やけど
+    if (currentAbility.id == 15 && (ailment.id == Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // ふみん
     if (currentAbility.id == 166 && isTypeContain(12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
     if (currentAbility.id == 272 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // きよめのしお
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
@@ -556,12 +561,12 @@ class PokemonState {
       yourState.addStatChanges(isMyEffect, index, num, this, myFields: yourFields, yourFields: myFields, lastMirror: true);
       return false;
     }
-    if (!isMyEffect && abilityId == 22 && currentAbility.id == 275) num = 1;   // いかくに対するばんけん
+    if (!isMyEffect && abilityId == 22 && currentAbility.id == 275) change = 1;   // いかくに対するばんけん
 
     if (currentAbility.id == 86) change *= 2;   // たんじゅん
     if (currentAbility.id == 126) change *= -1; // あまのじゃく
     if (!isMyEffect && currentAbility.id == 128 && num < 0) {  // まけんき
-      _statChanges[0] =  (_statChanges[0] + 2).clamp(-6, 6);
+      _statChanges[0] = (_statChanges[0] + 2).clamp(-6, 6);
     }
 
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
@@ -577,6 +582,28 @@ class PokemonState {
       if (_statChanges[i] < 0) _statChanges[i] = 0;
     }
   }
+
+  static int packStatChanges(List<int> statChanges) {
+    int ret = 0;
+    for (int i = 0; i < statChanges.length && i < 7; i++) {
+      int t = (statChanges[i] + 6).clamp(0, 12);
+      ret <<= 4;
+      ret += t;
+    }
+    return ret;
+  }
+
+  static List<int> unpackStatChanges(int statChanges) {
+    int t = statChanges;
+    List<int> ret = List.generate(7, (i) => 0);
+    for (int i = 6; i >= 0; i--) {
+      int statChange = (t & 0xf) - 6;
+      ret[i] = statChange;
+      t >>= 4;
+    }
+    return ret;
+  }
+
   // ランク変化に関する関数群ここまで
 
   // ランク補正等込みのHABCDSを返す

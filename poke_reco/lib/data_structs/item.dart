@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -28,11 +29,24 @@ class Item {
   final int flingEffectId;
   final AbilityTiming timing;
   final bool isBerry;
+  final String imageUrl;
 
-  const Item(this.id, this.displayName, this.flingPower, this.flingEffectId, this.timing, this.isBerry);
+  const Item({
+    required this.id,
+    required this.displayName,
+    required this.flingPower,
+    required this.flingEffectId,
+    required this.timing,
+    required this.isBerry,
+    required this.imageUrl,
+  });
 
   Item copyWith() =>
-    Item(id, displayName, flingPower, flingEffectId, timing, isBerry);
+    Item(
+      id: id, displayName: displayName, flingPower: flingPower,
+      flingEffectId: flingEffectId, timing: timing,
+      isBerry: isBerry, imageUrl: imageUrl
+    );
 
   static List<String> processEffect(
     int itemID,
@@ -319,6 +333,13 @@ class Item {
         break;
       case 1180:  // ルームサービス
         myState.addStatChanges(true, 4, -1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
+      case 1699:      // ものまねハーブ
+        var statChanges = PokemonState.unpackStatChanges(extraArg1);
+        for (int i = 0; i < 7; i++) {
+          myState.addStatChanges(true, i, statChanges[i], yourState, itemId: itemID);
+        }
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       default:
@@ -861,6 +882,8 @@ class Item {
         }
       case 211:     // たべのこし
         return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
+      case 1699:    // ものまねハーブ
+        return 0x06666666;
       default:
         break;
     }
@@ -1015,26 +1038,28 @@ class Item {
         return Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Flexible(
-              child: DropdownButtonFormField(
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
+            Row(children: [
+              Flexible(
+                child: DropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('HPが回復した'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('こんらんした'),
+                    ),
+                  ],
+                  value: extraArg2,
+                  onChanged: (value) => extraArg2ChangeFunc(value),
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text('HPが回復した'),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text('こんらんした'),
-                  ),
-                ],
-                value: extraArg2,
-                onChanged: (value) => extraArg2ChangeFunc(value),
               ),
-            ),
+            ]),
             extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
             extraArg2 == 0 ?
             Row(
@@ -1156,6 +1181,189 @@ class Item {
                 value: changePokemonIndex,
                 onChanged: (value) => changePokemonIndexChangeFunc(value),
               ),
+            ),
+          ],
+        );
+      case 1699:      // ものまねハーブ
+        return Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('こうげき:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[0] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[0],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[0] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+                Text('ぼうぎょ:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[1] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[1],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[1] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+                Text('とくこう:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[2] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[2],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[2] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('とくぼう:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[3] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[3],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[3] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+                SizedBox(width: 10,),
+                Text('すばやさ:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[4] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[4],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[4] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('めいちゅう:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[5] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[5],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[5] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+                SizedBox(width: 10,),
+                Text('かいひ:'),
+                Flexible(
+                  child: DropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[6] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[6],
+                    onChanged: (value) {
+                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[6] = value;
+                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         );

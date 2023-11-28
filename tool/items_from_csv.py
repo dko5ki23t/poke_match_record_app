@@ -19,6 +19,9 @@ itemColumnFlingPower = 'fling_power'
 itemColumnFlingEffect = 'fling_effect'
 itemColumnTiming = 'timing'
 itemColumnIsBerry = 'is_berry'
+itemColumnImageUrl = 'image_url'
+
+imageUrlBase = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/'
 
 # CSVファイル(PokeAPI)の列名
 itemsCSVItemIDColumn = 'id'
@@ -28,6 +31,7 @@ itemLangCSVNameColumn = 'name'
 
 # CSVファイル(PokeAPI+独自)の列インデックス
 itemCSVitemIDIndex = 1
+itemCSVIdentifierIndex = 2
 itemCSVFlingPowerIndex = 5
 itemCSVFlingEffectIDIndex = 6
 itemCSVtimingIDIndex = 7
@@ -81,7 +85,8 @@ def main():
                 # 属性について
                 #att = [a for a in flags_df[flags_df['item_id'] == id]['item_flag_id']]
                 #if len(att) > 0:
-                    items_list.append((id, names.iloc[0], fling_power, fling_effect, timing, is_berry,))
+                imageUrl = f'{imageUrlBase}{row[itemCSVIdentifierIndex]}.png'
+                items_list.append((id, names.iloc[0], fling_power, fling_effect, timing, is_berry, imageUrl))
 
         # 作成(存在してたら作らない)
         try:
@@ -92,7 +97,8 @@ def main():
             f'  {itemColumnFlingPower} integer,'
             f'  {itemColumnFlingEffect} integer,'
             f'  {itemColumnTiming} integer,'
-            f'  {itemColumnIsBerry} integer)'
+            f'  {itemColumnIsBerry} integer, '
+            f'  {itemColumnImageUrl} text not null)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -100,7 +106,8 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}) VALUES ( ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}, {itemColumnImageUrl})'
+                f' VALUES ( ?, ?, ?, ?, ?, ?, ? )',
                 items_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

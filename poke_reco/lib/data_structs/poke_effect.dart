@@ -786,7 +786,7 @@ class TurnEffect {
         break;
       case AbilityTiming.afterActionDecision:    // 行動決定直後
         {
-          timingIDs = afterActionDecisionTimingIDs;
+          timingIDs.addAll(afterActionDecisionTimingIDs);
           attackerTimingIDs.clear();
           defenderTimingIDs.clear();
         }
@@ -794,8 +794,42 @@ class TurnEffect {
       case AbilityTiming.beforeMove:    // わざ使用前
         {
           timingIDs.clear();
-          attackerTimingIDs = beforeMoveAttackerTimingIDs;
-          defenderTimingIDs = beforeMoveDefenderTimingIDs;
+          attackerTimingIDs.clear();
+          defenderTimingIDs.clear();
+          attackerTimingIDs.addAll(beforeMoveAttackerTimingIDs);
+          defenderTimingIDs.addAll(beforeMoveDefenderTimingIDs);
+          if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
+            var attackerState = phaseState.getPokemonState(attacker, prevAction);
+            var defenderState = phaseState.getPokemonState(attacker.opposite, prevAction);
+            if (turnMove.moveType.id == 1) {  // ノーマルタイプのわざを受けた時
+              defenderTimingIDs.addAll([148]);
+            }
+            if (PokeType.effectiveness(
+                attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+                defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                turnMove.moveType, pokemonState!
+              ).id == MoveEffectiveness.great
+            ) {
+              defenderTimingIDs.add(120);  // 効果ばつぐんのタイプのこうげきざわを受けた時
+              if (turnMove.moveType.id == 10) defenderTimingIDs.add(131);
+              if (turnMove.moveType.id == 11) defenderTimingIDs.add(132);
+              if (turnMove.moveType.id == 13) defenderTimingIDs.add(133);
+              if (turnMove.moveType.id == 12) defenderTimingIDs.add(134);
+              if (turnMove.moveType.id == 15) defenderTimingIDs.add(135);
+              if (turnMove.moveType.id == 2) defenderTimingIDs.add(136);
+              if (turnMove.moveType.id == 4) defenderTimingIDs.add(137);
+              if (turnMove.moveType.id == 5) defenderTimingIDs.add(138);
+              if (turnMove.moveType.id == 3) defenderTimingIDs.add(139);
+              if (turnMove.moveType.id == 14) defenderTimingIDs.add(140);
+              if (turnMove.moveType.id == 7) defenderTimingIDs.add(141);
+              if (turnMove.moveType.id == 6) defenderTimingIDs.add(142);
+              if (turnMove.moveType.id == 8) defenderTimingIDs.add(143);
+              if (turnMove.moveType.id == 16) defenderTimingIDs.add(144);
+              if (turnMove.moveType.id == 17) defenderTimingIDs.add(145);
+              if (turnMove.moveType.id == 9) defenderTimingIDs.add(146);
+              if (turnMove.moveType.id == 18) defenderTimingIDs.add(147);
+            }
+          }
         }
         break;
       case AbilityTiming.afterMove:     // わざ使用後
@@ -942,7 +976,7 @@ class TurnEffect {
         }
         break;
       default:
-        break;
+        return [];
     }
 
     if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
@@ -1071,6 +1105,7 @@ class TurnEffect {
     var yourState = playerType.id != PlayerType.opponent ?
       phaseState.getPokemonState(PlayerType(PlayerType.opponent), prevAction) : phaseState.getPokemonState(PlayerType(PlayerType.me), prevAction);
     for (var effect in ret) {
+      effect.timing = timing;
       effect.setAutoArgs(myState, yourState, phaseState, prevAction);
     }
 
@@ -2571,4 +2606,97 @@ class TurnEffectAndStateAndGuide {
   PhaseState phaseState = PhaseState();
   List<String> guides = [];
   bool needAssist = false;
+  List<TurnEffect> candidateEffect = [];    // 入力される候補となるTurnEffectのリスト
+
+  // candidateEffectを更新する
+  // candidateEffectは、各タイミングの最初の要素に入れておくのがbetter？
+  void updateEffectCandidates(Turn currentTurn, PhaseState prevState) {
+    candidateEffect.clear();
+    candidateEffect.addAll(
+      _getEffectCandidates(turnEffect.timing, PlayerType(PlayerType.me), null, currentTurn, prevState,)
+    );
+    candidateEffect.addAll(
+      _getEffectCandidates(turnEffect.timing, PlayerType(PlayerType.opponent), null, currentTurn, prevState,)
+    );
+    candidateEffect.addAll(
+      _getEffectCandidates(turnEffect.timing, PlayerType(PlayerType.entireField), null, currentTurn, prevState,)
+    );
+  }
+
+  List<TurnEffect> _getEffectCandidates(
+    AbilityTiming timing,
+    PlayerType playerType,
+    EffectType? effectType,
+    Turn turn,
+    PhaseState phaseState,
+  ) {
+    if (playerType.id == PlayerType.none) return [];
+    
+    // prevActionを設定
+    TurnEffect? prevAction;
+    if (timing.id == AbilityTiming.afterMove) {
+      for (int i = phaseIdx-1; i >= 0; i--) {
+        if (turn.phases[i].timing.id == AbilityTiming.action) {
+          prevAction = turn.phases[i];
+          break;
+        }
+        else if (turn.phases[i].timing.id != timing.id) {
+          break;
+        }
+      }
+    }
+    else if (timing.id == AbilityTiming.beforeMove) {
+      for (int i = phaseIdx+1; i < turn.phases.length; i++) {
+        if (turn.phases[i].timing.id == AbilityTiming.action) {
+          prevAction = turn.phases[i];
+          break;
+        }
+        else if (turn.phases[i].timing.id != timing.id) {
+          break;
+        }
+      }
+    }
+    PlayerType attacker = prevAction != null ? prevAction.playerType : PlayerType(PlayerType.none);
+    TurnMove turnMove = prevAction?.move != null ? prevAction!.move! : TurnMove();
+    
+    if (playerType.id == PlayerType.entireField) {
+      return _getEffectCandidatesWithEffectType(timing, playerType, EffectType(EffectType.ability), attacker, turnMove, turn, prevAction, phaseState);
+    }
+    if (effectType == null) {
+      List<TurnEffect> ret = [];
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, playerType, EffectType(EffectType.ability), attacker, turnMove, turn, prevAction, phaseState)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, playerType, EffectType(EffectType.item), attacker, turnMove, turn, prevAction, phaseState)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, playerType, EffectType(EffectType.individualField), attacker, turnMove, turn, prevAction, phaseState)
+      );
+      ret.addAll(
+        _getEffectCandidatesWithEffectType(timing, playerType, EffectType(EffectType.ailment), attacker, turnMove, turn, prevAction, phaseState)
+      );
+      return ret;
+    }
+    else {
+      return _getEffectCandidatesWithEffectType(timing, playerType, effectType, attacker, turnMove, turn, prevAction, phaseState);
+    }
+  }
+
+  List<TurnEffect> _getEffectCandidatesWithEffectType(
+    AbilityTiming timing,
+    PlayerType playerType,
+    EffectType effectType,
+    PlayerType attacker,
+    TurnMove turnMove,
+    Turn turn,
+    TurnEffect? prevAction,
+    PhaseState phaseState,
+  ) {
+    return TurnEffect.getPossibleEffects(timing, playerType, effectType,
+    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ?
+      phaseState.getPokemonState(playerType, prevAction).pokemon : null,
+    playerType.id == PlayerType.me || playerType.id == PlayerType.opponent ? phaseState.getPokemonState(playerType, prevAction) : null,
+    phaseState, attacker, turnMove, turn, prevAction);
+  }
 }

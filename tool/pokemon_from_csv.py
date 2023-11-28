@@ -25,6 +25,9 @@ pokeBaseColumnType = 'type'
 pokeBaseColumnHeight = 'height'
 pokeBaseColumnWeight = 'weight'
 pokeBaseColumnEggGroup = 'eggGroup'
+pokeBaseColumnImageUrl = 'imageUrl'
+
+imageUrlBase = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'
 
 # SQLiteでintの配列をvalueにした場合の変換方法
 IntList = list
@@ -225,8 +228,10 @@ def main():
             height = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVHeightColumn].iloc[0])
             # おもさ取得
             weight = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVWeightColumn].iloc[0])
+            # 画像URL作成
+            imageUrl = f'{imageUrlBase}{id}.png'
 
-            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups))
+            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups, imageUrl))
 
             for form_id in form:
                 if form_id == id:
@@ -278,8 +283,10 @@ def main():
                 form_height = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == form_id][allpokemonsCSVHeightColumn].iloc[0])
                 # おもさ取得
                 form_weight = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == form_id][allpokemonsCSVWeightColumn].iloc[0])
+                # 画像URL作成
+                form_imageUrl = f'{imageUrlBase}{form_id}.png'
 
-                pokemons_list.append((form_id, form_name, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups))
+                pokemons_list.append((form_id, form_name, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups, form_imageUrl))
 
 
         # 作成(存在してたら作らない)
@@ -299,7 +306,8 @@ def main():
             f'  {pokeBaseColumnType} IntList, '
             f'  {pokeBaseColumnHeight} integer, '
             f'  {pokeBaseColumnWeight} integer, '
-            f'  {pokeBaseColumnEggGroup} IntList)'
+            f'  {pokeBaseColumnEggGroup} IntList, '
+            f'  {pokeBaseColumnImageUrl} text not null)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -315,8 +323,8 @@ def main():
                 f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, '
                 f'{pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, '
                 f'{statsColumn}, {pokeBaseColumnType}, {pokeBaseColumnHeight}, '
-                f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}, {pokeBaseColumnImageUrl}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 pokemons_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

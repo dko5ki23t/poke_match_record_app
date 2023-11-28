@@ -5,6 +5,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 
 class BattleBasicListView extends ListView {
@@ -38,7 +39,6 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.name = value;
-                      //setState();
                     },
                     maxLength: 10,
                   ),
@@ -128,14 +128,37 @@ class BattleBasicListView extends ListView {
                     ],
                     value: battle.getParty(PlayerType(PlayerType.me)).id == 0 ? null : battle.getParty(PlayerType(PlayerType.me)).id,
                     onChanged: (value) {
-                      // 各ポケモンのレベルを50にするためコピー作成
-                      battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
-                      for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                      if (battle.getParty(PlayerType(PlayerType.me)).id != value && battle.turns.isNotEmpty) {
+                        showDialog(
+                          context: context,
+                          builder: (_) {
+                            return DeleteEditingCheckDialog(
+                              'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
+                              () {
+                                // 各ポケモンのレベルを50にするためコピー作成
+                                battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
+                                for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                                }
+                                battle.turns.clear();
+                                setState();
+                              },
+                            );
+                          }
+                        );
                       }
-                      setState();
+                      else {
+                        // 各ポケモンのレベルを50にするためコピー作成
+                        battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
+                        for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                        }
+                        setState();
+                      }
                     },
                   ),
                 ),
@@ -154,10 +177,8 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.opponentName = value;
-                      //setState();
                     },
                     maxLength: 10,
-//                          controller: partyNameController,
                   ),
                 ),
               ],
@@ -172,37 +193,96 @@ class BattleBasicListView extends ListView {
                 ],
                 opponentPokemonController[i],
                 (suggestion) {
-                  battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
-                  battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
-                  ..name = suggestion.name
-                  ..no = suggestion.no
-                  ..type1 = suggestion.type1
-                  ..type2 = suggestion.type2
-                  ..sex = suggestion.sex[0]
-                  ..h.race = suggestion.h
-                  ..a.race = suggestion.a
-                  ..b.race = suggestion.b
-                  ..c.race = suggestion.c
-                  ..d.race = suggestion.d
-                  ..s.race = suggestion.s
-                  ..teraType = suggestion.fixedTeraType;
-                  opponentPokemonController[i].text = suggestion.name;
-                  setState();
+                  if (battle.turns.isNotEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return DeleteEditingCheckDialog(
+                          '相手ポケモンを変更するにはこの後の各ターンの記録を削除する必要があります。\nポケモンを変更してもいいですか？',
+                          () {
+                            battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
+                            battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
+                            ..name = suggestion.name
+                            ..no = suggestion.no
+                            ..type1 = suggestion.type1
+                            ..type2 = suggestion.type2
+                            ..sex = suggestion.sex[0]
+                            ..h.race = suggestion.h
+                            ..a.race = suggestion.a
+                            ..b.race = suggestion.b
+                            ..c.race = suggestion.c
+                            ..d.race = suggestion.d
+                            ..s.race = suggestion.s
+                            ..teraType = suggestion.fixedTeraType;
+                            battle.turns.clear();
+                            opponentPokemonController[i].text = suggestion.name;
+                            setState();
+                          },
+                        );
+                      }
+                    );
+                  }
+                  else {
+                    battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
+                    battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
+                    ..name = suggestion.name
+                    ..no = suggestion.no
+                    ..type1 = suggestion.type1
+                    ..type2 = suggestion.type2
+                    ..sex = suggestion.sex[0]
+                    ..h.race = suggestion.h
+                    ..a.race = suggestion.a
+                    ..b.race = suggestion.b
+                    ..c.race = suggestion.c
+                    ..d.race = suggestion.d
+                    ..s.race = suggestion.s
+                    ..teraType = suggestion.fixedTeraType;
+                    opponentPokemonController[i].text = suggestion.name;
+                    setState();
+                  }
                 },
                 () {
-                  for (int j = i; j < 6; j++) {
-                    if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
-                      opponentPokemonController[j].text = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1]!.name;
-                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1];
-                    }
-                    else {
-                      opponentPokemonController[j].text = '';
-                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = j == 0 ?
-                        Pokemon() : null;
-                      break; 
-                    }
+                  if (battle.turns.isNotEmpty) {
+                    showDialog(
+                      context: context,
+                      builder: (_) {
+                        return DeleteEditingCheckDialog(
+                          '相手ポケモンを変更するにはこの後の各ターンの記録を削除する必要があります。\nポケモンを変更してもいいですか？',
+                          () {
+                            for (int j = i; j < 6; j++) {
+                              if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
+                                opponentPokemonController[j].text = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1]!.name;
+                                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1];
+                              }
+                              else {
+                                opponentPokemonController[j].text = '';
+                                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = j == 0 ?
+                                  Pokemon() : null;
+                                break; 
+                              }
+                            }
+                            battle.turns.clear();
+                            setState();
+                          },
+                        );
+                      },
+                    );
                   }
-                  setState();
+                  else {
+                    for (int j = i; j < 6; j++) {
+                      if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
+                        opponentPokemonController[j].text = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1]!.name;
+                        battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1];
+                      }
+                      else {
+                        opponentPokemonController[j].text = '';
+                        battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = j == 0 ?
+                          Pokemon() : null;
+                        break; 
+                      }
+                    }
+                    setState();
+                  }
                 },
                 'せいべつ${i+1}',
                 battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?

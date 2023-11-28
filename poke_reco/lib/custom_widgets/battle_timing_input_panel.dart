@@ -42,8 +42,8 @@ class BattleTimingInputPanel extends Column {
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _getHeader(sameTimingList.first.turnEffect.timing, actionCount),
-      _getDivider(sameTimingList.first.turnEffect.timing),
+      _getHeader(sameTimingList.first.turnEffect.timing, actionCount, sameTimingList),
+      _getDivider(sameTimingList.first.turnEffect.timing, sameTimingList),
       Container(
         child: _getExpandedWidget(
           sameTimingList.first.turnEffect.timing,
@@ -61,14 +61,23 @@ class BattleTimingInputPanel extends Column {
     ],
   );
 
-  static Widget _getHeader(AbilityTiming timing, int actionCount) {
+  static Widget _getHeader(AbilityTiming timing, int actionCount, List<TurnEffectAndStateAndGuide> sameTimingList) {
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:
-        return Text('ポケモン登場時');
+        if (sameTimingList.first.candidateEffect.isNotEmpty) {
+          return Text('ポケモン登場時');
+        }
+        break;
       case AbilityTiming.everyTurnEnd:
-        return Text('ターン終了時');
+        if (sameTimingList.first.candidateEffect.isNotEmpty) {
+          return Text('ターン終了時');
+        }
+        break;
       case AbilityTiming.afterActionDecision:
-        return Text('行動決定直後');
+        if (sameTimingList.first.candidateEffect.isNotEmpty) {
+          return Text('行動決定直後');
+        }
+        break;
       case AbilityTiming.terastaling:
         return Text('テラスタル');
       case AbilityTiming.action:
@@ -81,26 +90,38 @@ class BattleTimingInputPanel extends Column {
               height: 10,
               thickness: 1,
             ),
-            Text('わざ使用前'),
+            sameTimingList.first.candidateEffect.isNotEmpty ?
+            Text('わざ使用前') : Container(),
           ],
         );
       case AbilityTiming.afterMove:
-        return Text('わざ使用後');
+        if (sameTimingList.first.candidateEffect.isNotEmpty) {
+          return Text('わざ使用後');
+        }
+        break;
       case AbilityTiming.changeFaintingPokemon:
         return Text('ポケモン交代');
       case AbilityTiming.gameSet:
         return Text('対戦終了！');
       case AbilityTiming.continuousMove:
       default:
-        return Container();
+        break;
     }
+    return Container();
   }
 
-  static Widget _getDivider(AbilityTiming timing) {
+  static Widget _getDivider(AbilityTiming timing, List<TurnEffectAndStateAndGuide> sameTimingList) {
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:
       case AbilityTiming.everyTurnEnd:
       case AbilityTiming.afterActionDecision:
+        if (sameTimingList.first.candidateEffect.isNotEmpty) {
+          return const Divider(
+            height: 10,
+            thickness: 1,
+          );
+        }
+        break;
       case AbilityTiming.terastaling:
       case AbilityTiming.changeFaintingPokemon:
       case AbilityTiming.gameSet:
@@ -113,8 +134,9 @@ class BattleTimingInputPanel extends Column {
       case AbilityTiming.afterMove:
       case AbilityTiming.continuousMove:
       default:
-        return Container();
+        break;
     }
+    return Container();
   }
 
   static Widget _getExpandedWidget(

@@ -271,6 +271,7 @@ class TurnMove {
 
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    var beforeChangeMyState = myState.copyWith();
 
     // みちづれ状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
@@ -2801,12 +2802,32 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.candyCandy), state);
             break;
           case 502:   // オーガポンのフォルムによってわざのタイプが変わる
-            // TODO
+            {
+              int no = myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).isNotEmpty ?
+                myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).first.extraArg1 : myState.pokemon.no;
+              switch (no) {
+                case 1017:    // オーガポン(みどりのめん)->くさ
+                  moveType = PokeType.createFromId(12);
+                  break;
+                case 10273:   // オーガポン(いどのめん)->みず
+                  moveType = PokeType.createFromId(11);
+                  break;
+                case 10274:   // オーガポン(かまどのめん)->ほのお
+                  moveType = PokeType.createFromId(10);
+                  break;
+                case 10275:   // オーガポン(いしずえのめん)->いわ
+                  moveType = PokeType.createFromId(6);
+                  break;
+              }
+            }
             break;
           default:
             break;
         }
       }
+
+      // わざで交代した場合、交代前のstateで計算する。それを元に戻すために仮変数に退避
+      var tmpState = myState;
 
       // ダメージ計算式
       if (showDamageCalc) {
@@ -2816,6 +2837,10 @@ class TurnMove {
           if (findIdx >= 0 && moveType.id == 13) {
             movePower *= 2;
             myState.ailmentsRemoveAt(findIdx);
+          }
+
+          if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
+            myState = beforeChangeMyState;
           }
 
           // とくせい等によるわざタイプの変更
@@ -3140,6 +3165,9 @@ class TurnMove {
 
         ret.add(damageCalc);
       }
+
+      // 交代前stateを参照していた場合向けに、myStateを元に戻す
+      myState = tmpState;
 
       // ねごと系以外のわざを出しているならねむり解除とみなす
       if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
@@ -4262,7 +4290,10 @@ class TurnMove {
                       for (var item in opponentPokemonState.impossibleItems) {
                         matches.removeWhere((element) => element.id == item.id);
                       }
-                      matches.add(Item(0, 'なし', 0, 0, AbilityTiming(0), false));
+                      matches.add(Item(
+                        id: 0, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                        timing: AbilityTiming(0), isBerry: false, imageUrl: '',
+                      ));
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));

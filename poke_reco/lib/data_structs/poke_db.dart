@@ -22,7 +22,6 @@ import 'package:quiver/iterables.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'package:http/http.dart' as http;
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -82,6 +81,7 @@ const String itemColumnFlingPower = 'fling_power';
 const String itemColumnFlingEffect = 'fling_effect';
 const String itemColumnTiming = 'timing';
 const String itemColumnIsBerry = 'is_berry';
+const String itemColumnImageUrl = 'image_url';
 
 const String itemFlavorDBFile = 'ItemFlavors.db';
 const String itemFlavorDBTable = 'itemFlavorDB';
@@ -127,6 +127,7 @@ const String pokeBaseColumnType = 'type';
 const String pokeBaseColumnHeight = 'height';
 const String pokeBaseColumnWeight = 'weight';
 const String pokeBaseColumnEggGroup = 'eggGroup';
+const String pokeBaseColumnImageUrl = 'imageUrl';
 
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
@@ -720,7 +721,12 @@ class PokeDB {
   late Database abilityFlavorDb;
   Map<int, Temper> tempers = {0: Temper(0, '', '', '')};  // 無効なせいかく
   late Database temperDb;
-  Map<int, Item> items = {0: Item(0, '', 0, 0, AbilityTiming(0), false)};  // 無効なもちもの
+  Map<int, Item> items = {
+    0: Item(
+      id: 0, displayName: '', flingPower: 0, flingEffectId: 0,
+      timing: AbilityTiming(0), isBerry: false, imageUrl: ''
+    )
+  };  // 無効なもちもの
   late Database itemDb;
   Map<int, String> itemFlavors = {0: ''};   // 無効なもちもの
   late Database itemFlavorDb;
@@ -739,7 +745,7 @@ class PokeDB {
       sex: [Sex.createFromId(0)],
       no: 0, type1: PokeType.createFromId(0),
       type2: null, h: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
-      ability: [], move: [], height: 0, weight: 0, eggGroups: [], imageUrl: '',),
+      ability: [], move: [], height: 0, weight: 0, eggGroups: [], imageUrl: 'https://dammy',),
   };
   late Database pokeBaseDb;
   Map<int, Pokemon> pokemons = {0: Pokemon()};
@@ -947,16 +953,17 @@ class PokeDB {
     itemDb = await openAssetDatabase(itemDBFile);
     // 内部データに変換
     maps = await itemDb.query(itemDBTable,
-      columns: [itemColumnId, itemColumnName, itemColumnFlingPower, itemColumnFlingEffect, itemColumnTiming, itemColumnIsBerry],
+      columns: [itemColumnId, itemColumnName, itemColumnFlingPower, itemColumnFlingEffect, itemColumnTiming, itemColumnIsBerry, itemColumnImageUrl],
     );
     for (var map in maps) {
       items[map[itemColumnId]] = Item(
-        map[itemColumnId],
-        map[itemColumnName],
-        map[itemColumnFlingPower],
-        map[itemColumnFlingEffect],
-        AbilityTiming(map[itemColumnTiming]),
-        map[itemColumnIsBerry] == 1
+        id: map[itemColumnId],
+        displayName: map[itemColumnName],
+        flingPower: map[itemColumnFlingPower],
+        flingEffectId: map[itemColumnFlingEffect],
+        timing: AbilityTiming(map[itemColumnTiming]),
+        isBerry: map[itemColumnIsBerry] == 1,
+        imageUrl: map[itemColumnImageUrl]
       );
     }
 
@@ -1015,7 +1022,7 @@ class PokeDB {
         pokeBaseColumnForm, pokeBaseColumnFemaleRate, pokeBaseColumnMove,
         for (var e in pokeBaseColumnStats) e,
         pokeBaseColumnType, pokeBaseColumnHeight,
-        pokeBaseColumnWeight, pokeBaseColumnEggGroup],
+        pokeBaseColumnWeight, pokeBaseColumnEggGroup, pokeBaseColumnImageUrl,],
     );
 
     for (var map in maps) {
@@ -1036,11 +1043,6 @@ class PokeDB {
       else {
         sexList = [Sex.male, Sex.female];
       }
-      //final res = await http.get(Uri.parse('$pokeApiRoute/pokemon/${map[pokeBaseColumnId]}'));
-      String url = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${map[pokeBaseColumnId]}.png';
-      /*if (res.statusCode == 200) {
-        url = jsonDecode(res.body)['sprites']['other']['official-artwork']['front_default'];
-      }*/
       pokeBase[map[pokeBaseColumnId]] = PokeBase(
         name: map[pokeBaseColumnName],
         sex: sexList,
@@ -1058,7 +1060,7 @@ class PokeDB {
         height: map[pokeBaseColumnHeight],
         weight: map[pokeBaseColumnWeight],
         eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!],
-        imageUrl: url,
+        imageUrl: map[pokeBaseColumnImageUrl],
       );
     }
 
@@ -1144,7 +1146,9 @@ class PokeDB {
             map[myPokemonColumnEffort[5]],
             0)
           ..ability = abilities[map[myPokemonColumnAbility]]!
-          ..item = (map[myPokemonColumnItem] != null) ? Item(map[myPokemonColumnItem], '', 0, 0, AbilityTiming(0), false) : null   // TODO 消す
+          ..item = (map[myPokemonColumnItem] != null) ?   // TODO 消す
+            Item(id: map[myPokemonColumnItem], displayName: '', flingPower: 0, flingEffectId: 0, timing: AbilityTiming(0), isBerry: false, imageUrl: '') :
+            null
           ..move1 = moves[map[myPokemonColumnMove1]]!
           ..pp1 = map[myPokemonColumnPP1]
           ..move2 = map[myPokemonColumnMove2] != null ? moves[map[myPokemonColumnMove2]]! : null

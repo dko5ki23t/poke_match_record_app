@@ -36,6 +36,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
     var pokeData = appState.pokeData;
+    final theme = Theme.of(context);
     void onBack () {
       if (widget.party.pokemon1.no != 0) {
         showDialog(
@@ -210,6 +211,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         widget.party.items[i] = null;
                         setState(() {});
                       },
+                      widget.party.pokemons[i] != null ? widget.party.pokemons[i]!.no : 0,
+                      widget.party.items[i] != null ? widget.party.items[i]!.id : null,
+                      theme,
                       enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
                       enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
                     ),

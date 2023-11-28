@@ -186,12 +186,14 @@ class BuffDebuff {
   static const int copiedMove = 181;      // わざ「ものまね」のコピーしたわざ(隠しステータス)
   static const int chargingMove = 182;    // 溜める系わざの溜め状態(隠しステータス)
   static const int recoiling = 183;       // わざの反動で動けない状態(隠しステータス)
-  static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍    // TODO
+  static const int certainlyHittedDamage2 = 184;    // 相手わざ必中・ダメージ2倍
   static const int protean = 185;         // へんげんじざい/リベロ発動済み(隠しステータス)
   static const int attack1_2 = 186;       // こうげきわざ威力1.2倍
   static const int lastLostBerry = 187;   // 最後に消費したきのみ(隠しステータス)
   static const int lastLostItem = 188;    // 最後に消費したもちもの(隠しステータス)
   static const int transform = 189;       // へんしん(extraArgに、へんしん対象のポケモンNo、turnsに、性別のid)
+  static const int lastUpStatChange = 190;    // 最後に上昇したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
+  static const int lastDownStatChange = 191;  // 最後に下降したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
 
   static const _displayNameMap = {
     0:  '',

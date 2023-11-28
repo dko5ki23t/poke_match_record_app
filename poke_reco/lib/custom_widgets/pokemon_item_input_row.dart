@@ -16,6 +16,9 @@ class PokemonItemInputRow extends Row {
     List<Item?> removalItems,
     void Function(Item) onItemSuggestionSelected,
     void Function() itemOnClear,
+    int pokemonNo,
+    int? itemId,
+    ThemeData theme,
     {
       bool enabledPokemon = true,
       bool enabledItem = true,
@@ -24,8 +27,15 @@ class PokemonItemInputRow extends Row {
   super(
     mainAxisSize: MainAxisSize.min,
       children: [
+        Image.network(
+          PokeDB().pokeBase[pokemonNo]!.imageUrl,
+          height: theme.buttonTheme.height,
+          errorBuilder: (c, o, s) {
+            return const Icon(Icons.catching_pokemon);
+          },
+        ),
         Flexible(
-          flex: 6,
+          flex: 5,
           child: TextFormField(
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
@@ -44,7 +54,7 @@ class PokemonItemInputRow extends Row {
         ),
         SizedBox(width: 10),
         Flexible(
-          flex: 4,
+          flex: 5,
           child: enabledItem ?
             TypeAheadField(
               textFieldConfiguration: TextFieldConfiguration(
@@ -88,6 +98,15 @@ class PokemonItemInputRow extends Row {
               enabled: false,
             )
         ),
+        itemId != null ?
+        Image.network(
+          PokeDB().items[itemId]!.imageUrl,
+          height: theme.buttonTheme.height,
+          errorBuilder: (c, o, s) {
+            return const Icon(Icons.category);
+          },
+        ) :
+        const Icon(Icons.category),
       ],
   );
 }

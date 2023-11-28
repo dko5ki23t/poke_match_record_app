@@ -129,7 +129,7 @@ class PhaseState {
   }
 
   // ターン終了時処理
-  void processTurnEnd() {
+  void processTurnEnd(Turn currentTurn) {
     // 各々の場のターン経過
     for (var e in ownFields) {
       e.turns++;
@@ -138,8 +138,14 @@ class PhaseState {
       e.turns++;
     }
     // 各々のポケモンの状態のターン経過
-    getPokemonState(PlayerType(PlayerType.me), null).processTurnEnd(this);
-    getPokemonState(PlayerType(PlayerType.opponent), null).processTurnEnd(this);
+    int initialIndex = currentTurn.getInitialPokemonIndex(PlayerType(PlayerType.me));
+    bool isFaintingChange = getPokemonIndex(PlayerType(PlayerType.me), null) != initialIndex &&
+      getPokemonStates(PlayerType(PlayerType.me))[initialIndex-1].isFainting;   // 死に出しかどうか
+    getPokemonState(PlayerType(PlayerType.me), null).processTurnEnd(this, isFaintingChange);
+    initialIndex = currentTurn.getInitialPokemonIndex(PlayerType(PlayerType.opponent));
+    isFaintingChange = getPokemonIndex(PlayerType(PlayerType.opponent), null) != initialIndex &&
+      getPokemonStates(PlayerType(PlayerType.opponent))[initialIndex-1].isFainting;   // 死に出しかどうか
+    getPokemonState(PlayerType(PlayerType.opponent), null).processTurnEnd(this, isFaintingChange);
     // 天気のターン経過
     _weather.turns++;
     // フィールドのターン経過
@@ -239,18 +245,65 @@ class PhaseState {
           getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType(PlayerType.opponent), prevAction);
         var attackerPlayerTypeId = prevAction != null ? prevAction.playerType.id : PlayerType.me;
         var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
-        // とくせい「へんげんじざい」「リベロ」
-        if (prevAction != null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
-            (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
-        ) {
-          ret.add(TurnEffect()
-            ..playerType = PlayerType(attackerPlayerTypeId)
-            ..timing = AbilityTiming(AbilityTiming.beforeMove)
-            ..effect = EffectType(EffectType.ability)
-            ..effectId = attackerState.currentAbility.id
-            ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
-            ..isAutoSet = true
-          );
+        var defenderTimingIDList = [];
+
+        if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
+            prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
+        ) {  // わざ成功時
+          // とくせい「へんげんじざい」「リベロ」
+          if (attackerState.teraType == null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
+              (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
+          ) {
+            ret.add(TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.beforeMove)
+              ..effect = EffectType(EffectType.ability)
+              ..effectId = attackerState.currentAbility.id
+              ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
+              ..isAutoSet = true
+            );
+          }
+          // ノーマルタイプのこうげきをうけたとき
+          if (prevAction.move!.move.type.id == 1) {
+            defenderTimingIDList.add(148);
+          }
+          if (PokeType.effectiveness(
+              attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+              defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+              prevAction.move!.move.type, defenderState
+            ).id == MoveEffectiveness.great
+          ) {
+            // 効果ばつぐんのわざを受けたとき
+            defenderTimingIDList.addAll([AbilityTiming.greatAttacked]);
+            var moveTypeId = prevAction.move!.move.type.id;
+            if (moveTypeId == 10) defenderTimingIDList.add(131);
+            if (moveTypeId == 11) defenderTimingIDList.add(132);
+            if (moveTypeId == 13) defenderTimingIDList.add(133);
+            if (moveTypeId == 12) defenderTimingIDList.add(134);
+            if (moveTypeId == 15) defenderTimingIDList.add(135);
+            if (moveTypeId == 2) defenderTimingIDList.add(136);
+            if (moveTypeId == 4) defenderTimingIDList.add(137);
+            if (moveTypeId == 5) defenderTimingIDList.add(138);
+            if (moveTypeId == 3) defenderTimingIDList.add(139);
+            if (moveTypeId == 14) defenderTimingIDList.add(140);
+            if (moveTypeId == 7) defenderTimingIDList.add(141);
+            if (moveTypeId == 6) defenderTimingIDList.add(142);
+            if (moveTypeId == 8) defenderTimingIDList.add(143);
+            if (moveTypeId == 16) defenderTimingIDList.add(144);
+            if (moveTypeId == 17) defenderTimingIDList.add(145);
+            if (moveTypeId == 9) defenderTimingIDList.add(146);
+            if (moveTypeId == 18) defenderTimingIDList.add(147);
+          }
+          if (defenderState.holdingItem != null && defenderTimingIDList.contains(defenderState.holdingItem!.timing.id)) {
+            var addingItem = TurnEffect()
+              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..timing = AbilityTiming(AbilityTiming.afterMove)
+              ..effect = EffectType(EffectType.item)
+              ..effectId = defenderState.holdingItem!.id
+              ..isAutoSet = true;
+            addingItem.setAutoArgs(defenderState, attackerState, state, prevAction);
+            ret.add(addingItem);
+          }
         }
         break;
       case AbilityTiming.afterMove:   // わざ使用後
@@ -521,7 +574,7 @@ class PhaseState {
             }
             if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
             if ((isMe && myState.remainHP < myState.pokemon.h.real && myState.remainHP > 0) ||
-                (!isMe && myState.remainHPPercent <= 100 && myState.remainHPPercent > 0)
+                (!isMe && myState.remainHPPercent < 100 && myState.remainHPPercent > 0)
             ) {
               // HPが満タンでない毎ターン終了時
               playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull);
