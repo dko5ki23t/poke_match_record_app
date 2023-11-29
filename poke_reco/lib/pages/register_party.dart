@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_input_row.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -13,12 +16,18 @@ class RegisterPartyPage extends StatefulWidget {
     required this.onSelectPokemon,
     required this.party,
     required this.isNew,
+    required this.isEditPokemon,
+    required this.onEditPokemon,
+    this.phaseState,
   }) : super(key: key);
 
   final void Function() onFinish;
   final Future<Pokemon?> Function(Party party, int selectingPokemonIdx) onSelectPokemon;
   final Party party;
   final bool isNew;
+  final bool isEditPokemon;
+  final void Function(Pokemon pokemon, PokemonState pokemonState) onEditPokemon;
+  final PhaseState? phaseState;
 
   @override
   RegisterPartyPageState createState() => RegisterPartyPageState();
@@ -126,7 +135,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
           ],
         ),
         body: ListView(
-//        mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
               padding: const EdgeInsets.all(10),
@@ -144,7 +152,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           ),
                           onChanged: (value) {
                             widget.party.name = value;
-                            //setState(() {});
                           },
                           onTapOutside: (event) {
                             setState(() {});
@@ -214,6 +221,12 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       widget.party.pokemons[i] != null ? widget.party.pokemons[i]!.no : 0,
                       widget.party.items[i] != null ? widget.party.items[i]!.id : null,
                       theme,
+                      widget.isEditPokemon,
+                      () {
+                        if (widget.isEditPokemon && widget.party.pokemons[i] != null && widget.phaseState != null) {
+                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType(PlayerType.opponent))[i]);
+                        }
+                      },
                       enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
                       enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
                     ),

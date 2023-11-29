@@ -19,21 +19,25 @@ class PokemonItemInputRow extends Row {
     int pokemonNo,
     int? itemId,
     ThemeData theme,
+    bool isEditPokemon,
+    void Function() pokemonOnEdit,
     {
       bool enabledPokemon = true,
       bool enabledItem = true,
+      bool showNetworkImage = false,
     }
   ) : 
   super(
     mainAxisSize: MainAxisSize.min,
       children: [
+        showNetworkImage ?
         Image.network(
           PokeDB().pokeBase[pokemonNo]!.imageUrl,
           height: theme.buttonTheme.height,
           errorBuilder: (c, o, s) {
             return const Icon(Icons.catching_pokemon);
           },
-        ),
+        ) : const Icon(Icons.catching_pokemon),
         Flexible(
           flex: 5,
           child: TextFormField(
@@ -42,13 +46,13 @@ class PokemonItemInputRow extends Row {
               labelText: labelPokemonText,
               suffixIcon: canClear ? 
                 IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () => pokemonOnClear(),
+                  icon: isEditPokemon ? Icon(Icons.edit) : Icon(Icons.clear),
+                  onPressed: () => isEditPokemon ? pokemonOnEdit() : pokemonOnClear(),
                 ) :
                 Icon(Icons.arrow_drop_down),
             ),
             controller: pokemonController,
-            onTap: onPokemonTap,
+            onTap: isEditPokemon ? pokemonOnEdit : onPokemonTap,
             enabled: enabledPokemon,
           ),
         ),
@@ -98,7 +102,7 @@ class PokemonItemInputRow extends Row {
               enabled: false,
             )
         ),
-        itemId != null ?
+        itemId != null && showNetworkImage ?
         Image.network(
           PokeDB().items[itemId]!.imageUrl,
           height: theme.buttonTheme.height,

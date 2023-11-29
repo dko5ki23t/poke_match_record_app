@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
-//import 'package:intl/intl.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
@@ -12,8 +11,8 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
-//import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -48,9 +47,11 @@ class RegisterBattlePage extends StatefulWidget {
     required this.onFinish,
     required this.battle,
     required this.isNew,
+    required this.onSaveOpponentParty,
   }) : super(key: key);
 
   final void Function() onFinish;
+  final void Function(Party party, PhaseState state) onSaveOpponentParty;
   final Battle battle;
   final bool isNew;
 
@@ -203,6 +204,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
+
       if (widget.isNew) {
         // 相手のパーティ、ポケモンも登録
         for (int i = 0; i < opponentParty.pokemonNum; i++) {
@@ -244,6 +246,105 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
       await pokeData.addBattle(battle);
       widget.onFinish();
+
+/*
+      showDialog(
+        context: context,
+        builder: (_) {
+          return DeleteEditingCheckDialog(
+            '相手パーティ・ポケモンを保存しますか？',
+            () async {
+              if (widget.isNew) {
+                // 相手のパーティ、ポケモンを有効化
+                for (int i = 0; i < opponentParty.pokemonNum; i++) {
+                  var poke = opponentParty.pokemons[i]!;
+                  poke.id = pokeData.getUniqueMyPokemonID();
+                  poke.viewOrder = poke.id;
+                  poke.owner = Owner.fromBattle;
+                  // 対戦で確定できなかったものを穴埋めする
+                  if (poke.ability.id == 0) {
+                    poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
+                  }
+                  if (poke.temper.id == 0) {
+                    poke.temper = pokeData.tempers[1]!;
+                  }
+                  if (poke.move1.id == 0) {
+                    poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
+                  }
+                  if (poke.teraType.id == 0) {
+                    poke.teraType = PokeType.createFromId(1);
+                  }
+                  pokemons[poke.id] = poke;
+                  await pokeData.addMyPokemon(poke);
+                }
+                opponentParty.id = pokeData.getUniquePartyID();
+                opponentParty.viewOrder = opponentParty.id;
+                opponentParty.owner = Owner.fromBattle;
+                parties[opponentParty.id] = opponentParty;
+                await pokeData.addParty(opponentParty);
+
+                battle.id = pokeData.getUniqueBattleID();
+                battle.viewOrder = battle.id;
+                battles[battle.id] = battle;
+              }
+              else {
+                for (int i = 0; i < opponentParty.pokemonNum; i++) {
+                  var poke = opponentParty.pokemons[i]!;
+                  // 対戦で確定できなかったものを穴埋めする
+                  if (poke.ability.id == 0) {
+                    poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
+                  }
+                  if (poke.temper.id == 0) {
+                    poke.temper = pokeData.tempers[1]!;
+                  }
+                  if (poke.move1.id == 0) {
+                    poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
+                  }
+                  if (poke.teraType.id == 0) {
+                    poke.teraType = PokeType.createFromId(1);
+                  }
+                  if (poke.id == 0) {   // 編集時に追加したポケモン
+                    poke.id = pokeData.getUniqueMyPokemonID();
+                    poke.viewOrder = poke.id;
+                    poke.owner = Owner.fromBattle;
+                    pokemons[poke.id] = poke;
+                    await pokeData.addMyPokemon(poke);
+                  }
+                  else {
+                    pokemons[poke.id] = poke;
+                    await pokeData.addMyPokemon(poke);
+                  }
+                }
+                parties[opponentParty.id] = opponentParty;
+                await pokeData.addParty(opponentParty);
+
+                battles[battle.id] = battle;
+              }
+              widget.onSaveOpponentParty(
+                opponentParty,
+                turns.last.phases.isNotEmpty ?
+                  turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
+                  turns.last.copyInitialState()
+              );
+              await pokeData.addBattle(battle);
+              //widget.onFinish();
+            },
+            onNoPressed: () async {
+              if (widget.isNew) {
+                battle.id = pokeData.getUniqueBattleID();
+                battle.viewOrder = battle.id;
+                battles[battle.id] = battle;
+              }
+              else {
+                battles[battle.id] = battle;
+              }
+              await pokeData.addBattle(battle);
+              widget.onFinish();
+            },
+          );
+        }
+      );
+*/
     }
 
     void onNext() {
@@ -610,27 +711,29 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
+                    appState.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState!.getPokemonState(PlayerType(PlayerType.me), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
                       errorBuilder: (c, o, s) {
                         return const Icon(Icons.catching_pokemon);
                       },
-                    ),
-                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState).name, overflow: TextOverflow.ellipsis,)),
+                    ) : const Icon(Icons.catching_pokemon),
+                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
                     focusState.getPokemonState(PlayerType(PlayerType.me), null).sex.displayIcon,
                   ],),
                 ),
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
+                    appState.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
                       errorBuilder: (c, o, s) {
                         return const Icon(Icons.catching_pokemon);
                       },
-                    ),
+                    ) : const Icon(Icons.catching_pokemon),
                     Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
                     focusState.getPokemonState(PlayerType(PlayerType.opponent), null).sex.displayIcon,
                   ],),

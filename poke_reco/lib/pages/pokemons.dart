@@ -80,7 +80,6 @@ class PokemonsPageState extends State<PokemonsPage> {
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
-    final double deviceHeight = MediaQuery.of(context).size.height;
 
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
@@ -162,13 +161,13 @@ class PokemonsPageState extends State<PokemonsPage> {
                   e.value,
                   theme,
                   enabled: !partyPokemonsNo.contains(e.value.no),
-                  leading: Image.network(
+                  leading: appState.getPokeAPI ? Image.network(
                     pokeData.pokeBase[e.value.no]!.imageUrl,
                     height: theme.buttonTheme.height,
                     errorBuilder: (c, o, s) {
                       return const Icon(Icons.catching_pokemon);
                     },
-                  ),
+                  ) : const Icon(Icons.catching_pokemon),
                   onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
                   onTap: widget.selectMode ? () {
                     selectedPokemon = e.value;

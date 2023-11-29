@@ -5,6 +5,7 @@ import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
@@ -22,11 +23,13 @@ class RegisterPokemonPage extends StatefulWidget {
     required this.onFinish,
     required this.myPokemon,
     required this.isNew,
+    this.pokemonState,
   }) : super(key: key);
 
   final void Function() onFinish;
   final Pokemon myPokemon;
   final bool isNew;
+  final PokemonState? pokemonState;
 
   @override
   RegisterPokemonPageState createState() => RegisterPokemonPageState();
@@ -275,13 +278,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       */
                       Expanded(
                         flex: 3,
-                        child: Image.network(
-                          pokeData.pokeBase[widget.myPokemon.no]!.imageUrl,
-                          //height: theme.buttonTheme.height,
-                          errorBuilder: (c, o, s) {
-                            return const Icon(Icons.catching_pokemon);
-                          },
-                        ),
+                        child: appState.getPokeAPI ?
+                          Image.network(
+                            pokeData.pokeBase[widget.myPokemon.no]!.imageUrl,
+                            //height: theme.buttonTheme.height,
+                            errorBuilder: (c, o, s) {
+                              return const Icon(Icons.catching_pokemon);
+                            },
+                          ) : const Icon(Icons.catching_pokemon),
                       ),
                     ],
                   ),

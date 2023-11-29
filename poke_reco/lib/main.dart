@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-//import 'package:intl/date_symbol_data_file.dart';
-//import 'package:intl/intl.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/pages/battles.dart';
 import 'package:poke_reco/pages/parties.dart';
 import 'package:poke_reco/pages/register_battle.dart';
@@ -37,9 +37,6 @@ const Map<TabItem, IconData> tabIcon = {
 };
 
 void main() {
-  // TODO
-//  Intl.defaultLocale = 'ja_JP';
-//  initializeDateFormatting('ja', );
   runApp(const MyApp());
 }
 
@@ -74,7 +71,7 @@ class MyAppState extends ChangeNotifier {
   void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
-  bool getPokeAPI = true;     // インターネットに接続してポケモンの画像を取得するか
+  bool getPokeAPI = false;     // インターネットに接続してポケモンの画像を取得するか
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
@@ -298,6 +295,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
             onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
             party: party,
             isNew: isNew,
+            isEditPokemon: false,
+            onEditPokemon: (pokemon, pokemonState) => {},
           );
         },
       ),
@@ -352,6 +351,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                   onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
                   party: Party(),
                   isNew: true,
+                  isEditPokemon: false,
+                  onEditPokemon: (pokemon, pokemonState) => {},
                 );
               case PartyTabNavigatorRoutes.registerPokemon:
                 // ポケモン選択
@@ -401,10 +402,50 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
             onFinish: () => _pop(context),
             battle: battle,
             isNew: isNew,
+            onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
           );
         },
       ),
     ).then((value) {setState(() {});});
+  }
+
+  void _pushEditPokemonPage(BuildContext context, Pokemon pokemon, PokemonState pokemonState) async {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // ポケモン編集
+          return RegisterPokemonPage(
+            onFinish: () => _pop(context),
+            myPokemon: pokemon,
+            isNew: false,
+            pokemonState: pokemonState,
+          );
+        },
+      ),
+    );
+  }
+
+  void _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
+    var result =
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            // パーティ登録
+            return RegisterPartyPage(
+              onFinish: () => _pop(context),
+              onSelectPokemon: (party, idx) {return Future<Pokemon?>.value(Pokemon());},    // 使わない
+              party: party,
+              isNew: true,
+              isEditPokemon: true,
+              onEditPokemon: (pokemon, pokemonState) => _pushEditPokemonPage(context, pokemon, pokemonState),
+              phaseState: state,
+            );
+          },
+        ),
+      );
+    //return Future<Pokemon?>.value(result);
   }
 
   void _pop(BuildContext context) {
@@ -428,6 +469,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
                   onFinish: () => _pop(context),
                   battle: Battle(),
                   isNew: true,
+                  onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
                 );
               default:
                 return BattlesPage(

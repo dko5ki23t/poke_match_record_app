@@ -529,7 +529,7 @@ class TurnEffect {
         }
       }
       else {
-        if (pokeState.currentAbility.id == 129) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist)); // よわき
+        if (pokeState.currentAbility.id == 129) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defeatist); // よわき
       }
     }
 
@@ -553,10 +553,10 @@ class TurnEffect {
         }
       }
       else {
-        if (pokeState.currentAbility.id == 65) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow));   // しんりょく
-        if (pokeState.currentAbility.id == 66) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze));      // もうか
-        if (pokeState.currentAbility.id == 67) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent));       // げきりゅう
-        if (pokeState.currentAbility.id == 68) pokeState.buffDebuffs.removeAt(pokeState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm));         // むしのしらせ
+        if (pokeState.currentAbility.id == 65) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.overgrow);   // しんりょく
+        if (pokeState.currentAbility.id == 66) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.blaze);      // もうか
+        if (pokeState.currentAbility.id == 67) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.torrent);       // げきりゅう
+        if (pokeState.currentAbility.id == 68) pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.swarm);         // むしのしらせ
       }
     }
 

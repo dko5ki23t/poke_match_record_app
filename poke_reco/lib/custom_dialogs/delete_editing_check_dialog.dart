@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class DeleteEditingCheckDialog extends StatelessWidget {
   final String? question;
   final void Function() onYesPressed;
+  final void Function()? onNoPressed;
 
   const DeleteEditingCheckDialog(
     this.question,
     this.onYesPressed,
-    {Key? key}) : super(key: key);
+    {
+      Key? key,
+      this.onNoPressed,
+    }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -18,6 +22,7 @@ class DeleteEditingCheckDialog extends StatelessWidget {
           child: Text('いいえ'),
           onTap: () {
             Navigator.pop(context);
+            if (onNoPressed != null) onNoPressed!();
           },
         ),
         GestureDetector(
