@@ -19,6 +19,9 @@ class BattleBasicListView extends ListView {
     TextEditingController opponentNameController,
     TextEditingController dateController,
     List<TextEditingController> opponentPokemonController,
+    {
+      bool showNetworkImage = false,
+    }
   ) : 
   super(
     children: [
@@ -186,11 +189,13 @@ class BattleBasicListView extends ListView {
             SizedBox(height: 10),
             for (int i = 0; i < 6; i++)
               PokemonSexInputRow(
+                theme,
                 'ポケモン${i+1}',
                 [for (int j = 0; j < 6; j++)
                   i != j ? PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j]?.no]
                   : null
                 ],
+                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ? battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.no : 0,
                 opponentPokemonController[i],
                 (suggestion) {
                   if (battle.turns.isNotEmpty) {
@@ -293,6 +298,7 @@ class BattleBasicListView extends ListView {
                   (value) {battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.sex = value;}
                   : null,
                 enabledPokemon: i != 0 ? battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1] != null && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1]!.no >= pokemonMinNo : true,
+                showNetworkImage: showNetworkImage,
               ),
               SizedBox(height: 10),
             SizedBox(height: 10),

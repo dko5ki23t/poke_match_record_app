@@ -201,7 +201,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                               Pokemon() : null;
                             itemController[j].text = '';
                             widget.party.items[j] = null;
-                            break; 
+                            break;
                           }
                         }
                         setState(() {});
@@ -229,6 +229,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       },
                       enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
                       enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
+                      showNetworkImage: appState.getPokeAPI
                     ),
                     SizedBox(height: 10),
                   SizedBox(height: 10),

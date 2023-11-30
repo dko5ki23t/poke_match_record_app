@@ -20,7 +20,6 @@ class TypeDropdownButton extends DropdownButtonFormField {
       border: UnderlineInputBorder(),
       labelText: labelText,
       labelStyle: isError ? notAllowedStyle : null,
-      
     ),
     items: <DropdownMenuItem>[
       for (var type in PokeDB().types)

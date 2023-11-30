@@ -6,7 +6,6 @@ import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
-import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -32,10 +31,11 @@ class PartiesPageState extends State<PartiesPage> {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
     var pokeData = appState.pokeData;
+    var ownerFilter = pokeData.partiesOwnerFilter;
     var winRateMinFilter = pokeData.partiesWinRateMinFilter;
     var winRateMaxFilter = pokeData.partiesWinRateMaxFilter;
     var pokemonNoFilter = pokeData.partiesPokemonNoFilter;
-    var filteredParties = parties.entries.where((element) => element.value.id != 0 && element.value.owner == Owner.mine);
+    var filteredParties = parties.entries.where((element) => element.value.id != 0 && ownerFilter.contains(element.value.owner));
     filteredParties = filteredParties.where((element) => element.value.winRate >= winRateMinFilter);
     filteredParties = filteredParties.where((element) => element.value.winRate <= winRateMaxFilter);
     if (pokemonNoFilter.isNotEmpty) {
@@ -161,14 +161,17 @@ class PartiesPageState extends State<PartiesPage> {
                           builder: (_) {
                             return PartyFilterDialog(
                               pokeData,
+                              ownerFilter,
                               winRateMinFilter,
                               winRateMaxFilter,
                               pokemonNoFilter,
-                              (f1, f2, f3) async {
+                              (f1, f2, f3, f4) async {
+                                ownerFilter.clear();
                                 pokemonNoFilter.clear();
-                                pokeData.partiesWinRateMinFilter = f1;
-                                pokeData.partiesWinRateMaxFilter = f2;
-                                pokemonNoFilter.addAll(f3);
+                                ownerFilter.addAll(f1);
+                                pokeData.partiesWinRateMinFilter = f2;
+                                pokeData.partiesWinRateMaxFilter = f3;
+                                pokemonNoFilter.addAll(f4);
                                 await pokeData.saveConfig();
                                 setState(() {});
                               },

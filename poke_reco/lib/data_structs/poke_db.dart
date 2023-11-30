@@ -37,6 +37,7 @@ const String configKeyPokemonsTemperFilter = 'pokemonsTemperFilter';
 
 const String configKeyPokemonsSort = 'pokemonsSort';
 
+const String configKeyPartiesOwnerFilter = 'partiesOwnerFilter';
 const String configKeyPartiesWinRateMinFilter = 'partiesWinRateMinFilter';
 const String configKeyPartiesWinRateMaxFilter = 'partiesWinRateMaxFilter';
 const String configKeyPartiesPokemonNoFilter = 'partiesPokemonNoFilter';
@@ -706,6 +707,7 @@ class PokeDB {
   List<int> pokemonsTemperFilter = [];
   PokemonSort? pokemonsSort;
 
+  List<Owner> partiesOwnerFilter = [Owner.mine];
   int partiesWinRateMinFilter = 0;
   int partiesWinRateMaxFilter = 100;
   List<int> partiesPokemonNoFilter = [];
@@ -845,6 +847,21 @@ class PokeDB {
         int sort = configJson[configKeyPokemonsSort] as int;
         pokemonsSort = sort == 0 ? null : PokemonSort.createFromId(sort);
 
+        partiesOwnerFilter = [];
+        for (final e in configJson[configKeyPartiesOwnerFilter]) {
+          switch (e) {
+            case 0:
+              partiesOwnerFilter.add(Owner.mine);
+              break;
+            case 1:
+              partiesOwnerFilter.add(Owner.fromBattle);
+              break;
+            case 2:
+            default:
+              partiesOwnerFilter.add(Owner.hidden);
+              break;
+          }
+        }
         partiesWinRateMinFilter = configJson[configKeyPartiesWinRateMinFilter] as int;
         partiesWinRateMaxFilter = configJson[configKeyPartiesWinRateMaxFilter] as int;
         partiesPokemonNoFilter = [];
@@ -875,6 +892,7 @@ class PokeDB {
         pokemonsAbilityFilter = [];
         pokemonsTemperFilter = [];
         pokemonsSort = null;
+        partiesOwnerFilter = [Owner.mine];
         partiesWinRateMinFilter = 0;
         partiesWinRateMaxFilter = 100;
         partiesPokemonNoFilter = [];
@@ -1327,6 +1345,7 @@ class PokeDB {
         configKeyPokemonsTemperFilter: [for (final e in pokemonsTemperFilter) e],
         configKeyPokemonsSort: pokemonsSort == null ? 0 : pokemonsSort!.id,
 
+        configKeyPartiesOwnerFilter: [for (final e in partiesOwnerFilter) e.index],
         configKeyPartiesWinRateMinFilter: partiesWinRateMinFilter,
         configKeyPartiesWinRateMaxFilter: partiesWinRateMaxFilter,
         configKeyPartiesPokemonNoFilter: [for (final e in partiesPokemonNoFilter) e],

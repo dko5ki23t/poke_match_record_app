@@ -71,7 +71,7 @@ class MyAppState extends ChangeNotifier {
   void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
-  bool getPokeAPI = false;     // インターネットに接続してポケモンの画像を取得するか
+  bool getPokeAPI = true;     // インターネットに接続してポケモンの画像を取得するか
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
@@ -426,7 +426,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
     );
   }
 
-  void _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
+  Future<void> _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
     var result =
       await Navigator.push(
         context,
@@ -445,7 +445,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           },
         ),
       );
-    //return Future<Pokemon?>.value(result);
+    return Future<void>.value();
   }
 
   void _pop(BuildContext context) {

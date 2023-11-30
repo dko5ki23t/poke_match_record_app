@@ -7,16 +7,19 @@ import 'package:poke_reco/tool.dart';
 
 class PartyFilterDialog extends StatefulWidget {
   final Future<void> Function (
+    List<Owner> ownerFilter,
     int winRateMinFilter,
     int winRateMaxFilter,
     List<int> pokemonIDFilter) onOK;
   final PokeDB pokeData;
+  final List<Owner> ownerFilter;
   final int winRateMinFilter;
   final int winRateMaxFilter;
   final List<int> pokemonNoFilter;
 
   const PartyFilterDialog(
     this.pokeData,
+    this.ownerFilter,
     this.winRateMinFilter,
     this.winRateMaxFilter,
     this.pokemonNoFilter,
@@ -29,8 +32,10 @@ class PartyFilterDialog extends StatefulWidget {
 
 class PartyFilterDialogState extends State<PartyFilterDialog> {
   bool isFirstBuild = true;
+  bool ownerExpanded = true;
   bool winRateExpanded = true;
   bool pokemonNoExpanded = true;
+  List<Owner> ownerFilter = [];
   int winRateMinFilter = 0;
   int winRateMaxFilter = 100;
   List<int> pokemonNoFilter = [];
@@ -41,6 +46,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
   @override
   Widget build(BuildContext context) {
     if (isFirstBuild) {
+      ownerFilter = [...widget.ownerFilter];
       winRateMinFilter = widget.winRateMinFilter;
       winRateMaxFilter = widget.winRateMaxFilter;
       pokemonNoFilter = [...widget.pokemonNoFilter];
@@ -52,6 +58,62 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
       content: SingleChildScrollView(
         child: Column(
           children: [
+            GestureDetector(
+              onTap: () => setState(() {
+                ownerExpanded = !ownerExpanded;
+              }),
+              child: Stack(
+                children: [
+                  Center(child: Text('作成者'),),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ownerExpanded ?
+                      Icon(Icons.keyboard_arrow_up) :
+                      Icon(Icons.keyboard_arrow_down),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(
+              height: 10,
+              thickness: 1,
+            ),
+            ownerExpanded ?
+            ListTile(
+              title: Text('自分のパーティ'),
+              leading: Checkbox(
+                value: ownerFilter.contains(Owner.mine),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    if (value == true) {
+                      ownerFilter.add(Owner.mine);
+                    }
+                    else {
+                      ownerFilter.remove(Owner.mine);
+                    }
+                  });
+                },
+              ),
+            ) : Container(),
+            ownerExpanded ?
+            ListTile(
+              title: Text('対戦相手のパーティ'),
+              leading: Checkbox(
+                value: ownerFilter.contains(Owner.fromBattle),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    if (value == true) {
+                      ownerFilter.add(Owner.fromBattle);
+                    }
+                    else {
+                      ownerFilter.remove(Owner.fromBattle);
+                    }
+                  });
+                },
+              ),
+            ) : Container(),
             GestureDetector(
               onTap: () => setState(() {
                 winRateExpanded = !winRateExpanded;
@@ -201,7 +263,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
             child: Text('OK'),
             onTap: () async {
               Navigator.pop(context);
-              await widget.onOK(winRateMinFilter, winRateMaxFilter, pokemonNoFilter,);
+              await widget.onOK(ownerFilter, winRateMinFilter, winRateMaxFilter, pokemonNoFilter,);
             },
           ),
         ],

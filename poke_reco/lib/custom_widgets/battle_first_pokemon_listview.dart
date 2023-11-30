@@ -10,6 +10,9 @@ class BattleFirstPokemonListView extends ListView {
     Battle battle,
     ThemeData theme,
     CheckedPokemons checkedPokemons,
+    {
+      bool showNetworkImage = false,
+    }
   ) : 
   super(
     children: [
@@ -61,6 +64,14 @@ class BattleFirstPokemonListView extends ListView {
                       child: PokemonMiniTile(
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
                         theme,
+                        leading: showNetworkImage ?
+                          Image.network(
+                            PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.no]!.imageUrl,
+                            height: theme.buttonTheme.height,
+                            errorBuilder: (c, o, s) {
+                              return const Icon(Icons.catching_pokemon);
+                            },
+                          ) : const Icon(Icons.catching_pokemon),
                         onTap: () {
                           if (checkedPokemons.own.contains(i+1)) {
                             checkedPokemons.own.removeWhere((e) => e == i+1);
@@ -72,6 +83,8 @@ class BattleFirstPokemonListView extends ListView {
                         },
                         selected: checkedPokemons.own.contains(i+1),
                         selectedTileColor: Colors.black26,
+                        showLevel: false,
+                        showSex: false,
                       ),
                     ) : Text(''),
                   ),
@@ -82,9 +95,19 @@ class BattleFirstPokemonListView extends ListView {
                     PokemonMiniTile(
                       battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!,
                       theme,
+                      leading: showNetworkImage ?
+                        Image.network(
+                          PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.no]!.imageUrl,
+                          height: theme.buttonTheme.height,
+                          errorBuilder: (c, o, s) {
+                            return const Icon(Icons.catching_pokemon);
+                          },
+                        ) : const Icon(Icons.catching_pokemon),
                       onTap: () {checkedPokemons.opponent = i+1; setState();},
                       selected: checkedPokemons.opponent == i+1,
                       selectedTileColor: Colors.black26,
+                      showLevel: false,
+                      showSex: false,
                     ) : Text(''),
                   ),
                 ],

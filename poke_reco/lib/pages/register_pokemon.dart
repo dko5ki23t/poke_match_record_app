@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
@@ -39,7 +38,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   static const notAllowedStyle = TextStyle(
     color: Colors.red,
   );
-  final pokeNameController = TextEditingController();     // TODO:デストラクタ？で解放しなくていいのか https://codewithandrea.com/articles/flutter-text-field-form-validation/
+  final pokeNameController = TextEditingController();
   final pokeNickNameController = TextEditingController();
   final pokeNoController = TextEditingController();
   final pokeLevelController = TextEditingController();
@@ -83,6 +82,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var appState = context.watch<MyAppState>();
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
+    var pokemonState = widget.pokemonState;
     var theme = Theme.of(context);
     void onBack () {
       if (widget.myPokemon.no != 0) {
@@ -241,7 +241,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             pokeStatRaceController[4].text = 'D ${widget.myPokemon.d.race}';
                             pokeStatRaceController[5].text = 'S ${widget.myPokemon.s.race}';
                             updateRealStat();
-                            //pokeStatHRealController.text = widget.myPokemon.h.real.toString();
                             widget.myPokemon.move1 = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
                             widget.myPokemon.move2 = null;
                             widget.myPokemon.move3 = null;
@@ -258,30 +257,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         ),
                       ),
                       SizedBox(width: 10),
-                      /*
-                      Expanded(
-                        flex: 3,
-                        child:TextFormField(
-                          decoration: const InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: '図鑑No.',
-                            counterText: '',        // 下に出る文字数制限の表示を消す
-                          ),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          onChanged: (value) {widget.myPokemon.no = int.parse(value);},
-                          maxLength: 5,
-                          controller: pokeNoController,
-                          enabled: false,   // TODO:余裕があれば図鑑No変更→ポケモン名変更
-                        ),
-                      ),
-                      */
                       Expanded(
                         flex: 3,
                         child: appState.getPokeAPI ?
                           Image.network(
                             pokeData.pokeBase[widget.myPokemon.no]!.imageUrl,
-                            //height: theme.buttonTheme.height,
                             errorBuilder: (c, o, s) {
                               return const Icon(Icons.catching_pokemon);
                             },
@@ -338,6 +318,21 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       ),
                     ],
                   ),
+                  pokemonState != null ?
+                  Row(  // テラスタイプ
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            '対戦で確認できたテラスタイプ：${pokemonState!.teraType != null && pokemonState!.teraType!.id != 0 ? pokemonState!.teraType!.displayName : 'なし'}',
+                            style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ) : Container(),
                   SizedBox(height: 10),
                   Row(  // レベル, せいべつ
                     mainAxisSize: MainAxisSize.min,
@@ -461,83 +456,117 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                   SizedBox(height: 10),
                   // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ の数値入力
                   for (int i = 0; i < StatIndex.size.index; i++)
-                    StatInputRow(
-                      statsLabelTexts[i],
-                      widget.myPokemon,
-                      pokeStatRaceController[i],
-                      pokeStatIndiController[i],
-                      pokemonMinIndividual,
-                      pokemonMaxIndividual,
-                      widget.myPokemon.stats[i].indi,
-                      (value) {
-                        widget.myPokemon.stats[i].indi = value.toInt();
-                        updateRealStat();
-                      },
-                      pokeStatEffortController[i],
-                      pokemonMinEffort,
-                      pokemonMaxEffort,
-                      widget.myPokemon.stats[i].effort,
-                      (value) {
-                        widget.myPokemon.stats[i].effort = value.toInt();
-                        updateRealStat();
-                      },
-                      pokeStatRealController[i],
-                      widget.myPokemon.stats[i].real,
-                      (value) {
-                        widget.myPokemon.stats[i].real = value.toInt();
-                        updateStatsRefReal(i);
-                      },
-                      effectTemper: i != 0,
-                      statName: statNames[i],
+                    Column(
+                      children: [
+                        StatInputRow(
+                          statsLabelTexts[i],
+                          widget.myPokemon,
+                          pokeStatRaceController[i],
+                          pokeStatIndiController[i],
+                          pokemonMinIndividual,
+                          pokemonMaxIndividual,
+                          widget.myPokemon.stats[i].indi,
+                          (value) {
+                            widget.myPokemon.stats[i].indi = value.toInt();
+                            updateRealStat();
+                          },
+                          pokeStatEffortController[i],
+                          pokemonMinEffort,
+                          pokemonMaxEffort,
+                          widget.myPokemon.stats[i].effort,
+                          (value) {
+                            widget.myPokemon.stats[i].effort = value.toInt();
+                            updateRealStat();
+                          },
+                          pokeStatRealController[i],
+                          widget.myPokemon.stats[i].real,
+                          (value) {
+                            widget.myPokemon.stats[i].real = value.toInt();
+                            updateStatsRefReal(i);
+                          },
+                          effectTemper: i != 0,
+                          statName: statNames[i],
+                        ),
+                        pokemonState != null ?
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  '対戦で確認できた実数値の範囲：${pokemonState.minStats[i].real}～${pokemonState.maxStats[i].real}',
+                                  style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ) : Container(),
+                      ]
                     ),
-                    SizedBox(height: 10),
                   // ステータスの合計値
                   StatTotalRow(widget.myPokemon.totalRace(), widget.myPokemon.totalEffort()),
 
                   // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                   for (int i = 0; i < 4; i++)
-                    MoveInputRow(
-                      widget.myPokemon,
-                      'わざ${i+1}', 'PP',
-                      pokeMoveController[i],
-                      [for (int j = 0; j < 4; j++) i != j ? widget.myPokemon.moves[j] : null],
-                      (suggestion) {
-                        pokeMoveController[i].text = suggestion.displayName;
-                        widget.myPokemon.moves[i] = suggestion;
-                        pokePPController[i].text = suggestion.pp.toString();
-                        widget.myPokemon.pps[i] = suggestion.pp;
-                        setState(() {});
-                      },
-                      () {
-                        for (int j = i; j < 4; j++) {
-                          if (j+1 < 4 && widget.myPokemon.moves[j+1] != null) {
-                            pokeMoveController[j].text = widget.myPokemon.moves[j+1]!.displayName;
-                            widget.myPokemon.moves[j] = widget.myPokemon.moves[j+1];
-                            pokePPController[j].text = '${widget.myPokemon.pps[j+1]}';
-                            widget.myPokemon.pps[j] = widget.myPokemon.pps[j+1];
+                    Column(children: [
+                      MoveInputRow(
+                        widget.myPokemon,
+                        'わざ${i+1}', 'PP',
+                        pokeMoveController[i],
+                        [for (int j = 0; j < 4; j++) i != j ? widget.myPokemon.moves[j] : null],
+                        (suggestion) {
+                          pokeMoveController[i].text = suggestion.displayName;
+                          widget.myPokemon.moves[i] = suggestion;
+                          pokePPController[i].text = suggestion.pp.toString();
+                          widget.myPokemon.pps[i] = suggestion.pp;
+                          setState(() {});
+                        },
+                        () {
+                          for (int j = i; j < 4; j++) {
+                            if (j+1 < 4 && widget.myPokemon.moves[j+1] != null) {
+                              pokeMoveController[j].text = widget.myPokemon.moves[j+1]!.displayName;
+                              widget.myPokemon.moves[j] = widget.myPokemon.moves[j+1];
+                              pokePPController[j].text = '${widget.myPokemon.pps[j+1]}';
+                              widget.myPokemon.pps[j] = widget.myPokemon.pps[j+1];
+                            }
+                            else {
+                              pokeMoveController[j].text = '';
+                              widget.myPokemon.moves[j] = j == 0 ?
+                                Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
+                                null;
+                              pokePPController[j].text = '0';
+                              widget.myPokemon.pps[j] = 0;
+                              break; 
+                            }
                           }
-                          else {
-                            pokeMoveController[j].text = '';
-                            widget.myPokemon.moves[j] = j == 0 ?
-                              Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
-                              null;
-                            pokePPController[j].text = '0';
-                            widget.myPokemon.pps[j] = 0;
-                            break; 
-                          }
-                        }
-                        setState(() {});
-                      },
-                      pokePPController[i],
-                      (value) {widget.myPokemon.pps[i] = value.toInt();},
-                      moveEnabled: i == 0 ?
-                        widget.myPokemon.name != '' :
-                        widget.myPokemon.moves[i-1] != null && widget.myPokemon.moves[i-1]!.id != 0,
-                      ppEnabled: widget.myPokemon.moves[i] != null && widget.myPokemon.moves[i]!.id != 0,
-                      initialPPValue: widget.myPokemon.pps[i] ?? 0,
-                      isError: i == 0 && widget.myPokemon.no != 0 && widget.myPokemon.move1.id == 0,
-                    ),
-                    SizedBox(height: 10),
+                          setState(() {});
+                        },
+                        pokePPController[i],
+                        (value) {widget.myPokemon.pps[i] = value.toInt();},
+                        moveEnabled: i == 0 ?
+                          widget.myPokemon.name != '' :
+                          widget.myPokemon.moves[i-1] != null && widget.myPokemon.moves[i-1]!.id != 0,
+                        ppEnabled: widget.myPokemon.moves[i] != null && widget.myPokemon.moves[i]!.id != 0,
+                        initialPPValue: widget.myPokemon.pps[i] ?? 0,
+                        isError: i == 0 && widget.myPokemon.no != 0 && widget.myPokemon.move1.id == 0,
+                      ),
+                      pokemonState != null ?
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Flexible(
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  i < pokemonState.moves.length ? '対戦で確認できたわざ${i+1}：${pokeData.moves[pokemonState.moves[i]]!.displayName}' : '',
+                                  style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ) : Container(),
+                    ],),
 
                   SizedBox(height: 50),
                 ],

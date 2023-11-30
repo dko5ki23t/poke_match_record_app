@@ -6,8 +6,10 @@ import 'package:poke_reco/data_structs/poke_base.dart';
 
 class PokemonSexInputRow extends Row {
   PokemonSexInputRow(
+    ThemeData theme,
     String? labelPokemonText,
     List<PokeBase?> removalPokemons,
+    int pokemonNo,
     TextEditingController pokemonController,
     void Function(PokeBase) onPokemonSuggestionSelected,
     void Function() pokemonOnClear,
@@ -17,11 +19,21 @@ class PokemonSexInputRow extends Row {
     void Function(dynamic)? onSexChanged,
     {
       bool enabledPokemon = true,
+      bool showNetworkImage = false,
     }
   ) : 
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
+      showNetworkImage ?
+      Image.network(
+        PokeDB().pokeBase[pokemonNo]!.imageUrl,
+        height: theme.buttonTheme.height,
+        errorBuilder: (c, o, s) {
+          return const Icon(Icons.catching_pokemon);
+        },
+      ) : const Icon(Icons.catching_pokemon),
+      SizedBox(width: 10,),
       Expanded(
         flex: 8,
         child: enabledPokemon ?
@@ -69,7 +81,7 @@ class PokemonSexInputRow extends Row {
       ),
       SizedBox(width: 10),
       Expanded(
-        flex: 2,
+        flex: 3,
         child: DropdownButtonFormField(
           decoration: InputDecoration(
             border: UnderlineInputBorder(),

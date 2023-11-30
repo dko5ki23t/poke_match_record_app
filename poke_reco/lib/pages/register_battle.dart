@@ -51,7 +51,7 @@ class RegisterBattlePage extends StatefulWidget {
   }) : super(key: key);
 
   final void Function() onFinish;
-  final void Function(Party party, PhaseState state) onSaveOpponentParty;
+  final Future<void> Function(Party party, PhaseState state) onSaveOpponentParty;
   final Battle battle;
   final bool isNew;
 
@@ -205,61 +205,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
 
-      if (widget.isNew) {
-        // 相手のパーティ、ポケモンも登録
-        for (int i = 0; i < opponentParty.pokemonNum; i++) {
-          opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-          opponentParty.pokemons[i]!.viewOrder = opponentParty.pokemons[i]!.id;
-          opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-          pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
-          await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
-        }
-        opponentParty.id = pokeData.getUniquePartyID();
-        opponentParty.viewOrder = opponentParty.id;
-        opponentParty.owner = Owner.fromBattle;
-        parties[opponentParty.id] = opponentParty;
-        await pokeData.addParty(opponentParty);
-
-        battle.id = pokeData.getUniqueBattleID();
-        battle.viewOrder = battle.id;
-        battles[battle.id] = battle;
-      }
-      else {
-        for (int i = 0; i < opponentParty.pokemonNum; i++) {
-          int pokemonID = opponentParty.pokemons[i]!.id;
-          if (pokemonID == 0) {   // 編集時に追加したポケモン
-            opponentParty.pokemons[i]!.id = pokeData.getUniqueMyPokemonID();
-            opponentParty.pokemons[i]!.viewOrder = opponentParty.pokemons[i]!.id;
-            opponentParty.pokemons[i]!.owner = Owner.fromBattle;
-            pokemons[opponentParty.pokemons[i]!.id] = opponentParty.pokemons[i]!;
-            await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
-          }
-          else {
-            pokemons[pokemonID] = opponentParty.pokemons[i]!;
-            await pokeData.addMyPokemon(opponentParty.pokemons[i]!);
-          }
-        }
-        parties[opponentParty.id] = opponentParty;
-        await pokeData.addParty(opponentParty);
-
-        battles[battle.id] = battle;
-      }
-      await pokeData.addBattle(battle);
-      widget.onFinish();
-
-/*
       showDialog(
         context: context,
         builder: (_) {
-          return DeleteEditingCheckDialog(
-            '相手パーティ・ポケモンを保存しますか？',
-            () async {
+          return DeleteEditingCheckDialogWithCancel(
+            question: '相手パーティ・ポケモンを保存しますか？',
+            onYesPressed: () async {
               if (widget.isNew) {
                 // 相手のパーティ、ポケモンを有効化
                 for (int i = 0; i < opponentParty.pokemonNum; i++) {
                   var poke = opponentParty.pokemons[i]!;
-                  poke.id = pokeData.getUniqueMyPokemonID();
-                  poke.viewOrder = poke.id;
+                  //poke.id = pokeData.getUniqueMyPokemonID();
+                  //poke.viewOrder = poke.id;
                   poke.owner = Owner.fromBattle;
                   // 対戦で確定できなかったものを穴埋めする
                   if (poke.ability.id == 0) {
@@ -274,14 +231,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   if (poke.teraType.id == 0) {
                     poke.teraType = PokeType.createFromId(1);
                   }
-                  pokemons[poke.id] = poke;
-                  await pokeData.addMyPokemon(poke);
+                  //pokemons[poke.id] = poke;
+                  //await pokeData.addMyPokemon(poke);
                 }
-                opponentParty.id = pokeData.getUniquePartyID();
-                opponentParty.viewOrder = opponentParty.id;
+                //opponentParty.id = pokeData.getUniquePartyID();
+                //opponentParty.viewOrder = opponentParty.id;
                 opponentParty.owner = Owner.fromBattle;
-                parties[opponentParty.id] = opponentParty;
-                await pokeData.addParty(opponentParty);
+                //parties[opponentParty.id] = opponentParty;
+                //await pokeData.addParty(opponentParty);
 
                 battle.id = pokeData.getUniqueBattleID();
                 battle.viewOrder = battle.id;
@@ -320,14 +277,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
                 battles[battle.id] = battle;
               }
-              widget.onSaveOpponentParty(
+              await widget.onSaveOpponentParty(
                 opponentParty,
                 turns.last.phases.isNotEmpty ?
                   turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
                   turns.last.copyInitialState()
               );
               await pokeData.addBattle(battle);
-              //widget.onFinish();
+              widget.onFinish();
             },
             onNoPressed: () async {
               if (widget.isNew) {
@@ -344,7 +301,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           );
         }
       );
-*/
     }
 
     void onNext() {
@@ -687,7 +643,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           theme, battleNameController,
           opponentNameController,
           dateController,
-          opponentPokemonController);
+          opponentPokemonController,
+          showNetworkImage: appState.getPokeAPI);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
         deletePressed = () => onTurnDelete();
@@ -697,7 +654,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         lists = BattleFirstPokemonListView(
           () {setState(() {});},
           widget.battle, theme,
-          checkedPokemons);
+          checkedPokemons,
+          showNetworkImage: appState.getPokeAPI,);
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
         deletePressed = null;

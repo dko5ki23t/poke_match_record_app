@@ -14,6 +14,8 @@ class PokemonMiniTile extends ListTile {
       onTap,
       onLongPress,
       selectedTileColor,
+      bool showLevel = true,
+      bool showSex = true,
     }
   ) : 
   super(
@@ -32,9 +34,10 @@ class PokemonMiniTile extends ListTile {
           ),
         ),
         SizedBox(width: 10),
+        showLevel ?
         Text(
-            'Lv.${pokemon.level}', overflow: TextOverflow.ellipsis,
-          ),
+          'Lv.${pokemon.level}', overflow: TextOverflow.ellipsis,
+        ) : Container(),
       ],
     ),
     subtitle: Column(
@@ -48,7 +51,7 @@ class PokemonMiniTile extends ListTile {
               ),
             ),
             SizedBox(width: 10,),
-            pokemon.sex.displayIcon,
+            showSex ? pokemon.sex.displayIcon : Container(),
           ],
         ),
         Row(
