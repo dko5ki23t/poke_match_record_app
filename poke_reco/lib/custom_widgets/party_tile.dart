@@ -25,9 +25,9 @@ class PartyTile extends ListTile {
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  TextSpan(text: _removeFormName(party.pokemon1.name)),
-                  party.pokemon2 != null ? TextSpan(text: '/${_removeFormName(party.pokemon2!.name)}') : TextSpan(),
-                  party.pokemon3 != null ? TextSpan(text: '/${_removeFormName(party.pokemon3!.name)}') : TextSpan(),
+                  TextSpan(text: _removeFormName(party.pokemons[0]!.name)),
+                  party.pokemons[1] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[1]!.name)}') : TextSpan(),
+                  party.pokemons[2] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[2]!.name)}') : TextSpan(),
                 ],
               ),
             ),
@@ -39,9 +39,9 @@ class PartyTile extends ListTile {
               text: TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  party.pokemon4 != null ? TextSpan(text: _removeFormName(party.pokemon4!.name)) : TextSpan(),
-                  party.pokemon5 != null ? TextSpan(text: '/${_removeFormName(party.pokemon5!.name)}') : TextSpan(),
-                  party.pokemon6 != null ? TextSpan(text: '/${_removeFormName(party.pokemon6!.name)}') : TextSpan(),
+                  party.pokemons[3] != null ? TextSpan(text: _removeFormName(party.pokemons[3]!.name)) : TextSpan(),
+                  party.pokemons[4] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[4]!.name)}') : TextSpan(),
+                  party.pokemons[5] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[5]!.name)}') : TextSpan(),
                 ],
               ),
             ),

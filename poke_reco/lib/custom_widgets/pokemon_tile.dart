@@ -29,7 +29,7 @@ class PokemonTile extends ListTile {
     key: Key('${pokemon.id}'),
     title: Row(
       children: [
-        showWarning && pokemon.refCount > 0 ?
+        showWarning && pokemon.refs ?
         Icon(Icons.warning, color: Colors.red,)
         : Container(),
         Expanded(

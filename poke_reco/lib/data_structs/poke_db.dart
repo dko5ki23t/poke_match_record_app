@@ -11,7 +11,6 @@ import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/ability.dart';
@@ -167,7 +166,6 @@ const String myPokemonColumnPP3 = 'pp3';
 const String myPokemonColumnMove4 = 'move4';
 const String myPokemonColumnPP4 = 'pp4';
 const String myPokemonColumnOwnerID = 'owner';
-const String myPokemonColumnRefCount = 'refCount';
 
 
 const String partyDBFile = 'parties.db';
@@ -188,7 +186,6 @@ const String partyColumnPokemonItem5 = 'pokemonItem5';
 const String partyColumnPokemonId6 = 'pokemonID6';
 const String partyColumnPokemonItem6 = 'pokemonItem6';
 const String partyColumnOwnerID = 'owner';
-const String partyColumnRefCount = 'refCount';
 
 const String battleDBFile = 'battles.db';
 const String battleDBTable = 'battleDB';
@@ -692,7 +689,6 @@ Owner toOwner(int idx) {
 // シングルトンクラス
 // TODO: 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
 class PokeDB {
-//  Map<int, PokeBase> pokeBase = {};
   static const String pokeApiRoute = "https://pokeapi.co/api/v2";
 
   // 設定等を保存する(端末の)ファイル
@@ -756,11 +752,6 @@ class PokeDB {
   late Database partyDb;
   Map<int, Battle> battles = {0: Battle()};
   late Database battleDb;
-
-  // DBに使われているIDのリスト。常に昇順に並び替えておく
-  List<int> myPokemonIDs = [];
-  List<int> partyIDs = [];
-  List<int> battleIDs = [];
 
   bool isLoaded = false;
 
@@ -1115,72 +1106,14 @@ class PokeDB {
           myPokemonColumnMove2, myPokemonColumnPP2,
           myPokemonColumnMove3, myPokemonColumnPP3,
           myPokemonColumnMove4, myPokemonColumnPP4,
-          myPokemonColumnOwnerID, myPokemonColumnRefCount,
+          myPokemonColumnOwnerID,
         ],
       );
 
       for (var map in maps) {
-        int pokeNo = map[myPokemonColumnNo];
-        pokemons[map[myPokemonColumnId]] = Pokemon()
-          ..id = map[myPokemonColumnId]
-          ..viewOrder = map[myPokemonColumnViewOrder]
-          ..name = pokeBase[pokeNo]!.name
-          ..nickname = map[myPokemonColumnNickName]
-          ..level = map[myPokemonColumnLevel]
-          ..sex = Sex.createFromId(map[myPokemonColumnSex])
-          ..no = pokeNo
-          ..type1 = pokeBase[pokeNo]!.type1
-          ..type2 = pokeBase[pokeNo]!.type2
-          ..teraType = PokeType.createFromId(map[myPokemonColumnTeraType])
-          ..temper = tempers[map[myPokemonColumnTemper]]!
-          ..h = SixParams(
-            pokeBase[pokeNo]!.h,
-            map[myPokemonColumnIndividual[0]],
-            map[myPokemonColumnEffort[0]],
-            0)
-          ..a = SixParams(
-            pokeBase[pokeNo]!.a,
-            map[myPokemonColumnIndividual[1]],
-            map[myPokemonColumnEffort[1]],
-            0)
-          ..b = SixParams(
-            pokeBase[pokeNo]!.b,
-            map[myPokemonColumnIndividual[2]],
-            map[myPokemonColumnEffort[2]],
-            0)
-          ..c = SixParams(
-            pokeBase[pokeNo]!.c,
-            map[myPokemonColumnIndividual[3]],
-            map[myPokemonColumnEffort[3]],
-            0)
-          ..d = SixParams(
-            pokeBase[pokeNo]!.d,
-            map[myPokemonColumnIndividual[4]],
-            map[myPokemonColumnEffort[4]],
-            0)
-          ..s = SixParams(
-            pokeBase[pokeNo]!.s,
-            map[myPokemonColumnIndividual[5]],
-            map[myPokemonColumnEffort[5]],
-            0)
-          ..ability = abilities[map[myPokemonColumnAbility]]!
-          ..item = (map[myPokemonColumnItem] != null) ?   // TODO 消す
-            Item(id: map[myPokemonColumnItem], displayName: '', flingPower: 0, flingEffectId: 0, timing: AbilityTiming(0), isBerry: false, imageUrl: '') :
-            null
-          ..move1 = moves[map[myPokemonColumnMove1]]!
-          ..pp1 = map[myPokemonColumnPP1]
-          ..move2 = map[myPokemonColumnMove2] != null ? moves[map[myPokemonColumnMove2]]! : null
-          ..pp2 = map[myPokemonColumnPP2]
-          ..move3 = map[myPokemonColumnMove3] != null ? moves[map[myPokemonColumnMove3]]! : null
-          ..pp3 = map[myPokemonColumnPP3]
-          ..move4 = map[myPokemonColumnMove4] != null ? moves[map[myPokemonColumnMove4]]! : null
-          ..pp4 = map[myPokemonColumnPP4]
-          ..owner = toOwner(map[myPokemonColumnOwnerID])
-          ..refCount = map[myPokemonColumnRefCount]
-          ..updateRealStats();
-        myPokemonIDs.add(map[myPokemonColumnId]);
+        var pokemon = Pokemon.createFromDBMap(map);
+        pokemons[pokemon.id] = pokemon;
       }
-      myPokemonIDs.sort((a, b) => a.compareTo(b));
     }
 
     //////////// 登録したパーティ
@@ -1212,36 +1145,13 @@ class PokeDB {
           partyColumnPokemonId4, partyColumnPokemonItem4,
           partyColumnPokemonId5, partyColumnPokemonItem5,
           partyColumnPokemonId6, partyColumnPokemonItem6,
-          partyColumnOwnerID, partyColumnRefCount,
         ],
       );
 
       for (var map in maps) {
-        parties[map[partyColumnId]] = Party()
-          ..id = map[partyColumnId]
-          ..viewOrder = map[partyColumnViewOrder]
-          ..name = map[partyColumnName]
-          ..pokemon1 = pokemons.values.where((element) => element.id == map[partyColumnPokemonId1]).first
-          ..item1 = map[partyColumnPokemonItem1] != null ? items[map[partyColumnPokemonItem1]] : null
-          ..pokemon2 = map[partyColumnPokemonId2] != null ?
-              pokemons.values.where((element) => element.id == map[partyColumnPokemonId2]).first : null
-          ..item2 = map[partyColumnPokemonItem2] != null ? items[map[partyColumnPokemonItem2]] : null
-          ..pokemon3 = map[partyColumnPokemonId3] != null ?
-              pokemons.values.where((element) => element.id == map[partyColumnPokemonId3]).first : null
-          ..item3 = map[partyColumnPokemonItem3] != null ? items[map[partyColumnPokemonItem3]] : null
-          ..pokemon4 = map[partyColumnPokemonId4] != null ?
-              pokemons.values.where((element) => element.id == map[partyColumnPokemonId4]).first : null
-          ..item4 = map[partyColumnPokemonItem4] != null ? items[map[partyColumnPokemonItem4]] : null
-          ..pokemon5 = map[partyColumnPokemonId5] != null ?
-              pokemons.values.where((element) => element.id == map[partyColumnPokemonId5]).first : null
-          ..item5 = map[partyColumnPokemonItem5] != null ? items[map[partyColumnPokemonItem5]] : null
-          ..pokemon6 = map[partyColumnPokemonId6] != null ?
-              pokemons.values.where((element) => element.id == map[partyColumnPokemonId6]).first : null
-          ..item6 = map[partyColumnPokemonItem6] != null ? items[map[partyColumnPokemonItem6]] : null
-          ..owner = toOwner(map[partyColumnOwnerID]);
-        partyIDs.add(map[partyColumnId]);
+        var party = Party.createFromDBMap(map);
+        parties[party.id] = party;
       }
-      partyIDs.sort((a, b) => a.compareTo(b));
     }
 
     //////////// 登録した対戦
@@ -1274,36 +1184,9 @@ class PokeDB {
       );
 
       for (var map in maps) {
-        var battle = Battle()
-          ..id = map[battleColumnId]
-          ..viewOrder = map[battleColumnViewOrder]
-          ..name = map[battleColumnName]
-          ..type = BattleType.createFromId(map[battleColumnTypeId])
-          ..datetimeFromStr = map[battleColumnDate]
-          ..setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == map[battleColumnOwnPartyId]).first.copyWith())
-          ..opponentName = map[battleColumnOpponentName]
-          ..setParty(PlayerType(PlayerType.opponent), parties.values.where((element) => element.id == map[battleColumnOpponentPartyId]).first.copyWith())
-          ..isMyWin = map[battleColumnIsMyWin] == 1
-          ..isYourWin = map[battleColumnIsYourWin] == 1;
-        // 各ポケモンのレベルを50に
-        for (var player in [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)]) {
-          for (int i = 0; i < battle.getParty(player).pokemonNum; i++) {
-            battle.getParty(player).pokemons[i] = battle.getParty(player).pokemons[i]!.copyWith();
-            battle.getParty(player).pokemons[i]!.level = 50;
-            battle.getParty(player).pokemons[i]!.updateRealStats();
-          }
-        }
-        // turns
-        final turns = map[battleColumnTurns].split(sqlSplit1);
-        for (final turn in turns) {
-          if (turn == '') break;
-          battle.turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
-        }
-
+        var battle = Battle.createFromDBMap(map);
         battles[battle.id] = battle;
-        battleIDs.add(map[battleColumnId]);
       }
-      battleIDs.sort((a, b) => a.compareTo(b));
     }
 
     // 各パーティの勝率算出
@@ -1359,40 +1242,86 @@ class PokeDB {
     await _saveDataFile.writeAsString(jsonText);
   }
 
-  int getUniqueMyPokemonID() {
+  int _getUniqueID(List<int> ids) {
     int ret = 1;
-    /*for (final e in myPokemonIDs) {
+    ids.sort((a, b) => a.compareTo(b));
+    assert(ids.last < 0xffffffff);
+    /*for (final e in ids) {
       if (e > ret) break;
       ret++;
     }*/
-    if (myPokemonIDs.isNotEmpty) ret = myPokemonIDs.last+1;
-    assert(ret <= 0xffffffff);
+    if (ids.isNotEmpty) ret = ids.last+1;
     return ret;
   }
 
-  int getUniquePartyID() {
-    int ret = 1;
-    /*for (final e in partyIDs) {
-      if (e > ret) break;
-      ret++;
-    }*/
-    if (partyIDs.isNotEmpty) ret = partyIDs.last+1;
-    assert(ret <= 0xffffffff);
-    return ret;
+  int _getUniqueMyPokemonID() {
+    return _getUniqueID(pokemons.keys.toList());
   }
 
-  int getUniqueBattleID() {
-    int ret = 1;
-    /*for (final e in battleIDs) {
-      if (e > ret) break;
-      ret++;
-    }*/
-    if (battleIDs.isNotEmpty) ret = battleIDs.last+1;
-    assert(ret <= 0xffffffff);
-    return ret;
+  int _getUniquePartyID() {
+    return _getUniqueID(parties.keys.toList());
   }
 
-  Future<void> addMyPokemon(Pokemon myPokemon) async {
+  int _getUniqueBattleID() {
+    return _getUniqueID(battles.keys.toList());
+  }
+
+  Future<void> _deleteUnrefs() async {
+    // 各パーティが対戦で参照されているか判定
+    Map<int, bool> partyRefs = {};
+    for (final e in parties.keys) {
+      partyRefs[e] = false;
+    }
+    for (final e in battles.values) {
+      partyRefs[e.getParty(PlayerType(PlayerType.me)).id] = true;
+      partyRefs[e.getParty(PlayerType(PlayerType.opponent)).id] = true;
+    }
+    // 参照されておらず、削除可なら削除する
+    List<int> deleteIDs = [];
+    for (final e in partyRefs.entries) {
+      if (!e.value && parties.containsKey(e.key) && parties[e.key]!.owner == Owner.hidden) deleteIDs.add(e.key);
+    }
+    parties.removeWhere((k, v) => deleteIDs.contains(k));
+    String whereStr = '$partyColumnId=?';
+    for (int i = 1; i < deleteIDs.length; i++) {
+      whereStr += ' OR $partyColumnId=?';
+    }
+    await partyDb.delete(
+      partyDBTable,
+      where: whereStr,
+      whereArgs: deleteIDs,
+    );
+    // 参照している対戦用のフィルタからも削除
+    battlesPartyIDFilter.removeWhere((e) => deleteIDs.contains(e));
+    
+    // 各ポケモンがパーティで参照されているか判定
+    Map<int, bool> myPokemonRefs = {};
+    for (final e in pokemons.keys) {
+      myPokemonRefs[e] = false;
+    }
+    for (final e in parties.values) {
+      for (int i = 0; i < e.pokemonNum; i++) {
+        myPokemonRefs[e.pokemons[i]!.id] = true;
+      }
+    }
+    // 参照されておらず、削除可なら削除する
+    deleteIDs = [];
+    for (final e in myPokemonRefs.entries) {
+      if (!e.value && pokemons.containsKey(e.key) && pokemons[e.key]!.owner == Owner.hidden) deleteIDs.add(e.key);
+    }
+    pokemons.removeWhere((k, v) => deleteIDs.contains(k));
+    whereStr = '$myPokemonColumnId=?';
+    for (int i = 1; i < deleteIDs.length; i++) {
+      whereStr += ' OR $partyColumnId=?';
+    }
+    await myPokemonDb.delete(
+      myPokemonDBTable,
+      where: whereStr,
+      whereArgs: deleteIDs,
+    );
+  }
+
+  Future<void> _prepareMyPokemonDB() async {
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
     }
@@ -1415,10 +1344,17 @@ class PokeDB {
       // SQLiteのDB読み込み
       myPokemonDb = await openDatabase(myPokemonDBPath);
     }
+  }
 
-    // DBのIDリストを更新
-    myPokemonIDs.add(myPokemon.id);
-    myPokemonIDs.sort((a, b) => a.compareTo(b));
+  Future<void> addMyPokemon(Pokemon myPokemon, bool createNew) async {
+    await _prepareMyPokemonDB();
+
+    // 新規作成なら新たなIDを割り振る
+    if (createNew) {
+      myPokemon.id = _getUniqueMyPokemonID();
+      myPokemon.viewOrder = myPokemon.id;
+    }
+    pokemons[myPokemon.id] = myPokemon;
 
     // SQLiteのDBに挿入
     await myPokemonDb.insert(
@@ -1428,8 +1364,24 @@ class PokeDB {
     );
   }
 
-  Future<void> deleteMyPokemon(List<int> ids, bool remainRelations) async {
-    //assert(ids.isNotEmpty);
+  Future<void> updateAllMyPokemonViewOrder() async {
+    await _prepareMyPokemonDB();
+
+    // SQLiteのDBを更新
+    // TODO: for文なしで一文でできないかな？
+    String whereStr = '$myPokemonColumnId=?';
+    for (final e in pokemons.values) {
+      await myPokemonDb.update(
+        myPokemonDBTable,
+        {myPokemonColumnViewOrder: e.viewOrder},
+        where: whereStr,
+        whereArgs: [e.id],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  Future<void> deleteMyPokemon(List<int> ids) async {
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1440,72 +1392,15 @@ class PokeDB {
     // SQLiteのDB読み込み
     myPokemonDb = await openDatabase(myPokemonDBPath);
 
-    if (remainRelations) {
-      // TODO
+    // 削除可フラグを付与
+    for (int i = 1; i < ids.length; i++) {
+      pokemons[i]!.owner = Owner.hidden;
     }
-    else {
-      String whereStr = '$myPokemonColumnId=?';
-      for (int i = 1; i < ids.length; i++) {
-        whereStr += ' OR $myPokemonColumnId=?';
-      }
-      
-      // 登録ポケモンリストから削除
-      for (final e in ids) {
-        pokemons.remove(e);
-      }
 
-      // DBのIDリストから削除
-      for (final e in ids) {
-        myPokemonIDs.remove(e);
-      }
-
-      // SQLiteのDBから削除
-      await myPokemonDb.delete(
-        myPokemonDBTable,
-        where: whereStr,
-        whereArgs: ids,
-      );
-
-      // 各パーティに、削除したポケモンが含まれているか調べる
-      List<int> partyIDs = [];
-      for (final e in parties.values) {
-        for (int i = 0; i < e.pokemonNum; i++) {
-          if (ids.contains(e.pokemons[i]?.id)) {
-            partyIDs.add(e.id);
-            break;
-          }
-        }
-      }
-      deleteParty(partyIDs, false);
-    }
+    await _deleteUnrefs();
   }
 
-  Future<void> updateMyPokemonRefCounts() async {
-    if (kIsWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
-    }
-    final myPokemonDBPath = join(await getDatabasesPath(), myPokemonDBFile);
-    assert(await databaseExists(myPokemonDBPath));
-
-    // SQLiteのDB読み込み
-    myPokemonDb = await openDatabase(myPokemonDBPath);
-
-    String whereStr = '$myPokemonColumnId=?';
-
-    // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
-    for (final e in pokemons.values) {
-      await myPokemonDb.update(
-        myPokemonDBTable,
-        {myPokemonColumnRefCount: e.refCount},
-        where: whereStr,
-        whereArgs: [e.id],
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-  }
-
-  Future<void> addParty(Party party) async {
+  Future<void> _preparePartyDB() async {
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
     }
@@ -1528,22 +1423,17 @@ class PokeDB {
       // SQLiteのDB読み込み
       partyDb = await openDatabase(partyDBPath);
     }
+  }
 
-    // 既存パーティの上書きなら、各ポケモンの被参照カウントをデクリメント
-    if (parties.containsKey(party.id)) {
-      for (int i = 0; i < parties[party.id]!.pokemonNum; i++) {
-        parties[party.id]!.pokemons[i]!.refCount--;
-      }
+  Future<void> addParty(Party party, bool createNew) async {
+    await _preparePartyDB();
+
+    // 新規作成なら新たなIDを割り振る
+    if (createNew) {
+      party.id = _getUniquePartyID();
+      party.viewOrder = party.id;
     }
-
-    // パーティ内ポケモンの被参照カウントをインクリメント
-    for (int i = 0; i < party.pokemonNum; i++) {
-      party.pokemons[i]!.refCount++;
-    }
-
-    // DBのIDリストを更新
-    partyIDs.add(party.id);
-    partyIDs.sort((a, b) => a.compareTo(b));
+    parties[party.id] = party;
 
     // SQLiteのDBに挿入
     await partyDb.insert(
@@ -1551,13 +1441,26 @@ class PokeDB {
       party.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
-
-    // refCountの更新をデータベースに反映
-    await updateMyPokemonRefCounts();
   }
 
-  Future<void> deleteParty(List<int> ids, bool remainRelations) async {
-    //assert(ids.isNotEmpty);
+  Future<void> updateAllPartyViewOrder() async {
+    await _preparePartyDB();
+
+    // SQLiteのDBを更新
+    // TODO: for文なしで一文でできないかな？
+    String whereStr = '$partyColumnId=?';
+    for (final e in parties.values) {
+      await partyDb.update(
+        partyDBTable,
+        {partyColumnViewOrder: e.viewOrder},
+        where: whereStr,
+        whereArgs: [e.id],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
+  }
+
+  Future<void> deleteParty(List<int> ids) async {
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1568,82 +1471,15 @@ class PokeDB {
     // SQLiteのDB読み込み
     partyDb = await openDatabase(partyDBPath);
 
-    if (remainRelations) {
-      // TODO
+    // 削除可フラグを付与
+    for (int i = 1; i < ids.length; i++) {
+      parties[i]!.owner = Owner.hidden;
     }
-    else {
-      String whereStr = '$partyColumnId=?';
-      for (int i = 1; i < ids.length; i++) {
-        whereStr += ' OR $partyColumnId=?';
-      }
 
-      // 登録パーティリストから削除
-      for (final e in ids) {
-        // パーティ内ポケモンの被参照カウントをデクリメント
-        for (int j = 0; j < parties[e]!.pokemonNum; j++) {
-          parties[e]!.pokemons[j]!.refCount--;
-        }
-        parties.remove(e);
-      }
-      
-      // 参照している対戦用のフィルタから削除
-      for (final e in ids) {
-        battlesPartyIDFilter.remove(e);
-      }
-
-      // DBのIDリストから削除
-      for (final e in ids) {
-        partyIDs.remove(e);
-      }
-
-      // SQLiteのDBから削除
-      await partyDb.delete(
-        partyDBTable,
-        where: whereStr,
-        whereArgs: ids,
-      );
-
-      // refCountの更新をデータベースに反映
-      await updateMyPokemonRefCounts();
-
-      // 各対戦に、削除したパーティが含まれているか調べる
-      List<int> battleIDs = [];
-      for (final e in battles.values) {
-        if (ids.contains(e.getParty(PlayerType(PlayerType.me)).id) || ids.contains(e.getParty(PlayerType(PlayerType.opponent)).id)) {
-          battleIDs.add(e.id);
-          break;
-        }
-      }
-      deleteBattle(battleIDs);
-    }
+    await _deleteUnrefs();
   }
 
-  Future<void> updatePartyRefCounts() async {
-    if (kIsWeb) {
-      databaseFactory = databaseFactoryFfiWeb;
-    }
-    final partyDBPath = join(await getDatabasesPath(), partyDBFile);
-    assert(await databaseExists(partyDBPath));
-
-    // SQLiteのDB読み込み
-    partyDb = await openDatabase(partyDBPath);
-
-    String whereStr = '$partyColumnId=?';
-
-    // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
-    for (final e in parties.values) {
-      await partyDb.update(
-        partyDBTable,
-        {partyColumnRefCount: e.refCount},
-        where: whereStr,
-        whereArgs: [e.id],
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
-    }
-  }
-
-  Future<void> addBattle(Battle battle) async {
+  Future<void> _prepareBattleDB() async {
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
     }
@@ -1666,20 +1502,17 @@ class PokeDB {
       // SQLiteのDB読み込み
       battleDb = await openDatabase(battleDBPath);
     }
+  }
 
-    // 既存対戦の上書きなら、対戦内パーティの被参照カウントをデクリメント
-    if (battles.containsKey(battle.id)) {
-      battles[battle.id]!.getParty(PlayerType(PlayerType.me)).refCount--;
-      battles[battle.id]!.getParty(PlayerType(PlayerType.opponent)).refCount--;
+  Future<void> addBattle(Battle battle, bool createNew) async {
+    await _prepareBattleDB();
+
+    // 新規作成なら新たなIDを割り振る
+    if (createNew) {
+      battle.id = _getUniqueBattleID();
+      battle.viewOrder = battle.id;
     }
-
-    // 対戦内パーティの被参照カウントをインクリメント
-    battle.getParty(PlayerType(PlayerType.me)).refCount++;
-    battle.getParty(PlayerType(PlayerType.opponent)).refCount++;
-
-    // DBのIDリストを更新
-    battleIDs.add(battle.id);
-    battleIDs.sort((a, b) => a.compareTo(b));
+    battles[battle.id] = battle;
 
     // パーティの勝率を更新
     updatePartyWinRate();
@@ -1690,13 +1523,26 @@ class PokeDB {
       battle.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+  }
 
-    // refCountの更新をデータベースに反映
-    await updatePartyRefCounts();
+  Future<void> updateAllBattleViewOrder() async {
+    await _prepareBattleDB();
+
+    // SQLiteのDBを更新
+    // TODO: for文なしで一文でできないかな？
+    String whereStr = '$battleColumnId=?';
+    for (final e in battles.values) {
+      await battleDb.update(
+        battleDBTable,
+        {battleColumnViewOrder: e.viewOrder},
+        where: whereStr,
+        whereArgs: [e.id],
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    }
   }
 
   Future<void> deleteBattle(List<int> ids) async {
-    //assert(ids.isNotEmpty);
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1706,35 +1552,24 @@ class PokeDB {
 
     // SQLiteのDB読み込み
     battleDb = await openDatabase(battleDBPath);
+    
+    // 登録対戦リストから削除
+    battles.removeWhere((k, v) => ids.contains(k));
 
     String whereStr = '$battleColumnId=?';
     for (int i = 1; i < ids.length; i++) {
       whereStr += ' OR $battleColumnId=?';
     }
-    
-    // 登録対戦リストから削除
-    for (final e in ids) {
-      // 対戦内パーティおよびポケモンの被参照カウントをデクリメント
-      for (final player in [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)]) {
-        for (int j = 0; j < battles[e]!.getParty(player).pokemonNum; j++) {
-          battles[e]!.getParty(player).pokemons[j]!.refCount--;
-        }
-        battles[e]!.getParty(player).refCount--;
-      }
-      battles.remove(e);
-    }
-
-    // DBのIDリストから削除
-    for (final e in ids) {
-      battleIDs.remove(e);
-    }
-
     // SQLiteのDBから削除
     await battleDb.delete(
       battleDBTable,
       where: whereStr,
       whereArgs: ids,
     );
+
+    _deleteUnrefs();
+    // パーティの勝率を更新
+    updatePartyWinRate();
   }
 
   Future<Database> _createMyPokemonDB() async {
@@ -1773,8 +1608,7 @@ class PokeDB {
             '$myPokemonColumnPP3 INTEGER, '
             '$myPokemonColumnMove4 INTEGER, '
             '$myPokemonColumnPP4 INTEGER, '
-            '$myPokemonColumnOwnerID INTEGER, '
-            '$myPokemonColumnRefCount INTEGER)';
+            '$myPokemonColumnOwnerID INTEGER)';
 
     // SQLiteのDB作成
     if (kIsWeb) {
@@ -1820,8 +1654,7 @@ class PokeDB {
             '$partyColumnPokemonItem5 INTEGER, '
             '$partyColumnPokemonId6 INTEGER, '
             '$partyColumnPokemonItem6 INTEGER, '
-            '$partyColumnOwnerID INTEGER, '
-            '$partyColumnRefCount INTEGER)';
+            '$partyColumnOwnerID INTEGER)';
 
     // SQLiteのDB作成
     if (kIsWeb) {

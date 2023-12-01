@@ -43,11 +43,10 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var parties = appState.parties;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     void onBack () {
-      if (widget.party.pokemon1.no != 0) {
+      if (widget.party.pokemons[0]!.no != 0) {
         showDialog(
           context: context,
           builder: (_) {
@@ -68,7 +67,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     }
 
     void onTabChange (void Function() func) {
-      if (widget.party.pokemon1.no != 0) {
+      if (widget.party.pokemons[0]!.no != 0) {
         showDialog(
           context: context,
           builder: (_) {
@@ -107,15 +106,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     }
 
     void onComplete() async {
-      if (widget.isNew) {
-        widget.party.id = pokeData.getUniquePartyID();
-        widget.party.viewOrder = widget.party.id;
-        parties[widget.party.id] = widget.party;
-      }
-      else {
-        parties[widget.party.id] = widget.party;
-      }
-      await pokeData.addParty(widget.party);
+      await pokeData.addParty(widget.party, widget.isNew);
       widget.onFinish();
     }
 

@@ -21,13 +21,13 @@ class RegisterPokemonPage extends StatefulWidget {
     Key? key,
     required this.onFinish,
     required this.myPokemon,
-    required this.isNew,
+//    required this.isNew,
     this.pokemonState,
   }) : super(key: key);
 
   final void Function() onFinish;
   final Pokemon myPokemon;
-  final bool isNew;
+//  final bool isNew;     // この変数の代わりに、ポケモンのIDが0(まだ無効)かどうかで新規登録かを判定する
   final PokemonState? pokemonState;
 
   @override
@@ -83,9 +83,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     var pokemonState = widget.pokemonState;
+    var myPokemon = widget.myPokemon;
     var theme = Theme.of(context);
     void onBack () {
-      if (widget.myPokemon.no != 0) {
+      if (myPokemon.no != 0) {
         showDialog(
           context: context,
           builder: (_) {
@@ -106,7 +107,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     }
 
     void onTabChange (void Function() func) {
-      if (widget.myPokemon.no != 0) {
+      if (myPokemon.no != 0) {
         showDialog(
           context: context,
           builder: (_) {
@@ -128,40 +129,35 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       firstBuild = false;
     }
 
-    pokeNameController.text = widget.myPokemon.name;
-    pokeNickNameController.text = widget.myPokemon.nickname;
-    pokeNoController.text = widget.myPokemon.no.toString();
-    pokeLevelController.text = widget.myPokemon.level.toString();
-    pokeTemperController.text = widget.myPokemon.temper.displayName;
-    pokeStatRaceController[0].text = widget.myPokemon.name == '' ? 'H -' : 'H ${widget.myPokemon.h.race}';
-    pokeStatRaceController[1].text = widget.myPokemon.name == '' ? 'A -' : 'A ${widget.myPokemon.a.race}';
-    pokeStatRaceController[2].text = widget.myPokemon.name == '' ? 'B -' : 'B ${widget.myPokemon.b.race}';
-    pokeStatRaceController[3].text = widget.myPokemon.name == '' ? 'C -' : 'C ${widget.myPokemon.c.race}';
-    pokeStatRaceController[4].text = widget.myPokemon.name == '' ? 'D -' : 'D ${widget.myPokemon.d.race}';
-    pokeStatRaceController[5].text = widget.myPokemon.name == '' ? 'S -' : 'S ${widget.myPokemon.s.race}';
-    pokeMoveController[0].text = widget.myPokemon.move1.displayName;
-    pokeMoveController[1].text = widget.myPokemon.move2 == null ? '' : widget.myPokemon.move2!.displayName;
-    pokeMoveController[2].text = widget.myPokemon.move3 == null ? '' : widget.myPokemon.move3!.displayName;
-    pokeMoveController[3].text = widget.myPokemon.move4 == null ? '' : widget.myPokemon.move4!.displayName;
+    pokeNameController.text = myPokemon.name;
+    pokeNickNameController.text = myPokemon.nickname;
+    pokeNoController.text = myPokemon.no.toString();
+    pokeLevelController.text = myPokemon.level.toString();
+    pokeTemperController.text = myPokemon.temper.displayName;
+    pokeStatRaceController[0].text = myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
+    pokeStatRaceController[1].text = myPokemon.name == '' ? 'A -' : 'A ${myPokemon.a.race}';
+    pokeStatRaceController[2].text = myPokemon.name == '' ? 'B -' : 'B ${myPokemon.b.race}';
+    pokeStatRaceController[3].text = myPokemon.name == '' ? 'C -' : 'C ${myPokemon.c.race}';
+    pokeStatRaceController[4].text = myPokemon.name == '' ? 'D -' : 'D ${myPokemon.d.race}';
+    pokeStatRaceController[5].text = myPokemon.name == '' ? 'S -' : 'S ${myPokemon.s.race}';
+    pokeMoveController[0].text = myPokemon.move1.displayName;
+    pokeMoveController[1].text = myPokemon.move2 == null ? '' : myPokemon.move2!.displayName;
+    pokeMoveController[2].text = myPokemon.move3 == null ? '' : myPokemon.move3!.displayName;
+    pokeMoveController[3].text = myPokemon.move4 == null ? '' : myPokemon.move4!.displayName;
 
     void onComplete() async {
-      if (widget.isNew) {
-        widget.myPokemon.id = pokeData.getUniqueMyPokemonID();
-        widget.myPokemon.viewOrder = widget.myPokemon.id;
-        pokemons[widget.myPokemon.id] = widget.myPokemon;
-      }
-      else {
-        pokemons[widget.myPokemon.id] = widget.myPokemon;
+      if (myPokemon.id != 0) {
+        pokemons[myPokemon.id] = myPokemon;
         // 登録されているパーティのポケモン情報更新
         var parties = appState.parties;
         for (final party in parties.values) {
-          var target = party.pokemons.indexWhere((element) => element?.id == widget.myPokemon.id);
+          var target = party.pokemons.indexWhere((element) => element?.id == myPokemon.id);
           if (target >= 0) {
-            party.pokemons[target] = widget.myPokemon;
+            party.pokemons[target] = myPokemon;
           }
         }
       }
-      await pokeData.addMyPokemon(widget.myPokemon);
+      await pokeData.addMyPokemon(myPokemon, myPokemon.id == 0);
       widget.onFinish();
     }
 
@@ -172,10 +168,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: widget.isNew ? Text('ポケモン登録') : Text('ポケモン編集'),
+          title: myPokemon.id == 0 ? Text('ポケモン登録') : Text('ポケモン編集'),
           actions: [
             TextButton(
-              onPressed: (widget.myPokemon.isValid) ? () => onComplete() : null,
+              onPressed: (myPokemon.isValid) ? () => onComplete() : null,
               child: Text('保存'),
             ),
           ]
@@ -219,7 +215,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           },
                           onSuggestionSelected: (suggestion) {
                             pokeNoController.text = suggestion.no.toString();
-                            widget.myPokemon
+                            myPokemon
                             ..name = suggestion.name
                             ..no = suggestion.no
                             ..type1 = suggestion.type1
@@ -234,20 +230,20 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             ..s.race = suggestion.s
                             ..teraType = suggestion.fixedTeraType;
                             canChangeTeraType = suggestion.fixedTeraType.id == 0;
-                            pokeStatRaceController[0].text = 'H ${widget.myPokemon.h.race}';
-                            pokeStatRaceController[1].text = 'A ${widget.myPokemon.a.race}';
-                            pokeStatRaceController[2].text = 'B ${widget.myPokemon.b.race}';
-                            pokeStatRaceController[3].text = 'C ${widget.myPokemon.c.race}';
-                            pokeStatRaceController[4].text = 'D ${widget.myPokemon.d.race}';
-                            pokeStatRaceController[5].text = 'S ${widget.myPokemon.s.race}';
+                            pokeStatRaceController[0].text = 'H ${myPokemon.h.race}';
+                            pokeStatRaceController[1].text = 'A ${myPokemon.a.race}';
+                            pokeStatRaceController[2].text = 'B ${myPokemon.b.race}';
+                            pokeStatRaceController[3].text = 'C ${myPokemon.c.race}';
+                            pokeStatRaceController[4].text = 'D ${myPokemon.d.race}';
+                            pokeStatRaceController[5].text = 'S ${myPokemon.s.race}';
                             updateRealStat();
-                            widget.myPokemon.move1 = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
-                            widget.myPokemon.move2 = null;
-                            widget.myPokemon.move3 = null;
-                            widget.myPokemon.move4 = null;
+                            myPokemon.move1 = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
+                            myPokemon.move2 = null;
+                            myPokemon.move3 = null;
+                            myPokemon.move4 = null;
                             for (int i = 0; i < 4; i++) {
                               pokeMoveController[i].text = '';
-                              widget.myPokemon.pps[i] = 0;
+                              myPokemon.pps[i] = 0;
                               pokePPController[i].text = '0';
                             }
                             // TODO:Listnerのために最後に更新した方がいい？
@@ -261,7 +257,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         flex: 3,
                         child: appState.getPokeAPI ?
                           Image.network(
-                            pokeData.pokeBase[widget.myPokemon.no]!.imageUrl,
+                            pokeData.pokeBase[myPokemon.no]!.imageUrl,
                             errorBuilder: (c, o, s) {
                               return const Icon(Icons.catching_pokemon);
                             },
@@ -279,7 +275,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             border: UnderlineInputBorder(),
                             labelText: 'ニックネーム(任意)'
                           ),
-                          onChanged: (value) {widget.myPokemon.nickname = value;},
+                          onChanged: (value) {myPokemon.nickname = value;},
                           maxLength: 6,
                           controller: pokeNickNameController,
                         ),
@@ -294,7 +290,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           'タイプ1',
                           null,
-                          widget.myPokemon.type1.id == 0 ? null : widget.myPokemon.type1.id,
+                          myPokemon.type1.id == 0 ? null : myPokemon.type1.id,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -302,7 +298,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           'タイプ2',
                           null,
-                          widget.myPokemon.type2?.id == 0 ? null : widget.myPokemon.type2?.id,
+                          myPokemon.type2?.id == 0 ? null : myPokemon.type2?.id,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -310,10 +306,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           'テラスタイプ',
                           canChangeTeraType ? (value) {setState(() {
-                            widget.myPokemon.teraType = pokeData.types[value - 1];
+                            myPokemon.teraType = pokeData.types[value - 1];
                           });} : null,
-                          widget.myPokemon.teraType.id == 0 ? null : widget.myPokemon.teraType.id,
-                          isError: widget.myPokemon.no != 0 && widget.myPokemon.teraType.id == 0,
+                          myPokemon.teraType.id == 0 ? null : myPokemon.teraType.id,
+                          isError: myPokemon.no != 0 && myPokemon.teraType.id == 0,
                         ),
                       ),
                     ],
@@ -349,17 +345,17 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           ),
                           min: pokemonMinLevel,
                           max: pokemonMaxLevel,
-                          initialValue: widget.myPokemon.level,
+                          initialValue: myPokemon.level,
                           onIncrement: (value) {
-                            widget.myPokemon.level = value.toInt();
+                            myPokemon.level = value.toInt();
                             updateRealStat();
                           },
                           onDecrement: (value) {
-                            widget.myPokemon.level = value.toInt();
+                            myPokemon.level = value.toInt();
                             updateRealStat();
                           },
                           onChanged: (value) {
-                            widget.myPokemon.level = value.toInt();
+                            myPokemon.level = value.toInt();
                             updateRealStat();
                           },                      // TODO: いい方法ありそう
                         ),
@@ -372,14 +368,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             labelText: 'せいべつ'
                           ),
                           items: <DropdownMenuItem<Sex>>[
-                            for (var type in pokeData.pokeBase[widget.myPokemon.no]!.sex)
+                            for (var type in pokeData.pokeBase[myPokemon.no]!.sex)
                               DropdownMenuItem(
                                 value: type,
                                 child: type.displayIcon,
                             ),
                           ],
-                          value: widget.myPokemon.sex,
-                          onChanged: widget.myPokemon.no != 0 ? (value) {widget.myPokemon.sex = value as Sex;} : null,
+                          value: myPokemon.sex,
+                          onChanged: myPokemon.no != 0 ? (value) {myPokemon.sex = value as Sex;} : null,
                         ),
                       ),
                     ],
@@ -395,7 +391,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: 'せいかく',
-                              labelStyle: widget.myPokemon.no != 0 && widget.myPokemon.temper.id == 0 ? notAllowedStyle : null,
+                              labelStyle: myPokemon.no != 0 && myPokemon.temper.id == 0 ? notAllowedStyle : null,
                             ),
                           ),
                           autoFlipDirection: true,
@@ -424,7 +420,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           },
                           onSuggestionSelected: (suggestion) {
                             pokeTemperController.text = suggestion.displayName;
-                            widget.myPokemon.temper = suggestion;
+                            myPokemon.temper = suggestion;
                             updateRealStat();
                           },
                         ),
@@ -437,16 +433,16 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             labelText: 'とくせい'
                           ),
                           items: <DropdownMenuItem>[
-                            for (var ab in pokeData.pokeBase[widget.myPokemon.no]!.ability)
+                            for (var ab in pokeData.pokeBase[myPokemon.no]!.ability)
                               DropdownMenuItem(
                                 value: ab,
                                 child: Text(ab.displayName),
                               )
                           ],
-                          value: pokeData.abilities[widget.myPokemon.ability.id],
-                          onChanged: (widget.myPokemon.name == '') ? null :
+                          value: pokeData.abilities[myPokemon.ability.id],
+                          onChanged: (myPokemon.name == '') ? null :
                             (dynamic value) {
-                              widget.myPokemon.ability = value;
+                              myPokemon.ability = value;
                               setState(() {});
                             },
                         ),
@@ -460,28 +456,28 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       children: [
                         StatInputRow(
                           statsLabelTexts[i],
-                          widget.myPokemon,
+                          myPokemon,
                           pokeStatRaceController[i],
                           pokeStatIndiController[i],
                           pokemonMinIndividual,
                           pokemonMaxIndividual,
-                          widget.myPokemon.stats[i].indi,
+                          myPokemon.stats[i].indi,
                           (value) {
-                            widget.myPokemon.stats[i].indi = value.toInt();
+                            myPokemon.stats[i].indi = value.toInt();
                             updateRealStat();
                           },
                           pokeStatEffortController[i],
                           pokemonMinEffort,
                           pokemonMaxEffort,
-                          widget.myPokemon.stats[i].effort,
+                          myPokemon.stats[i].effort,
                           (value) {
-                            widget.myPokemon.stats[i].effort = value.toInt();
+                            myPokemon.stats[i].effort = value.toInt();
                             updateRealStat();
                           },
                           pokeStatRealController[i],
-                          widget.myPokemon.stats[i].real,
+                          myPokemon.stats[i].real,
                           (value) {
-                            widget.myPokemon.stats[i].real = value.toInt();
+                            myPokemon.stats[i].real = value.toInt();
                             updateStatsRefReal(i);
                           },
                           effectTemper: i != 0,
@@ -505,51 +501,51 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       ]
                     ),
                   // ステータスの合計値
-                  StatTotalRow(widget.myPokemon.totalRace(), widget.myPokemon.totalEffort()),
+                  StatTotalRow(myPokemon.totalRace(), myPokemon.totalEffort()),
 
                   // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                   for (int i = 0; i < 4; i++)
                     Column(children: [
                       MoveInputRow(
-                        widget.myPokemon,
+                        myPokemon,
                         'わざ${i+1}', 'PP',
                         pokeMoveController[i],
-                        [for (int j = 0; j < 4; j++) i != j ? widget.myPokemon.moves[j] : null],
+                        [for (int j = 0; j < 4; j++) i != j ? myPokemon.moves[j] : null],
                         (suggestion) {
                           pokeMoveController[i].text = suggestion.displayName;
-                          widget.myPokemon.moves[i] = suggestion;
+                          myPokemon.moves[i] = suggestion;
                           pokePPController[i].text = suggestion.pp.toString();
-                          widget.myPokemon.pps[i] = suggestion.pp;
+                          myPokemon.pps[i] = suggestion.pp;
                           setState(() {});
                         },
                         () {
                           for (int j = i; j < 4; j++) {
-                            if (j+1 < 4 && widget.myPokemon.moves[j+1] != null) {
-                              pokeMoveController[j].text = widget.myPokemon.moves[j+1]!.displayName;
-                              widget.myPokemon.moves[j] = widget.myPokemon.moves[j+1];
-                              pokePPController[j].text = '${widget.myPokemon.pps[j+1]}';
-                              widget.myPokemon.pps[j] = widget.myPokemon.pps[j+1];
+                            if (j+1 < 4 && myPokemon.moves[j+1] != null) {
+                              pokeMoveController[j].text = myPokemon.moves[j+1]!.displayName;
+                              myPokemon.moves[j] = myPokemon.moves[j+1];
+                              pokePPController[j].text = '${myPokemon.pps[j+1]}';
+                              myPokemon.pps[j] = myPokemon.pps[j+1];
                             }
                             else {
                               pokeMoveController[j].text = '';
-                              widget.myPokemon.moves[j] = j == 0 ?
+                              myPokemon.moves[j] = j == 0 ?
                                 Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
                                 null;
                               pokePPController[j].text = '0';
-                              widget.myPokemon.pps[j] = 0;
+                              myPokemon.pps[j] = 0;
                               break; 
                             }
                           }
                           setState(() {});
                         },
                         pokePPController[i],
-                        (value) {widget.myPokemon.pps[i] = value.toInt();},
+                        (value) {myPokemon.pps[i] = value.toInt();},
                         moveEnabled: i == 0 ?
-                          widget.myPokemon.name != '' :
-                          widget.myPokemon.moves[i-1] != null && widget.myPokemon.moves[i-1]!.id != 0,
-                        ppEnabled: widget.myPokemon.moves[i] != null && widget.myPokemon.moves[i]!.id != 0,
-                        initialPPValue: widget.myPokemon.pps[i] ?? 0,
-                        isError: i == 0 && widget.myPokemon.no != 0 && widget.myPokemon.move1.id == 0,
+                          myPokemon.name != '' :
+                          myPokemon.moves[i-1] != null && myPokemon.moves[i-1]!.id != 0,
+                        ppEnabled: myPokemon.moves[i] != null && myPokemon.moves[i]!.id != 0,
+                        initialPPValue: myPokemon.pps[i] ?? 0,
+                        isError: i == 0 && myPokemon.no != 0 && myPokemon.move1.id == 0,
                       ),
                       pokemonState != null ?
                         Row(

@@ -152,7 +152,7 @@ class BattlesPageState extends State<BattlesPage> {
               for (int i = 0; i < sortedBattles.length; i++) {
                 var battle = battles[sortedBattles[i].key]!;
                 battle.viewOrder = i+1;
-                await pokeData.addBattle(battle);
+                await pokeData.addBattle(battle, false);
               }
               pokeData.battlesSort = null;
               setState(() {
@@ -218,8 +218,8 @@ class BattlesPageState extends State<BattlesPage> {
                             for (int i = 0; i < sortedBattles.length; i++) {
                               var battle = battles[sortedBattles[i].key]!;
                               battle.viewOrder = i+1;
-                              await pokeData.addBattle(battle);
                             }
+                            await pokeData.updateAllBattleViewOrder();
                           }
                           pokeData.battlesSort = battleSort;
                           await pokeData.saveConfig();
@@ -281,7 +281,6 @@ class BattlesPageState extends State<BattlesPage> {
                                         deleteIDs.add(e);
                                       }
                                     }
-                                    //pokeData.recreateMyPokemon(pokemons);
                                     await pokeData.deleteBattle(deleteIDs);
                                     setState(() {
                                       checkList = {};
@@ -309,10 +308,7 @@ class BattlesPageState extends State<BattlesPage> {
                             for (final e in checkList!.keys) {
                               if (checkList![e]!) {
                                 Battle copiedBattle = battles[e]!.copyWith();
-                                copiedBattle.id = pokeData.getUniqueBattleID();
-                                copiedBattle.viewOrder = copiedBattle.id;
-                                battles[copiedBattle.id] = copiedBattle;
-                                await pokeData.addBattle(copiedBattle);
+                                await pokeData.addBattle(copiedBattle, true);
                               }
                             }
                             setState(() {

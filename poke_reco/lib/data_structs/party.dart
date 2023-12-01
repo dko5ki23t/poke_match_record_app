@@ -7,28 +7,42 @@ class Party {
   int viewOrder = 0;  // 無効値
   String name = '';
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
-  List<Item?> _items = List.generate(6, (i) => null);
+  List<Item?> items = List.generate(6, (i) => null);
   Owner owner = Owner.mine;
   int refCount = 0;
   int winCount = 0;
   int usedCount = 0;
   int winRate = 0;
 
+  Party();
+
+  Party.createFromDBMap(Map<String, dynamic> map) {
+    var pokeData = PokeDB();
+    id = map[partyColumnId];
+    viewOrder = map[partyColumnViewOrder];
+    name = map[partyColumnName];
+    pokemons[0] = pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId1]).first;
+    items[0] = map[partyColumnPokemonItem1] != null ? pokeData.items[map[partyColumnPokemonItem1]] : null;
+    pokemons[1] = map[partyColumnPokemonId2] != null ?
+      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId2]).first : null;
+    items[1] = map[partyColumnPokemonItem2] != null ? pokeData.items[map[partyColumnPokemonItem2]] : null;
+    pokemons[2] = map[partyColumnPokemonId3] != null ?
+      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId3]).first : null;
+    items[2] = map[partyColumnPokemonItem3] != null ? pokeData.items[map[partyColumnPokemonItem3]] : null;
+    pokemons[3] = map[partyColumnPokemonId4] != null ?
+      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId4]).first : null;
+    items[3] = map[partyColumnPokemonItem4] != null ? pokeData.items[map[partyColumnPokemonItem4]] : null;
+    pokemons[4] = map[partyColumnPokemonId5] != null ?
+      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId5]).first : null;
+    items[4] = map[partyColumnPokemonItem5] != null ? pokeData.items[map[partyColumnPokemonItem5]] : null;
+    pokemons[5] = map[partyColumnPokemonId6] != null ?
+      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId6]).first : null;
+    items[5] = map[partyColumnPokemonItem6] != null ? pokeData.items[map[partyColumnPokemonItem6]] : null;
+    owner = toOwner(map[partyColumnOwnerID]);
+  }
+
   // getter
-  Pokemon get pokemon1 => _pokemons[0]!;
-  Pokemon? get pokemon2 => _pokemons[1];
-  Pokemon? get pokemon3 => _pokemons[2];
-  Pokemon? get pokemon4 => _pokemons[3];
-  Pokemon? get pokemon5 => _pokemons[4];
-  Pokemon? get pokemon6 => _pokemons[5];
   List<Pokemon?> get pokemons => _pokemons;
-  Item? get item1 => _items[0];
-  Item? get item2 => _items[1];
-  Item? get item3 => _items[2];
-  Item? get item4 => _items[3];
-  Item? get item5 => _items[4];
-  Item? get item6 => _items[5];
-  List<Item?> get items => _items;
   int get pokemonNum {
     for (int i = 0; i < 6; i++) {
       if (pokemons[i] == null) return i;
@@ -40,30 +54,26 @@ class Party {
       name != '' &&
       _pokemons[0]!.isValid;
   }
+  bool get refs {
+    for (final e in PokeDB().battles.values) {
+      if (e.getParty(PlayerType(PlayerType.me)).id == id) return true;
+      if (e.getParty(PlayerType(PlayerType.opponent)).id == id) return true;
+    }
+    return false;
+  }
 
   // setter
-  set pokemon1(Pokemon x)  => _pokemons[0] = x;
-  set pokemon2(Pokemon? x) => _pokemons[1] = x;
-  set pokemon3(Pokemon? x) => _pokemons[2] = x;
-  set pokemon4(Pokemon? x) => _pokemons[3] = x;
-  set pokemon5(Pokemon? x) => _pokemons[4] = x;
-  set pokemon6(Pokemon? x) => _pokemons[5] = x;
-  set item1(Item? x) => _items[0] = x;
-  set item2(Item? x) => _items[1] = x;
-  set item3(Item? x) => _items[2] = x;
-  set item4(Item? x) => _items[3] = x;
-  set item5(Item? x) => _items[4] = x;
-  set item6(Item? x) => _items[5] = x;
-
-  Party copyWith() =>
-    Party()
+  
+  Party copyWith() {
+    return Party()
     ..id = id
     ..viewOrder = viewOrder
     ..name = name
     .._pokemons = [..._pokemons]
-    .._items = [..._items]
+    ..items = [...items]
     ..owner = owner
     ..refCount = refCount;
+  }
 
   // SQLite保存用
   Map<String, dynamic> toMap() {
@@ -71,20 +81,19 @@ class Party {
       partyColumnId: id,
       partyColumnViewOrder: viewOrder,
       partyColumnName: name,
-      partyColumnPokemonId1: pokemon1.id,
-      partyColumnPokemonItem1: item1?.id,
-      partyColumnPokemonId2: pokemon2?.id,
-      partyColumnPokemonItem2: item2?.id,
-      partyColumnPokemonId3: pokemon3?.id,
-      partyColumnPokemonItem3: item3?.id,
-      partyColumnPokemonId4: pokemon4?.id,
-      partyColumnPokemonItem4: item4?.id,
-      partyColumnPokemonId5: pokemon5?.id,
-      partyColumnPokemonItem5: item5?.id,
-      partyColumnPokemonId6: pokemon6?.id,
-      partyColumnPokemonItem6: item6?.id,
+      partyColumnPokemonId1: pokemons[0]!.id,
+      partyColumnPokemonItem1: items[0]?.id,
+      partyColumnPokemonId2: pokemons[1]?.id,
+      partyColumnPokemonItem2: items[1]?.id,
+      partyColumnPokemonId3: pokemons[2]?.id,
+      partyColumnPokemonItem3: items[2]?.id,
+      partyColumnPokemonId4: pokemons[3]?.id,
+      partyColumnPokemonItem4: items[3]?.id,
+      partyColumnPokemonId5: pokemons[4]?.id,
+      partyColumnPokemonItem5: items[4]?.id,
+      partyColumnPokemonId6: pokemons[5]?.id,
+      partyColumnPokemonItem6: items[5]?.id,
       partyColumnOwnerID: owner.index,
-      partyColumnRefCount: refCount,
     };
   }
 }

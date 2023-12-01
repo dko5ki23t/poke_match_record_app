@@ -210,7 +210,7 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
           return RegisterPokemonPage(
             onFinish: () => _pop(context),
             myPokemon: myPokemon,
-            isNew: isNew,
+            //isNew: isNew,
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -248,7 +248,7 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
                 return RegisterPokemonPage(
                   onFinish: () => _pop(context),
                   myPokemon: Pokemon(),
-                  isNew: true,
+                  //isNew: true,
                 );
               default:
                 return PokemonsPage(
@@ -418,7 +418,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           return RegisterPokemonPage(
             onFinish: () => _pop(context),
             myPokemon: pokemon,
-            isNew: false,
+            //isNew: false,
             pokemonState: pokemonState,
           );
         },

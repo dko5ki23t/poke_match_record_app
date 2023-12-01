@@ -44,3 +44,4 @@ tool/*.txt
 private/*
 
 .vscode/*
+.VSCodeCounter/*

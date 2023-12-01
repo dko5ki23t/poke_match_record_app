@@ -27,8 +27,68 @@ class Pokemon {
   ];  // わざ
   List<int?> _pps = [0, null, null, null];  // PP
   Owner owner = Owner.mine;     // 自分でつくったか、対戦相手が作ったものか
-  int refCount = 0;                 // パーティに含まれている数（削除時に警告出す用の変数）       
-  //bool _isValid = false;            // 必要な情報が入力されているか
+
+  Pokemon();
+
+  Pokemon.createFromDBMap(Map<String, dynamic> map) {
+    var pokeData = PokeDB();
+    int pokeNo = map[myPokemonColumnNo];
+    id = map[myPokemonColumnId];
+    viewOrder = map[myPokemonColumnViewOrder];
+    name = pokeData.pokeBase[pokeNo]!.name;
+    nickname = map[myPokemonColumnNickName];
+    level = map[myPokemonColumnLevel];
+    sex = Sex.createFromId(map[myPokemonColumnSex]);
+    no = pokeNo;
+    type1 = pokeData.pokeBase[pokeNo]!.type1;
+    type2 = pokeData.pokeBase[pokeNo]!.type2;
+    teraType = PokeType.createFromId(map[myPokemonColumnTeraType]);
+    temper = pokeData.tempers[map[myPokemonColumnTemper]]!;
+    h = SixParams(
+      pokeData.pokeBase[pokeNo]!.h,
+      map[myPokemonColumnIndividual[0]],
+      map[myPokemonColumnEffort[0]], 0,
+    );
+    a = SixParams(
+      pokeData.pokeBase[pokeNo]!.a,
+      map[myPokemonColumnIndividual[1]],
+      map[myPokemonColumnEffort[1]], 0,
+    );
+    b = SixParams(
+      pokeData.pokeBase[pokeNo]!.b,
+      map[myPokemonColumnIndividual[2]],
+      map[myPokemonColumnEffort[2]], 0,
+    );
+    c = SixParams(
+      pokeData.pokeBase[pokeNo]!.c,
+      map[myPokemonColumnIndividual[3]],
+      map[myPokemonColumnEffort[3]], 0,
+    );
+    d = SixParams(
+      pokeData.pokeBase[pokeNo]!.d,
+      map[myPokemonColumnIndividual[4]],
+      map[myPokemonColumnEffort[4]], 0,
+    );
+    s = SixParams(
+      pokeData.pokeBase[pokeNo]!.s,
+      map[myPokemonColumnIndividual[5]],
+      map[myPokemonColumnEffort[5]], 0,
+    );
+    ability = pokeData.abilities[map[myPokemonColumnAbility]]!;
+    item = (map[myPokemonColumnItem] != null) ?   // TODO 消す
+      Item(id: map[myPokemonColumnItem], displayName: '', flingPower: 0, flingEffectId: 0, timing: AbilityTiming(0), isBerry: false, imageUrl: '') :
+      null;
+    move1 = pokeData.moves[map[myPokemonColumnMove1]]!;
+    pp1 = map[myPokemonColumnPP1];
+    move2 = map[myPokemonColumnMove2] != null ? pokeData.moves[map[myPokemonColumnMove2]]! : null;
+    pp2 = map[myPokemonColumnPP2];
+    move3 = map[myPokemonColumnMove3] != null ? pokeData.moves[map[myPokemonColumnMove3]]! : null;
+    pp3 = map[myPokemonColumnPP3];
+    move4 = map[myPokemonColumnMove4] != null ? pokeData.moves[map[myPokemonColumnMove4]]! : null;
+    pp4 = map[myPokemonColumnPP4];
+    owner = toOwner(map[myPokemonColumnOwnerID]);
+    updateRealStats();
+  }
 
   // getter
   String get name => _name;
@@ -66,6 +126,14 @@ class Pokemon {
       ability.id != 0 && _moves[0]!.id != 0 &&
       totalEffort() <= pokemonMaxEffortTotal
     );
+  }
+  bool get refs {
+    for (final e in PokeDB().parties.values) {
+      for (int i = 0; i < e.pokemonNum; i++) {
+        if (e.pokemons[i]!.id == id) return true;
+      }
+    }
+    return false;
   }
   // TODO:しんかのきせきが適用できるかどうか
   bool get isEvolvable => true;
@@ -109,8 +177,7 @@ class Pokemon {
     ..item = item?.copyWith()
     .._moves = [move1.copyWith(), move2?.copyWith(), move3?.copyWith(), move4?.copyWith()]
     .._pps = [..._pps]
-    ..owner = owner
-    ..refCount = refCount;
+    ..owner = owner;
 
   // レベル、種族値、個体値、努力値、せいかくから実数値を更新
   // TODO habcdsのsetterで自動的に呼ぶ？
@@ -210,7 +277,6 @@ class Pokemon {
       myPokemonColumnMove4: move4?.id,
       myPokemonColumnPP4: pp4,
       myPokemonColumnOwnerID: owner.index,
-      myPokemonColumnRefCount: refCount,
     };
   }
 }

@@ -38,6 +38,39 @@ class Battle {
 
   static DateFormat outputFormat = DateFormat('yyyy-MM-dd HH:mm');
 
+  Battle();
+
+  Battle.createFromDBMap(Map<String, dynamic> map) {
+    var pokeData = PokeDB();
+    id = map[battleColumnId];
+    viewOrder = map[battleColumnViewOrder];
+    name = map[battleColumnName];
+    type = BattleType.createFromId(map[battleColumnTypeId]);
+    datetimeFromStr = map[battleColumnDate];
+    _parties[0] = pokeData.parties.values.where(
+      (element) => element.id == map[battleColumnOwnPartyId]).first.copyWith();
+    opponentName = map[battleColumnOpponentName];
+    _parties[1] = pokeData.parties.values.where(
+      (element) => element.id == map[battleColumnOpponentPartyId]).first.copyWith();
+    isMyWin = map[battleColumnIsMyWin] == 1;
+    isYourWin = map[battleColumnIsYourWin] == 1;
+    // 各ポケモンのレベルを50に
+    for (int j = 0; j < 2; j++) {
+      var party = _parties[j];
+      for (int i = 0; i < party.pokemonNum; i++) {
+        party.pokemons[i] = party.pokemons[i]!.copyWith();
+        party.pokemons[i]!.level = 50;
+        party.pokemons[i]!.updateRealStats();
+      }
+    }
+    // turns
+    final turns = map[battleColumnTurns].split(sqlSplit1);
+    for (final turn in turns) {
+      if (turn == '') break;
+      turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
+    }
+  }
+
   Battle copyWith() =>
     Battle()
     ..id = id
@@ -61,7 +94,7 @@ class Battle {
       name != '' &&
       _parties[0].isValid &&
       opponentName != '' &&
-      _parties[1].pokemon1.name != '';
+      _parties[1].pokemons[0]!.name != '';
   }
 
   void clear() {

@@ -211,91 +211,52 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           return DeleteEditingCheckDialogWithCancel(
             question: '相手パーティ・ポケモンを保存しますか？',
             onYesPressed: () async {
-              if (widget.isNew) {
-                // 相手のパーティ、ポケモンを有効化
-                for (int i = 0; i < opponentParty.pokemonNum; i++) {
-                  var poke = opponentParty.pokemons[i]!;
-                  //poke.id = pokeData.getUniqueMyPokemonID();
-                  //poke.viewOrder = poke.id;
-                  poke.owner = Owner.fromBattle;
-                  // 対戦で確定できなかったものを穴埋めする
-                  if (poke.ability.id == 0) {
-                    poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
-                  }
-                  if (poke.temper.id == 0) {
-                    poke.temper = pokeData.tempers[1]!;
-                  }
-                  if (poke.move1.id == 0) {
-                    poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
-                  }
-                  if (poke.teraType.id == 0) {
-                    poke.teraType = PokeType.createFromId(1);
-                  }
-                  //pokemons[poke.id] = poke;
-                  //await pokeData.addMyPokemon(poke);
+              // 現在無効のポケモンを有効化し、DBに保存
+              for (int i = 0; i < opponentParty.pokemonNum; i++) {
+                var poke = opponentParty.pokemons[i]!;
+                poke.owner = Owner.fromBattle;
+                // 対戦で確定できなかったものを穴埋めする
+                if (poke.ability.id == 0) {
+                  poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
                 }
-                //opponentParty.id = pokeData.getUniquePartyID();
-                //opponentParty.viewOrder = opponentParty.id;
-                opponentParty.owner = Owner.fromBattle;
-                //parties[opponentParty.id] = opponentParty;
-                //await pokeData.addParty(opponentParty);
-
-                battle.id = pokeData.getUniqueBattleID();
-                battle.viewOrder = battle.id;
-                battles[battle.id] = battle;
-              }
-              else {
-                for (int i = 0; i < opponentParty.pokemonNum; i++) {
-                  var poke = opponentParty.pokemons[i]!;
-                  // 対戦で確定できなかったものを穴埋めする
-                  if (poke.ability.id == 0) {
-                    poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
-                  }
-                  if (poke.temper.id == 0) {
-                    poke.temper = pokeData.tempers[1]!;
-                  }
-                  if (poke.move1.id == 0) {
-                    poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
-                  }
-                  if (poke.teraType.id == 0) {
-                    poke.teraType = PokeType.createFromId(1);
-                  }
-                  if (poke.id == 0) {   // 編集時に追加したポケモン
-                    poke.id = pokeData.getUniqueMyPokemonID();
-                    poke.viewOrder = poke.id;
-                    poke.owner = Owner.fromBattle;
-                    pokemons[poke.id] = poke;
-                    await pokeData.addMyPokemon(poke);
-                  }
-                  else {
-                    pokemons[poke.id] = poke;
-                    await pokeData.addMyPokemon(poke);
-                  }
+                if (poke.temper.id == 0) {
+                  poke.temper = pokeData.tempers[1]!;
                 }
-                parties[opponentParty.id] = opponentParty;
-                await pokeData.addParty(opponentParty);
-
-                battles[battle.id] = battle;
+                if (poke.move1.id == 0) {
+                  poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
+                }
+                if (poke.teraType.id == 0) {
+                  poke.teraType = PokeType.createFromId(1);
+                }
+                await pokeData.addMyPokemon(poke, poke.id == 0);
               }
+              
+              opponentParty.owner = Owner.fromBattle;
+
               await widget.onSaveOpponentParty(
                 opponentParty,
                 turns.last.phases.isNotEmpty ?
                   turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
                   turns.last.copyInitialState()
               );
-              await pokeData.addBattle(battle);
+
+              // TODO パーティを保存されなかった場合は、hiddenとして残す必要あり（battleを正しく保存できないため）
+              // TODO refCount
+              await pokeData.addBattle(battle, widget.isNew);
               widget.onFinish();
             },
             onNoPressed: () async {
-              if (widget.isNew) {
-                battle.id = pokeData.getUniqueBattleID();
-                battle.viewOrder = battle.id;
-                battles[battle.id] = battle;
+              // TODO ポケモンとパーティを(ID決まってないやつは)hiddenとして保存する必要あり(battleを正しく保存できないため)
+              // TODO refCount
+              // 現在無効のポケモンを有効化し、DBに保存
+              for (int i = 0; i < opponentParty.pokemonNum; i++) {
+                var poke = opponentParty.pokemons[i]!;
+                if (poke.id == 0) {
+                  poke.owner = Owner.hidden;
+                }
+                await pokeData.addMyPokemon(poke, poke.id == 0);
               }
-              else {
-                battles[battle.id] = battle;
-              }
-              await pokeData.addBattle(battle);
+              await pokeData.addBattle(battle, widget.isNew);
               widget.onFinish();
             },
           );

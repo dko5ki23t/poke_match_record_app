@@ -215,8 +215,8 @@ class PartiesPageState extends State<PartiesPage> {
                             for (int i = 0; i < sortedParties.length; i++) {
                               var party = parties[sortedParties[i].key]!;
                               party.viewOrder = i+1;
-                              await pokeData.addParty(party);
                             }
+                            await pokeData.updateAllPartyViewOrder();
                           }
                           pokeData.partiesSort = partySort;
                           await pokeData.saveConfig();
@@ -268,6 +268,14 @@ class PartiesPageState extends State<PartiesPage> {
                         onPressed: (getSelectedNumMap(checkList!) > 0) ?
                           () {
                             bool isContainedBattle = false;
+                            for (final e in checkList!.keys) {
+                                if (checkList![e]!) {
+                                  if (sortedParties.where((element) => element.value.id == e).first.value.refs) {
+                                    isContainedBattle = true;
+                                    break;
+                                  }
+                                }
+                              }
                             showDialog(
                               context: context,
                               builder: (_) {
@@ -280,8 +288,7 @@ class PartiesPageState extends State<PartiesPage> {
                                         deleteIDs.add(e);
                                       }
                                     }
-                                    //pokeData.recreateParty(parties);
-                                    await pokeData.deleteParty(deleteIDs, false);
+                                    await pokeData.deleteParty(deleteIDs);
                                     setState(() {
                                       checkList = {};
                                       for (final e in sortedParties) {
@@ -289,7 +296,6 @@ class PartiesPageState extends State<PartiesPage> {
                                       }
                                     });
                                   },
-                                  () {},        // TODO
                                 );
                               }
                             );
@@ -309,11 +315,7 @@ class PartiesPageState extends State<PartiesPage> {
                             for (final e in checkList!.keys) {
                               if (checkList![e]!) {
                                 Party copiedParty = parties[e]!.copyWith();
-                                copiedParty.id = pokeData.getUniquePartyID();
-                                copiedParty.viewOrder = copiedParty.id;
-                                copiedParty.refCount = 0;
-                                parties[copiedParty.id] = copiedParty;
-                                await pokeData.addParty(copiedParty);
+                                await pokeData.addParty(copiedParty, true);
                               }
                             }
                             setState(() {
