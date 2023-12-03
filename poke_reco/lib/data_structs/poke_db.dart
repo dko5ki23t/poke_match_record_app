@@ -401,6 +401,8 @@ class SixParams {
     this.real = real;
   }
 
+  SixParams copyWith() => SixParams(race, indi, effort, real);
+
   // SQLに保存された文字列からSixParamsをパース
   static SixParams deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
@@ -1145,6 +1147,7 @@ class PokeDB {
           partyColumnPokemonId4, partyColumnPokemonItem4,
           partyColumnPokemonId5, partyColumnPokemonItem5,
           partyColumnPokemonId6, partyColumnPokemonItem6,
+          partyColumnOwnerID,
         ],
       );
 
@@ -1393,8 +1396,8 @@ class PokeDB {
     myPokemonDb = await openDatabase(myPokemonDBPath);
 
     // 削除可フラグを付与
-    for (int i = 1; i < ids.length; i++) {
-      pokemons[i]!.owner = Owner.hidden;
+    for (int e in ids) {
+      pokemons[e]!.owner = Owner.hidden;
     }
 
     await _deleteUnrefs();
@@ -1472,8 +1475,8 @@ class PokeDB {
     partyDb = await openDatabase(partyDBPath);
 
     // 削除可フラグを付与
-    for (int i = 1; i < ids.length; i++) {
-      parties[i]!.owner = Owner.hidden;
+    for (int e in ids) {
+      parties[e]!.owner = Owner.hidden;
     }
 
     await _deleteUnrefs();

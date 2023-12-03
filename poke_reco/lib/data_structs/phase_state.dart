@@ -251,7 +251,7 @@ class PhaseState {
             prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
         ) {  // わざ成功時
           // とくせい「へんげんじざい」「リベロ」
-          if (attackerState.teraType == null && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
+          if (!attackerState.isTerastaling && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
               (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
           ) {
             ret.add(TurnEffect()
@@ -569,7 +569,7 @@ class PhaseState {
             if (myState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {  // どく/もうどく状態
               playerTimingIDs.add(52);
             }
-            if (myState.teraType == null || myState.teraType!.id == 0) {  // テラスタルしていない
+            if (!myState.isTerastaling) {  // テラスタルしていない
               playerTimingIDs.add(116);
             }
             if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) playerTimingIDs.add(152);             // 状態異常でない毎ターン終了時
@@ -783,7 +783,7 @@ class PhaseState {
             var player = players[i];
             var myState = getPokemonState(player, null);
             bool isMe = player.id == PlayerType.me;
-            bool isTerastal = myState.teraType?.id != 0 && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
+            bool isTerastal = myState.isTerastaling && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
 
             if (isTerastal && myState.currentAbility.id == 303) {
               ret.add(TurnEffect()

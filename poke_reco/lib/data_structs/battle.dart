@@ -64,10 +64,10 @@ class Battle {
       }
     }
     // turns
-    final turns = map[battleColumnTurns].split(sqlSplit1);
-    for (final turn in turns) {
-      if (turn == '') break;
-      turns.add(Turn.deserialize(turn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
+    final strTurns = map[battleColumnTurns].split(sqlSplit1);
+    for (final strTurn in strTurns) {
+      if (strTurn == '') break;
+      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
     }
   }
 

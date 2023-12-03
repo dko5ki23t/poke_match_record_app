@@ -322,7 +322,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '対戦で確認できたテラスタイプ：${pokemonState!.teraType != null && pokemonState!.teraType!.id != 0 ? pokemonState!.teraType!.displayName : 'なし'}',
+                            '対戦で確認できたテラスタイプ：${pokemonState.teraType1.id != 0 ? pokemonState.teraType1.displayName : 'なし'}',
                             style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                           ),
                         ),
@@ -555,7 +555,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  i < pokemonState.moves.length ? '対戦で確認できたわざ${i+1}：${pokeData.moves[pokemonState.moves[i]]!.displayName}' : '',
+                                  i < pokemonState.moves.length ? '対戦で確認できたわざ${i+1}：${pokeData.moves[pokemonState.moves[i].id]!.displayName}' : '',
                                   style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                                 ),
                               ),

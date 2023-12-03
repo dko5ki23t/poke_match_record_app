@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/main.dart';
@@ -289,7 +290,8 @@ class TurnMove {
 
     // テラスタル
     if (teraType.id != 0) {
-      myState.teraType ??= teraType;
+      myState.isTerastaling = true;
+      myState.teraType1 = teraType;
       if (playerType.id == PlayerType.me) {
         state.hasOwnTerastal = true;
       }
@@ -1417,11 +1419,11 @@ class TurnMove {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             int lostFly = 0;
-            if (myState.teraType == null && myState.type1.id == 3) {
+            if (!myState.isTerastaling && myState.type1.id == 3) {
               myState.type1 = PokeType.createFromId(0);
               lostFly = 1;
             }
-            else if (myState.teraType == null && myState.type2?.id == 3) {
+            else if (!myState.isTerastaling && myState.type2?.id == 3) {
               myState.type2 = null;
               lostFly = 2;
             }
@@ -1921,7 +1923,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 295:   // 相手のタイプをみず単体に変更する
-            if (targetState.teraType == null) {
+            if (!targetState.isTerastaling) {
               targetState.type1 = PokeType.createFromId(11);
               targetState.type2 = null;
             }
@@ -2002,8 +2004,8 @@ class TurnMove {
             }
             break;
           case 319:   // 相手と同じタイプになる
-            if (targetState.teraType != null) {
-              myState.type1 = targetState.teraType!;
+            if (targetState.isTerastaling) {
+              myState.type1 = targetState.teraType1;
             }
             else {
               myState.type1 = targetState.type1;
@@ -2266,7 +2268,7 @@ class TurnMove {
             break;
           case 398:   // 使用者がほのおタイプでないと失敗する。成功するとほのおタイプを失う。こおり状態を治す
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-            if (myState.teraType == null) {
+            if (!myState.isTerastaling) {
               if (myState.type1.id == 10) {
                 if (myState.type2 == null) {
                   myState.type1 = PokeType.createFromId(0); // タイプなし
@@ -2292,7 +2294,7 @@ class TurnMove {
           case 400:   // 相手の状態異常を治し、使用者のHPを最大HP半分だけ回復する(SV使用不可のため処理なし)
             break;
           case 401:   // わざのタイプが使用者のタイプ1のタイプになる
-            moveType = myState.teraType != null ? myState.teraType! : myState.type1;
+            moveType = myState.isTerastaling ? myState.teraType1 : myState.type1;
             break;
           case 402:   // そのターンですでに行動を終えた相手をとくせいなし状態にする
             targetState.ailmentsAdd(Ailment(Ailment.abilityNoEffect), state);
@@ -2389,7 +2391,7 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.tarShot), state);
             break;
           case 427:   // 相手のタイプをエスパー単タイプにする
-            if (targetState.teraType == null) {
+            if (!targetState.isTerastaling) {
               targetState.type1 = PokeType.createFromId(14);
               targetState.type2 = null;
             }
@@ -2449,8 +2451,8 @@ class TurnMove {
             break;
           case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
                       // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
-            if (myState.teraType != null) {
-              moveType = myState.teraType!;
+            if (myState.isTerastaling) {
+              moveType = myState.teraType1;
             }
             // ステータスが確定している場合
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
@@ -3721,46 +3723,22 @@ class TurnMove {
         case 441:   // 最大HP1/4だけ回復
         case 461:   // 最大HP1/4回復、状態異常を治す
         case 485:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
-          effectInputRow2 = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: hpController2,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: playerType.id == PlayerType.me ? 
-                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                  ),
-                  enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-              SizedBox(width: 10,),
-              playerType.id == PlayerType.me ?
-                extraArg1[continuousCount] >= 0 ?
-                Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
-                Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
-                extraArg2[continuousCount] >= 0 ?
-                Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
-                Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
-            ],
+          effectInputRow2 = DamageInputIndicateRow(
+            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            hpController2,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount]
           );
           break;
         case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
@@ -3991,46 +3969,22 @@ class TurnMove {
           break;
         case 46:    // わざを外すと使用者に、使用者の最大HP1/2のダメージ
           if (moveHits[continuousCount].id == MoveHit.notHit || moveHits[continuousCount].id == MoveHit.fail) {
-            effectInputRow2 = Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: TextFormField(
-                    controller: hpController2,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: playerType.id == PlayerType.me ? 
-                        '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                    ),
-                    enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onTap: () => onFocus(),
-                    onChanged: (value) {
-                      if (playerType.id == PlayerType.me) {
-                        extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                      }
-                      else {
-                        extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                      }
-                      appState.editingPhase[phaseIdx] = true;
-                      onFocus();
-                    },
-                  ),
-                ),
-                playerType.id == PlayerType.me ?
-                Flexible(child: Text('/${ownPokemon.h.real}')) :
-                Flexible(child: Text('% /100%')),
-                SizedBox(width: 10,),
-                playerType.id == PlayerType.me ?
-                  extraArg1[continuousCount] >= 0 ?
-                  Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
-                  Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
-                  extraArg2[continuousCount] >= 0 ?
-                  Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
-                  Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
-              ],
+            effectInputRow2 = DamageInputIndicateRow(
+              playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+              hpController2,
+              playerType.id == PlayerType.me,
+              onFocus,
+              (value) {
+                if (playerType.id == PlayerType.me) {
+                  extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                }
+                else {
+                  extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                }
+                appState.editingPhase[phaseIdx] = true;
+                onFocus();
+              },
+              playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
             );
           }
           break;
@@ -4116,46 +4070,22 @@ class TurnMove {
           if ((playerType.id == PlayerType.me && ownPokemonState.isTypeContain(8)) ||
               (playerType.id == PlayerType.opponent && opponentPokemonState.isTypeContain(8))
           ) {
-            effectInputRow2 = Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: TextFormField(
-                    controller: hpController2,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: playerType.id == PlayerType.me ? 
-                        '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                    ),
-                    enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onTap: () => onFocus(),
-                    onChanged: (value) {
-                      if (playerType.id == PlayerType.me) {
-                        extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                      }
-                      else {
-                        extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                      }
-                      appState.editingPhase[phaseIdx] = true;
-                      onFocus();
-                    },
-                  ),
-                ),
-                playerType.id == PlayerType.me ?
-                Flexible(child: Text('/${ownPokemon.h.real}')) :
-                Flexible(child: Text('% /100%')),
-                SizedBox(width: 10,),
-                playerType.id == PlayerType.me ?
-                  extraArg1[continuousCount] >= 0 ?
-                  Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
-                  Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
-                  extraArg2[continuousCount] >= 0 ?
-                  Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
-                  Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
-              ],
+            effectInputRow2 = DamageInputIndicateRow(
+              playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+              hpController2,
+              playerType.id == PlayerType.me,
+              onFocus,
+              (value) {
+                if (playerType.id == PlayerType.me) {
+                  extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                }
+                else {
+                  extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                }
+                appState.editingPhase[phaseIdx] = true;
+                onFocus();
+              },
+              playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
             );
           }
           break;
@@ -4788,42 +4718,22 @@ class TurnMove {
               ),
             ],
           );
-          effectInputRow2 = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: hpController2,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: playerType.id == PlayerType.me ? 
-                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                  ),
-                  enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg2[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-              SizedBox(width: 10,),
-              extraArg2[continuousCount] >= 0 ?
-              Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}${playerType.id == PlayerType.me ? '' : '%'}')) :
-              Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}${playerType.id == PlayerType.me ? '' : '%'}')),
-            ],
+          effectInputRow2 = DamageInputIndicateRow(
+            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            hpController2,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg2[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg2[continuousCount]
           );
           break;
         case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
@@ -5169,45 +5079,22 @@ class TurnMove {
               ),
             ],
           );
-          effectInputRow2 = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: hpController2,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: playerType.id == PlayerType.me ? 
-                      '${ownPokemon.name}の残りHP' : '${opponentPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${ownPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-              SizedBox(width: 10,),
-              playerType.id == PlayerType.me ?
-                extraArg1[continuousCount] >= 0 ?
-                Flexible(child: Text('= ダメージ ${extraArg1[continuousCount]}')) :
-                Flexible(child: Text('= 回復 ${-extraArg1[continuousCount]}')) :
-                extraArg2[continuousCount] >= 0 ?
-                Flexible(child: Text('= ダメージ ${extraArg2[continuousCount]}%')) :
-                Flexible(child: Text('= 回復 ${-extraArg2[continuousCount]}%')),
-            ],
+          effectInputRow2 = DamageInputIndicateRow(
+            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            hpController2,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
           );
           break;
         default:
@@ -5419,46 +5306,22 @@ class TurnMove {
                   effectInputRow,
                   SizedBox(height: 10,),
                   yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound ?
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: TextFormField(
-                          controller: hpController,
-                          textAlign: TextAlign.center,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: playerType.id == PlayerType.me ? 
-                              '${opponentPokemon.name}の残りHP' : '${ownPokemon.name}の残りHP',
-                          ),
-                          enabled: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          onTap: () => onFocus(),
-                          onChanged: (value) {
-                            if (playerType.id == PlayerType.me) {
-                              percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                            }
-                            else {
-                              realDamage[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                            }
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                        ),
-                      ),
-                      playerType.id == PlayerType.me ?
-                      Flexible(child: Text('% /100%')) :
-                      Flexible(child: Text('/${ownPokemon.h.real}')),
-                      SizedBox(width: 10,),
-                      playerType.id == PlayerType.me ?
-                        percentDamage[continuousCount] >= 0 ?
-                        Flexible(child: Text('= ダメージ ${percentDamage[continuousCount]}%')) :
-                        Flexible(child: Text('= 回復 ${-percentDamage[continuousCount]}%')) :
-                        realDamage[continuousCount] >= 0 ?
-                        Flexible(child: Text('= ダメージ ${realDamage[continuousCount]}')) :
-                        Flexible(child: Text('= 回復 ${-realDamage[continuousCount]}')),
-                    ],
+                  DamageInputIndicateRow(
+                    playerType.id == PlayerType.me ? opponentPokemon : ownPokemon,
+                    hpController,
+                    playerType.id != PlayerType.me,
+                    onFocus,
+                    (value) {
+                      if (playerType.id == PlayerType.me) {
+                        percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                      }
+                      else {
+                        realDamage[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                      }
+                      appState.editingPhase[phaseIdx] = true;
+                      onFocus();
+                    },
+                    playerType.id == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
                   ) :
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -5776,7 +5639,7 @@ class TurnMove {
         }
         break;
       case 401:   // わざのタイプが使用者のタイプ1のタイプになる
-        ret = myState.teraType != null ? myState.teraType! : myState.type1;
+        ret = myState.isTerastaling ? myState.teraType1 : myState.type1;
         break;
       case 437:   // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
         if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.harapekoForm).isNotEmpty) {
@@ -5785,8 +5648,8 @@ class TurnMove {
         break;
       case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
                   // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
-        if (myState.teraType != null) {
-          ret = myState.teraType!;
+        if (myState.isTerastaling) {
+          ret = myState.teraType1;
         }
         break;
       case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる

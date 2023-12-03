@@ -71,7 +71,7 @@ class MyAppState extends ChangeNotifier {
   void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
-  bool getPokeAPI = true;     // インターネットに接続してポケモンの画像を取得するか
+  bool getPokeAPI = false;     // インターネットに接続してポケモンの画像を取得するか
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
@@ -427,24 +427,23 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
   }
 
   Future<void> _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
-    var result =
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            // パーティ登録
-            return RegisterPartyPage(
-              onFinish: () => _pop(context),
-              onSelectPokemon: (party, idx) {return Future<Pokemon?>.value(Pokemon());},    // 使わない
-              party: party,
-              isNew: true,
-              isEditPokemon: true,
-              onEditPokemon: (pokemon, pokemonState) => _pushEditPokemonPage(context, pokemon, pokemonState),
-              phaseState: state,
-            );
-          },
-        ),
-      );
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // パーティ登録
+          return RegisterPartyPage(
+            onFinish: () => _pop(context),
+            onSelectPokemon: (party, idx) {return Future<Pokemon?>.value(Pokemon());},    // 使わない
+            party: party,
+            isNew: party.id == 0,
+            isEditPokemon: true,
+            onEditPokemon: (pokemon, pokemonState) => _pushEditPokemonPage(context, pokemon, pokemonState),
+            phaseState: state,
+          );
+        },
+      ),
+    );
     return Future<void>.value();
   }
 

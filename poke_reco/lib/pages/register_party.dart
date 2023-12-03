@@ -86,10 +86,10 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     if (firstBuild) {
       appState.onBackKeyPushed = onBack;
       appState.onTabChange = onTabChange;
+      partyNameController.text = widget.party.name;
       firstBuild = false;
     }
 
-    partyNameController.text = widget.party.name;
     for (int i = 0; i < 6; i++) {
       final pokemon = widget.party.pokemons[i];
       if (pokemon != null && pokemon.isValid) {
@@ -136,16 +136,15 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
-                        child:TextFormField(
+                        child: TextFormField(
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
                             labelText: 'パーティ名'
                           ),
                           onChanged: (value) {
-                            widget.party.name = value;
-                          },
-                          onTapOutside: (event) {
-                            setState(() {});
+                            setState(() {
+                              widget.party.name = value;
+                            });
                           },
                           maxLength: 5,
                           controller: partyNameController,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -998,38 +999,18 @@ class Item {
       case 185:     // ナゾのみ
       case 230:     // かいがらのすず
       case 43:      // きのみジュース
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: TextFormField(
-                controller: controller,
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: '${myPokemon.name}の残りHP',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onTap: () => onFocus(),
-                onChanged: (value) {
-                  int val = myState.remainHP - (int.tryParse(value)??0);
-                  if (playerType.id == PlayerType.opponent) {
-                    val = myState.remainHPPercent - (int.tryParse(value)??0);
-                  }
-                  extraArg1ChangeFunc(val);
-                }
-              ),
-            ),
-            playerType.id == PlayerType.me ?
-            Flexible(child: Text('/${myPokemon.h.real}')) :
-            Flexible(child: Text('% /100%')),
-            SizedBox(width: 10,),
-            extraArg1 >= 0 ?
-            Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '' : '%'}')) :
-            Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '' : '%'}')),
-          ],
-        );
+        return DamageInputIndicateRow(
+          myState.pokemon, controller,
+          playerType.id == PlayerType.me,
+          onFocus,
+          (value) {
+            int val = myState.remainHP - (int.tryParse(value)??0);
+            if (playerType.id == PlayerType.opponent) {
+              val = myState.remainHPPercent - (int.tryParse(value)??0);
+            }
+            extraArg1ChangeFunc(val);
+          },
+          extraArg1);
       case 136:     // フィラのみ
       case 137:     // ウイのみ
       case 138:     // マゴのみ
@@ -1062,72 +1043,36 @@ class Item {
             ]),
             extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
             extraArg2 == 0 ?
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Flexible(
-                  child: TextFormField(
-                    controller: controller,
-                    textAlign: TextAlign.center,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: '${myPokemon.name}の残りHP',
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    onTap: () => onFocus(),
-                    onChanged: (value) {
-                      int val = myState.remainHP - (int.tryParse(value)??0);
-                      if (playerType.id == PlayerType.opponent) {
-                        val = myState.remainHPPercent - (int.tryParse(value)??0);
-                      }
-                      extraArg1ChangeFunc(val);
-                    },
-                  ),
-                ),
-                playerType.id == PlayerType.me ?
-                Flexible(child: Text('/${myPokemon.h.real}')) :
-                Flexible(child: Text('% /100%')),
-                extraArg1 >= 0 ?
-                Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '' : '%'}')) :
-                Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '' : '%'}')),
-              ],
+            DamageInputIndicateRow(
+              myPokemon, controller,
+              playerType.id == PlayerType.me,
+              onFocus,
+              (value) {
+                int val = myState.remainHP - (int.tryParse(value)??0);
+                if (playerType.id == PlayerType.opponent) {
+                  val = myState.remainHPPercent - (int.tryParse(value)??0);
+                }
+                extraArg1ChangeFunc(val);
+              },
+              extraArg1
             ) : Container(),
           ],
         );
       case 583:     // ゴツゴツメット
       case 188:     // ジャポのみ
       case 189:     // レンブのみ
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: TextFormField(
-                controller: controller,
-                textAlign: TextAlign.center,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: '${yourPokemon.name}の残りHP',
-                ),
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                onTap: () => onFocus(),
-                onChanged: (value) {
-                  int val = yourState.remainHPPercent - (int.tryParse(value)??0);
-                  if (playerType.id == PlayerType.opponent) {
-                    val = yourState.remainHP - (int.tryParse(value)??0);
-                  }
-                  extraArg1ChangeFunc(val);
-                },
-              ),
-            ),
-            playerType.id == PlayerType.me ?
-            Flexible(child: Text('% /100%')) :
-            Flexible(child: Text('/${yourPokemon.h.real}')),
-            extraArg1 >= 0 ?
-            Flexible(child: Text('= ダメージ $extraArg1${playerType.id == PlayerType.me ? '%' : ''}')) :
-            Flexible(child: Text('= 回復 ${-extraArg1}${playerType.id == PlayerType.me ? '%' : ''}')),
-          ],
+        return DamageInputIndicateRow(
+          yourPokemon, controller,
+          playerType.id != PlayerType.me,
+          onFocus,
+          (value) {
+            int val = yourState.remainHPPercent - (int.tryParse(value)??0);
+            if (playerType.id == PlayerType.opponent) {
+              val = yourState.remainHP - (int.tryParse(value)??0);
+            }
+            extraArg1ChangeFunc(val);
+          },
+          extraArg1,
         );
       case 584:     // ふうせん
         return Row(

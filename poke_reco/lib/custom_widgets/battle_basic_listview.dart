@@ -42,6 +42,7 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.name = value;
+                      setState();
                     },
                     maxLength: 10,
                   ),
@@ -180,6 +181,7 @@ class BattleBasicListView extends ListView {
                     ),
                     onChanged: (value) {
                       battle.opponentName = value;
+                      setState();
                     },
                     maxLength: 10,
                   ),

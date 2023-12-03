@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
@@ -394,8 +395,8 @@ class TurnEffect {
       case EffectType.move:
         {
           // テラスタル済みならわざもテラスタル化
-          if (myState.teraType != null) {
-            move!.teraType = myState.teraType!;
+          if (myState.isTerastaling) {
+            move!.teraType = myState.teraType1;
           }
           ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount));
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
@@ -414,7 +415,8 @@ class TurnEffect {
         }
         break;
       case EffectType.terastal:
-        myState.teraType = PokeType.createFromId(effectId);
+        myState.isTerastaling = true;
+        myState.teraType1 = PokeType.createFromId(effectId);
         if (pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID != 0) {   // テラスタルによってとくせいが変わる場合
           myState.setCurrentAbility(
             pokeData.abilities[pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!,
@@ -455,6 +457,25 @@ class TurnEffect {
             else {
               myState.remainHPPercent -= extraArg1;
               yourState.remainHP -= extraArg2;
+            }
+            // 相手HP確定
+            if (playerType.id == PlayerType.opponent) {
+              int drain = extraArg2.abs();
+              if (yourState.remainHP < yourState.pokemon.h.real && myState.remainHPPercent > 0) {
+                if (yourState.holdingItem?.id == 273) {   // おおきなねっこ
+                  int tmp = ((drain.toDouble() + 0.5) / 1.3).round();
+                  while (roundOff5(tmp * 1.3) > drain) {tmp--;}
+                  drain = tmp;
+                }
+                int hpMin = drain * 8;
+                int hpMax = hpMin + 3;
+                // TODO: この時点で努力値等を反映するのかどうかとか
+                if (hpMin != myState.minStats[0].real || hpMax != myState.maxStats[0].real) {
+                  myState.minStats[0].real = hpMin;
+                  myState.maxStats[0].real = hpMax;
+                  ret.add('相手の${myState.pokemon.name}のHP実数値を$hpMin～$hpMaxで確定しました。');
+                }
+              }
             }
             break;
           case AilmentEffect.tauntEnd:
@@ -728,7 +749,7 @@ class TurnEffect {
               break;
           }
           // 状態変化等
-          if (pokemonState != null && (pokemonState.teraType == null || pokemonState.teraType!.id == 0)) {   // テラスタルしていないとき
+          if (pokemonState != null && !pokemonState.isTerastaling) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.sleepy).isNotEmpty) {   // ねむけ状態のとき
@@ -963,7 +984,7 @@ class TurnEffect {
           defenderTimingIDs.clear();
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             bool isMe = playerType.id == PlayerType.me;
-            bool isTerastal = pokemonState!.teraType?.id != 0 && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
+            bool isTerastal = pokemonState!.isTerastaling && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
 
             if (isTerastal && pokemonState.currentAbility.id == 303) {
               ret.add(TurnEffect()
@@ -1462,36 +1483,21 @@ class TurnEffect {
         case 209:   // ばけのかわ
         case 211:   // スワームチェンジ
         case 297:   // どしょく
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${myPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${myPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-            ],
+          return DamageInputIndicateRow(
+            myPokemon, controller,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1,
           );
         case 16:      // へんしょく
         case 168:     // へんげんじざい
@@ -1517,36 +1523,21 @@ class TurnEffect {
         case 123:   // ナイトメア
         case 160:   // てつのトゲ
         case 215:   // とびだすなかみ
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${yourPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = yourState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = yourState.remainHP - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('% /100%')) :
-              Flexible(child: Text('/${yourPokemon.h.real}')),
-            ],
+          return DamageInputIndicateRow(
+            yourPokemon, controller,
+            playerType.id != PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = yourState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = yourState.remainHP - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1
           );
         case 27:    // ほうし
           return Row(
@@ -2052,68 +2043,38 @@ class TurnEffect {
               ),
               SizedBox(height: 10,),
               extraArg1 == 872 || extraArg1 == 80 || extraArg1 == 552 || extraArg1 == 10552 || extraArg1 == 686 ?
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${yourPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          extraArg2 = yourState.remainHPPercent - (int.tryParse(value)??0);
-                        }
-                        else {
-                          extraArg2 = yourState.remainHP - (int.tryParse(value)??0);
-                        }
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  playerType.id == PlayerType.me ?
-                  Flexible(child: Text('% /100%')) :
-                  Flexible(child: Text('/${yourPokemon.h.real}')),
-                ],
+              DamageInputIndicateRow(
+                yourPokemon, controller,
+                playerType.id != PlayerType.me,
+                onFocus,
+                (value) {
+                  if (playerType.id == PlayerType.me) {
+                    extraArg2 = yourState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  else {
+                    extraArg2 = yourState.remainHP - (int.tryParse(value)??0);
+                  }
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg2,
               ) :
               extraArg1 == 775 ?
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${myPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          extraArg2 = myState.remainHP - (int.tryParse(value)??0);
-                        }
-                        else {
-                          extraArg2 = myState.remainHPPercent - (int.tryParse(value)??0);
-                        }
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  playerType.id == PlayerType.me ?
-                  Flexible(child: Text('/${myPokemon.h.real}')) :
-                  Flexible(child: Text('% /100%')),
-                ],
+              DamageInputIndicateRow(
+                myPokemon, controller,
+                playerType.id == PlayerType.me,
+                onFocus,
+                (value) {
+                  if (playerType.id == PlayerType.me) {
+                    extraArg2 = myState.remainHP - (int.tryParse(value)??0);
+                  }
+                  else {
+                    extraArg2 = myState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg2,
               ) :
               Container(),
               extraArg1 == 552 || extraArg1 == 10552 ? SizedBox(height: 10,) : Container(),
@@ -2176,36 +2137,21 @@ class TurnEffect {
       switch (effectId) {
         case IndividualField.futureAttack:      // みらいにこうげき
         case IndiFieldEffect.stealthRock:       // ステルスロック
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${myPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${myPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-            ],
+          return DamageInputIndicateRow(
+            myPokemon, controller,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1
           );
       }
     }
@@ -2217,103 +2163,58 @@ class TurnEffect {
         case AilmentEffect.saltCure:  // しおづけ
         case AilmentEffect.curse:     // のろい
         case AilmentEffect.ingrain:   // ねをはる
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${myPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${myPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-            ],
+          return DamageInputIndicateRow(
+            myPokemon, controller,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1,
           );
         case AilmentEffect.leechSeed:   // やどりぎのタネ
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${myPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-                        }
-                        else {
-                          extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-                        }
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  playerType.id == PlayerType.me ?
-                  Flexible(child: Text('/${myPokemon.h.real}')) :
-                  Flexible(child: Text('% /100%')),
-                ],
+              DamageInputIndicateRow(
+                myPokemon, controller,
+                playerType.id == PlayerType.me,
+                onFocus,
+                (value) {
+                  if (playerType.id == PlayerType.me) {
+                    extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+                  }
+                  else {
+                    extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg1,
               ),
               SizedBox(height: 10,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller2,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${yourPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        if (playerType.id == PlayerType.me) {
-                          extraArg2 = yourState.remainHPPercent - (int.tryParse(value)??0);
-                        }
-                        else {
-                          extraArg2 = yourState.remainHP - (int.tryParse(value)??0);
-                        }
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  playerType.id == PlayerType.me ?
-                  Flexible(child: Text('% /100%')) :
-                  Flexible(child: Text('/${yourPokemon.h.real}')),
-                ],
+              DamageInputIndicateRow(
+                yourPokemon, controller2,
+                playerType.id != PlayerType.me,
+                onFocus,
+                (value) {
+                  if (playerType.id == PlayerType.me) {
+                    extraArg2 = yourState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  else {
+                    extraArg2 = yourState.remainHP - (int.tryParse(value)??0);
+                  }
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg2,
               ),
             ],
           );
@@ -2325,54 +2226,28 @@ class TurnEffect {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${ownPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  Flexible(child: Text('/${ownPokemon.h.real}')),
-                ],
+              DamageInputIndicateRow(
+                ownPokemon, controller,
+                true,
+                onFocus,
+                (value) {
+                  extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg1,
               ),
               SizedBox(height: 10,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller2,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${opponentPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  Flexible(child: Text('% /100%')),
-                ],
+              DamageInputIndicateRow(
+                opponentPokemon, controller2,
+                false,
+                onFocus,
+                (value) {
+                  extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg2,
               ),
             ],
           );
@@ -2384,54 +2259,28 @@ class TurnEffect {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${ownPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  Flexible(child: Text('/${ownPokemon.h.real}')),
-                ],
+              DamageInputIndicateRow(
+                ownPokemon, controller,
+                true,
+                onFocus,
+                (value) {
+                  extraArg1 = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg1,
               ),
               SizedBox(height: 10,),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Flexible(
-                    child: TextFormField(
-                      controller: controller2,
-                      textAlign: TextAlign.center,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: '${opponentPokemon.name}の残りHP',
-                      ),
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      onTap: () => onFocus(),
-                      onChanged: (value) {
-                        extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                    ),
-                  ),
-                  Flexible(child: Text('% /100%')),
-                ],
+              DamageInputIndicateRow(
+                opponentPokemon, controller2,
+                false,
+                onFocus,
+                (value) {
+                  extraArg2 = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg2,
               ),
             ],
           );
@@ -2440,36 +2289,21 @@ class TurnEffect {
     else if (effect.id == EffectType.afterMove) {   // わざによる効果
       switch (effectId) {
         case 596:   // ニードルガード
-          return Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: TextFormField(
-                  controller: controller,
-                  textAlign: TextAlign.center,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${myPokemon.name}の残りHP',
-                  ),
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  onTap: () => onFocus(),
-                  onChanged: (value) {
-                    if (playerType.id == PlayerType.me) {
-                      extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-                    }
-                    else {
-                      extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-                    }
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                ),
-              ),
-              playerType.id == PlayerType.me ?
-              Flexible(child: Text('/${myPokemon.h.real}')) :
-              Flexible(child: Text('% /100%')),
-            ],
+          return DamageInputIndicateRow(
+            myPokemon, controller,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1,
           );
       }
     }

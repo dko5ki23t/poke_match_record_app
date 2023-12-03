@@ -983,7 +983,7 @@ class Ability {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.gorimuchu));
         break;
       case 258:   // はらぺこスイッチ
-        if (myState.teraType == null || myState.teraType!.id == 0) {
+        if (!myState.isTerastaling) {
           int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.harapekoForm || e.id == BuffDebuff.manpukuForm);
           if (findIdx < 0) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.manpukuForm));

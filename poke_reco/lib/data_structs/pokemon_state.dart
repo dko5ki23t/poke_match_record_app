@@ -16,7 +16,8 @@ class PokemonState {
   Pokemon pokemon = Pokemon();  // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
-  PokeType? teraType;           // テラスタルしているかどうか、している場合はそのタイプ
+  bool isTerastaling = false;   // テラスタルしているかどうか
+  PokeType teraType1 = PokeType.createFromId(0);      // テラスタルした場合のタイプ
   bool _isFainting = false;     // ひんしかどうか
   int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
   Item? _holdingItem = Item(
@@ -36,6 +37,7 @@ class PokemonState {
   PokeType type1 = PokeType.createFromId(0);  // ポケモンのタイプ1(対戦中変わることもある)
   PokeType? type2;              // ポケモンのタイプ2
   Move? lastMove;               // 最後に使用した(PP消費した)わざ
+  bool isOriginalItem = true;   // trueのときに判明したholdingItemは、ポケモンがもともと持っていたもの(トリック等でfalseになる)
 
   PokemonState copyWith() =>
     PokemonState()
@@ -43,7 +45,8 @@ class PokemonState {
     ..pokemon = pokemon
     ..remainHP = remainHP
     ..remainHPPercent = remainHPPercent
-    ..teraType = teraType
+    ..isTerastaling = isTerastaling
+    ..teraType1 = teraType1
     .._isFainting = _isFainting
     ..battlingNum = battlingNum
     .._holdingItem = _holdingItem?.copyWith()
@@ -53,14 +56,15 @@ class PokemonState {
     ..hiddenBuffs = [for (final e in hiddenBuffs) e.copyWith()]
     .._currentAbility = _currentAbility.copyWith()
     .._ailments = _ailments.copyWith()
-    ..minStats = [...minStats]        // TODO:よい？
-    ..maxStats = [...maxStats]        // TODO:よい？
+    ..minStats = [for (final e in minStats) e.copyWith()]
+    ..maxStats = [for (final e in maxStats) e.copyWith()]
     ..possibleAbilities = [for (final e in possibleAbilities) e.copyWith()]
     ..impossibleItems = [for (final e in impossibleItems) e.copyWith()]
     ..moves = [...moves]
     ..type1 = type1
     ..type2 = type2
-    ..lastMove = lastMove?.copyWith();
+    ..lastMove = lastMove?.copyWith()
+    ..isOriginalItem = isOriginalItem;
 
   Item? get holdingItem => _holdingItem;
   Ability get currentAbility => _currentAbility;
@@ -82,9 +86,13 @@ class PokemonState {
   }
 
   set holdingItem(Item? item) {
+    if (isOriginalItem && item != null) {
+      pokemon.item = item;
+      isOriginalItem = false;
+    }
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
-    if (item == null && _holdingItem?.id != 0) {
+    if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
       // 最後に消費したもちもの/きのみ更新
       var lastLostItem = hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostItem);
       if (lastLostItem.isEmpty) {
@@ -118,7 +126,7 @@ class PokemonState {
 
   set isFainting(bool t) {
     // テラスタル解除
-    if (t) teraType = null;
+    if (t) isTerastaling = false;
     _isFainting = t;
   }
 
@@ -168,8 +176,8 @@ class PokemonState {
 
   // タイプが含まれるか判定(テラスタル後ならテラスタイプで判定)
   bool isTypeContain(int typeId) {
-    if (teraType != null) {
-      return teraType!.id == typeId;
+    if (isTerastaling) {
+      return teraType1.id == typeId;
     }
     else {
       return type1.id == typeId || type2?.id == typeId;
@@ -178,16 +186,16 @@ class PokemonState {
 
   double typeBonusRate(int moveTypeId, bool isAdaptability) {
     double rate = 1.0;
-    if (teraType != null) {
+    if (isTerastaling) {
       if (isAdaptability) {
-        if (teraType!.id == moveTypeId) rate += 1.0;
+        if (teraType1.id == moveTypeId) rate += 1.0;
         if (type1.id == moveTypeId || type2?.id == moveTypeId) {
           rate += 0.5;
         }
         if (rate > 2.25) rate = 2.25;
       }
       else {
-        if (teraType!.id == moveTypeId) rate += 0.5;
+        if (teraType1.id == moveTypeId) rate += 0.5;
         if (type1.id == moveTypeId || type2?.id == moveTypeId) {
           rate += 0.5;
         }
@@ -769,81 +777,81 @@ class PokemonState {
     pokemonState.remainHP = int.parse(stateElements[1]);
     // remainHPPercent
     pokemonState.remainHPPercent = int.parse(stateElements[2]);
-    // teraType
-    if (stateElements[3] != '') {
-      pokemonState.teraType = PokeType.createFromId(int.parse(stateElements[3]));
-    }
+    // isTerastaling
+    pokemonState.isTerastaling = int.parse(stateElements[3]) != 0;
+    // teraType1
+    pokemonState.teraType1 = PokeType.createFromId(int.parse(stateElements[4]));
     // _isFainting
-    pokemonState._isFainting = int.parse(stateElements[4]) != 0;
+    pokemonState._isFainting = int.parse(stateElements[5]) != 0;
     // battlingNum
-    pokemonState.battlingNum = int.parse(stateElements[5]);
+    pokemonState.battlingNum = int.parse(stateElements[6]);
     // holdingItem
-    pokemonState.setHoldingItemNoEffect(stateElements[6] == '' ? null : pokeData.items[int.parse(stateElements[6])]);
+    pokemonState.setHoldingItemNoEffect(stateElements[7] == '' ? null : pokeData.items[int.parse(stateElements[7])]);
     // usedPPs
     pokemonState.usedPPs.clear();
-    final pps = stateElements[7].split(split2);
+    final pps = stateElements[8].split(split2);
     for (final pp in pps) {
       if (pp == '') break;
       pokemonState.usedPPs.add(int.parse(pp));
     }
     // statChanges
-    final statChangeElements = stateElements[8].split(split2);
+    final statChangeElements = stateElements[9].split(split2);
     for (int i = 0; i < 7; i++) {
       pokemonState._statChanges[i] = int.parse(statChangeElements[i]);
     }
     // buffDebuffs
-    final buffDebuffElements = stateElements[9].split(split2);
+    final buffDebuffElements = stateElements[10].split(split2);
     for (final buffDebuff in buffDebuffElements) {
       if (buffDebuff == '') break;
       pokemonState.buffDebuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
     }
     // hiddenBuffs
-    final hiddenBuffElements = stateElements[10].split(split2);
+    final hiddenBuffElements = stateElements[11].split(split2);
     for (final buffDebuff in hiddenBuffElements) {
       if (buffDebuff == '') break;
       pokemonState.hiddenBuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
     }
     // currentAbility
-    pokemonState.setCurrentAbilityNoEffect(Ability.deserialize(stateElements[11], split2));
+    pokemonState.setCurrentAbilityNoEffect(Ability.deserialize(stateElements[12], split2));
     // ailments
-    pokemonState._ailments = Ailments.deserialize(stateElements[12], split2, split3);
+    pokemonState._ailments = Ailments.deserialize(stateElements[13], split2, split3);
     // minStats
-    final minStatElements = stateElements[13].split(split2);
+    final minStatElements = stateElements[14].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.minStats[i] = SixParams.deserialize(minStatElements[i], split3);
     }
     // maxStats
-    final maxStatElements = stateElements[14].split(split2);
+    final maxStatElements = stateElements[15].split(split2);
     for (int i = 0; i < 6; i++) {
       pokemonState.maxStats[i] = SixParams.deserialize(maxStatElements[i], split3);
     }
     // possibleAbilities
-    final abilities = stateElements[15].split(split2);
+    final abilities = stateElements[16].split(split2);
     for (var ability in abilities) {
       if (ability == '') break;
       pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
     }
     // impossibleItems
-    final items = stateElements[16].split(split2);
+    final items = stateElements[17].split(split2);
     for (var item in items) {
       if (item == '') break;
       pokemonState.impossibleItems.add(pokeData.items[int.parse(item)]!);
     }
     // moves
-    final moves = stateElements[17].split(split2);
+    final moves = stateElements[18].split(split2);
     for (var move in moves) {
       if (move == '') break;
       pokemonState.moves.add(pokeData.moves[int.parse(move)]!);
     }
     // type1
-    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[18]));
+    pokemonState.type1 = PokeType.createFromId(int.parse(stateElements[19]));
     // type2
-    if (stateElements[19] != '') {
-      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[19]));
+    if (stateElements[20] != '') {
+      pokemonState.type2 = PokeType.createFromId(int.parse(stateElements[20]));
     }
     // lastMove
-    if (stateElements[20] != '') {
-      pokemonState.lastMove = pokeData.moves[int.parse(stateElements[20])];
+    if (stateElements[21] != '') {
+      pokemonState.lastMove = pokeData.moves[int.parse(stateElements[21])];
     }
 
     return pokemonState;
@@ -861,10 +869,11 @@ class PokemonState {
     // remainHPPercent
     ret += remainHPPercent.toString();
     ret += split1;
-    // teraType
-    if (teraType != null) {
-      ret += teraType!.id.toString();
-    }
+    // isTerastaling
+    ret += isTerastaling ? '1' : '0';
+    ret += split1;
+    // teraType1
+    ret += teraType1.id.toString();
     ret += split1;
     // _isFainting
     ret += _isFainting ? '1' : '0';

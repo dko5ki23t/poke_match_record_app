@@ -71,8 +71,8 @@ class PokeType {
   {
     PokeType defenseType1 = state.type1;
     PokeType? defenseType2 = state.type2;
-    if (state.teraType != null) {
-      defenseType1 = state.teraType!;
+    if (state.isTerastaling) {
+      defenseType1 = state.teraType1;
       defenseType2 = null;
     }
     int deg = 0;

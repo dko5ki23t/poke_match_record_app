@@ -113,9 +113,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
-    var battles = appState.battles;
     var parties = appState.parties;
-    var pokemons = appState.pokemons;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
@@ -127,8 +125,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Party ownParty = widget.battle.getParty(PlayerType(PlayerType.me));
     Party opponentParty = widget.battle.getParty(PlayerType(PlayerType.opponent));
 
-    battleNameController.text = widget.battle.name;
-    opponentNameController.text = widget.battle.opponentName;
     for (int i = 0; i < opponentParty.pokemonNum; i++) {
       opponentPokemonController[i].text = opponentParty.pokemons[i]!.name;
     }
@@ -184,6 +180,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     if (firstBuild) {
       appState.onBackKeyPushed = onBack;
       appState.onTabChange = onTabChange;
+      battleNameController.text = widget.battle.name;
+      opponentNameController.text = widget.battle.opponentName;
       firstBuild = false;
     }
 
@@ -211,10 +209,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           return DeleteEditingCheckDialogWithCancel(
             question: '相手パーティ・ポケモンを保存しますか？',
             onYesPressed: () async {
+              var lastState = turns.last.phases.isNotEmpty ?
+                turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
+                turns.last.copyInitialState();
+              var oppPokemonStates = lastState.getPokemonStates(PlayerType(PlayerType.opponent));
               // 現在無効のポケモンを有効化し、DBに保存
               for (int i = 0; i < opponentParty.pokemonNum; i++) {
                 var poke = opponentParty.pokemons[i]!;
+                var pokemonState = oppPokemonStates[i];
                 poke.owner = Owner.fromBattle;
+                // もちもの
+                opponentParty.items[i] = poke.item;
                 // 対戦で確定できなかったものを穴埋めする
                 if (poke.ability.id == 0) {
                   poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
@@ -222,6 +227,27 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 if (poke.temper.id == 0) {
                   poke.temper = pokeData.tempers[1]!;
                 }
+                // TODO
+                for (int j = 0; j < StatIndex.size.index; j++) {
+                  poke.stats[j].real = pokemonState.minStats[j].real;
+                  poke.updateStatsRefReal(j);
+                }
+                // TODO
+                for (int j = 0; j < pokemonState.moves.length; j++) {
+                  if (j < poke.moves.length) {
+                    poke.moves[j] = pokemonState.moves[j];
+                  }
+                  else {
+                    poke.moves.add(pokemonState.moves[j]);
+                  }
+                  if (j < poke.pps.length) {
+                    poke.pps[j] = pokeData.moves[poke.moves[j]!.id]!.pp;
+                  }
+                  else {
+                    poke.pps.add(pokeData.moves[poke.moves[j]!.id]!.pp);
+                  }
+                }
+                poke.teraType = pokemonState.teraType1;
                 if (poke.move1.id == 0) {
                   poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
                 }
@@ -230,14 +256,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 await pokeData.addMyPokemon(poke, poke.id == 0);
               }
-              
               opponentParty.owner = Owner.fromBattle;
 
               await widget.onSaveOpponentParty(
                 opponentParty,
-                turns.last.phases.isNotEmpty ?
-                  turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
-                  turns.last.copyInitialState()
+                lastState,
               );
 
               // TODO パーティを保存されなかった場合は、hiddenとして残す必要あり（battleを正しく保存できないため）
@@ -246,9 +269,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               widget.onFinish();
             },
             onNoPressed: () async {
-              // TODO ポケモンとパーティを(ID決まってないやつは)hiddenとして保存する必要あり(battleを正しく保存できないため)
-              // TODO refCount
-              // 現在無効のポケモンを有効化し、DBに保存
+              // ポケモンとパーティを(ID決まってないやつは)hiddenとして保存する必要あり(battleを正しく保存できないため)
               for (int i = 0; i < opponentParty.pokemonNum; i++) {
                 var poke = opponentParty.pokemons[i]!;
                 if (poke.id == 0) {
@@ -256,6 +277,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 await pokeData.addMyPokemon(poke, poke.id == 0);
               }
+              if (opponentParty.id == 0) {
+                opponentParty.owner = Owner.hidden;
+              }
+              await pokeData.addParty(opponentParty, opponentParty.id == 0);
               await pokeData.addBattle(battle, widget.isNew);
               widget.onFinish();
             },
@@ -750,10 +775,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           SizedBox(width: 10,),
                           Expanded(
                             child:
-                              focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType != null ?
+                              focusState.getPokemonState(PlayerType(PlayerType.me), null).isTerastaling ?
                               Row(children: [
                                 Text('テラスタル'),
-                                focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType!.displayIcon,
+                                focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
                                 focusState.getPokemonState(PlayerType(PlayerType.me), null).type1.displayIcon,
@@ -764,10 +789,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           SizedBox(width: 10,),
                           Expanded(
                             child:
-                              focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType != null ?
+                              focusState.getPokemonState(PlayerType(PlayerType.opponent), null).isTerastaling ?
                               Row(children: [
                                 Text('テラスタル'),
-                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType!.displayIcon,
+                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
                                 focusState.getPokemonState(PlayerType(PlayerType.opponent), null).type1.displayIcon,

@@ -149,7 +149,8 @@ class BattleEffectInputColumn extends Column {
                             value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
                             onChanged: (value) {
                               turn.phases[firstIdx+i].playerType = PlayerType(value);
-                              var candidates = sameTimingList.first.candidateEffect;
+                              var candidates = sameTimingList.first.candidateEffect.where((e) => 
+                                    e.playerType.id == value);
                               if (candidates.length == 1) {       // 候補が1つだけなら
                                 turn.phases[firstIdx+i].effect = candidates.first.effect;
                                 turn.phases[firstIdx+i].effectId = candidates.first.effectId;
@@ -308,7 +309,7 @@ class BattleEffectInputColumn extends Column {
                               List<TurnEffect> matches =
                                 sameTimingList.first.candidateEffect.where((e) =>
                                 e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
-                                e.effect.id == turn.phases[firstIdx+i].effect.id
+                                (e.playerType.id == PlayerType.entireField || e.effect.id == turn.phases[firstIdx+i].effect.id)
                               ).toList();
                               matches.retainWhere((s){
                                 return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -355,8 +356,8 @@ class BattleEffectInputColumn extends Column {
                     for (final e in sameTimingList[i].guides)
                     Row(
                       children: [
-                        Icon(Icons.info, color: Colors.lightGreen,),
-                        Text(e, overflow: TextOverflow.ellipsis,),
+                        Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
+                        Expanded(flex: 10, child: Text(e)),
                       ],
                     ),
                   ],
