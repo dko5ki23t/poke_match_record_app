@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/custom_widgets/pokemon_sex_input_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -19,6 +18,8 @@ class BattleBasicListView extends ListView {
     TextEditingController opponentNameController,
     TextEditingController dateController,
     List<TextEditingController> opponentPokemonController,
+    TextEditingController ownPartyController,
+    Future<Party?> Function() onSelectParty,
     {
       bool showNetworkImage = false,
     }
@@ -111,59 +112,50 @@ class BattleBasicListView extends ListView {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: DropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
+                  child: TextFormField(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'あなたのパーティ'
+                      labelText: 'あなたのパーティ',
+                      suffixIcon: Icon(Icons.arrow_drop_down),
                     ),
-                    selectedItemBuilder: (context) {
-                      return [
-                        for (final party in parties.values.where((element) => element.id != 0 && element.owner == Owner.mine))
-                          Text(party.name),
-                      ];
-                    },
-                    items: <DropdownMenuItem>[
-                      for (final party in parties.values.where((element) => element.id != 0 && element.owner == Owner.mine))
-                        DropdownMenuItem(
-                          value: party.id,
-                          child: PartyTile(party, theme,),
-                        ),
-                    ],
-                    value: battle.getParty(PlayerType(PlayerType.me)).id == 0 ? null : battle.getParty(PlayerType(PlayerType.me)).id,
-                    onChanged: (value) {
-                      if (battle.getParty(PlayerType(PlayerType.me)).id != value && battle.turns.isNotEmpty) {
-                        showDialog(
-                          context: context,
-                          builder: (_) {
-                            return DeleteEditingCheckDialog(
-                              'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
-                              () {
-                                // 各ポケモンのレベルを50にするためコピー作成
-                                battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
-                                for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                                  battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
-                                }
-                                battle.turns.clear();
-                                setState();
-                              },
-                            );
-                          }
-                        );
-                      }
-                      else {
-                        // 各ポケモンのレベルを50にするためコピー作成
-                        battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == value).first.copyWith());
-                        for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                          battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                    controller: ownPartyController,
+                    onTap: () async {
+                      var party = await onSelectParty();
+                      if (!context.mounted) return;     // クラッシュ回避用 https://dart.dev/tools/linter-rules/use_build_context_synchronously
+                      if (party != null) {
+                        if (battle.getParty(PlayerType(PlayerType.me)).id != party.id && battle.turns.isNotEmpty) {
+                          showDialog(
+                            context: context,
+                            builder: (_) {
+                              return DeleteEditingCheckDialog(
+                                'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
+                                () {
+                                  // 各ポケモンのレベルを50にするためコピー作成
+                                  battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
+                                  for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                                  }
+                                  battle.turns.clear();
+                                  setState();
+                                },
+                              );
+                            }
+                          );
                         }
-                        setState();
+                        else {
+                          // 各ポケモンのレベルを50にするためコピー作成
+                          battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
+                          for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                          }
+                          setState();
+                        }
                       }
-                    },
+                    }
                   ),
                 ),
               ],

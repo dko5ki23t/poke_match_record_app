@@ -11,7 +11,6 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -45,12 +44,14 @@ class RegisterBattlePage extends StatefulWidget {
   RegisterBattlePage({
     Key? key,
     required this.onFinish,
+    required this.onSelectParty,
     required this.battle,
     required this.isNew,
     required this.onSaveOpponentParty,
   }) : super(key: key);
 
   final void Function() onFinish;
+  final Future<Party?> Function() onSelectParty;
   final Future<void> Function(Party party, PhaseState state) onSaveOpponentParty;
   final Battle battle;
   final bool isNew;
@@ -65,6 +66,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   final battleNameController = TextEditingController();
   final opponentNameController = TextEditingController();
   final dateController = TextEditingController();
+  final ownPartyController = TextEditingController();
 
   List<TextEditingController> textEditingControllerList1 = [];
   List<TextEditingController> textEditingControllerList2 = [];
@@ -129,6 +131,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       opponentPokemonController[i].text = opponentParty.pokemons[i]!.name;
     }
     dateController.text = widget.battle.formattedDateTime;
+    ownPartyController.text = widget.battle.getParty(PlayerType(PlayerType.me)).id != 0 ?
+      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : 'パーティ選択';
     
     if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage
@@ -224,9 +228,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 if (poke.ability.id == 0) {
                   poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
                 }
-                if (poke.temper.id == 0) {
+                /*if (poke.temper.id == 0) {
                   poke.temper = pokeData.tempers[1]!;
-                }
+                }*/
                 // TODO
                 for (int j = 0; j < StatIndex.size.index; j++) {
                   poke.stats[j].real = pokemonState.minStats[j].real;
@@ -248,12 +252,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                 }
                 poke.teraType = pokemonState.teraType1;
-                if (poke.move1.id == 0) {
+                /*if (poke.move1.id == 0) {
                   poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
                 }
                 if (poke.teraType.id == 0) {
                   poke.teraType = PokeType.createFromId(1);
-                }
+                }*/
                 await pokeData.addMyPokemon(poke, poke.id == 0);
               }
               opponentParty.owner = Owner.fromBattle;
@@ -630,6 +634,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           opponentNameController,
           dateController,
           opponentPokemonController,
+          ownPartyController,
+          widget.onSelectParty,
           showNetworkImage: appState.getPokeAPI);
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;

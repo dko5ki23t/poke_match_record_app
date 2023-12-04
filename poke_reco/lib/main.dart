@@ -363,7 +363,9 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 );
               default:
                 return PartiesPage(
-                  onAdd: (party, isNew) => _push(context, party, isNew)
+                  onAdd: (party, isNew) => _push(context, party, isNew),
+                  onSelect: null,
+                  selectMode: false,
                 );
             }
           },
@@ -400,6 +402,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           // 新規作成
           return RegisterBattlePage(
             onFinish: () => _pop(context),
+            onSelectParty: () => _pushSelectPartyPage(context),
             battle: battle,
             isNew: isNew,
             onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
@@ -424,6 +427,24 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
         },
       ),
     );
+  }
+
+  Future<Party?> _pushSelectPartyPage(BuildContext context) async {
+    var result =
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            // パーティ選択
+            return PartiesPage(
+              onAdd: (party, isNew) {},
+              onSelect: (party) => _popSelectPartyPage(context, party),
+              selectMode: true,
+            );
+          },
+        ),
+      );
+    return Future<Party?>.value(result);
   }
 
   Future<void> _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
@@ -453,6 +474,12 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
     );
   }
 
+  void _popSelectPartyPage(BuildContext context, Party party) {
+    Navigator.of(context).pop(
+      party,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Navigator(
@@ -466,6 +493,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
                 // 新規作成
                 return RegisterBattlePage(
                   onFinish: () => _pop(context),
+                  onSelectParty: () => _pushSelectPartyPage(context),
                   battle: Battle(),
                   isNew: true,
                   onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),

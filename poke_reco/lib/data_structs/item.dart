@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';

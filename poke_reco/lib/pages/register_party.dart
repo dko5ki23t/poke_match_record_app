@@ -92,7 +92,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
 
     for (int i = 0; i < 6; i++) {
       final pokemon = widget.party.pokemons[i];
-      if (pokemon != null && pokemon.isValid) {
+      if (pokemon != null && pokemon.id != 0) {
         pokemonController[i].text =
           pokemon.nickname == '' ?
             '${pokemon.name}/${pokemon.name}' :
@@ -120,7 +120,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
           title: widget.isNew ? Text('パーティ登録') : Text('パーティ編集'),
           actions: [
             TextButton(
-              onPressed: (widget.party.isValid) ? () => onComplete() : null,
+              onPressed: ((widget.isEditPokemon && widget.party.name != '') || widget.party.isValid) ? () => onComplete() : null,
               child: Text('保存'),
             ),
           ],
@@ -217,7 +217,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                           widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType(PlayerType.opponent))[i]);
                         }
                       },
-                      enabledPokemon: i != 0 ? widget.party.pokemons[i-1] != null && widget.party.pokemons[i-1]!.isValid : true,
+                      enabledPokemon: i == 0 || (widget.party.pokemons[i-1] != null && (widget.isEditPokemon || widget.party.pokemons[i-1]!.isValid)),
                       enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
                       showNetworkImage: appState.getPokeAPI
                     ),

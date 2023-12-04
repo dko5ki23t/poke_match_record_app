@@ -14,8 +14,12 @@ class PartiesPage extends StatefulWidget {
   const PartiesPage({
     Key? key,
     required this.onAdd,
+    required this.selectMode,
+    required this.onSelect,
   }) : super(key: key);
   final void Function(Party party, bool isNew) onAdd;
+  final void Function(Party selectedParty)? onSelect;
+  final bool selectMode;
 
   @override
   PartiesPageState createState() => PartiesPageState();
@@ -45,6 +49,11 @@ class PartiesPageState extends State<PartiesPage> {
         }
         return false;
       });
+    }
+    // 通常の表示ではvalidでないパーティも表示するが、
+    // 対戦編集での表示ではvalidでないパーティは表示しない
+    if (widget.selectMode) {
+      filteredParties = filteredParties.where((element) => element.value.isValid);
     }
     var sort = pokeData.partiesSort;
     var sortedParties = filteredParties.toList();
@@ -127,7 +136,11 @@ class PartiesPageState extends State<PartiesPage> {
                 PartyTile(
                   party.value, theme,
                   leading: Icon(Icons.group),
-                  onLongPress: () => widget.onAdd(party.value.copyWith(), false),
+                  onLongPress: !widget.selectMode ? () => widget.onAdd(party.value.copyWith(), false) : null,
+                  onTap: widget.selectMode ? () {
+                    selectedParty = party.value;
+                    widget.onSelect!(party.value);
+                  } : null,
                 )
             ],
           ),
@@ -135,228 +148,318 @@ class PartiesPageState extends State<PartiesPage> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('パーティ一覧'),
-        actions: [
-          isEditMode ?
-          MyIconButton(
-            theme: theme,
-            onPressed: () {
-              setState(() => isEditMode = false);
-              pokeData.partiesSort = null;
-            },
-            icon: Icon(Icons.check),
-            tooltip: '完了',
-          ) :
-          Align(
-            alignment: Alignment.centerRight,
-            child: Row(
-              children: [
-                MyIconButton(
-                  theme: theme,
-                  onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) {
-                            return PartyFilterDialog(
-                              pokeData,
-                              ownerFilter,
-                              winRateMinFilter,
-                              winRateMaxFilter,
-                              pokemonNoFilter,
-                              (f1, f2, f3, f4) async {
-                                ownerFilter.clear();
-                                pokemonNoFilter.clear();
-                                ownerFilter.addAll(f1);
-                                pokeData.partiesWinRateMinFilter = f2;
-                                pokeData.partiesWinRateMaxFilter = f3;
-                                pokemonNoFilter.addAll(f4);
-                                await pokeData.saveConfig();
-                                setState(() {});
-                              },
-                            );
-                          }
-                        );
-                      },
-                  icon: Icon(Icons.filter_alt),
-                  tooltip: 'フィルタ',
-                ),
-                MyIconButton(
-                  theme: theme,
-                  onPressed: () => showDialog(
-                    context: context,
-                    builder: (_) {
-                      return PartySortDialog(
-                        (partySort) async {
-                          switch (partySort) {
-                            case PartySort.registerUp:
-                              sortedParties.sort((a, b) => a.value.id.compareTo(b.value.id),);
-                              break;
-                            case PartySort.registerDown:
-                              sortedParties.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
-                              break;
-                            case PartySort.nameUp:
-                              sortedParties.sort((a, b) => a.value.name.compareTo(b.value.name),);
-                              break;
-                            case PartySort.nameDown:
-                              sortedParties.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
-                              break;
-                            case PartySort.winRateUp:
-                              sortedParties.sort((a, b) => a.value.winRate.compareTo(b.value.winRate),);
-                              break;
-                            case PartySort.winRateDown:
-                              sortedParties.sort((a, b) => -1 * a.value.winRate.compareTo(b.value.winRate),);
-                              break;
-                            default:
-                              break;
-                          }
-                          if (sort != partySort && partySort != null) {
-                            for (int i = 0; i < sortedParties.length; i++) {
-                              var party = parties[sortedParties[i].key]!;
-                              party.viewOrder = i+1;
-                            }
-                            await pokeData.updateAllPartyViewOrder();
-                          }
-                          pokeData.partiesSort = partySort;
-                          await pokeData.saveConfig();
-                          setState(() {});
-                        },
-                        sort
-                      );
-                    }
-                  ),
-                  icon: Icon(Icons.sort),
-                  tooltip: '並べ替え',
-                ),
-                MyIconButton(
-                  theme: theme,
-                  onPressed: (sortedParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
-                  icon: Icon(Icons.edit),
-                  tooltip: '編集',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Column(
-            children:
+    return WillPopScope(
+      onWillPop: () {
+        Navigator.of(context).pop(selectedParty);
+        return Future.value(false);
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: widget.selectMode ? Text('パーティ選択') : Text('パーティ一覧'),
+          actions: [
+            !widget.selectMode ?
               isEditMode ?
-                [
-                  Expanded(flex: 10, child: lists),
-                  Expanded(child: Align(
-                    alignment: Alignment.bottomCenter,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                      TextButton(
-                        child: Row(children: [
-                          Icon(Icons.select_all),
-                          SizedBox(width: 10),
-                          Text('すべて選択')
-                        ]),
-                        onPressed: () => setState(() {
-                          selectAllMap(checkList!);
-                        }),
-                      ),
-                      SizedBox(width: 20),
-                      TextButton(
-                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
-                          () {
-                            bool isContainedBattle = false;
-                            for (final e in checkList!.keys) {
-                                if (checkList![e]!) {
-                                  if (sortedParties.where((element) => element.value.id == e).first.value.refs) {
-                                    isContainedBattle = true;
-                                    break;
-                                  }
-                                }
-                              }
+              MyIconButton(
+                theme: theme,
+                onPressed: () {
+                  setState(() => isEditMode = false);
+                  pokeData.partiesSort = null;
+                },
+                icon: Icon(Icons.check),
+                tooltip: '完了',
+              ) :
+              Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  children: [
+                    MyIconButton(
+                      theme: theme,
+                      onPressed: () {
                             showDialog(
                               context: context,
                               builder: (_) {
-                                return PartyDeleteCheckDialog(
-                                  isContainedBattle,
-                                  () async {
-                                    List<int> deleteIDs = [];
-                                    for (final e in checkList!.keys) {
-                                      if (checkList![e]!) {
-                                        deleteIDs.add(e);
-                                      }
-                                    }
-                                    await pokeData.deleteParty(deleteIDs);
-                                    setState(() {
-                                      checkList = {};
-                                      for (final e in sortedParties) {
-                                        checkList![e.key] = false;
-                                      }
-                                    });
+                                return PartyFilterDialog(
+                                  pokeData,
+                                  ownerFilter,
+                                  winRateMinFilter,
+                                  winRateMaxFilter,
+                                  pokemonNoFilter,
+                                  (f1, f2, f3, f4) async {
+                                    ownerFilter.clear();
+                                    pokemonNoFilter.clear();
+                                    ownerFilter.addAll(f1);
+                                    pokeData.partiesWinRateMinFilter = f2;
+                                    pokeData.partiesWinRateMaxFilter = f3;
+                                    pokemonNoFilter.addAll(f4);
+                                    await pokeData.saveConfig();
+                                    setState(() {});
                                   },
                                 );
                               }
                             );
-                          }
-                          :
-                          null,
-                        child: Row(children: [
-                          Icon(Icons.delete),
-                          SizedBox(width: 10),
-                          Text('削除')
-                        ]),
-                      ),
-                      SizedBox(width: 20,),
-                      TextButton(
-                        onPressed: (getSelectedNumMap(checkList!) > 0) ?
-                          () async {
-                            for (final e in checkList!.keys) {
-                              if (checkList![e]!) {
-                                Party copiedParty = parties[e]!.copyWith();
-                                await pokeData.addParty(copiedParty, true);
+                          },
+                      icon: Icon(Icons.filter_alt),
+                      tooltip: 'フィルタ',
+                    ),
+                    MyIconButton(
+                      theme: theme,
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (_) {
+                          return PartySortDialog(
+                            (partySort) async {
+                              switch (partySort) {
+                                case PartySort.registerUp:
+                                  sortedParties.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                                  break;
+                                case PartySort.registerDown:
+                                  sortedParties.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                                  break;
+                                case PartySort.nameUp:
+                                  sortedParties.sort((a, b) => a.value.name.compareTo(b.value.name),);
+                                  break;
+                                case PartySort.nameDown:
+                                  sortedParties.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
+                                  break;
+                                case PartySort.winRateUp:
+                                  sortedParties.sort((a, b) => a.value.winRate.compareTo(b.value.winRate),);
+                                  break;
+                                case PartySort.winRateDown:
+                                  sortedParties.sort((a, b) => -1 * a.value.winRate.compareTo(b.value.winRate),);
+                                  break;
+                                default:
+                                  break;
                               }
-                            }
-                            setState(() {
-                              checkList = {};
-                              for (final e in sortedParties) {
-                                checkList![e.key] = false;
+                              if (sort != partySort && partySort != null) {
+                                for (int i = 0; i < sortedParties.length; i++) {
+                                  var party = parties[sortedParties[i].key]!;
+                                  party.viewOrder = i+1;
+                                }
+                                await pokeData.updateAllPartyViewOrder();
                               }
-                            });
-                          } : null,
-                        child: Row(children: [
-                          Icon(Icons.copy),
-                          SizedBox(width: 10),
-                          Text('コピー作成'),
-                        ]),
+                              pokeData.partiesSort = partySort;
+                              await pokeData.saveConfig();
+                              setState(() {});
+                            },
+                            sort
+                          );
+                        }
                       ),
-                    ],
-                  ),),),
-                ]
-                :
-                [
-                  Expanded(child: lists),
+                      icon: Icon(Icons.sort),
+                      tooltip: '並べ替え',
+                    ),
+                    MyIconButton(
+                      theme: theme,
+                      onPressed: (sortedParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
+                      icon: Icon(Icons.edit),
+                      tooltip: '編集',
+                    ),
                 ],
-          ),
-          !isEditMode ?
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: Align(
-              alignment: Alignment.bottomRight,
-              child: FloatingActionButton(
-                tooltip: 'パーティ登録',
-                shape: CircleBorder(),
-                onPressed: (){
-                  checkList = null;
-                  widget.onAdd(Party(), true);
-                },
-                child: Icon(Icons.add),
+              ),
+            ) :
+            Align(
+              alignment: Alignment.centerRight,
+              child: Row(
+                children: [
+                  MyIconButton(
+                    theme: theme,
+                    onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (_) {
+                              return PartyFilterDialog(
+                                pokeData,
+                                ownerFilter,
+                                winRateMinFilter,
+                                winRateMaxFilter,
+                                pokemonNoFilter,
+                                (f1, f2, f3, f4) async {
+                                  ownerFilter.clear();
+                                  pokemonNoFilter.clear();
+                                  ownerFilter.addAll(f1);
+                                  pokeData.partiesWinRateMinFilter = f2;
+                                  pokeData.partiesWinRateMaxFilter = f3;
+                                  pokemonNoFilter.addAll(f4);
+                                  await pokeData.saveConfig();
+                                  setState(() {});
+                                },
+                              );
+                            }
+                          );
+                        },
+                    icon: Icon(Icons.filter_alt),
+                    tooltip: 'フィルタ',
+                  ),
+                  MyIconButton(
+                    theme: theme,
+                    onPressed: () => showDialog(
+                      context: context,
+                      builder: (_) {
+                        return PartySortDialog(
+                          (partySort) async {
+                            switch (partySort) {
+                              case PartySort.registerUp:
+                                sortedParties.sort((a, b) => a.value.id.compareTo(b.value.id),);
+                                break;
+                              case PartySort.registerDown:
+                                sortedParties.sort((a, b) => -1 * a.value.id.compareTo(b.value.id),);
+                                break;
+                              case PartySort.nameUp:
+                                sortedParties.sort((a, b) => a.value.name.compareTo(b.value.name),);
+                                break;
+                              case PartySort.nameDown:
+                                sortedParties.sort((a, b) => -1 * a.value.name.compareTo(b.value.name),);
+                                break;
+                              case PartySort.winRateUp:
+                                sortedParties.sort((a, b) => a.value.winRate.compareTo(b.value.winRate),);
+                                break;
+                              case PartySort.winRateDown:
+                                sortedParties.sort((a, b) => -1 * a.value.winRate.compareTo(b.value.winRate),);
+                                break;
+                              default:
+                                break;
+                            }
+                            if (sort != partySort && partySort != null) {
+                              for (int i = 0; i < sortedParties.length; i++) {
+                                var party = parties[sortedParties[i].key]!;
+                                party.viewOrder = i+1;
+                              }
+                              await pokeData.updateAllPartyViewOrder();
+                            }
+                            pokeData.partiesSort = partySort;
+                            await pokeData.saveConfig();
+                            setState(() {});
+                          },
+                          sort
+                        );
+                      }
+                    ),
+                    icon: Icon(Icons.sort),
+                    tooltip: '並べ替え',
+                  ),
+                ],
               ),
             ),
-          )
-          : Container(),
-        ],
+          ],
+        ),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            Column(
+              children:
+                isEditMode ?
+                  [
+                    Expanded(flex: 10, child: lists),
+                    Expanded(child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                        TextButton(
+                          child: Row(children: [
+                            Icon(Icons.select_all),
+                            SizedBox(width: 10),
+                            Text('すべて選択')
+                          ]),
+                          onPressed: () => setState(() {
+                            selectAllMap(checkList!);
+                          }),
+                        ),
+                        SizedBox(width: 20),
+                        TextButton(
+                          onPressed: (getSelectedNumMap(checkList!) > 0) ?
+                            () {
+                              bool isContainedBattle = false;
+                              for (final e in checkList!.keys) {
+                                  if (checkList![e]!) {
+                                    if (sortedParties.where((element) => element.value.id == e).first.value.refs) {
+                                      isContainedBattle = true;
+                                      break;
+                                    }
+                                  }
+                                }
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return PartyDeleteCheckDialog(
+                                    isContainedBattle,
+                                    () async {
+                                      List<int> deleteIDs = [];
+                                      for (final e in checkList!.keys) {
+                                        if (checkList![e]!) {
+                                          deleteIDs.add(e);
+                                        }
+                                      }
+                                      await pokeData.deleteParty(deleteIDs);
+                                      setState(() {
+                                        checkList = {};
+                                        for (final e in sortedParties) {
+                                          checkList![e.key] = false;
+                                        }
+                                      });
+                                    },
+                                  );
+                                }
+                              );
+                            }
+                            :
+                            null,
+                          child: Row(children: [
+                            Icon(Icons.delete),
+                            SizedBox(width: 10),
+                            Text('削除')
+                          ]),
+                        ),
+                        SizedBox(width: 20,),
+                        TextButton(
+                          onPressed: (getSelectedNumMap(checkList!) > 0) ?
+                            () async {
+                              for (final e in checkList!.keys) {
+                                if (checkList![e]!) {
+                                  Party copiedParty = parties[e]!.copyWith();
+                                  await pokeData.addParty(copiedParty, true);
+                                }
+                              }
+                              setState(() {
+                                checkList = {};
+                                for (final e in sortedParties) {
+                                  checkList![e.key] = false;
+                                }
+                              });
+                            } : null,
+                          child: Row(children: [
+                            Icon(Icons.copy),
+                            SizedBox(width: 10),
+                            Text('コピー作成'),
+                          ]),
+                        ),
+                      ],
+                    ),),),
+                  ]
+                  :
+                  [
+                    Expanded(child: lists),
+                  ],
+            ),
+            !isEditMode ?
+            Container(
+              padding: const EdgeInsets.all(20),
+              child: Align(
+                alignment: Alignment.bottomRight,
+                child: FloatingActionButton(
+                  tooltip: 'パーティ登録',
+                  shape: CircleBorder(),
+                  onPressed: (){
+                    checkList = null;
+                    widget.onAdd(Party(), true);
+                  },
+                  child: Icon(Icons.add),
+                ),
+              ),
+            )
+            : Container(),
+          ],
+        ),
       ),
     );
   }

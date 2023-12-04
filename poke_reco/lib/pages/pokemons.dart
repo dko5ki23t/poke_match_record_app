@@ -61,7 +61,7 @@ class PokemonsPageState extends State<PokemonsPage> {
       filteredPokemons = filteredPokemons.where((element) => noFilter.contains(element.value.no));
     }
     filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
-    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id));
+    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id) || element.value.teraType.id == 0);
     if (moveFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) =>
         moveFilter.contains(element.value.move1.id) || moveFilter.contains(element.value.move2?.id) ||
@@ -73,6 +73,11 @@ class PokemonsPageState extends State<PokemonsPage> {
     }
     if (temperFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) => temperFilter.contains(element.value.temper.id));
+    }
+    // 通常の表示ではvalidでないポケモンも表示するが、
+    // パーティ編集での表示ではvalidでないポケモンは表示しない
+    if (widget.selectMode) {
+      filteredPokemons = filteredPokemons.where((element) => element.value.isValid);
     }
     var sort = pokeData.pokemonsSort;
     var sortedPokemons = filteredPokemons.toList();
