@@ -15,10 +15,12 @@ class PartiesPage extends StatefulWidget {
     Key? key,
     required this.onAdd,
     required this.selectMode,
+    required this.onView,
     required this.onSelect,
   }) : super(key: key);
   final void Function(Party party, bool isNew) onAdd;
   final void Function(Party selectedParty)? onSelect;
+  final void Function(List<Party> partyList, int index) onView;
   final bool selectMode;
 
   @override
@@ -132,15 +134,16 @@ class PartiesPageState extends State<PartiesPage> {
         lists = Scrollbar(
           child: ListView(
             children: [
-              for (final party in sortedParties)
+              for (int i = 0; i < sortedParties.length; i++)
                 PartyTile(
-                  party.value, theme,
+                  sortedParties[i].value, theme,
                   leading: Icon(Icons.group),
-                  onLongPress: !widget.selectMode ? () => widget.onAdd(party.value.copyWith(), false) : null,
+                  onLongPress: !widget.selectMode ? () => widget.onAdd(sortedParties[i].value.copyWith(), false) : null,
                   onTap: widget.selectMode ? () {
-                    selectedParty = party.value;
-                    widget.onSelect!(party.value);
-                  } : null,
+                    selectedParty = sortedParties[i].value;
+                    widget.onSelect!(sortedParties[i].value);
+                  } : 
+                  () => widget.onView([for (final e in sortedParties) e.value], i),
                 )
             ],
           ),

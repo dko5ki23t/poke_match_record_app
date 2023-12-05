@@ -9,6 +9,8 @@ import 'package:poke_reco/pages/register_pokemon.dart';
 import 'package:poke_reco/pages/pokemons.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/settings.dart';
+import 'package:poke_reco/pages/view_party.dart';
+import 'package:poke_reco/pages/view_pokemon.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -201,16 +203,58 @@ class PokemonTabNavigator extends StatefulWidget {
 }
 
 class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
-  void _push(BuildContext context, Pokemon myPokemon, bool isNew) {
+  void _pushRegister(BuildContext context, Pokemon myPokemon, bool isNew, {bool isChange = false,}) {
+    if (isChange) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            // 新規作成
+            return RegisterPokemonPage(
+              onFinish: () => _pop(context),
+              myPokemon: myPokemon,
+            );
+          },
+        ),
+      ).then((value) {setState(() {});});
+    }
+    else {
+      Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) {
+            // 新規作成
+            return RegisterPokemonPage(
+              onFinish: () => _pop(context),
+              myPokemon: myPokemon,
+            );
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final Offset begin = Offset(1.0, 0.0); // 右から左
+            const Offset end = Offset.zero;
+            final Animatable<Offset> tween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOut));
+            final Animation<Offset> offsetAnimation = animation.drive(tween);
+            return SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            );
+          },
+        ),
+      ).then((value) {setState(() {});});
+    }
+  }
+
+  void _pushView(BuildContext context, List<Pokemon> pokemonList, int index) {
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
-          // 新規作成
-          return RegisterPokemonPage(
-            onFinish: () => _pop(context),
-            myPokemon: myPokemon,
-            //isNew: isNew,
+          // ポケモン詳細表示
+          return ViewPokemonPage(
+            pokemonList: pokemonList,
+            listIndex: index,
+            onEdit: (pokemon) => _pushRegister(context, pokemon, false),
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -252,7 +296,8 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
                 );
               default:
                 return PokemonsPage(
-                  onAdd: (myPokemon, isNew) => _push(context, myPokemon, isNew),
+                  onAdd: (myPokemon, isNew) => _pushRegister(context, myPokemon, isNew),
+                  onView: (pokemonList, index) => _pushView(context, pokemonList, index),
                   onSelect: null,
                   selectMode: false,
                 );
@@ -284,7 +329,7 @@ class PartyTabNavigator extends StatefulWidget {
 }
 
 class _PartyTabNavigatorState extends State<PartyTabNavigator> {
-  void _push(BuildContext context, Party party, bool isNew) {
+  void _pushRegister(BuildContext context, Party party, bool isNew) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -303,6 +348,76 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
     ).then((value) {setState(() {});});
   }
 
+  void _pushView(BuildContext context, List<Party> partyList, int index) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          // パーティ詳細表示
+          return ViewPartyPage(
+            partyList: partyList,
+            listIndex: index,
+            onEdit: (party) => _pushRegister(context, party, false),
+            onViewPokemon: (pokemonList, listIndex) => _pushPokemonView(context, pokemonList, listIndex),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final Offset begin = Offset(1.0, 0.0); // 右から左
+          const Offset end = Offset.zero;
+          final Animatable<Offset> tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final Animation<Offset> offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pushPokemonView(BuildContext context, List<Pokemon> pokemonList, int index) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          // ポケモン詳細表示
+          return ViewPokemonPage(
+            pokemonList: pokemonList,
+            listIndex: index,
+            onEdit: (pokemon) => _pushPokemonRegister(context, pokemon, false),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final Offset begin = Offset(1.0, 0.0); // 右から左
+          const Offset end = Offset.zero;
+          final Animatable<Offset> tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final Animation<Offset> offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pushPokemonRegister(BuildContext context, Pokemon pokemon, bool isNew) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // ポケモン編集
+          return RegisterPokemonPage(
+            onFinish: () => _pop(context),
+            myPokemon: pokemon,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
   Future<Pokemon?> _pushSelectPokemonPage(BuildContext context, Party party, int selectingPokemonIdx) async {
     var result =
       await Navigator.push(
@@ -311,7 +426,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           builder: (context) {
             // ポケモン選択
             return PokemonsPage(
-              onAdd: (pokemon, isNew){},
+              onAdd: (pokemon, isNew) {},
+              onView: (pokemonList, index) {},
               onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
               selectMode: true,
               party: party,
@@ -358,13 +474,15 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 // ポケモン選択
                 return PokemonsPage(
                   onAdd: (pokemon, isNew){},
+                  onView:(pokemonList, index) {},
                   onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
                   selectMode: true,
                 );
               default:
                 return PartiesPage(
-                  onAdd: (party, isNew) => _push(context, party, isNew),
+                  onAdd: (party, isNew) => _pushRegister(context, party, isNew),
                   onSelect: null,
+                  onView: (partyList, index) => _pushView(context, partyList, index),
                   selectMode: false,
                 );
             }
@@ -439,6 +557,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
             return PartiesPage(
               onAdd: (party, isNew) {},
               onSelect: (party) => _popSelectPartyPage(context, party),
+              onView: (partyList, index) {},
               selectMode: true,
             );
           },

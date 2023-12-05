@@ -16,12 +16,14 @@ class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
     Key? key,
     required this.onAdd,
+    required this.onView,
     required this.selectMode,
     required this.onSelect,
     this.party,
     this.selectingPokemonIdx,
   }) : super(key: key);
   final void Function(Pokemon myPokemon, bool isNew) onAdd;
+  final void Function(List<Pokemon> pokemonList, int index) onView;
   final void Function(Pokemon selectedPokemon)? onSelect;
   final bool selectMode;
   final Party? party;
@@ -162,22 +164,24 @@ class PokemonsPageState extends State<PokemonsPage> {
         lists = Scrollbar(
           child: ListView(
             children: [
-              for (final e in sortedPokemons)
+              for (int i = 0; i < sortedPokemons.length; i++)
                 PokemonTile(
-                  e.value,
+                  sortedPokemons[i].value,
                   theme,
-                  enabled: !partyPokemonsNo.contains(e.value.no),
+                  enabled: !partyPokemonsNo.contains(sortedPokemons[i].value.no),
                   leading: appState.getPokeAPI ? Image.network(
-                    pokeData.pokeBase[e.value.no]!.imageUrl,
+                    pokeData.pokeBase[sortedPokemons[i].value.no]!.imageUrl,
                     height: theme.buttonTheme.height,
                     errorBuilder: (c, o, s) {
                       return const Icon(Icons.catching_pokemon);
                     },
                   ) : const Icon(Icons.catching_pokemon),
-                  onLongPress: !widget.selectMode ? () => widget.onAdd(e.value.copyWith(), false) : null,
+                  onLongPress: !widget.selectMode ? () => widget.onAdd(sortedPokemons[i].value.copyWith(), false) : null,
                   onTap: widget.selectMode ? () {
-                    selectedPokemon = e.value;
-                    widget.onSelect!(e.value);} : null,
+                    selectedPokemon = sortedPokemons[i].value;
+                    widget.onSelect!(sortedPokemons[i].value);
+                  } :
+                  () => widget.onView([for (final e in sortedPokemons) e.value], i),
                 ),
             ],
           ),

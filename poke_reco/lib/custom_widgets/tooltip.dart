@@ -5,45 +5,83 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 
 // 長押しで説明が表示されるテキスト
 
-class AbilityText extends Tooltip {
-  AbilityText(
-    Ability ability,
+class AbilityTooltip extends Tooltip {
+  AbilityTooltip(
     {
-      bool showHatena = false,
+      required Ability ability,
+      required Widget child,
+      TooltipTriggerMode? triggerMode,
     }
   ) : 
   super(
     message: PokeDB().abilityFlavors[ability.id] ?? '',
+    child: child,
+    showDuration: Duration(minutes: 1,),
+    triggerMode: triggerMode,
+  );
+}
+
+class AbilityText extends AbilityTooltip {
+  AbilityText(
+    Ability ability,
+    {
+      bool showHatena = false,
+      TooltipTriggerMode? triggerMode,
+    }
+  ) : 
+  super(
+    ability: ability,
     child: Text(
       showHatena && ability.id == 0 ? '？' :
       ability.displayName
     ),
-    showDuration: Duration(minutes: 1,),
+    triggerMode: triggerMode,
   );
 }
 
-class ItemText extends Tooltip {
+class ItemTooltip extends Tooltip {
+  ItemTooltip(
+    {
+      required Item? item,
+      required Widget child,
+      TooltipTriggerMode? triggerMode,
+    }
+  ) : 
+  super(
+    message: PokeDB().itemFlavors[item?.id] ?? '',
+    child: child,
+    showDuration: Duration(minutes: 1,),
+    triggerMode: triggerMode,
+  );
+}
+
+class ItemText extends ItemTooltip {
   ItemText(
     Item? item,
     {
       bool showHatena = false,
       bool showNone = false,
+      TooltipTriggerMode? triggerMode,
     }
   ) : 
   super(
-    message: PokeDB().itemFlavors[item?.id] ?? '',
+    item: item,
     child: Text(
       showNone && item == null ? 'なし' :
       showHatena && item?.id == 0 ? '？' :
       item == null ? '' : item.displayName
     ),
-    showDuration: Duration(minutes: 1,),
+    triggerMode: triggerMode,
   );
 }
 
-class MoveText extends Tooltip {
-  MoveText(
-    Move move,
+class MoveTooltip extends Tooltip {
+  MoveTooltip(
+    {
+      required Move move,
+      required Widget child,
+      TooltipTriggerMode? triggerMode,
+    }
   ) : 
   super(
     richMessage: TextSpan(children: [
@@ -57,7 +95,22 @@ class MoveText extends Tooltip {
       TextSpan(text: '　威力：${move.power}　命中：${move.accuracy}'),
       TextSpan(text: '\n${PokeDB().moveFlavors[move.id] ?? ''}'),
     ]),
-    child: Text(move.displayName),
+    child: child,
     showDuration: Duration(minutes: 1,),
+    triggerMode: triggerMode,
+  );
+}
+
+class MoveText extends MoveTooltip {
+  MoveText(
+    Move move,
+    {
+      TooltipTriggerMode? triggerMode,
+    }
+  ) :
+  super(
+    move: move,
+    child: Text(move.displayName),
+    triggerMode: triggerMode,
   );
 }
