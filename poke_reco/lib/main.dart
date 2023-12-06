@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/appopen_admanager.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/pages/battles.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/battle.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 enum TabItem {
   battles,
@@ -40,6 +42,8 @@ const Map<TabItem, IconData> tabIcon = {
 };
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  MobileAds.instance.initialize();
   runApp(const MyApp());
 }
 
@@ -74,7 +78,7 @@ class MyAppState extends ChangeNotifier {
   void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
-  bool getPokeAPI = false;     // インターネットに接続してポケモンの画像を取得するか
+  bool getPokeAPI = true;     // インターネットに接続してポケモンの画像を取得するか
   // 対戦登録画面のわざ選択前後入力で必要なステート(TODO:他に方法ない？)
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
@@ -104,6 +108,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  AppOpenAdManager appOpenAdManager = AppOpenAdManager();
+
   var _currentTab = TabItem.battles;
   Widget page = Container();
   final _navigatorKeys = {
@@ -119,6 +125,12 @@ class _MyHomePageState extends State<MyHomePage> {
         setState(() => _currentTab = tabItem);
       },);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    appOpenAdManager.loadAd();
   }
 
   @override
