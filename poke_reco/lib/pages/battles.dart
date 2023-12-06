@@ -15,8 +15,10 @@ class BattlesPage extends StatefulWidget {
   const BattlesPage({
     Key? key,
     required this.onAdd,
+    required this.onView,
   }) : super(key: key);
-  final void Function(Battle myPokemon, bool isNew) onAdd;
+  final void Function(Battle battle, bool isNew) onAdd;
+  final void Function(Battle battle) onView;
 
   @override
   BattlesPageState createState() => BattlesPageState();
@@ -133,6 +135,7 @@ class BattlesPageState extends State<BattlesPage> {
                   theme,
                   leading: Icon(Icons.list_alt),
                   onLongPress: () => widget.onAdd(battle.value.copyWith(), false),
+                  onTap: () => widget.onView(battle.value),
                 ),
             ],
           ),

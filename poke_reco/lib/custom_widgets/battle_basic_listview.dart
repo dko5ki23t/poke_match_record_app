@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/pokemon_sex_input_row.dart';
+import 'package:poke_reco/custom_widgets/pokemon_sex_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/battle.dart';
@@ -21,6 +21,7 @@ class BattleBasicListView extends ListView {
     TextEditingController ownPartyController,
     Future<Party?> Function() onSelectParty,
     {
+      required bool isInput,
       bool showNetworkImage = false,
     }
   ) : 
@@ -35,18 +36,28 @@ class BattleBasicListView extends ListView {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: TextFormField(
-                    controller: battleNameController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'バトル名'
+                  child: isInput ?
+                    TextFormField(
+                      controller: battleNameController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'バトル名'
+                      ),
+                      onChanged: (value) {
+                        battle.name = value;
+                        setState();
+                      },
+                      maxLength: 10,
+                    ) :
+                    TextField(
+                      controller: battleNameController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'バトル名'
+                      ),
+                      maxLength: 10,
+                      readOnly: true,
                     ),
-                    onChanged: (value) {
-                      battle.name = value;
-                      setState();
-                    },
-                    maxLength: 10,
-                  ),
                 ),
               ],
             ),
@@ -55,55 +66,73 @@ class BattleBasicListView extends ListView {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: TextFormField(
-                    controller: dateController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: '対戦日時'
+                  child: isInput ?
+                    TextFormField(
+                      controller: dateController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '対戦日時'
+                      ),
+                      onTap: () {
+                        // キーボードが出ないようにする
+                        FocusScope.of(context).requestFocus(FocusNode());
+                        DatePicker.showDatePicker(context,
+                          showTitleActions: true,
+                          minTime: DateTime(2000, 1, 1),
+                          maxTime: DateTime(2200, 12, 31),
+                          onConfirm: (date) {
+                            battle.date = date;
+                            DatePicker.showTimePicker(context,
+                              showTitleActions: true,
+                              showSecondsColumn: false,
+                              onConfirm: (time) {
+                                battle.time = time;
+                                dateController.text = battle.formattedDateTime;
+                              },
+                              currentTime: battle.datetime,
+                              locale: LocaleType.jp,
+                            );
+                          },
+                          currentTime: battle.datetime,
+                          locale: LocaleType.jp
+                        );
+                      },
+                    ) :
+                    TextField(
+                      controller: dateController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: '対戦日時'
+                      ),
+                      readOnly: true,
                     ),
-                    onTap: () {
-                      // キーボードが出ないようにする
-                      FocusScope.of(context).requestFocus(FocusNode());
-                      DatePicker.showDatePicker(context,
-                        showTitleActions: true,
-                        minTime: DateTime(2000, 1, 1),
-                        maxTime: DateTime(2200, 12, 31),
-                        onConfirm: (date) {
-                          battle.date = date;
-                          DatePicker.showTimePicker(context,
-                            showTitleActions: true,
-                            showSecondsColumn: false,
-                            onConfirm: (time) {
-                              battle.time = time;
-                              dateController.text = battle.formattedDateTime;
-                            },
-                            currentTime: battle.datetime,
-                            locale: LocaleType.jp,
-                          );
-                        },
-                        currentTime: battle.datetime,
-                        locale: LocaleType.jp
-                      );
-                    },
-                  ),
                 ),
                 SizedBox(width: 10),
                 Flexible(
-                  child: DropdownButtonFormField(
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'バトルの種類'
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (var type in BattleType.values)
-                        DropdownMenuItem(
-                          value: type.id,
-                          child: Text(type.displayName),
+                  child: isInput ?
+                    DropdownButtonFormField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'バトルの種類'
                       ),
-                    ],
-                    value: battle.type.id,
-                    onChanged: (value) {battle.type = BattleType.createFromId(value); setState();},
-                  ),
+                      items: <DropdownMenuItem>[
+                        for (var type in BattleType.values)
+                          DropdownMenuItem(
+                            value: type.id,
+                            child: Text(type.displayName),
+                        ),
+                      ],
+                      value: battle.type.id,
+                      onChanged: (value) {battle.type = BattleType.createFromId(value); setState();},
+                    ) :
+                    TextField(
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'バトルの種類'
+                      ),
+                      controller: TextEditingController(text: battle.type.displayName),
+                      readOnly: true,
+                    ),
                 ),
               ],
             ),
@@ -112,51 +141,60 @@ class BattleBasicListView extends ListView {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: TextFormField(
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'あなたのパーティ',
-                      suffixIcon: Icon(Icons.arrow_drop_down),
-                    ),
-                    controller: ownPartyController,
-                    onTap: () async {
-                      var party = await onSelectParty();
-                      if (!context.mounted) return;     // クラッシュ回避用 https://dart.dev/tools/linter-rules/use_build_context_synchronously
-                      if (party != null) {
-                        if (battle.getParty(PlayerType(PlayerType.me)).id != party.id && battle.turns.isNotEmpty) {
-                          showDialog(
-                            context: context,
-                            builder: (_) {
-                              return DeleteEditingCheckDialog(
-                                'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
-                                () {
-                                  // 各ポケモンのレベルを50にするためコピー作成
-                                  battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
-                                  for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                                    battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
-                                  }
-                                  battle.turns.clear();
-                                  setState();
-                                },
-                              );
-                            }
-                          );
-                        }
-                        else {
-                          // 各ポケモンのレベルを50にするためコピー作成
-                          battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
-                          for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                            battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                  child: isInput ?
+                    TextFormField(
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'あなたのパーティ',
+                        suffixIcon: Icon(Icons.arrow_drop_down),
+                      ),
+                      controller: ownPartyController,
+                      onTap: () async {
+                        var party = await onSelectParty();
+                        if (!context.mounted) return;     // クラッシュ回避用 https://dart.dev/tools/linter-rules/use_build_context_synchronously
+                        if (party != null) {
+                          if (battle.getParty(PlayerType(PlayerType.me)).id != party.id && battle.turns.isNotEmpty) {
+                            showDialog(
+                              context: context,
+                              builder: (_) {
+                                return DeleteEditingCheckDialog(
+                                  'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
+                                  () {
+                                    // 各ポケモンのレベルを50にするためコピー作成
+                                    battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
+                                    for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                                    }
+                                    battle.turns.clear();
+                                    setState();
+                                  },
+                                );
+                              }
+                            );
                           }
-                          setState();
+                          else {
+                            // 各ポケモンのレベルを50にするためコピー作成
+                            battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
+                            for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
+                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
+                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
+                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                            }
+                            setState();
+                          }
                         }
                       }
-                    }
-                  ),
+                    ) :
+                    TextField(
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'あなたのパーティ',
+                      ),
+                      controller: ownPartyController,
+                      readOnly: true,
+                    ),
                 ),
               ],
             ),
@@ -165,24 +203,36 @@ class BattleBasicListView extends ListView {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(
-                  child: TextFormField(
-                    controller: opponentNameController,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: 'あいての名前'
+                  child: isInput ?
+                    TextFormField(
+                      controller: opponentNameController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'あいての名前'
+                      ),
+                      onChanged: (value) {
+                        battle.opponentName = value;
+                        setState();
+                      },
+                      maxLength: 10,
+                    ) :
+                    TextField(
+                      controller: opponentNameController,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: 'あいての名前'
+                      ),
+                      maxLength: 10,
+                      readOnly: true,
                     ),
-                    onChanged: (value) {
-                      battle.opponentName = value;
-                      setState();
-                    },
-                    maxLength: 10,
-                  ),
                 ),
               ],
             ),
             SizedBox(height: 10),
+            Text('あいてのパーティ'),
+            SizedBox(height: 10),
             for (int i = 0; i < 6; i++)
-              PokemonSexInputRow(
+              PokemonSexRow(
                 theme,
                 'ポケモン${i+1}',
                 [for (int j = 0; j < 6; j++)
@@ -293,6 +343,7 @@ class BattleBasicListView extends ListView {
                   : null,
                 enabledPokemon: i != 0 ? battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1] != null && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1]!.no >= pokemonMinNo : true,
                 showNetworkImage: showNetworkImage,
+                isInput: isInput,
               ),
               SizedBox(height: 10),
             SizedBox(height: 10),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/battle_timing_input_panel.dart';
+import 'package:poke_reco/custom_widgets/battle_timing_panel.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -27,6 +27,7 @@ class BattleTurnListView extends ListView {
     int focusPhaseIdx,
     void Function(int) onFocus,
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
+    {required bool isInput,}
   ) : 
   super(
     controller: controller,
@@ -38,7 +39,7 @@ class BattleTurnListView extends ListView {
           children: [
             SizedBox(height: 10,),
             for (int i = 0; i < sameTimingList.length; i++)
-            BattleTimingInputPanel(
+            BattleTimingPanel(
               setState, theme, battle, battle.turns[turnNum-1],
               appState, focusPhaseIdx, onFocus,
               sameTimingList[i],
@@ -55,7 +56,8 @@ class BattleTurnListView extends ListView {
                 i > 0 ? sameTimingList[i-1].first.turnEffect.playerType :   // わざ使用後の場合、そのわざの発動主を渡す
                 PlayerType(PlayerType.none),
               i > 0 ? sameTimingList[i-1].first.turnEffect.move ?? TurnMove() : TurnMove(),
-              i+1 < sameTimingList.length ? sameTimingList[i+1].first : null
+              i+1 < sameTimingList.length ? sameTimingList[i+1].first : null,
+              isInput: isInput,
             )
           ],
         ),

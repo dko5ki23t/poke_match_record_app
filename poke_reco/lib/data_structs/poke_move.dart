@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/main.dart';
@@ -3220,7 +3219,7 @@ class TurnMove {
     return ret;
   }
 
-  Widget extraInputWidget1(
+  Widget extraWidget1(
     void Function() onFocus,
     void Function() onFocusTextUpdate,
     Party ownParty,
@@ -3237,6 +3236,7 @@ class TurnMove {
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     ThemeData theme,
+    {required bool isInput,}
   )
   {
     final pokeData = PokeDB();
@@ -3283,7 +3283,7 @@ class TurnMove {
         children: [
           Expanded(
             flex: 5,
-            child: DropdownButtonFormField(
+            child: _myDropdownButtonFormField(
               isExpanded: true,
               decoration: const InputDecoration(
                 border: UnderlineInputBorder(),
@@ -3302,12 +3302,15 @@ class TurnMove {
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
+              onFocus: onFocus,
+              isInput: isInput,
+              textValue: ActionFailure(actionFailure.id).displayName,
             ),
           ),
           SizedBox(width: 10,),
           Expanded(
             flex: 5,
-            child: TypeAheadField(
+            child: _myTypeAheadField(
               textFieldConfiguration: TextFieldConfiguration(
                 controller: moveController,
                 decoration: const InputDecoration(
@@ -3343,6 +3346,8 @@ class TurnMove {
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
+              onFocus: onFocus,
+              isInput: isInput,
             ),
           ),
         ],
@@ -3356,34 +3361,40 @@ class TurnMove {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextButton(
-                onPressed: playerType.id != PlayerType.none ?
-                () {
-                  type = TurnMoveType(TurnMoveType.move);
-                  appState.editingPhase[phaseIdx] = true;
-                  onFocus();
-                } : null,
+                onPressed: isInput ?
+                  playerType.id != PlayerType.none ?
+                  () {
+                    type = TurnMoveType(TurnMoveType.move);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  } : null :
+                  () {},
                 style: type.id == TurnMoveType.move ? pressedStyle : null,
                 child: Text('わざ'),
               ),
               SizedBox(width: 10),
               TextButton(
-                onPressed: playerType.id != PlayerType.none ?
-                () {
-                  type = TurnMoveType(TurnMoveType.change);
-                  appState.editingPhase[phaseIdx] = true;
-                  onFocus();
-                } : null,
+                onPressed: isInput ?
+                  playerType.id != PlayerType.none ?
+                  () {
+                    type = TurnMoveType(TurnMoveType.change);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  } : null :
+                  () {},
                 style: type.id == TurnMoveType.change ? pressedStyle : null,
                 child: Text('ポケモン交代'),
               ),
               SizedBox(width: 10,),
               TextButton(
-                onPressed: playerType.id != PlayerType.none ?
-                () {
-                  type = TurnMoveType(TurnMoveType.surrender);
-                  appState.editingPhase[phaseIdx] = true;
-                  onFocus();
-                } : null,
+                onPressed: isInput ?
+                  playerType.id != PlayerType.none ?
+                  () {
+                    type = TurnMoveType(TurnMoveType.surrender);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  } : null :
+                  () {},
                 style: type.id == TurnMoveType.surrender ? pressedStyle : null,
                 child: Text('こうさん'),
               ),
@@ -3394,7 +3405,7 @@ class TurnMove {
           Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: moveController,
                     decoration: const InputDecoration(
@@ -3445,6 +3456,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -3453,7 +3466,7 @@ class TurnMove {
           Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3491,6 +3504,11 @@ class TurnMove {
                     appState.needAdjustPhases = phaseIdx+1;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
                 ),
               ),
             ],
@@ -3502,7 +3520,7 @@ class TurnMove {
     }
   }
 
-  Widget extraInputWidget2(
+  Widget extraWidget2(
     void Function() onFocus,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
@@ -3520,6 +3538,7 @@ class TurnMove {
     int phaseIdx,
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
+    {required bool isInput,}
   )
   {
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
@@ -3539,7 +3558,7 @@ class TurnMove {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
                     decoration: const InputDecoration(
@@ -3571,6 +3590,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -3582,7 +3603,7 @@ class TurnMove {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
                     decoration: const InputDecoration(
@@ -3627,6 +3648,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -3675,7 +3698,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3697,6 +3720,10 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
             ],
@@ -3723,7 +3750,7 @@ class TurnMove {
         case 441:   // 最大HP1/4だけ回復
         case 461:   // 最大HP1/4回復、状態異常を治す
         case 485:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
-          effectInputRow2 = DamageInputIndicateRow(
+          effectInputRow2 = DamageIndicateRow(
             playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
             playerType.id == PlayerType.me,
@@ -3738,7 +3765,8 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
-            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount]
+            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+            isInput,
           );
           break;
         case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
@@ -3746,7 +3774,7 @@ class TurnMove {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -3786,6 +3814,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -3808,7 +3838,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3830,6 +3860,10 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    '自身は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
             ],
@@ -3839,7 +3873,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3861,6 +3895,10 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == replacedMove.effect.id ?
+                    '疲れ果ててこんらんした' : 'なし',
                 ),
               ),
             ],
@@ -3872,7 +3910,7 @@ class TurnMove {
             children: [
               Expanded(
                 flex: 5,
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3909,6 +3947,11 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: playerType.id == PlayerType.opponent ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType.opposite)!-1]!.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)!-1]!.name,
                 ),
               ),
             ],
@@ -3919,11 +3962,13 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: TypeDropdownButton(
-                  '変更先タイプ',
-                  (val) {extraArg1[continuousCount] = val;},
-                  extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
-                ),
+                child: _myTypeDropdownButton(
+                    '変更先タイプ',
+                    (val) {extraArg1[continuousCount] = val;},
+                    onFocus,
+                    extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
+                    isInput: isInput,
+                  ),
               ),
             ],
           );
@@ -3932,7 +3977,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -3962,6 +4007,11 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == Ailment.burn ? '相手はやけどをおった' :
+                    extraArg1[continuousCount] == Ailment.freeze ? '相手はこおってしまった' :
+                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' : 'なし',
                 ),
               ),
             ],
@@ -3969,7 +4019,7 @@ class TurnMove {
           break;
         case 46:    // わざを外すと使用者に、使用者の最大HP1/2のダメージ
           if (moveHits[continuousCount].id == MoveHit.notHit || moveHits[continuousCount].id == MoveHit.fail) {
-            effectInputRow2 = DamageInputIndicateRow(
+            effectInputRow2 = DamageIndicateRow(
               playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
               hpController2,
               playerType.id == PlayerType.me,
@@ -3985,6 +4035,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+              isInput,
             );
           }
           break;
@@ -3992,7 +4043,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4014,11 +4065,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    'もちものをぬすんだ' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4061,6 +4116,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4070,7 +4127,7 @@ class TurnMove {
           if ((playerType.id == PlayerType.me && ownPokemonState.isTypeContain(8)) ||
               (playerType.id == PlayerType.opponent && opponentPokemonState.isTypeContain(8))
           ) {
-            effectInputRow2 = DamageInputIndicateRow(
+            effectInputRow2 = DamageIndicateRow(
               playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
               hpController2,
               playerType.id == PlayerType.me,
@@ -4086,6 +4143,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+              isInput,
             );
           }
           break;
@@ -4105,7 +4163,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4127,6 +4185,10 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == 1 ?
+                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
             ],
@@ -4141,7 +4203,7 @@ class TurnMove {
             children: [
               Expanded(
                 flex: 5,
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4178,6 +4240,11 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
                 ),
               ),
             ],
@@ -4187,10 +4254,12 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: TypeDropdownButton(
+                child: _myTypeDropdownButton(
                   'わざのタイプ',
                   (val) {extraArg1[continuousCount] = val;},
+                  onFocus,
                   extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4200,7 +4269,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4241,6 +4310,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4250,7 +4321,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4288,6 +4359,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4300,7 +4373,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4325,6 +4398,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4334,7 +4409,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4356,11 +4431,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    'もちものをはたきおとした' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4403,6 +4482,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4412,7 +4493,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4425,18 +4506,21 @@ class TurnMove {
                     List<Ability> matches = [];
                     if (opponentPokemonState.currentAbility.id != 0) {
                       matches.add(opponentPokemonState.currentAbility);
-                    }
-                    else {
+                    } else {
                       matches.addAll(opponentPokemonState.possibleAbilities);
                     }
-                    matches.retainWhere((s){
-                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
                     });
                     return matches;
                   },
                   itemBuilder: (context, suggestion) {
                     return ListTile(
-                      title: Text(suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   },
                   onSuggestionSelected: (suggestion) {
@@ -4445,6 +4529,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4454,7 +4540,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4476,11 +4562,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    '相手のきのみを消費した' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4523,12 +4613,14 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
           );
           // TODO controllerの数足りてない
-          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
+          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
@@ -4542,13 +4634,14 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
+            isInput,
           );
           break;
         case 227:     // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4586,6 +4679,14 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == 0 ? '自身はこうげきがぐーんと上がった' :
+                    extraArg1[continuousCount] == 1 ? '自身はぼうぎょがぐーんと上がった' :
+                    extraArg1[continuousCount] == 2 ? '自身はとくこうがぐーんと上がった' :
+                    extraArg1[continuousCount] == 3 ? '自身はとくぼうがぐーんと上がった' :
+                    extraArg1[continuousCount] == 5 ? '自身はめいちゅうがぐーんと上がった' :
+                    '自身はかいひがぐーんと上がった',
                 ),
               ),
             ],
@@ -4595,7 +4696,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4617,11 +4718,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    'もちものを投げつけた' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4664,12 +4769,14 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
           );
           // TODO controllerの数足りてない
-          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
+          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
@@ -4683,6 +4790,7 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
+            isInput,
           );
           break;
         case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
@@ -4692,7 +4800,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4714,11 +4822,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == 1 ?
+                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
             ],
           );
-          effectInputRow2 = DamageInputIndicateRow(
+          effectInputRow2 = DamageIndicateRow(
             playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
             playerType.id == PlayerType.me,
@@ -4733,7 +4845,8 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
-            extraArg2[continuousCount]
+            extraArg2[continuousCount],
+            isInput,
           );
           break;
         case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
@@ -4743,7 +4856,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4765,11 +4878,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == 1 ?
+                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4791,6 +4908,10 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg2[continuousCount] == 1 ?
+                    '相手は${moveEffectText2[replacedMove.effect.id]!}' : 'なし',
                 ),
               ),
             ],
@@ -4800,7 +4921,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Flexible(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4838,6 +4959,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4847,7 +4970,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -4869,11 +4992,15 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    'もちものをやきつくした' : 'なし',
                 ),
               ),
               SizedBox(width: 10,),
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4919,6 +5046,8 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -4928,7 +5057,7 @@ class TurnMove {
           effectInputRow = Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
                     decoration: const InputDecoration(
@@ -4973,12 +5102,14 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
           );
           // TODO controllerの数足りてない
-          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraInputWidget(
+          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
             onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
@@ -4992,13 +5123,14 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
+            isInput,
           );
           break;
         case 464:     // どく・まひ・ねむりのいずれかにする(確率)
           effectInputRow = Row(
             children: [
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -5028,6 +5160,12 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1[continuousCount] == Ailment.poison ? '相手はどくにかかった' :
+                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' :
+                    extraArg1[continuousCount] == Ailment.sleep ? '相手はねむってしまった' :
+                    'なし',
                 ),
               ),
             ],
@@ -5038,7 +5176,7 @@ class TurnMove {
             children: [
               Expanded(
                 flex: 5,
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -5075,11 +5213,16 @@ class TurnMove {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
                 ),
               ),
             ],
           );
-          effectInputRow2 = DamageInputIndicateRow(
+          effectInputRow2 = DamageIndicateRow(
             playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
             playerType.id == PlayerType.me,
@@ -5095,6 +5238,7 @@ class TurnMove {
               onFocus();
             },
             playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+            isInput,
           );
           break;
         default:
@@ -5108,7 +5252,7 @@ class TurnMove {
               return Row(
                 children: [
                   Expanded(
-                    child: DropdownButtonFormField(
+                    child: _myDropdownButtonFormField(
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: UnderlineInputBorder(),
@@ -5145,6 +5289,11 @@ class TurnMove {
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
+                      onFocus: onFocus,
+                      isInput: isInput,
+                      textValue: playerType.id == PlayerType.me ?
+                        ownParty.pokemons[extraArg1[continuousCount]-1]!.name :
+                        opponentParty.pokemons[extraArg1[continuousCount]-1]!.name,
                     ),
                   ),
                 ],
@@ -5155,7 +5304,7 @@ class TurnMove {
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField(
+                        child: _myDropdownButtonFormField(
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -5181,6 +5330,11 @@ class TurnMove {
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '成功' :
+                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
+                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
                         ),
                       ),
                     ],
@@ -5203,7 +5357,7 @@ class TurnMove {
                   Row(
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField(
+                        child: _myDropdownButtonFormField(
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -5217,6 +5371,9 @@ class TurnMove {
                           ],
                           value: false,
                           onChanged: null,
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: 'うまく決まらなかった！',
                         ),
                       ),
                     ],
@@ -5233,7 +5390,7 @@ class TurnMove {
                     children: [
                       Expanded(
                         flex: 5,
-                        child: DropdownButtonFormField(
+                        child: _myDropdownButtonFormField(
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -5263,12 +5420,18 @@ class TurnMove {
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '命中' :
+                            moveHits[continuousCount].id == MoveHit.critical ? '急所に命中' :
+                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
+                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
                         ),
                       ),
                       SizedBox(width: 10,),
                       Expanded(
                         flex: 5,
-                        child: DropdownButtonFormField<int>(
+                        child: _myDropdownButtonFormField<int>(
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -5298,6 +5461,12 @@ class TurnMove {
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           } : null,
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? '（テキストなし）' :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? 'ばつぐんだ' :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? 'いまひとつのようだ' :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? 'ないようだ' : '',
                         ),
                       ),
                     ],
@@ -5306,7 +5475,7 @@ class TurnMove {
                   effectInputRow,
                   SizedBox(height: 10,),
                   yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound ?
-                  DamageInputIndicateRow(
+                  DamageIndicateRow(
                     playerType.id == PlayerType.me ? opponentPokemon : ownPokemon,
                     hpController,
                     playerType.id != PlayerType.me,
@@ -5322,12 +5491,13 @@ class TurnMove {
                       onFocus();
                     },
                     playerType.id == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
+                    isInput,
                   ) :
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Expanded(
-                        child: DropdownButtonFormField(
+                        child: _myDropdownButtonFormField(
                           isExpanded: true,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -5349,6 +5519,9 @@ class TurnMove {
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: realDamage[continuousCount] == 0 ? 'みがわりはのこった' : 'みがわりは消えてしまった',
                         ),
                       ),
                     ],
@@ -5362,6 +5535,158 @@ class TurnMove {
     }
 
     return Container();
+  }
+
+    Widget _myTypeAheadField<T>({
+    required SuggestionsCallback<T> suggestionsCallback,
+    required ItemBuilder<T> itemBuilder,
+    required SuggestionSelectionCallback<T> onSuggestionSelected,
+    TextFieldConfiguration textFieldConfiguration = const TextFieldConfiguration(),
+    SuggestionsBoxDecoration suggestionsBoxDecoration = const SuggestionsBoxDecoration(),
+    Duration debounceDuration = const Duration(milliseconds: 300),
+    SuggestionsBoxController? suggestionsBoxController,
+    ScrollController? scrollController,
+    WidgetBuilder? loadingBuilder,
+    WidgetBuilder? noItemsFoundBuilder,
+    ErrorBuilder? errorBuilder,
+    AnimationTransitionBuilder? transitionBuilder,
+    double animationStart = 0.25,
+    Duration animationDuration = const Duration(milliseconds: 500),
+    bool getImmediateSuggestions = false,
+    double suggestionsBoxVerticalOffset = 5.0,
+    AxisDirection direction = AxisDirection.down,
+    bool hideOnLoading = false,
+    bool hideOnEmpty = false,
+    bool hideOnError = false,
+    bool hideSuggestionsOnKeyboardHide = true,
+    bool keepSuggestionsOnLoading = true,
+    bool keepSuggestionsOnSuggestionSelected = false,
+    bool autoFlipDirection = false,
+    bool autoFlipListDirection = true,
+    bool hideKeyboard = false,
+    int minCharsForSuggestions = 0,
+    void Function(bool)? onSuggestionsBoxToggle,
+    bool hideKeyboardOnDrag = false,
+    Key? key,
+    required void Function() onFocus,
+    required bool isInput,
+  })
+  {
+    if (isInput) {
+      return TypeAheadField(
+        suggestionsCallback: suggestionsCallback, itemBuilder: itemBuilder, onSuggestionSelected: onSuggestionSelected,
+        textFieldConfiguration: textFieldConfiguration, suggestionsBoxDecoration: suggestionsBoxDecoration,
+        debounceDuration: debounceDuration, suggestionsBoxController: suggestionsBoxController, scrollController: scrollController,
+        loadingBuilder: loadingBuilder, noItemsFoundBuilder: noItemsFoundBuilder, errorBuilder: errorBuilder,
+        transitionBuilder: transitionBuilder, animationStart: animationStart, animationDuration: animationDuration,
+        getImmediateSuggestions: getImmediateSuggestions, suggestionsBoxVerticalOffset: suggestionsBoxVerticalOffset,
+        direction: direction, hideOnLoading: hideOnLoading, hideOnEmpty: hideOnEmpty, hideOnError: hideOnError,
+        hideSuggestionsOnKeyboardHide: hideSuggestionsOnKeyboardHide, keepSuggestionsOnLoading: keepSuggestionsOnLoading,
+        keepSuggestionsOnSuggestionSelected: keepSuggestionsOnSuggestionSelected, autoFlipDirection: autoFlipDirection,
+        autoFlipListDirection: autoFlipListDirection, hideKeyboard: hideKeyboard, minCharsForSuggestions: minCharsForSuggestions,
+        onSuggestionsBoxToggle: onSuggestionsBoxToggle, hideKeyboardOnDrag: hideKeyboardOnDrag, key: key,
+      );
+    }
+    else {
+      return TextField(
+        controller: textFieldConfiguration.controller,
+        decoration: textFieldConfiguration.decoration,
+        readOnly: true,
+        onTap: onFocus,
+      );
+    }
+  }
+
+  Widget _myDropdownButtonFormField<T>({
+    Key? key,
+    required List<DropdownMenuItem<T>>? items,
+    DropdownButtonBuilder? selectedItemBuilder,
+    T? value,
+    Widget? hint,
+    Widget? disabledHint,
+    required ValueChanged<T?>? onChanged,
+    VoidCallback? onTap,
+    int elevation = 8,
+    TextStyle? style,
+    Widget? icon,
+    Color? iconDisabledColor,
+    Color? iconEnabledColor,
+    double iconSize = 24.0,
+    bool isDense = true,
+    bool isExpanded = false,
+    double? itemHeight,
+    Color? focusColor,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Color? dropdownColor,
+    InputDecoration? decoration,
+    void Function(T?)? onSaved,
+    String? Function(T?)? validator,
+    AutovalidateMode? autovalidateMode,
+    double? menuMaxHeight,
+    bool? enableFeedback,
+    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    required void Function() onFocus,
+    required bool isInput,
+    required String? textValue,   // isInput==falseのとき、出力する文字列として必須
+  })
+  {
+    if (isInput) {
+      return DropdownButtonFormField(
+        key: key, items: items, selectedItemBuilder: selectedItemBuilder, value: value,
+        hint: hint, disabledHint: disabledHint, onChanged: onChanged, onTap: onTap,
+        elevation: elevation, style: style, icon: icon, iconDisabledColor: iconDisabledColor,
+        iconEnabledColor: iconEnabledColor, iconSize: iconSize, isDense: isDense,
+        isExpanded: isExpanded, itemHeight: itemHeight, focusColor: focusColor,
+        focusNode: focusNode, autofocus: autofocus, dropdownColor: dropdownColor,
+        decoration: decoration, onSaved: onSaved, validator: validator, autovalidateMode: autovalidateMode,
+        menuMaxHeight: menuMaxHeight, enableFeedback: enableFeedback, alignment: alignment,
+        borderRadius: borderRadius, padding: padding,
+      );
+    }
+    else {
+      return TextField(
+        decoration: decoration,
+        controller: TextEditingController(
+          text: textValue,
+        ),
+        readOnly: true,
+        onTap: onFocus,
+      );
+    }
+  }
+
+  Widget _myTypeDropdownButton(
+    String? labelText,
+    void Function(dynamic)? onChanged,
+    void Function() onFocus,
+    int? value,
+    {
+      required bool isInput,
+      bool isError = false,
+    }
+  )
+  {
+    if (isInput) {
+      return TypeDropdownButton(
+        labelText, onChanged, value,
+        isError: isError,
+      );
+    }
+    else {
+      return TextField(
+        controller: TextEditingController(text: PokeType.createFromId(value ?? 0).displayName),
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: labelText,
+          prefixIcon: PokeType.createFromId(value ?? 0).displayIcon,
+        ),
+        onTap: onFocus,
+        readOnly: true,
+      );
+    } 
   }
 
   // 行動が確定するなら自動で設定する。自動で設定した場合はtrueを返す

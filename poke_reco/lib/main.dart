@@ -9,6 +9,7 @@ import 'package:poke_reco/pages/register_pokemon.dart';
 import 'package:poke_reco/pages/pokemons.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/settings.dart';
+import 'package:poke_reco/pages/view_battle.dart';
 import 'package:poke_reco/pages/view_party.dart';
 import 'package:poke_reco/pages/view_pokemon.dart';
 import 'package:provider/provider.dart';
@@ -512,7 +513,15 @@ class BattleTabNavigator extends StatefulWidget {
 }
 
 class _BattleTabNavigatorState extends State<BattleTabNavigator> {
-  void _push(BuildContext context, Battle battle, bool isNew) {
+  void _push(
+    BuildContext context,
+    Battle battle,
+    bool isNew,
+    {
+      RegisterBattlePageType pageType = RegisterBattlePageType.basePage,
+      int turnNum = 1,
+    }
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -524,6 +533,35 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
             battle: battle,
             isNew: isNew,
             onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
+            firstPageType: pageType,
+            firstTurnNum: turnNum,
+          );
+        },
+      ),
+    ).then((value) {setState(() {});});
+  }
+
+  void _pushBattleView(BuildContext context, Battle battle,) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          // 対戦詳細表示
+          return ViewBattlePage(
+            battle: battle,
+            onEdit: (b, pageType, turnNum) =>
+              _push(context, b, false, pageType: pageType, turnNum: turnNum),
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final Offset begin = Offset(1.0, 0.0); // 右から左
+          const Offset end = Offset.zero;
+          final Animatable<Offset> tween = Tween(begin: begin, end: end)
+              .chain(CurveTween(curve: Curves.easeInOut));
+          final Animation<Offset> offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: child,
           );
         },
       ),
@@ -616,10 +654,13 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
                   battle: Battle(),
                   isNew: true,
                   onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
+                  firstPageType: RegisterBattlePageType.basePage,
+                  firstTurnNum: 1,
                 );
               default:
                 return BattlesPage(
-                  onAdd: (battle, isNew) => _push(context, battle, isNew)
+                  onAdd: (battle, isNew) => _push(context, battle, isNew),
+                  onView: (battle) => _pushBattleView(context, battle),
                 );
             }
           },

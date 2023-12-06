@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/pokemon_mini_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/register_battle.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 
 class BattleFirstPokemonListView extends ListView {
@@ -11,7 +12,10 @@ class BattleFirstPokemonListView extends ListView {
     ThemeData theme,
     CheckedPokemons checkedPokemons,
     {
+      required bool isInput,
       bool showNetworkImage = false,
+      List<PokemonState>? ownPokemonStates,
+      int? opponentPokemonIndex,
     }
   ) : 
   super(
@@ -21,6 +25,7 @@ class BattleFirstPokemonListView extends ListView {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            isInput ?
             Row(
               children: [
                 Expanded(
@@ -30,7 +35,7 @@ class BattleFirstPokemonListView extends ListView {
                   ),
                 ),
               ],
-            ),
+            ) : Container(),
             Row(
               children: [
                 Expanded(
@@ -59,8 +64,9 @@ class BattleFirstPokemonListView extends ListView {
                     Badge(
                       smallSize: 0,
                       offset: Offset(-10, 0),
-                      //textStyle: TextStyle(fontSize: 20),
-                      label: checkedPokemons.own.indexWhere((e) => e == i+1) >= 0 ? Text('${checkedPokemons.own.indexWhere((e) => e == i+1)+1}') : null,
+                      label: isInput ?
+                        checkedPokemons.own.indexWhere((e) => e == i+1) >= 0 ? Text('${checkedPokemons.own.indexWhere((e) => e == i+1)+1}') : null :
+                        ownPokemonStates![i].battlingNum != 0 ? Text('${ownPokemonStates[i].battlingNum}') : null,
                       child: PokemonMiniTile(
                         battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
                         theme,
@@ -72,7 +78,7 @@ class BattleFirstPokemonListView extends ListView {
                               return const Icon(Icons.catching_pokemon);
                             },
                           ) : const Icon(Icons.catching_pokemon),
-                        onTap: () {
+                        onTap: isInput ? () {
                           if (checkedPokemons.own.contains(i+1)) {
                             checkedPokemons.own.removeWhere((e) => e == i+1);
                           }
@@ -80,8 +86,8 @@ class BattleFirstPokemonListView extends ListView {
                             checkedPokemons.own.add(i+1);
                           }
                           setState();
-                        },
-                        selected: checkedPokemons.own.contains(i+1),
+                        } : null,
+                        selected: isInput ? checkedPokemons.own.contains(i+1) : ownPokemonStates![i].battlingNum != 0,
                         selectedTileColor: Colors.black26,
                         showLevel: false,
                         showSex: false,
@@ -103,8 +109,8 @@ class BattleFirstPokemonListView extends ListView {
                             return const Icon(Icons.catching_pokemon);
                           },
                         ) : const Icon(Icons.catching_pokemon),
-                      onTap: () {checkedPokemons.opponent = i+1; setState();},
-                      selected: checkedPokemons.opponent == i+1,
+                      onTap: isInput ? () {checkedPokemons.opponent = i+1; setState();} : null,
+                      selected: isInput ? checkedPokemons.opponent == i+1 : opponentPokemonIndex == i+1,
                       selectedTileColor: Colors.black26,
                       showLevel: false,
                       showSex: false,

@@ -48,6 +48,8 @@ class RegisterBattlePage extends StatefulWidget {
     required this.battle,
     required this.isNew,
     required this.onSaveOpponentParty,
+    required this.firstPageType,
+    required this.firstTurnNum,
   }) : super(key: key);
 
   final void Function() onFinish;
@@ -55,6 +57,8 @@ class RegisterBattlePage extends StatefulWidget {
   final Future<void> Function(Party party, PhaseState state) onSaveOpponentParty;
   final Battle battle;
   final bool isNew;
+  final RegisterBattlePageType firstPageType;
+  final int firstTurnNum;
 
   @override
   RegisterBattlePageState createState() => RegisterBattlePageState();
@@ -133,25 +137,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     dateController.text = widget.battle.formattedDateTime;
     ownPartyController.text = widget.battle.getParty(PlayerType(PlayerType.me)).id != 0 ?
       pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : 'パーティ選択';
-    
-    if (turns.length >= turnNum &&
-        pageType == RegisterBattlePageType.turnPage
-    ) {
-      // フォーカスしているフェーズの状態を取得
-      focusState = turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
-      // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      if (appState.requestActionSwap) {
-        _onlySwapActionPhases();
-        appState.requestActionSwap = false;
-      }
-      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
-        sameTimingList = _adjustPhases(appState, isNewTurn);
-        isNewTurn = false;
-        appState.needAdjustPhases = -1;
-        appState.adjustPhaseByDelete = false;
-      }
-    }
 
     // TODO
     void onBack () {
@@ -186,7 +171,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       appState.onTabChange = onTabChange;
       battleNameController.text = widget.battle.name;
       opponentNameController.text = widget.battle.opponentName;
+      if (!widget.isNew) {
+        pageType = widget.firstPageType;
+        if (pageType == RegisterBattlePageType.turnPage && turnNum <= turns.length) {
+          turnNum = widget.firstTurnNum;
+        }
+      }
       firstBuild = false;
+    }
+    
+    if (turns.length >= turnNum &&
+        pageType == RegisterBattlePageType.turnPage
+    ) {
+      // フォーカスしているフェーズの状態を取得
+      focusState = turns[turnNum-1].
+                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
+      // 各フェーズを確認して、必要なものがあれば足したり消したりする
+      if (appState.requestActionSwap) {
+        _onlySwapActionPhases();
+        appState.requestActionSwap = false;
+      }
+      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
+        sameTimingList = _adjustPhases(appState, isNewTurn);
+        isNewTurn = false;
+        appState.needAdjustPhases = -1;
+        appState.adjustPhaseByDelete = false;
+      }
     }
 
     Widget lists;
@@ -636,7 +646,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           opponentPokemonController,
           ownPartyController,
           widget.onSelectParty,
-          showNetworkImage: appState.getPokeAPI);
+          showNetworkImage: appState.getPokeAPI,
+          isInput: true,
+        );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
         deletePressed = () => onTurnDelete();
@@ -647,7 +659,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           () {setState(() {});},
           widget.battle, theme,
           checkedPokemons,
-          showNetworkImage: appState.getPokeAPI,);
+          showNetworkImage: appState.getPokeAPI,
+          isInput: true,
+        );
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
         deletePressed = null;
@@ -1069,6 +1083,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 },
                 //_getSameTimingList(pokeData),
                 sameTimingList,
+                isInput: true,
               ),
             ),
           ],
@@ -2340,10 +2355,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     else {
       return item.displayName;
     }
-  }
-
-  String _focusingItemName(PlayerType player, PhaseState focusState) {
-    return _itemNameWithNull(focusState.getPokemonState(player, null).holdingItem);
   }
 
   String _abilityNameWithNull(Ability ability) {

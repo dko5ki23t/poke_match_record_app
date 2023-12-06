@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
@@ -36,6 +36,22 @@ class EffectType {
   static const int afterMove = 10;
 
   const EffectType(this.id);
+
+  static const _displayNameMap = {
+    0:  '',
+    1:  'とくせい',
+    2:  'もちもの',
+    3:  '場',
+    4:  '状態変化',
+    5:  '',
+    6:  '',
+    7:  '',
+    8:  '',
+    9:  '',
+    10: 'わざ',
+  };
+
+  String get displayName => _displayNameMap[id]!;
 
   final int id;
 }
@@ -1438,7 +1454,7 @@ class TurnEffect {
     return '';
   }
 
-  Widget extraInputWidget(
+  Widget extraWidget(
     void Function() onFocus,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
@@ -1452,6 +1468,7 @@ class TurnEffect {
     TextEditingController controller2,
     MyAppState appState,
     int phaseIdx,
+    {required bool isInput,}
   )
   {
     // TODO:呼び出し元で判定してたらprevAction関連の判定不要かも？
@@ -1482,7 +1499,7 @@ class TurnEffect {
         case 209:   // ばけのかわ
         case 211:   // スワームチェンジ
         case 297:   // どしょく
-          return DamageInputIndicateRow(
+          return DamageIndicateRow(
             myPokemon, controller,
             playerType.id == PlayerType.me,
             onFocus,
@@ -1497,6 +1514,7 @@ class TurnEffect {
               onFocus();
             },
             extraArg1,
+            isInput,
           );
         case 16:      // へんしょく
         case 168:     // へんげんじざい
@@ -1505,14 +1523,16 @@ class TurnEffect {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Flexible(
-                child: TypeDropdownButton(
+                child: _myTypeDropdownButton(
                   '変化後のタイプ',
                   (value) {
                     extraArg1 = value;
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus,
                   extraArg1 == 0 ? null : extraArg1,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -1522,7 +1542,7 @@ class TurnEffect {
         case 123:   // ナイトメア
         case 160:   // てつのトゲ
         case 215:   // とびだすなかみ
-          return DamageInputIndicateRow(
+          return DamageIndicateRow(
             yourPokemon, controller,
             playerType.id != PlayerType.me,
             onFocus,
@@ -1536,14 +1556,15 @@ class TurnEffect {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
-            extraArg1
+            extraArg1,
+            isInput,
           );
         case 27:    // ほうし
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1569,6 +1590,9 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: Ailment(extraArg1).displayName,
                 ),
               ),
             ],
@@ -1577,7 +1601,7 @@ class TurnEffect {
           return Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: const InputDecoration(
@@ -1615,6 +1639,8 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -1624,7 +1650,7 @@ class TurnEffect {
           return Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: const InputDecoration(
@@ -1652,6 +1678,8 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -1660,7 +1688,7 @@ class TurnEffect {
           return Row(
             children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1681,6 +1709,9 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1 == 0 ? 'こうげき' : 'とくこう',
                 ),
               ),
               Text('があがった'),
@@ -1691,7 +1722,7 @@ class TurnEffect {
           return Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: const InputDecoration(
@@ -1727,6 +1758,8 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -1737,7 +1770,7 @@ class TurnEffect {
           return Row(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: const InputDecoration(
@@ -1778,6 +1811,8 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
             ],
@@ -1788,7 +1823,7 @@ class TurnEffect {
               Row(
                 children: [
                   Flexible(
-                    child: DropdownButtonFormField(
+                    child: _myDropdownButtonFormField(
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: UnderlineInputBorder(),
@@ -1821,6 +1856,10 @@ class TurnEffect {
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
+                      onFocus: onFocus,
+                      isInput: isInput,
+                      textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
+                        extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : 'すばやさ',
                     ),
                   ),
                   Text('がぐーんとあがった'),
@@ -1830,7 +1869,7 @@ class TurnEffect {
               Row(
                 children: [
                   Flexible(
-                    child: DropdownButtonFormField(
+                    child: _myDropdownButtonFormField(
                       isExpanded: true,
                       decoration: const InputDecoration(
                         border: UnderlineInputBorder(),
@@ -1863,6 +1902,10 @@ class TurnEffect {
                         appState.editingPhase[phaseIdx] = true;
                         onFocus();
                       },
+                      onFocus: onFocus,
+                      isInput: isInput,
+                      textValue: extraArg2 == 0 ? 'こうげき' : extraArg2 == 1 ? 'ぼうぎょ' :
+                        extraArg2 == 2 ? 'とくこう' : extraArg2 == 3 ? 'とくぼう' : 'すばやさ',
                     ),
                   ),
                   Text('がさがった'),
@@ -1876,7 +1919,7 @@ class TurnEffect {
           return Row(
             children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1913,6 +1956,10 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
+                    extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : extraArg1 == 4 ? 'すばやさ' : '効果が切れた',
                 ),
               ),
               extraArg1 >= 0 ? Text('が高まった') : Text(''),
@@ -1922,7 +1969,7 @@ class TurnEffect {
           return Row(
             children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1955,11 +2002,15 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
+                    extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : 'すばやさ',
                 ),
               ),
               Text('が'),
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1996,6 +2047,9 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg2.toString(),
                 ),
               ),
               Text('段階あがった'),
@@ -2005,7 +2059,7 @@ class TurnEffect {
           return Column(
             children: [
               Expanded(
-                child: TypeAheadField(
+                child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: const InputDecoration(
@@ -2038,11 +2092,13 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
                 ),
               ),
               SizedBox(height: 10,),
               extraArg1 == 872 || extraArg1 == 80 || extraArg1 == 552 || extraArg1 == 10552 || extraArg1 == 686 ?
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 yourPokemon, controller,
                 playerType.id != PlayerType.me,
                 onFocus,
@@ -2057,9 +2113,10 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg2,
+                isInput,
               ) :
               extraArg1 == 775 ?
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 myPokemon, controller,
                 playerType.id == PlayerType.me,
                 onFocus,
@@ -2074,12 +2131,13 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg2,
+                isInput,
               ) :
               Container(),
               extraArg1 == 552 || extraArg1 == 10552 ? SizedBox(height: 10,) : Container(),
               extraArg1 == 552 || extraArg1 == 10552 ?
               Expanded(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -2101,6 +2159,9 @@ class TurnEffect {
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg1 == 552 ? 'なし' : 'とくこうがあがった',
                 ),
               ) : Container(),
             ],
@@ -2111,7 +2172,7 @@ class TurnEffect {
     }
     else if (effect.id == EffectType.item) {   // もちものによる効果
       // TODO myStateとかを使う？
-      return appState.pokeData.items[effectId]!.extraInputWidget(
+      return appState.pokeData.items[effectId]!.extraWidget(
         onFocus, playerType, myPokemon, yourPokemon, myState,
         yourState, myParty, yourParty, state,
         controller, extraArg1, extraArg2, getChangePokemonIndex(playerType),
@@ -2130,39 +2191,14 @@ class TurnEffect {
           appState.editingPhase[phaseIdx] = true;
           onFocus();
         },
+        isInput,
       );
     }
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
       switch (effectId) {
         case IndividualField.futureAttack:      // みらいにこうげき
         case IndiFieldEffect.stealthRock:       // ステルスロック
-          return DamageInputIndicateRow(
-            myPokemon, controller,
-            playerType.id == PlayerType.me,
-            onFocus,
-            (value) {
-              if (playerType.id == PlayerType.me) {
-                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
-              }
-              else {
-                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
-              }
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            extraArg1
-          );
-      }
-    }
-    else if (effect.id == EffectType.ailment) {   // 状態変化による効果
-      switch (effectId) {
-        case AilmentEffect.poison:    // どく
-        case AilmentEffect.badPoison: // もうどく
-        case AilmentEffect.burn:      // やけど
-        case AilmentEffect.saltCure:  // しおづけ
-        case AilmentEffect.curse:     // のろい
-        case AilmentEffect.ingrain:   // ねをはる
-          return DamageInputIndicateRow(
+          return DamageIndicateRow(
             myPokemon, controller,
             playerType.id == PlayerType.me,
             onFocus,
@@ -2177,12 +2213,40 @@ class TurnEffect {
               onFocus();
             },
             extraArg1,
+            isInput,
+          );
+      }
+    }
+    else if (effect.id == EffectType.ailment) {   // 状態変化による効果
+      switch (effectId) {
+        case AilmentEffect.poison:    // どく
+        case AilmentEffect.badPoison: // もうどく
+        case AilmentEffect.burn:      // やけど
+        case AilmentEffect.saltCure:  // しおづけ
+        case AilmentEffect.curse:     // のろい
+        case AilmentEffect.ingrain:   // ねをはる
+          return DamageIndicateRow(
+            myPokemon, controller,
+            playerType.id == PlayerType.me,
+            onFocus,
+            (value) {
+              if (playerType.id == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+              }
+              else {
+                extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+              }
+              appState.editingPhase[phaseIdx] = true;
+              onFocus();
+            },
+            extraArg1,
+            isInput,
           );
         case AilmentEffect.leechSeed:   // やどりぎのタネ
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 myPokemon, controller,
                 playerType.id == PlayerType.me,
                 onFocus,
@@ -2197,9 +2261,10 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg1,
+                isInput,
               ),
               SizedBox(height: 10,),
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 yourPokemon, controller2,
                 playerType.id != PlayerType.me,
                 onFocus,
@@ -2214,6 +2279,7 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg2,
+                isInput,
               ),
             ],
           );
@@ -2225,7 +2291,7 @@ class TurnEffect {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 ownPokemon, controller,
                 true,
                 onFocus,
@@ -2235,9 +2301,10 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg1,
+                isInput,
               ),
               SizedBox(height: 10,),
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 opponentPokemon, controller2,
                 false,
                 onFocus,
@@ -2247,6 +2314,7 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg2,
+                isInput,
               ),
             ],
           );
@@ -2258,7 +2326,7 @@ class TurnEffect {
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 ownPokemon, controller,
                 true,
                 onFocus,
@@ -2268,9 +2336,10 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg1,
+                isInput,
               ),
               SizedBox(height: 10,),
-              DamageInputIndicateRow(
+              DamageIndicateRow(
                 opponentPokemon, controller2,
                 false,
                 onFocus,
@@ -2280,6 +2349,7 @@ class TurnEffect {
                   onFocus();
                 },
                 extraArg2,
+                isInput,
               ),
             ],
           );
@@ -2288,7 +2358,7 @@ class TurnEffect {
     else if (effect.id == EffectType.afterMove) {   // わざによる効果
       switch (effectId) {
         case 596:   // ニードルガード
-          return DamageInputIndicateRow(
+          return DamageIndicateRow(
             myPokemon, controller,
             playerType.id == PlayerType.me,
             onFocus,
@@ -2303,11 +2373,164 @@ class TurnEffect {
               onFocus();
             },
             extraArg1,
+            isInput,
           );
       }
     }
 
     return Container();
+  }
+
+  Widget _myTypeAheadField<T>({
+    required SuggestionsCallback<T> suggestionsCallback,
+    required ItemBuilder<T> itemBuilder,
+    required SuggestionSelectionCallback<T> onSuggestionSelected,
+    TextFieldConfiguration textFieldConfiguration = const TextFieldConfiguration(),
+    SuggestionsBoxDecoration suggestionsBoxDecoration = const SuggestionsBoxDecoration(),
+    Duration debounceDuration = const Duration(milliseconds: 300),
+    SuggestionsBoxController? suggestionsBoxController,
+    ScrollController? scrollController,
+    WidgetBuilder? loadingBuilder,
+    WidgetBuilder? noItemsFoundBuilder,
+    ErrorBuilder? errorBuilder,
+    AnimationTransitionBuilder? transitionBuilder,
+    double animationStart = 0.25,
+    Duration animationDuration = const Duration(milliseconds: 500),
+    bool getImmediateSuggestions = false,
+    double suggestionsBoxVerticalOffset = 5.0,
+    AxisDirection direction = AxisDirection.down,
+    bool hideOnLoading = false,
+    bool hideOnEmpty = false,
+    bool hideOnError = false,
+    bool hideSuggestionsOnKeyboardHide = true,
+    bool keepSuggestionsOnLoading = true,
+    bool keepSuggestionsOnSuggestionSelected = false,
+    bool autoFlipDirection = false,
+    bool autoFlipListDirection = true,
+    bool hideKeyboard = false,
+    int minCharsForSuggestions = 0,
+    void Function(bool)? onSuggestionsBoxToggle,
+    bool hideKeyboardOnDrag = false,
+    Key? key,
+    required void Function() onFocus,
+    required bool isInput,
+  })
+  {
+    if (isInput) {
+      return TypeAheadField(
+        suggestionsCallback: suggestionsCallback, itemBuilder: itemBuilder, onSuggestionSelected: onSuggestionSelected,
+        textFieldConfiguration: textFieldConfiguration, suggestionsBoxDecoration: suggestionsBoxDecoration,
+        debounceDuration: debounceDuration, suggestionsBoxController: suggestionsBoxController, scrollController: scrollController,
+        loadingBuilder: loadingBuilder, noItemsFoundBuilder: noItemsFoundBuilder, errorBuilder: errorBuilder,
+        transitionBuilder: transitionBuilder, animationStart: animationStart, animationDuration: animationDuration,
+        getImmediateSuggestions: getImmediateSuggestions, suggestionsBoxVerticalOffset: suggestionsBoxVerticalOffset,
+        direction: direction, hideOnLoading: hideOnLoading, hideOnEmpty: hideOnEmpty, hideOnError: hideOnError,
+        hideSuggestionsOnKeyboardHide: hideSuggestionsOnKeyboardHide, keepSuggestionsOnLoading: keepSuggestionsOnLoading,
+        keepSuggestionsOnSuggestionSelected: keepSuggestionsOnSuggestionSelected, autoFlipDirection: autoFlipDirection,
+        autoFlipListDirection: autoFlipListDirection, hideKeyboard: hideKeyboard, minCharsForSuggestions: minCharsForSuggestions,
+        onSuggestionsBoxToggle: onSuggestionsBoxToggle, hideKeyboardOnDrag: hideKeyboardOnDrag, key: key,
+      );
+    }
+    else {
+      return TextField(
+        controller: textFieldConfiguration.controller,
+        decoration: textFieldConfiguration.decoration,
+        readOnly: true,
+        onTap: onFocus,
+      );
+    }
+  }
+
+  Widget _myDropdownButtonFormField<T>({
+    Key? key,
+    required List<DropdownMenuItem<T>>? items,
+    DropdownButtonBuilder? selectedItemBuilder,
+    T? value,
+    Widget? hint,
+    Widget? disabledHint,
+    required ValueChanged<T?>? onChanged,
+    VoidCallback? onTap,
+    int elevation = 8,
+    TextStyle? style,
+    Widget? icon,
+    Color? iconDisabledColor,
+    Color? iconEnabledColor,
+    double iconSize = 24.0,
+    bool isDense = true,
+    bool isExpanded = false,
+    double? itemHeight,
+    Color? focusColor,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Color? dropdownColor,
+    InputDecoration? decoration,
+    void Function(T?)? onSaved,
+    String? Function(T?)? validator,
+    AutovalidateMode? autovalidateMode,
+    double? menuMaxHeight,
+    bool? enableFeedback,
+    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    required bool isInput,
+    required String? textValue,   // isInput==falseのとき、出力する文字列として必須
+    required void Function() onFocus,
+  })
+  {
+    if (isInput) {
+      return DropdownButtonFormField(
+        key: key, items: items, selectedItemBuilder: selectedItemBuilder, value: value,
+        hint: hint, disabledHint: disabledHint, onChanged: onChanged, onTap: onTap,
+        elevation: elevation, style: style, icon: icon, iconDisabledColor: iconDisabledColor,
+        iconEnabledColor: iconEnabledColor, iconSize: iconSize, isDense: isDense,
+        isExpanded: isExpanded, itemHeight: itemHeight, focusColor: focusColor,
+        focusNode: focusNode, autofocus: autofocus, dropdownColor: dropdownColor,
+        decoration: decoration, onSaved: onSaved, validator: validator, autovalidateMode: autovalidateMode,
+        menuMaxHeight: menuMaxHeight, enableFeedback: enableFeedback, alignment: alignment,
+        borderRadius: borderRadius, padding: padding,
+      );
+    }
+    else {
+      return TextField(
+        decoration: decoration,
+        controller: TextEditingController(
+          text: textValue,
+        ),
+        readOnly: true,
+        onTap: onFocus,
+      );
+    }
+  }
+
+  Widget _myTypeDropdownButton(
+    String? labelText,
+    void Function(dynamic)? onChanged,
+    void Function() onFocus,
+    int? value,
+    {
+      required bool isInput,
+      bool isError = false,
+    }
+  )
+  {
+    if (isInput) {
+      return TypeDropdownButton(
+        labelText, onChanged, value,
+        isError: isError,
+      );
+    }
+    else {
+      return TextField(
+        controller: TextEditingController(text: PokeType.createFromId(value ?? 0).displayName),
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: labelText,
+          prefixIcon: PokeType.createFromId(value ?? 0).displayIcon,
+        ),
+        onTap: onFocus,
+        readOnly: true,
+      );
+    } 
   }
 
   // SQLに保存された文字列からTurnMoveをパース

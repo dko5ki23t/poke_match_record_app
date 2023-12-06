@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/battle_action_input_column.dart';
-import 'package:poke_reco/custom_widgets/battle_change_fainting_pokemon_input_column.dart';
-import 'package:poke_reco/custom_widgets/battle_continuous_move_input_column.dart';
-import 'package:poke_reco/custom_widgets/battle_effect_input_column.dart';
+import 'package:poke_reco/custom_widgets/battle_action_column.dart';
+import 'package:poke_reco/custom_widgets/battle_change_fainting_pokemon_column.dart';
+import 'package:poke_reco/custom_widgets/battle_continuous_move_column.dart';
+import 'package:poke_reco/custom_widgets/battle_effect_column.dart';
 import 'package:poke_reco/custom_widgets/battle_gameset_column.dart';
-import 'package:poke_reco/custom_widgets/battle_terastal_input.dart';
+import 'package:poke_reco/custom_widgets/battle_terastal_column.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -15,8 +15,8 @@ import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 
-class BattleTimingInputPanel extends Column {
-  BattleTimingInputPanel(
+class BattleTimingPanel extends Column {
+  BattleTimingPanel(
     void Function() setState,
     ThemeData theme,
     Battle battle,
@@ -38,6 +38,7 @@ class BattleTimingInputPanel extends Column {
     PlayerType attacker,
     TurnMove turnMove,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
+    {required bool isInput,}
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -54,7 +55,7 @@ class BattleTimingInputPanel extends Column {
           textEditControllerList3, textEditControllerList4,
           prevState, prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount, attacker, turnMove,
-          nextSameTimingFirst,
+          nextSameTimingFirst, isInput: isInput,
         ),
       ),
       SizedBox(height: 20,),
@@ -161,10 +162,11 @@ class BattleTimingInputPanel extends Column {
     PlayerType attacker,
     TurnMove turnMove,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
+    {required bool isInput,}
   ) {
     return 
     timing.id == AbilityTiming.action ?
-    BattleActionInputColumn(
+    BattleActionColumn(
       prevState,
       sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
@@ -178,9 +180,10 @@ class BattleTimingInputPanel extends Column {
       textEditControllerList4,
       sameTimingList.first,
       nextSameTimingFirst,
+      isInput: isInput,
     ) :
     timing.id == AbilityTiming.continuousMove ?
-    BattleContinuousMoveInputColumn(
+    BattleContinuousMoveColumn(
       prevState,
       sameTimingList.first.phaseState,
       prevOwnPokemon, prevOpponentPokemon,
@@ -195,9 +198,10 @@ class BattleTimingInputPanel extends Column {
       refMove!, continuousCount,
       sameTimingList.first,
       nextSameTimingFirst,
+      isInput: isInput,
     ) :
     timing.id == AbilityTiming.changeFaintingPokemon ?
-    BattleChangeFaintingPokemonInputColumn(
+    BattleChangeFaintingPokemonColumn(
       prevState,
       theme, battle, turn,
       appState, focusPhaseIdx,
@@ -207,21 +211,14 @@ class BattleTimingInputPanel extends Column {
       textEditControllerList2,
       textEditControllerList3,
       sameTimingList.first.guides,
+      isInput: isInput,
     ) :
     timing.id == AbilityTiming.gameSet ?
     BattleGamesetColumn(
       theme, sameTimingList.first.turnEffect,
       battle.opponentName) :
     timing.id == AbilityTiming.terastaling ?
-    BattleTerastalInputColumn(
-      theme, battle, turn,
-      appState, focusPhaseIdx,
-      (phaseIdx) => onFocus(phaseIdx),
-      prevState, sameTimingList,
-      sameTimingList.first.phaseIdx,
-      timing, textEditControllerList1, textEditControllerList2,
-      textEditControllerList3, textEditControllerList4,) :
-    BattleEffectInputColumn(
+    BattleTerastalColumn(
       theme, battle, turn,
       appState, focusPhaseIdx,
       (phaseIdx) => onFocus(phaseIdx),
@@ -229,7 +226,17 @@ class BattleTimingInputPanel extends Column {
       sameTimingList.first.phaseIdx,
       timing, textEditControllerList1, textEditControllerList2,
       textEditControllerList3, textEditControllerList4,
-      attacker, turnMove,
+      isInput: isInput,
+    ) :
+    BattleEffectColumn(
+      theme, battle, turn,
+      appState, focusPhaseIdx,
+      (phaseIdx) => onFocus(phaseIdx),
+      prevState, sameTimingList,
+      sameTimingList.first.phaseIdx,
+      timing, textEditControllerList1, textEditControllerList2,
+      textEditControllerList3, textEditControllerList4,
+      attacker, turnMove, isInput: isInput,
     );
   }
 }

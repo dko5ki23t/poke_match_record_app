@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/damage_input_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -933,7 +933,7 @@ class Item {
     return '';
   }
 
-  Widget extraInputWidget(
+  Widget extraWidget(
     void Function() onFocus,
     PlayerType playerType,
     Pokemon myPokemon,
@@ -948,6 +948,7 @@ class Item {
     void Function(int) extraArg1ChangeFunc,
     void Function(int) extraArg2ChangeFunc,
     void Function(int?) changePokemonIndexChangeFunc,
+    bool isInput,
   ) {
     switch (id) {
       case 184:     // スターのみ
@@ -997,7 +998,7 @@ class Item {
       case 185:     // ナゾのみ
       case 230:     // かいがらのすず
       case 43:      // きのみジュース
-        return DamageInputIndicateRow(
+        return DamageIndicateRow(
           myState.pokemon, controller,
           playerType.id == PlayerType.me,
           onFocus,
@@ -1008,7 +1009,7 @@ class Item {
             }
             extraArg1ChangeFunc(val);
           },
-          extraArg1);
+          extraArg1, isInput,);
       case 136:     // フィラのみ
       case 137:     // ウイのみ
       case 138:     // マゴのみ
@@ -1041,7 +1042,7 @@ class Item {
             ]),
             extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
             extraArg2 == 0 ?
-            DamageInputIndicateRow(
+            DamageIndicateRow(
               myPokemon, controller,
               playerType.id == PlayerType.me,
               onFocus,
@@ -1052,14 +1053,14 @@ class Item {
                 }
                 extraArg1ChangeFunc(val);
               },
-              extraArg1
+              extraArg1, isInput,
             ) : Container(),
           ],
         );
       case 583:     // ゴツゴツメット
       case 188:     // ジャポのみ
       case 189:     // レンブのみ
-        return DamageInputIndicateRow(
+        return DamageIndicateRow(
           yourPokemon, controller,
           playerType.id != PlayerType.me,
           onFocus,
@@ -1070,7 +1071,7 @@ class Item {
             }
             extraArg1ChangeFunc(val);
           },
-          extraArg1,
+          extraArg1, isInput,
         );
       case 584:     // ふうせん
         return Row(
