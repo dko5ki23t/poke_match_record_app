@@ -146,7 +146,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                               widget.party.name = value;
                             });
                           },
-                          maxLength: 5,
+                          maxLength: 20,
                           controller: partyNameController,
                         ),
                       ),

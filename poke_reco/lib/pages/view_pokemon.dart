@@ -159,7 +159,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                           labelText: 'ニックネーム(任意)'
                         ),
                         readOnly: true,
-                        maxLength: 6,
+                        maxLength: 20,
                         controller: pokeNickNameController,
                       ),
                     ),

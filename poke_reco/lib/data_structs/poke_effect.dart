@@ -1948,7 +1948,7 @@ class TurnEffect {
                     },
                     onFocus: onFocus,
                     isInput: isInput,
-                    textValue: opponentParty.pokemons[extraArg1-1]!.name,
+                    textValue: opponentParty.pokemons[extraArg1-1]?.name,
                   ),
                 ),
               ],

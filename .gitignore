@@ -43,6 +43,7 @@ tool/add_csv_row.py
 tool/*.txt
 private/*
 /*.png
+poke_reco/android/app/src/main/AndroidManifest.xml
 
 .vscode/*
 .VSCodeCounter/*

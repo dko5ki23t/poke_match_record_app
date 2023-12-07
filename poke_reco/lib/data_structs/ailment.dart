@@ -166,7 +166,7 @@ class Ailment {
   static const int nightmare = 16;          // あくむ
   static const int partiallyTrapped = 17;   // バインド(交代不可、毎ターンダメージ)
   static const int perishSong = 18;         // ほろびのうた
-  static const int taunt = 19;              // ちょうはつ
+  static const int taunt = 19;              // ちょうはつ(3ターンの間へんかわざ使用不可)  extraArg1に、ちょうはつ状態になってからのわざ使用回数を記録
   static const int torment = 20;            // いちゃもん
   static const int noBerry = 21;            // きのみを食べられない状態(きんちょうかん)
   static const int saltCure = 22;           // しおづけ

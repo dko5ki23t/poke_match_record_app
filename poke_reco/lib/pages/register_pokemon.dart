@@ -276,7 +276,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             labelText: 'ニックネーム(任意)'
                           ),
                           onChanged: (value) {myPokemon.nickname = value;},
-                          maxLength: 6,
+                          maxLength: 20,
                           controller: pokeNickNameController,
                         ),
                       ),

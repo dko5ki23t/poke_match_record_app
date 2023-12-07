@@ -47,7 +47,7 @@ class BattleBasicListView extends ListView {
                         battle.name = value;
                         setState();
                       },
-                      maxLength: 10,
+                      maxLength: 20,
                     ) :
                     TextField(
                       controller: battleNameController,
@@ -55,7 +55,7 @@ class BattleBasicListView extends ListView {
                         border: UnderlineInputBorder(),
                         labelText: 'バトル名'
                       ),
-                      maxLength: 10,
+                      maxLength: 20,
                       readOnly: true,
                     ),
                 ),
@@ -214,7 +214,7 @@ class BattleBasicListView extends ListView {
                         battle.opponentName = value;
                         setState();
                       },
-                      maxLength: 10,
+                      maxLength: 20,
                     ) :
                     TextField(
                       controller: opponentNameController,
@@ -222,7 +222,7 @@ class BattleBasicListView extends ListView {
                         border: UnderlineInputBorder(),
                         labelText: 'あいての名前'
                       ),
-                      maxLength: 10,
+                      maxLength: 20,
                       readOnly: true,
                     ),
                 ),

@@ -192,8 +192,7 @@ class PhaseState {
                   ..playerType = player
                   ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
                   ..effect = EffectType(EffectType.ability)
-                  ..effectId = myState.currentAbility.id
-                  ..isAutoSet = true;
+                  ..effectId = myState.currentAbility.id;
                 addingAbility.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(addingAbility);
               }
@@ -214,7 +213,6 @@ class PhaseState {
                   ..effect = EffectType(EffectType.individualField)
                   ..effectId = IndiFieldEffect.stealthRock
                   ..extraArg1 = extraArg1
-                  ..isAutoSet = true
                 );
               }
               // どくびし/どくどくびし
@@ -227,7 +225,6 @@ class PhaseState {
                   ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
                   ..effect = EffectType(EffectType.individualField)
                   ..effectId = indiField[findIdx].extraArg1 <= 1 ? IndiFieldEffect.toxicSpikes : IndiFieldEffect.badToxicSpikes
-                  ..isAutoSet = true
                 );
               }
               // ねばねばネット
@@ -240,7 +237,6 @@ class PhaseState {
                   ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
                   ..effect = EffectType(EffectType.individualField)
                   ..effectId = IndiFieldEffect.stickyWeb
-                  ..isAutoSet = true
                 );
               }
             }
@@ -270,7 +266,6 @@ class PhaseState {
               ..effect = EffectType(EffectType.ability)
               ..effectId = attackerState.currentAbility.id
               ..extraArg1 = replacedMoveType.id
-              ..isAutoSet = true
             );
           }
           // ノーマルタイプのこうげきをうけたとき
@@ -309,8 +304,7 @@ class PhaseState {
               ..playerType = PlayerType(defenderPlayerTypeId)
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
-              ..effectId = defenderState.holdingItem!.id
-              ..isAutoSet = true;
+              ..effectId = defenderState.holdingItem!.id;
             addingItem.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
           }
@@ -351,7 +345,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.afterMove)
                 ..effectId = id
                 ..extraArg1 = extraArg1
-                ..isAutoSet = true
               );
             }
           }
@@ -362,7 +355,6 @@ class PhaseState {
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.afterMove)
               ..effectId = 194
-              ..isAutoSet = true
             );
           }
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
@@ -515,7 +507,6 @@ class PhaseState {
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.ability)
               ..effectId = attackerState.currentAbility.id
-              ..isAutoSet = true
             );
           }
           // こうげきを受ける側のとくせいは、かたやぶり等によって発動しない場合あり
@@ -527,8 +518,7 @@ class PhaseState {
               ..playerType = PlayerType(defenderPlayerTypeId)
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.ability)
-              ..effectId = defenderState.currentAbility.id
-              ..isAutoSet = true;
+              ..effectId = defenderState.currentAbility.id;
             addingAbility.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingAbility);
           }
@@ -538,8 +528,7 @@ class PhaseState {
               ..playerType = PlayerType(attackerPlayerTypeId)
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
-              ..effectId = attackerState.holdingItem!.id
-              ..isAutoSet = true;
+              ..effectId = attackerState.holdingItem!.id;
             addingItem.setAutoArgs(attackerState, defenderState, state, prevAction);
             ret.add(addingItem);
           }
@@ -548,8 +537,7 @@ class PhaseState {
               ..playerType = PlayerType(defenderPlayerTypeId)
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
-              ..effectId = defenderState.holdingItem!.id
-              ..isAutoSet = true;
+              ..effectId = defenderState.holdingItem!.id;
             addingItem.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
           }
@@ -607,8 +595,7 @@ class PhaseState {
                 ..playerType = player
                 ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
                 ..effect = EffectType(EffectType.ability)
-                ..effectId = myState.currentAbility.id
-                ..isAutoSet = true;
+                ..effectId = myState.currentAbility.id;
               addingAbility.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingAbility);
             }
@@ -619,8 +606,7 @@ class PhaseState {
                 ..playerType = player
                 ..timing = timing
                 ..effect = EffectType(EffectType.item)
-                ..effectId = myState.holdingItem!.id
-                ..isAutoSet = true;
+                ..effectId = myState.holdingItem!.id;
               addingItem.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingItem);
             }
@@ -634,7 +620,6 @@ class PhaseState {
                 ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.sleepy
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty) {    // やけど
@@ -644,7 +629,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.burn
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / 16).floor() : 6
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.poison).isNotEmpty) {    // どく
@@ -654,7 +638,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.poison
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.badPoison).isNotEmpty) { // もうどく
@@ -665,7 +648,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.badPoison
                 ..extraArg1 = isMe ? (myState.pokemon.h.real * turns / 16).floor() : (100 * turns / 16).floor()
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {    // しおづけ
@@ -676,7 +658,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.saltCure
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / bunbo).floor() : (100 / bunbo).floor()
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.curse).isNotEmpty) {     // のろい
@@ -686,7 +667,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.curse
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / 4).floor() : 25
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) { // やどりぎのタネ
@@ -696,7 +676,6 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.leechSeed
                 ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
-                ..isAutoSet = true
               );
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {   // ねをはる
@@ -706,7 +685,14 @@ class PhaseState {
                 ..effect = EffectType(EffectType.ailment)
                 ..effectId = AilmentEffect.ingrain
                 ..extraArg1 = isMe ? -((myState.pokemon.h.real / 16).floor()) : -6
-                ..isAutoSet = true
+              );
+            }
+            if (myState.ailmentsWhere((e) => e.id == Ailment.taunt && e.extraArg1 >= 3).isNotEmpty) {   // ちょうはつ終了
+              ret.add(TurnEffect()
+                ..playerType = player
+                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..effect = EffectType(EffectType.ailment)
+                ..effectId = AilmentEffect.tauntEnd
               );
             }
 
@@ -719,7 +705,6 @@ class PhaseState {
                 ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
                 ..effect = EffectType(EffectType.individualField)
                 ..effectId = IndividualField.futureAttack
-                ..isAutoSet = true
               );
             }
           }
@@ -761,7 +746,6 @@ class PhaseState {
               ..effectId = e
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2
-              ..isAutoSet = true
             );
           }
           // フィールド
@@ -783,7 +767,6 @@ class PhaseState {
               ..effectId = e
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2
-              ..isAutoSet = true
             );
           }
         }
@@ -803,7 +786,6 @@ class PhaseState {
                 ..timing = AbilityTiming(AbilityTiming.afterTerastal)
                 ..effect = EffectType(EffectType.ability)
                 ..effectId = 303
-                ..isAutoSet = true
               );
             }
           }
@@ -842,8 +824,7 @@ class PhaseState {
           ..playerType = player
           ..timing = timing
           ..effect = EffectType(EffectType.ability)
-          ..effectId = myState.currentAbility.id
-          ..isAutoSet = true;
+          ..effectId = myState.currentAbility.id;
         addingAbility.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingAbility);
       }
@@ -857,8 +838,7 @@ class PhaseState {
           ..playerType = player
           ..timing = timing
           ..effect = EffectType(EffectType.item)
-          ..effectId = myState.holdingItem!.id
-          ..isAutoSet = true;
+          ..effectId = myState.holdingItem!.id;
         addingItem.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingItem);
       }

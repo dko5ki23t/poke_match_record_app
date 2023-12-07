@@ -276,6 +276,8 @@ class TurnMove {
 
     // みちづれ状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
+    // ちょうはつのカウントインクリメント
+    if (myState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty) myState.ailmentsWhere((e) => e.id == Ailment.taunt).first.extraArg1++;
 
     // こうさん
     if (type.id == TurnMoveType.surrender) {
@@ -2826,6 +2828,13 @@ class TurnMove {
           default:
             break;
         }
+
+        // わざの相性をここで変えちゃう
+        moveEffectivenesses[continuousCount] = PokeType.effectiveness(
+          myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+          moveType, targetState,
+        );
       }
 
       // わざで交代した場合、交代前のstateで計算する。それを元に戻すために仮変数に退避
@@ -3511,9 +3520,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: playerType.id == PlayerType.me ?
-                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
-                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
+                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
                 ),
               ),
             ],
@@ -3954,9 +3963,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: playerType.id == PlayerType.opponent ?
-                    ownParty.pokemons[getChangePokemonIndex(playerType.opposite)!-1]!.name :
-                    opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)!-1]!.name,
+                  textValue: isInput ? null : playerType.id == PlayerType.opponent ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name,
                 ),
               ),
             ],
@@ -4247,9 +4256,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: playerType.id == PlayerType.me ?
-                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
-                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
+                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
                 ),
               ),
             ],
@@ -5220,9 +5229,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: playerType.id == PlayerType.me ?
-                    ownParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name :
-                    opponentParty.pokemons[getChangePokemonIndex(playerType)!-1]!.name,
+                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
                 ),
               ),
             ],
@@ -5296,9 +5305,9 @@ class TurnMove {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: playerType.id == PlayerType.me ?
-                        ownParty.pokemons[extraArg1[continuousCount]-1]!.name :
-                        opponentParty.pokemons[extraArg1[continuousCount]-1]!.name,
+                      textValue: isInput ? null : playerType.id == PlayerType.me ?
+                        ownParty.pokemons[extraArg1[continuousCount]-1]?.name :
+                        opponentParty.pokemons[extraArg1[continuousCount]-1]?.name,
                     ),
                   ),
                 ],

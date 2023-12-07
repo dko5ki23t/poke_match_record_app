@@ -110,7 +110,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
                           border: UnderlineInputBorder(),
                           labelText: 'パーティ名'
                         ),
-                        maxLength: 5,
+                        maxLength: 20,
                         controller: partyNameController,
                         readOnly: true,
                       ),
