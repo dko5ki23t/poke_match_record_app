@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -127,6 +128,20 @@ class ActionFailure {
   const ActionFailure(this.id);
 
   final int id;
+}
+
+class DamageGetter {
+  int minDamage = 0;
+  int maxDamage = 0;
+
+  String get rangeString {
+    if (minDamage == maxDamage) {
+      return minDamage.toString();
+    }
+    else {
+      return '$minDamage～$maxDamage';
+    }
+  }
 }
 
 class TurnMove {
@@ -264,6 +279,9 @@ class TurnMove {
     PokemonState opponentPokemonState,
     PhaseState state,
     int continuousCount,
+    {
+      DamageGetter? damageGetter,
+    }
   )
   {
     final pokeData = PokeDB();
@@ -3172,6 +3190,8 @@ class TurnMove {
           // ダイマックスわざに関する計算のため、SVでは不要
           { }
           damageCalc += '= $damageVmin～$damageVmax';
+          damageGetter?.minDamage = damageVmin;
+          damageGetter?.maxDamage = damageVmax;
         }
 
         ret.add(damageCalc);
@@ -3315,6 +3335,7 @@ class TurnMove {
               onFocus: onFocus,
               isInput: isInput,
               textValue: ActionFailure(actionFailure.id).displayName,
+              theme: theme,
             ),
           ),
           SizedBox(width: 10,),
@@ -3450,8 +3471,16 @@ class TurnMove {
                     return matches;
                   },
                   itemBuilder: (context, suggestion) {
+                    DamageGetter getter = DamageGetter();
+                    TurnMove tmp = copyWith();
+                    tmp.move = getReplacedMove(suggestion, continuousCount, myState);
+                    tmp.processMove(
+                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, damageGetter: getter);
                     return ListTile(
+                      leading: getReplacedMoveType(suggestion, continuousCount, myState, state).displayIcon,
                       title: Text(getReplacedMoveName(suggestion, continuousCount, myState)),
+                      trailing: Text(getter.rangeString),
                     );
                   },
                   onSuggestionSelected: (suggestion) {
@@ -3489,26 +3518,22 @@ class TurnMove {
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
-                          child: Text(
-                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon) ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: ownParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
-                          child: Text(
-                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: opponentParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -3523,6 +3548,11 @@ class TurnMove {
                   textValue: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
+                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
+                  showNetworkImage: appState.getPokeAPI,
+                  theme: theme,
                 ),
               ),
             ],
@@ -3536,6 +3566,7 @@ class TurnMove {
 
   Widget extraWidget2(
     void Function() onFocus,
+    ThemeData theme,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
     Party ownParty,
@@ -3738,6 +3769,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -3878,6 +3910,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     '自身は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -3913,6 +3946,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == replacedMove.effect.id ?
                     '疲れ果ててこんらんした' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -3933,26 +3967,22 @@ class TurnMove {
                   items: playerType.id == PlayerType.opponent ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                          child: Text(
-                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: ownParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                          child: Text(
-                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: opponentParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType.opposite),
@@ -3966,6 +3996,11 @@ class TurnMove {
                   textValue: isInput ? null : playerType.id == PlayerType.opponent ?
                     ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name,
+                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.opponent ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1] :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1],
+                  showNetworkImage: appState.getPokeAPI,
+                  theme: theme,
                 ),
               ),
             ],
@@ -4026,6 +4061,7 @@ class TurnMove {
                   textValue: extraArg1[continuousCount] == Ailment.burn ? '相手はやけどをおった' :
                     extraArg1[continuousCount] == Ailment.freeze ? '相手はこおってしまった' :
                     extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -4083,6 +4119,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     'もちものをぬすんだ' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -4203,6 +4240,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
                     '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -4226,26 +4264,22 @@ class TurnMove {
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                          child: Text(
-                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: ownParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                          child: Text(
-                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: opponentParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -4259,6 +4293,11 @@ class TurnMove {
                   textValue: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
+                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
+                  showNetworkImage: appState.getPokeAPI,
+                  theme: theme,
                 ),
               ),
             ],
@@ -4449,6 +4488,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     'もちものをはたきおとした' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -4580,6 +4620,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     '相手のきのみを消費した' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -4635,7 +4676,7 @@ class TurnMove {
           );
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
+            onFocus, theme, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
@@ -4649,6 +4690,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
+            showNetworkImage: appState.getPokeAPI,
           );
           break;
         case 227:     // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
@@ -4701,6 +4743,7 @@ class TurnMove {
                     extraArg1[continuousCount] == 3 ? '自身はとくぼうがぐーんと上がった' :
                     extraArg1[continuousCount] == 5 ? '自身はめいちゅうがぐーんと上がった' :
                     '自身はかいひがぐーんと上がった',
+                  theme: theme,
                 ),
               ),
             ],
@@ -4736,6 +4779,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     'もちものを投げつけた' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -4791,7 +4835,7 @@ class TurnMove {
           );
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
+            onFocus, theme, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
@@ -4805,6 +4849,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
+            showNetworkImage: appState.getPokeAPI,
           );
           break;
         case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
@@ -4840,6 +4885,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
                     '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -4896,6 +4942,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
                     '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -4926,6 +4973,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: extraArg2[continuousCount] == 1 ?
                     '相手は${moveEffectText2[replacedMove.effect.id]!}' : 'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -5010,6 +5058,7 @@ class TurnMove {
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
                     'もちものをやきつくした' : 'なし',
+                  theme: theme,
                 ),
               ),
               SizedBox(width: 10,),
@@ -5124,7 +5173,7 @@ class TurnMove {
           );
           // TODO controllerの数足りてない
           effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
+            onFocus, theme, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
             state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
             (value) {
               extraArg2[continuousCount] = value;
@@ -5138,6 +5187,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
+            showNetworkImage: appState.getPokeAPI,
           );
           break;
         case 464:     // どく・まひ・ねむりのいずれかにする(確率)
@@ -5180,6 +5230,7 @@ class TurnMove {
                     extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' :
                     extraArg1[continuousCount] == Ailment.sleep ? '相手はねむってしまった' :
                     'なし',
+                  theme: theme,
                 ),
               ),
             ],
@@ -5199,26 +5250,22 @@ class TurnMove {
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                          child: Text(
-                            ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: ownParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
-                        DropdownMenuItem(
+                        PokemonDropdownMenuItem(
                           value: i+1,
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                          child: Text(
-                            opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                            style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
-                              Colors.black : Colors.grey),
-                            ),
+                          theme: theme,
+                          pokemon: opponentParty.pokemons[i]!,
+                          showNetworkImage: appState.getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -5232,6 +5279,11 @@ class TurnMove {
                   textValue: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
+                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                    ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
+                    opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
+                  showNetworkImage: appState.getPokeAPI,
+                  theme: theme,
                 ),
               ),
             ],
@@ -5275,26 +5327,22 @@ class TurnMove {
                       items: playerType.id == PlayerType.me ?
                         <DropdownMenuItem>[
                           for (int i = 0; i < ownParty.pokemonNum; i++)
-                            DropdownMenuItem(
+                            PokemonDropdownMenuItem(
                               value: i+1,
                               enabled: state.isPossibleBattling(playerType, i) && ownPokemonStates[i].isFainting,
-                              child: Text(
-                                ownParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: state.isPossibleBattling(playerType, i) && ownPokemonStates[i].isFainting ?
-                                  Colors.black : Colors.grey),
-                                ),
+                              theme: theme,
+                              pokemon: ownParty.pokemons[i]!,
+                              showNetworkImage: appState.getPokeAPI,
                             ),
                         ] :
                         <DropdownMenuItem>[
                           for (int i = 0; i < opponentParty.pokemonNum; i++)
-                            DropdownMenuItem(
+                            PokemonDropdownMenuItem(
                               value: i+1,
                               enabled: state.isPossibleBattling(playerType, i) && opponentPokemonStates[i].isFainting,
-                              child: Text(
-                                opponentParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: state.isPossibleBattling(playerType, i) && opponentPokemonStates[i].isFainting ?
-                                  Colors.black : Colors.grey),
-                                ),
+                              theme: theme,
+                              pokemon: opponentParty.pokemons[i]!,
+                              showNetworkImage: appState.getPokeAPI,
                             ),
                         ],
                       value: extraArg1[continuousCount] != 0 ? extraArg1[continuousCount] : null,
@@ -5308,6 +5356,7 @@ class TurnMove {
                       textValue: isInput ? null : playerType.id == PlayerType.me ?
                         ownParty.pokemons[extraArg1[continuousCount]-1]?.name :
                         opponentParty.pokemons[extraArg1[continuousCount]-1]?.name,
+                      theme: theme,
                     ),
                   ),
                 ],
@@ -5349,6 +5398,7 @@ class TurnMove {
                           textValue: moveHits[continuousCount].id == MoveHit.hit ? '成功' :
                             moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
                             moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -5388,6 +5438,7 @@ class TurnMove {
                           onFocus: onFocus,
                           isInput: isInput,
                           textValue: 'うまく決まらなかった！',
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -5440,6 +5491,7 @@ class TurnMove {
                             moveHits[continuousCount].id == MoveHit.critical ? '急所に命中' :
                             moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
                             moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          theme: theme,
                         ),
                       ),
                       SizedBox(width: 10,),
@@ -5481,6 +5533,7 @@ class TurnMove {
                             moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? 'ばつぐんだ' :
                             moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? 'いまひとつのようだ' :
                             moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? 'ないようだ' : '',
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -5536,6 +5589,7 @@ class TurnMove {
                           onFocus: onFocus,
                           isInput: isInput,
                           textValue: realDamage[continuousCount] == 0 ? 'みがわりはのこった' : 'みがわりは消えてしまった',
+                          theme: theme,
                         ),
                       ),
                     ],
@@ -5645,6 +5699,9 @@ class TurnMove {
     required void Function() onFocus,
     required bool isInput,
     required String? textValue,   // isInput==falseのとき、出力する文字列として必須
+    Pokemon? prefixIconPokemon,
+    bool showNetworkImage = false,
+    required ThemeData theme,
   })
   {
     if (isInput) {
@@ -5662,7 +5719,18 @@ class TurnMove {
     }
     else {
       return TextField(
-        decoration: decoration,
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: decoration?.labelText,
+          prefixIcon: prefixIconPokemon != null ? showNetworkImage ?
+            Image.network(
+              PokeDB().pokeBase[prefixIconPokemon.no]!.imageUrl,
+              height: theme.buttonTheme.height,
+              errorBuilder: (c, o, s) {
+                return const Icon(Icons.catching_pokemon);
+              },
+            ) : const Icon(Icons.catching_pokemon) : null,
+        ),
         controller: TextEditingController(
           text: textValue,
         ),

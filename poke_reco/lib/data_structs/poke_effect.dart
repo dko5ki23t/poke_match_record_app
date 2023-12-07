@@ -1459,6 +1459,7 @@ class TurnEffect {
 
   Widget extraWidget(
     void Function() onFocus,
+    ThemeData theme,
     Pokemon ownPokemon,
     Pokemon opponentPokemon,
     PokemonState ownPokemonState,
@@ -2215,7 +2216,7 @@ class TurnEffect {
     else if (effect.id == EffectType.item) {   // もちものによる効果
       // TODO myStateとかを使う？
       return appState.pokeData.items[effectId]!.extraWidget(
-        onFocus, playerType, myPokemon, yourPokemon, myState,
+        onFocus, theme, playerType, myPokemon, yourPokemon, myState,
         yourState, myParty, yourParty, state,
         controller, extraArg1, extraArg2, getChangePokemonIndex(playerType),
         (value) {
@@ -2234,6 +2235,7 @@ class TurnEffect {
           onFocus();
         },
         isInput,
+        showNetworkImage: appState.getPokeAPI,
       );
     }
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果

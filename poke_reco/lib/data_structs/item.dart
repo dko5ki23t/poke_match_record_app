@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -935,6 +936,7 @@ class Item {
 
   Widget extraWidget(
     void Function() onFocus,
+    ThemeData theme,
     PlayerType playerType,
     Pokemon myPokemon,
     Pokemon yourPokemon,
@@ -949,6 +951,9 @@ class Item {
     void Function(int) extraArg2ChangeFunc,
     void Function(int?) changePokemonIndexChangeFunc,
     bool isInput,
+    {
+      bool showNetworkImage = false,
+    }
   ) {
     switch (id) {
       case 184:     // スターのみ
@@ -1112,14 +1117,12 @@ class Item {
                 ),
                 items: <DropdownMenuItem>[
                   for (int i = 0; i < yourParty.pokemonNum; i++)
-                    DropdownMenuItem(
+                    PokemonDropdownMenuItem(
                       value: i+1,
                       enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                      child: Text(
-                        yourParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting ?
-                          Colors.black : Colors.grey),
-                        ),
+                      theme: theme,
+                      pokemon: yourParty.pokemons[i]!,
+                      showNetworkImage: showNetworkImage,
                     ),
                 ],
                 value: changePokemonIndex,
@@ -1325,14 +1328,12 @@ class Item {
                 ),
                 items: <DropdownMenuItem>[
                   for (int i = 0; i < myParty.pokemonNum; i++)
-                    DropdownMenuItem(
+                    PokemonDropdownMenuItem(
                       value: i+1,
                       enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                      child: Text(
-                        myParty.pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting ?
-                          Colors.black : Colors.grey),
-                        ),
+                      theme: theme,
+                      pokemon: myParty.pokemons[i]!,
+                      showNetworkImage: showNetworkImage,
                     ),
                 ],
                 value: changePokemonIndex,

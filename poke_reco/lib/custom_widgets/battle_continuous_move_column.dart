@@ -92,7 +92,7 @@ class BattleContinuousMoveColumn extends Column {
                 )),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraWidget2(
-                () => onFocus(phaseIdx+1), ownPokemon, opponentPokemon,
+                () => onFocus(phaseIdx+1), theme, ownPokemon, opponentPokemon,
                 battle.getParty(PlayerType(PlayerType.me)),
                 battle.getParty(PlayerType(PlayerType.opponent)),
                 prevState.getPokemonState(PlayerType(PlayerType.me), null),

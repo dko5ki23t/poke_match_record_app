@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -149,14 +150,12 @@ class BattleChangeFaintingPokemonColumn extends Column {
                         items: 
                           <DropdownMenuItem>[
                           for (int i = 0; i < battle.getParty(turn.phases[phaseIdx].playerType).pokemonNum; i++)
-                            DropdownMenuItem(
+                            PokemonDropdownMenuItem(
                               value: i+1,
+                              pokemon: battle.getParty(turn.phases[phaseIdx].playerType).pokemons[i]!,
+                              theme: theme,
                               enabled: prevState.isPossibleBattling(turn.phases[phaseIdx].playerType, i) && !prevState.getPokemonStates(turn.phases[phaseIdx].playerType)[i].isFainting,
-                              child: Text(
-                                battle.getParty(turn.phases[phaseIdx].playerType).pokemons[i]!.name, overflow: TextOverflow.ellipsis,
-                                style: TextStyle(color: prevState.isPossibleBattling(turn.phases[phaseIdx].playerType, i) && !prevState.getPokemonStates(turn.phases[phaseIdx].playerType)[i].isFainting ?
-                                  Colors.black : Colors.grey),
-                                ),
+                              showNetworkImage: appState.getPokeAPI,
                             ),
                           ],
                         value: turn.phases[phaseIdx].effectId == 0 ? null : turn.phases[phaseIdx].effectId,
@@ -167,9 +166,17 @@ class BattleChangeFaintingPokemonColumn extends Column {
                         },
                       ) :
                       TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: '交代先ポケモン',
+                          prefixIcon: appState.getPokeAPI ?
+                            Image.network(
+                              PokeDB().pokeBase[battle.getParty(turn.phases[phaseIdx].playerType).pokemons[turn.phases[phaseIdx].effectId-1]!.no]!.imageUrl,
+                              height: theme.buttonTheme.height,
+                              errorBuilder: (c, o, s) {
+                                return const Icon(Icons.catching_pokemon);
+                              },
+                            ) : const Icon(Icons.catching_pokemon),
                         ),
                         controller: TextEditingController(
                           text: battle.getParty(turn.phases[phaseIdx].playerType).pokemons[turn.phases[phaseIdx].effectId-1]!.name

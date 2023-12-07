@@ -388,6 +388,7 @@ class BattleEffectColumn extends Column {
                         appState.needAdjustPhases = firstIdx+i+1;
                         onFocus(firstIdx+i+1);
                       },
+                      theme,
                       battle.getParty(PlayerType(PlayerType.me)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.me), null)-1]!,
                       battle.getParty(PlayerType(PlayerType.opponent)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.opponent), null)-1]!,
                       _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null),
