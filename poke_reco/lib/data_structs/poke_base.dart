@@ -41,6 +41,12 @@ class PokeBase {    // 各ポケモンの種族ごとの値
     required this.imageUrl,
   });
 
+  // 特徴的なポケモンのNo
+  static int zoruaNo = 570;
+  static int zoroarkNo = 571;
+  static int zoruaHisuiNo = 10238;
+  static int zoroarkHisuiNo = 10239;
+
   // TODO:しんかのきせきが適用できるかどうか
   bool get isEvolvable => true;
 

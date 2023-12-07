@@ -11,6 +11,7 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -344,7 +345,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             turns.clear();
             Turn turn = Turn()
             ..setInitialPokemonIndex(PlayerType(PlayerType.me), checkedPokemons.own[0]) 
-            ..setInitialPokemonIndex(PlayerType(PlayerType.opponent), checkedPokemons.opponent);
+            ..setInitialPokemonIndex(PlayerType(PlayerType.opponent), checkedPokemons.opponent)
+            ..canZorua = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaNo).isNotEmpty
+            ..canZoroark = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkNo).isNotEmpty
+            ..canZoruaHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaHisuiNo).isNotEmpty
+            ..canZoroarkHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkHisuiNo).isNotEmpty;
             // 初期状態設定ここから
             for (int i = 0; i < ownParty.pokemonNum; i++) {
               turn.getInitialPokemonStates(PlayerType(PlayerType.me)).add(PokemonState()

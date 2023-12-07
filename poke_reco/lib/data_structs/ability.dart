@@ -5,6 +5,7 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -339,7 +340,17 @@ class Ability {
         myState.addStatChanges(true, extraArg1, 2, yourState, abilityId: abilityID);
         myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: abilityID);
         break;
-      case 150:   // かわりもの
+      case 149:     // イリュージョン
+        if (playerType.id == PlayerType.opponent) {
+          var pokeNo = state.getPokemonStates(PlayerType(PlayerType.opponent))[extraArg1-1].pokemon.no;
+          if (pokeNo == PokeBase.zoruaNo) state.canZorua = false;
+          if (pokeNo == PokeBase.zoroarkNo) state.canZoroark = false;
+          if (pokeNo == PokeBase.zoruaHisuiNo) state.canZoruaHisui = false;
+          if (pokeNo == PokeBase.zoroarkHisuiNo) state.canZoroarkHisui = false;
+          // TODO インデックス等を変える
+        }
+        break;
+      case 150:     // かわりもの
         if (yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute || e.id == BuffDebuff.transform).isEmpty &&
             myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).isEmpty
         ) {    // 対象がみがわり状態でない・お互いにへんしん状態でないなら

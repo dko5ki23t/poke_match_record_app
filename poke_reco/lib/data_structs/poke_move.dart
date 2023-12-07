@@ -3,6 +3,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -3428,6 +3429,10 @@ class TurnMove {
                     }
                     else {
                       matches.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
+                      if (state.canZorua) matches.addAll(pokeData.pokeBase[PokeBase.zoruaNo]!.move.where((e) => matches.where((element) => element.id == e.id).isEmpty));
+                      if (state.canZoroark) matches.addAll(pokeData.pokeBase[PokeBase.zoroarkNo]!.move.where((e) => matches.where((element) => element.id == e.id).isEmpty));
+                      if (state.canZoruaHisui) matches.addAll(pokeData.pokeBase[PokeBase.zoruaHisuiNo]!.move.where((e) => matches.where((element) => element.id == e.id).isEmpty));
+                      if (state.canZoroarkHisui) matches.addAll(pokeData.pokeBase[PokeBase.zoroarkHisuiNo]!.move.where((e) => matches.where((element) => element.id == e.id).isEmpty));
                     }
                     matches.add(pokeData.moves[165]!);    // わるあがき
                     matches.retainWhere((s){

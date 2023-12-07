@@ -19,6 +19,10 @@ class Turn {
   List<bool> _initialHasTerastal = [false, false];
   UserForces initialUserForces = UserForces();
   List<TurnEffect> phases = [];
+  bool canZorua = false;    // 正体を明かしていないゾロアがいるかどうか
+  bool canZoroark = false;
+  bool canZoruaHisui = false;
+  bool canZoroarkHisui = false;
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
@@ -71,7 +75,11 @@ class Turn {
     ..phases = [
       for (final phase in phases)
       phase.copyWith()
-    ];
+    ]
+    ..canZorua = canZorua
+    ..canZoroark = canZoroark
+    ..canZoruaHisui = canZoruaHisui
+    ..canZoroarkHisui = canZoroarkHisui;
 
   PhaseState copyInitialState() {
     var ret = PhaseState()
@@ -80,7 +88,11 @@ class Turn {
     ..ownFields = [for (final field in _initialIndiFields[0]) field.copyWith()]
     ..opponentFields = [for (final field in _initialIndiFields[1]) field.copyWith()]
     ..hasOwnTerastal = _initialHasTerastal[0]
-    ..hasOpponentTerastal = _initialHasTerastal[1];
+    ..hasOpponentTerastal = _initialHasTerastal[1]
+    ..canZorua = canZorua
+    ..canZoroark = canZoroark
+    ..canZoruaHisui = canZoruaHisui
+    ..canZoroarkHisui = canZoroarkHisui;
     ret.getPokemonStates(PlayerType(PlayerType.me)).clear();
     ret.getPokemonStates(PlayerType(PlayerType.me)).addAll([
       for (final state in _initialPokemonStates[0])
@@ -148,6 +160,10 @@ class Turn {
       state.getPokemonState(PlayerType(PlayerType.me), null),
       state.getPokemonState(PlayerType(PlayerType.opponent), null), state,
     );
+    canZorua = state.canZorua;
+    canZoroark = state.canZoroark;
+    canZoruaHisui = state.canZoruaHisui;
+    canZoroarkHisui = state.canZoroarkHisui;
   }
 
   // とある時点(フェーズ)での状態を取得
@@ -255,6 +271,14 @@ class Turn {
       if (turnEffect == '') break;
       ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
     }
+    // canZorua
+    ret.canZorua = int.parse(turnElements[8]) != 0;
+    // canZoroark
+    ret.canZoroark = int.parse(turnElements[9]) != 0;
+    // canZoruaHisui
+    ret.canZoruaHisui = int.parse(turnElements[10]) != 0;
+    // canZoroarkHisui
+    ret.canZoroarkHisui = int.parse(turnElements[11]) != 0;
 
     return ret;
   }
@@ -306,6 +330,18 @@ class Turn {
       ret += turnEffect.serialize(split3, split4, split5);
       ret += split2;
     }
+    ret += split1;
+    // canZorua
+    ret += canZorua ? '1' : '0';
+    ret += split1;
+    // canZoroark
+    ret += canZoroark ? '1' : '0';
+    ret += split1;
+    // canZoruaHisui
+    ret += canZoruaHisui ? '1' : '0';
+    ret += split1;
+    // canZoroarkHisui
+    ret += canZoroarkHisui ? '1' : '0';
 
     return ret;
   }

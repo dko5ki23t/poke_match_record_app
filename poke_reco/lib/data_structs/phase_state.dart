@@ -21,11 +21,16 @@ class PhaseState {
   Field _field = Field(0);
   bool hasOwnTerastal = false;        // これまでのフェーズでテラスタルをしたことがあるか
   bool hasOpponentTerastal = false;
+  bool canZorua = false;    // 正体を明かしていないゾロアがいるかどうか
+  bool canZoroark = false;
+  bool canZoruaHisui = false;
+  bool canZoroarkHisui = false;
 
   Weather get weather => _weather;
   Field get field => _field;
   int get ownFaintingNum => _pokemonStates[0].where((e) => e.isFainting).length;
   int get opponentFaintingNum => _pokemonStates[1].where((e) => e.isFainting).length;
+  bool get canAnyZoroark => canZorua || canZoroark || canZoruaHisui || canZoroarkHisui;
 
   set weather(Weather w) {
     Weather.processWeatherEffect(_weather, w, getPokemonState(PlayerType(PlayerType.me), null), getPokemonState(PlayerType(PlayerType.opponent), null));
@@ -108,7 +113,11 @@ class PhaseState {
     ..weather = weather.copyWith()
     ..field = field.copyWith()
     ..hasOwnTerastal = hasOwnTerastal
-    ..hasOpponentTerastal = hasOpponentTerastal;
+    ..hasOpponentTerastal = hasOpponentTerastal
+    ..canZorua = canZorua
+    ..canZoroark = canZoroark
+    ..canZoruaHisui = canZoruaHisui
+    ..canZoroarkHisui = canZoroarkHisui;
   
   bool get isMyWin {
     var n = _pokemonStates[1].where((element) => element.isFainting).length;
@@ -250,6 +259,7 @@ class PhaseState {
         if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
             prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
         ) {  // わざ成功時
+          var replacedMoveType = prevAction.move!.getReplacedMoveType(prevAction.move!.move, continuousCount, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
           if (!attackerState.isTerastaling && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
               (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
@@ -259,23 +269,23 @@ class PhaseState {
               ..timing = AbilityTiming(AbilityTiming.beforeMove)
               ..effect = EffectType(EffectType.ability)
               ..effectId = attackerState.currentAbility.id
-              ..extraArg1 = prevAction.move!.getReplacedMove(prevAction.move!.move, continuousCount, attackerState).type.id
+              ..extraArg1 = replacedMoveType.id
               ..isAutoSet = true
             );
           }
           // ノーマルタイプのこうげきをうけたとき
-          if (prevAction.move!.move.type.id == 1) {
+          if (replacedMoveType.id == 1) {
             defenderTimingIDList.add(148);
           }
           if (PokeType.effectiveness(
               attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
               defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-              prevAction.move!.move.type, defenderState
+              replacedMoveType, defenderState
             ).id == MoveEffectiveness.great
           ) {
             // 効果ばつぐんのわざを受けたとき
             defenderTimingIDList.addAll([AbilityTiming.greatAttacked]);
-            var moveTypeId = prevAction.move!.move.type.id;
+            var moveTypeId = replacedMoveType.id;
             if (moveTypeId == 10) defenderTimingIDList.add(131);
             if (moveTypeId == 11) defenderTimingIDList.add(132);
             if (moveTypeId == 13) defenderTimingIDList.add(133);
@@ -316,9 +326,11 @@ class PhaseState {
           var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
+          var replacedMove = prevAction?.move?.getReplacedMove(prevAction.move!.move, continuousCount, attackerState);
+          var replacedMoveType = prevAction?.move?.getReplacedMoveType(prevAction.move!.move, continuousCount, attackerState, state);
           // 直接こうげきをまもる系統のわざで防がれたとき
-          if (prevAction != null && prevAction.move!.move.isDirect &&
-              !(prevAction.move!.move.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+          if (prevAction != null && replacedMove!.isDirect &&
+              !(replacedMove.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
               attackerState.currentAbility.id != 203    // とくせいがえんかくでない
           ) {
             var findIdx = defenderState.ailmentsIndexWhere((e) => e.id == Ailment.protect);
@@ -356,11 +368,11 @@ class PhaseState {
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
               prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
           ) {  // わざ成功時
-            if (prevAction.move!.move.damageClass.id == 1 && prevAction.move!.move.isTargetYou) {
+            if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
               defenderTimingIDList.add(AbilityTiming.statused);
             }
-            if (prevAction.move!.move.damageClass.id >= 2) {
+            if (replacedMove.damageClass.id >= 2) {
               // こうげきわざヒット後
               attackerTimingIDList.add(AbilityTiming.attackHitted);
               // こうげきわざでひんしにした後
@@ -368,7 +380,7 @@ class PhaseState {
                 attackerTimingIDList.add(AbilityTiming.defeatOpponentWithAttack);
               }
               // ぶつりこうげきを受けた時
-              if (prevAction.move!.move.damageClass.id == DamageClass.physical) {
+              if (replacedMove.damageClass.id == DamageClass.physical) {
                 defenderTimingIDList.add(AbilityTiming.phisycalAttackedHitted);
               }
               // こうげきわざを受けた後
@@ -382,40 +394,40 @@ class PhaseState {
                 defenderTimingIDList.add(AbilityTiming.attackedFainting);
               }
               // ノーマルタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 1) {
+              if (replacedMoveType!.id == 1) {
                 defenderTimingIDList.add(148);
               }
               // あくタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 17) {
+              if (replacedMoveType.id == 17) {
                 defenderTimingIDList.addAll([86, 87]);
               }
               // みずタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 11) {
+              if (replacedMoveType.id == 11) {
                 defenderTimingIDList.addAll([92, 104]);
               }
               // ほのおタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 10) {
+              if (replacedMoveType.id == 10) {
                 defenderTimingIDList.addAll([104, 107]);
               }
               // でんきタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 13) {
+              if (replacedMoveType.id == 13) {
                 defenderTimingIDList.addAll([118]);
               }
               // こおりタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 15) {
+              if (replacedMoveType.id == 15) {
                 defenderTimingIDList.addAll([119]);
               }
               // ゴーストタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 8) {
+              if (replacedMoveType.id == 8) {
                 defenderTimingIDList.addAll([87]);
               }
               // むしタイプのこうげきをうけたとき
-              if (prevAction.move!.move.type.id == 7) {
+              if (replacedMoveType.id == 7) {
                 defenderTimingIDList.addAll([92]);
               }
               // 直接こうげきを受けた後
-              if (prevAction.move!.move.isDirect &&
-                  !(prevAction.move!.move.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+              if (replacedMove.isDirect &&
+                  !(replacedMove.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
                   attackerState.currentAbility.id != 203    // とくせいがえんかくでない
               ) {
                 // ぼうごパットで防がれないなら
@@ -429,48 +441,48 @@ class PhaseState {
               }
             }
             // 優先度1以上のわざを受けた後
-            if (prevAction.move!.move.priority >= 1) {
+            if (replacedMove.priority >= 1) {
               defenderTimingIDList.add(AbilityTiming.priorityMoved);
             }
             // 音技を受けた後
-            if (prevAction.move!.move.isSound) {
+            if (replacedMove.isSound) {
               defenderTimingIDList.add(AbilityTiming.soundAttacked);
             }
             // 風の技を受けた後
-            if (prevAction.move!.move.isWind) {
+            if (replacedMove.isWind) {
               defenderTimingIDList.add(AbilityTiming.winded);
             }
             // HP吸収わざを受けた後
-            if (prevAction.move!.move.isDrain) {
+            if (replacedMove.isDrain) {
               defenderTimingIDList.add(AbilityTiming.drained);
             }
-            if (prevAction.move!.move.type.id == 13) {    // でんきタイプのわざをうけた時
+            if (replacedMoveType!.id == 13) {    // でんきタイプのわざをうけた時
               defenderTimingIDList.addAll([AbilityTiming.electriced, AbilityTiming.electricUse]);
             }
-            if (prevAction.move!.move.type.id == 11) {    // みずタイプのわざをうけた時
+            if (replacedMoveType.id == 11) {    // みずタイプのわざをうけた時
               defenderTimingIDList.addAll([AbilityTiming.watered, AbilityTiming.fireWaterAttackedSunnyRained, AbilityTiming.waterUse]);
             }
-            if (prevAction.move!.move.type.id == 10) {    // ほのおタイプのわざをうけた時
+            if (replacedMoveType.id == 10) {    // ほのおタイプのわざをうけた時
               defenderTimingIDList.addAll([AbilityTiming.fired, AbilityTiming.fireWaterAttackedSunnyRained]);
             }
-            if (prevAction.move!.move.type.id == 12) {    // くさタイプのわざをうけた時
+            if (replacedMoveType.id == 12) {    // くさタイプのわざをうけた時
               defenderTimingIDList.addAll([AbilityTiming.grassed]);
             }
-            if (prevAction.move!.move.type.id == 5) {    // じめんタイプのわざをうけた時
+            if (replacedMoveType.id == 5) {    // じめんタイプのわざをうけた時
               defenderTimingIDList.addAll([AbilityTiming.grounded]);
-              if (prevAction.move!.move.id != 28 && prevAction.move!.move.id != 614) {  // すなかけ/サウザンアローではない
+              if (replacedMove.id != 28 && replacedMove.id != 614) {  // すなかけ/サウザンアローではない
                 defenderTimingIDList.addAll([AbilityTiming.groundFieldEffected]);
               }
             }
             if (PokeType.effectiveness(
                   attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
                   defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                  prevAction.move!.move.type, defenderState
+                  replacedMoveType, defenderState
                 ).id == MoveEffectiveness.great
             ) {
               // 効果ばつぐんのわざを受けたとき
               defenderTimingIDList.addAll([AbilityTiming.greatAttacked]);
-              var moveTypeId = prevAction.move!.move.type.id;
+              var moveTypeId = replacedMoveType.id;
               if (moveTypeId == 10) defenderTimingIDList.add(131);
               if (moveTypeId == 11) defenderTimingIDList.add(132);
               if (moveTypeId == 13) defenderTimingIDList.add(133);
