@@ -960,7 +960,7 @@ class Item {
         return Row(
           children: [
             Flexible(
-              child: DropdownButtonFormField(
+              child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),
@@ -989,6 +989,10 @@ class Item {
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
+                textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
+                  extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : extraArg1 == 4 ? 'すばやさ' : '',
+                isInput: isInput,
+                onFocus: onFocus,
               ),
             ),
             Text('があがった'),
@@ -1025,7 +1029,7 @@ class Item {
           children: [
             Row(children: [
               Flexible(
-                child: DropdownButtonFormField(
+                child: _myDropdownButtonFormField(
                   isExpanded: true,
                   decoration: const InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1042,6 +1046,9 @@ class Item {
                   ],
                   value: extraArg2,
                   onChanged: (value) => extraArg2ChangeFunc(value),
+                  textValue: extraArg2 == 0 ? 'HPが回復した' : extraArg1 == 1 ? 'こんらんした' : '',
+                  isInput: isInput,
+                  onFocus: onFocus,
                 ),
               ),
             ]),
@@ -1083,7 +1090,7 @@ class Item {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Flexible(
-              child: DropdownButtonFormField(
+              child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),
@@ -1100,6 +1107,9 @@ class Item {
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
+                textValue: extraArg1 == 0 ? 'ふうせんで浮いている' : extraArg1 == 1 ? 'ふうせんが割れた' : '',
+                isInput: isInput,
+                onFocus: onFocus,
               ),
             ),
           ],
@@ -1109,7 +1119,7 @@ class Item {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Flexible(
-              child: DropdownButtonFormField(
+              child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),
@@ -1127,6 +1137,12 @@ class Item {
                 ],
                 value: changePokemonIndex,
                 onChanged: (value) => changePokemonIndexChangeFunc(value),
+                textValue: isInput ? null : yourParty.pokemons[changePokemonIndex??1-1]!.name,
+                isInput: isInput,
+                onFocus: onFocus,
+                prefixIconPokemon: isInput ? null : yourParty.pokemons[changePokemonIndex??1-1]!,
+                showNetworkImage: showNetworkImage,
+                theme: theme,
               ),
             ),
           ],
@@ -1139,7 +1155,7 @@ class Item {
               children: [
                 Text('こうげき:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1158,11 +1174,14 @@ class Item {
                       statChanges[0] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[0] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[0]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
                 Text('ぼうぎょ:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1181,11 +1200,14 @@ class Item {
                       statChanges[1] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[1] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[1]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
                 Text('とくこう:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1204,6 +1226,9 @@ class Item {
                       statChanges[2] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[2] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[2]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1213,7 +1238,7 @@ class Item {
               children: [
                 Text('とくぼう:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1232,12 +1257,15 @@ class Item {
                       statChanges[3] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[3] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[3]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
                 SizedBox(width: 10,),
                 Text('すばやさ:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1256,6 +1284,9 @@ class Item {
                       statChanges[4] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[4] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[4]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1265,7 +1296,7 @@ class Item {
               children: [
                 Text('めいちゅう:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1284,12 +1315,15 @@ class Item {
                       statChanges[5] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[5] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[5]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
                 SizedBox(width: 10,),
                 Text('かいひ:'),
                 Flexible(
-                  child: DropdownButtonFormField(
+                  child: _myDropdownButtonFormField(
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -1308,6 +1342,9 @@ class Item {
                       statChanges[6] = value;
                       extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
                     },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[6] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[6]).toString(),
+                    isInput: isInput,
+                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1320,7 +1357,7 @@ class Item {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Flexible(
-              child: DropdownButtonFormField(
+              child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),
@@ -1338,12 +1375,93 @@ class Item {
                 ],
                 value: changePokemonIndex,
                 onChanged: (value) => changePokemonIndexChangeFunc(value),
+                textValue: isInput ? null : myParty.pokemons[changePokemonIndex??1-1]!.name,
+                isInput: isInput,
+                onFocus: onFocus,
+                prefixIconPokemon: isInput ? null : myParty.pokemons[changePokemonIndex??1-1]!,
+                showNetworkImage: showNetworkImage,
+                theme: theme,
               ),
             ),
           ],
         );
     }
     return Container();
+  }
+
+  Widget _myDropdownButtonFormField<T>({
+    Key? key,
+    required List<DropdownMenuItem<T>>? items,
+    DropdownButtonBuilder? selectedItemBuilder,
+    T? value,
+    Widget? hint,
+    Widget? disabledHint,
+    required ValueChanged<T?>? onChanged,
+    VoidCallback? onTap,
+    int elevation = 8,
+    TextStyle? style,
+    Widget? icon,
+    Color? iconDisabledColor,
+    Color? iconEnabledColor,
+    double iconSize = 24.0,
+    bool isDense = true,
+    bool isExpanded = false,
+    double? itemHeight,
+    Color? focusColor,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Color? dropdownColor,
+    InputDecoration? decoration,
+    void Function(T?)? onSaved,
+    String? Function(T?)? validator,
+    AutovalidateMode? autovalidateMode,
+    double? menuMaxHeight,
+    bool? enableFeedback,
+    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    required void Function() onFocus,
+    required bool isInput,
+    required String? textValue,   // isInput==falseのとき、出力する文字列として必須
+    Pokemon? prefixIconPokemon,
+    bool showNetworkImage = false,
+    ThemeData? theme,
+  })
+  {
+    if (isInput) {
+      return DropdownButtonFormField(
+        key: key, items: items, selectedItemBuilder: selectedItemBuilder, value: value,
+        hint: hint, disabledHint: disabledHint, onChanged: onChanged, onTap: onTap,
+        elevation: elevation, style: style, icon: icon, iconDisabledColor: iconDisabledColor,
+        iconEnabledColor: iconEnabledColor, iconSize: iconSize, isDense: isDense,
+        isExpanded: isExpanded, itemHeight: itemHeight, focusColor: focusColor,
+        focusNode: focusNode, autofocus: autofocus, dropdownColor: dropdownColor,
+        decoration: decoration, onSaved: onSaved, validator: validator, autovalidateMode: autovalidateMode,
+        menuMaxHeight: menuMaxHeight, enableFeedback: enableFeedback, alignment: alignment,
+        borderRadius: borderRadius, padding: padding,
+      );
+    }
+    else {
+      return TextField(
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: decoration?.labelText,
+          prefixIcon: prefixIconPokemon != null ? showNetworkImage ?
+            Image.network(
+              PokeDB().pokeBase[prefixIconPokemon.no]!.imageUrl,
+              height: theme?.buttonTheme.height,
+              errorBuilder: (c, o, s) {
+                return const Icon(Icons.catching_pokemon);
+              },
+            ) : const Icon(Icons.catching_pokemon) : null,
+        ),
+        controller: TextEditingController(
+          text: textValue,
+        ),
+        readOnly: true,
+        onTap: onFocus,
+      );
+    }
   }
 
   Map<String, Object?> toMap() {
