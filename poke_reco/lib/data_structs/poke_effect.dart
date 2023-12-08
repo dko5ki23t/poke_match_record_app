@@ -627,6 +627,7 @@ class TurnEffect {
       ownPokemonState.isFainting = true;
       if (!alreadyOwnFainting) {
         isOwnFainting = true;
+        state.incFaintingCount(PlayerType(PlayerType.me), 1);
       }
     }
     else {
@@ -638,6 +639,7 @@ class TurnEffect {
       opponentPokemonState.isFainting = true;
       if (!alreadyOpponentFainting) {
         isOpponentFainting = true;
+        state.incFaintingCount(PlayerType(PlayerType.opponent), 1);
       }
     }
     else {
@@ -1330,10 +1332,64 @@ class TurnEffect {
     return '';
   }
 
-  String getEditingControllerText3(PhaseState state, TurnEffect? prevAction) {
+  String getEditingControllerText3(
+    PhaseState state,
+    TurnEffect? prevAction,
+    {
+      bool isOnMoveSelected = false,
+    }
+  ) {
     var myState = state.getPokemonState(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
     var yourState = state.getPokemonState(playerType.opposite, timing.id == AbilityTiming.afterMove ? prevAction : null);
     var pokeData = PokeDB();
+
+    // わざが選択されたときのみ、extraArgを引いたHPの値をセット
+    if (isOnMoveSelected) {
+      switch (timing.id) {
+        case AbilityTiming.action:
+        case AbilityTiming.continuousMove:
+          {
+            if (move == null) return '';
+            switch (move!.moveAdditionalEffects[0].id) {
+              case 33:    // 最大HPの半分だけ回復する
+              case 215:   // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
+              case 80:    // 場に「みがわり」を発生させる
+              case 133:   // 使用者のHP回復。回復量は天気による
+              case 163:   // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
+              case 382:   // 最大HPの半分だけ回復する。天気がすなあらしの場合は2/3回復する
+              case 387:   // 最大HPの半分だけ回復する。場がグラスフィールドの場合は2/3回復する
+              case 441:   // 最大HP1/4だけ回復
+              case 420:   // 最大HP1/2(小数点切り上げ)を削ってこうげき
+              case 433:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
+              case 461:   // 最大HP1/4回復、状態異常を治す
+              case 492:   // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
+                if (move!.playerType.id == PlayerType.me) {
+                  return (myState.remainHP - move!.extraArg1[0]).toString();
+                }
+                else if (move!.playerType.id == PlayerType.opponent) {
+                  return (myState.remainHPPercent - move!.extraArg2[0]).toString();
+                }
+                break;
+              case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
+                if (myState.isTypeContain(8)) {
+                  if (move!.playerType.id == PlayerType.me) {
+                    return (myState.remainHP - move!.extraArg1[0]).toString();
+                  }
+                  else if (move!.playerType.id == PlayerType.opponent) {
+                    return (myState.remainHPPercent - move!.extraArg2[0]).toString();
+                  }
+                }
+                break;
+              default:
+                break;
+            }
+          }
+          break;
+        default:
+          break;
+      }
+    }
+
     switch (timing.id) {
       case AbilityTiming.action:
       case AbilityTiming.continuousMove:

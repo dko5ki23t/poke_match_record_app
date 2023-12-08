@@ -2750,7 +2750,7 @@ class TurnMove {
               movePower = (movePower / 3 * 4).floor();
             }
             break;
-          case 492:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
+          case 492:   // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
@@ -3498,6 +3498,8 @@ class TurnMove {
                     setAutoArgs(state, continuousCount);
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
+                    //appState.needAdjustPhases = phaseIdx;
+                    //onFocus();
                   },
                   onFocus: onFocus,
                   isInput: isInput,
@@ -5851,17 +5853,70 @@ class TurnMove {
     return '';
   }
 
-  // わざに対応して、argsを自動でセット
+  // わざに対応して、args等を自動でセット
   void setAutoArgs(PhaseState state, int continuousCount) {
     var myState = state.getPokemonState(playerType, null);
     var yourState = state.getPokemonState(playerType.opposite, null);
     var opponentState = state.getPokemonState(PlayerType(PlayerType.opponent), null);
     
     switch (moveAdditionalEffects[continuousCount].id) {
+      case 33:    // 最大HPの半分だけ回復する
+      case 215:   // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
+        extraArg1[continuousCount] = -((myState.pokemon.h.real / 2).ceil());
+        extraArg2[continuousCount] = -50;
+        break;
+      case 80:    // 場に「みがわり」を発生させる
+        extraArg1[continuousCount] = (myState.pokemon.h.real / 4).floor();
+        extraArg2[continuousCount] = 25;
+        break;
+      case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
+        if (myState.isTypeContain(8)) {
+          extraArg1[continuousCount] = (myState.pokemon.h.real / 2).floor();
+          extraArg2[continuousCount] = 50;
+        }
+        break;
       case 106:   // もちものを盗む
       case 189:   // もちものを持っていれば失わせ、威力1.5倍
         if (yourState.holdingItem != null && yourState.holdingItem!.id != 0) {
           extraArg1[continuousCount] = yourState.holdingItem!.id;
+        }
+        break;
+      case 133:   // 使用者のHP回復。回復量は天気による
+        if (state.weather.id == Weather.sunny) {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+        }
+        else if (state.weather.id == Weather.rainy || state.weather.id == Weather.sandStorm ||
+          state.weather.id == Weather.snowy)
+        {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 4));
+          extraArg2[continuousCount] = -25;
+        }
+        else {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2[continuousCount] = -50;
+        }
+        break;
+      case 163:   // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
+        int findIdx = myState.ailmentsIndexWhere((e) => e.id >= Ailment.stock1 && e.id <= Ailment.stock3);
+        if (findIdx >= 0) {
+          int t = myState.ailments(findIdx).id - Ailment.stock1;
+          switch (t) {
+            case 0:
+              extraArg1[continuousCount] = -((myState.pokemon.h.real / 4).floor());
+              extraArg2[continuousCount] = -25;
+              break;
+            case 1:
+              extraArg1[continuousCount] = -((myState.pokemon.h.real / 2).floor());
+              extraArg2[continuousCount] = -50;
+              break;
+            case 2:
+              extraArg1[continuousCount] = -myState.pokemon.h.real;
+              extraArg2[continuousCount] = -100;
+              break;
+            default:
+              break;
+          }
         }
         break;
       case 178:   // 使用者ともちものを入れ替える
@@ -5902,6 +5957,46 @@ class TurnMove {
         if (myState.currentAbility.id != 0) {
           extraArg1[continuousCount] = myState.currentAbility.id;
         }
+        break;
+      case 382:   // 最大HPの半分だけ回復する。天気がすなあらしの場合は2/3回復する
+        if (state.weather.id == Weather.sandStorm) {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+        }
+        else {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2[continuousCount] = -50;
+        }
+        break;
+      case 387:   // 最大HPの半分だけ回復する。場がグラスフィールドの場合は2/3回復する
+        if (state.field.id == Field.grassyTerrain) {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+        }
+        else {
+          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2[continuousCount] = -50;
+        }
+        break;
+      case 441:   // 最大HP1/4だけ回復
+        extraArg1[continuousCount] = -((myState.pokemon.h.real / 4).round());
+        extraArg2[continuousCount] = -25;
+        break;
+      case 420:   // 最大HP1/2(小数点切り上げ)を削ってこうげき
+        extraArg1[continuousCount] = (myState.pokemon.h.real / 2).ceil();
+        extraArg2[continuousCount] = 50;
+        break;
+      case 433:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
+        extraArg1[continuousCount] = (myState.pokemon.h.real / 3).floor();
+        extraArg2[continuousCount] = 33;
+        break;
+      case 461:   // 最大HP1/4回復、状態異常を治す
+        extraArg1[continuousCount] = -((myState.pokemon.h.real / 4).floor());
+        extraArg2[continuousCount] = -25;
+        break;
+      case 492:   // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
+        extraArg1[continuousCount] = ((myState.pokemon.h.real / 2).ceil());
+        extraArg2[continuousCount] = 50;
         break;
       default:
         break;

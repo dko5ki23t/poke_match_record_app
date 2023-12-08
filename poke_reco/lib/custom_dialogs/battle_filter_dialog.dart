@@ -194,6 +194,13 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
             },
           ),
           GestureDetector(
+            child: Text('リセット'),
+            onTap: () {
+              winFilter = [for (int i = 1; i < 4; i++) i];
+              partyIDFilter = [];
+            },
+          ),
+          GestureDetector(
             child: Text('OK'),
             onTap: () async {
               Navigator.pop(context);

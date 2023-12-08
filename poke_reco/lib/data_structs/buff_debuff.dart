@@ -758,6 +758,8 @@ class BuffDebuff {
     182: Colors.white,
     183: Colors.white,
     184: Colors.blue,
+    186: Colors.red,
+    189: Colors.orange,
   };
 
   final int id;

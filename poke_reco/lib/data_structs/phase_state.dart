@@ -25,11 +25,10 @@ class PhaseState {
   bool canZoroark = false;
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
+  List<int> _faintingCount = [0, 0];   // ひんしになった回数
 
   Weather get weather => _weather;
   Field get field => _field;
-  int get ownFaintingNum => _pokemonStates[0].where((e) => e.isFainting).length;
-  int get opponentFaintingNum => _pokemonStates[1].where((e) => e.isFainting).length;
   bool get canAnyZoroark => canZorua || canZoroark || canZoruaHisui || canZoroarkHisui;
 
   set weather(Weather w) {
@@ -60,7 +59,6 @@ class PhaseState {
     else if (player.id == PlayerType.opponent) {
       _pokemonIndexes[1] = index;
     }
-    assert(true);
   }
 
   List<PokemonState> getPokemonStates(PlayerType player) {
@@ -87,6 +85,24 @@ class PhaseState {
     }
     else {
       return _pokemonStates[1][_pokemonIndexes[1]-1];
+    }
+  }
+
+  int getFaintingCount(PlayerType player) {
+    if (player.id == PlayerType.me) {
+      return _faintingCount[0];
+    }
+    else {
+      return _faintingCount[1];
+    }
+  }
+
+  void incFaintingCount(PlayerType player, int delta) {
+    if (player.id == PlayerType.me) {
+      _faintingCount[0] += delta;
+    }
+    else {
+      _faintingCount[1] += delta;
     }
   }
 
@@ -117,7 +133,8 @@ class PhaseState {
     ..canZorua = canZorua
     ..canZoroark = canZoroark
     ..canZoruaHisui = canZoruaHisui
-    ..canZoroarkHisui = canZoroarkHisui;
+    ..canZoroarkHisui = canZoroarkHisui
+    .._faintingCount = [..._faintingCount];
   
   bool get isMyWin {
     var n = _pokemonStates[1].where((element) => element.isFainting).length;
@@ -252,10 +269,10 @@ class PhaseState {
         var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
         var defenderTimingIDList = [];
 
-        if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
-            prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
+        if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(0) &&
+            prevAction.move!.moveEffectivenesses[0].id != MoveEffectiveness.noEffect
         ) {  // わざ成功時
-          var replacedMoveType = prevAction.move!.getReplacedMoveType(prevAction.move!.move, continuousCount, attackerState, state);
+          var replacedMoveType = prevAction.move!.getReplacedMoveType(prevAction.move!.move, 0, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
           if (!attackerState.isTerastaling && attackerState.hiddenBuffs.where((e) => e.id == BuffDebuff.protean).isEmpty &&
               (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
@@ -320,8 +337,8 @@ class PhaseState {
           var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
-          var replacedMove = prevAction?.move?.getReplacedMove(prevAction.move!.move, continuousCount, attackerState);
-          var replacedMoveType = prevAction?.move?.getReplacedMoveType(prevAction.move!.move, continuousCount, attackerState, state);
+          var replacedMove = prevAction?.move?.getReplacedMove(prevAction.move!.move, 0, attackerState);
+          var replacedMoveType = prevAction?.move?.getReplacedMoveType(prevAction.move!.move, 0, attackerState, state);
           // 直接こうげきをまもる系統のわざで防がれたとき
           if (prevAction != null && replacedMove!.isDirect &&
               !(replacedMove.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
@@ -357,8 +374,8 @@ class PhaseState {
               ..effectId = 194
             );
           }
-          if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(continuousCount) &&
-              prevAction.move!.moveEffectivenesses[continuousCount].id != MoveEffectiveness.noEffect
+          if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(0) &&
+              prevAction.move!.moveEffectivenesses[0].id != MoveEffectiveness.noEffect
           ) {  // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
@@ -436,8 +453,9 @@ class PhaseState {
             if (replacedMove.priority >= 1) {
               defenderTimingIDList.add(AbilityTiming.priorityMoved);
             }
-            // 音技を受けた後
+            // 音技を使った後/受けた後
             if (replacedMove.isSound) {
+              attackerTimingIDList.add(AbilityTiming.soundAttack);
               defenderTimingIDList.add(AbilityTiming.soundAttacked);
             }
             // 風の技を受けた後

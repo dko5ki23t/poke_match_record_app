@@ -563,6 +563,21 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
             },
           ),
           GestureDetector(
+            child: Text('リセット'),
+            onTap: () {
+              setState(() {
+                ownerFilter = [Owner.mine];
+                noFilter = [];
+                typeFilter = [for (int i = 1; i < 19; i++) i];
+                teraTypeFilter = [for (int i = 1; i < 19; i++) i];
+                moveFilter = [];
+                sexFilter = [for (var sex in Sex.values) sex.id];
+                abilityFilter = [];
+                temperFilter = [];
+              });
+            },
+          ),
+          GestureDetector(
             child: Text('OK'),
             onTap: () async {
               Navigator.pop(context);

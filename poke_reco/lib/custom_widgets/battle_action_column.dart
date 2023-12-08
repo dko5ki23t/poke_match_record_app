@@ -196,7 +196,7 @@ class BattleActionColumn extends Column {
                   hpControllerList[phaseIdx].text =
                     turn.phases[phaseIdx].getEditingControllerText2(currentState, null);
                   textEditingControllerList3[phaseIdx].text =
-                    turn.phases[phaseIdx].getEditingControllerText3(currentState, null);
+                    turn.phases[phaseIdx].getEditingControllerText3(currentState, null, isOnMoveSelected: true,);
                   textEditingControllerList4[phaseIdx].text =
                     turn.phases[phaseIdx].getEditingControllerText4(currentState);
                   onFocus(phaseIdx+1);

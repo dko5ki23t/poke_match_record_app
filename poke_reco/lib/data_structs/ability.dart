@@ -697,8 +697,7 @@ class Ability {
         break;
       case 293:   // そうだいしょう
         {
-          int faintingNum = myPlayerID == PlayerType.me ?
-                state.ownFaintingNum : state.opponentFaintingNum;
+          int faintingNum = state.getFaintingCount(playerType);
           if (faintingNum > 0) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.power10 + faintingNum - 1));
           }

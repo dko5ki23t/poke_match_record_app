@@ -260,6 +260,15 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
             },
           ),
           GestureDetector(
+            child: Text('リセット'),
+            onTap: () {
+              ownerFilter = [Owner.mine];
+              winRateMinFilter = 0;
+              winRateMaxFilter = 100;
+              pokemonNoFilter = [];
+            },
+          ),
+          GestureDetector(
             child: Text('OK'),
             onTap: () async {
               Navigator.pop(context);

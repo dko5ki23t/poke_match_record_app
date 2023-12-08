@@ -61,6 +61,7 @@ class MoveInputRow extends Row {
           },
           itemBuilder: (context, suggestion) {
             return ListTile(
+              leading: suggestion.type.displayIcon,
               title: Text(suggestion.displayName),
             );
           },
