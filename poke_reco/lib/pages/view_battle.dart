@@ -304,7 +304,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
           dateController,
           opponentPokemonController,
           ownPartyController, () {return Future<Party?>.value(null);},
-          showNetworkImage: appState.getPokeAPI,
+          showNetworkImage: pokeData.getPokeAPI,
           isInput: false,
         );
         nextPressed = turns.isNotEmpty ?
@@ -323,7 +323,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
           () {}, widget.battle, theme, CheckedPokemons(),
           ownPokemonStates: turns.first.getInitialPokemonStates(PlayerType(PlayerType.me)),
           opponentPokemonIndex: turns.first.getInitialPokemonIndex(PlayerType(PlayerType.opponent)),
-          showNetworkImage: appState.getPokeAPI,
+          showNetworkImage: pokeData.getPokeAPI,
           isInput: false,
         );
         nextPressed = () => onNext();
@@ -342,7 +342,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    appState.getPokeAPI ?
+                    pokeData.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState!.getPokemonState(PlayerType(PlayerType.me), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
@@ -357,7 +357,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    appState.getPokeAPI ?
+                    pokeData.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,

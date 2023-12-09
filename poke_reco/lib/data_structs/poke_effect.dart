@@ -104,15 +104,6 @@ const List<int> allTimingIDs = [
 ];
 
 // ポケモンを繰り出すとき
-// ポケモンの場
-const List<int> pokemonAppearFieldIDs = [
-  IndividualField.healingWish,  // いやしのねがい
-  IndividualField.lunarDance,   // みかづきのまい
-  IndividualField.spikes,       // まきびし
-  IndividualField.toxicSpikes,  // どくびし
-  IndividualField.stealthRock,  // ステルスロック
-  IndividualField.stickyWeb,    // ねばねばネット
-];
 // タイミング
 const List<int> pokemonAppearTimingIDs = [
   1,      // ポケモン登場時
@@ -288,13 +279,14 @@ class TurnEffect {
     setPrevPokemonIndex(PlayerType(PlayerType.me), state.getPokemonIndex(PlayerType(PlayerType.me), null));
     setPrevPokemonIndex(PlayerType(PlayerType.opponent), state.getPokemonIndex(PlayerType(PlayerType.opponent), null));
 
+    bool isMe = playerType.id == PlayerType.me;
     var myState = timing.id == AbilityTiming.afterMove && prevAction != null ?
-      state.getPokemonState(playerType, prevAction) : playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
+      state.getPokemonState(playerType, prevAction) : isMe ? ownPokemonState : opponentPokemonState;
     var yourState = timing.id == AbilityTiming.afterMove && prevAction != null ?
-      state.getPokemonState(playerType.opposite, prevAction) : playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
-    var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
-    var myParty = playerType.id == PlayerType.me ? ownParty : opponentParty;
+      state.getPokemonState(playerType.opposite, prevAction) : isMe ? opponentPokemonState : ownPokemonState;
+    var myFields = isMe ? state.ownFields : state.opponentFields;
+    var yourFields = isMe ? state.opponentFields : state.ownFields;
+    var myParty = isMe ? ownParty : opponentParty;
     var myPokemonIndex = state.getPokemonIndex(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
 
     switch (effect.id) {
@@ -314,26 +306,31 @@ class TurnEffect {
             case IndiFieldEffect.badToxicSpikes:  // どくどくびし
               myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
               break;
-            case IndividualField.futureAttack:    // みらいにこうげき
+            case IndiFieldEffect.spikes1:         // まきびし
+            case IndiFieldEffect.spikes2:
+            case IndiFieldEffect.spikes3:
+            case IndiFieldEffect.futureAttack:    // みらいにこうげき
             case IndiFieldEffect.stealthRock:     // ステルスロック
-              if (playerType.id == PlayerType.me) {
+            case IndiFieldEffect.wish:            // ねがいごと
+              if (isMe) {
                 myState.remainHP -= extraArg1;
               }
               else {
                 myState.remainHPPercent -= extraArg1;
               }
               break;
-            case IndividualField.healingWish:     // いやしのねがい
-              if (playerType.id == PlayerType.me) {
+            case IndiFieldEffect.healingWish:     // いやしのねがい
+              if (isMe) {
                 myState.remainHP = myState.pokemon.h.real;
               }
               else {
                 myState.remainHPPercent = 100;
               }
               myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
+              myFields.removeWhere((e) => e.id == IndividualField.healingWish);
               break;
-            case IndividualField.lunarDance:      // みかづきのまい
-              if (playerType.id == PlayerType.me) {
+            case IndiFieldEffect.lunarDance:      // みかづきのまい
+              if (isMe) {
                 myState.remainHP = myState.pokemon.h.real;
               }
               else {
@@ -343,27 +340,55 @@ class TurnEffect {
               for (int i = 0; i < myState.usedPPs.length; i++) {
                 myState.usedPPs[i] = 0;
               }
+              myFields.removeWhere((e) => e.id == IndividualField.lunarDance);
               break;
             case IndiFieldEffect.stickyWeb:       // ねばねばネット
-              if (myState.isGround(myFields) && myState.holdingItem?.id != 1178) {
-                myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields);
-              }
+              myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields);
               break;
-            case IndiFieldEffect.reflectorEnd:
+            case IndiFieldEffect.reflectorEnd:    // リフレクター終了
               myFields.removeWhere((e) => e.id == IndividualField.reflector);
               break;
-            case IndiFieldEffect.lightScreenEnd:
+            case IndiFieldEffect.lightScreenEnd:  // ひかりのかべ終了
               myFields.removeWhere((e) => e.id == IndividualField.lightScreen);
               break;
-            case IndiFieldEffect.tailwindEnd:
+            case IndiFieldEffect.safeGuardEnd:    // しんぴのまもり終了
+              myFields.removeWhere((e) => e.id == IndividualField.safeGuard);
+              break;
+            case IndiFieldEffect.mistEnd:         // しろいきり終了
+              myFields.removeWhere((e) => e.id == IndividualField.mist);
+              break;
+            case IndiFieldEffect.tailwindEnd:     // おいかぜ終了
               myFields.removeWhere((e) => e.id == IndividualField.tailwind);
               break;
-            case IndiFieldEffect.auroraVeilEnd:
+            case IndiFieldEffect.auroraVeilEnd:   // オーロラベール終了
               myFields.removeWhere((e) => e.id == IndividualField.auroraVeil);
               break;
-            case IndiFieldEffect.trickRoomEnd:
+            case IndiFieldEffect.gravityEnd:      // じゅうりょく終了
+              myFields.removeWhere((e) => e.id == IndividualField.gravity);
+              break;
+            case IndiFieldEffect.trickRoomEnd:    // トリックルーム終了
               myFields.removeWhere((e) => e.id == IndividualField.trickRoom);
               yourFields.removeWhere((e) => e.id == IndividualField.trickRoom);
+              break;
+            case IndiFieldEffect.waterSportEnd:   // みずあそび終了
+              myFields.removeWhere((e) => e.id == IndividualField.waterSport);
+              yourFields.removeWhere((e) => e.id == IndividualField.waterSport);
+              break;
+            case IndiFieldEffect.mudSportEnd:     // どろあそび終了
+              myFields.removeWhere((e) => e.id == IndividualField.mudSport);
+              yourFields.removeWhere((e) => e.id == IndividualField.mudSport);
+              break;
+            case IndiFieldEffect.wonderRoomEnd:   // ワンダールーム終了
+              myFields.removeWhere((e) => e.id == IndividualField.wonderRoom);
+              yourFields.removeWhere((e) => e.id == IndividualField.wonderRoom);
+              break;
+            case IndiFieldEffect.magicRoomEnd:    // マジックルーム終了
+              myFields.removeWhere((e) => e.id == IndividualField.magicRoom);
+              yourFields.removeWhere((e) => e.id == IndividualField.magicRoom);
+              break;
+            case IndiFieldEffect.fairyLockEnd:    // フェアリーロック終了
+              myFields.removeWhere((e) => e.id == IndividualField.fairyLock);
+              yourFields.removeWhere((e) => e.id == IndividualField.fairyLock);
               break;
           }
         }
@@ -476,7 +501,7 @@ class TurnEffect {
             // 相手HP確定
             if (playerType.id == PlayerType.opponent) {
               int drain = extraArg2.abs();
-              if (yourState.remainHP < yourState.pokemon.h.real && myState.remainHPPercent > 0) {
+              if (yourState.remainHP < yourState.pokemon.h.real && myState.remainHPPercent > 0 && drain > 0) {
                 if (yourState.holdingItem?.id == 273) {   // おおきなねっこ
                   int tmp = ((drain.toDouble() + 0.5) / 1.3).round();
                   while (roundOff5(tmp * 1.3) > drain) {tmp--;}
@@ -692,26 +717,11 @@ class TurnEffect {
           if (phaseState.field.id != Field.psychicTerrain) timingIDs.add(100);  // ポケモン登場時(サイコフィールドでない)
           if (phaseState.field.id != Field.mistyTerrain) timingIDs.add(101);    // ポケモン登場時(ミストフィールドでない)
           if (phaseState.field.id != Field.grassyTerrain) timingIDs.add(102);   // ポケモン登場時(グラスフィールドでない)
-          if ((playerType.id == PlayerType.me && phaseState.ownFields.where((e) => e.id == IndividualField.stealthRock).isNotEmpty) ||
-              (playerType.id == PlayerType.opponent && phaseState.opponentFields.where((e) => e.id == IndividualField.stealthRock).isNotEmpty)
-          ) {         // ステルスロックがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.stealthRock);
-          }
-          var findIdx = playerType.id == PlayerType.me ? phaseState.ownFields.indexWhere((e) => e.id == IndividualField.toxicSpikes) :
-                        playerType.id == PlayerType.opponent ? phaseState.opponentFields.indexWhere((e) => e.id == IndividualField.toxicSpikes) : -1;
-          var extraArg1 = findIdx >= 0 ? playerType.id == PlayerType.me ? phaseState.ownFields[findIdx].extraArg1 : phaseState.opponentFields[findIdx].extraArg1 : 0;
-          if (findIdx >= 0) {       // どくびしがあるとき
-            if (extraArg1 <= 1) {
-              indiFieldEffectIDs.add(IndiFieldEffect.toxicSpikes);
+          var myFields = playerType.id == PlayerType.me ? phaseState.ownFields : phaseState.opponentFields;
+          for (final field in myFields) {
+            if (field.possiblyActive(timing)) {
+              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
             }
-            else {
-              indiFieldEffectIDs.add(IndiFieldEffect.badToxicSpikes);
-            }
-          }
-          if ((playerType.id == PlayerType.me && phaseState.ownFields.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty) ||
-              (playerType.id == PlayerType.opponent && phaseState.opponentFields.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty)
-          ) {         // ねばねばネットがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.stickyWeb);
           }
         }
         break;
@@ -769,6 +779,14 @@ class TurnEffect {
           if (pokemonState != null && !pokemonState.isTerastaling) {   // テラスタルしていないとき
             timingIDs.add(116);
           }
+          if (pokemonState != null) {
+            for (final ailment in pokemonState.ailmentsIterable) {
+              if (ailment.possiblyActive(timing, pokemonState, phaseState)) {
+                ailmentEffectIDs.add(AilmentEffect.getIdFromAilment(ailment));
+              }
+            }
+          }
+/*
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.sleepy).isNotEmpty) {   // ねむけ状態のとき
             ailmentEffectIDs.add(AilmentEffect.sleepy);
           }
@@ -798,6 +816,7 @@ class TurnEffect {
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
             ailmentEffectIDs.add(AilmentEffect.ingrain);
           }
+*/
           if (playerType.id == PlayerType.me || playerType.id == PlayerType.opponent) {
             if (pokemonState!.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
               timingIDs.add(152);     // 状態異常でない毎ターン終了時
@@ -805,20 +824,10 @@ class TurnEffect {
           }
           // 各々の場
           var myFields = playerType.id == PlayerType.me ? phaseState.ownFields : phaseState.opponentFields;
-          if (myFields.where((e) => e.id == IndividualField.reflector).isNotEmpty) {      // リフレクターがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.reflectorEnd);
-          }
-          if (myFields.where((e) => e.id == IndividualField.lightScreen).isNotEmpty) {    // ひかりのかべがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.lightScreenEnd);
-          }
-          if (myFields.where((e) => e.id == IndividualField.auroraVeil).isNotEmpty) {     // オーロラベールがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.auroraVeilEnd);
-          }
-          if (myFields.where((e) => e.id == IndividualField.tailwind).isNotEmpty) {       // おいかぜがあるとき
-            indiFieldEffectIDs.add(IndiFieldEffect.tailwindEnd);
-          }
-          if (myFields.where((e) => e.id == IndividualField.trickRoom).isNotEmpty) {      // トリックルーム中
-            indiFieldEffectIDs.add(IndiFieldEffect.trickRoomEnd);
+          for (final field in myFields) {
+            if (field.possiblyActive(timing)) {
+              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
+            }
           }
         }
         break;
@@ -1057,11 +1066,19 @@ class TurnEffect {
       }
       if (type.id == EffectType.individualField) {
         for (var e in indiFieldEffectIDs) {
-          ret.add(TurnEffect()
+          var adding = TurnEffect()
             ..playerType = playerType
             ..effect = EffectType(EffectType.individualField)
-            ..effectId = e
-          );
+            ..effectId = e;
+          if (adding.effectId == IndiFieldEffect.trickRoomEnd) {    // 各々の場だが効果としては両フィールドのもの
+            adding.playerType = PlayerType(PlayerType.entireField);
+            if (ret.where((element) => element.nearEqual(adding)).isNotEmpty) {
+              ret.add(adding);
+            }
+          }
+          else {
+            ret.add(adding);
+          }
         }
       }
       if (type.id == EffectType.ailment) {
@@ -1189,6 +1206,14 @@ class TurnEffect {
       case EffectType.item:
         extraArg1 = Item.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
         extraArg2 = Item.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
+        break;
+      case EffectType.ailment:
+        extraArg1 = Ailment.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
+        extraArg2 = Ailment.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
+        break;
+      case EffectType.individualField:
+        extraArg1 = IndividualField.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
+        extraArg2 = IndividualField.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
         break;
     }
   }
@@ -2291,13 +2316,17 @@ class TurnEffect {
           onFocus();
         },
         isInput,
-        showNetworkImage: appState.getPokeAPI,
+        showNetworkImage: PokeDB().getPokeAPI,
       );
     }
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
       switch (effectId) {
-        case IndividualField.futureAttack:      // みらいにこうげき
+        case IndiFieldEffect.spikes1:           // まきびし
+        case IndiFieldEffect.spikes2:
+        case IndiFieldEffect.spikes3:
+        case IndiFieldEffect.futureAttack:      // みらいにこうげき
         case IndiFieldEffect.stealthRock:       // ステルスロック
+        case IndiFieldEffect.wish:              // ねがいごと
           return DamageIndicateRow(
             myPokemon, controller,
             playerType.id == PlayerType.me,

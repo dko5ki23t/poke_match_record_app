@@ -1,11 +1,20 @@
+// 状態変化
+
+import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/data_structs/timing.dart';
+import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 
 // 状態変化による効果(TurnEffectのeffectIdに使用する定数を提供)
 class AilmentEffect {
   static const int none = 0;
   static const int burn = 1;                // やけど
-  static const int freeze = 2;              // こおり
+  static const int freezeEnd = 2;           // こおりがとけた
   static const int paralysis = 3;           // まひ
   static const int poison = 4;              // どく
   static const int badPoison = 5;           // もうどく
@@ -72,10 +81,18 @@ class AilmentEffect {
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
   static const int candyCandy = 62;         // あめまみれ     // TODO
 
+  static int getIdFromAilment(Ailment ailment) {
+    switch (ailment.id) {
+      default:
+        break;
+    }
+    return ailment.id;
+  }
+
   static const _displayNameMap = {
     0: '',
     1: 'やけど',
-    2: 'こおり',
+    2: 'こおりが溶けた',
     3: 'まひ',
     4: 'どく',
     5: 'もうどく',
@@ -216,137 +233,70 @@ class Ailment {
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
   static const int candyCandy = 62;         // あめまみれ     // TODO
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'やけど',
-    2: 'こおり',
-    3: 'まひ',
-    4: 'どく',
-    5: 'もうどく',
-    6: 'ねむり',
-    7: 'こんらん',
-    8: 'のろい',
-    9: 'アンコール',
-    10: 'ひるみ',
-    11: 'みやぶる',
-    12: 'メロメロ',
-    13: 'やどりぎのタネ',
-    14: 'こころのめ',
-    15: 'ロックオン',
-    16: 'あくむ',
-    17: 'バインド',
-    18: 'ほろびのうた',
-    19: 'ちょうはつ',
-    20: 'いちゃもん',
-    21: 'きのみを食べられない状態',
-    22: 'しおづけ',
-    23: 'かなしばり',
-    24: 'でんじふゆう',
-    25: 'テレキネシス',
-    26: 'かいふくふうじ',
-    27: 'さしおさえ',
-    28: 'ねむけ',
-    29: 'ねをはる',
-    30: 'さわぐ',
-    31: 'うちおとす',
-    32: 'マジックコート',
-    33: 'じゅうでん',
-    34: 'あばれる',
-    35: 'がまん',
-    36: 'みちづれ',
-    37: 'にげられない',
-    38: 'ちいさくなる',
-    39: 'そらをとぶ',
-    40: 'あなをほる',
-    41: 'まるくなる',
-    42: 'たくわえる(1)',
-    43: 'たくわえる(2)',
-    44: 'たくわえる(3)',
-    45: 'ちゅうもくのまと',
-    46: 'てだすけ',
-    47: 'ふういん',
-    48: 'おんねん',
-    49: 'はねやすめ',
-    50: 'ミラクルアイ',
-    51: 'パワートリック',
-    52: 'とくせいなし',
-    53: 'アクアリング',
-    54: 'ダイビング',
-    55: 'シャドーダイブ',
-    56: 'そうでん',
-    57: 'ふんじん',
-    58: 'じごくづき',
-    59: 'タールショット',
-    60: 'たこがため',
-    61: 'まもる',
-    62: 'あめまみれ',
-  };
-
-  // TODO:
-  static final _bgColor = {
-    0: Colors.black,
-    1: Colors.black,
-    2: Colors.black,
-    3: Colors.yellow.shade700,
-    4: Colors.black,
-    5: Colors.black,
-    6: Colors.black,
-    7: Colors.black,
-    8: Colors.black,
-    9: Colors.black,
-    10: Colors.black,
-    11: Colors.black,
-    12: Colors.black,
-    13: Colors.black,
-    14: Colors.black,
-    15: Colors.black,
-    16: Colors.black,
-    17: Colors.black,
-    18: Colors.black,
-    19: Colors.black,
-    20: Colors.black,
-    21: Colors.black,
-    22: Colors.black,
-    23: Colors.black,
-    24: Colors.black,
-    25: Colors.black,
-    26: Colors.black,
-    27: Colors.black,
-    28: Colors.black,
-    29: Colors.black,
-    30: Colors.black,
-    31: Colors.black,
-    32: Colors.black,
-    33: Colors.yellow.shade700,
-    34: Colors.black,
-    35: Colors.black,
-    36: Colors.black,
-    37: Colors.black,
-    38: Colors.black,
-    39: Colors.black,
-    40: Colors.black,
-    41: Colors.black,
-    42: Colors.black,
-    43: Colors.black,
-    44: Colors.black,
-    45: Colors.black,
-    46: Colors.black,
-    47: Colors.black,
-    48: Colors.black,
-    49: Colors.black,
-    50: Colors.black,
-    51: Colors.black,
-    52: Colors.black,
-    53: Colors.black,
-    54: Colors.black,
-    55: Colors.black,
-    56: Colors.black,
-    57: Colors.black,
-    58: Colors.black,
-    59: Colors.black,
-    60: Colors.black,
-    61: Colors.black,
-    62: Colors.black,
+  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
+    0: Tuple3('', Colors.black, 0),
+    1: Tuple3('やけど', PokeTypeColor.fire, 0),
+    2: Tuple3('こおり', PokeTypeColor.ice, 0),
+    3: Tuple3('まひ', PokeTypeColor.electric, 0),
+    4: Tuple3('どく', PokeTypeColor.poison, 0),
+    5: Tuple3('もうどく', PokeTypeColor.poison, 0),
+    6: Tuple3('ねむり', PokeTypeColor.fly, 0),
+    7: Tuple3('こんらん', PokeTypeColor.electric, 0),
+    8: Tuple3('のろい', PokeTypeColor.ghost, 0),
+    9: Tuple3('アンコール', PokeTypeColor.evil, 0),
+    10: Tuple3('ひるみ', PokeTypeColor.evil, 0),
+    11: Tuple3('みやぶる', PokeTypeColor.evil, 0),
+    12: Tuple3('メロメロ', PokeTypeColor.fairy, 0),
+    13: Tuple3('やどりぎのタネ', PokeTypeColor.grass, 0),
+    14: Tuple3('こころのめ', PokeTypeColor.evil, 0),
+    15: Tuple3('ロックオン', PokeTypeColor.fight, 0),
+    16: Tuple3('あくむ', PokeTypeColor.evil, 0),
+    17: Tuple3('バインド', PokeTypeColor.evil, 0),
+    18: Tuple3('ほろびのうた', PokeTypeColor.evil, 0),
+    19: Tuple3('ちょうはつ', PokeTypeColor.ghost, 0),
+    20: Tuple3('いちゃもん', PokeTypeColor.evil, 0),
+    21: Tuple3('きのみを食べられない状態', PokeTypeColor.evil, 0),
+    22: Tuple3('しおづけ', PokeTypeColor.rock, 0),
+    23: Tuple3('かなしばり', PokeTypeColor.ghost, 0),
+    24: Tuple3('でんじふゆう', PokeTypeColor.electric, 0),
+    25: Tuple3('テレキネシス', PokeTypeColor.psychic, 0),
+    26: Tuple3('かいふくふうじ', PokeTypeColor.evil, 0),
+    27: Tuple3('さしおさえ', PokeTypeColor.evil, 0),
+    28: Tuple3('ねむけ', PokeTypeColor.fly, 0),
+    29: Tuple3('ねをはる', PokeTypeColor.grass, 0),
+    30: Tuple3('さわぐ', PokeTypeColor.evil, 0),
+    31: Tuple3('うちおとす', PokeTypeColor.ground, 0),
+    32: Tuple3('マジックコート', PokeTypeColor.psychic, 0),
+    33: Tuple3('じゅうでん', PokeTypeColor.electric, 0),
+    34: Tuple3('あばれる', PokeTypeColor.dragon, 0),
+    35: Tuple3('がまん', PokeTypeColor.fight, 0),
+    36: Tuple3('みちづれ', PokeTypeColor.ghost, 0),
+    37: Tuple3('にげられない', PokeTypeColor.evil, 0),
+    38: Tuple3('ちいさくなる', PokeTypeColor.psychic, 0),
+    39: Tuple3('そらをとぶ', PokeTypeColor.fly, 0),
+    40: Tuple3('あなをほる', PokeTypeColor.ground, 0),
+    41: Tuple3('まるくなる', PokeTypeColor.fight, 0),
+    42: Tuple3('たくわえる(1)', PokeTypeColor.fight, 0),
+    43: Tuple3('たくわえる(2)', PokeTypeColor.fight, 0),
+    44: Tuple3('たくわえる(3)', PokeTypeColor.fight, 0),
+    45: Tuple3('ちゅうもくのまと', PokeTypeColor.psychic, 0),
+    46: Tuple3('てだすけ', PokeTypeColor.fairy, 0),
+    47: Tuple3('ふういん', PokeTypeColor.evil, 0),
+    48: Tuple3('おんねん', PokeTypeColor.ghost, 0),
+    49: Tuple3('はねやすめ', PokeTypeColor.fly, 0),
+    50: Tuple3('ミラクルアイ', PokeTypeColor.psychic, 0),
+    51: Tuple3('パワートリック', PokeTypeColor.psychic, 0),
+    52: Tuple3('とくせいなし', PokeTypeColor.evil, 0),
+    53: Tuple3('アクアリング', PokeTypeColor.water, 0),
+    54: Tuple3('ダイビング', PokeTypeColor.water, 0),
+    55: Tuple3('シャドーダイブ', PokeTypeColor.ghost, 0),
+    56: Tuple3('そうでん', PokeTypeColor.electric, 0),
+    57: Tuple3('ふんじん', PokeTypeColor.rock, 0),
+    58: Tuple3('じごくづき', PokeTypeColor.evil, 0),
+    59: Tuple3('タールショット', PokeTypeColor.evil, 0),
+    60: Tuple3('たこがため', PokeTypeColor.evil, 0),
+    61: Tuple3('まもる', Colors.green, 0),
+    62: Tuple3('あめまみれ', PokeTypeColor.poison, 0),
   };
 
   final int id;
@@ -369,9 +319,74 @@ class Ailment {
         extraStr = '(${pokeData.moves[extraArg1]!.displayName})';
         break;
     }
-    return _displayNameMap[id]! + extraStr;
+    if (_nameColorTurnMap[id]!.item3 > 0) extraStr += ' ($turns/?)';
+    return _nameColorTurnMap[id]!.item1 + extraStr;
   }
-  Color get bgColor => _bgColor[id]!;
+  Color get bgColor => _nameColorTurnMap[id]!.item2;
+
+  // 発動するタイミング・条件かどうかを返す
+  bool isActive(AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
+    switch (timing.id) {
+      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する状態変化
+        return false;
+      case AbilityTiming.everyTurnEnd:  // ターン終了時に発動する状態変化
+        switch (id) {
+          case burn:
+            return pokemonState.isNotAttackedDamaged;
+          default:
+            return false;
+        }
+      default:
+        return false;
+    }
+  }
+
+  // 発動する可能性のあるタイミング・条件かどうかを返す
+  bool possiblyActive(AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
+    switch (timing.id) {
+      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する状態変化
+        return false;
+      case AbilityTiming.everyTurnEnd:  // ターン終了時に発動する状態変化
+        switch (id) {
+          case burn:
+            return true;
+          default:
+            return false;
+        }
+      default:
+        return false;
+    }
+  }
+
+  // TurnEffectのarg1が決定できる場合はその値を返す
+  static int getAutoArg1(
+    int ailmentId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    bool isMe = player.id == PlayerType.me;
+
+    switch (ailmentId) {
+      case Ailment.burn:
+        if (myState.buffDebuffs.where((element) => element.id == BuffDebuff.heatproof).isNotEmpty) {
+          return isMe ? (myState.pokemon.h.real / 32). floor() : 3;
+        }
+        else {
+          return isMe ? (myState.pokemon.h.real / 16). floor() : 6;
+        }
+      default:
+        break;
+    }
+
+    return 0;
+  }
+
+  // TurnEffectのarg2が決定できる場合はその値を返す
+  static int getAutoArg2(
+    int ailmentId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
+    TurnEffect? prevAction, AbilityTiming timing,
+  ) {
+    return 0;
+  }
 
   // SQLに保存された文字列からAilmentをパース
   static Ailment deserialize(dynamic str, String split1) {

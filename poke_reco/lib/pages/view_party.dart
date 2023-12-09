@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_view_row.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
@@ -133,7 +134,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
                         i,
                       );
                     },
-                    showNetworkImage: appState.getPokeAPI
+                    showNetworkImage: PokeDB().getPokeAPI
                   ),
                   SizedBox(height: 10),
                 SizedBox(height: 10),

@@ -84,6 +84,8 @@ class PokemonState {
     var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
+  bool get isMe => playerType.id == PlayerType.me;
+  bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
 
   set holdingItem(Item? item) {
     if (isOriginalItem && item != null) {
@@ -152,6 +154,21 @@ class PokemonState {
       return false;
     }
     return true;
+  }
+
+  // 相手のこうげきわざ以外でのダメージを受けるかどうか
+  bool get isNotAttackedDamaged {
+    return currentAbility.id != 98;
+  }
+
+  // 交代可能な状態かどうか
+  bool canChange(PokemonState yourState, PhaseState state) {
+    var fields = isMe ? state.ownFields : state.opponentFields;
+    return fields.where((element) => element.id == IndividualField.fairyLock).isEmpty &&
+          (isTypeContain(PokeTypeId.ghost) ||   // ゴーストタイプならOK
+           // (yourState.currentAbility.id != 23)   // TODO:かげふみとくせいで、ailment「にげられない」を追加しとく。ほかにもとくせい「じりょく」とか「ありじごく」とか
+           ailmentsWhere((e) => e.id == Ailment.cannotRunAway).isEmpty
+          );
   }
 
   // きゅうしょランク加算
@@ -326,7 +343,7 @@ class PokemonState {
   
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
     var indiField = isOwn ? state.ownFields : state.opponentFields;
-    if (isGround(indiField) && isTypeContain(4)) {
+    if (isGround(indiField) && isTypeContain(PokeTypeId.poison)) {
       indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
     }
   }
@@ -368,14 +385,17 @@ class PokemonState {
 
   // 状態異常に関する関数群ここから
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
+    bool isMe = playerType.id == PlayerType.me;
+    var indiFields = isMe ? state.ownFields : state.opponentFields;
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
-    if ((isTypeContain(9) || isTypeContain(4)) &&
+    if ((isTypeContain(PokeTypeId.steel) || isTypeContain(PokeTypeId.poison)) &&
         (ailment.id == Ailment.poison || (!forceAdd && ailment.id == Ailment.badPoison))    // もうどくに関しては、わざ使用者のとくせいがふしょくなら可能
     ) return false;
-    if (isTypeContain(10) && ailment.id == Ailment.burn) return false;
-    if (isTypeContain(13) && ailment.id == Ailment.paralysis) return false;
+    if (isTypeContain(PokeTypeId.fire) && ailment.id == Ailment.burn) return false;
+    if (isTypeContain(PokeTypeId.ice) && ailment.id == Ailment.freeze) return false;
+    if (isTypeContain(PokeTypeId.electric) && ailment.id == Ailment.paralysis) return false;
     // とくせいによる耐性
     if ((currentAbility.id == 17 || currentAbility.id == 257) && (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) return false;
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
@@ -390,10 +410,12 @@ class PokemonState {
     if (currentAbility.id == 213 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // ぜったいねむり<-状態異常＋ねむけ
     // TODO:リミットシールド
     if (currentAbility.id == 213) return false;
-    if (state.weather.id == Weather.sunny && ailment.id == Ailment.freeze) return false;
+    if (state.weather.id == Weather.sunny && holdingItem?.id != Item.bannougasa && ailment.id == Ailment.freeze) return false;
     if (state.field.id == Field.electricTerrain &&
-        isGround(playerType.id == PlayerType.me ? state.ownFields : state.opponentFields) &&
+        isGround(indiFields) &&
         ailment.id == Ailment.sleep) return false;
+    // 各々の場
+    if (indiFields.where((e) => e.id == IndividualField.safeGuard).isNotEmpty && (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy)) return false; // しんぴのまもり
     if (state.field.id == Field.mistyTerrain) return false;
 
     bool isAdded = _ailments.add(ailment);
@@ -609,6 +631,59 @@ class PokemonState {
       ret[i] = statChange;
       t >>= 4;
     }
+    return ret;
+  }
+
+  // ランク補正後の実数値→ランク補正なしの実数値を得る
+  int getNotRankedStat(StatIndex statIdx, int stat) {
+    if (statIdx == StatIndex.H) {
+      return stat;
+    }
+    double coef = 1.0;
+    switch (statChanges(statIdx.index-1)) {
+      case -6:
+        coef = 2 / 8;
+        break;
+      case -5:
+        coef = 2 / 7;
+        break;
+      case -4:
+        coef = 2 / 6;
+        break;
+      case -3:
+        coef = 2 / 5;
+        break;
+      case -2:
+        coef = 2 / 4;
+        break;
+      case -1:
+        coef = 2 / 3;
+        break;
+      case 1:
+        coef = 3 / 2;
+        break;
+      case 2:
+        coef = 4 / 2;
+        break;
+      case 3:
+        coef = 5 / 2;
+        break;
+      case 4:
+        coef = 6 / 2;
+        break;
+      case 5:
+        coef = 7 / 2;
+        break;
+      case 6:
+        coef = 8 / 2;
+        break;
+      default:
+        break;
+    }
+    // ランク補正で割る
+    int ret = (stat.toDouble() / coef).floor();
+    if ((ret.toDouble() * coef).floor() < stat) {ret++;}
+    else if ((ret.toDouble() * coef).floor() > stat) {ret--;}
     return ret;
   }
 

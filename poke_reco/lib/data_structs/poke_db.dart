@@ -48,6 +48,8 @@ const String configKeyBattlesPartyIDFilter = 'partiesPartyIDFilter';
 
 const String configKeyBattlesSort = 'battlesSort';
 
+const String configKeyGetNetworkImage = 'getNetworkImage';
+
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
 const String abilityColumnId = 'id';
@@ -755,6 +757,8 @@ class PokeDB {
   Map<int, Battle> battles = {0: Battle()};
   late Database battleDb;
 
+  bool getPokeAPI = true;     // インターネットに接続してポケモンの画像を取得するか
+
   bool isLoaded = false;
 
   // コンストラクタ（private）
@@ -874,6 +878,7 @@ class PokeDB {
         }
         sort = configJson[configKeyBattlesSort] as int;
         battlesSort = sort == 0 ? null : BattleSort.createFromId(sort);
+        getPokeAPI = (configJson[configKeyGetNetworkImage] as int) != 0;
       }
       catch (e) {
         pokemonsOwnerFilter = [Owner.mine];
@@ -1240,6 +1245,8 @@ class PokeDB {
         configKeyBattlesWinFilter: battlesWinFilter,
         configKeyBattlesPartyIDFilter: battlesPartyIDFilter,
         configKeyBattlesSort: battlesSort == null ? 0 : battlesSort!.id,
+
+        configKeyGetNetworkImage: getPokeAPI ? 1 : 0,
       }
     );
     await _saveDataFile.writeAsString(jsonText);

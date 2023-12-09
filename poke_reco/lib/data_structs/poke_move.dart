@@ -82,20 +82,20 @@ class ActionFailure {
   static const int recoil = 1;        // わざの反動
   static const int sleep = 2;         // ねむり(カウント消費)
   static const int freeze = 3;        // こおり(回復判定で失敗)
-  static const int pp = 4;            // PPが残っていない
-  static const int lazy = 5;          // なまけ(カウント消費(反動で動けなくても消費はする))
-  static const int focusPunch = 6;    // きあいパンチ使用時、そのターンにダメージを受けていて動けない
+  static const int pp = 4;            // PPが残っていない                                               // 消去候補
+  static const int lazy = 5;          // なまけ(カウント消費(反動で動けなくても消費はする))                // 消去候補
+  static const int focusPunch = 6;    // きあいパンチ使用時、そのターンにダメージを受けていて動けない       // 消去候補
   static const int flinch = 7;        // ひるみ
-  static const int disable = 8;       // かなしばり
-  static const int gravity = 9;       // じゅうりょく
-  static const int healBlock = 10;    // かいふくふうじ
-  static const int throatChop = 11;   // じごくづき
-  static const int choice = 12;       // こだわり
+  static const int disable = 8;       // かなしばり                                                     // 消去候補
+  static const int gravity = 9;       // じゅうりょく                                                   // 消去候補
+  static const int healBlock = 10;    // かいふくふうじ                                                 // 消去候補
+  static const int throatChop = 11;   // じごくづき                                                     // 消去候補
+  static const int choice = 12;       // こだわり                                                       // 消去候補
   static const int taunt = 13;        // ちょうはつ
-  static const int imprison = 14;     // ふういん
+  static const int imprison = 14;     // ふういん                                                       // 消去候補
   static const int confusion = 15;    // こんらんにより自傷
   static const int paralysis = 16;    // まひ
-  static const int infatuation = 17;  // メロメロ
+  static const int infatuation = 17;  // メロメロ                                                       // 消去候補
   static const int protected = 18;    // 相手にこうげきを防がれた
   static const int other = 19;        // その他
   static const int size = 20;
@@ -448,6 +448,13 @@ class TurnMove {
           break;
       }
 
+      // ねごと系以外のわざを出しているならねむり解除とみなす
+      if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
+        myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
+      }
+      // 動いているということで、こおり状態解除とみなす
+      myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
+
       // ダメージ計算式を表示するかどうか
       showDamageCalc = false;
       // ダメージ計算式が特殊か(固定ダメージ等)
@@ -632,7 +639,7 @@ class TurnMove {
             break;
           case 36:    // 場に「ひかりのかべ」を発生させる
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.lightScreen);
-            if (findIdx < 0) targetIndiField.add(IndividualField(IndividualField.lightScreen));
+            if (findIdx < 0) targetIndiField.add(IndividualField(IndividualField.lightScreen)..extraArg1 = targetState.holdingItem?.id == 246 ? 8 : 5);
             break;
           case 37:    // やけど・こおり・まひのいずれかにする(確率)
             if (extraArg1[continuousCount] != 0) {
@@ -769,7 +776,7 @@ class TurnMove {
             break;
           case 66:    // 場に「リフレクター」を発生させる
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.reflector);
-            if (findIdx < 0) targetIndiField.add(IndividualField(IndividualField.reflector));
+            if (findIdx < 0) targetIndiField.add(IndividualField(IndividualField.reflector)..extraArg1 = targetState.holdingItem?.id == 246 ? 8 : 5);
             break;
           case 72:    // とくこうを1段階下げる(確率)
           case 358:   // とくこうを1段階下げる
@@ -907,11 +914,11 @@ class TurnMove {
             break;
           case 106:   // もちものを盗む
             if (extraArg1[continuousCount] != 0) {
-              // もちもの確定
-              if (myPlayerTypeID == PlayerType.me &&
+              // もちもの確定のため、一度持たせる
+              if (targetPlayerTypeID == PlayerType.opponent &&
                   opponentPokemonState.holdingItem?.id == 0
               ) {
-                ret.add('もちものを${pokeData.items[extraArg1[continuousCount]]!.displayName}で確定しました。');
+                targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
               myState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               targetState.holdingItem = null;
@@ -1275,13 +1282,17 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.helpHand), state);
             break;
           case 178:   // 使用者ともちものを入れ替える
-            opponentPokemonState.holdingItem = ownPokemonState.holdingItem;
             if (extraArg1[continuousCount] > 0) {
+              // もちもの確定のため、一度持たせる
+              if (opponentPokemonState.holdingItem?.id == 0) {
+                opponentPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              }
               ownPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
             }
             else {
               ownPokemonState.holdingItem = null;
             }
+            opponentPokemonState.holdingItem = ownPokemonState.holdingItem;
             break;
           case 179:   // 相手と同じとくせいになる
             if (extraArg1[continuousCount] != 0) {
@@ -1319,7 +1330,10 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.sleepy), state);
             break;
           case 189:   // もちものを持っていれば失わせ、威力1.5倍
-            // TODOもちもの確定
+            // もちもの確定のため、一度持たせる
+            if (targetPlayerTypeID == PlayerType.opponent && targetState.holdingItem?.id == 0) {
+              if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+            }
             targetState.holdingItem = null;
             movePower *= 2;
             break;
@@ -2260,10 +2274,27 @@ class TurnMove {
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
             break;
           case 388:   // 相手のこうげきを1段階下げ、下げる前のこうげき実数値と同じ値だけ使用者のHPを回復する
-            targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
-            // TODO 相手のこうげき実数値が確定する場合あり
+            // 相手こうげき確定
+            if (myPlayerTypeID == PlayerType.me) {
+              int drain = extraArg1[continuousCount].abs();
+              if (myState.remainHP < myState.pokemon.h.real && drain > 0) {
+                if (myState.holdingItem?.id == 273) {   // おおきなねっこ
+                  int tmp = ((drain.toDouble() + 0.5) / 1.3).round();
+                  while (roundOff5(tmp * 1.3) > drain) {tmp--;}
+                  drain = tmp;
+                }
+                int attack = targetState.getNotRankedStat(StatIndex.A, drain);
+                // TODO: この時点で努力値等を反映するのかどうかとか
+                if (attack != targetState.minStats[1].real || attack != targetState.maxStats[1].real) {
+                  myState.minStats[1].real = attack;
+                  myState.maxStats[1].real = attack;
+                  ret.add('相手の${myState.pokemon.name}のこうげき実数値を$attackで確定しました。');
+                }
+              }
+              targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
+            }
             break;
           case 389:   // 相手をちゅうもくのまと状態にする
             targetState.ailmentsAdd(Ailment(Ailment.attention), state);
@@ -2329,7 +2360,7 @@ class TurnMove {
           case 407:   // 場にオーロラベールを発生させる。天気がゆきの場合のみ成功する
             if (state.weather.id == Weather.snowy) {
               if (myFields.where((e) => e.id == IndividualField.auroraVeil).isEmpty) {
-                myFields.add(IndividualField(IndividualField.auroraVeil));
+                myFields.add(IndividualField(IndividualField.auroraVeil)..extraArg1 = targetState.holdingItem?.id == 246 ? 8 : 5);
               }
             }
             break;
@@ -2433,9 +2464,28 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 432:   // 使用者と相手の場の状態を入れ替える
+            // いやしのねがい・みかづきのまい・みらいにこうげき・ねがいごとは入れ替えない
+            bool isMyH = myFields.where((e) => e.id == IndividualField.healingWish).isNotEmpty;
+            bool isMyL = myFields.where((e) => e.id == IndividualField.lunarDance).isNotEmpty;
+            bool isMyF = myFields.where((e) => e.id == IndividualField.futureAttack).isNotEmpty;
+            bool isMyW = myFields.where((e) => e.id == IndividualField.wish).isNotEmpty;
+            bool isTaH = targetIndiField.where((e) => e.id == IndividualField.healingWish).isNotEmpty;
+            bool isTaL = targetIndiField.where((e) => e.id == IndividualField.lunarDance).isNotEmpty;
+            bool isTaF = targetIndiField.where((e) => e.id == IndividualField.futureAttack).isNotEmpty;
+            bool isTaW = targetIndiField.where((e) => e.id == IndividualField.wish).isNotEmpty;
+            myFields.removeWhere((e) => e.id == IndividualField.healingWish || e.id == IndividualField.lunarDance || e.id == IndividualField.futureAttack || e.id == IndividualField.wish);
+            targetIndiField.removeWhere((e) => e.id == IndividualField.healingWish || e.id == IndividualField.lunarDance || e.id == IndividualField.futureAttack || e.id == IndividualField.wish);
             var tmp = myFields;
             myFields = targetIndiField;
             targetIndiField = tmp;
+            if (isMyH) myFields.add(IndividualField(IndividualField.healingWish));
+            if (isMyL) myFields.add(IndividualField(IndividualField.lunarDance));
+            if (isMyF) myFields.add(IndividualField(IndividualField.futureAttack));
+            if (isMyW) myFields.add(IndividualField(IndividualField.wish));
+            if (isTaH) targetIndiField.add(IndividualField(IndividualField.healingWish));
+            if (isTaL) targetIndiField.add(IndividualField(IndividualField.lunarDance));
+            if (isTaF) targetIndiField.add(IndividualField(IndividualField.futureAttack));
+            if (isTaW) targetIndiField.add(IndividualField(IndividualField.wish));
             effectOnce = true;
             break;
           case 433:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
@@ -2589,7 +2639,10 @@ class TurnMove {
             // TODO もちもの確定
             break;
           case 457:   // 対象のもちものを消失させる
-            // TODO もちもの確定
+            // もちもの確定のため、一度持たせる
+            if (targetPlayerTypeID == PlayerType.opponent && targetState.holdingItem?.id == 0) {
+              if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+            }
             targetState.holdingItem = null;
             break;
           case 458:   // 自分以外の味方全員のこうげきとぼうぎょを1段階ずつ上げる
@@ -2878,6 +2931,7 @@ class TurnMove {
           if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) moveType = PokeType.createFromId(3);
           if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) moveType = PokeType.createFromId(11);
           if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) moveType = PokeType.createFromId(13);
+          if (replacedMove.id != 165 && moveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) moveType = PokeType.createFromId(PokeTypeId.electric);
           
           // とくせい等による威力変動
           double tmpPow = movePower.toDouble();
@@ -2952,6 +3006,9 @@ class TurnMove {
           
           if (moveType.id == 10 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
 
+          if (moveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+          if (moveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+
           movePower = tmpPow.floor();
 
           // TODO: targetStates(リスト)
@@ -2993,13 +3050,23 @@ class TurnMove {
           int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
                 ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
                 ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
+          int calcMaxSDefense = ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
           int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
                 ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
                 ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
-          int defenseVmax = moveDamageClassID == 2 ? calcMaxDefense : invDeffense ? calcMaxDefense :
-                ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
-          int defenseVmin = moveDamageClassID == 2 ? calcMinDefense : invDeffense ? calcMinDefense :
-                ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
+          int calcMinSDefense = ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
+          int defenseVmax = moveDamageClassID == 2 ? 
+                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+                  calcMaxDefense : calcMaxSDefense :
+                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+                  invDeffense ? calcMaxDefense : calcMaxSDefense :
+                  invDeffense ? calcMaxSDefense : calcMaxDefense;
+          int defenseVmin = moveDamageClassID == 2 ? 
+                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+                  calcMinDefense : calcMinSDefense : 
+                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+                  invDeffense ? calcMinDefense : calcMinSDefense :
+                  invDeffense ? calcMinSDefense : calcMinDefense ;
           String defenseStr = '';
           if (defenseVmax == defenseVmin) {
             defenseStr = defenseVmax.toString();
@@ -3200,10 +3267,6 @@ class TurnMove {
       // 交代前stateを参照していた場合向けに、myStateを元に戻す
       myState = tmpState;
 
-      // ねごと系以外のわざを出しているならねむり解除とみなす
-      if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
-        myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
-      }
       // ミクルのみのこうかが残っていれば消費
       int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
       if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
@@ -3525,7 +3588,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
                           theme: theme,
                           pokemon: ownParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: pokeData.getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
@@ -3535,7 +3598,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
                           theme: theme,
                           pokemon: opponentParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: pokeData.getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -3553,7 +3616,7 @@ class TurnMove {
                   prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
-                  showNetworkImage: appState.getPokeAPI,
+                  showNetworkImage: pokeData.getPokeAPI,
                   theme: theme,
                 ),
               ),
@@ -3974,7 +4037,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
                           theme: theme,
                           pokemon: ownParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
@@ -3984,7 +4047,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
                           theme: theme,
                           pokemon: opponentParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType.opposite),
@@ -4001,7 +4064,7 @@ class TurnMove {
                   prefixIconPokemon: isInput ? null : playerType.id == PlayerType.opponent ?
                     ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1],
-                  showNetworkImage: appState.getPokeAPI,
+                  showNetworkImage: PokeDB().getPokeAPI,
                   theme: theme,
                 ),
               ),
@@ -4271,7 +4334,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
                           theme: theme,
                           pokemon: ownParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
@@ -4281,7 +4344,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
                           theme: theme,
                           pokemon: opponentParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -4298,7 +4361,7 @@ class TurnMove {
                   prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
-                  showNetworkImage: appState.getPokeAPI,
+                  showNetworkImage: PokeDB().getPokeAPI,
                   theme: theme,
                 ),
               ),
@@ -4692,7 +4755,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
-            showNetworkImage: appState.getPokeAPI,
+            showNetworkImage: PokeDB().getPokeAPI,
           );
           break;
         case 227:     // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
@@ -4851,7 +4914,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
-            showNetworkImage: appState.getPokeAPI,
+            showNetworkImage: PokeDB().getPokeAPI,
           );
           break;
         case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
@@ -5189,7 +5252,7 @@ class TurnMove {
               onFocus();
             },
             isInput,
-            showNetworkImage: appState.getPokeAPI,
+            showNetworkImage: PokeDB().getPokeAPI,
           );
           break;
         case 464:     // どく・まひ・ねむりのいずれかにする(確率)
@@ -5257,7 +5320,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
                           theme: theme,
                           pokemon: ownParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ] :
                     <DropdownMenuItem>[
@@ -5267,7 +5330,7 @@ class TurnMove {
                           enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
                           theme: theme,
                           pokemon: opponentParty.pokemons[i]!,
-                          showNetworkImage: appState.getPokeAPI,
+                          showNetworkImage: PokeDB().getPokeAPI,
                         ),
                     ],
                   value: getChangePokemonIndex(playerType),
@@ -5284,7 +5347,7 @@ class TurnMove {
                   prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
-                  showNetworkImage: appState.getPokeAPI,
+                  showNetworkImage: PokeDB().getPokeAPI,
                   theme: theme,
                 ),
               ),
@@ -5334,7 +5397,7 @@ class TurnMove {
                               enabled: state.isPossibleBattling(playerType, i) && ownPokemonStates[i].isFainting,
                               theme: theme,
                               pokemon: ownParty.pokemons[i]!,
-                              showNetworkImage: appState.getPokeAPI,
+                              showNetworkImage: PokeDB().getPokeAPI,
                             ),
                         ] :
                         <DropdownMenuItem>[
@@ -5344,7 +5407,7 @@ class TurnMove {
                               enabled: state.isPossibleBattling(playerType, i) && opponentPokemonStates[i].isFainting,
                               theme: theme,
                               pokemon: opponentParty.pokemons[i]!,
-                              showNetworkImage: appState.getPokeAPI,
+                              showNetworkImage: PokeDB().getPokeAPI,
                             ),
                         ],
                       value: extraArg1[continuousCount] != 0 ? extraArg1[continuousCount] : null,
@@ -6198,7 +6261,7 @@ class TurnMove {
     var mA = myState.currentAbility.id;
     var yA = yourState.currentAbility.id;
     // (こうげき側がとくせいを無視できず、)ぼうぎょ側がカブトアーマー/シェルアーマー/おまじない(場)ならば急所に当たらない
-    if ((yourState.holdingItem?.id == 1697 || (mA != 104 && mA != 163 && mA != 164)) && (yA == 4 || yA == 75 || yourFields.where((e) => e.id == IndividualField.luckyChant).isNotEmpty)) return ret;
+    if ((yourState.holdingItem?.id == 1697 || (mA != 104 && mA != 163 && mA != 164)) && (yA == 4 || yA == 75)) return ret;
     switch (move.effect.id) {
       case 289:   // かならず急所に当たる
       case 462:   // 3回連続でこうげきする。かならず急所に当たる

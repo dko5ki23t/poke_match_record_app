@@ -219,7 +219,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       },
                       enabledPokemon: i == 0 || (widget.party.pokemons[i-1] != null && (widget.isEditPokemon || widget.party.pokemons[i-1]!.isValid)),
                       enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
-                      showNetworkImage: appState.getPokeAPI
+                      showNetworkImage: pokeData.getPokeAPI
                     ),
                     SizedBox(height: 10),
                   SizedBox(height: 10),

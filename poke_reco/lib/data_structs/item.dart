@@ -31,6 +31,10 @@ class Item {
   final bool isBerry;
   final String imageUrl;
 
+  // 特徴的なもちもののNo
+  static int atsuzoko = 1178;       // あつぞこブーツ
+  static int bannougasa = 1181;     // ばんのうがさ
+
   const Item({
     required this.id,
     required this.displayName,

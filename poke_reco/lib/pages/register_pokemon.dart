@@ -255,7 +255,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Expanded(
                         flex: 3,
-                        child: appState.getPokeAPI ?
+                        child: pokeData.getPokeAPI ?
                           Image.network(
                             pokeData.pokeBase[myPokemon.no]!.imageUrl,
                             errorBuilder: (c, o, s) {

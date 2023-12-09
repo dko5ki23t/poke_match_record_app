@@ -651,7 +651,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           opponentPokemonController,
           ownPartyController,
           widget.onSelectParty,
-          showNetworkImage: appState.getPokeAPI,
+          showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
         );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
@@ -664,7 +664,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           () {setState(() {});},
           widget.battle, theme,
           checkedPokemons,
-          showNetworkImage: appState.getPokeAPI,
+          showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
         );
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
@@ -680,7 +680,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    appState.getPokeAPI ?
+                    pokeData.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState!.getPokemonState(PlayerType(PlayerType.me), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
@@ -695,7 +695,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 SizedBox(width: 10,),
                 Expanded(
                   child: Row(children: [
-                    appState.getPokeAPI ?
+                    pokeData.getPokeAPI ?
                     Image.network(
                       pokeData.pokeBase[focusState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,

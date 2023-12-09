@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
@@ -39,6 +40,20 @@ class SettingsPageState extends State<SettingsPage> {
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.onReset(),
           ),*/
+          ListTile(
+            title: Text('画像をインターネットで取得'),
+            subtitle: Text('チェックするとポケモンやもちものの画像をインターネットに接続して取得します。\nチェックを外すと画像の代わりにインストール済みのアイコンが表示されます。'),
+            trailing: Checkbox(
+              value: PokeDB().getPokeAPI,
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() {
+                  PokeDB().getPokeAPI = value;
+                  PokeDB().saveConfig();
+                });
+              },
+            ),
+          ),
           ListTile(
             title: Text('ライセンス情報'),
             trailing: Icon(Icons.chevron_right),

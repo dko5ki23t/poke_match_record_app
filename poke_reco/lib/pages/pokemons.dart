@@ -169,7 +169,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                   sortedPokemons[i].value,
                   theme,
                   enabled: !partyPokemonsNo.contains(sortedPokemons[i].value.no),
-                  leading: appState.getPokeAPI ? Image.network(
+                  leading: pokeData.getPokeAPI ? Image.network(
                     pokeData.pokeBase[sortedPokemons[i].value.no]!.imageUrl,
                     height: theme.buttonTheme.height,
                     errorBuilder: (c, o, s) {

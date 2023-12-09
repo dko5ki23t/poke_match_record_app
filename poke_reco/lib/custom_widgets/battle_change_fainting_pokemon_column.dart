@@ -155,7 +155,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                               pokemon: battle.getParty(turn.phases[phaseIdx].playerType).pokemons[i]!,
                               theme: theme,
                               enabled: prevState.isPossibleBattling(turn.phases[phaseIdx].playerType, i) && !prevState.getPokemonStates(turn.phases[phaseIdx].playerType)[i].isFainting,
-                              showNetworkImage: appState.getPokeAPI,
+                              showNetworkImage: PokeDB().getPokeAPI,
                             ),
                           ],
                         value: turn.phases[phaseIdx].effectId == 0 ? null : turn.phases[phaseIdx].effectId,
@@ -169,7 +169,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: '交代先ポケモン',
-                          prefixIcon: appState.getPokeAPI ?
+                          prefixIcon: PokeDB().getPokeAPI ?
                             Image.network(
                               PokeDB().pokeBase[battle.getParty(turn.phases[phaseIdx].playerType).pokemons[turn.phases[phaseIdx].effectId-1]!.no]!.imageUrl,
                               height: theme.buttonTheme.height,

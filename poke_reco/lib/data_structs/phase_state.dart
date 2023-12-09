@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/turn.dart';
@@ -160,9 +161,11 @@ class PhaseState {
     for (var e in ownFields) {
       e.turns++;
     }
+    ownFields.removeWhere((element) => element.id == IndividualField.ionDeluge);  // プラズマシャワー消失
     for (var e in opponentFields) {
       e.turns++;
     }
+    opponentFields.removeWhere((element) => element.id == IndividualField.ionDeluge); // プラズマシャワー消失
     // 各々のポケモンの状態のターン経過
     int initialIndex = currentTurn.getInitialPokemonIndex(PlayerType(PlayerType.me));
     bool isFaintingChange = getPokemonIndex(PlayerType(PlayerType.me), null) != initialIndex &&
@@ -203,58 +206,25 @@ class PhaseState {
               var myState = getPokemonState(player, null);
               var yourState = getPokemonState(player.opposite, null);
               var myTimingIDs = [...timingIDs];
-              // とくせい追加
+              var addingBase = TurnEffect()..playerType = player..timing = timing;
+              // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing.id)) {
-                var addingAbility = TurnEffect()
-                  ..playerType = player
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                var addingAbility = addingBase.copyWith()
                   ..effect = EffectType(EffectType.ability)
                   ..effectId = myState.currentAbility.id;
                 addingAbility.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(addingAbility);
               }
               // 各ポケモンの場
+              addingBase.effect = EffectType(EffectType.individualField);
               var indiField = player.id == PlayerType.me ? ownFields : opponentFields;
-              // ステルスロック
-              if (indiField.where((e) => e.id == IndividualField.stealthRock).isNotEmpty &&
-                  myState.currentAbility.id != 98 &&    // マジックガード
-                  myState.holdingItem?.id != 1178       // あつぞこブーツ
-              ) {
-                var rate = PokeType.effectivenessRate(
-                  false, false, false, PokeType.createFromId(6), myState) / 8;
-                int extraArg1 = player.id == PlayerType.me ?
-                  (myState.pokemon.h.real * rate).floor() : (100 * rate).floor();
-                ret.add(TurnEffect()
-                  ..playerType = player
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                  ..effect = EffectType(EffectType.individualField)
-                  ..effectId = IndiFieldEffect.stealthRock
-                  ..extraArg1 = extraArg1
-                );
-              }
-              // どくびし/どくどくびし
-              var findIdx = indiField.indexWhere((e) => e.id == IndividualField.toxicSpikes);
-              if (findIdx >= 0 && myState.isGround(indiField) && myState.copyWith().ailmentsAdd(Ailment(Ailment.poison), state) &&
-                  myState.holdingItem?.id != 1178)
-              {
-                ret.add(TurnEffect()
-                  ..playerType = player
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                  ..effect = EffectType(EffectType.individualField)
-                  ..effectId = indiField[findIdx].extraArg1 <= 1 ? IndiFieldEffect.toxicSpikes : IndiFieldEffect.badToxicSpikes
-                );
-              }
-              // ねばねばネット
-              if (indiField.where((e) => e.id == IndividualField.stickyWeb).isNotEmpty &&
-                  myState.isGround(indiField) &&
-                  myState.holdingItem?.id != 1178       // あつぞこブーツ
-              ) {
-                ret.add(TurnEffect()
-                  ..playerType = player
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
-                  ..effect = EffectType(EffectType.individualField)
-                  ..effectId = IndiFieldEffect.stickyWeb
-                );
+              for (final field in indiField) {
+                if (field.isActive(timing, myState, state)) {
+                  var adding = addingBase.copyWith()
+                    ..effectId = IndiFieldEffect.getIdFromIndiField(field);
+                  adding.setAutoArgs(myState, yourState, state, prevAction);
+                  ret.add(adding);
+                }
               }
             }
           }
@@ -611,7 +581,7 @@ class PhaseState {
             if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
               var addingAbility = TurnEffect()
                 ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                ..timing = timing
                 ..effect = EffectType(EffectType.ability)
                 ..effectId = myState.currentAbility.id;
               addingAbility.setAutoArgs(myState, yourState, state, prevAction);
@@ -630,6 +600,19 @@ class PhaseState {
             }
 
             //  状態異常
+            for (final ailment in myState.ailmentsIterable) {
+              if (ailment.isActive(timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
+                var adding = TurnEffect()
+                  ..playerType = player
+                  ..timing = timing
+                  ..effect = EffectType(EffectType.ailment)
+                  ..effectId = AilmentEffect.getIdFromAilment(ailment);
+                adding.setAutoArgs(myState, yourState, state, prevAction);
+                ret.add(adding);
+              }
+            }
+
+/*
             if (myState.ailmentsWhere((e) => e.id == Ailment.sleepy && e.turns >= 1).isNotEmpty &&
                 myState.copyWith().ailmentsAdd(Ailment(Ailment.sleep), state)
             ) {  // ねむけ状態のとき&ねむりになるとき
@@ -713,17 +696,22 @@ class PhaseState {
                 ..effectId = AilmentEffect.tauntEnd
               );
             }
+*/
 
             // 各ポケモンの場の効果
             var fields = player.id == PlayerType.me ? ownFields : opponentFields;
-            var findIdx = fields.indexWhere((e) => e.id == IndividualField.futureAttack && e.turns == 2);
-            if (findIdx >= 0) {
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.individualField)
-                ..effectId = IndividualField.futureAttack
-              );
+            for (final field in fields) {
+              if (field.isActive(timing, myState, state)) {   // ターン経過で終了する場の判定
+                var adding = TurnEffect()
+                  ..playerType = field.isEntireField ? PlayerType(PlayerType.entireField) : player
+                  ..timing = timing
+                  ..effect = EffectType(EffectType.individualField)
+                  ..effectId = IndiFieldEffect.getIdFromIndiField(field);
+                adding.setAutoArgs(myState, yourState, state, prevAction);
+                if (ret.where((element) => element.nearEqual(adding)).isEmpty) {  // 両者の場の場合に重複がないようにする
+                  ret.add(adding);
+                }
+              }
             }
           }
 
