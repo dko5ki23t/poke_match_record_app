@@ -2112,18 +2112,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
       }
 
-      final guide = phases[i].processEffect(
+      final guides = phases[i].processEffect(
         widget.battle.getParty(PlayerType(PlayerType.me)),
         currentState.getPokemonState(PlayerType(PlayerType.me), null),
         widget.battle.getParty(PlayerType(PlayerType.opponent)),
         currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
-        currentState, lastAction, continuousCount);
+        currentState, lastAction, continuousCount,
+      );
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
         ..phaseIdx = i
         ..turnEffect = phases[i]
         ..phaseState = currentState.copyWith()
-        ..guides = guide
+        ..guides = guides
       );
       // 更新要求インデックス以降はフォームの内容を変える
       // 追加されたフェーズのフォームの内容を変える
@@ -2308,18 +2309,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           continuousCount++;
         }
 
-        final guide = phases[i].processEffect(
+        final guides = phases[i].processEffect(
           widget.battle.getParty(PlayerType(PlayerType.me)),
           currentState.getPokemonState(PlayerType(PlayerType.me), null),
           widget.battle.getParty(PlayerType(PlayerType.opponent)),
           currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
-          currentState, lastAction, continuousCount);
+          currentState, lastAction, continuousCount
+        );
         turnEffectAndStateAndGuides.add(
           TurnEffectAndStateAndGuide()
           ..phaseIdx = i
           ..turnEffect = phases[i]
           ..phaseState = currentState.copyWith()
-          ..guides = guide
+          ..guides = guides
         );
         // フォームの内容を変える
         textEditingControllerList1[i].text = phases[i].getEditingControllerText1();
@@ -2444,7 +2446,7 @@ class _StatChangeViewRow extends Row {
             GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.arrow_drop_up, color: Colors.red)) :
             GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
           for (int i = ownStatChange.abs(); i < 6; i++)
-            GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.minimize, color: Colors.grey)),
+            GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.remove, color: Colors.grey)),
         ],),
       ),
       SizedBox(width: 10,),
@@ -2456,7 +2458,7 @@ class _StatChangeViewRow extends Row {
             GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.arrow_drop_up, color: Colors.red)) :
             GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
           for (int i = opponentStatChange.abs(); i < 6; i++)
-            GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.minimize, color: Colors.grey)),
+            GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.remove, color: Colors.grey)),
         ],),
       ),
     ],

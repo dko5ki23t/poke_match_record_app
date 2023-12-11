@@ -4,6 +4,7 @@ import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -272,7 +273,7 @@ class TurnMove {
     468: 'ひるんで技がだせない',
   };
 
-  List<String> processMove(
+  List<Guide> processMove(
     Party ownParty,
     Party opponentParty,
     PokemonState ownPokemonState,
@@ -285,7 +286,7 @@ class TurnMove {
   )
   {
     final pokeData = PokeDB();
-    List<String> ret = [];
+    List<Guide> ret = [];
     if (playerType.id == PlayerType.none) return ret;
 
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
@@ -341,8 +342,12 @@ class TurnMove {
         opponentPokemonState.moves.length < 4 &&
         tmp.isEmpty
     ) {
+      ret.add(Guide()
+        ..guideId = Guide.confMove
+        ..canDelete = false
+        ..guideStr = 'あいての${myState.pokemon.name}のわざの1つを${move.displayName}で確定しました。'
+      );
       opponentPokemonState.moves.add(move);
-      ret.add('わざの1つを${move.displayName}で確定しました。');
     }
 
     // わざPP消費
@@ -2288,9 +2293,11 @@ class TurnMove {
                 int attack = targetState.getNotRankedStat(StatIndex.A, drain);
                 // TODO: この時点で努力値等を反映するのかどうかとか
                 if (attack != targetState.minStats[1].real || attack != targetState.maxStats[1].real) {
-                  myState.minStats[1].real = attack;
-                  myState.maxStats[1].real = attack;
-                  ret.add('相手の${myState.pokemon.name}のこうげき実数値を$attackで確定しました。');
+                  ret.add(Guide()
+                    ..guideId = Guide.sapConfAttack
+                    ..args = [attack, attack]
+                    ..guideStr = 'あいての${targetState.pokemon.name}のこうげき実数値を$attackで確定しました。'
+                  );
                 }
               }
               targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
@@ -3261,7 +3268,11 @@ class TurnMove {
           damageGetter?.maxDamage = damageVmax;
         }
 
-        ret.add(damageCalc);
+        ret.add(Guide()
+          ..guideId = Guide.damageCalc
+          ..guideStr = damageCalc
+          ..canDelete = false
+        );
       }
 
       // 交代前stateを参照していた場合向けに、myStateを元に戻す
@@ -3561,8 +3572,6 @@ class TurnMove {
                     setAutoArgs(state, continuousCount);
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
-                    //appState.needAdjustPhases = phaseIdx;
-                    //onFocus();
                   },
                   onFocus: onFocus,
                   isInput: isInput,

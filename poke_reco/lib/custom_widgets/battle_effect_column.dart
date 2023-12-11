@@ -405,7 +405,18 @@ class BattleEffectColumn extends Column {
                     Row(
                       children: [
                         Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
-                        Expanded(flex: 10, child: Text(e)),
+                        Expanded(flex: 10, child: Text(e.guideStr)),
+                        e.canDelete && isInput ?
+                        Expanded(
+                          child: IconButton(
+                            onPressed: () {
+                              turn.phases[firstIdx+i].invalidGuideIDs.add(e.guideId);
+                              appState.needAdjustPhases = firstIdx+i+1;
+                              onFocus(firstIdx+i+1);
+                            },
+                            icon: Icon(Icons.cancel, color: Colors.grey[800],),
+                            ),
+                         ) : Container(),
                       ],
                     ),
                   ],

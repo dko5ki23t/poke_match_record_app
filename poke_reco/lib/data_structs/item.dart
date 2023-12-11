@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -52,7 +53,7 @@ class Item {
       isBerry: isBerry, imageUrl: imageUrl
     );
 
-  static List<String> processEffect(
+  static List<Guide> processEffect(
     int itemID,
     PlayerType playerType,
     PokemonState myState,
@@ -67,13 +68,14 @@ class Item {
 //    TurnEffect? prevAction,
   ) {
     final pokeData = PokeDB();
-    List<String> ret = [];
-    /*
+    List<Guide> ret = [];
     if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-      myParty.items[myPokemonIndex-1] = pokeData.items[itemID];   // もちもの確定
-      ret.add('もちものを${pokeData.items[itemID]!.displayName}で確定しました。');
+      ret.add(Guide()
+        ..guideId = Guide.confItem
+        ..args = [itemID]
+        ..guideStr = 'あいての${myState.pokemon.name}のもちものを${pokeData.items[itemID]!.displayName}で確定しました。'
+      );
     }
-    */
     // 既にもちものがわかっている場合は代入しない(代入によってbuffを追加してしまうから)
     if (myState.holdingItem == null || myState.holdingItem?.id != itemID) {
       myState.holdingItem = pokeData.items[itemID];
@@ -593,7 +595,7 @@ class Item {
       case 228:   // シルクのスカーフ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.normalAttack1_2));
         break;
-      case 1696:  // パンチグローブ
+      case 1700:  // パンチグローブ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.punchNotDirect1_1));
         break;
       case 2106:  // いどのめん
@@ -819,7 +821,7 @@ class Item {
       case 228:   // シルクのスカーフ
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.normalAttack1_2);
         break;
-      case 1696:  // パンチグローブ
+      case 1700:  // パンチグローブ
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.punchNotDirect1_1);
         break;
       case 2106:  // いどのめん

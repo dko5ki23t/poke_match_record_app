@@ -63,6 +63,9 @@ class UserForces {
             ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentPokemonState, true, state);
           }
           else if (force.playerType.id == PlayerType.opponent) {
+            if (opponentPokemonState.currentAbility.id == 0) {
+              opponentPokemonState.pokemon.ability = pokeData.abilities[force.arg1]!;
+            }
             opponentPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
           }
           break;
@@ -72,6 +75,9 @@ class UserForces {
             ownPokemonState.holdingItem = item;
           }
           else if (force.playerType.id == PlayerType.opponent) {
+            if (opponentPokemonState.pokemon.item?.id == 0) {
+              opponentPokemonState.pokemon.item = item;
+            }
             opponentPokemonState.holdingItem = item;
           }
           break;

@@ -233,7 +233,7 @@ pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
 }*/
 
 enum Sex {
-  none(0, 'なし', Icon(Icons.minimize, color: Colors.grey)),
+  none(0, 'なし', Icon(Icons.remove, color: Colors.grey)),
   male(1, 'オス', Icon(Icons.male, color: Colors.blue)),
   female(2, 'メス', Icon(Icons.female, color: Colors.red)),
   ;

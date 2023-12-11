@@ -1,6 +1,7 @@
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/field.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -82,7 +83,7 @@ class Ability {
     return ids.contains(id);
   }
 
-  static List<String> processEffect(
+  static List<Guide> processEffect(
     int abilityID,
     PlayerType playerType,
     PokemonState myState,
@@ -96,7 +97,7 @@ class Ability {
     int? changePokemonIndex,
   ) {
     final pokeData = PokeDB();
-    List<String> ret = [];
+    List<Guide> ret = [];
     var myPlayerID = playerType.id;
     var yourPlayerID = playerType.opposite.id;
     var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
@@ -228,17 +229,21 @@ class Ability {
       case 36:    // トレース
         {
           if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
-            myState.pokemon.ability = pokeData.abilities[abilityID]!;
-            myState.setCurrentAbility(myState.pokemon.ability, yourState, isOwn, state);  // とくせい確定
-            ret.add('とくせいを${myState.currentAbility.displayName}で確定しました。');
+            ret.add(Guide()
+              ..guideId = Guide.confAbility
+              ..args = [abilityID]
+              ..guideStr = 'あいての${myState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+            );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
           if (playerType.id == PlayerType.me && yourState.currentAbility.id == 0) {
-            yourState.pokemon.ability = pokeData.abilities[extraArg1]!;
-            yourState.setCurrentAbility(yourState.pokemon.ability, myState, !isOwn, state);   // とくせい確定
-            ret.add('とくせいを${yourState.currentAbility.displayName}で確定しました。');
+            ret.add(Guide()
+              ..guideId = Guide.confAbility
+              ..args = [extraArg1]
+              ..guideStr = 'あいての${yourState.pokemon.name}のとくせいを${pokeData.abilities[extraArg1]!.displayName}で確定しました。'
+            );
+            yourState.setCurrentAbility(yourState.pokemon.ability, myState, !isOwn, state);
           }
-          myState.processPassiveEffect(myPlayerID == PlayerType.me, state, yourState);
         }
         break;
       case 38:    // どくのトゲ
@@ -301,8 +306,11 @@ class Ability {
               opponentPokemonState.moves.length < 4 &&
               tmp.isEmpty
           ) {
-            opponentPokemonState.moves.add(pokeData.moves[extraArg1]!);
-            ret.add('わざの1つを${pokeData.moves[extraArg1]!.displayName}で確定しました。');
+            ret.add(Guide()
+              ..guideId = Guide.confMove
+              ..canDelete = false
+              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のわざの1つを${pokeData.moves[extraArg1]!.displayName}で確定しました。'
+            );
           }
         }
         break;
@@ -319,9 +327,13 @@ class Ability {
               myPlayerID == PlayerType.me &&
               opponentPokemonState.holdingItem?.id == 0
           ) {
-            opponentPokemonState.holdingItem = pokeData.items[extraArg1]!;
-            ret.add('もちものを${pokeData.items[extraArg1]!.displayName}で確定しました。');
+            ret.add(Guide()
+              ..guideId = Guide.confItem
+              ..args = [extraArg1]
+              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[extraArg1]!.displayName}で確定しました。'
+            );
           }
+          yourState.holdingItem = pokeData.items[extraArg1]!;
         }
         break;
       case 124:     // わるいてぐせ
@@ -656,8 +668,11 @@ class Ability {
           int arg = 0;
           if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
             if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-              ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+              ret.add(Guide()
+                ..guideId = Guide.confItem
+                ..args = [1696]
+                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+              );
             }
             myState.holdingItem = null;   // アイテム消費
             arg = 1;
@@ -673,8 +688,11 @@ class Ability {
           int arg = 0;
           if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
             if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
-              myParty.items[myPokemonIndex-1] = pokeData.items[1696];   // ブーストエナジー確定
-              ret.add('もちものを${pokeData.items[1696]!.displayName}で確定しました。');
+              ret.add(Guide()
+                ..guideId = Guide.confItem
+                ..args = [1696]
+                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+              );
             }
             myState.holdingItem = null;   // アイテム消費
             arg = 1;
@@ -733,9 +751,12 @@ class Ability {
         break;
     }
     if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
-      myState.pokemon.ability = pokeData.abilities[abilityID]!;
+      ret.add(Guide()
+        ..guideId = Guide.confAbility
+        ..args = [abilityID]
+        ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+      );
       myState.setCurrentAbility(myState.pokemon.ability, yourState, isOwn, state);   // とくせい確定
-      ret.add('とくせいを${myState.currentAbility.displayName}で確定しました。');
     }
 
     return ret;

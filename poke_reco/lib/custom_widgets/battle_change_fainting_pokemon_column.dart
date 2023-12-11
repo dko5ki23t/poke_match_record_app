@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -21,7 +22,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
-    List<String> guides,
+    List<Guide> guides,
     {required bool isInput,}
   ) :
   super(
@@ -192,7 +193,18 @@ class BattleChangeFaintingPokemonColumn extends Column {
               Row(
                 children: [
                   Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
-                  Expanded(flex: 10, child: Text(e)),
+                  Expanded(flex: 10, child: Text(e.guideStr)),
+                  e.canDelete && isInput ?
+                  Expanded(
+                    child: IconButton(
+                      onPressed: () {
+                        turn.phases[phaseIdx].invalidGuideIDs.add(e.guideId);
+                        appState.needAdjustPhases = phaseIdx+1;
+                        onFocus(phaseIdx+1);
+                      },
+                      icon: Icon(Icons.cancel, color: Colors.grey[800],),
+                    ),
+                   ) : Container(),
                 ],
               ),
             ],

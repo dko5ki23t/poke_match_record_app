@@ -199,6 +199,7 @@ class BattleActionColumn extends Column {
                     turn.phases[phaseIdx].getEditingControllerText3(currentState, null, isOnMoveSelected: true,);
                   textEditingControllerList4[phaseIdx].text =
                     turn.phases[phaseIdx].getEditingControllerText4(currentState);
+                  appState.needAdjustPhases = phaseIdx;
                   onFocus(phaseIdx+1);
                 },
                 battle.getParty(PlayerType(PlayerType.me)), 
@@ -231,7 +232,17 @@ class BattleActionColumn extends Column {
               Row(
                 children: [
                   Expanded(child: Icon(Icons.info, color: Colors.lightGreen,)),
-                  Expanded(flex: 10, child: Text(e)),
+                  Expanded(flex: 10, child: Text(e.guideStr)),
+                  e.canDelete && isInput ?
+                  Expanded(
+                    child: IconButton(
+                      onPressed: () {
+                        turn.phases[phaseIdx].invalidGuideIDs.add(e.guideId);
+                        appState.needAdjustPhases = phaseIdx+1;
+                        onFocus(phaseIdx+1);
+                      },
+                      icon: Icon(Icons.cancel, color: Colors.grey[800],),),
+                   ) : Container(),
                 ],
               ),
             ],

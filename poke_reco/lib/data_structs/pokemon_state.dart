@@ -37,7 +37,6 @@ class PokemonState {
   PokeType type1 = PokeType.createFromId(0);  // ポケモンのタイプ1(対戦中変わることもある)
   PokeType? type2;              // ポケモンのタイプ2
   Move? lastMove;               // 最後に使用した(PP消費した)わざ
-  bool isOriginalItem = true;   // trueのときに判明したholdingItemは、ポケモンがもともと持っていたもの(トリック等でfalseになる)
 
   PokemonState copyWith() =>
     PokemonState()
@@ -63,8 +62,7 @@ class PokemonState {
     ..moves = [...moves]
     ..type1 = type1
     ..type2 = type2
-    ..lastMove = lastMove?.copyWith()
-    ..isOriginalItem = isOriginalItem;
+    ..lastMove = lastMove?.copyWith();
 
   Item? get holdingItem => _holdingItem;
   Ability get currentAbility => _currentAbility;
@@ -88,10 +86,6 @@ class PokemonState {
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
 
   set holdingItem(Item? item) {
-    if (isOriginalItem && item != null) {
-      pokemon.item = item;
-      isOriginalItem = false;
-    }
     _holdingItem?.clearPassiveEffect(this);
     item?.processPassiveEffect(this);
     if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
@@ -120,10 +114,9 @@ class PokemonState {
     _currentAbility.clearPassiveEffect(this, yourState, isOwn, state);
     ability.processPassiveEffect(this, yourState, isOwn, state);
     _currentAbility = ability;
-    // TODO:これでいいかは要確認
-    if (pokemon.ability.id == 0 && PokeDB().pokeBase[pokemon.no]!.ability.where((e) => e.id == ability.id).isNotEmpty) {
+    /*if (pokemon.ability.id == 0 && PokeDB().pokeBase[pokemon.no]!.ability.where((e) => e.id == ability.id).isNotEmpty) {
       pokemon.ability = ability;
-    }
+    }*/
   }
 
   set isFainting(bool t) {

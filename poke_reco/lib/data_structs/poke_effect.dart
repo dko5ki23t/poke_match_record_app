@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -186,6 +187,7 @@ class TurnEffect {
   List<int> _prevPokemonIndexes = [0, 0];             // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
   UserForces userForces = UserForces();     // ユーザによる手動修正
   bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
+  List<int> invalidGuideIDs = [];
 
   TurnEffect copyWith() =>
     TurnEffect()
@@ -204,7 +206,8 @@ class TurnEffect {
     .._changePokemonIndexes = [..._changePokemonIndexes]
     .._prevPokemonIndexes = [..._prevPokemonIndexes]
     ..userForces = userForces.copyWith()
-    ..isAutoSet = isAutoSet;
+    ..isAutoSet = isAutoSet
+    ..invalidGuideIDs = [...invalidGuideIDs];
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player.id == PlayerType.me) return _changePokemonIndexes[0];
@@ -249,7 +252,7 @@ class TurnEffect {
   }
 
   // 効果やわざの結果から、各ポケモン等の状態を更新する
-  List<String> processEffect(
+  List<Guide> processEffect(
     Party ownParty,
     PokemonState ownPokemonState,
     Party opponentParty,
@@ -260,7 +263,7 @@ class TurnEffect {
   )
   {
     final pokeData = PokeDB();
-    List<String> ret = [];
+    List<Guide> ret = [];
     if (!isValid()) return ret;
 
     // もちもの失くした判定
@@ -509,11 +512,12 @@ class TurnEffect {
                 }
                 int hpMin = drain * 8;
                 int hpMax = hpMin + 3;
-                // TODO: この時点で努力値等を反映するのかどうかとか
                 if (hpMin != myState.minStats[0].real || hpMax != myState.maxStats[0].real) {
-                  myState.minStats[0].real = hpMin;
-                  myState.maxStats[0].real = hpMax;
-                  ret.add('相手の${myState.pokemon.name}のHP実数値を$hpMin～$hpMaxで確定しました。');
+                  ret.add(Guide()
+                    ..guideId = Guide.leechSeedConfHP
+                    ..args = [hpMin, hpMax]
+                    ..guideStr = 'あいての${myState.pokemon.name}のHP実数値を$hpMin～$hpMaxで確定しました。'
+                  );
                 }
               }
             }
@@ -556,9 +560,14 @@ class TurnEffect {
         break;
     }
 
+    // 相手のパラメータ等推定(これ以降でretへの追加禁止)
+    ret.removeWhere((element) => invalidGuideIDs.contains(element.guideId));
+    // パラメータ等推定
+    for (final guide in ret) {
+      guide.processEffect(isMe ? myState : yourState, isMe ? yourState : myState, state);
+    }
     // ユーザ手動入力による修正
-    userForces.processEffect(state.getPokemonState(PlayerType(PlayerType.me), null),
-                             state.getPokemonState(PlayerType(PlayerType.opponent), null), state);
+    userForces.processEffect(ownPokemonState, opponentPokemonState, state);
 
     // HP 満タン判定
     for (var player in [PlayerType.me, PlayerType.opponent]) {
@@ -2714,6 +2723,12 @@ class TurnEffect {
     effect.userForces = UserForces.deserialize(effectElements[14], split2, split3);
     // isAutoSet
     effect.isAutoSet = int.parse(effectElements[15]) != 0;
+    // invalidGuideIDs
+    var invalidGuideIDs = effectElements[16].split(split2);
+    for (final id in invalidGuideIDs) {
+      if (id == '') break;
+      effect.invalidGuideIDs.add(int.parse(id));
+    }
 
     return effect;
   }
@@ -2774,6 +2789,12 @@ class TurnEffect {
     ret += split1;
     // isAutoSet
     ret += isAutoSet ? '1' : '0';
+    ret += split1;
+    // invalidGuideIDs
+    for (final id in invalidGuideIDs) {
+      ret += id.toString();
+      ret += split2;
+    }
 
     return ret;
   }
@@ -2789,7 +2810,7 @@ class TurnEffectAndStateAndGuide {
   int phaseIdx = -1;
   TurnEffect turnEffect = TurnEffect();
   PhaseState phaseState = PhaseState();
-  List<String> guides = [];
+  List<Guide> guides = [];
   bool needAssist = false;
   List<TurnEffect> candidateEffect = [];    // 入力される候補となるTurnEffectのリスト
 
