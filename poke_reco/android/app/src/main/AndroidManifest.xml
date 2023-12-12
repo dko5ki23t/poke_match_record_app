@@ -1,5 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.dko5ki23t.pokereco">
+    package="com.dkomki.pokereco">
+   <uses-permission android:name="android.permission.INTERNET"/>
    <application
         android:label="poke_reco"
         android:name="${applicationName}"

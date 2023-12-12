@@ -37,3 +37,13 @@ poke_reco/linux/
 poke_reco/windows/
 poke_reco/macos/
 poke_reco/web/
+
+tool/name_to_id.py
+tool/add_csv_row.py
+tool/*.txt
+private/*
+/*.png
+
+.vscode/*
+.VSCodeCounter/*
+poke_reco/android/app/src/main/AndroidManifest.xml

@@ -89,11 +89,11 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "com.dko5ki23t" "\0"
+            VALUE "CompanyName", "com.dkomki" "\0"
             VALUE "FileDescription", "poke_reco" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "poke_reco" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2023 com.dko5ki23t. All rights reserved." "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2023 com.dkomki. All rights reserved." "\0"
             VALUE "OriginalFilename", "poke_reco.exe" "\0"
             VALUE "ProductName", "poke_reco" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
