@@ -78,7 +78,7 @@ class MoveAdditionalEffect {
 }
 
 class ActionFailure {
-  // TODO:多い(まだ他にもある)から、何か情報が得られるものに限定したい
+  // TODO:多い(まだ他にもある)から、何か情報が得られるものに限定したい・ありえない選択肢は消す
   static const int none = 0;
   static const int recoil = 1;        // わざの反動
   static const int sleep = 2;         // ねむり(カウント消費)
@@ -87,16 +87,13 @@ class ActionFailure {
   static const int lazy = 5;          // なまけ(カウント消費(反動で動けなくても消費はする))                // 消去候補
   static const int focusPunch = 6;    // きあいパンチ使用時、そのターンにダメージを受けていて動けない       // 消去候補
   static const int flinch = 7;        // ひるみ
-  static const int disable = 8;       // かなしばり                                                     // 消去候補
-  static const int gravity = 9;       // じゅうりょく                                                   // 消去候補
-  static const int healBlock = 10;    // かいふくふうじ                                                 // 消去候補
   static const int throatChop = 11;   // じごくづき                                                     // 消去候補
   static const int choice = 12;       // こだわり                                                       // 消去候補
   static const int taunt = 13;        // ちょうはつ
   static const int imprison = 14;     // ふういん                                                       // 消去候補
   static const int confusion = 15;    // こんらんにより自傷
   static const int paralysis = 16;    // まひ
-  static const int infatuation = 17;  // メロメロ                                                       // 消去候補
+  static const int infatuation = 17;  // メロメロ
   static const int protected = 18;    // 相手にこうげきを防がれた
   static const int other = 19;        // その他
   static const int size = 20;
@@ -110,9 +107,6 @@ class ActionFailure {
     5: 'なまけ',
     6: 'きあいパンチ中にダメージを受けた',
     7: 'ひるみ',
-    8: 'かなしばり',
-    9: 'じゅうりょく',
-    10: 'かいふくふうじ',
     11: 'じごくづき',
     12: 'こだわり中以外のわざを使った',
     13: 'ちょうはつ',
@@ -295,8 +289,8 @@ class TurnMove {
 
     // みちづれ状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
-    // ちょうはつのカウントインクリメント
-    if (myState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty) myState.ailmentsWhere((e) => e.id == Ailment.taunt).first.extraArg1++;
+    // おんねん状態解除
+    myState.ailmentsRemoveWhere((e) => e.id == Ailment.grudge);
 
     // こうさん
     if (type.id == TurnMoveType.surrender) {
@@ -327,6 +321,23 @@ class TurnMove {
       myState.processExitEffect(playerType.id == PlayerType.me, yourState);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
+      return ret;
+    }
+
+    // ねむりカウント加算
+    var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
+    if (sleep.isNotEmpty) sleep.first.turns++;
+    // アンコールカウント加算
+    var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
+    if (encore.isNotEmpty) encore.first.turns++;
+    // ちょうはつのカウントインクリメント
+    var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
+    if (taunt.isNotEmpty) taunt.first.extraArg1++;
+
+    // こんらんによる自傷
+    if (actionFailure.id == ActionFailure.confusion) {
+      myState.remainHP -= extraArg1[continuousCount];
+      myState.remainHPPercent -= extraArg2[continuousCount];
       return ret;
     }
 
@@ -451,6 +462,14 @@ class TurnMove {
           break;
         default:
           break;
+      }
+      // マジックコートによるはねかえし
+      if (replacedMove.damageClass.id == 1 && yourState.ailmentsWhere((e) => e.id == Ailment.magicCoat).isNotEmpty) {
+        for (int i = 0; i < targetStates.length; i++) {
+          if (targetStates[i] == yourState) {
+            targetStates[i] = myState;
+          }
+        }
       }
 
       // ねごと系以外のわざを出しているならねむり解除とみなす
@@ -659,7 +678,7 @@ class TurnMove {
             else {
               myState.remainHPPercent = 100;
             }
-            myState.ailmentsAdd(Ailment(Ailment.sleep), state);
+            myState.ailmentsAdd(Ailment(Ailment.sleep)..extraArg1 = 3, state);
             break;
           case 39:    // 一撃必殺
             targetState.remainHP = 0;
@@ -933,12 +952,14 @@ class TurnMove {
           case 374:   // にげられない状態にする
           case 385:   // にげられない状態にする
             if (!targetState.isTypeContain(8)) {
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
             }
             break;
-          case 108:   // あくむ状態にする
+/*
+          case 108:   // あくむ状態にする(SVで使用不可のため実装無し)
             targetState.ailmentsAdd(Ailment(Ailment.nightmare), state);
             break;
+*/
           case 109:   // 使用者のかいひを2段階上げる。ちいさくなる状態になる
             myState.addStatChanges(true, 6, 2, targetState, moveId: replacedMove.id);
             myState.ailmentsAdd(Ailment(Ailment.minimize), state);
@@ -1198,6 +1219,9 @@ class TurnMove {
             break;
           case 160:   // さわぐ状態になる
             myState.ailmentsAdd(Ailment(Ailment.uproar), state);
+            // ねむり状態解除
+            myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
+            yourState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
             break;
           case 161:   // たくわえた回数を+1する。使用者のぼうぎょ・とくぼうが1段階上がる
             int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.stock3);
@@ -1284,7 +1308,8 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.taunt), state);
             break;
           case 177:   // てだすけ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.helpHand), state);
+            // シングルバトルでは失敗する
+            //targetState.ailmentsAdd(Ailment(Ailment.helpHand), state);
             break;
           case 178:   // 使用者ともちものを入れ替える
             if (extraArg1[continuousCount] > 0) {
@@ -1458,20 +1483,29 @@ class TurnMove {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             int lostFly = 0;
-            if (!myState.isTerastaling && myState.type1.id == 3) {
-              myState.type1 = PokeType.createFromId(0);
-              lostFly = 1;
+            if (!myState.isTerastaling && myState.type1.id == PokeTypeId.fly) {
+              if (myState.type2 == null) {
+                myState.type1 = PokeType.createFromId(PokeTypeId.normal);
+                lostFly = 1;
+              }
+              else {
+                myState.type1 = PokeType.createFromId(myState.type2!.id);
+                myState.type2 = null;
+                lostFly = 3;
+              }
             }
-            else if (!myState.isTerastaling && myState.type2?.id == 3) {
+            else if (!myState.isTerastaling && myState.type2?.id == PokeTypeId.fly) {
               myState.type2 = null;
               lostFly = 2;
             }
+            myState.ailmentsRemoveWhere((e) => e.id == Ailment.magnetRise);   // でんじふゆうは解除
             myState.ailmentsAdd(Ailment(Ailment.roost)..extraArg1 = lostFly, state);
             break;
           case 216:   // 場をじゅうりょく状態にする
             if (targetIndiField.where((e) => e.id == IndividualField.gravity).isEmpty) {
               targetIndiField.add(IndividualField(IndividualField.gravity));
             }
+            targetState.ailmentsRemoveWhere((e) => e.id == Ailment.magnetRise || e.id == Ailment.telekinesis || e.id == Ailment.flying);   // でんじふゆう/テレキネシス/そらをとぶは解除
             break;
           case 217:   // ミラクルアイ状態にする
             targetState.ailmentsAdd(Ailment(Ailment.miracleEye), state);
@@ -1924,6 +1958,7 @@ class TurnMove {
           case 288:   // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
           case 373:   // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
             targetState.ailmentsAdd(Ailment(Ailment.antiAir), state);
+            targetState.ailmentsRemoveWhere((e) => e.id == Ailment.magnetRise || e.id == Ailment.telekinesis || e.id == Ailment.flying);   // でんじふゆう/テレキネシス/そらをとぶは解除
             break;
           case 289:   // かならず急所に当たる
             break;
@@ -2266,9 +2301,9 @@ class TurnMove {
           case 376:   // 相手のタイプにくさを追加する
             //TODO
             break;
-          case 378:   // ふんじん状態にする
+/*          case 378:   // ふんじん状態にする(SVで使用不可のため処理なし)
             targetState.ailmentsAdd(Ailment(Ailment.powder), state);
-            break;
+            break;*/
           case 380:   // こおりにする(確率)。みずタイプのポケモンに対しても効果ばつぐんとなる
             targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             break;
@@ -2424,7 +2459,7 @@ class TurnMove {
           case 423:   // 使用者と相手をにげられない状態にする
             if (!myState.isTypeContain(8) && !targetState.isTypeContain(8)) {
               myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
             }
             break;
           case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
@@ -2462,7 +2497,7 @@ class TurnMove {
             break;
           case 430:   // にげられない状態とたこがため状態にする
             if (!targetState.isTypeContain(8)) {
-              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
+              targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
               targetState.ailmentsAdd(Ailment(Ailment.octoLock), state);
             }
             break;
@@ -2752,7 +2787,9 @@ class TurnMove {
             }
             break;
           case 482:   // しおづけ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.saltCure), state);
+            if (targetState.holdingItem?.id != 1701 && targetState.currentAbility.id != 19) {
+              targetState.ailmentsAdd(Ailment(Ailment.saltCure), state);
+            }
             break;
           case 483:   // 3回連続でこうげきする
             break;
@@ -2907,6 +2944,11 @@ class TurnMove {
             break;
         }
 
+        // そうでんによるわざタイプ変更
+        if (myState.ailmentsWhere((e) => e.id == Ailment.electrify).isNotEmpty) {
+          moveType = PokeType.createFromId(PokeTypeId.electric);
+        }
+
         // わざの相性をここで変えちゃう
         moveEffectivenesses[continuousCount] = PokeType.effectiveness(
           myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
@@ -3018,9 +3060,7 @@ class TurnMove {
 
           movePower = tmpPow.floor();
 
-          // TODO: targetStates(リスト)
           // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
-          // TODO パワートリック等で、実際にmaxStatsとかの値を入れ替えたほうが良さそう
           int calcMaxAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
               myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
@@ -3660,6 +3700,29 @@ class TurnMove {
     {required bool isInput,}
   )
   {
+    if (!isSuccess && actionFailure.id != ActionFailure.confusion) return Container();
+
+    if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
+      return DamageIndicateRow(
+        playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+        hpController2,
+        playerType.id == PlayerType.me,
+        onFocus,
+        (value) {
+          if (playerType.id == PlayerType.me) {
+            extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+          }
+          else {
+            extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+          }
+          appState.editingPhase[phaseIdx] = true;
+          onFocus();
+        },
+        playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+        isInput,
+      );
+    }
+
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
     var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
@@ -5384,7 +5447,7 @@ class TurnMove {
         default:
           break;
       }
-
+      
       switch (replacedMove.damageClass.id) {
         case 1:   // へんか
           switch(replacedMove.target.id) {
@@ -5854,7 +5917,7 @@ class TurnMove {
     bool isMoveChanged = false;
 
     // ねむり
-    if (myState.ailmentsWhere((e) => e.id == Ailment.sleep).isNotEmpty) {
+    if (myState.ailmentsWhere((e) => e.id == Ailment.sleep && e.turns < (e.extraArg1 == 3 ? 2 : 3)).isNotEmpty) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.sleep);
       ret = true;

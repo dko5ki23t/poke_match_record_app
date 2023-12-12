@@ -142,7 +142,7 @@ class PokemonState {
         holdingItem?.id == 255) {
       return true;
     }
-    if (isTypeContain(3) || currentAbility.id == 26 || holdingItem?.id == 584 ||
+    if (isTypeContain(PokeTypeId.fly) || currentAbility.id == 26 || holdingItem?.id == 584 ||
         ailmentsWhere((e) => e.id == Ailment.magnetRise || e.id == Ailment.telekinesis).isNotEmpty) {
       return false;
     }
@@ -157,11 +157,15 @@ class PokemonState {
   // 交代可能な状態かどうか
   bool canChange(PokemonState yourState, PhaseState state) {
     var fields = isMe ? state.ownFields : state.opponentFields;
-    return fields.where((element) => element.id == IndividualField.fairyLock).isEmpty &&
-          (isTypeContain(PokeTypeId.ghost) ||   // ゴーストタイプならOK
-           // (yourState.currentAbility.id != 23)   // TODO:かげふみとくせいで、ailment「にげられない」を追加しとく。ほかにもとくせい「じりょく」とか「ありじごく」とか
-           ailmentsWhere((e) => e.id == Ailment.cannotRunAway).isEmpty
-          );
+    return isTypeContain(PokeTypeId.ghost) ||   // ゴーストタイプならOK
+       holdingItem?.id == 272 ||            // きれいなぬけがらを持っていればOK
+    (fields.where((element) => element.id == IndividualField.fairyLock).isEmpty &&
+      (
+        ailmentsWhere((e) => e.id == Ailment.cannotRunAway).isEmpty ||
+        (ailmentsWhere((e) => e.id == Ailment.cannotRunAway).first.extraArg1 == 2 && !isTypeContain(PokeTypeId.steel)) ||
+        (ailmentsWhere((e) => e.id == Ailment.cannotRunAway).first.extraArg1 == 3 && !isGround(fields))
+      )
+    );
   }
 
   // きゅうしょランク加算
@@ -276,6 +280,8 @@ class PokemonState {
         }
       }
     }
+    // あいてのロックオン状態解除
+    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.lockOn);
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) { // ダークオーラ
       yourState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.darkAura || element.id == BuffDebuff.antiDarkAura);
@@ -296,8 +302,8 @@ class PokemonState {
     if (currentAbility.id == 287) { // わざわいのたま
       yourState.buffDebuffs.removeWhere((element) => element.id == BuffDebuff.specialDefense0_75);
     }
-    // にげられない状態の解除
-    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway);
+    // あいてのにげられない状態の解除
+    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway && e.extraArg1 == 1);
     // 退場することで自身に効果がある場合
     if (!_isFainting && currentAbility.id == 30) { // しぜんかいふく
       ailmentsClear();
@@ -346,22 +352,28 @@ class PokemonState {
     // 状態変化の経過ターンインクリメント
     if (!isFaintingChange) {
       for (var e in _ailments.iterable) {
-        e.turns++;
+        if (e.id != Ailment.sleep) {    // ねむりのターン経過は行動時のみ
+          e.turns++;
+        }
       }
     }
-    // ねむけ→ねむりに変化
-    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
+    // ねむけ→ねむりに変化(TurnEffectにもあるから、余計かも)
+/*    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
     if (findIdx >= 0) {
       ailmentsRemoveAt(findIdx);
       ailmentsAdd(Ailment(Ailment.sleep), state);
-    }
-    // まもる状態は解除
-    ailmentsRemoveWhere((e) => e.id == Ailment.protect);
+    }*/
+    // ちゅうもくのまと/まもる状態/そうでんは解除
+    ailmentsRemoveWhere((e) => e.id == Ailment.attention || e.id == Ailment.protect || e.id == Ailment.electrify);
     // はねやすめ解除＆ひこうタイプ復活
-    findIdx = ailmentsIndexWhere((e) => e.id == Ailment.roost);
+    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.roost);
     if (findIdx >= 0) {
-      if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.createFromId(3);
-      if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.createFromId(3);
+      if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.createFromId(PokeTypeId.fly);
+      if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.createFromId(PokeTypeId.fly);
+      if (ailments(findIdx).extraArg1 == 3) {
+        type2 = PokeType.createFromId(type1.id);
+        type1 = PokeType.createFromId(PokeTypeId.fly);
+      }
       ailmentsRemoveAt(findIdx);
     }
     // その他の補正の経過ターンインクリメント
@@ -394,6 +406,8 @@ class PokemonState {
     if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) return false;
     if ((currentAbility.id == 41 || currentAbility.id == 199 || currentAbility.id == 270) && (ailment.id == Ailment.burn)) return false;    // みずのベール/ねつこうかん<-やけど
     if (currentAbility.id == 15 && (ailment.id == Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // ふみん
+    if (currentAbility.id == 165 && (ailment.id == Ailment.infatuation || ailment.id == Ailment.encore || ailment.id == Ailment.torment ||
+        ailment.id == Ailment.disable || ailment.id == Ailment.taunt || ailment.id == Ailment.healBlock)) return false; // アロマベール
     if (currentAbility.id == 166 && isTypeContain(12) && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // フラワーベール
     if (currentAbility.id == 272 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false; // きよめのしお
     if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) return false;      // せいしんりょく<-ひるみ
@@ -402,7 +416,9 @@ class PokemonState {
         (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // 晴れ下リーフガード<-状態異常＋ねむけ
     if (currentAbility.id == 213 && (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) return false;    // ぜったいねむり<-状態異常＋ねむけ
     // TODO:リミットシールド
-    if (currentAbility.id == 213) return false;
+    //if (currentAbility.id == 213) return false;
+    if ((ailmentsWhere((e) => e.id == Ailment.uproar).isNotEmpty || state.getPokemonState(playerType.opposite, null).ailmentsWhere((e) => e.id == Ailment.uproar).isNotEmpty) &&
+        ailment.id == Ailment.sleep) return false;
     if (state.weather.id == Weather.sunny && holdingItem?.id != Item.bannougasa && ailment.id == Ailment.freeze) return false;
     if (state.field.id == Field.electricTerrain &&
         isGround(indiFields) &&
@@ -410,6 +426,8 @@ class PokemonState {
     // 各々の場
     if (indiFields.where((e) => e.id == IndividualField.safeGuard).isNotEmpty && (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy)) return false; // しんぴのまもり
     if (state.field.id == Field.mistyTerrain) return false;
+    // 持続ターン数の変更
+    if (holdingItem?.id == 263 && ailment.id == Ailment.partiallyTrapped) ailment.extraArg1 = 7;    // ねばりのかぎづめ＋バインド
 
     bool isAdded = _ailments.add(ailment);
 

@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -130,6 +131,7 @@ class PokeType {
   {
     PokeType defenseType1 = state.type1;
     PokeType? defenseType2 = state.type2;
+    bool canNormalFightToGhost = isScrappy || state.ailmentsWhere((e) => e.id == Ailment.identify).isNotEmpty;
     if (state.isTerastaling) {
       defenseType1 = state.teraType1;
       defenseType2 = null;
@@ -141,12 +143,12 @@ class PokeType {
       switch (attackType.id) {
         case 1:
           if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
-          if (!isRingTarget && !isScrappy && type.id == 8) return 0;   // ノーマル->ゴースト
+          if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;   // ノーマル->ゴースト
           break;
         case 2:
           if (type.id == 1 || type.id == 15 || type.id == 6 || type.id == 17 || type.id == 9) deg++;
           if (type.id == 4 || type.id == 3 || type.id == 14 || type.id == 7 || type.id == 18) deg--;
-          if (!isRingTarget && !isScrappy && type.id == 8) return 0;
+          if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;
           break;
         case 3:
           if (type.id == 2 || type.id == 12 || type.id == 7) deg++;
@@ -223,7 +225,11 @@ class PokeType {
       }
       type = defenseType2;
     }
-    if (deg == 2) {
+    if (attackType.id == PokeTypeId.fire && state.ailmentsWhere((e) => e.id == Ailment.tarShot).isNotEmpty) deg++;
+    if (deg == 3) {
+      return 8;
+    }
+    else if (deg == 2) {
       return 4;
     }
     else if (deg == 1) {

@@ -1,4 +1,3 @@
-import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/turn.dart';
@@ -218,10 +217,10 @@ class PhaseState {
               // 各ポケモンの場
               addingBase.effect = EffectType(EffectType.individualField);
               var indiField = player.id == PlayerType.me ? ownFields : opponentFields;
-              for (final field in indiField) {
-                if (field.isActive(timing, myState, state)) {
+              for (final f in indiField) {
+                if (f.isActive(timing, myState, state)) {
                   var adding = addingBase.copyWith()
-                    ..effectId = IndiFieldEffect.getIdFromIndiField(field);
+                    ..effectId = IndiFieldEffect.getIdFromIndiField(f);
                   adding.setAutoArgs(myState, yourState, state, prevAction);
                   ret.add(adding);
                 }
@@ -239,6 +238,19 @@ class PhaseState {
         var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
         var defenderTimingIDList = [];
 
+        // 状態変化
+        for (final ailment in attackerState.ailmentsIterable) {
+          if (ailment.isActive(attackerPlayerTypeId == PlayerType.me, timing, attackerState, state)) {
+            var adding = TurnEffect()
+              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..timing = timing
+              ..effect = EffectType(EffectType.ailment)
+              ..effectId = AilmentEffect.getIdFromAilment(ailment);
+            adding.setAutoArgs(attackerState, defenderState, state, prevAction);
+            ret.add(adding);
+          }
+        }
+        
         if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(0) &&
             prevAction.move!.moveEffectivenesses[0].id != MoveEffectiveness.noEffect
         ) {  // わざ成功時
@@ -601,102 +613,17 @@ class PhaseState {
 
             //  状態異常
             for (final ailment in myState.ailmentsIterable) {
-              if (ailment.isActive(timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
+              if (ailment.isActive(player.id == PlayerType.me, timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
                 var adding = TurnEffect()
                   ..playerType = player
                   ..timing = timing
                   ..effect = EffectType(EffectType.ailment)
-                  ..effectId = AilmentEffect.getIdFromAilment(ailment);
+                  ..effectId = AilmentEffect.getIdFromAilment(ailment)
+                  ..extraArg1 = ailment.turns;
                 adding.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(adding);
               }
             }
-
-/*
-            if (myState.ailmentsWhere((e) => e.id == Ailment.sleepy && e.turns >= 1).isNotEmpty &&
-                myState.copyWith().ailmentsAdd(Ailment(Ailment.sleep), state)
-            ) {  // ねむけ状態のとき&ねむりになるとき
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.sleepy
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty) {    // やけど
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.burn
-                ..extraArg1 = isMe ? (myState.pokemon.h.real / 16).floor() : 6
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.poison).isNotEmpty) {    // どく
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.poison
-                ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.badPoison).isNotEmpty) { // もうどく
-              int turns = (myState.ailmentsWhere((e) => e.id == Ailment.badPoison).first.turns + 1).clamp(1, 15);
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.badPoison
-                ..extraArg1 = isMe ? (myState.pokemon.h.real * turns / 16).floor() : (100 * turns / 16).floor()
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {    // しおづけ
-              int bunbo = myState.isTypeContain(9) || myState.isTypeContain(11) ? 4 : 8;
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.saltCure
-                ..extraArg1 = isMe ? (myState.pokemon.h.real / bunbo).floor() : (100 / bunbo).floor()
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.curse).isNotEmpty) {     // のろい
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.curse
-                ..extraArg1 = isMe ? (myState.pokemon.h.real / 4).floor() : 25
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) { // やどりぎのタネ
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.leechSeed
-                ..extraArg1 = isMe ? (myState.pokemon.h.real / 8).floor() : 12
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {   // ねをはる
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.ingrain
-                ..extraArg1 = isMe ? -((myState.pokemon.h.real / 16).floor()) : -6
-              );
-            }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.taunt && e.extraArg1 >= 3).isNotEmpty) {   // ちょうはつ終了
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
-                ..effect = EffectType(EffectType.ailment)
-                ..effectId = AilmentEffect.tauntEnd
-              );
-            }
-*/
 
             // 各ポケモンの場の効果
             var fields = player.id == PlayerType.me ? ownFields : opponentFields;

@@ -211,7 +211,7 @@ class BattleActionColumn extends Column {
                 isInput: isInput,
               ),
               SizedBox(height: turn.phases[phaseIdx].move!.isSuccess ? 10 : 0,),
-              turn.phases[phaseIdx].move!.isSuccess ?
+              turn.phases[phaseIdx].move!.isSuccess || turn.phases[phaseIdx].move!.actionFailure.id == ActionFailure.confusion ?
               turn.phases[phaseIdx].move!.extraWidget2(
                 () => onFocus(phaseIdx+1), theme, ownPokemon, opponentPokemon,
                 battle.getParty(PlayerType(PlayerType.me)), battle.getParty(PlayerType(PlayerType.opponent)),

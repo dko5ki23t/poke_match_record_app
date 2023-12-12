@@ -87,6 +87,32 @@ class IndiFieldEffect {
     return field.id;
   }
 
+  // ただ場を終了させるだけの処理を行う
+  static void processRemove(int effectId, List<IndividualField> myFields, List<IndividualField> yourFields,) {
+    switch (effectId) {
+      case IndiFieldEffect.reflectorEnd:    // リフレクター終了
+      case IndiFieldEffect.lightScreenEnd:  // ひかりのかべ終了
+      case IndiFieldEffect.safeGuardEnd:    // しんぴのまもり終了
+      case IndiFieldEffect.mistEnd:         // しろいきり終了
+      case IndiFieldEffect.tailwindEnd:     // おいかぜ終了
+      case IndiFieldEffect.auroraVeilEnd:   // オーロラベール終了
+      case IndiFieldEffect.gravityEnd:      // じゅうりょく終了
+        myFields.removeWhere((e) => e.id == effectId);
+        break;
+      case IndiFieldEffect.trickRoomEnd:    // トリックルーム終了
+      case IndiFieldEffect.waterSportEnd:   // みずあそび終了
+      case IndiFieldEffect.mudSportEnd:     // どろあそび終了
+      case IndiFieldEffect.wonderRoomEnd:   // ワンダールーム終了
+      case IndiFieldEffect.magicRoomEnd:    // マジックルーム終了
+      case IndiFieldEffect.fairyLockEnd:    // フェアリーロック終了
+        myFields.removeWhere((e) => e.id == effectId);
+        yourFields.removeWhere((e) => e.id == effectId);
+        break;
+      default:
+        break;
+    }
+  }
+
   final int id;
 }
 
@@ -115,6 +141,7 @@ class IndividualField {
   static const int magicRoom = 24;        // マジックルーム   // TODO
   static const int ionDeluge = 25;        // プラズマシャワー(わざタイプ：ノーマル→でんき)
   static const int fairyLock = 26;        // フェアリーロック
+  static const int noBerry = 27;          // きのみを食べられない状態(きんちょうかん)
 
   static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
     0: Tuple3('', Colors.black, 0),
@@ -141,6 +168,7 @@ class IndividualField {
     24: Tuple3('マジックルーム', PokeTypeColor.psychic, 5),
     25: Tuple3('プラズマシャワー', PokeTypeColor.electric, 0),
     26: Tuple3('フェアリーロック', PokeTypeColor.fairy, 2),
+    27: Tuple3('きのみを食べられない状態', PokeTypeColor.evil, 0),
   };
 
   final int id;

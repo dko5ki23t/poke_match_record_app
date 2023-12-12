@@ -348,50 +348,8 @@ class TurnEffect {
             case IndiFieldEffect.stickyWeb:       // ねばねばネット
               myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields);
               break;
-            case IndiFieldEffect.reflectorEnd:    // リフレクター終了
-              myFields.removeWhere((e) => e.id == IndividualField.reflector);
-              break;
-            case IndiFieldEffect.lightScreenEnd:  // ひかりのかべ終了
-              myFields.removeWhere((e) => e.id == IndividualField.lightScreen);
-              break;
-            case IndiFieldEffect.safeGuardEnd:    // しんぴのまもり終了
-              myFields.removeWhere((e) => e.id == IndividualField.safeGuard);
-              break;
-            case IndiFieldEffect.mistEnd:         // しろいきり終了
-              myFields.removeWhere((e) => e.id == IndividualField.mist);
-              break;
-            case IndiFieldEffect.tailwindEnd:     // おいかぜ終了
-              myFields.removeWhere((e) => e.id == IndividualField.tailwind);
-              break;
-            case IndiFieldEffect.auroraVeilEnd:   // オーロラベール終了
-              myFields.removeWhere((e) => e.id == IndividualField.auroraVeil);
-              break;
-            case IndiFieldEffect.gravityEnd:      // じゅうりょく終了
-              myFields.removeWhere((e) => e.id == IndividualField.gravity);
-              break;
-            case IndiFieldEffect.trickRoomEnd:    // トリックルーム終了
-              myFields.removeWhere((e) => e.id == IndividualField.trickRoom);
-              yourFields.removeWhere((e) => e.id == IndividualField.trickRoom);
-              break;
-            case IndiFieldEffect.waterSportEnd:   // みずあそび終了
-              myFields.removeWhere((e) => e.id == IndividualField.waterSport);
-              yourFields.removeWhere((e) => e.id == IndividualField.waterSport);
-              break;
-            case IndiFieldEffect.mudSportEnd:     // どろあそび終了
-              myFields.removeWhere((e) => e.id == IndividualField.mudSport);
-              yourFields.removeWhere((e) => e.id == IndividualField.mudSport);
-              break;
-            case IndiFieldEffect.wonderRoomEnd:   // ワンダールーム終了
-              myFields.removeWhere((e) => e.id == IndividualField.wonderRoom);
-              yourFields.removeWhere((e) => e.id == IndividualField.wonderRoom);
-              break;
-            case IndiFieldEffect.magicRoomEnd:    // マジックルーム終了
-              myFields.removeWhere((e) => e.id == IndividualField.magicRoom);
-              yourFields.removeWhere((e) => e.id == IndividualField.magicRoom);
-              break;
-            case IndiFieldEffect.fairyLockEnd:    // フェアリーロック終了
-              myFields.removeWhere((e) => e.id == IndividualField.fairyLock);
-              yourFields.removeWhere((e) => e.id == IndividualField.fairyLock);
+            default:
+              IndiFieldEffect.processRemove(effectId, myFields, yourFields);
               break;
           }
         }
@@ -522,8 +480,38 @@ class TurnEffect {
               }
             }
             break;
-          case AilmentEffect.tauntEnd:
-            myState.ailmentsRemoveWhere((e) => e.id == Ailment.taunt);
+          case AilmentEffect.partiallyTrapped:
+            if (extraArg2 > 0) {
+              myState.ailmentsRemoveWhere((e) => e.id == Ailment.partiallyTrapped);
+            }
+            else {
+              if (playerType.id == PlayerType.me) {
+                myState.remainHP -= extraArg1;
+              }
+              else {
+                myState.remainHPPercent -= extraArg1;
+              }
+            }
+            break;
+          case AilmentEffect.perishSong:
+            myState.remainHP = 0;
+            myState.remainHPPercent = 0;
+            myState.isFainting = true;
+            break;
+          case AilmentEffect.octoLock:
+            myState.addStatChanges(true, 1, -1, yourState);
+            myState.addStatChanges(true, 3, -1, yourState);
+            break;
+          case AilmentEffect.candyCandy:
+            if (extraArg2 > 0) {
+              myState.ailmentsRemoveWhere((e) => e.id == Ailment.candyCandy);
+            }
+            else {
+              myState.addStatChanges(false, 4, -1, yourState);
+            }
+            break;
+          default:
+            AilmentEffect.processRemove(effectId, myState);
             break;
         }
         break;
@@ -701,7 +689,7 @@ class TurnEffect {
     List<int> attackerTimingIDs = [...allTimingIDs];
     List<int> defenderTimingIDs = [...allTimingIDs];
     List<int> indiFieldEffectIDs = [];
-    List<int> ailmentEffectIDs = [];
+    Map<int, int> ailmentEffectIDs = {};    // 効果IDと経過ターン数を入れる
     List<int> weatherEffectIDs = [];
     List<int> fieldEffectIDs = [];
 
@@ -727,9 +715,9 @@ class TurnEffect {
           if (phaseState.field.id != Field.mistyTerrain) timingIDs.add(101);    // ポケモン登場時(ミストフィールドでない)
           if (phaseState.field.id != Field.grassyTerrain) timingIDs.add(102);   // ポケモン登場時(グラスフィールドでない)
           var myFields = playerType.id == PlayerType.me ? phaseState.ownFields : phaseState.opponentFields;
-          for (final field in myFields) {
-            if (field.possiblyActive(timing)) {
-              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
+          for (final f in myFields) {
+            if (f.possiblyActive(timing)) {
+              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(f));
             }
           }
         }
@@ -791,37 +779,14 @@ class TurnEffect {
           if (pokemonState != null) {
             for (final ailment in pokemonState.ailmentsIterable) {
               if (ailment.possiblyActive(timing, pokemonState, phaseState)) {
-                ailmentEffectIDs.add(AilmentEffect.getIdFromAilment(ailment));
+                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] = ailment.turns;
               }
             }
           }
+          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty) {    // どく/もうどく状態のとき
+            timingIDs.add(52);
+          }
 /*
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.sleepy).isNotEmpty) {   // ねむけ状態のとき
-            ailmentEffectIDs.add(AilmentEffect.sleepy);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.poison).isNotEmpty) {   // どく状態のとき
-            ailmentEffectIDs.add(AilmentEffect.poison);
-            timingIDs.add(52);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.badPoison).isNotEmpty) {  // もうどく状態のとき
-            ailmentEffectIDs.add(AilmentEffect.badPoison);
-            timingIDs.add(52);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty) {     // やけど状態のとき
-            ailmentEffectIDs.add(AilmentEffect.burn);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.saltCure).isNotEmpty) {   // しおづけ状態のとき
-            ailmentEffectIDs.add(AilmentEffect.saltCure);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.curse).isNotEmpty) {      // のろい状態のとき
-            ailmentEffectIDs.add(AilmentEffect.curse);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.leechSeed).isNotEmpty) {  // やどりぎのタネ状態のとき
-            ailmentEffectIDs.add(AilmentEffect.leechSeed);
-          }
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty) {      // ちょうはつ状態のとき
-            ailmentEffectIDs.add(AilmentEffect.tauntEnd);
-          }
           if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
             ailmentEffectIDs.add(AilmentEffect.ingrain);
           }
@@ -885,6 +850,12 @@ class TurnEffect {
               if (replacedMoveType.id == 17) defenderTimingIDs.add(145);
               if (replacedMoveType.id == 9) defenderTimingIDs.add(146);
               if (replacedMoveType.id == 18) defenderTimingIDs.add(147);
+            }
+            // 状態変化
+            for (final ailment in attackerState.ailmentsIterable) {
+              if (ailment.possiblyActive(timing, attackerState, phaseState)) {
+                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] = ailment.turns;
+              }
             }
           }
         }
@@ -1091,11 +1062,12 @@ class TurnEffect {
         }
       }
       if (type.id == EffectType.ailment) {
-        for (var e in ailmentEffectIDs) {
+        for (var e in ailmentEffectIDs.entries) {
           ret.add(TurnEffect()
             ..playerType = playerType
             ..effect = EffectType(EffectType.ailment)
-            ..effectId = e
+            ..effectId = e.key
+            ..extraArg1 = e.value
           );
         }
       }
@@ -1217,7 +1189,8 @@ class TurnEffect {
         extraArg2 = Item.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
         break;
       case EffectType.ailment:
-        extraArg1 = Ailment.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing);
+        // extraArg1にはあらかじめ経過ターン数を代入しておく。
+        extraArg1 = Ailment.getAutoArg1(effectId, playerType, myState, yourState, state, prevAction, timing, extraArg1);
         extraArg2 = Ailment.getAutoArg2(effectId, playerType, myState, yourState, state, prevAction, timing);
         break;
       case EffectType.individualField:
@@ -1328,6 +1301,7 @@ class TurnEffect {
                 case AilmentEffect.saltCure:    // しおづけ
                 case AilmentEffect.curse:       // のろい
                 case AilmentEffect.leechSeed:   // やどりぎのタネ
+                case AilmentEffect.partiallyTrapped:  // バインド
                 case AilmentEffect.ingrain:     // ねをはる
                   if (playerType.id == PlayerType.me) {
                     return myState.remainHP.toString();
@@ -2418,6 +2392,91 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+              ),
+            ],
+          );
+        case AilmentEffect.partiallyTrapped:    // バインド
+          return Column(
+            children: [
+              Expanded(
+                child: _myDropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '効果',
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('ダメージを負った'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('効果が解けた'),
+                    ),
+                  ],
+                  value: extraArg2,
+                  onChanged: (value) {
+                    extraArg2 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg2 == 1 ? '効果が解けた' : 'ダメージを負った',
+                ),
+              ),
+              SizedBox(height: 10,),
+              extraArg2 == 0 ?
+              DamageIndicateRow(
+                myPokemon, controller,
+                playerType.id == PlayerType.me,
+                onFocus,
+                (value) {
+                  if (playerType.id == PlayerType.me) {
+                    extraArg1 = myState.remainHP - (int.tryParse(value)??0);
+                  }
+                  else {
+                    extraArg1 = myState.remainHPPercent - (int.tryParse(value)??0);
+                  }
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                extraArg1,
+                isInput,
+              ) : Container(),
+            ],
+          );
+        case AilmentEffect.candyCandy:    // あめまみれ
+          return Row(
+            children: [
+              Expanded(
+                child: _myDropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: const InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: '効果',
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: 0,
+                      child: Text('すばやさが下がった'),
+                    ),
+                    DropdownMenuItem(
+                      value: 1,
+                      child: Text('効果が解けた'),
+                    ),
+                  ],
+                  value: extraArg2,
+                  onChanged: (value) {
+                    extraArg2 = value;
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: extraArg2 == 1 ? '効果が解けた' : 'すばやさが下がった',
+                ),
               ),
             ],
           );

@@ -763,9 +763,16 @@ class Ability {
   }
 
   void processPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
+    var myFields = isOwn ? state.ownFields : state.opponentFields;
+    var yourFields = isOwn ? state.opponentFields : state.ownFields;
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
+        break;
+      case 23:  // かげふみ
+        if (yourState.currentAbility.id != 23) {
+          yourState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
+        }
         break;
       case 32:  // てんのめぐみ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.additionalEffect2));
@@ -773,6 +780,9 @@ class Ability {
       case 37:  // ちからもち
       case 74:  // ヨガパワー
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack2));
+        break;
+      case 42:  // じりょく
+        yourState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 2, state);
         break;
       case 55:  // はりきり
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5));
@@ -790,6 +800,9 @@ class Ability {
         if (myState.ailmentsIndexWhere((e) => e.id <= Ailment.sleep && e.id != 0) >= 0) {
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
         }
+        break;
+      case 71:  // ありじごく
+        yourState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 3, state);
         break;
       case 77:  // ちどりあし
         if (myState.ailmentsIndexWhere((e) => e.id == Ailment.confusion) >= 0) {
@@ -864,6 +877,9 @@ class Ability {
         break;
       case 125: // ちからずく
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.sheerForce));
+        break;
+      case 127: // きんちょうかん
+        yourFields.add(IndividualField(IndividualField.noBerry));
         break;
       case 134: // ヘヴィメタル
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.heavy2));
@@ -1098,6 +1114,8 @@ class Ability {
   }
 
   void clearPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
+    var myFields = isOwn ? state.ownFields : state.opponentFields;
+    var yourFields = isOwn ? state.opponentFields : state.ownFields;
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_3);
@@ -1191,6 +1209,9 @@ class Ability {
         break;
       case 125: // ちからずく
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.sheerForce);
+        break;
+      case 127: // きんちょうかん
+        yourFields.removeWhere((e) => e.id == IndividualField.noBerry);
         break;
       case 134: // ヘヴィメタル
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.heavy2);

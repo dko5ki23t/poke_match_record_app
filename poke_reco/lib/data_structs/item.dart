@@ -216,60 +216,52 @@ class Item {
         break;
       case 126:   // クラボのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.paralysis);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.paralysis);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 127:   // カゴのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.sleep);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 128:   // モモンのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 129:   // チーゴのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.burn);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 130:   // ナナシのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.freeze);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 133:   // キーのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.confusion);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.confusion);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 134:   // ラムのみ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id <= Ailment.confusion);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
+          myState.ailmentsRemoveWhere((e) => e.id <= Ailment.confusion);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 196:   // メンタルハーブ
         {
-          int findIdx = myState.ailmentsIndexWhere((e) => 
+          myState.ailmentsRemoveWhere((e) => 
             e.id == Ailment.infatuation || e.id == Ailment.encore ||
             e.id == Ailment.torment || e.id == Ailment.disable ||
             e.id == Ailment.taunt || e.id == Ailment.healBlock);
-          if (findIdx >= 0) myState.ailmentsRemoveAt(findIdx);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
