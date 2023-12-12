@@ -166,6 +166,8 @@ class AbilityTiming {
   static const int afterTerastal = 162;         // テラスタル後
   static const int beforeMove = 163;            // わざ使用前
   static const int beforeMoveWithChance = 164;  // わざ使用前(確率・条件)
+  static const int powdered = 165;              // こなやほうしわざを受けた時
+  static const int bulleted = 166;              // 弾のわざを受けた時
 
   const AbilityTiming(this.id);
 

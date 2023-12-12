@@ -315,7 +315,12 @@ class Ability {
         }
         break;
       case 112:   // スロースタート
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackSpeed0_5));
+        if (extraArg1 == 0) {
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackSpeed0_5));
+        }
+        else {
+          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attackSpeed0_5);
+        }
         break;
       case 117:     // ゆきふらし
         state.weather = Weather(Weather.snowy);
@@ -402,7 +407,7 @@ class Ability {
       case 274:     // かぜのり
         myState.addStatChanges(true, 0, 1, yourState, abilityId: abilityID);
         break;
-      case 161:     // ダルマモード
+      case 161:     // ダルマモード(現状SVではヒヒダルマ登場してないので実装していない)
         {
           int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.zenMode);
           if (findIdx >= 0) {
@@ -440,7 +445,7 @@ class Ability {
       case 238:   // わたげ
         yourState.addStatChanges(false, 4, -1, myState, myFields: yourFields, yourFields: myFields, abilityId: abilityID);
         break;
-      case 176:   // バトルスイッチ
+      case 176:   // バトルスイッチ(現状SVでギルガルドが登場していないため未実装)
         {
           int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bladeForm);
           if (findIdx >= 0) {
@@ -460,7 +465,7 @@ class Ability {
       case 273:   // こんがりボディ
         myState.addStatChanges(true, 1, 2, yourState, abilityId: abilityID);
         break;
-      case 208:     // ぎょぐん
+      case 208:     // ぎょぐん(現状SVでは登場していないため未実装)
         {
           int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.singleForm);
           if (findIdx >= 0) {
@@ -489,10 +494,9 @@ class Ability {
         }
         break;
       case 210:   // きずなへんげ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.satoshiGekkoga);
-          if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.satoshiGekkoga));
-        }
+        myState.addStatChanges(true, 0, 1, yourState, abilityId: abilityID);
+        myState.addStatChanges(true, 2, 1, yourState, abilityId: abilityID);
+        myState.addStatChanges(true, 4, 1, yourState, abilityId: abilityID);
         break;
       case 211:   // スワームチェンジ
         {
@@ -611,11 +615,31 @@ class Ability {
           int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.iceFace);
           if (findIdx >= 0) {
             myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.niceFace);
+            // TODO この2行csvに移したい
+            myState.maxStats[StatIndex.B.index].race = 70; myState.maxStats[StatIndex.D.index].race = 50; myState.maxStats[StatIndex.S.index].race = 130;
+            myState.minStats[StatIndex.B.index].race = 70; myState.minStats[StatIndex.D.index].race = 50; myState.minStats[StatIndex.S.index].race = 130;
+            for (final i in [StatIndex.B.index, StatIndex.D.index, StatIndex.S.index]) {
+              var biases = Temper.getTemperBias(myState.pokemon.temper);
+              myState.maxStats[i].real = SixParams.getRealABCDS(
+                myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+              myState.minStats[i].real = SixParams.getRealABCDS(
+                myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+            }
           }
           else {
             findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.niceFace);
             if (findIdx >= 0) {
               myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.iceFace);
+              // TODO この2行csvに移したい
+              myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.D.index].race = 90; myState.maxStats[StatIndex.S.index].race = 50;
+              myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.D.index].race = 90; myState.minStats[StatIndex.S.index].race = 50;
+              for (final i in [StatIndex.B.index, StatIndex.D.index, StatIndex.S.index]) {
+                var biases = Temper.getTemperBias(myState.pokemon.temper);
+                myState.maxStats[i].real = SixParams.getRealABCDS(
+                  myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+                myState.minStats[i].real = SixParams.getRealABCDS(
+                  myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+              }
             }
           }
         }
@@ -763,7 +787,6 @@ class Ability {
   }
 
   void processPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var myFields = isOwn ? state.ownFields : state.opponentFields;
     var yourFields = isOwn ? state.opponentFields : state.ownFields;
     switch (id) {
       case 14:  // ふくがん
@@ -1114,7 +1137,6 @@ class Ability {
   }
 
   void clearPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var myFields = isOwn ? state.ownFields : state.opponentFields;
     var yourFields = isOwn ? state.opponentFields : state.ownFields;
     switch (id) {
       case 14:  // ふくがん
@@ -1345,7 +1367,8 @@ class Ability {
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steel1_5);
         break;
       case 255:   // ごりむちゅう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.gorimuchu);
+        int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
+        if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
         break;
       case 258:   // はらぺこスイッチ
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.harapekoForm || e.id == BuffDebuff.manpukuForm);

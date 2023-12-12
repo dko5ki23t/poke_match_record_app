@@ -342,7 +342,7 @@ class Ailment {
         extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/3)';
         break;
       case Ailment.partiallyTrapped:
-        extraStr = ' ($turns/${extraArg1 == 7 ? '7' : '4～5'})';
+        extraStr = ' ($turns/${extraArg1 % 10 == 7 ? '7' : '4～5'})';
         break;
     }
     return _nameColorTurnMap[id]!.item1 + extraStr;
@@ -351,7 +351,7 @@ class Ailment {
   int get maxTurn {
     int ret = _nameColorTurnMap[id]!.item3;
     if (id == sleep && extraArg1 == 3) ret = 3;
-    if (id == partiallyTrapped && extraArg1 == 7) ret = 7;
+    if (id == partiallyTrapped && extraArg1 % 10 == 7) ret = 7;
     return ret;
   }
 
@@ -469,7 +469,8 @@ class Ailment {
       case poison:
       case leechSeed:
       case partiallyTrapped:
-        return isMe ? (myState.pokemon.h.real / 8). floor() : 12;
+        return isMe ? turns >= 10 ? (myState.pokemon.h.real / 8). floor() : (myState.pokemon.h.real / 6). floor() :
+          turns >= 10 ? 16 : 12;
       case badPoison:
         return isMe ? (myState.pokemon.h.real * (turns + 1).clamp(1, 15) / 16). floor() :
                       (100 * (turns + 1).clamp(1, 15) / 16).floor();

@@ -151,7 +151,7 @@ class PokemonState {
 
   // 相手のこうげきわざ以外でのダメージを受けるかどうか
   bool get isNotAttackedDamaged {
-    return currentAbility.id != 98;
+    return buffDebuffs.where((e) => e.id == BuffDebuff.magicGuard).isEmpty;
   }
 
   // 交代可能な状態かどうか
@@ -273,10 +273,10 @@ class PokemonState {
         minStats[StatIndex.A.index].race = 160; minStats[StatIndex.B.index].race = 97; minStats[StatIndex.C.index].race = 106; minStats[StatIndex.D.index].race = 87;
         for (int i = StatIndex.A.index; i <= StatIndex.D.index; i++) {
           var biases = Temper.getTemperBias(pokemon.temper);
-          maxStats[StatIndex.A.index].real = SixParams.getRealABCDS(
-            pokemon.level, maxStats[StatIndex.A.index].race, maxStats[StatIndex.A.index].indi, maxStats[StatIndex.A.index].effort, biases[i-1]);
-          minStats[StatIndex.A.index].real = SixParams.getRealABCDS(
-            pokemon.level, minStats[StatIndex.A.index].race, minStats[StatIndex.A.index].indi, minStats[StatIndex.A.index].effort, biases[i-1]);
+          maxStats[i].real = SixParams.getRealABCDS(
+            pokemon.level, maxStats[i].race, maxStats[i].indi, maxStats[i].effort, biases[i-1]);
+          minStats[i].real = SixParams.getRealABCDS(
+            pokemon.level, minStats[i].race, minStats[i].indi, minStats[i].effort, biases[i-1]);
         }
       }
     }
@@ -357,12 +357,6 @@ class PokemonState {
         }
       }
     }
-    // ねむけ→ねむりに変化(TurnEffectにもあるから、余計かも)
-/*    var findIdx = ailmentsIndexWhere((e) => e.id == Ailment.sleepy && e.turns >= 2);
-    if (findIdx >= 0) {
-      ailmentsRemoveAt(findIdx);
-      ailmentsAdd(Ailment(Ailment.sleep), state);
-    }*/
     // ちゅうもくのまと/まもる状態/そうでんは解除
     ailmentsRemoveWhere((e) => e.id == Ailment.attention || e.id == Ailment.protect || e.id == Ailment.electrify);
     // はねやすめ解除＆ひこうタイプ復活
@@ -384,6 +378,12 @@ class PokemonState {
     for (var e in hiddenBuffs) {
       e.turns++;
     }
+    // スロースタート終了
+    buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attackSpeed0_5 && e.turns >= 5);
+    // 交代したターンであることのフラグ削除
+    hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.changedThisTurn);
+    // フォーカスレンズの効果削除
+    buffDebuffs.removeWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
     // わざの反動で動けない状態は2ターンエンド経過で削除
     hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.recoiling && e.turns >= 2);
   }
@@ -392,6 +392,7 @@ class PokemonState {
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
     bool isMe = playerType.id == PlayerType.me;
     var indiFields = isMe ? state.ownFields : state.opponentFields;
+    var yourState = state.getPokemonState(playerType.opposite, null);
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
@@ -424,10 +425,13 @@ class PokemonState {
         isGround(indiFields) &&
         ailment.id == Ailment.sleep) return false;
     // 各々の場
-    if (indiFields.where((e) => e.id == IndividualField.safeGuard).isNotEmpty && (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy)) return false; // しんぴのまもり
+    if (indiFields.where((e) => e.id == IndividualField.safeGuard).isNotEmpty && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty &&
+      (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy)) return false; // しんぴのまもり
     if (state.field.id == Field.mistyTerrain) return false;
     // 持続ターン数の変更
     if (holdingItem?.id == 263 && ailment.id == Ailment.partiallyTrapped) ailment.extraArg1 = 7;    // ねばりのかぎづめ＋バインド
+    // ダメージの変更
+    if (holdingItem?.id == 587 && ailment.id == Ailment.partiallyTrapped) ailment.extraArg1 = 10;    // じめつけバンド＋バインド
 
     bool isAdded = _ailments.add(ailment);
 
@@ -467,34 +471,28 @@ class PokemonState {
     var ret = _ailments.removeAt(index);
     if (ret.id <= Ailment.sleep && ret.id != 0) {
       if (currentAbility.id == 62) {  // こんじょう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
       }
       if (currentAbility.id == 63) {  // ふしぎなうろこ
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
       }
       if (currentAbility.id == 95) {  // はやあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
       }
     }
     else if (ret.id == Ailment.confusion) {    // こんらん消失時
       if (currentAbility.id == 77) {  // ちどりあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
       }
     }
     else if (ret.id == Ailment.poison || ret.id == Ailment.badPoison) {    // どく/もうどく消失時
       if (currentAbility.id == 137) {  // どくぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
       }
     }
     else if (ret.id == Ailment.burn) {    // やけど消失時
       if (currentAbility.id == 138) {  // ねつぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
       }
     }
     
@@ -505,34 +503,28 @@ class PokemonState {
     _ailments.removeWhere(test);
     if (_ailments.indexWhere((e) => e.id <= Ailment.sleep && e.id != 0) < 0) {
       if (currentAbility.id == 62) {  // こんじょう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
       }
       if (currentAbility.id == 63) {  // ふしぎなうろこ
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
       }
       if (currentAbility.id == 95) {  // はやあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
       }
     }
     else if (_ailments.indexWhere((e) => e.id == Ailment.confusion) < 0) {    // こんらん消失時
       if (currentAbility.id == 77) {  // ちどりあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
       }
     }
     else if (_ailments.indexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison) < 0) {    // どく/もうどく消失時
       if (currentAbility.id == 137) {  // どくぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
       }
     }
     else if (_ailments.indexWhere((e) => e.id == Ailment.burn) < 0) {    // やけど消失時
       if (currentAbility.id == 138) {  // ねつぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
       }
     }
   }
@@ -540,28 +532,22 @@ class PokemonState {
   void ailmentsClear() {
     _ailments.clear();
     if (currentAbility.id == 62) {  // こんじょう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
       }
       if (currentAbility.id == 63) {  // ふしぎなうろこ
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
       }
       if (currentAbility.id == 95) {  // はやあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
       }
       if (currentAbility.id == 77) {  // ちどりあし
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
       }
       if (currentAbility.id == 137) {  // どくぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
       }
       if (currentAbility.id == 138) {  // ねつぼうそう
-        int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5);
-        if (findIdx >= 0) buffDebuffs.removeAt(findIdx);
+        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
       }
   }
   // 状態異常に関する関数群ここまで
@@ -586,7 +572,8 @@ class PokemonState {
   ) {
     int change = num;
     if (!isMyEffect && buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty && num < 0) return false;   // みがわり
-    if (!isMyEffect && myFields!.where((e) => e.id == IndividualField.mist).isNotEmpty && num < 0) return false;       // しろいきり
+    if (!isMyEffect && myFields!.where((e) => e.id == IndividualField.mist).isNotEmpty &&
+      yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty && num < 0) return false;       // しろいきり
     if (!isMyEffect && holdingItem?.id == 1698 && num < 0) return false;    // クリアチャーム
     if (!isMyEffect && currentAbility.id == 12 && moveId == 445) return false;   // どんかん
     if (!isMyEffect && abilityId == 22 &&        // いかくに対する
@@ -645,6 +632,56 @@ class PokemonState {
     return ret;
   }
 
+  // ランク補正後の実数値を返す
+  int getRankedStat(int val, StatIndex statIdx, {bool plusCut = false, bool minusCut = false}) {
+    if (statIdx == StatIndex.H) {
+      return val;
+    }
+    double ret = val.toDouble();
+    // ランク補正
+    switch (statChanges(statIdx.index-1)) {
+      case -6:
+        if (!minusCut) ret = ret * 2 / 8;
+        break;
+      case -5:
+        if (!minusCut) ret = ret * 2 / 7;
+        break;
+      case -4:
+        if (!minusCut) ret = ret * 2 / 6;
+        break;
+      case -3:
+        if (!minusCut) ret = ret * 2 / 5;
+        break;
+      case -2:
+        if (!minusCut) ret = ret * 2 / 4;
+        break;
+      case -1:
+        if (!minusCut) ret = ret * 2 / 3;
+        break;
+      case 1:
+        if (!plusCut) ret = ret * 3 / 2;
+        break;
+      case 2:
+        if (!plusCut) ret = ret * 4 / 2;
+        break;
+      case 3:
+        if (!plusCut) ret = ret * 5 / 2;
+        break;
+      case 4:
+        if (!plusCut) ret = ret * 6 / 2;
+        break;
+      case 5:
+        if (!plusCut) ret = ret * 7 / 2;
+        break;
+      case 6:
+        if (!plusCut) ret = ret * 8 / 2;
+        break;
+      default:
+        break;
+    }
+    return ret.floor();
+  }
+
   // ランク補正後の実数値→ランク補正なしの実数値を得る
   int getNotRankedStat(StatIndex statIdx, int stat) {
     if (statIdx == StatIndex.H) {
@@ -700,7 +737,7 @@ class PokemonState {
 
   // ランク変化に関する関数群ここまで
 
-  // ランク補正等込みのHABCDSを返す
+  // ランク補正等込みのHABCDSを返す(※やけど・まひの補正は入ってないので注意)
   int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
       return maxStats[StatIndex.H.index].real;
@@ -782,6 +819,7 @@ class PokemonState {
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack0_75) >= 0) ret *= 0.75;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_33) >= 0) ret *= 1.33;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >= 0) ret *= 2;
+          if (type.id == PokeTypeId.fire && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.flashFired) >= 0) ret *= 1.5;
         }
         break;
       case StatIndex.B:
@@ -810,6 +848,7 @@ class PokemonState {
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceSpecs) >= 0) ret *= 1.5;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.specialAttack2) >= 0) ret *= 2.0;
           if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >= 0) ret *= 2.0;
+          if (type.id == PokeTypeId.fire && buffDebuffs.indexWhere((e) => e.id == BuffDebuff.flashFired) >= 0) ret *= 1.5;
         }
         break;
       case StatIndex.D:

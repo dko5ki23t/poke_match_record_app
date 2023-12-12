@@ -537,6 +537,13 @@ class Move {
     return punchMoveIDs.contains(id);
   }
 
+  bool get isWave {  // はどうわざかどうか
+    const waveMoveIDs = [
+      399, 618, 805, 396, 352, 406, 505,
+    ];
+    return waveMoveIDs.contains(id);
+  }
+
   bool get isDance {  // おどりわざかどうか
     const danceMoveIDs = [
       872, 837, 775, 483, 14, 80, 297, 298, 552, 461, 686, 349,
@@ -550,6 +557,47 @@ class Move {
       344, 457, 528,
     ];
     return recoilMoveIDs.contains(id);
+  }
+
+  bool get isAdditionalEffect {   // 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
+                                  // 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はfalseを返す
+    const additionalEffectMoveIDs = [
+      677, 664, 703, 662, 830, 864, 675, 845, 290, 826, 903,
+      440, 143, 843, 840, 394, 344,
+    ];
+    const noAdditionalEffectMoveIDs = [
+      165, 720, 796, 835, 276, 621, 799, 691, 874, 315, 354, 437, 434,
+      705, 359, 665, 859, 890, 370, 838, 620, 557, 130, 800, 565, 499,
+      265, 358, 479, 614, 615, 746, 687, 168, 343, 365, 450, 282, 510,
+      481, 99, 37, 80, 200, 833, 253, 682, 892, 721, 727, 798, 861, 364,
+      467, 566, 593, 621, 712, 280, 706, 873, 6, 874, 690,
+    ];
+    const noAdditionalEffectIDs = [   // 追加効果とみなされない追加効果
+      1, 104, 86, 370, 371, 379, 383, 406, 417, 439,  // 追加効果なし
+      4, 9, 33, 49, 133, 199, 255, 270, 346, 349, 382, 387, 420, 441, 388,   // HP吸収
+      18, 79, 381,  // 必中
+      43, 262,      // バインド状態にする
+      44, 289, 422, 462, 486, // 急所に当たりやすい/急所確定
+      8, 169, 221, 271, 321, 450,  // ひんしになる
+      81,    // 次のターン動けない
+      126, 254, 275, 460, 490, 500,   // こおりをかいふくする
+      29, 314, 128, 154, 229, 347, 492, 493,    // 自分/あいてを交代
+    ];
+    if (damageClass.id == 1) return true;
+    if (additionalEffectMoveIDs.contains(id)) return true;
+    if (noAdditionalEffectMoveIDs.contains(id)) return false;
+    if (isRecoil) return false;
+    return (damageClass.id > 1 && !noAdditionalEffectIDs.contains(effect.id));
+  }
+
+  bool get isAdditionalEffect2 {  // 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
+                                  // 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はtrueを返す
+    bool ret = isAdditionalEffect;
+    const additionalEffectIDs = [   // 追加効果も含まれている追加効果
+      126, 254, 275, 460, 490, 500,   // こおりをかいふくする
+    ];
+    if (additionalEffectIDs.contains(effect.id)) ret = true;
+    return ret;
   }
 
   bool get isBite {  // かみつきわざかどうか
@@ -572,6 +620,21 @@ class Move {
       314, 16, 847, 846, 196, 239, 848, 257, 572, 831, 18, 59, 542, 584,
     ];
     return windMoveIDs.contains(id);
+  }
+
+  bool get isPowder {   // こなやほうしのわざかどうか
+    const powderMoveIDs = [
+      476, 147, 78, 77, 79, 600, 750, 178,
+    ];
+    return powderMoveIDs.contains(id);
+  }
+
+  bool get isBullet {   // 弾のわざかどうか
+    const bulletMoveIDs = [
+      301, 491, 311, 412, 486, 190, 545, 780, 676, 439, 411, 690, 360, 247,
+      331, 402, 121, 140, 192, 426, 396, 188, 443, 296, 903, 350,
+    ];
+    return bulletMoveIDs.contains(id);
   }
 
   Move(

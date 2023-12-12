@@ -323,7 +323,7 @@ class PhaseState {
           var replacedMoveType = prevAction?.move?.getReplacedMoveType(prevAction.move!.move, 0, attackerState, state);
           // 直接こうげきをまもる系統のわざで防がれたとき
           if (prevAction != null && replacedMove!.isDirect &&
-              !(replacedMove.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+              !(replacedMove.isPunch && attackerState.holdingItem?.id == 1700) &&  // パンチグローブをつけたパンチわざでない
               attackerState.currentAbility.id != 203    // とくせいがえんかくでない
           ) {
             var findIdx = defenderState.ailmentsIndexWhere((e) => e.id == Ailment.protect);
@@ -418,7 +418,7 @@ class PhaseState {
               }
               // 直接こうげきを受けた後
               if (replacedMove.isDirect &&
-                  !(replacedMove.isPunch && attackerState.holdingItem?.id == 1696) &&  // パンチグローブをつけたパンチわざでない
+                  !(replacedMove.isPunch && attackerState.holdingItem?.id == 1700) &&  // パンチグローブをつけたパンチわざでない
                   attackerState.currentAbility.id != 203    // とくせいがえんかくでない
               ) {
                 // ぼうごパットで防がれないなら
@@ -444,6 +444,8 @@ class PhaseState {
             if (replacedMove.isWind) {
               defenderTimingIDList.add(AbilityTiming.winded);
             }
+            if (replacedMove.isPowder) defenderTimingIDList.add(AbilityTiming.powdered);   // こな系のこうげきを受けた時
+            if (replacedMove.isBullet) defenderTimingIDList.add(AbilityTiming.bulleted);   // 弾のこうげきを受けた時
             // HP吸収わざを受けた後
             if (replacedMove.isDrain) {
               defenderTimingIDList.add(AbilityTiming.drained);
@@ -619,7 +621,7 @@ class PhaseState {
                   ..timing = timing
                   ..effect = EffectType(EffectType.ailment)
                   ..effectId = AilmentEffect.getIdFromAilment(ailment)
-                  ..extraArg1 = ailment.turns;
+                  ..extraArg1 = ailment.id == Ailment.partiallyTrapped ? ailment.extraArg1 : ailment.turns;
                 adding.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(adding);
               }

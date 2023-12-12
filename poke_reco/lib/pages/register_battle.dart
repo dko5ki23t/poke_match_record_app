@@ -1794,6 +1794,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       ..move = TurnMove(),
                       appState
                     );
+                    if (actionCount == 1) phases[i].move!.isFirst = true;
                     isInserted = true;
                     if (actionCount == 2) {
                       s1 = 8;    // ターン終了状態へ
@@ -2260,12 +2261,22 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     int action2BeginIdx = -1;
     int action2EndIdx = -1;
     var phases = widget.battle.turns[turnNum-1].phases;
+    bool actioned = false;
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].timing.id == AbilityTiming.beforeMove || phases[i].timing.id == AbilityTiming.action) {
+        if (phases[i].timing.id == AbilityTiming.action) {
+          if (!actioned) {
+            phases[i].move!.isFirst = true;
+            actioned = true;
+          }
+          else {
+            phases[i].move!.isFirst = false;
+          }
+        }
         if (action1BeginIdx < 0) {
           action1BeginIdx = i;
         }
-        else {
+        else if (actioned) {
           assert(i >= 1);
           action1EndIdx = i-1;
           action2BeginIdx = i;

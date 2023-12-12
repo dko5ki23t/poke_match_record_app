@@ -575,7 +575,7 @@ class Item {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onlyAttackSpecialDefense1_5));
         break;
       case 690:   // ぼうじんゴーグル
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignorePowder));
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.overcoat));
         break;
       case 897:   // ぼうごパット
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreDirectAtackEffect));
@@ -639,7 +639,8 @@ class Item {
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_9);
         break;
       case 197:   // こだわりハチマキ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.gorimuchu);
+        int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
+        if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
         break;
       case 213:   // でんきだま
         if (myState.pokemon.no == 25) {     // ピカチュウ
@@ -801,7 +802,7 @@ class Item {
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5);
         break;
       case 690:   // ぼうじんゴーグル
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignorePowder);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.overcoat);
         break;
       case 897:   // ぼうごパット
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreDirectAtackEffect);

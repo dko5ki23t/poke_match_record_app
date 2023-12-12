@@ -156,6 +156,7 @@ class TurnMove {
   List<int> extraArg3 = [0];
   List<int?> _changePokemonIndexes = [null, null];
   PokeType moveType = PokeType.createFromId(0);
+  bool isFirst = false;   // ターン内最初の行動か
 
   TurnMove copyWith() =>
     TurnMove()
@@ -174,7 +175,8 @@ class TurnMove {
     ..extraArg2 = [...extraArg2]
     ..extraArg3 = [...extraArg3]
     .._changePokemonIndexes = [..._changePokemonIndexes]
-    ..moveType = moveType;
+    ..moveType = moveType
+    ..isFirst = isFirst;
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player.id == PlayerType.me) return _changePokemonIndexes[0];
@@ -291,6 +293,8 @@ class TurnMove {
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
     // おんねん状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.grudge);
+    // きょけんとつげき後状態解除
+    myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.certainlyHittedDamage2);
 
     // こうさん
     if (type.id == TurnMoveType.surrender) {
@@ -321,6 +325,7 @@ class TurnMove {
       myState.processExitEffect(playerType.id == PlayerType.me, yourState);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
+      state.getPokemonState(playerType, null).hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
       return ret;
     }
 
@@ -401,6 +406,8 @@ class TurnMove {
     int moveDamageClassID = 0;
     // はれによるダメージ補正率が0.5倍→1.5倍
     bool isSunny1_5 = false;
+    // ノーマルスキンによって威力が1.2倍になるか
+    bool isNormalized1_2 = false;
 
     {
       Move replacedMove = getReplacedMove(move, continuousCount, myState);   // 必要に応じてわざの内容変更
@@ -503,11 +510,13 @@ class TurnMove {
       // 追加効果
       bool effectOnce = false;    // ターゲットが(便宜上)複数(==targetStates.length > 1)でも、処理は一回にしたい場合にtrueにする(さむいギャグなど)
       for (int i = 0; i < targetStates.length; i++) {
+        // ちからずくの場合、追加効果なし
+        if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.sheerForce).isNotEmpty && replacedMove.isAdditionalEffect) break;
+
         if (effectOnce) break;
         var targetState = targetStates[i];
         var targetIndiField = targetIndiFields[i];
         var targetPlayerTypeID = targetPlayerTypeIDs[i];
-        bool isSubstitute = targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty;
         switch (moveAdditionalEffects[continuousCount].id) {
           case 1:     // 追加効果なし
           case 104:   // 追加効果なし
@@ -638,6 +647,7 @@ class TurnMove {
               state.setPokemonIndex(playerType.opposite, getChangePokemonIndex(PlayerType(targetPlayerTypeID))!);
               newState = state.getPokemonState(playerType.opposite, null);
               newState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state, myState);
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 30:    // 2～5回連続でこうげきする
@@ -1075,6 +1085,7 @@ class TurnMove {
                 newState.ailmentsAdd(e, state);
               }
               newState.buffDebuffs.addAll(takeOverBuffDebuffs);
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 129:   // そのターンに相手が交代しようとした場合、威力2倍で交代前のポケモンにこうげき
@@ -1194,6 +1205,7 @@ class TurnMove {
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 155:   // 手持ちポケモン(ひんし、状態異常除く)の数だけ連続でこうげきする
@@ -1399,6 +1411,9 @@ class TurnMove {
             break;
           case 197:   // 相手のおもさによって威力が変わる
             int weight = targetState.weight;
+            if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.heavy2).isNotEmpty) weight *= 2;
+            if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.heavy0_5).isNotEmpty) weight  = (weight / 2).floor();
+            if (targetState.holdingItem?.id == 582) weight  = (weight / 2).floor();
             if (weight <= 99) {
               movePower = 20;
             }
@@ -1972,6 +1987,9 @@ class TurnMove {
           case 292:   // 使用者のおもさと相手のおもさの比率によって威力がかわる。ちいさくなる状態の相手に必中、その場合ダメージが2倍
             {
               int myWeight = myState.weight;
+              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.heavy2).isNotEmpty) myWeight *= 2;
+              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.heavy0_5).isNotEmpty) myWeight  = (myWeight / 2).floor();
+              if (targetState.holdingItem?.id == 582) myWeight  = (myWeight / 2).floor();
               int targetWeight = targetState.weight;
               if (targetWeight <= myWeight / 5) {
                 movePower = 120;
@@ -2047,6 +2065,13 @@ class TurnMove {
             myState.addStatChanges(true, 4, 2, targetState, moveId: replacedMove.id);
             break;
           case 310:   // 相手のHPを最大HP1/2だけ回復する
+            bool isMegaLauncher = myState.buffDebuffs.where((e) => e.id == BuffDebuff.wave1_5).isNotEmpty;
+            if (myPlayerTypeID == PlayerType.me) {
+              targetState.remainHPPercent += isMegaLauncher ? 75 : 50;
+            }
+            else {
+              targetState.remainHPPercent += isMegaLauncher ? (targetState.pokemon.h.real * 3 / 4).floor() : (targetState.pokemon.h.real / 2).floor();
+            }
             break;
           case 311:   // 相手が状態異常のとき威力2倍
             if (targetState.ailmentsWhere((e) => e.id <= Ailment.sleep).isNotEmpty) {
@@ -2133,9 +2158,32 @@ class TurnMove {
             if (findIdx >= 0) {
               if (myState.buffDebuffs[findIdx].id == BuffDebuff.voiceForm) {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
+                // TODO この2行csvに移したい
+                myState.type2 = PokeType.createFromId(PokeTypeId.fight);
+                myState.maxStats[StatIndex.A.index].race = 128; myState.maxStats[StatIndex.B.index].race = 90; myState.maxStats[StatIndex.C.index].race = 77; myState.maxStats[StatIndex.D.index].race = 77; myState.maxStats[StatIndex.S.index].race = 128;
+                myState.minStats[StatIndex.A.index].race = 128; myState.minStats[StatIndex.B.index].race = 90; myState.minStats[StatIndex.C.index].race = 77; myState.minStats[StatIndex.D.index].race = 77; myState.minStats[StatIndex.S.index].race = 128;
+                for (int i = StatIndex.A.index; i < StatIndex.S.index; i++) {
+                  var biases = Temper.getTemperBias(myState.pokemon.temper);
+                  myState.maxStats[i].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+                  myState.minStats[i].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+                }
               }
               else {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.voiceForm);
+                myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
+                // TODO この2行csvに移したい
+                myState.type2 = PokeType.createFromId(PokeTypeId.psychic);
+                myState.maxStats[StatIndex.A.index].race = 77; myState.maxStats[StatIndex.B.index].race = 77; myState.maxStats[StatIndex.C.index].race = 128; myState.maxStats[StatIndex.D.index].race = 128; myState.maxStats[StatIndex.S.index].race = 90;
+                myState.minStats[StatIndex.A.index].race = 77; myState.minStats[StatIndex.B.index].race = 77; myState.minStats[StatIndex.C.index].race = 128; myState.minStats[StatIndex.D.index].race = 128; myState.minStats[StatIndex.S.index].race = 90;
+                for (int i = StatIndex.A.index; i < StatIndex.S.index; i++) {
+                  var biases = Temper.getTemperBias(myState.pokemon.temper);
+                  myState.maxStats[i].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+                  myState.minStats[i].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+                }
               }
             }
             break;
@@ -2219,6 +2267,7 @@ class TurnMove {
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 348:   // 相手の能力変化を逆にする
@@ -2570,8 +2619,8 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState, state) >
-                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState, state)
+              if (myState.getRankedStat(myState.maxStats[1].real, StatIndex.A,) >
+                  myState.getRankedStat(myState.maxStats[3].real, StatIndex.C,)
             ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2621,8 +2670,8 @@ class TurnMove {
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
                 myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
             ) {
-              if (myState.finalizedMaxStat(StatIndex.A, moveType, targetState, state) >
-                    myState.finalizedMaxStat(StatIndex.C, moveType, targetState, state)
+              if (myState.getRankedStat(myState.maxStats[1].real, StatIndex.A,) >
+                  myState.getRankedStat(myState.maxStats[3].real, StatIndex.C,)
               ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2834,7 +2883,7 @@ class TurnMove {
             }
             break;
           case 490:   // はれによるダメージ補正率が0.5倍→1.5倍。使用者・対象のこおり状態を治す
-            isSunny1_5 = true;
+            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.sheerForce).isEmpty) isSunny1_5 = true;
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             break;
@@ -2857,6 +2906,7 @@ class TurnMove {
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 493:   // 天気をゆきにして控えと交代
@@ -2867,6 +2917,7 @@ class TurnMove {
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
               newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             effectOnce = true;
             break;
@@ -2944,6 +2995,13 @@ class TurnMove {
             break;
         }
 
+        // ノーマルスキンによるわざタイプ変更
+        if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.normalize).isNotEmpty) {
+          if (moveType.id != PokeTypeId.normal) {
+            moveType = PokeType.createFromId(PokeTypeId.normal);
+            isNormalized1_2 = true;
+          }
+        }
         // そうでんによるわざタイプ変更
         if (myState.ailmentsWhere((e) => e.id == Ailment.electrify).isNotEmpty) {
           moveType = PokeType.createFromId(PokeTypeId.electric);
@@ -2985,12 +3043,13 @@ class TurnMove {
           // とくせい等による威力変動
           double tmpPow = movePower.toDouble();
           // テクニシャン補正は一番最初
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
+          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
 
-          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
-          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
-          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
-          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
+          if (isNormalized1_2) tmpPow *= 1.2;
+          if (moveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+          if (moveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+          if (moveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+          if (moveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
           if (myState.sex.id != 0 && targetStates[0].sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
             if (myState.sex.id != targetStates[0].sex.id) {
               tmpPow *= 1.25;
@@ -3000,11 +3059,14 @@ class TurnMove {
             }
           }
           if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) tmpPow *= 1.2;
-          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
           if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) tmpPow *= 1.2;
+          if (replacedMove.isAdditionalEffect2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >= 0) tmpPow *= 1.3;
+          if (replacedMove.isWave && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0) tmpPow *= 1.5;
+          if (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >= 0) tmpPow *= 1.3;
+          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >= 0 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >= 0) tmpPow *= 2;
           if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
           if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
-          // TODO : 最後の行動なら威力1.3倍 if (?? && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
+          if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
           if ((moveType.id == 5 || moveType.id == 6 || moveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
           if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
           if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
@@ -3020,9 +3082,7 @@ class TurnMove {
           if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
           if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
           int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-          if (myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50) >= 0) {
-            tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
-          }
+          if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
           if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
           if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
           if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
@@ -3061,26 +3121,28 @@ class TurnMove {
           movePower = tmpPow.floor();
 
           // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
+          bool plusIgnore = targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+          bool minusIgnore = isCritical || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
           int calcMaxAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
+              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           int calcMinAttack =
             myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
+              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           if (isFoulPlay) {
             calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
+                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
             calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical);
+                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           }
           else if (defenseAltAttack) {
             calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical);
+                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
             calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, minusCut: isCritical) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, minusCut: isCritical);
+                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           }
-          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state, minusCut: isCritical);
-          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state, minusCut: isCritical);
+          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
+          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           String attackStr = '';
           if (attackVmax == attackVmin) {
             attackStr = attackVmax.toString();
@@ -3094,14 +3156,16 @@ class TurnMove {
           else {
             attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
           }
+          plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+          minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
           int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
-                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
-          int calcMaxSDefense = ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
+                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) :
+                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
+          int calcMaxSDefense = ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: isCritical) :
-                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: isCritical);
-          int calcMinSDefense = ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: isCritical);
+                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) :
+                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
+          int calcMinSDefense = ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
           int defenseVmax = moveDamageClassID == 2 ? 
                 myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
                   calcMaxDefense : calcMaxSDefense :
@@ -3175,7 +3239,7 @@ class TurnMove {
           damageVmin = (damageVmin * 85 / 100).floor();
           damageCalc += '×85～100÷100(乱数) ';
           // タイプ一致補正(五捨五超入)
-          var rate = myState.typeBonusRate(moveType.id, myState.currentAbility.id == 91);
+          var rate = myState.typeBonusRate(moveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
           if (rate > 1.0) {
             damageVmax = roundOff5(damageVmax * rate);
             damageVmin = roundOff5(damageVmin * rate);
@@ -3204,7 +3268,7 @@ class TurnMove {
             double tmpMin = damageVmin.toDouble();
             // 壁補正
             if (
-              !isCritical && (
+              !isCritical && myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty && (
               (moveDamageClassID == 2 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
               (moveDamageClassID == 3 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty))
             ) {
@@ -3255,9 +3319,12 @@ class TurnMove {
               // ファントムガード
               // マルチスケイル
               ((targetStates[0].remainHP >= targetStates[0].pokemon.h.real || targetStates[0].remainHPPercent >= 100) &&
-                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty ||
+                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty) ||
               // もふもふ直接こうげき
-               replacedMove.isDirect && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty)
+              (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+               targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
+              // たいねつ
+              (moveType.id == PokeTypeId.fire && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
             ) {
               tmpMax *= 0.5;
               tmpMin *= 0.5;
@@ -3282,6 +3349,7 @@ class TurnMove {
               damageCalc += '×1.2(たつじんのおび) ';
             }
             // TODO:メトロノーム補正
+            // continuousMoveDamageInc0_2
             // いのちのたま補正
             if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
             {
@@ -3326,7 +3394,9 @@ class TurnMove {
         myState.holdingItem = null;
       }
       // くっつきバリ移動
-      if (replacedMove.isDirect && myState.holdingItem == null && yourState.holdingItem?.id == 265) {
+      if (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&  // パンチグローブをつけたパンチわざでない
+        myState.holdingItem == null && yourState.holdingItem?.id == 265
+      ) {
         myState.holdingItem = yourState.holdingItem;
         yourState.holdingItem = null;
       }
@@ -3339,7 +3409,9 @@ class TurnMove {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound) {
+              if (targetState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty
+                  || replacedMove.isSound || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isNotEmpty
+              ) {
                 targetState.remainHP -= realDamage[continuousCount];
                 targetState.remainHPPercent -= percentDamage[continuousCount];
               }
@@ -5678,7 +5750,8 @@ class TurnMove {
                   SizedBox(height: 10,),
                   effectInputRow,
                   SizedBox(height: 10,),
-                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty || replacedMove.isSound ?
+                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ||
+                  replacedMove.isSound || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isNotEmpty ?
                   DamageIndicateRow(
                     playerType.id == PlayerType.me ? opponentPokemon : ownPokemon,
                     hpController,
@@ -6343,6 +6416,11 @@ class TurnMove {
       default:
         break;
     }
+    if (yourState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty &&
+        myState.buffDebuffs.where((e) => e.id == BuffDebuff.merciless).isNotEmpty
+    ) {
+      ret = MoveHit(MoveHit.critical);
+    }
 
     return ret;
   }
@@ -6364,6 +6442,7 @@ class TurnMove {
     extraArg3 = [0];
     _changePokemonIndexes = [null, null];
     moveType = PokeType.createFromId(0);
+    isFirst = false;
   }
 
   // SQLに保存された文字列からTurnMoveをパース
@@ -6463,6 +6542,8 @@ class TurnMove {
     }
     // moveType
     turnMove.moveType = PokeType.createFromId(int.parse(turnMoveElements[15]));
+    // isFirst
+    turnMove.isFirst = int.parse(turnMoveElements[16]) != 0;
 
     return turnMove;
   }
@@ -6576,6 +6657,9 @@ class TurnMove {
     ret += split1;
     // moveType
     ret += moveType.id.toString();
+    ret += split1;
+    // isFirst
+    ret += isFirst ? '1' : '0';
 
     return ret;
   }

@@ -634,7 +634,7 @@ class TurnEffect {
       ) {
         // もちもの得た
         if (pokeState.currentAbility.id == 84) {  // かるわざ
-          pokeState.buffDebuffs.remove(BuffDebuff(BuffDebuff.unburden));
+          pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.unburden);
         }
       }
     }
@@ -891,9 +891,13 @@ class TurnEffect {
             // こうげきによりひんしになっているとき
             if (defenderState.isFainting) defenderTimingIDs.add(96);
           }
+          if (replacedMove.isPowder) defenderTimingIDs.addAll([165]);   // こな系のこうげきを受けた時
+          if (replacedMove.isBullet) defenderTimingIDs.addAll([166]);   // 弾のこうげきを受けた時
           if (replacedMove.damageClass.id == DamageClass.physical) defenderTimingIDs.addAll([83]);   // ぶつりこうげきを受けた時
           if (replacedMove.damageClass.id == DamageClass.special) defenderTimingIDs.addAll([124]);   // とくしゅこうげきを受けた時
-          if (replacedMove.isDirect && attackerState.currentAbility.id != 203) {
+          if (replacedMove.isDirect && !(replacedMove.isPunch && attackerState.holdingItem?.id == 1700) &&  // パンチグローブをつけたパンチわざでない
+              attackerState.currentAbility.id != 203
+          ) {
             defenderTimingIDs.add(9);  // 直接攻撃を受けた時(確率)
             defenderTimingIDs.add(63);  // 直接攻撃を受けた時
             attackerTimingIDs.add(84);  // 直接攻撃をあてたとき(確率)
