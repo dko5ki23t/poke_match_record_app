@@ -129,17 +129,19 @@ class PokeType {
     bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState state,
   )
   {
-    PokeType defenseType1 = state.type1;
-    PokeType? defenseType2 = state.type2;
     bool canNormalFightToGhost = isScrappy || state.ailmentsWhere((e) => e.id == Ailment.identify).isNotEmpty;
+    List<PokeType> types = [];
     if (state.isTerastaling) {
-      defenseType1 = state.teraType1;
-      defenseType2 = null;
+      types = [state.teraType1];
+    }
+    else {
+      types = [state.type1];
+      if (state.type2 != null) types.add(state.type2!);
+      if (state.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) types.add(PokeType.createFromId(PokeTypeId.ghost));
+      if (state.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) types.add(PokeType.createFromId(PokeTypeId.grass));
     }
     int deg = 0;
-    PokeType? type = defenseType1;
-    for (int i = 0; i < 2; i++) {
-      if (type == null) break;
+    for (final type in types) {
       switch (attackType.id) {
         case 1:
           if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
@@ -223,9 +225,8 @@ class PokeType {
         default:
           break;
       }
-      type = defenseType2;
     }
-    if (attackType.id == PokeTypeId.fire && state.ailmentsWhere((e) => e.id == Ailment.tarShot).isNotEmpty) deg++;
+    if (!state.isTerastaling && attackType.id == PokeTypeId.fire && state.ailmentsWhere((e) => e.id == Ailment.tarShot).isNotEmpty) deg++;
     if (deg == 3) {
       return 8;
     }

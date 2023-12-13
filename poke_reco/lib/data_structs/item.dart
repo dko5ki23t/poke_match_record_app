@@ -69,7 +69,7 @@ class Item {
   ) {
     final pokeData = PokeDB();
     List<Guide> ret = [];
-    if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+    if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
       ret.add(Guide()
         ..guideId = Guide.confItem
         ..args = [itemID]
@@ -77,7 +77,7 @@ class Item {
       );
     }
     // 既にもちものがわかっている場合は代入しない(代入によってbuffを追加してしまうから)
-    if (myState.holdingItem == null || myState.holdingItem?.id != itemID) {
+    if (myState.holdingItem == null || myState.getHoldingItem()?.id != itemID) {
       myState.holdingItem = pokeData.items[itemID];
     }
     bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
@@ -325,7 +325,7 @@ class Item {
         break;
       case 585:     // レッドカード
         if (changePokemonIndex != null) {
-          yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState);
+          yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState, state);
           state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite, null);
@@ -336,7 +336,7 @@ class Item {
       case 1177:    // だっしゅつパック
       case 590:     // だっしゅつボタン
         if (changePokemonIndex != null) {
-          myState.processExitEffect(playerType.id == PlayerType.me, yourState);
+          myState.processExitEffect(playerType.id == PlayerType.me, yourState, state);
           state.setPokemonIndex(playerType, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType, null);
@@ -399,7 +399,7 @@ class Item {
     }
   }
 
-  void processPassiveEffect(/*bool isOwn, Weather weather, Field field,*/ PokemonState myState, /*PokemonState yourState*/) {
+  void processPassiveEffect(PokemonState myState, {bool processForm = true}) {
     switch (id) {
       case 112:   // こんごうだま
         if (myState.pokemon.no == 483) {    // ディアルガ
@@ -627,7 +627,7 @@ class Item {
     }
   }
 
-  void clearPassiveEffect(/*bool isOwn, Weather weather, Field field,*/ PokemonState myState, /*PokemonState yourState*/) {
+  void clearPassiveEffect(PokemonState myState, {bool clearForm = true}) {
     switch (id) {
       case 112:     // こんごうだま
         if (myState.pokemon.no == 483) {    // ディアルガ

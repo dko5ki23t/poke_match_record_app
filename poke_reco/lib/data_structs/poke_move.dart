@@ -78,19 +78,12 @@ class MoveAdditionalEffect {
 }
 
 class ActionFailure {
-  // TODO:多い(まだ他にもある)から、何か情報が得られるものに限定したい・ありえない選択肢は消す
   static const int none = 0;
   static const int recoil = 1;        // わざの反動
   static const int sleep = 2;         // ねむり(カウント消費)
   static const int freeze = 3;        // こおり(回復判定で失敗)
-  static const int pp = 4;            // PPが残っていない                                               // 消去候補
-  static const int lazy = 5;          // なまけ(カウント消費(反動で動けなくても消費はする))                // 消去候補
-  static const int focusPunch = 6;    // きあいパンチ使用時、そのターンにダメージを受けていて動けない       // 消去候補
   static const int flinch = 7;        // ひるみ
-  static const int throatChop = 11;   // じごくづき                                                     // 消去候補
-  static const int choice = 12;       // こだわり                                                       // 消去候補
   static const int taunt = 13;        // ちょうはつ
-  static const int imprison = 14;     // ふういん                                                       // 消去候補
   static const int confusion = 15;    // こんらんにより自傷
   static const int paralysis = 16;    // まひ
   static const int infatuation = 17;  // メロメロ
@@ -249,6 +242,7 @@ class TurnMove {
     372: 'しびれてしまった',
     380: 'こおってしまった',
     449: 'どくにかかった',
+    454: 'やけどをおった',
     460: 'やけどをおった',
     466: 'どくにかかった',
     468: 'ぼうぎょが下がった',
@@ -322,22 +316,24 @@ class TurnMove {
     // ポケモン交代
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-      myState.processExitEffect(playerType.id == PlayerType.me, yourState);
+      myState.processExitEffect(playerType.id == PlayerType.me, yourState, state);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
       state.getPokemonState(playerType, null).hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
       return ret;
     }
 
-    // ねむりカウント加算
-    var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
-    if (sleep.isNotEmpty) sleep.first.turns++;
-    // アンコールカウント加算
-    var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
-    if (encore.isNotEmpty) encore.first.turns++;
-    // ちょうはつのカウントインクリメント
-    var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
-    if (taunt.isNotEmpty) taunt.first.extraArg1++;
+    if (continuousCount == 0) {
+      // ねむりカウント加算
+      var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
+      if (sleep.isNotEmpty) sleep.first.turns++;
+      // アンコールカウント加算
+      var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
+      if (encore.isNotEmpty) encore.first.turns++;
+      // ちょうはつのカウントインクリメント
+      var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
+      if (taunt.isNotEmpty) taunt.first.extraArg1++;
+    }
 
     // こんらんによる自傷
     if (actionFailure.id == ActionFailure.confusion) {
@@ -376,11 +372,13 @@ class TurnMove {
     }
 
     // メトロノーム用
-    int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
-    if (findIdx >= 0) {
-      if (!isSuccess) {
-        if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.recoiling).isEmpty) {
-          myState.hiddenBuffs[findIdx].extraArg1 = 0;
+    if (continuousCount == 0) {
+      int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
+      if (findIdx >= 0) {
+        if (!isSuccess) {
+          if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.recoiling).isEmpty) {
+            myState.hiddenBuffs[findIdx].extraArg1 = 0;
+          }
         }
       }
     }
@@ -418,6 +416,8 @@ class TurnMove {
     bool isSunny1_5 = false;
     // ノーマルスキンによって威力が1.2倍になるか
     bool isNormalized1_2 = false;
+    // タイプ相性計算時、追加で計算するタイプ
+    PokeType? additionalMoveType;
 
     {
       Move replacedMove = getReplacedMove(move, continuousCount, myState);   // 必要に応じてわざの内容変更
@@ -488,19 +488,21 @@ class TurnMove {
         }
       }
       // メトロノーム用
-      int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
-      if (findIdx >= 0) {
-        if ((myState.hiddenBuffs[findIdx].extraArg1 / 100).floor() == replacedMove.id) {
-          if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.chargingMove).isEmpty || myState.hiddenBuffs[findIdx].extraArg1 == 0) {
-            myState.hiddenBuffs[findIdx].extraArg1++;
+      if (continuousCount == 0) {
+        int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+        if (findIdx >= 0) {
+          if ((myState.hiddenBuffs[findIdx].extraArg1 / 100).floor() == replacedMove.id) {
+            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.chargingMove).isEmpty || myState.hiddenBuffs[findIdx].extraArg1 == 0) {
+              myState.hiddenBuffs[findIdx].extraArg1++;
+            }
+          }
+          else {
+            myState.hiddenBuffs[findIdx].extraArg1 = replacedMove.id * 100;
           }
         }
         else {
-          myState.hiddenBuffs[findIdx].extraArg1 = replacedMove.id * 100;
+          myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.sameMoveCount)..extraArg1 = replacedMove.id * 100);
         }
-      }
-      else {
-        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.sameMoveCount)..extraArg1 = replacedMove.id * 100);
       }
       // ねごと系以外のわざを出しているならねむり解除とみなす
       if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
@@ -665,7 +667,7 @@ class TurnMove {
           case 29:    // 相手ポケモンをランダムに交代させる
           case 314:   // 相手ポケモンをランダムに交代させる
             if (getChangePokemonIndex(PlayerType(targetPlayerTypeID)) != null) {
-              targetState.processExitEffect(targetPlayerTypeID == PlayerType.me, myState);
+              targetState.processExitEffect(targetPlayerTypeID == PlayerType.me, myState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType.opposite, getChangePokemonIndex(PlayerType(targetPlayerTypeID))!);
               newState = state.getPokemonState(playerType.opposite, null);
@@ -794,6 +796,8 @@ class TurnMove {
             ) {    // 対象がみがわり状態でない・お互いにへんしん状態でないなら
               myState.type1 = targetState.type1;
               myState.type2 = targetState.type2;
+              if (targetState.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.halloween), state);
+              if (targetState.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
               myState.setCurrentAbility(targetState.currentAbility, targetState, playerType.id == PlayerType.me, state);
               for (int i = 0; i < targetState.moves.length; i++) {
                 if (i >= myState.moves.length) {
@@ -973,7 +977,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               // もちもの確定のため、一度持たせる
               if (targetPlayerTypeID == PlayerType.opponent &&
-                  opponentPokemonState.holdingItem?.id == 0
+                  opponentPokemonState.getHoldingItem()?.id == 0
               ) {
                 targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
@@ -1096,7 +1100,7 @@ class TurnMove {
               var takeOverBuffDebuffs = [...myState.buffDebuffs.where((e) => e.id == BuffDebuff.vital1 ||
                 e.id == BuffDebuff.vital2 || e.id == BuffDebuff.vital3 || e.id == BuffDebuff.substitute
               )];
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
+              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
@@ -1223,7 +1227,7 @@ class TurnMove {
           case 154:   // 控えのポケモンと交代する
           case 229:   // 控えのポケモンと交代する
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
+              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
@@ -1349,7 +1353,7 @@ class TurnMove {
           case 178:   // 使用者ともちものを入れ替える
             if (extraArg1[continuousCount] > 0) {
               // もちもの確定のため、一度持たせる
-              if (opponentPokemonState.holdingItem?.id == 0) {
+              if (opponentPokemonState.getHoldingItem()?.id == 0) {
                 opponentPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
               ownPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
@@ -1396,7 +1400,7 @@ class TurnMove {
             break;
           case 189:   // もちものを持っていれば失わせ、威力1.5倍
             // もちもの確定のため、一度持たせる
-            if (targetPlayerTypeID == PlayerType.opponent && targetState.holdingItem?.id == 0) {
+            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
               if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
             }
             targetState.holdingItem = null;
@@ -1415,7 +1419,7 @@ class TurnMove {
             if (movePower == 0) movePower = 1;
             break;
           case 192:   // 使用者ととくせいを入れ替える
-            opponentPokemonState.setCurrentAbility(ownPokemonState.currentAbility, ownPokemonState, false, state);
+            opponentPokemonState.setCurrentAbility(ownPokemonState.getCurrentAbility(), ownPokemonState, false, state);
             if (extraArg1[continuousCount] != 0) {
               ownPokemonState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, opponentPokemonState, true, state);
             }
@@ -1600,7 +1604,6 @@ class TurnMove {
             myState.addStatChanges(true, extraArg1[continuousCount], 2, targetState, moveId: replacedMove.id);
             break;
           case 228:   // そのターンで最後に相手から受けたこうげきわざのダメージを1.5倍にして返す
-            //TODO
             showDamageCalc = false;
             break;
           case 230:   // 使用者のぼうぎょ・とくぼうを1段階ずつ下げる
@@ -1608,11 +1611,9 @@ class TurnMove {
             myState.addStatChanges(true, 3, -1, targetState, moveId: replacedMove.id);
             break;
           case 231:   // 相手がそのターン既に行動していると威力2倍
-            //TODO
             showDamageCalc = false;
             break;
           case 232:   // 相手がそのターン既にダメージを受けていると威力2倍
-            //TODO
             showDamageCalc = false;
             break;
           case 233:   // さしおさえ状態にする
@@ -1659,7 +1660,6 @@ class TurnMove {
           case 242:   // 場におまじないを発生させる(SV使用不可のため処理なし)
             break;
           case 243:   // 最後に出されたわざを出す(相手のわざとは限らない)
-            // TODO 入力するわざのデフォルトサジェストを変更したい
             break;
           case 244:   // 使用者のこうげき・とくこうランク変化と相手のこうげき・とくこうランク変化を入れ替える
             int myAttackStat = myState.statChanges(0);
@@ -1898,7 +1898,6 @@ class TurnMove {
                   break;
               }
             }
-            // TODOこうかばつぐんとかの情報から、相手のもちものわからない？
             break;
           case 271:   // 使用者はひんしになる。場にみかづきのまいを発生させる
             myFields.add(IndividualField(IndividualField.lunarDance));
@@ -2007,10 +2006,14 @@ class TurnMove {
           case 287:   //場をマジックルームにする/解除する
             int findIdx = targetIndiField.indexWhere((e) => e.id == IndividualField.magicRoom);
             if (findIdx < 0) {
+              targetState.holdingItem?.clearPassiveEffect(targetState, clearForm: false);
               targetIndiField.add(IndividualField(IndividualField.magicRoom));
+              targetState.hiddenBuffs.add(BuffDebuff(BuffDebuff.magicRoom));
             }
             else {
               targetIndiField.removeAt(findIdx);
+              targetState.holdingItem?.processPassiveEffect(targetState, processForm: false);
+              targetState.hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.magicRoom);
             }
             break;
           case 288:   // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
@@ -2152,6 +2155,8 @@ class TurnMove {
             else {
               myState.type1 = targetState.type1;
               myState.type2 = targetState.type2;
+              if (targetState.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.halloween), state);
+              if (targetState.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
             }
             break;
           case 320:   // 味方がひんしになった次のターンに使った場合威力2倍
@@ -2271,7 +2276,7 @@ class TurnMove {
           case 337:   // 直前に成功したわざがクロスフレイムだった場合威力2倍(SV使用不可のため処理なし)
             break;
           case 338:   // わざのタイプにひこうタイプの2つの相性を組み合わせてダメージ計算する。ちいさくなる状態の相手に必中し、その場合はダメージ2倍
-            //TODO
+            additionalMoveType = PokeType.createFromId(PokeTypeId.fly);
             if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             break;
           case 339:   // 戦闘中にきのみを食べた場合のみ使用可能
@@ -2290,7 +2295,10 @@ class TurnMove {
             }
             break;
           case 343:   // 相手のタイプにゴーストを追加する
-            //TODO
+            if (!targetState.isTypeContain(PokeTypeId.ghost)) {
+              targetState.ailmentsRemoveWhere((e) => e.id == Ailment.forestCurse);
+              targetState.ailmentsAdd(Ailment(Ailment.halloween), state);
+            }
             break;
           case 344:   // こうげき・とくこうを1段階ずつ下げる
             targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
@@ -2305,7 +2313,7 @@ class TurnMove {
             targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
+              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
@@ -2391,7 +2399,10 @@ class TurnMove {
             effectOnce = true;
             break;
           case 376:   // 相手のタイプにくさを追加する
-            //TODO
+            if (!targetState.isTypeContain(PokeTypeId.grass)) {
+              targetState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween);
+              targetState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
+            }
             break;
 /*          case 378:   // ふんじん状態にする(SVで使用不可のため処理なし)
             targetState.ailmentsAdd(Ailment(Ailment.powder), state);
@@ -2502,7 +2513,6 @@ class TurnMove {
             break;
           case 409:   // 使用者が前のターンで動けなかった/使用したわざが失敗したとき威力2倍
             showDamageCalc = false;
-            // TODO?
             break;
           case 410:   // 相手のランク補正のうち、ランク+1以上をすべて使用者に移し替えてからこうげきする。みがわり状態を無視する
             for (int i = 0; i < 7; i++) {
@@ -2594,7 +2604,6 @@ class TurnMove {
             }
             break;
           case 431:   // まだ行動していないポケモンに対して使うと威力2倍
-            //TODO
             showDamageCalc = false;
             break;
           case 432:   // 使用者と相手の場の状態を入れ替える
@@ -2764,17 +2773,22 @@ class TurnMove {
             }
             break;
           case 454:   // 対象がそのターンに能力が上がっているとやけど状態にする(確率)
-            // TODO
+            targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             break;
           case 455:   // このターンに使用者の能力が下がっていた場合、威力2倍
-            // TODO
+            if (myState.hiddenBuffs.where((e) => e.id == BuffDebuff.thisTurnDownStatChange).isNotEmpty) {
+              movePower *= 2;
+            }
             break;
           case 456:   // 対象にもちものがあるときのみ成功
-            // TODO もちもの確定
+            // もちもの確定のため、一度持たせる
+            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()!.id == 0) {
+              if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+            }
             break;
           case 457:   // 対象のもちものを消失させる
             // もちもの確定のため、一度持たせる
-            if (targetPlayerTypeID == PlayerType.opponent && targetState.holdingItem?.id == 0) {
+            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
               if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
             }
             targetState.holdingItem = null;
@@ -2860,7 +2874,8 @@ class TurnMove {
             }
             break;
           case 476:   // その戦闘で味方がひんしになるたび、威力が50ずつ上がる
-            // TODO
+            int faintingNum = state.getFaintingCount(playerType);
+            movePower += (faintingNum) * 50;
             break;
           case 477:   // ヘイラッシャがシャリタツを飲み込んでいた場合、使用者の能力を上げる
             break;
@@ -2943,7 +2958,7 @@ class TurnMove {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
+              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
@@ -2955,7 +2970,7 @@ class TurnMove {
           case 493:   // 天気をゆきにして控えと交代
             state.weather = Weather(Weather.snowy);
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState);
+              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
               newState = state.getPokemonState(playerType, null);
@@ -2981,7 +2996,12 @@ class TurnMove {
             effectOnce = true;
             break;
           case 496:   // その戦闘でこうげき技のダメージを受けるたびに威力+50。(最大350)
-            // TODO
+            {
+              int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.attackedCount);
+              if (findIdx >= 0) {
+                movePower += myState.hiddenBuffs[findIdx].extraArg1 * 50;
+              }
+            }
             break;
           case 497:   // 使用者がでんきタイプの場合のみ成功。でんきタイプを失くす
             if (myState.type1.id == 13) {
@@ -3291,6 +3311,10 @@ class TurnMove {
           // 相性補正(切り捨て)
           rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
             targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
+          if (additionalMoveType != null) {
+            rate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
+              targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, targetStates[0]);
+          }
           damageVmax = (damageVmax * rate).floor();
           damageVmin = (damageVmin * rate).floor();
           damageCalc += '×$rate(相性) ';
@@ -3448,7 +3472,7 @@ class TurnMove {
       myState = tmpState;
 
       // ミクルのみのこうかが残っていれば消費
-      findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
+      int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
       if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
       // ノーマルジュエル消費
       if (myState.holdingItem?.id == 669 && moveDamageClassID >= 2 && moveType.id == 1) {
@@ -3475,6 +3499,14 @@ class TurnMove {
               ) {
                 targetState.remainHP -= realDamage[continuousCount];
                 targetState.remainHPPercent -= percentDamage[continuousCount];
+                // こうげきを受けた数をカウント
+                int findIdx = targetState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.attackedCount);
+                if (findIdx >= 0) {
+                  targetState.hiddenBuffs[findIdx].extraArg1++;
+                }
+                else {
+                  targetState.hiddenBuffs.add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
+                }
               }
               else {
                 if (realDamage[continuousCount] > 0) {
@@ -3490,7 +3522,6 @@ class TurnMove {
     }
 
     // 最後に使用した(PP消費した)わざセット
-    // TODO:replacedMove?
     myState.lastMove = move;
 
     return ret;
@@ -3975,6 +4006,7 @@ class TurnMove {
         case 330:   // ねむり状態にする(確率)。メロエッタのフォルムが変わる
         case 334:   // こんらんさせる(確率)。そらをとぶ状態の相手にも当たる。天気があめだと必中、はれだと命中率50になる
         case 372:   // まひにする(確率)
+        case 454:   // 対象がそのターンに能力が上がっているとやけど状態にする(確率)
         case 470:   // すばやさを1段階下げる(確率)。天気があめの時は必中
         case 471:   // まひにする(確率)。天気があめの時は必中
         case 472:   // やけどにする(確率)。天気があめの時は必中
@@ -4376,8 +4408,8 @@ class TurnMove {
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
                     if (playerType.id == PlayerType.me) {
-                      if (opponentPokemonState.holdingItem != null && opponentPokemonState.holdingItem!.id != 0) {
-                        matches.add(opponentPokemonState.holdingItem!);
+                      if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
+                        matches.add(opponentPokemonState.getHoldingItem()!);
                       }
                       else {
                         matches = appState.pokeData.items.values.toList();
@@ -4387,8 +4419,8 @@ class TurnMove {
                         }
                       }
                     }
-                    else if (ownPokemonState.holdingItem != null) {
-                      matches = [ownPokemonState.holdingItem!];
+                    else if (ownPokemonState.getHoldingItem() != null) {
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -4572,8 +4604,8 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    if (opponentPokemonState.holdingItem != null && opponentPokemonState.holdingItem!.id != 0) {
-                      matches.add(opponentPokemonState.holdingItem!);
+                    if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
+                      matches.add(opponentPokemonState.getHoldingItem()!);
                     }
                     else {
                       matches = appState.pokeData.items.values.toList();
@@ -4745,8 +4777,8 @@ class TurnMove {
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
                     if (playerType.id == PlayerType.me) {
-                      if (opponentPokemonState.holdingItem != null && opponentPokemonState.holdingItem!.id != 0) {
-                        matches.add(opponentPokemonState.holdingItem!);
+                      if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
+                        matches.add(opponentPokemonState.getHoldingItem()!);
                       }
                       else {
                         matches = appState.pokeData.items.values.toList();
@@ -4756,8 +4788,8 @@ class TurnMove {
                         }
                       }
                     }
-                    else if (ownPokemonState.holdingItem != null) {
-                      matches = [ownPokemonState.holdingItem!];
+                    else if (ownPokemonState.getHoldingItem() != null) {
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -4797,8 +4829,8 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Ability> matches = [];
-                    if (opponentPokemonState.currentAbility.id != 0) {
-                      matches.add(opponentPokemonState.currentAbility);
+                    if (opponentPokemonState.getCurrentAbility().id != 0) {
+                      matches.add(opponentPokemonState.getCurrentAbility());
                     } else {
                       matches.addAll(opponentPokemonState.possibleAbilities);
                     }
@@ -4877,8 +4909,8 @@ class TurnMove {
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
                     if (playerType.id == PlayerType.me) {
-                      if (opponentPokemonState.holdingItem != null && opponentPokemonState.holdingItem!.id != 0) {
-                        matches.add(opponentPokemonState.holdingItem!);
+                      if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
+                        matches.add(opponentPokemonState.getHoldingItem()!);
                       }
                       else {
                         matches = appState.pokeData.items.values.toList();
@@ -4888,8 +4920,8 @@ class TurnMove {
                         }
                       }
                     }
-                    else if (ownPokemonState.holdingItem != null) {
-                      matches = [ownPokemonState.holdingItem!];
+                    else if (ownPokemonState.getHoldingItem() != null) {
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -5036,8 +5068,8 @@ class TurnMove {
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
                     if (playerType.id == PlayerType.opponent) {
-                      if (opponentPokemonState.holdingItem != null && opponentPokemonState.holdingItem!.id != 0) {
-                        matches.add(opponentPokemonState.holdingItem!);
+                      if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
+                        matches.add(opponentPokemonState.getHoldingItem()!);
                       }
                       else {
                         matches = appState.pokeData.items.values.toList();
@@ -5047,8 +5079,8 @@ class TurnMove {
                         }
                       }
                     }
-                    else if (ownPokemonState.holdingItem != null) {
-                      matches = [ownPokemonState.holdingItem!];
+                    else if (ownPokemonState.getHoldingItem() != null) {
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -5314,7 +5346,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    Item? holdingItem = playerType.id == PlayerType.me ? opponentPokemonState.holdingItem : ownPokemonState.holdingItem;
+                    Item? holdingItem = playerType.id == PlayerType.me ? opponentPokemonState.getHoldingItem() : ownPokemonState.getHoldingItem();
                     if (playerType.id == PlayerType.me) {
                       if (holdingItem != null && holdingItem.id != 0) {
                         if (holdingItem.isBerry || holdingItem.id == 669) {
@@ -5330,7 +5362,7 @@ class TurnMove {
                       }
                     }
                     else if (holdingItem != null && (holdingItem.isBerry || holdingItem.id == 669)) {
-                      matches = [ownPokemonState.holdingItem!];
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -5370,7 +5402,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    Item? holdingItem = playerType.id == PlayerType.me ? ownPokemonState.holdingItem : opponentPokemonState.holdingItem;
+                    Item? holdingItem = playerType.id == PlayerType.me ? ownPokemonState.getHoldingItem() : opponentPokemonState.getHoldingItem();
                     if (playerType.id == PlayerType.opponent) {
                       if (holdingItem != null && holdingItem.id != 0) {
                         if (holdingItem.isBerry) {
@@ -5386,7 +5418,7 @@ class TurnMove {
                       }
                     }
                     else if (holdingItem != null && (holdingItem.isBerry)) {
-                      matches = [ownPokemonState.holdingItem!];
+                      matches = [ownPokemonState.getHoldingItem()!];
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -6115,8 +6147,8 @@ class TurnMove {
         break;
       case 106:   // もちものを盗む
       case 189:   // もちものを持っていれば失わせ、威力1.5倍
-        if (yourState.holdingItem != null && yourState.holdingItem!.id != 0) {
-          extraArg1[continuousCount] = yourState.holdingItem!.id;
+        if (yourState.getHoldingItem() != null && yourState.getHoldingItem()!.id != 0) {
+          extraArg1[continuousCount] = yourState.getHoldingItem()!.id;
         }
         break;
       case 133:   // 使用者のHP回復。回復量は天気による
@@ -6158,37 +6190,37 @@ class TurnMove {
         }
         break;
       case 178:   // 使用者ともちものを入れ替える
-        if (opponentState.holdingItem?.id != 0) {
-          extraArg1[continuousCount] = opponentState.holdingItem!.id;
+        if (opponentState.getHoldingItem() != null && opponentState.getHoldingItem()!.id != 0) {
+          extraArg1[continuousCount] = opponentState.getHoldingItem()!.id;
         }
         break;
       case 185:   // 戦闘中自分が最後に使用したもちものを復活させる
         // TODO
         break;
       case 225:   // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
-        if (yourState.holdingItem != null && yourState.holdingItem!.id != 0 && yourState.holdingItem!.isBerry) {
-          extraArg1[continuousCount] = yourState.holdingItem!.id;
+        if (yourState.getHoldingItem() != null && yourState.getHoldingItem()!.id != 0 && yourState.getHoldingItem()!.isBerry) {
+          extraArg1[continuousCount] = yourState.getHoldingItem()!.id;
         }
         break;
       case 234:   // 使用者のもちものによって威力と追加効果が変わる
       case 324:   // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
-        if (myState.holdingItem?.id != 0) {
-          extraArg1[continuousCount] = myState.holdingItem!.id;
+        if (myState.getHoldingItem() != null && myState.getHoldingItem()!.id != 0) {
+          extraArg1[continuousCount] = myState.getHoldingItem()!.id;
         }
         break;
       case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
-        if (myState.holdingItem?.id != 0 && myState.holdingItem!.isBerry) {
-          extraArg1[continuousCount] = myState.holdingItem!.id;
+        if (myState.getHoldingItem() != null && myState.getHoldingItem()!.id != 0 && myState.getHoldingItem()!.isBerry) {
+          extraArg1[continuousCount] = myState.getHoldingItem()!.id;
         }
         break;
       case 179:   // 相手と同じとくせいになる
-        if (yourState.currentAbility.id != 0) {
-          extraArg1[continuousCount] = yourState.currentAbility.id;
+        if (yourState.getCurrentAbility().id != 0) {
+          extraArg1[continuousCount] = yourState.getCurrentAbility().id;
         }
         break;
       case 192:   // 使用者ととくせいを入れ替える
-        if (opponentState.currentAbility.id != 0) {
-          extraArg1[continuousCount] = opponentState.currentAbility.id;
+        if (opponentState.getCurrentAbility().id != 0) {
+          extraArg1[continuousCount] = opponentState.getCurrentAbility().id;
         }
         break;
       case 300:   // 相手のとくせいを使用者のとくせいと同じにする

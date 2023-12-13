@@ -166,6 +166,7 @@ class Ability {
         {
           myState.pokemon.type1 = PokeType.createFromId(extraArg1);
           myState.pokemon.type2 = null;
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
         }
         break;
       case 17:    // めんえき
@@ -228,7 +229,7 @@ class Ability {
         break;
       case 36:    // トレース
         {
-          if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
+          if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [abilityID]
@@ -236,7 +237,7 @@ class Ability {
             );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
-          if (playerType.id == PlayerType.me && yourState.currentAbility.id == 0) {
+          if (playerType.id == PlayerType.me && yourState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [extraArg1]
@@ -330,7 +331,7 @@ class Ability {
         {
           if (extraArg1 != 0 &&
               myPlayerID == PlayerType.me &&
-              opponentPokemonState.holdingItem?.id == 0
+              opponentPokemonState.getHoldingItem()?.id == 0
           ) {
             ret.add(Guide()
               ..guideId = Guide.confItem
@@ -437,6 +438,7 @@ class Ability {
         myState.type1 = PokeType.createFromId(extraArg1);
         myState.type2 = null;
         myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
+        myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
         break;
       case 172:   // かちき
         myState.addStatChanges(true, 2, 2, yourState, abilityId: abilityID);
@@ -691,7 +693,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -711,7 +713,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -794,7 +796,7 @@ class Ability {
       default:
         break;
     }
-    if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
+    if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
       ret.add(Guide()
         ..guideId = Guide.confAbility
         ..args = [abilityID]
@@ -891,6 +893,7 @@ class Ability {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.technician));
         break;
       case 103: // ぶきよう
+        myState.holdingItem?.clearPassiveEffect(myState, clearForm: false);
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.noItemEffect));
         break;
       case 104: // かたやぶり
@@ -1223,6 +1226,7 @@ class Ability {
         break;
       case 103: // ぶきよう
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.noItemEffect);
+        myState.holdingItem?.processPassiveEffect(myState, processForm: false);
         break;
       case 104: // かたやぶり
       case 163: // ターボブレイズ
@@ -1501,7 +1505,7 @@ class Ability {
         }
         break;
       case 36:        // トレース
-        return yourState.currentAbility.id;
+        return yourState.getCurrentAbility().id;
       case 139:   // しゅうかく
         var lastLostBerry = myState.hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
         if (lastLostBerry.isNotEmpty) {

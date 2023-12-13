@@ -737,11 +737,13 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
     ).then((value) {setState(() {});});
   }
 
+/*
   void _pop(BuildContext context) {
     Navigator.pop(
       context,
     );
   }
+*/
 
   @override
   Widget build(BuildContext context) {

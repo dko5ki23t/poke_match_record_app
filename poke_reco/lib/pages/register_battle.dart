@@ -26,9 +26,6 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
-import 'package:poke_reco/data_structs/weather.dart';
-import 'package:poke_reco/data_structs/individual_field.dart';
 
 enum RegisterBattlePageType {
   basePage,
@@ -1189,23 +1186,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].isAdding) {
           removeIdxs.add(i);
-      }
-    }
-    // 削除インデックスリストの重複削除、ソート(念のため)
-    removeIdxs = removeIdxs.toSet().toList();
-    removeIdxs.sort();
-    for (int i = removeIdxs.length-1; i >= 0; i--) {
-      _removeAtPhase(removeIdxs[i], appState);
-    }
-  }
-
-  // 自動追加されたフェーズを削除
-  void _clearAutoSetPhase(MyAppState appState, int targetIdx) {
-    List<int> removeIdxs = [];
-    var phases = widget.battle.turns[turnNum-1].phases;
-    for (int i = targetIdx; i < phases.length; i++) {
-      if (phases[i].isAutoSet) {
-        removeIdxs.add(i);
       }
     }
     // 削除インデックスリストの重複削除、ソート(念のため)
@@ -2384,6 +2364,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
   }
 
+/*
   int _correctedSpeed(PlayerType player, PhaseState focusState) {
     int ret = widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!.s.real;
     final item = focusState.getPokemonState(player, null).holdingItem;
@@ -2436,6 +2417,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     return ret;
   }
+*/
 }
 
 class _StatChangeViewRow extends Row {

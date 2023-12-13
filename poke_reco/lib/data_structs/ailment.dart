@@ -62,7 +62,7 @@ class AilmentEffect {
   static const int roost = 49;              // はねやすめ
   static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
   static const int powerTrick = 51;         // パワートリック
-  static const int abilityNoEffect = 52;    // とくせいなし   //TODO
+  static const int abilityNoEffect = 52;    // とくせいなし
   static const int aquaRing = 53;           // アクアリング
   static const int diving = 54;             // ダイビング
   static const int shadowForcing = 55;      // シャドーダイブ(姿を消した状態)
@@ -78,6 +78,8 @@ class AilmentEffect {
                                             // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
   static const int candyCandy = 62;         // あめまみれ / 終了も含む
+  static const int halloween = 63;          // ハロウィン(ゴーストタイプ)
+  static const int forestCurse = 64;        // もりののろい(くさタイプ)
 
   static int getIdFromAilment(Ailment ailment) {
     switch (ailment.id) {
@@ -149,6 +151,8 @@ class AilmentEffect {
     60: 'たこがため',
     61: 'まもる',
     62: 'あめまみれ',
+    63: 'ハロウィン',
+    64: 'もりののろい',
   };
 
   const AilmentEffect(this.id);
@@ -204,7 +208,7 @@ class Ailment {
   static const int magnetRise = 24;         // でんじふゆう
   static const int telekinesis = 25;        // テレキネシス
   static const int healBlock = 26;          // かいふくふうじ
-  static const int embargo = 27;            // さしおさえ   // TODO
+  static const int embargo = 27;            // さしおさえ
   static const int sleepy = 28;             // ねむけ
   static const int ingrain = 29;            // ねをはる
   static const int uproar = 30;             // さわぐ
@@ -229,7 +233,7 @@ class Ailment {
   static const int roost = 49;              // はねやすめ
   static const int miracleEye = 50;         // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
   static const int powerTrick = 51;         // パワートリック
-  static const int abilityNoEffect = 52;    // とくせいなし   //TODO
+  static const int abilityNoEffect = 52;    // とくせいなし
   static const int aquaRing = 53;           // アクアリング
   static const int diving = 54;             // ダイビング
   static const int shadowForcing = 55;      // シャドーダイブ(姿を消した状態)
@@ -245,6 +249,8 @@ class Ailment {
                                             // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
   static const int candyCandy = 62;         // あめまみれ
+  static const int halloween = 63;          // ハロウィン(ゴーストタイプ)
+  static const int forestCurse = 64;        // もりののろい(くさタイプ)
 
   static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
     0: Tuple3('', Colors.black, 0),
@@ -308,6 +314,8 @@ class Ailment {
     60: Tuple3('たこがため', PokeTypeColor.evil, 0),
     61: Tuple3('まもる', Colors.green, 0),
     62: Tuple3('あめまみれ', PokeTypeColor.poison, 3),
+    63: Tuple3('ハロウィン', PokeTypeColor.ghost, 0),
+    64: Tuple3('もりののろい', PokeTypeColor.grass, 0),
   };
 
   final int id;

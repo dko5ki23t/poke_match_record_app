@@ -740,7 +740,6 @@ enum Owner {
   hidden,
 }
 
-// TODO
 Owner toOwner(int idx) {
   switch (idx) {
     case 0:
@@ -754,7 +753,7 @@ Owner toOwner(int idx) {
 }
 
 // シングルトンクラス
-// TODO: 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
+// 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
 class PokeDB {
   static const String pokeApiRoute = "https://pokeapi.co/api/v2";
 

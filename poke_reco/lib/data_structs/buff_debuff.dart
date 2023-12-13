@@ -44,8 +44,8 @@ class BuffDebuff {
   static const int noGuard = 35;          // 出すわざ/受けるわざ必中
   static const int stall = 36;            // 同優先度行動で最後に行動
   static const int technician = 37;       // 60以下威力わざの威力1.5倍
-  static const int noItemEffect= 38;      // もちものの効果なし   // TODO
-  static const int noAbilityEffect= 39;   // 相手とくせい無視     // TODO
+  static const int noItemEffect= 38;      // もちものの効果なし
+  static const int noAbilityEffect= 39;   // 相手とくせい無視
   static const int vital1 = 40;           // 急所率+1
   static const int vital2 = 41;           // 急所率+2
   static const int vital3 = 42;           // 急所率+3
@@ -195,11 +195,13 @@ class BuffDebuff {
   static const int lastLostBerry = 187;   // 最後に消費したきのみ(隠しステータス)
   static const int lastLostItem = 188;    // 最後に消費したもちもの(隠しステータス)
   static const int transform = 189;       // へんしん(extraArgに、へんしん対象のポケモンNo、turnsに、性別のid)
-  static const int lastUpStatChange = 190;    // 最後に上昇したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
-  static const int lastDownStatChange = 191;  // 最後に下降したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
+  static const int thisTurnUpStatChange = 190;    // このターンでステータス上昇が起きたことを示す(隠しステータス)
+  static const int thisTurnDownStatChange = 191;  // このターンでステータス下降が起きたことを示す(隠しステータス)
   static const int changedThisTurn = 192; // このターン、交代わざやこうたい行動によってでてきたポケモンであることを表す(隠しステータス。はりこみ用)
   static const int halvedBerry = 193;     // わざを受ける前に半減系きのみを食べた(隠しステータス)
   static const int sameMoveCount = 194;   // 連続で使用しているわざのID*100+カウント(隠しステータス)
+  static const int magicRoom = 195;       // マジックルーム時、もちものが使えないことを示すフラグ(隠しステータス。場の効果にすると使いづらいため、こちらと併用)
+  static const int attackedCount = 196;   // こうげきわざを受けた回数(隠しステータス。交代・ひんしでも消えない)
 
   static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
     0:  Tuple3('', Colors.black, 0),

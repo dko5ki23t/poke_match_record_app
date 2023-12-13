@@ -8,11 +8,11 @@ import 'package:poke_reco/data_structs/poke_move.dart';
 class Pokemon {
   int id = 0;    // データベースのプライマリーキー
   int viewOrder = 0;      // 表示順
-  String _name = '';       // ポケモン名
+  String name = '';       // ポケモン名
   String nickname = '';            // ニックネーム
-  int _level = 50;                  // レベル
+  int level = 50;                  // レベル
   Sex sex = Sex.none;              // せいべつ
-  int _no = 0;                      // 図鑑No.
+  int no = 0;                      // 図鑑No.
   PokeType type1 = PokeType.createFromId(0);        // タイプ1
   PokeType? type2;                     // タイプ2(null OK)
   PokeType teraType = PokeType.createFromId(0);     // テラスタルタイプ
@@ -75,7 +75,7 @@ class Pokemon {
       map[myPokemonColumnEffort[5]], 0,
     );
     ability = pokeData.abilities[map[myPokemonColumnAbility]]!;
-    item = (map[myPokemonColumnItem] != null) ?   // TODO 消す
+    item = (map[myPokemonColumnItem] != null) ?
       Item(id: map[myPokemonColumnItem], displayName: '', flingPower: 0, flingEffectId: 0, timing: AbilityTiming(0), isBerry: false, imageUrl: '') :
       null;
     move1 = pokeData.moves[map[myPokemonColumnMove1]]!;
@@ -91,9 +91,6 @@ class Pokemon {
   }
 
   // getter
-  String get name => _name;
-  int get level => _level;
-  int get no => _no;
   SixParams get h => _stats[StatIndex.H.index];
   SixParams get a => _stats[StatIndex.A.index];
   SixParams get b => _stats[StatIndex.B.index];
@@ -119,9 +116,9 @@ class Pokemon {
   }
   bool get isValid {
     return (
-      _name != '' &&
-      (_level >= pokemonMinLevel && _level <= pokemonMaxLevel) &&
-      _no >= pokemonMinNo && temper.id != 0 &&
+      name != '' &&
+      (level >= pokemonMinLevel && level <= pokemonMaxLevel) &&
+      no >= pokemonMinNo && temper.id != 0 &&
       teraType.id != 0 &&
       ability.id != 0 && _moves[0]!.id != 0 &&
       totalEffort() <= pokemonMaxEffortTotal
@@ -139,9 +136,6 @@ class Pokemon {
   bool get isEvolvable => true;
 
   // setter
-  set name(String x) {_name = x;}
-  set level(int x) {_level = x;}
-  set no(int x) {_no = x;}
   set h(SixParams x) {_stats[StatIndex.H.index] = x;}
   set a(SixParams x) {_stats[StatIndex.A.index] = x;}
   set b(SixParams x) {_stats[StatIndex.B.index] = x;}
@@ -161,11 +155,11 @@ class Pokemon {
     Pokemon()
     ..id = id
     ..viewOrder = viewOrder
-    .._name = _name
+    ..name = name
     ..nickname = nickname
-    .._level = _level
+    ..level = level
     ..sex = sex
-    .._no = _no
+    ..no = no
     ..type1 = type1
     ..type2 = type2
     ..teraType = teraType
@@ -248,10 +242,10 @@ class Pokemon {
     return {
       myPokemonColumnId: id,
       myPokemonColumnViewOrder: viewOrder,
-      myPokemonColumnNo: _no,
+      myPokemonColumnNo: no,
       myPokemonColumnNickName: nickname,
       myPokemonColumnTeraType: teraType.id,
-      myPokemonColumnLevel: _level,
+      myPokemonColumnLevel: level,
       myPokemonColumnSex: sex.id,
       myPokemonColumnTemper: temper.id,
       myPokemonColumnAbility: ability.id,

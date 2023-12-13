@@ -409,7 +409,7 @@ class TurnEffect {
         break;
       case EffectType.changeFaintingPokemon:    // ひんし後のポケモン交代
         // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-        myState.processExitEffect(true, yourState);
+        myState.processExitEffect(true, yourState, state);
         if (effectId != 0) {
           state.setPokemonIndex(playerType, effectId);
           state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
@@ -671,7 +671,15 @@ class TurnEffect {
     // 勝利判定
     isMyWin = state.isMyWin;
     isYourWin = state.isYourWin;
-    // TODO わざの反動とかで同時に倒れる場合あり、その場合の勝者判定必要
+    // わざの反動等で両者同時に倒れる場合あり→このTurnEffectの発動主が勝利とする
+    if (isMyWin && isYourWin) {
+      if (playerType.id == PlayerType.me) {
+        isYourWin = false;
+      }
+      else {
+        isMyWin = false;
+      }
+    }
 
     return ret;
   }
@@ -1283,17 +1291,17 @@ class TurnEffect {
                   }
                 case 36:    // トレース
                   if (playerType.id == PlayerType.me) {
-                    if (yourState.currentAbility.id != 0) {
-                      extraArg1 = yourState.currentAbility.id;
-                      return yourState.currentAbility.displayName;
+                    if (yourState.getCurrentAbility().id != 0) {
+                      extraArg1 = yourState.getCurrentAbility().id;
+                      return yourState.getCurrentAbility().displayName;
                     }
                     else {
                       return '';
                     }
                   }
                   else {
-                    extraArg1 = myState.currentAbility.id;
-                    return myState.currentAbility.displayName;
+                    extraArg1 = myState.getCurrentAbility().id;
+                    return myState.getCurrentAbility().displayName;
                   }
                 case 53:    // ものひろい
                 case 119:   // おみとおし
@@ -1433,10 +1441,9 @@ class TurnEffect {
             case 192:   // 使用者ととくせいを入れ替える
             case 300:   // 相手のとくせいを使用者のとくせいと同じにする
               return pokeData.abilities[move!.extraArg1[0]]!.displayName;
-            //TODO
             case 456:   // 対象にもちものがあるときのみ成功
             case 457:   // 対象のもちものを消失させる
-              return '';
+              return pokeData.items[move!.extraArg1[0]]!.displayName;
             default:
               if (move!.playerType.id == PlayerType.me) {
                 return myState.remainHP.toString();
@@ -1553,7 +1560,6 @@ class TurnEffect {
     {required bool isInput,}
   )
   {
-    // TODO:呼び出し元で判定してたらprevAction関連の判定不要かも？
     var myPokemon = prevAction != null && timing.id == AbilityTiming.afterMove ?
       state.getPokemonState(playerType, prevAction).pokemon :
       playerType.id == PlayerType.me ? ownPokemon : opponentPokemon;
@@ -1695,15 +1701,15 @@ class TurnEffect {
                   suggestionsCallback: (pattern) async {
                     List<Ability> matches = [];
                     if (playerType.id == PlayerType.me) {
-                      if (yourState.currentAbility.id != 0) {
-                        matches.add(yourState.currentAbility);
+                      if (yourState.getCurrentAbility().id != 0) {
+                        matches.add(yourState.getCurrentAbility());
                       }
                       else {
                         matches.addAll(yourState.possibleAbilities);
                       }
                     }
                     else {
-                      matches.add(yourState.currentAbility);
+                      matches.add(yourState.getCurrentAbility());
                     }
                     matches.retainWhere((s){
                       return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -2292,7 +2298,6 @@ class TurnEffect {
       }
     }
     else if (effect.id == EffectType.item) {   // もちものによる効果
-      // TODO myStateとかを使う？
       return appState.pokeData.items[effectId]!.extraWidget(
         onFocus, theme, playerType, myPokemon, yourPokemon, myState,
         yourState, myParty, yourParty, state,

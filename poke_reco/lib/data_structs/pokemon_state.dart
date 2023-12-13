@@ -64,8 +64,8 @@ class PokemonState {
     ..type2 = type2
     ..lastMove = lastMove?.copyWith();
 
-  Item? get holdingItem => _holdingItem;
-  Ability get currentAbility => _currentAbility;
+  Item? get holdingItem => _holdingItem != null ? canUseItem ? _holdingItem : PokeDB().items[0] : null;
+  Ability get currentAbility => isEffectAbility ? _currentAbility : PokeDB().abilities[0]!;
   bool get isFainting => _isFainting;
   // たかさ・おもさ・せいべつはメタモンのへんしん状態に応じて変化
   int get weight {
@@ -84,10 +84,18 @@ class PokemonState {
   }
   bool get isMe => playerType.id == PlayerType.me;
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
+  bool get canUseItem {
+    return ailmentsWhere((e) => e.id == Ailment.embargo).isEmpty &&
+      buffDebuffs.where((e) => e.id == BuffDebuff.noItemEffect).isEmpty &&
+      hiddenBuffs.where((e) => e.id == BuffDebuff.magicRoom).isEmpty;
+  }
+  bool get isEffectAbility {
+    return ailmentsWhere((e) => e.id == Ailment.abilityNoEffect).isEmpty;
+  }
 
   set holdingItem(Item? item) {
     _holdingItem?.clearPassiveEffect(this);
-    item?.processPassiveEffect(this);
+    if (canUseItem) item?.processPassiveEffect(this);
     if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
       // 最後に消費したもちもの/きのみ更新
       var lastLostItem = hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostItem);
@@ -110,9 +118,17 @@ class PokemonState {
     _holdingItem = item;
   }
 
+  Item? getHoldingItem() {  // もちものの効果なしかどうかに関わらずもちもの取得
+    return _holdingItem;
+  }
+
+  Ability getCurrentAbility() {   // とくせいの効果なしかどうかに関わらずとくせい取得
+    return _currentAbility;
+  }
+
   void setCurrentAbility(Ability ability, PokemonState yourState, bool isOwn, PhaseState state) {
     _currentAbility.clearPassiveEffect(this, yourState, isOwn, state);
-    ability.processPassiveEffect(this, yourState, isOwn, state);
+    if (isEffectAbility) ability.processPassiveEffect(this, yourState, isOwn, state);
     _currentAbility = ability;
     /*if (pokemon.ability.id == 0 && PokeDB().pokeBase[pokemon.no]!.ability.where((e) => e.id == ability.id).isNotEmpty) {
       pokemon.ability = ability;
@@ -194,10 +210,15 @@ class PokemonState {
       return teraType1.id == typeId;
     }
     else {
-      return type1.id == typeId || type2?.id == typeId;
+      List<int> typeIDs = [type1.id];
+      if (type2 != null) typeIDs.add(type2!.id);
+      if (ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) typeIDs.add(PokeTypeId.ghost);
+      if (ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) typeIDs.add(PokeTypeId.grass);
+      return typeIDs.contains(typeId);
     }
   }
 
+  // ダメージ計算におけるタイプ一致ボーナス
   double typeBonusRate(int moveTypeId, bool isAdaptability) {
     double rate = 1.0;
     if (isTerastaling) {
@@ -216,7 +237,7 @@ class PokemonState {
       }
     }
     else {
-      if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+      if (isTypeContain(moveTypeId)) {
         rate += 0.5;
         if (isAdaptability) rate += 0.5;
       }
@@ -238,7 +259,7 @@ class PokemonState {
   }
 
   // ポケモン交代やひんしにより退場する場合の処理
-  void processExitEffect(bool isOwn, PokemonState yourState) {
+  void processExitEffect(bool isOwn, PokemonState yourState, PhaseState state) {
     resetStatChanges();
     resetRealSixParams();
     setCurrentAbilityNoEffect(pokemon.ability);
@@ -248,7 +269,7 @@ class PokemonState {
     // もうどくはターン数をリセット(ターン数をもとにダメージを計算するため)
     var badPoison = ailmentsWhere((e) => e.id == Ailment.badPoison);
     if (badPoison.isNotEmpty) badPoison.first.turns = 0;
-    if (_isFainting) ailmentsClear();
+    if (_isFainting) ailmentsClear(yourState, state);
     // 退場後も継続するフォルム以外をクリア
     var unchangingForms = buffDebuffs.where((e) =>
       e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace ||
@@ -259,7 +280,8 @@ class PokemonState {
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
     var unchangingHidden = hiddenBuffs.where((e) =>
-      e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry
+      e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry ||
+      e.id == BuffDebuff.attackedCount
     ).toList();
     hiddenBuffs.clear();
     hiddenBuffs.addAll(unchangingHidden);
@@ -306,7 +328,7 @@ class PokemonState {
     yourState.ailmentsRemoveWhere((e) => e.id == Ailment.cannotRunAway && e.extraArg1 == 1);
     // 退場することで自身に効果がある場合
     if (!_isFainting && currentAbility.id == 30) { // しぜんかいふく
-      ailmentsClear();
+      ailmentsClear(yourState, state);
     }
     if (!_isFainting && currentAbility.id == 144) { // さいせいりょく
       if (isOwn) {
@@ -381,7 +403,9 @@ class PokemonState {
     // スロースタート終了
     buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attackSpeed0_5 && e.turns >= 5);
     // 交代したターンであることのフラグ削除
-    hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.changedThisTurn);
+    // 当ターンでランクが変わったかを示すフラグ削除
+    hiddenBuffs.removeWhere((e) => e.id == BuffDebuff.changedThisTurn ||
+      e.id == BuffDebuff.thisTurnUpStatChange || e.id == BuffDebuff.thisTurnDownStatChange);
     // フォーカスレンズの効果削除
     buffDebuffs.removeWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
     // わざの反動で動けない状態は2ターンエンド経過で削除
@@ -390,7 +414,6 @@ class PokemonState {
 
   // 状態異常に関する関数群ここから
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
-    bool isMe = playerType.id == PlayerType.me;
     var indiFields = isMe ? state.ownFields : state.opponentFields;
     var yourState = state.getPokemonState(playerType.opposite, null);
     // すでに同じものになっている場合は何も起こらない
@@ -435,6 +458,15 @@ class PokemonState {
 
     bool isAdded = _ailments.add(ailment);
 
+    // さしおさえの場合
+    if (ailment.id == Ailment.embargo) {
+      _holdingItem?.clearPassiveEffect(this, clearForm: false);
+    }
+    // とくせいなしの場合
+    if (ailment.id == Ailment.abilityNoEffect) {
+      _currentAbility.clearPassiveEffect(this, yourState, isMe, state);
+    }
+
     if (isAdded && ailment.id <= Ailment.sleep && ailment.id != 0) {    // 状態異常時
       if (currentAbility.id == 62) buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn));  // こんじょう
       if (currentAbility.id == 63) buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));            // ふしぎなうろこ
@@ -467,7 +499,7 @@ class PokemonState {
     return _ailments.indexWhere(test);
   }
 
-  Ailment ailmentsRemoveAt(int index) {
+  Ailment ailmentsRemoveAt(int index, {PokemonState? yourState, PhaseState? state}) {
     var ret = _ailments.removeAt(index);
     if (ret.id <= Ailment.sleep && ret.id != 0) {
       if (currentAbility.id == 62) {  // こんじょう
@@ -495,11 +527,19 @@ class PokemonState {
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
       }
     }
+    else if (ret.id == Ailment.embargo) { // さしおさえ消失時
+      _holdingItem?.processPassiveEffect(this, processForm: false);
+    }
+    else if (ret.id == Ailment.abilityNoEffect) { // とくせいなし消失時
+      _currentAbility.processPassiveEffect(this, yourState!, isMe, state!);
+    }
     
     return ret;
   }
 
-  void ailmentsRemoveWhere(bool Function(Ailment) test) {
+  void ailmentsRemoveWhere(bool Function(Ailment) test, {PokemonState? yourState, PhaseState? state}) {
+    bool embargo = _ailments.where((e) => e.id == Ailment.embargo).isNotEmpty;
+    bool abilityNoEffect = _ailments.where((e) => e.id == Ailment.abilityNoEffect).isNotEmpty;
     _ailments.removeWhere(test);
     if (_ailments.indexWhere((e) => e.id <= Ailment.sleep && e.id != 0) < 0) {
       if (currentAbility.id == 62) {  // こんじょう
@@ -512,43 +552,57 @@ class PokemonState {
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
       }
     }
-    else if (_ailments.indexWhere((e) => e.id == Ailment.confusion) < 0) {    // こんらん消失時
+    if (_ailments.indexWhere((e) => e.id == Ailment.confusion) < 0) {    // こんらん消失時
       if (currentAbility.id == 77) {  // ちどりあし
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
       }
     }
-    else if (_ailments.indexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison) < 0) {    // どく/もうどく消失時
+    if (_ailments.indexWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison) < 0) {    // どく/もうどく消失時
       if (currentAbility.id == 137) {  // どくぼうそう
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
       }
     }
-    else if (_ailments.indexWhere((e) => e.id == Ailment.burn) < 0) {    // やけど消失時
+    if (_ailments.indexWhere((e) => e.id == Ailment.burn) < 0) {    // やけど消失時
       if (currentAbility.id == 138) {  // ねつぼうそう
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
       }
+    }
+    if (embargo && _ailments.indexWhere((e) => e.id == Ailment.embargo) < 0) {  // さしおさえ消失時
+      _holdingItem?.processPassiveEffect(this, processForm: false);
+    }
+    if (abilityNoEffect && _ailments.indexWhere((e) => e.id == Ailment.abilityNoEffect) < 0) { // とくせいなし消失時
+      _currentAbility.processPassiveEffect(this, yourState!, isMe, state!);
     }
   }
 
-  void ailmentsClear() {
+  void ailmentsClear(PokemonState yourState, PhaseState state) {
+    bool embargo = _ailments.where((e) => e.id == Ailment.embargo).isNotEmpty;
+    bool abilityNoEffect = _ailments.where((e) => e.id == Ailment.abilityNoEffect).isNotEmpty;
     _ailments.clear();
     if (currentAbility.id == 62) {  // こんじょう
         buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
-      }
-      if (currentAbility.id == 63) {  // ふしぎなうろこ
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
-      }
-      if (currentAbility.id == 95) {  // はやあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
-      }
-      if (currentAbility.id == 77) {  // ちどりあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
-      }
-      if (currentAbility.id == 137) {  // どくぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
-      }
-      if (currentAbility.id == 138) {  // ねつぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
-      }
+    }
+    if (currentAbility.id == 63) {  // ふしぎなうろこ
+      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+    }
+    if (currentAbility.id == 95) {  // はやあし
+      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
+    }
+    if (currentAbility.id == 77) {  // ちどりあし
+      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
+    }
+    if (currentAbility.id == 137) {  // どくぼうそう
+      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
+    }
+    if (currentAbility.id == 138) {  // ねつぼうそう
+      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+    }
+    if (embargo) {  // さしおさえ消失時
+      _holdingItem?.processPassiveEffect(this, processForm: false);
+    }
+    if (abilityNoEffect) { // とくせいなし消失時
+      _currentAbility.processPassiveEffect(this, yourState, isMe, state);
+    }
   }
   // 状態異常に関する関数群ここまで
   
@@ -597,7 +651,10 @@ class PokemonState {
       _statChanges[0] = (_statChanges[0] + 2).clamp(-6, 6);
     }
 
+    int before = _statChanges[index];
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
+    if (_statChanges[index] > before && hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.thisTurnUpStatChange) < 0) hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnUpStatChange));
+    if (_statChanges[index] < before && hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.thisTurnDownStatChange) < 0) hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnDownStatChange));
     return true;
   }
 
