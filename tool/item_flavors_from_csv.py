@@ -27,7 +27,7 @@ itemFlavorCSVFlavorIndex = 4
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='もちものの説明をCSVからデータベース化')
     parser.add_argument('item_flavor_text', help='各アイテムの説明が記載されたCSVファイル(item_flavor_text.csv)')
     args = parser.parse_args()
     return args

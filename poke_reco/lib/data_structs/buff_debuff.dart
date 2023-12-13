@@ -198,6 +198,8 @@ class BuffDebuff {
   static const int lastUpStatChange = 190;    // 最後に上昇したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
   static const int lastDownStatChange = 191;  // 最後に下降したステータス変化(隠しステータス。extraArg1に、int化されたステータス変化)
   static const int changedThisTurn = 192; // このターン、交代わざやこうたい行動によってでてきたポケモンであることを表す(隠しステータス。はりこみ用)
+  static const int halvedBerry = 193;     // わざを受ける前に半減系きのみを食べた(隠しステータス)
+  static const int sameMoveCount = 194;   // 連続で使用しているわざのID*100+カウント(隠しステータス)
 
   static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
     0:  Tuple3('', Colors.black, 0),

@@ -25,7 +25,7 @@ eggGroupCSVnameIndex = 3
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='タマゴグループの情報をCSVからデータベース化')
     parser.add_argument('egg_group', help='各タマゴグループの情報が記載されたCSVファイル(egg_group_prose.csv)')
     args = parser.parse_args()
     return args

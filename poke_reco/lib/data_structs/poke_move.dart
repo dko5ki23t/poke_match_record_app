@@ -375,6 +375,16 @@ class TurnMove {
       }
     }
 
+    // メトロノーム用
+    int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
+    if (findIdx >= 0) {
+      if (!isSuccess) {
+        if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.recoiling).isEmpty) {
+          myState.hiddenBuffs[findIdx].extraArg1 = 0;
+        }
+      }
+    }
+
     if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
 
     List<IndividualField> myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
@@ -420,7 +430,6 @@ class TurnMove {
       PhaseState? targetField;
       switch (replacedMove.target.id) {
         case 1:     // TODO:不定、わざによって異なる のろいとかカウンターとか
-          // TODO
           break;
         case 2:     // 選択した自分以外の場にいるポケモン
                     // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
@@ -478,7 +487,21 @@ class TurnMove {
           }
         }
       }
-
+      // メトロノーム用
+      int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+      if (findIdx >= 0) {
+        if ((myState.hiddenBuffs[findIdx].extraArg1 / 100).floor() == replacedMove.id) {
+          if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.chargingMove).isEmpty || myState.hiddenBuffs[findIdx].extraArg1 == 0) {
+            myState.hiddenBuffs[findIdx].extraArg1++;
+          }
+        }
+        else {
+          myState.hiddenBuffs[findIdx].extraArg1 = replacedMove.id * 100;
+        }
+      }
+      else {
+        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.sameMoveCount)..extraArg1 = replacedMove.id * 100);
+      }
       // ねごと系以外のわざを出しているならねむり解除とみなす
       if (replacedMove.id != 156 && replacedMove.id != 173 && replacedMove.id != 214) {
         myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
@@ -1716,6 +1739,16 @@ class TurnMove {
               else {  // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.diving);
                 myState.hiddenBuffs.removeAt(findIdx);
+                if (myState.currentAbility.id == 241) {   // うのミサイル
+                  if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm).isEmpty) {
+                    if (myPlayerTypeID == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
+                      myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
+                    }
+                    else {
+                      myState.buffDebuffs.add(BuffDebuff(BuffDebuff.marunomiForm));
+                    }
+                  }
+                }
               }
             }
             break;
@@ -1735,6 +1768,16 @@ class TurnMove {
             break;
           case 258:   // ダイビング状態でも命中し、その場合ダメージ2倍
             if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) mTwice = true;
+            if (myState.currentAbility.id == 241) {   // うのミサイル
+              if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm).isEmpty) {
+                if (myPlayerTypeID == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
+                  myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
+                }
+                else {
+                  myState.buffDebuffs.add(BuffDebuff(BuffDebuff.marunomiForm));
+                }
+              }
+            }
             break;
           case 259:   // かいひを1段階下げる。相手のひかりのかべ・リフレクター・オーロラベール・しんぴのまもり・しろいきりを消す
                       // 使用者・相手の場にあるまきびし・どくびし・とがった岩・ねばねばネットを取り除く。フィールドを解除する
@@ -3348,8 +3391,18 @@ class TurnMove {
               tmpMin *= 1.2;
               damageCalc += '×1.2(たつじんのおび) ';
             }
-            // TODO:メトロノーム補正
-            // continuousMoveDamageInc0_2
+            // メトロノーム補正
+            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2).isNotEmpty) {
+              int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+              if (findIdx >= 0) {
+                int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
+                if (count > 0) {
+                  tmpMax *= (1.0 + 0.2 * count);
+                  tmpMin *= (1.0 + 0.2 * count);
+                  damageCalc += '×${(1.0 + 0.2 * count)}(メトロノーム) ';
+                }
+              }
+            }
             // いのちのたま補正
             if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
             {
@@ -3357,7 +3410,15 @@ class TurnMove {
               tmpMin *= 1.3;
               damageCalc += '×1.3(いのちのたま) ';
             }
-            // TODO:半減の実補正
+            // 半減きのみ補正
+            findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.halvedBerry);
+            if (findIdx >= 0) {
+              double mult = myState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
+              tmpMax *= mult;
+              tmpMin *= mult;
+              damageCalc += '×$mult(半減きのみ) ';
+              myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.halvedBerry);
+            }
             // Mtwice
             if (mTwice || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
               tmpMax *= 2;
@@ -3387,7 +3448,7 @@ class TurnMove {
       myState = tmpState;
 
       // ミクルのみのこうかが残っていれば消費
-      int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
+      findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
       if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
       // ノーマルジュエル消費
       if (myState.holdingItem?.id == 669 && moveDamageClassID >= 2 && moveType.id == 1) {
@@ -3456,39 +3517,9 @@ class TurnMove {
   )
   {
     final pokeData = PokeDB();
-    // 交代先ポケモンがいるかどうか
-    int count = 0;
-    if (playerType.id == PlayerType.me) {
-      for (int i = 0; i < ownParty.pokemonNum; i++) {
-        if (state.isPossibleBattling(playerType, i) &&
-            !state.getPokemonStates(playerType)[i].isFainting &&
-            i != ownParty.pokemons.indexWhere((element) => element == ownPokemon)
-        ) {
-          count++;
-        }
-      }
-    }
-    else if (playerType.id == PlayerType.opponent) {
-      for (int i = 0; i < opponentParty.pokemonNum; i++) {
-        if (state.isPossibleBattling(playerType, i) &&
-            !state.getPokemonStates(playerType)[i].isFainting &&
-            i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon)
-        ) {
-          count++;
-        }
-      }
-    }
-    // 相手のポケモンのとくせいによって交代可能かどうか
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
-    bool isShadowTag = !myState.isTypeContain(8) &&    // ゴーストタイプではない
-      (yourState.currentAbility.id == 23 ||                                     // 相手がかげふみ
-       (yourState.currentAbility.id == 42 && myState.isTypeContain(9)) ||       // 相手がじりょく＆自身がはがね
-       (yourState.currentAbility.id == 71 && myState.isGround(myFields))                  // 相手がありじごく＆自身が地面にいる
-      );
-    bool canChange = count >= 1 && !isShadowTag;
     ButtonStyle pressedStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
@@ -3797,7 +3828,6 @@ class TurnMove {
 
     var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
 
     if (playerType.id != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
       // 追加効果

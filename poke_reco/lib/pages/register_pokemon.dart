@@ -246,7 +246,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                               myPokemon.pps[i] = 0;
                               pokePPController[i].text = '0';
                             }
-                            // TODO:Listnerのために最後に更新した方がいい？
                             pokeNameController.text = suggestion.name;
                             setState(() {});
                           },

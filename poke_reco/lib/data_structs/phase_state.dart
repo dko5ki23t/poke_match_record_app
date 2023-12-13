@@ -198,7 +198,6 @@ class PhaseState {
           if (weather.id != Weather.sandStorm) timingIDs.add(AbilityTiming.pokemonAppearNotSandStormed);
           if (weather.id != Weather.sunny) timingIDs.add(AbilityTiming.pokemonAppearNotSunny);
           if (weather.id != Weather.snowy) timingIDs.add(AbilityTiming.pokemonAppearNotSnowed);
-          // TODO 追加順はすばやさを考慮したい
           for (final player in players) {
             bool changed = player.id == PlayerType.me ? changedOwn : changedOpponent;
             if (changed) {
@@ -366,6 +365,16 @@ class PhaseState {
             if (replacedMove.damageClass.id >= 2) {
               // こうげきわざヒット後
               attackerTimingIDList.add(AbilityTiming.attackHitted);
+              // うのみ状態/まるのみ状態で相手にこうげきされた後
+              int findIdx = defenderState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm);
+              if (findIdx >= 0) {
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(defenderPlayerTypeId)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.ability)
+                  ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
+                );
+              }
               // こうげきわざでひんしにした後
               if (defenderState.isFainting) {
                 attackerTimingIDList.add(AbilityTiming.defeatOpponentWithAttack);
@@ -502,7 +511,6 @@ class PhaseState {
           }
 
           // 対応するタイミングに該当するとくせい
-          // TODO 追加順はすばやさを考慮したい
           if (attackerTimingIDList.contains(attackerState.currentAbility.timing.id)) {
             ret.add(TurnEffect()
               ..playerType = PlayerType(attackerPlayerTypeId)

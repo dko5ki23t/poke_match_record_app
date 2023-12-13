@@ -28,7 +28,7 @@ abilitiesCSVeffectIDIndex = 7
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='とくせいの情報をCSVからデータベース化')
     parser.add_argument('abilities', help='各とくせいの情報（ID等）が記載されたCSVファイル')
     parser.add_argument('ability_lang', help='各とくせいと各言語での名称の情報が記載されたCSVファイル')
     args = parser.parse_args()

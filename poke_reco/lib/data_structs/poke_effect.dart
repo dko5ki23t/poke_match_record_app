@@ -876,6 +876,16 @@ class TurnEffect {
           if (replacedMove.damageClass.id >= 2) {
             defenderTimingIDs.addAll([62, 82, 157, 161]);
             attackerTimingIDs.addAll([60, 2]);
+            // うのみ状態/まるのみ状態で相手にこうげきされた後
+            int findIdx = defenderState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm);
+            if (findIdx >= 0) {
+              ret.add(TurnEffect()
+                ..playerType = attacker.opposite
+                ..timing = AbilityTiming(AbilityTiming.afterMove)
+                ..effect = EffectType(EffectType.ability)
+                ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
+              );
+            }
             // ノーマルタイプのこうげきをした時
             if (replacedMoveType.id == 1) attackerTimingIDs.addAll([130]);
             // あくタイプのこうげきを受けた時

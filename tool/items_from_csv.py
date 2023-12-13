@@ -42,7 +42,7 @@ validItemIDs = [i for i in range(1, 8)]       # バトルでポケモンに持�
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='もちものの情報をCSVからデータベース化')
     parser.add_argument('items', help='各アイテムの情報（IDやタイプ）が記載されたCSVファイル')
     parser.add_argument('item_lang', help='各アイテムと各言語での名称の情報が記載されたCSVファイル')
     parser.add_argument('item_flag_map', help='各アイテムとその属性が記載されたCSVファイル')

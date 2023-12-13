@@ -80,6 +80,7 @@ class Item {
     if (myState.holdingItem == null || myState.holdingItem?.id != itemID) {
       myState.holdingItem = pokeData.items[itemID];
     }
+    bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
 
     switch (itemID) {
       case 161:     // オッカのみ
@@ -100,9 +101,12 @@ class Item {
       case 176:     // リリバのみ
       case 723:     // ロゼルのみ
       case 177:     // ホズのみ
+        // ダメージ軽減効果はわざのダメージ計算時に使う
+        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.halvedBerry)..extraArg1 = doubleBerry ? 1 : 0);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 187:     // イバンのみ
       case 248:     // パワフルハーブ
-        // ダメージ軽減効果はユーザ入力に任せる
       case 669:     // ノーマルジュエル
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
@@ -110,6 +114,9 @@ class Item {
         myState.holdingItem = pokeData.items[itemID];
         break;
       case 178:     // チイラのみ
+        myState.addStatChanges(true, 0, doubleBerry ? 2 : 1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 589:     // じゅうでんち
       case 689:     // ゆきだま
         myState.addStatChanges(true, 0, 1, yourState, itemId: itemID);
@@ -117,12 +124,18 @@ class Item {
         break;
       case 179:     // リュガのみ
       case 724:     // アッキのみ
+        myState.addStatChanges(true, 1, doubleBerry ? 2 : 1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 898:     // エレキシード
       case 901:     // グラスシード
         myState.addStatChanges(true, 1, 1, yourState, itemId: itemID);
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 181:     // ヤタピのみ
+        myState.addStatChanges(true, 2, doubleBerry ? 2 : 1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 588:     // きゅうこん
       case 1176:    // のどスプレー
         myState.addStatChanges(true, 2, 1, yourState, itemId: itemID);
@@ -130,6 +143,9 @@ class Item {
         break;
       case 182:     // ズアのみ
       case 725:     // タラプのみ
+        myState.addStatChanges(true, 3, doubleBerry ? 2 : 1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 688:     // ひかりごけ
       case 899:     // サイコシード
       case 900:     // ミストシード
@@ -137,16 +153,19 @@ class Item {
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 180:     // カムラのみ
+        myState.addStatChanges(true, 4, doubleBerry ? 2 : 1, yourState, itemId: itemID);
+        if (autoConsume) myState.holdingItem = null;   // アイテム消費
+        break;
       case 883:     // ビビリだま
         myState.addStatChanges(true, 4, 1, yourState, itemId: itemID);
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 183:     // サンのみ
-        myState.addVitalRank(1);
+        myState.addVitalRank(doubleBerry ? 2 : 1);
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 184:     // スターのみ
-        myState.addStatChanges(true, extraArg1, 2, yourState, itemId: itemID);
+        myState.addStatChanges(true, extraArg1, doubleBerry ? 4 : 2, yourState, itemId: itemID);
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 186:     // ミクルのみ
@@ -841,6 +860,7 @@ class Item {
     TurnEffect? prevAction, AbilityTiming timing,
   ) {
     bool isMe = player.id == PlayerType.me;
+    bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
 
     switch (itemID) {
       case 247:       // いのちのたま
@@ -849,7 +869,7 @@ class Item {
         return !isMe ? (yourState.pokemon.h.real / 6).floor() : 16;
       case 188:       // ジャポのみ
       case 189:       // レンブのみ
-        return !isMe ? (yourState.pokemon.h.real / 8).floor() : 12;
+        return !isMe ? (yourState.pokemon.h.real / (doubleBerry ? 4 : 8)).floor() : (doubleBerry ? 25 : 12);
       case 584:       // ふうせん
         if (timing.id != AbilityTiming.pokemonAppear) {
           return 1;
@@ -858,20 +878,20 @@ class Item {
       case 265:     // くっつきバリ
         return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
       case 132:     // オレンのみ
-        if (isMe) return -10;
+        if (isMe) return doubleBerry ? -20 : -10;
         break;
       case 43:      // きのみジュース
         if (isMe) return -20;
         break;
       case 135:     // オボンのみ
       case 185:     // ナゾのみ
-        return isMe ? -(myState.pokemon.h.real / 4).floor() : -25;
+        return isMe ? -(myState.pokemon.h.real / (doubleBerry ? 2 : 4)).floor() : (doubleBerry ? -50 : -25);
       case 136:     // フィラのみ
       case 137:     // ウイのみ
       case 138:     // マゴのみ
       case 139:     // バンジのみ
       case 140:     // イアのみ
-        return isMe ? -(myState.pokemon.h.real / 3).floor() : -33;
+        return isMe ? -(myState.pokemon.h.real * (doubleBerry ? 2 : 1) / 3).floor() : (doubleBerry ? -66 : -33);
       case 258:     // くろいヘドロ
         if (myState.isTypeContain(4)) {   // どくタイプか
           return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;

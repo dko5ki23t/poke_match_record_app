@@ -771,6 +771,26 @@ class Ability {
         }
         myState.addStatChanges(true, statIdx, 1, yourState, abilityId: abilityID);
         break;
+      case 10000 + BuffDebuff.unomiForm:    // うのミサイル(うのみのすがた)
+        if (isOwn) {
+          yourState.remainHPPercent -= 25;
+        }
+        else {
+          yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
+        }
+        yourState.addStatChanges(false, 1, -1, myState);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.unomiForm);
+        break;
+      case 10000 + BuffDebuff.marunomiForm: // うのミサイル(うのみのすがた)
+        if (isOwn) {
+          yourState.remainHPPercent -= 25;
+        }
+        else {
+          yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
+        }
+        yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.marunomiForm);
+        break;
       default:
         break;
     }

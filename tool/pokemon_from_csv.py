@@ -92,7 +92,7 @@ svVersionID = 25
 svVersionID2 = 26
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='ポケモンの情報をCSVからデータベース化')
     parser.add_argument('pokemons', help='各ポケモンの情報（ID等）が記載されたCSVファイル(pokemon_species.csv)')
     parser.add_argument('pokemon_lang', help='各ポケモンと各言語での名称の情報が記載されたCSVファイル(pokemon_species_names.csv)')
     parser.add_argument('pokemon_ability', help='各ポケモンのもつとくせいの情報が記載されたCSVファイル(pokemon_abilities.csv)')
