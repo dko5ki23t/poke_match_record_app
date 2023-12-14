@@ -40,7 +40,7 @@ movesCSVPPIndex = 6
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='わざの情報をCSVからデータベース化')
     parser.add_argument('moves', help='各わざの情報（ID等）が記載されたCSVファイル')
     parser.add_argument('move_lang', help='各わざと各言語での名称の情報が記載されたCSVファイル')
     args = parser.parse_args()

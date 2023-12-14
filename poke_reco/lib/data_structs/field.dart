@@ -46,12 +46,10 @@ class Field {
 
   static const _bgColorMap = {
     0: Colors.black,
-    1: Colors.yellow,
-    2: Colors.green,
-    3: Colors.pinkAccent,
-    4: Colors.pink,
-    5: Colors.purple,
-    // TODO
+    1: PokeTypeColor.electric,
+    2: PokeTypeColor.grass,
+    3: PokeTypeColor.fairy,
+    4: PokeTypeColor.psychic,
   };
 
   String get displayName => '${_displayNameMap[id]!} ($turns/5)';

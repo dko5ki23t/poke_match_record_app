@@ -166,6 +166,7 @@ class Ability {
         {
           myState.pokemon.type1 = PokeType.createFromId(extraArg1);
           myState.pokemon.type2 = null;
+          myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
         }
         break;
       case 17:    // めんえき
@@ -228,7 +229,7 @@ class Ability {
         break;
       case 36:    // トレース
         {
-          if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
+          if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [abilityID]
@@ -236,7 +237,7 @@ class Ability {
             );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
-          if (playerType.id == PlayerType.me && yourState.currentAbility.id == 0) {
+          if (playerType.id == PlayerType.me && yourState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [extraArg1]
@@ -330,7 +331,7 @@ class Ability {
         {
           if (extraArg1 != 0 &&
               myPlayerID == PlayerType.me &&
-              opponentPokemonState.holdingItem?.id == 0
+              opponentPokemonState.getHoldingItem()?.id == 0
           ) {
             ret.add(Guide()
               ..guideId = Guide.confItem
@@ -358,13 +359,16 @@ class Ability {
         myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: abilityID);
         break;
       case 149:     // イリュージョン
-        if (playerType.id == PlayerType.opponent) {
+        if (playerType.id == PlayerType.opponent && extraArg1 > 0) {
           var pokeNo = state.getPokemonStates(PlayerType(PlayerType.opponent))[extraArg1-1].pokemon.no;
           if (pokeNo == PokeBase.zoruaNo) state.canZorua = false;
           if (pokeNo == PokeBase.zoroarkNo) state.canZoroark = false;
           if (pokeNo == PokeBase.zoruaHisuiNo) state.canZoruaHisui = false;
           if (pokeNo == PokeBase.zoroarkHisuiNo) state.canZoroarkHisui = false;
-          // TODO インデックス等を変える
+          state.makePokemonOther(playerType, pokeNo);
+          var newState = state.getPokemonState(playerType, null);
+          newState.setCurrentAbility(pokeData.abilities[149]!, yourState, isOwn, state);
+          return ret;
         }
         break;
       case 150:     // かわりもの
@@ -437,6 +441,7 @@ class Ability {
         myState.type1 = PokeType.createFromId(extraArg1);
         myState.type2 = null;
         myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
+        myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
         break;
       case 172:   // かちき
         myState.addStatChanges(true, 2, 2, yourState, abilityId: abilityID);
@@ -691,7 +696,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -711,7 +716,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.holdingItem?.id == 0) {
+            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -771,10 +776,30 @@ class Ability {
         }
         myState.addStatChanges(true, statIdx, 1, yourState, abilityId: abilityID);
         break;
+      case 10000 + BuffDebuff.unomiForm:    // うのミサイル(うのみのすがた)
+        if (isOwn) {
+          yourState.remainHPPercent -= 25;
+        }
+        else {
+          yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
+        }
+        yourState.addStatChanges(false, 1, -1, myState);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.unomiForm);
+        break;
+      case 10000 + BuffDebuff.marunomiForm: // うのミサイル(うのみのすがた)
+        if (isOwn) {
+          yourState.remainHPPercent -= 25;
+        }
+        else {
+          yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
+        }
+        yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
+        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.marunomiForm);
+        break;
       default:
         break;
     }
-    if (playerType.id == PlayerType.opponent && myState.currentAbility.id == 0) {
+    if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
       ret.add(Guide()
         ..guideId = Guide.confAbility
         ..args = [abilityID]
@@ -871,6 +896,7 @@ class Ability {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.technician));
         break;
       case 103: // ぶきよう
+        myState.holdingItem?.clearPassiveEffect(myState, clearForm: false);
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.noItemEffect));
         break;
       case 104: // かたやぶり
@@ -1203,6 +1229,7 @@ class Ability {
         break;
       case 103: // ぶきよう
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.noItemEffect);
+        myState.holdingItem?.processPassiveEffect(myState, processForm: false);
         break;
       case 104: // かたやぶり
       case 163: // ターボブレイズ
@@ -1481,7 +1508,7 @@ class Ability {
         }
         break;
       case 36:        // トレース
-        return yourState.currentAbility.id;
+        return yourState.getCurrentAbility().id;
       case 139:   // しゅうかく
         var lastLostBerry = myState.hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
         if (lastLostBerry.isNotEmpty) {

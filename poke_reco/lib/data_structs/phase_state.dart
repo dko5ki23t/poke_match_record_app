@@ -1,5 +1,7 @@
+import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
@@ -15,6 +17,7 @@ import 'package:poke_reco/data_structs/buff_debuff.dart';
 class PhaseState {
   List<int> _pokemonIndexes = [0, 0];   // 0は無効値
   List<List<PokemonState>> _pokemonStates = [[], []];
+  List<List<PokemonState>> lastExitedStates =[[], []];  // 最後に退場したときの状態
   List<IndividualField> ownFields = [];        // 場(天気やフィールドを含まない、かべ等)
   List<IndividualField> opponentFields = [];        // 場(天気やフィールドを含まない、かべ等)
   Weather _weather = Weather(0);
@@ -124,6 +127,14 @@ class PhaseState {
       for (final state in _pokemonStates[1])
       state.copyWith()
     ]
+    ..lastExitedStates[0] = [
+      for (final state in lastExitedStates[0])
+      state.copyWith()
+    ]
+    ..lastExitedStates[1] = [
+      for (final state in lastExitedStates[1])
+      state.copyWith()
+    ]
     ..ownFields = [for (final e in ownFields) e.copyWith()]
     ..opponentFields = [for (final e in opponentFields) e.copyWith()]
     ..weather = weather.copyWith()
@@ -198,7 +209,6 @@ class PhaseState {
           if (weather.id != Weather.sandStorm) timingIDs.add(AbilityTiming.pokemonAppearNotSandStormed);
           if (weather.id != Weather.sunny) timingIDs.add(AbilityTiming.pokemonAppearNotSunny);
           if (weather.id != Weather.snowy) timingIDs.add(AbilityTiming.pokemonAppearNotSnowed);
-          // TODO 追加順はすばやさを考慮したい
           for (final player in players) {
             bool changed = player.id == PlayerType.me ? changedOwn : changedOpponent;
             if (changed) {
@@ -366,6 +376,16 @@ class PhaseState {
             if (replacedMove.damageClass.id >= 2) {
               // こうげきわざヒット後
               attackerTimingIDList.add(AbilityTiming.attackHitted);
+              // うのみ状態/まるのみ状態で相手にこうげきされた後
+              int findIdx = defenderState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm);
+              if (findIdx >= 0) {
+                ret.add(TurnEffect()
+                  ..playerType = PlayerType(defenderPlayerTypeId)
+                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..effect = EffectType(EffectType.ability)
+                  ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
+                );
+              }
               // こうげきわざでひんしにした後
               if (defenderState.isFainting) {
                 attackerTimingIDList.add(AbilityTiming.defeatOpponentWithAttack);
@@ -502,7 +522,6 @@ class PhaseState {
           }
 
           // 対応するタイミングに該当するとくせい
-          // TODO 追加順はすばやさを考慮したい
           if (attackerTimingIDList.contains(attackerState.currentAbility.timing.id)) {
             ret.add(TurnEffect()
               ..playerType = PlayerType(attackerPlayerTypeId)
@@ -785,5 +804,58 @@ class PhaseState {
     }
 
     return ret;
+  }
+
+  // 現在場に出ているポケモン(A)のNoを変える
+  void makePokemonOther(PlayerType player, int no, {Party? ownParty, Party? opponentParty,}) {
+    if (no == 0) return;
+    if (getPokemonState(player, null).pokemon.no == no) return;
+    // 変更先ポケモン(B)がパーティにいるかどうか
+    int index = -1;
+    for (int i = 0; i < getPokemonStates(player).length; i++) {
+      if (no == getPokemonStates(player)[i].pokemon.no) {
+        index = i;
+        break;
+      }
+    }
+    if (index >= 0) {
+      // 現在のステータスをBにコピー
+      var pokemon = getPokemonStates(player)[index].pokemon;
+      getPokemonStates(player)[index] = getPokemonState(player, null).copyWith()..pokemon = pokemon;
+      // Aのステータスを、最後に場にいた状態に戻す
+      int currentIndex = getPokemonIndex(player, null);
+      getPokemonStates(player)[currentIndex-1] = lastExitedStates[player.id == PlayerType.me ? 0 : 1][currentIndex-1].copyWith();
+      // 現在のインデックス変更(Bを指すように)
+      setPokemonIndex(player, index+1);
+    }
+    else {
+      // 現在のポケモンをまんま変えてしまう(TODO: 不具合でるかも？)
+      var pokemonState = getPokemonState(player, null);
+      var base = PokeDB().pokeBase[no]!;
+      var party = player.id == PlayerType.me ? ownParty : opponentParty;
+      if (party == null) {
+        print("arienai");
+        return;
+      }
+      party.pokemons[getPokemonIndex(player, null)-1]!
+        ..name = base.name
+        ..no = base.no
+        ..type1 = base.type1
+        ..type2 = base.type2
+        ..sex = pokemonState.sex
+        ..h.race = base.h
+        ..a.race = base.a
+        ..b.race = base.b
+        ..c.race = base.c
+        ..d.race = base.d
+        ..s.race = base.s
+        ..teraType = base.fixedTeraType.id == 0 ? pokemonState.teraType1 : base.fixedTeraType;
+      // TODO:ゾロアーク系
+      Pokemon poke = party.pokemons[getPokemonIndex(player, null)-1]!;
+      pokemonState.pokemon = poke;
+      pokemonState.possibleAbilities = base.ability;
+      pokemonState.type1 = poke.type1;
+      pokemonState.type2 = poke.type2;
+    }
   }
 }

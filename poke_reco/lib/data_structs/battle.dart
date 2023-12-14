@@ -97,6 +97,26 @@ class Battle {
       _parties[1].pokemons[0]!.name != '';
   }
 
+  // 編集したかどうかのチェックに使う
+  bool isDiff(Battle battle) {
+    bool ret =
+      id != battle.id ||
+      name != battle.name ||
+      type != battle.type ||
+      datetime != battle.datetime ||
+      _parties[0].id != battle._parties[0].id ||
+      _parties[1].id != battle._parties[1].id ||
+      opponentName != battle.opponentName ||
+      isMyWin != battle.isMyWin ||
+      isYourWin != battle.isYourWin;
+    if (ret) return true;
+    if (turns.length != battle.turns.length) return true;
+    for (int i = 0; i < turns.length; i++) {
+      if (turns[i] != battle.turns[i]) return true;
+    }
+    return false;
+  }
+
   void clear() {
     name = '';
     type = BattleType.rankmatch;

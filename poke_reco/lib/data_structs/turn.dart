@@ -23,6 +23,7 @@ class Turn {
   bool canZoroark = false;
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
+  List<List<PokemonState>> _initialLastExitedStates = [[], []];
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
@@ -46,6 +47,10 @@ class Turn {
 
   List<PokemonState> getInitialPokemonStates(PlayerType player) {
     return player.id == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
+  }
+
+  List<PokemonState> getInitialLastExitedStates(PlayerType player) {
+    return player.id == PlayerType.me ? _initialLastExitedStates[0] : _initialLastExitedStates[1];
   }
 
 
@@ -79,9 +84,17 @@ class Turn {
     ..canZorua = canZorua
     ..canZoroark = canZoroark
     ..canZoruaHisui = canZoruaHisui
-    ..canZoroarkHisui = canZoroarkHisui;
+    ..canZoroarkHisui = canZoroarkHisui
+    .._initialLastExitedStates[0] = [
+      for (final state in _initialLastExitedStates[0])
+      state.copyWith()
+    ]
+    .._initialLastExitedStates[1] = [
+      for (final state in _initialLastExitedStates[1])
+      state.copyWith()
+    ];
 
-  PhaseState copyInitialState() {
+  PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
     var ret = PhaseState()
     ..setPokemonIndex(PlayerType(PlayerType.me), _initialPokemonIndexes[0])
     ..setPokemonIndex(PlayerType(PlayerType.opponent), _initialPokemonIndexes[1])
@@ -107,8 +120,19 @@ class Turn {
     ret.forceSetField(initialField.copyWith());
     initialUserForces.processEffect(
       ret.getPokemonState(PlayerType(PlayerType.me), null),
-      ret.getPokemonState(PlayerType(PlayerType.opponent), null), ret,
+      ret.getPokemonState(PlayerType(PlayerType.opponent), null),
+      ret, ownParty, opponentParty,
     );
+    ret.lastExitedStates[0].clear();
+    ret.lastExitedStates[0].addAll([
+      for (final state in _initialLastExitedStates[0])
+      state.copyWith()
+    ]);
+    ret.lastExitedStates[1].clear();
+    ret.lastExitedStates[1].addAll([
+      for (final state in _initialLastExitedStates[1])
+      state.copyWith()
+    ]);
     return ret;
   }
 
@@ -126,7 +150,7 @@ class Turn {
     return actionCount == validCount && actionCount >= 2;
   }
 
-  void setInitialState(PhaseState state) {
+  void setInitialState(PhaseState state, Party ownParty, Party opponentParty,) {
     _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType(PlayerType.me), null);
     _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType(PlayerType.opponent), null);
     _initialPokemonStates[0] = [
@@ -158,19 +182,28 @@ class Turn {
     _initialHasTerastal[1] = state.hasOpponentTerastal;
     initialUserForces.processEffect(
       state.getPokemonState(PlayerType(PlayerType.me), null),
-      state.getPokemonState(PlayerType(PlayerType.opponent), null), state,
+      state.getPokemonState(PlayerType(PlayerType.opponent), null),
+      state, ownParty, opponentParty,
     );
     canZorua = state.canZorua;
     canZoroark = state.canZoroark;
     canZoruaHisui = state.canZoruaHisui;
     canZoroarkHisui = state.canZoroarkHisui;
+    _initialLastExitedStates[0] = [
+      for (final s in state.lastExitedStates[0])
+      s.copyWith()
+    ];
+    _initialLastExitedStates[1] = [
+      for (final s in state.lastExitedStates[1])
+      s.copyWith()
+    ];
   }
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
     int phaseIdx, Party ownParty, Party opponentParty)
   {
-    PhaseState ret = copyInitialState();
+    PhaseState ret = copyInitialState(ownParty, opponentParty,);
     int continousCount = 0;
     TurnEffect? lastAction;
 
@@ -279,6 +312,23 @@ class Turn {
     ret.canZoruaHisui = int.parse(turnElements[10]) != 0;
     // canZoroarkHisui
     ret.canZoroarkHisui = int.parse(turnElements[11]) != 0;
+    // _initialLastExitedStates
+    pokeStates = turnElements[12].split(split2);
+    ret._initialLastExitedStates.clear();
+    for (final pokeState in pokeStates) {
+      if (pokeState == '') break;
+      var states = pokeState.split(split3);
+      List<PokemonState> adding = [];
+      int i = 0;
+      for (final state in states) {
+        if (state == '') break;
+        adding.add(
+          PokemonState.deserialize(state, split4, split5, split6)
+          ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
+        i++;
+      }
+      ret._initialLastExitedStates.add(adding);
+    }
 
     return ret;
   }
@@ -342,6 +392,15 @@ class Turn {
     ret += split1;
     // canZoroarkHisui
     ret += canZoroarkHisui ? '1' : '0';
+    ret += split1;
+    // _initialLastExitedStates
+    for (final states in _initialLastExitedStates) {
+      for (final state in states) {
+        ret += state.serialize(split4, split5, split6);
+        ret += split3;
+      }
+      ret += split2;
+    }
 
     return ret;
   }

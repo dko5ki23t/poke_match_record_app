@@ -26,7 +26,7 @@ moveFlavorCSVFlavorIndex = 4
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='TODO')
+    parser = argparse.ArgumentParser(description='わざの説明文をCSVからデータベース化')
     parser.add_argument('move_flavor_text', help='各アイテムの説明が記載されたCSVファイル(move_flavor_text.csv)')
     args = parser.parse_args()
     return args

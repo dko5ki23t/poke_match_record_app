@@ -1,6 +1,7 @@
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/data_structs/party.dart';
 
 // ユーザが手動で変更した内容
 class UserForce {
@@ -27,6 +28,7 @@ class UserForce {
   static const int statMaxC = 20;
   static const int statMaxD = 21;
   static const int statMaxS = 22;
+  static const int pokemon = 23;
 
   final PlayerType playerType;
   final int typeId;
@@ -53,6 +55,8 @@ class UserForces {
     PokemonState ownPokemonState,
     PokemonState opponentPokemonState,
     PhaseState state,
+    Party ownParty,
+    Party opponentParty,
   )
   {
     var pokeData = PokeDB();
@@ -63,7 +67,7 @@ class UserForces {
             ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentPokemonState, true, state);
           }
           else if (force.playerType.id == PlayerType.opponent) {
-            if (opponentPokemonState.currentAbility.id == 0) {
+            if (opponentPokemonState.getCurrentAbility().id == 0) {
               opponentPokemonState.pokemon.ability = pokeData.abilities[force.arg1]!;
             }
             opponentPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
@@ -128,6 +132,9 @@ class UserForces {
           else if (force.playerType.id == PlayerType.opponent) {
             opponentPokemonState.maxStats[force.typeId-UserForce.statMaxH].real = force.arg1;
           }
+          break;
+        case UserForce.pokemon:
+          state.makePokemonOther(force.playerType, force.arg1, ownParty: ownParty, opponentParty: opponentParty);
           break;
       }
     }

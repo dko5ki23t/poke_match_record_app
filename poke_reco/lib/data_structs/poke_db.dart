@@ -336,6 +336,18 @@ class SixParams {
 
   SixParams(this.race, this.indi, this.effort, this.real);
 
+  @override
+  bool operator ==(Object other) =>
+    other.runtimeType == runtimeType &&
+    other is SixParams &&
+    race == other.race &&
+    indi == other.indi &&
+    effort == other.effort &&
+    real == other.real;
+
+  @override
+  int get hashCode => race.hashCode;
+
   static int getRealH(int level, int race, int indi, int effort) {
     return (race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + level + 10;
   }
@@ -740,7 +752,6 @@ enum Owner {
   hidden,
 }
 
-// TODO
 Owner toOwner(int idx) {
   switch (idx) {
     case 0:
@@ -754,7 +765,7 @@ Owner toOwner(int idx) {
 }
 
 // シングルトンクラス
-// TODO: 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
+// 欠点があるからライブラリを使うべき？ https://zenn.dev/shinkano/articles/c0f392fc3d218c
 class PokeDB {
   static const String pokeApiRoute = "https://pokeapi.co/api/v2";
 
