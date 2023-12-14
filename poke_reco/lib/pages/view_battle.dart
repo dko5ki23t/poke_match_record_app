@@ -602,13 +602,16 @@ class ViewBattlePageState extends State<ViewBattlePage> {
   List<List<TurnEffectAndStateAndGuide>> _createSameTimingList(MyAppState appState) {
     List<List<TurnEffectAndStateAndGuide>> ret = [];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    Turn currentTurn = widget.battle.turns[turnNum-1];
-    PhaseState currentState = currentTurn.copyInitialState();
+    Battle battle = widget.battle;
+    Party ownParty = battle.getParty(PlayerType(PlayerType.me));
+    Party opponentParty = battle.getParty(PlayerType(PlayerType.opponent));
+    Turn currentTurn = battle.turns[turnNum-1];
+    PhaseState currentState = currentTurn.copyInitialState(ownParty, opponentParty);
     int continuousCount = 0;
     TurnEffect? lastAction;
     int beginIdx = 0;
     int timingId = 0;
-    var phases = widget.battle.turns[turnNum-1].phases;
+    var phases = battle.turns[turnNum-1].phases;
 
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].timing.id == AbilityTiming.action){
@@ -622,10 +625,8 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         continuousCount++;
       }
       final guides = phases[i].processEffect(
-        widget.battle.getParty(PlayerType(PlayerType.me)),
-        currentState.getPokemonState(PlayerType(PlayerType.me), null),
-        widget.battle.getParty(PlayerType(PlayerType.opponent)),
-        currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
+        ownParty, currentState.getPokemonState(PlayerType(PlayerType.me), null),
+        opponentParty, currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
         currentState, lastAction, continuousCount
       );
       turnEffectAndStateAndGuides.add(

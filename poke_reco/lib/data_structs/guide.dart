@@ -10,6 +10,8 @@ class Guide {
   static const int confItem = 1002;         // 相手のもちもの確定(当該もちものの使用等、自然にわかる範囲)
   static const int confMove = 1003;         // 相手のわざ確定(当該わざの使用等、自然にわかる範囲)
   static const int confAbility = 1004;      // 相手のとくせい確定(当該わざの使用等、自然にわかる範囲)
+  static const int confZoroark = 1005;      // 相手が使用したわざから、相手のポケモンがゾロアーク系であること確定(ここではなくprocessMoveで処理)
+  // 以下、別CSVに記載のIDと一致させる
   static const int leechSeedConfHP = 1;     // やどりぎのタネから相手のHP範囲確定
   static const int sapConfAttack = 2;       // ちからをすいとるから相手のこうげき確定
 
@@ -38,6 +40,9 @@ class Guide {
         break;
       case confAbility:
         opponentState.pokemon.ability = pokeData.abilities[args[0]]!;
+        break;
+      case confZoroark:
+        // nop
         break;
       case leechSeedConfHP:
         // TODO: この時点で努力値等を反映するのかどうかとか

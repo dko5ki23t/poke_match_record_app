@@ -338,6 +338,8 @@ class PokemonState {
         remainHPPercent += 33;
       }
     }
+    // 最後に退場した状態の保存
+    state.lastExitedStates[isMe ? 0 : 1][state.getPokemonIndex(playerType, null)-1] = copyWith();
   }
 
   // ポケモン交代や死に出しにより登場する場合の処理

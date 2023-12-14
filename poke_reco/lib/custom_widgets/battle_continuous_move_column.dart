@@ -105,6 +105,7 @@ class BattleContinuousMoveColumn extends Column {
                 textEditingControllerList4[phaseIdx],
                 appState, phaseIdx, continuousCount,
                 turnEffectAndStateAndGuide,
+                turn.phases[phaseIdx].invalidGuideIDs,
                 isInput: isInput,
               ),
               SizedBox(height: 10,),

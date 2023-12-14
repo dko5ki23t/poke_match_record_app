@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/party.dart';
 
 class BattleTurnListView extends ListView {
   BattleTurnListView(
@@ -45,7 +46,11 @@ class BattleTurnListView extends ListView {
               sameTimingList[i],
               textEditControllerList1, textEditControllerList2,
               textEditControllerList3, textEditControllerList4,
-              _getPrevPhase(battle.turns[turnNum-1], i, sameTimingList),
+              _getPrevPhase(
+                battle.turns[turnNum-1], i, sameTimingList,
+                battle.getParty(PlayerType(PlayerType.me)),
+                battle.getParty(PlayerType(PlayerType.opponent)),
+              ),
               _getPrevPhasePokemon(PlayerType.me, battle, battle.turns[turnNum-1], i, sameTimingList),
               _getPrevPhasePokemon(PlayerType.opponent, battle, battle.turns[turnNum-1], i, sameTimingList),
               _getRefMove(sameTimingList, i, battle.turns[turnNum-1]),
@@ -78,9 +83,10 @@ class BattleTurnListView extends ListView {
   static PhaseState _getPrevPhase(
     Turn turn, int i,
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
+    Party ownParty, Party opponentParty,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
-      return turn.copyInitialState();
+      return turn.copyInitialState(ownParty, opponentParty);
     }
     return sameTimingList[i-1].last.phaseState;
   }

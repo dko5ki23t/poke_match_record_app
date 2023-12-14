@@ -359,13 +359,16 @@ class Ability {
         myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: abilityID);
         break;
       case 149:     // イリュージョン
-        if (playerType.id == PlayerType.opponent) {
+        if (playerType.id == PlayerType.opponent && extraArg1 > 0) {
           var pokeNo = state.getPokemonStates(PlayerType(PlayerType.opponent))[extraArg1-1].pokemon.no;
           if (pokeNo == PokeBase.zoruaNo) state.canZorua = false;
           if (pokeNo == PokeBase.zoroarkNo) state.canZoroark = false;
           if (pokeNo == PokeBase.zoruaHisuiNo) state.canZoruaHisui = false;
           if (pokeNo == PokeBase.zoroarkHisuiNo) state.canZoroarkHisui = false;
-          // TODO インデックス等を変える
+          state.makePokemonOther(playerType, pokeNo);
+          var newState = state.getPokemonState(playerType, null);
+          newState.setCurrentAbility(pokeData.abilities[149]!, yourState, isOwn, state);
+          return ret;
         }
         break;
       case 150:     // かわりもの

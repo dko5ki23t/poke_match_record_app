@@ -173,6 +173,38 @@ class Pokemon {
     .._pps = [..._pps]
     ..owner = owner;
 
+  // 編集したかどうかのチェックに使う
+  bool isDiff(Pokemon pokemon) {
+    bool ret =
+      id != pokemon.id ||
+      name != pokemon.name ||
+      nickname != pokemon.nickname ||
+      level != pokemon.level ||
+      sex != pokemon.sex ||
+      no != pokemon.no ||
+      type1.id != pokemon.type1.id ||
+      type2?.id != pokemon.type2?.id ||
+      teraType.id != pokemon.teraType.id ||
+      temper.id != pokemon.temper.id ||
+      ability.id != pokemon.ability.id ||
+      item?.id != pokemon.item?.id ||
+      owner != pokemon.owner;
+    if (ret) return true;
+    if (_stats.length != pokemon._stats.length) return true;
+    if (_moves.length != pokemon._moves.length) return true;
+    if (_pps.length != pokemon._pps.length) return true;
+    for (int i = 0; i < _stats.length; i++) {
+      if (_stats[i] != pokemon._stats[i]) return true;
+    }
+    for (int i = 0; i < _moves.length; i++) {
+      if (_moves[i]?.id != pokemon._moves[i]?.id) return true;
+    }
+    for (int i = 0; i < _pps.length; i++) {
+      if (_pps[i] != pokemon._pps[i]) return true;
+    }
+    return false;
+  }
+
   // レベル、種族値、個体値、努力値、せいかくから実数値を更新
   // TODO habcdsのsetterで自動的に呼ぶ？
   void updateRealStats() {

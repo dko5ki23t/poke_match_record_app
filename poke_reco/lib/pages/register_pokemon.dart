@@ -86,7 +86,16 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var myPokemon = widget.myPokemon;
     var theme = Theme.of(context);
     void onBack () {
+      bool showAlert = false;
       if (myPokemon.no != 0) {
+        if (myPokemon.id == 0) {
+          showAlert = true;
+        }
+        else if (myPokemon.isDiff(pokeData.pokemons[myPokemon.id]!)) {
+          showAlert = true;
+        }
+      }
+      if (showAlert) {
         showDialog(
           context: context,
           builder: (_) {

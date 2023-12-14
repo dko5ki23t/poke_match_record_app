@@ -9,7 +9,6 @@ class Party {
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
   List<Item?> items = List.generate(6, (i) => null);
   Owner owner = Owner.mine;
-  int refCount = 0;
   int winCount = 0;
   int usedCount = 0;
   int winRate = 0;
@@ -71,8 +70,25 @@ class Party {
     ..name = name
     .._pokemons = [..._pokemons]
     ..items = [...items]
-    ..owner = owner
-    ..refCount = refCount;
+    ..owner = owner;
+  }
+
+  // 編集したかどうかのチェックに使う
+  bool isDiff(Party party) {
+    bool ret =
+      id != party.id ||
+      name != party.name ||
+      owner != party.owner;
+    if (ret) return true;
+    if (_pokemons.length != party._pokemons.length) return true;
+    if (items.length != party.items.length) return true;
+    for (int i = 0; i < _pokemons.length; i++) {
+      if (_pokemons[i]?.id != party._pokemons[i]?.id) return true;
+    }
+    for (int i = 0; i < items.length; i++) {
+      if (items[i]?.id != party.items[i]?.id) return true;
+    }
+    return false;
   }
 
   // SQLite保存用

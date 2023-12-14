@@ -82,33 +82,33 @@ class ActionFailure {
   static const int recoil = 1;        // わざの反動
   static const int sleep = 2;         // ねむり(カウント消費)
   static const int freeze = 3;        // こおり(回復判定で失敗)
-  static const int flinch = 7;        // ひるみ
-  static const int taunt = 13;        // ちょうはつ
-  static const int confusion = 15;    // こんらんにより自傷
-  static const int paralysis = 16;    // まひ
-  static const int infatuation = 17;  // メロメロ
-  static const int protected = 18;    // 相手にこうげきを防がれた
-  static const int other = 19;        // その他
-  static const int size = 20;
+  static const int flinch = 4;        // ひるみ
+  static const int taunt = 5;        // ちょうはつ
+  static const int confusion = 6;    // こんらんにより自傷
+  static const int paralysis = 7;    // まひ
+  static const int infatuation = 8;  // メロメロ
+  static const int protected = 9;    // 相手にこうげきを防がれた
+  static const int other = 10;        // その他
+  static const int size = 11;
 
   static const _displayNameMap = {
     0: '',
     1: 'わざの反動',
     2: 'ねむり',
     3: 'こおり',
-    4: 'PPが残っていない',
-    5: 'なまけ',
-    6: 'きあいパンチ中にダメージを受けた',
-    7: 'ひるみ',
-    11: 'じごくづき',
-    12: 'こだわり中以外のわざを使った',
-    13: 'ちょうはつ',
-    14: 'ふういん',
-    15: 'こんらん',
-    16: 'まひ',
-    17: 'メロメロ',
-    18: '相手にこうげきを防がれた',
-    19: 'その他',
+//    4: 'PPが残っていない',
+//    5: 'なまけ',
+//    6: 'きあいパンチ中にダメージを受けた',
+    4: 'ひるみ',
+//    11: 'じごくづき',
+//    12: 'こだわり中以外のわざを使った',
+    5: 'ちょうはつ',
+//    14: 'ふういん',
+    6: 'こんらん',
+    7: 'まひ',
+    8: 'メロメロ',
+    9: '相手にこうげきを防がれた',
+    10: 'その他',
   };
 
   String get displayName => _displayNameMap[id]!;
@@ -266,10 +266,11 @@ class TurnMove {
   List<Guide> processMove(
     Party ownParty,
     Party opponentParty,
-    PokemonState ownPokemonState,
-    PokemonState opponentPokemonState,
+    PokemonState ownState,
+    PokemonState opponentState,
     PhaseState state,
     int continuousCount,
+    List<int> invalidGuideIDs,
     {
       DamageGetter? damageGetter,
     }
@@ -279,8 +280,10 @@ class TurnMove {
     List<Guide> ret = [];
     if (playerType.id == PlayerType.none) return ret;
 
-    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
-    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    var ownPokemonState = ownState;
+    var opponentPokemonState = opponentState;
+    var myState = playerType.id == PlayerType.me ? ownState : opponentState;
+    var yourState = playerType.id == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copyWith();
 
     // みちづれ状態解除
@@ -344,10 +347,40 @@ class TurnMove {
 
     if (move.id == 0) return ret;
 
+    // ゾロアーク判定
+    // ゾロアーク判定だけは、有効/無効でこの後の処理が変わるため、
+    // TurnEffectのinvalidGuideIDsに含まれるかどうかチェックする必要がある
+    if (!invalidGuideIDs.contains(Guide.confZoroark)) {
+      int check = 0;
+      check += state.canZorua ? PokeBase.zoruaNo : 0;
+      check += state.canZoroark ? PokeBase.zoroarkNo : 0;
+      check += state.canZoruaHisui ? PokeBase.zoruaHisuiNo : 0;
+      check += state.canZoroarkHisui ? PokeBase.zoroarkHisuiNo : 0;
+      if (check == PokeBase.zoruaNo || check == PokeBase.zoroarkNo ||
+          check == PokeBase.zoruaHisuiNo || check == PokeBase.zoroarkHisuiNo
+      ) {
+        // へんしん状態でなく、当該ポケモンが使えないわざを選択していたら
+        if (pokeData.pokeBase[myState.pokemon.no]!.move.where((e) => e.id == move.id && e.id != 0).isEmpty &&
+            myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).isEmpty
+        ) {
+          ret.add(Guide()
+            ..guideId = Guide.confZoroark
+            ..canDelete = true
+            ..guideStr = 'あいての${myState.pokemon.name}の正体を${pokeData.pokeBase[check]!.name}で確定しました。'
+          );
+          state.makePokemonOther(playerType, check);
+          myState = state.getPokemonState(playerType, null);
+          myState.setCurrentAbility(pokeData.abilities[149]!, yourState, playerType.id == PlayerType.me, state);
+          ownPokemonState = state.getPokemonState(PlayerType(PlayerType.me), null);
+          opponentPokemonState = state.getPokemonState(PlayerType(PlayerType.opponent), null);
+        }
+      }
+    }
+
     // わざ確定(失敗時でも確定はできる)
     var tmp = myState.moves.where(
-          (element) => element.id != 0 && element.id == move.id
-        );
+      (element) => element.id != 0 && element.id == move.id
+    );
     if (move.id != 165 &&     // わるあがきは除外
         playerType.id == PlayerType.opponent &&
         type.id == TurnMoveType.move &&
@@ -1351,6 +1384,7 @@ class TurnMove {
             //targetState.ailmentsAdd(Ailment(Ailment.helpHand), state);
             break;
           case 178:   // 使用者ともちものを入れ替える
+            var ownItem = ownPokemonState.getHoldingItem();
             if (extraArg1[continuousCount] > 0) {
               // もちもの確定のため、一度持たせる
               if (opponentPokemonState.getHoldingItem()?.id == 0) {
@@ -1361,7 +1395,7 @@ class TurnMove {
             else {
               ownPokemonState.holdingItem = null;
             }
-            opponentPokemonState.holdingItem = ownPokemonState.holdingItem;
+            opponentPokemonState.holdingItem = ownItem;
             break;
           case 179:   // 相手と同じとくせいになる
             if (extraArg1[continuousCount] != 0) {
@@ -3544,6 +3578,7 @@ class TurnMove {
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     ThemeData theme,
+    List<int> invalidGuideIDs,
     {required bool isInput,}
   )
   {
@@ -3724,7 +3759,8 @@ class TurnMove {
                     tmp.move = getReplacedMove(suggestion, continuousCount, myState);
                     tmp.processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, damageGetter: getter);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs,
+                      damageGetter: getter);
                     return ListTile(
                       leading: getReplacedMoveType(suggestion, continuousCount, myState, state).displayIcon,
                       title: Text(getReplacedMoveName(suggestion, continuousCount, myState)),
@@ -3737,7 +3773,7 @@ class TurnMove {
                     moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
                     moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
                     moveEffectivenesses[0] = PokeType.effectiveness(
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
@@ -3831,6 +3867,7 @@ class TurnMove {
     int phaseIdx,
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
+    List<int> invalidGuideIDs,
     {required bool isInput,}
   )
   {
@@ -3901,7 +3938,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -3959,7 +3996,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4663,6 +4700,7 @@ class TurnMove {
                       else {
                         matches.addAll(opponentPokemonState.possibleAbilities);
                       }
+                      if (state.canAnyZoroark) matches.add(PokeDB().abilities[149]!);
                     }
                     else {
                       matches.add(ownPokemonState.currentAbility);
@@ -4834,6 +4872,7 @@ class TurnMove {
                     } else {
                       matches.addAll(opponentPokemonState.possibleAbilities);
                     }
+                    if (state.canAnyZoroark) matches.add(PokeDB().abilities[149]!);
                     matches.retainWhere((s) {
                       return toKatakana50(s.displayName.toLowerCase())
                           .contains(toKatakana50(pattern.toLowerCase()));
@@ -5272,6 +5311,7 @@ class TurnMove {
                       else {
                         matches.addAll(opponentPokemonState.possibleAbilities);
                       }
+                      if (state.canAnyZoroark) matches.add(PokeDB().abilities[149]!);
                     }
                     else {
                       matches.add(ownPokemonState.currentAbility);

@@ -46,7 +46,16 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     void onBack () {
+      bool showAlert = false;
       if (widget.party.pokemons[0]!.no != 0) {
+        if (widget.party.id == 0) {
+          showAlert = true;
+        }
+        else if (widget.party.isDiff(pokeData.parties[widget.party.id]!)) {
+          showAlert = true;
+        }
+      }
+      if (showAlert) {
         showDialog(
           context: context,
           builder: (_) {

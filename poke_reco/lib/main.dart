@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:poke_reco/appopen_admanager.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -86,6 +88,8 @@ class MyAppState extends ChangeNotifier {
   bool requestActionSwap = false;
   // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
   bool adjustPhaseByDelete = false;
+  // 広告表示フラグ
+  bool showAd = false;
 
   MyAppState(BuildContext context) {
     changeTab = (func) {onTabChange(func);};
@@ -128,12 +132,24 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState() {
-    super.initState();
     appOpenAdManager.loadAd();
+    Timer.periodic(
+      Duration(minutes: 1),
+      (timer) {
+        var appState = context.read<MyAppState>();
+        appState.showAd = true;
+      }
+    );
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    var appState = context.read<MyAppState>();
+    if (appState.showAd) {
+      appOpenAdManager.loadAd();
+      appState.showAd = false;
+    }
     switch (_currentTab) {
       case TabItem.battles:
         page = BattleTabNavigator(

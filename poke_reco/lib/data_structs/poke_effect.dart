@@ -297,7 +297,7 @@ class TurnEffect {
         ret.addAll(Ability.processEffect(
           effectId, playerType, myState, yourState, state,
           myParty, myPokemonIndex, opponentPokemonState,
-          extraArg1, extraArg2, getChangePokemonIndex(playerType)
+          extraArg1, extraArg2, getChangePokemonIndex(playerType),
         ));
         break;
       case EffectType.individualField:
@@ -399,7 +399,11 @@ class TurnEffect {
           if (myState.isTerastaling) {
             move!.teraType = myState.teraType1;
           }
-          ret.addAll(move!.processMove(ownParty, opponentParty, ownPokemonState, opponentPokemonState, state, continuousCount));
+          ret.addAll(
+            move!.processMove(
+              ownParty, opponentParty, ownPokemonState, opponentPokemonState,
+              state, continuousCount, invalidGuideIDs)
+          );
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
           if (move!.type.id == TurnMoveType.change) {
             if (playerType.id == PlayerType.me) isOwnChanged = true;
@@ -555,7 +559,7 @@ class TurnEffect {
       guide.processEffect(isMe ? myState : yourState, isMe ? yourState : myState, state);
     }
     // ユーザ手動入力による修正
-    userForces.processEffect(ownPokemonState, opponentPokemonState, state);
+    userForces.processEffect(ownPokemonState, opponentPokemonState, state, ownParty, opponentParty);
 
     // HP 満タン判定
     for (var player in [PlayerType.me, PlayerType.opponent]) {
@@ -1056,6 +1060,9 @@ class TurnEffect {
               retAbilityIDs.add(ability.id);
             }
           }
+        }
+        if (playerType.id == PlayerType.opponent && phaseState.canAnyZoroark) {
+          retAbilityIDs.add(149);   // イリュージョン追加
         }
         final abilityIDs = retAbilityIDs.toSet();
         for (final abilityID in abilityIDs) {
@@ -1707,6 +1714,7 @@ class TurnEffect {
                       else {
                         matches.addAll(yourState.possibleAbilities);
                       }
+                      if (state.canAnyZoroark) matches.add(PokeDB().abilities[149]!);
                     }
                     else {
                       matches.add(yourState.getCurrentAbility());
@@ -2024,7 +2032,7 @@ class TurnEffect {
                             ),
                         ),
                     ],
-                    value: extraArg1,
+                    value: extraArg1 <= 0 ? null : extraArg1,
                     onChanged: (value) {
                       extraArg1 = value;
                       appState.editingPhase[phaseIdx] = true;
@@ -2033,7 +2041,7 @@ class TurnEffect {
                     },
                     onFocus: onFocus,
                     isInput: isInput,
-                    textValue: opponentParty.pokemons[extraArg1-1]?.name,
+                    textValue: extraArg1 > 0 ? opponentParty.pokemons[extraArg1-1]?.name : '',
                   ),
                 ),
               ],
