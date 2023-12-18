@@ -86,6 +86,9 @@ class BattleEffectColumn extends Column {
                             IconButton(
                               icon: Icon(Icons.close),
                               onPressed: () {
+                                if (turn.phases[firstIdx+i].isAutoSet) {
+                                  turn.noAutoAddEffect.add(turn.phases[firstIdx+i].copyWith());
+                                }
                                 if (i == 0) {
                                   var timing = turn.phases[firstIdx+i].timing;
                                   turn.phases[firstIdx+i] =

@@ -745,6 +745,27 @@ enum StatIndex {
   size,
 }
 
+extension StatStr on StatIndex {
+  String get name {
+    switch (this) {
+      case StatIndex.H:
+        return 'HP';
+      case StatIndex.A:
+        return 'こうげき';
+      case StatIndex.B:
+        return 'ぼうぎょ';
+      case StatIndex.C:
+        return 'とくこう';
+      case StatIndex.D:
+        return 'とくぼう';
+      case StatIndex.S:
+        return 'すばやさ';
+      default:
+        return '';
+    }
+  }
+}
+
 // 登録しているポケモンの作成者
 enum Owner {
   mine,

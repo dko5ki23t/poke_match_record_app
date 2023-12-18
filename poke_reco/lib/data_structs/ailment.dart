@@ -477,7 +477,7 @@ class Ailment {
       case poison:
       case leechSeed:
       case partiallyTrapped:
-        return isMe ? turns >= 10 ? (myState.pokemon.h.real / 8). floor() : (myState.pokemon.h.real / 6). floor() :
+        return isMe ? turns >= 10 ? (myState.pokemon.h.real / 6). floor() : (myState.pokemon.h.real / 8). floor() :
           turns >= 10 ? 16 : 12;
       case badPoison:
         return isMe ? (myState.pokemon.h.real * (turns + 1).clamp(1, 15) / 16). floor() :

@@ -559,7 +559,7 @@ class TurnEffect {
       guide.processEffect(isMe ? myState : yourState, isMe ? yourState : myState, state);
     }
     // ユーザ手動入力による修正
-    userForces.processEffect(ownPokemonState, opponentPokemonState, state, ownParty, opponentParty);
+    userForces.processEffect(state.getPokemonState(PlayerType(PlayerType.me), null), state.getPokemonState(PlayerType(PlayerType.opponent), null), state, ownParty, opponentParty);
 
     // HP 満タン判定
     for (var player in [PlayerType.me, PlayerType.opponent]) {
@@ -1343,6 +1343,11 @@ class TurnEffect {
             case EffectType.individualField:
               switch (effectId) {
                 case IndiFieldEffect.stealthRock:
+                case IndiFieldEffect.spikes1:
+                case IndiFieldEffect.spikes2:
+                case IndiFieldEffect.spikes3:
+                case IndiFieldEffect.futureAttack:
+                case IndiFieldEffect.wish:
                   if (playerType.id == PlayerType.me) {
                     return myState.remainHP.toString();
                   }
@@ -2425,33 +2430,31 @@ class TurnEffect {
         case AilmentEffect.partiallyTrapped:    // バインド
           return Column(
             children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '効果',
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text('ダメージを負った'),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('効果が解けた'),
-                    ),
-                  ],
-                  value: extraArg2,
-                  onChanged: (value) {
-                    extraArg2 = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg2 == 1 ? '効果が解けた' : 'ダメージを負った',
+              _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: '効果',
                 ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text('ダメージを負った'),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('効果が解けた'),
+                  ),
+                ],
+                value: extraArg2,
+                onChanged: (value) {
+                  extraArg2 = value;
+                  appState.editingPhase[phaseIdx] = true;
+                  onFocus();
+                },
+                onFocus: onFocus,
+                isInput: isInput,
+                textValue: extraArg2 == 1 ? '効果が解けた' : 'ダメージを負った',
               ),
               SizedBox(height: 10,),
               extraArg2 == 0 ?

@@ -1,3 +1,6 @@
+// 天気
+
+import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
@@ -22,6 +25,18 @@ class WeatherEffect {
 
   const WeatherEffect(this.id);
 
+  static int getIdFromWeather(Weather weather) {
+    switch (weather.id) {
+      case Weather.sunny:
+      case Weather.rainy:
+      case Weather.sandStorm:
+      case Weather.snowy:
+        return weather.id;
+      default:
+        return 0;
+    }
+  }
+
   String get displayName => _displayNameMap[id]!;
 
   final int id;
@@ -37,24 +52,22 @@ class Weather {
   
   static const int invalid = 100;          // 天気無効化
 
-  static const _displayNameMap = {
-    0: '',
-    1: '晴れ',
-    2: 'あめ',
-    3: 'すなあらし',
-    4: 'ゆき',
+  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
+    0:  Tuple3('', Colors.black, 0),
+    1:  Tuple3('晴れ', Colors.orange, 5),
+    2:  Tuple3('あめ', Colors.blueAccent, 5),
+    3:  Tuple3('すなあらし', Colors.brown, 5),
+    4:  Tuple3('ゆき', Colors.blue, 5),
   };
 
-  static const _bgColorMap = {
-    0: Colors.black,
-    1: Colors.orange,
-    2: Colors.blueAccent,
-    3: Colors.brown,
-    4: Colors.blue
-  };
-
-  String get displayName => isValid ? '${_displayNameMap[id]!} ($turns/?)' : '${_displayNameMap[id]!} ($turns/?)(無効)';
-  Color get bgColor => isValid ? _bgColorMap[id]! : Colors.grey;
+  String get displayName => isValid ? '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)' : '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)(無効)';
+  Color get bgColor => isValid ? _nameColorTurnMap[id]!.item2 : Colors.grey;
+  int get maxTurns {
+    if (extraArg1 == 8) {
+      return 8;
+    }
+    return _nameColorTurnMap[id]!.item3;
+  }
 
   int id;
   int turns = 0;        // 経過ターン

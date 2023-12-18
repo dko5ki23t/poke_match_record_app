@@ -4,6 +4,7 @@ import 'package:poke_reco/custom_dialogs/party_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_filter_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/tool.dart';
@@ -125,6 +126,7 @@ class PartiesPageState extends State<PartiesPage> {
                       });
                     },
                   ),
+                  showNetworkImage: PokeDB().getPokeAPI,
                 )
             ],
           ),
@@ -144,6 +146,7 @@ class PartiesPageState extends State<PartiesPage> {
                     widget.onSelect!(sortedParties[i].value);
                   } : 
                   () => widget.onView([for (final e in sortedParties) e.value], i),
+                  showNetworkImage: PokeDB().getPokeAPI,
                 )
             ],
           ),

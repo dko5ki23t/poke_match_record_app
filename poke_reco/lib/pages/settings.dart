@@ -64,6 +64,10 @@ class SettingsPageState extends State<SettingsPage> {
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.viewPolicy(),
           ),
+          ListTile(
+            title: Text('バージョン'),
+            trailing: Text('1.0.1'),
+          ),
         ],
       ),
     );

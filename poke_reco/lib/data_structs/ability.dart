@@ -109,7 +109,7 @@ class Ability {
         yourState.ailmentsAdd(Ailment(Ailment.flinch), state);  // ひるませる
         break;
       case 2:     // あめふらし
-        state.weather = Weather(Weather.rainy);
+        state.weather = Weather(Weather.rainy)..extraArg1 = myState.holdingItem?.id == 262 ? 8 : 5;
         break;
       case 3:     // かそく
       case 78:    // でんきエンジン
@@ -266,7 +266,7 @@ class Ability {
         break;
       case 45:    // すなおこし
       case 245:   // すなはき
-        state.weather = Weather(Weather.sandStorm);
+        state.weather = Weather(Weather.sandStorm)..extraArg1 = myState.holdingItem?.id == 260 ? 8 : 5;
         break;
       case 49:    // ほのおのからだ
         yourState.ailmentsAdd(Ailment(Ailment.burn), state);
@@ -287,7 +287,7 @@ class Ability {
         break;
       case 70:      // ひでり
       case 288:     // ひひいろのこどう
-        state.weather = Weather(Weather.sunny);
+        state.weather = Weather(Weather.sunny)..extraArg1 = myState.holdingItem?.id == 261 ? 8 : 5;
         break;
       case 83:    // いかりのつぼ
         myState.addStatChanges(true, 0, 6, yourState, abilityId: abilityID);
@@ -324,7 +324,7 @@ class Ability {
         }
         break;
       case 117:     // ゆきふらし
-        state.weather = Weather(Weather.snowy);
+        state.weather = Weather(Weather.snowy)..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
         break;
       case 119:     // おみとおし
         // もちもの確定
@@ -346,6 +346,9 @@ class Ability {
       case 170:     // マジシャン
         myState.holdingItem = pokeData.items[extraArg1]!;
         yourState.holdingItem = null;
+        break;
+      case 128:     // まけんき
+        myState.addStatChanges(true, 0, 2, yourState, abilityId: abilityID);
         break;
       case 130:     // のろわれボディ
         yourState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = extraArg1, state);
@@ -601,16 +604,16 @@ class Ability {
         break;
       case 226:   // エレキメイカー
       case 289:   // ハドロンエンジン
-        state.field = Field(Field.electricTerrain);
+        state.field = Field(Field.electricTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 227:   // サイコメイカー
-        state.field = Field(Field.psychicTerrain);
+        state.field = Field(Field.psychicTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 228:   // ミストメイカー
-        state.field = Field(Field.mistyTerrain);
+        state.field = Field(Field.mistyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 229:   // グラスメイカー
-        state.field = Field(Field.grassyTerrain);
+        state.field = Field(Field.grassyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 243:   // じょうききかん
         myState.addStatChanges(true, 4, 6, yourState, abilityId: abilityID);
@@ -679,7 +682,7 @@ class Ability {
         }
         break;
       case 269:   // こぼれダネ
-        state.field = Field(Field.grassyTerrain);
+        state.field = Field(Field.grassyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 271:   // いかりのこうら
         myState.addStatChanges(true, 0, 1, yourState, abilityId: abilityID);
@@ -1505,6 +1508,25 @@ class Ability {
       case 282:       // ブーストエナジー
         if (timing.id == AbilityTiming.everyTurnEnd) {
           return -1;
+        }
+        else {
+          bool isClear = true;
+          int ret = 0;
+          int maxReal = 0;
+          for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S,]) {
+            int i = statIndex.index;
+            if (myState.minStats[i].real != myState.maxStats[i].real) {
+              isClear = false;
+              break;
+            }
+            if (myState.getRankedStat(myState.minStats[i].real, statIndex) > maxReal) {
+              maxReal = myState.getRankedStat(myState.minStats[i].real, statIndex);
+              ret = statIndex.index - 1;
+            }
+          }
+          if (isClear) {
+            return ret;
+          }
         }
         break;
       case 36:        // トレース

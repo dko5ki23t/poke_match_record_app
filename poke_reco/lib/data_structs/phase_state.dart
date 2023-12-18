@@ -604,10 +604,10 @@ class PhaseState {
             }
             // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
             if (!myState.isTypeContain(4)) playerTimingIDs.add(AbilityTiming.everyTurnEndHPNotFull2);
-            // こだいかっせい発動中に天気が晴れでなくなった場合
+            // こだいかっせい発動中に天気が晴れでなくなった/なくなる場合
             if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5 && e.extraArg1 == 0).isNotEmpty) {
-              if (weather.id != Weather.sunny) playerTimingIDs.add(AbilityTiming.sunnyBoostEnergy);
-              if (field.id != Field.electricTerrain) playerTimingIDs.add(AbilityTiming.elecFieldBoostEnergy);
+              if (weather.id != Weather.sunny || weather.turns >= weather.maxTurns-1) playerTimingIDs.add(AbilityTiming.sunnyBoostEnergy);
+              if (field.id != Field.electricTerrain || field.turns >= field.maxTurns-1) playerTimingIDs.add(AbilityTiming.elecFieldBoostEnergy);
             }
 
             // とくせい
@@ -632,7 +632,7 @@ class PhaseState {
               ret.add(addingItem);
             }
 
-            //  状態異常
+            // 状態異常
             for (final ailment in myState.ailmentsIterable) {
               if (ailment.isActive(player.id == PlayerType.me, timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
                 var adding = TurnEffect()
@@ -665,20 +665,28 @@ class PhaseState {
 
           // 両者に効果があるもの
           var weatherEffectIDs = [];
-          if (weather.id == Weather.sandStorm) {
+          if (weather.id == Weather.sandStorm) {    // すなあらしによるダメージ
             if (getPokemonState(PlayerType(PlayerType.me), null).isSandstormDamaged() ||
                 getPokemonState(PlayerType(PlayerType.opponent), null).isSandstormDamaged())
             {
               weatherEffectIDs.add(WeatherEffect.sandStormDamage);
             }
           }
+          if (weather.turns >= weather.maxTurns-1) {  // 天気終了
+            int effectId = WeatherEffect.getIdFromWeather(weather);
+            if (effectId > 0) weatherEffectIDs.add(effectId);
+          }
           var fieldEffectIDs = [];
-          if (field.id == Field.grassyTerrain) {
+          if (field.id == Field.grassyTerrain) {    // グラスフィールドによる回復
             if (getPokemonState(PlayerType(PlayerType.me), null).isGround(state.ownFields) ||
                 getPokemonState(PlayerType(PlayerType.opponent), null).isGround(state.opponentFields))
             {
               fieldEffectIDs.add(FieldEffect.grassHeal);
             }
+          }
+          if (field.turns >= field.maxTurns-1) {  // フィールド終了
+            int effectId = FieldEffect.getIdFromField(field);
+            if (effectId > 0) fieldEffectIDs.add(effectId);
           }
 
           // 天気
@@ -773,6 +781,11 @@ class PhaseState {
         if (myState.holdingItem?.id == 1696) playerTimingIDs.addAll([111, 112]);
       }
 
+      // 能力ランクが下がった
+      if (myState.hiddenBuffs.where((e) => e.id == BuffDebuff.thisTurnDownStatChange).isNotEmpty) {
+        playerTimingIDs.add(128);
+      }
+
       // とくせい
       if (playerTimingIDs.contains(myState.currentAbility.timing.id)) {
         var addingAbility = TurnEffect()
@@ -852,10 +865,14 @@ class PhaseState {
         ..teraType = base.fixedTeraType.id == 0 ? pokemonState.teraType1 : base.fixedTeraType;
       // TODO:ゾロアーク系
       Pokemon poke = party.pokemons[getPokemonIndex(player, null)-1]!;
+      if (base.fixedItemID != 0) poke.item = PokeDB().items[base.fixedItemID];
       pokemonState.pokemon = poke;
       pokemonState.possibleAbilities = base.ability;
       pokemonState.type1 = poke.type1;
       pokemonState.type2 = poke.type2;
+      if (pokemonState.getHoldingItem()?.id == 0) {
+        pokemonState.setHoldingItemNoEffect(PokeDB().items[base.fixedItemID]);
+      }
     }
   }
 }

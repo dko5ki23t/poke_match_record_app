@@ -396,6 +396,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
                 ..type1 = poke.type1
                 ..type2 = poke.type2;
+              if (pokeData.pokeBase[poke.no]!.fixedItemID != 0) {
+                // もちもの確定
+                poke.item = pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID];
+              }
               if (state.possibleAbilities.length == 1) {    // 対象ポケモンのとくせいが1つしかあり得ないなら確定
                 opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
                 state.setCurrentAbilityNoEffect(state.possibleAbilities[0]);
@@ -1340,6 +1344,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         currentTurn, AbilityTiming(currentTimingID),
         changeOwn, changeOpponent, currentState, lastAction, continuousCount,
       );
+      for (final effect in currentTurn.noAutoAddEffect) {
+        assistList.removeWhere((e) => effect.nearEqual(e));
+      }
     }
 
     var phases = widget.battle.turns[turnNum-1].phases;
@@ -2241,6 +2248,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             currentTurn, AbilityTiming(nextTimingID),
             changeOwn, changeOpponent, currentState, tmpAction, continuousCount,
           );
+          for (final effect in currentTurn.noAutoAddEffect) {
+            assistList.removeWhere((e) => effect.nearEqual(e));
+          }
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
           // それ以外で入力済みの自動入力は削除
           List<int> removeIdxs = [];

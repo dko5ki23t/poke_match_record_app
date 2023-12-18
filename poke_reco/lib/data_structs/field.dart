@@ -1,3 +1,6 @@
+// フィールド
+
+import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -23,6 +26,18 @@ class FieldEffect {
 
   const FieldEffect(this.id);
 
+  static int getIdFromField(Field field) {
+    switch (field.id) {
+      case Field.electricTerrain:
+      case Field.grassyTerrain:
+      case Field.mistyTerrain:
+      case Field.psychicTerrain:
+        return field.id;
+      default:
+        return 0;
+    }
+  }
+
   String get displayName => _displayNameMap[id]!;
 
   final int id;
@@ -36,24 +51,22 @@ class Field {
   static const int mistyTerrain = 3;       // ミストフィールド
   static const int psychicTerrain = 4;     // サイコフィールド
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'エレキフィールド',
-    2: 'グラスフィールド',
-    3: 'ミストフィールド',
-    4: 'サイコフィールド',
+  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
+    0:  Tuple3('', Colors.black, 0),
+    1:  Tuple3('エレキフィールド', PokeTypeColor.electric, 5),
+    2:  Tuple3('グラスフィールド', PokeTypeColor.grass, 5),
+    3:  Tuple3('ミストフィールド', PokeTypeColor.fairy, 5),
+    4:  Tuple3('サイコフィールド', PokeTypeColor.psychic, 5),
   };
 
-  static const _bgColorMap = {
-    0: Colors.black,
-    1: PokeTypeColor.electric,
-    2: PokeTypeColor.grass,
-    3: PokeTypeColor.fairy,
-    4: PokeTypeColor.psychic,
-  };
-
-  String get displayName => '${_displayNameMap[id]!} ($turns/5)';
-  Color get bgColor => _bgColorMap[id]!;
+  String get displayName => '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)';
+  Color get bgColor => _nameColorTurnMap[id]!.item2;
+  int get maxTurns {
+    if (extraArg1 == 8) {
+      return 8;
+    }
+    return _nameColorTurnMap[id]!.item3;
+  }
 
   final int id;
   int turns = 0;        // 経過ターン

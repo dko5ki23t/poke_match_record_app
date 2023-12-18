@@ -24,6 +24,7 @@ class Turn {
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
   List<List<PokemonState>> _initialLastExitedStates = [[], []];
+  List<TurnEffect> noAutoAddEffect = [];
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
@@ -92,6 +93,10 @@ class Turn {
     .._initialLastExitedStates[1] = [
       for (final state in _initialLastExitedStates[1])
       state.copyWith()
+    ]
+    ..noAutoAddEffect = [
+      for (final effect in noAutoAddEffect)
+      effect.copyWith()
     ];
 
   PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
@@ -329,6 +334,13 @@ class Turn {
       }
       ret._initialLastExitedStates.add(adding);
     }
+    // noAutoAddEffect
+    var effects = turnElements[13].split(split2);
+    ret.noAutoAddEffect.clear();
+    for (final effect in effects) {
+      if (effect == '') break;
+      ret.noAutoAddEffect.add(TurnEffect.deserialize(effect, split3, split4, split5));
+    }
 
     return ret;
   }
@@ -399,6 +411,12 @@ class Turn {
         ret += state.serialize(split4, split5, split6);
         ret += split3;
       }
+      ret += split2;
+    }
+    ret += split1;
+    // noAutoAddEffect
+    for (final effect in noAutoAddEffect) {
+      ret += effect.serialize(split3, split4, split5);
       ret += split2;
     }
 

@@ -365,7 +365,7 @@ class PokemonState {
     holdingItem?.processPassiveEffect(this);
   
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
-    var indiField = isOwn ? state.ownFields : state.opponentFields;
+    var indiField = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     if (isGround(indiField) && isTypeContain(PokeTypeId.poison)) {
       indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
     }
