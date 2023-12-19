@@ -371,6 +371,7 @@ class Ability {
           state.makePokemonOther(playerType, pokeNo);
           var newState = state.getPokemonState(playerType, null);
           newState.setCurrentAbility(pokeData.abilities[149]!, yourState, isOwn, state);
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.zoroappear));
           return ret;
         }
         break;

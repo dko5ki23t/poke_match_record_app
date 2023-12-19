@@ -168,6 +168,7 @@ class AbilityTiming {
   static const int beforeMoveWithChance = 164;  // わざ使用前(確率・条件)
   static const int powdered = 165;              // こなやほうしわざを受けた時
   static const int bulleted = 166;              // 弾のわざを受けた時
+  static const int attackedNotZoroappeared = 167;   // ゾロアーク系がばれていない状態でこうげきを受けたとき
 
   const AbilityTiming(this.id);
 

@@ -281,7 +281,7 @@ class PokemonState {
     buffDebuffs.addAll(unchangingForms);
     var unchangingHidden = hiddenBuffs.where((e) =>
       e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry ||
-      e.id == BuffDebuff.attackedCount
+      e.id == BuffDebuff.attackedCount || e.id == BuffDebuff.zoroappear
     ).toList();
     hiddenBuffs.clear();
     hiddenBuffs.addAll(unchangingHidden);

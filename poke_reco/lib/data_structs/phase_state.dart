@@ -29,6 +29,7 @@ class PhaseState {
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
   List<int> _faintingCount = [0, 0];   // ひんしになった回数
+  TurnMove? firstAction;     // 行動2が行動1を参照するために使う
 
   Weather get weather => _weather;
   Field get field => _field;
@@ -167,6 +168,8 @@ class PhaseState {
 
   // ターン終了時処理
   void processTurnEnd(Turn currentTurn) {
+    // 行動1削除
+    firstAction = null;
     // 各々の場のターン経過
     for (var e in ownFields) {
       e.turns++;
@@ -396,6 +399,10 @@ class PhaseState {
               }
               // こうげきわざを受けた後
               defenderTimingIDList.addAll([AbilityTiming.attackedHitted, AbilityTiming.pokemonAppearAttacked]);
+              // ゾロアーク系がばれていないときにこうげきわざを受けた後
+              if (defenderState.hiddenBuffs.where((e) => e.id == BuffDebuff.zoroappear).isEmpty) {
+                defenderTimingIDList.add(AbilityTiming.attackedNotZoroappeared);
+              }
               // ばけたすがたでこうげきを受けた後
               if (defenderState.buffDebuffs.where((element) => element.id == BuffDebuff.transedForm).isNotEmpty) {
                 defenderTimingIDList.add(AbilityTiming.attackedHittedWithBake);

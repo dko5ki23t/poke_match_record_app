@@ -287,6 +287,10 @@ class TurnMove {
     var yourState = playerType.id == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copyWith();
 
+    // 行動1の場合は登録
+    if (isFirst) {
+      state.firstAction = this;
+    }
     // みちづれ状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
     // おんねん状態解除
@@ -3222,12 +3226,26 @@ class TurnMove {
                     mTwice, additionalMoveType, halvedBerry,
                   );
                   if (reals.item1.index > StatIndex.H.index) {
-                    ret.add(Guide()
-                      ..guideId = Guide.moveDamagedToStatus
-                      ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の${reals.item1.name}実数値を${reals.item3}～${reals.item2}で確定しました。'
-                      ..args = [reals.item1.index, reals.item2, reals.item3,]
-                      ..canDelete = true
-                    );
+                    // もともとある範囲より狭まるようにのみ上書き
+                    int minS = opponentPokemonState.minStats[reals.item1.index].real;
+                    int maxS = opponentPokemonState.maxStats[reals.item1.index].real;
+                    bool addGuide = false;
+                    if (minS < reals.item3) {
+                      minS = reals.item3;
+                      addGuide = true;
+                    }
+                    if (maxS > reals.item2) {
+                      maxS = reals.item2;
+                      addGuide = true;
+                    }
+                    if (addGuide) {
+                      ret.add(Guide()
+                        ..guideId = Guide.moveDamagedToStatus
+                        ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の${reals.item1.name}実数値を$minS～$maxSで確定しました。'
+                        ..args = [reals.item1.index, minS, maxS,]
+                        ..canDelete = true
+                      );
+                    }
                   }
                 }
               }
@@ -3241,6 +3259,36 @@ class TurnMove {
           break;
         default:
           break;
+      }
+    }
+
+    // あいてポケモンのすばやさ確定
+    if (!isFirst && state.firstAction != null && state.firstAction!.type.id == TurnMoveType.move) {
+      if (move.priority == state.firstAction!.move.priority) {    // わざの優先度が同じ
+        // もともとある範囲より狭まるようにのみ上書き
+        int minS = opponentPokemonState.minStats[StatIndex.S.index].real;
+        int maxS = opponentPokemonState.maxStats[StatIndex.S.index].real;
+        bool addGuide = false;
+        if (playerType.id == PlayerType.me) {
+          if (minS < ownPokemonState.minStats[StatIndex.S.index].real) {   // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            minS = ownPokemonState.minStats[StatIndex.S.index].real;
+            addGuide = true;
+          }
+        }
+        else {
+          if (maxS > ownPokemonState.maxStats[StatIndex.S.index].real) {    // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            maxS = ownPokemonState.maxStats[StatIndex.S.index].real;
+            addGuide = true;
+          }
+        }
+        if (addGuide) {
+          ret.add(Guide()
+            ..guideId = Guide.moveOrderConfSpeed
+            ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のすばやさ実数値を$minS～$maxSで確定しました。'
+            ..args = [minS, maxS,]
+            ..canDelete = true
+          );
+        }
       }
     }
 

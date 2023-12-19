@@ -202,6 +202,7 @@ class BuffDebuff {
   static const int sameMoveCount = 194;   // 連続で使用しているわざのID*100+カウント(隠しステータス)
   static const int magicRoom = 195;       // マジックルーム時、もちものが使えないことを示すフラグ(隠しステータス。場の効果にすると使いづらいため、こちらと併用)
   static const int attackedCount = 196;   // こうげきわざを受けた回数(隠しステータス。交代・ひんしでも消えない)
+  static const int zoroappear = 197;      // ゾロア系だとバレたあと(隠しステータス。交代でも消えない)
 
   static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
     0:  Tuple3('', Colors.black, 0),
