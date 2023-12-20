@@ -25,7 +25,8 @@ class FlingItemEffect {
 
 class Item {
   final int id;
-  final String displayName;
+  late final String _displayName;
+  late final String _displayNameEn;
   final int flingPower;
   final int flingEffectId;
   final AbilityTiming timing;
@@ -36,22 +37,36 @@ class Item {
   static int atsuzoko = 1178;       // あつぞこブーツ
   static int bannougasa = 1181;     // ばんのうがさ
 
-  const Item({
+  Item({
     required this.id,
-    required this.displayName,
+    required String displayName,
+    required String displayNameEn,
     required this.flingPower,
     required this.flingEffectId,
     required this.timing,
     required this.isBerry,
     required this.imageUrl,
-  });
+  }) {
+    _displayName = displayName;
+    _displayNameEn = displayNameEn;
+  }
 
   Item copyWith() =>
     Item(
-      id: id, displayName: displayName, flingPower: flingPower,
-      flingEffectId: flingEffectId, timing: timing,
+      id: id, displayName: _displayName, displayNameEn: _displayNameEn,
+      flingPower: flingPower, flingEffectId: flingEffectId, timing: timing,
       isBerry: isBerry, imageUrl: imageUrl
     );
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.english:
+        return _displayNameEn;
+      case Language.japanese:
+      default:
+        return _displayName;
+    }
+  }
 
   static List<Guide> processEffect(
     int itemID,

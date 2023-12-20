@@ -249,7 +249,8 @@ class Turn {
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
     dynamic str, String split1, String split2,
-    String split3, String split4, String split5, String split6)
+    String split3, String split4, String split5,
+    String split6, {int version = -1})  // -1は最新バージョン
   {
     Turn ret = Turn();
     final turnElements = str.split(split1);
@@ -271,7 +272,7 @@ class Turn {
       for (final state in states) {
         if (state == '') break;
         adding.add(
-          PokemonState.deserialize(state, split4, split5, split6)
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
           ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
         i++;
       }
@@ -307,7 +308,7 @@ class Turn {
     var turnEffects = turnElements[7].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5, version: version));
     }
     // canZorua
     ret.canZorua = int.parse(turnElements[8]) != 0;
@@ -328,7 +329,7 @@ class Turn {
       for (final state in states) {
         if (state == '') break;
         adding.add(
-          PokemonState.deserialize(state, split4, split5, split6)
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
           ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
         i++;
       }
@@ -339,7 +340,7 @@ class Turn {
     ret.noAutoAddEffect.clear();
     for (final effect in effects) {
       if (effect == '') break;
-      ret.noAutoAddEffect.add(TurnEffect.deserialize(effect, split3, split4, split5));
+      ret.noAutoAddEffect.add(TurnEffect.deserialize(effect, split3, split4, split5, version: version));
     }
 
     return ret;

@@ -980,7 +980,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 suggestionsCallback: (pattern) async {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(
-                                    id: -1, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                                    id: -1, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                                     timing: AbilityTiming(0), isBerry: false, imageUrl: ''));
                                   matches.retainWhere((s){
                                     return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -1016,7 +1016,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 suggestionsCallback: (pattern) async {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(
-                                    id: -1, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                                    id: -1, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                                     timing: AbilityTiming(0), isBerry: false, imageUrl: ''));
                                   matches.retainWhere((s){
                                     return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));

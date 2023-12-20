@@ -2761,7 +2761,7 @@ class TurnEffect {
   }
 
   // SQLに保存された文字列からTurnMoveをパース
-  static TurnEffect deserialize(dynamic str, String split1, String split2, String split3) {
+  static TurnEffect deserialize(dynamic str, String split1, String split2, String split3, {int version = -1}) {   // -1は最新バージョン
     TurnEffect effect = TurnEffect();
     final effectElements = str.split(split1);
     // playerType
@@ -2781,7 +2781,7 @@ class TurnEffect {
       effect.move = null;
     }
     else {
-      effect.move = TurnMove.deserialize(effectElements[6], split2, split3);
+      effect.move = TurnMove.deserialize(effectElements[6], split2, split3, version: version);
     }
     // isAdding
     effect.isAdding = int.parse(effectElements[7]) != 0;

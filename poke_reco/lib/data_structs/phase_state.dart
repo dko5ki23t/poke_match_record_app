@@ -858,8 +858,8 @@ class PhaseState {
         return;
       }
       party.pokemons[getPokemonIndex(player, null)-1]!
-        ..name = base.name
-        ..no = base.no
+        //..name = base.name
+        ..no = base.no      // nameも変わる
         ..type1 = base.type1
         ..type2 = base.type2
         ..sex = pokemonState.sex

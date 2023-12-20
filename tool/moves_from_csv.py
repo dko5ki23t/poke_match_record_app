@@ -9,6 +9,7 @@ moveDBFile = 'Moves.db'
 moveDBTable = 'moveDB'
 moveColumnId = 'id'
 moveColumnName = 'name'
+moveColumnEnglishName = 'englishName'
 moveColumnType = 'type'
 moveColumnPower = 'power'
 moveColumnAccuracy = 'accuracy'
@@ -38,6 +39,7 @@ movesCSVPPIndex = 6
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
+englishID = 9
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='わざの情報をCSVからデータベース化')
@@ -89,8 +91,10 @@ def main():
             
             # 日本語名取得
             names = lang_df[(lang_df[movesLangCSVmoveIDColumn] == id) & (lang_df[movesLangCSVLangIDColumn] == japaneseID)][movesLangCSVNameColumn]
+            # 英語名取得
+            names_en = lang_df[(lang_df[movesLangCSVmoveIDColumn] == id) & (lang_df[movesLangCSVLangIDColumn] == englishID)][movesLangCSVNameColumn]
             if len(names) > 0:
-                moves_list.append((id, names.iloc[0], pokeType, power, accuracy, priority, target, damage_class, effect, effect_chance, pp))
+                moves_list.append((id, names.iloc[0], names_en.iloc[0], pokeType, power, accuracy, priority, target, damage_class, effect, effect_chance, pp))
 
         # 作成(存在してたら作らない)
         try:
@@ -98,6 +102,7 @@ def main():
             f'CREATE TABLE IF NOT EXISTS {moveDBTable} ('
             f'  {moveColumnId} integer primary key,'
             f'  {moveColumnName} text not null,'
+            f'  {moveColumnEnglishName} text not null,'
             f'  {moveColumnType} integer not null,'
             f'  {moveColumnPower} integer not null,'
             f'  {moveColumnAccuracy} integer not null,'
@@ -114,8 +119,8 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {moveDBTable} ({moveColumnId}, {moveColumnName}, {moveColumnType}, {moveColumnPower}, {moveColumnAccuracy}, {moveColumnPriority}, {moveColumnTarget}, {moveColumnDamageClass}, {moveColumnEffect}, {moveColumnEffectChance}, {moveColumnPP}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {moveDBTable} ({moveColumnId}, {moveColumnName}, {moveColumnEnglishName}, {moveColumnType}, {moveColumnPower}, {moveColumnAccuracy}, {moveColumnPriority}, {moveColumnTarget}, {moveColumnDamageClass}, {moveColumnEffect}, {moveColumnEffectChance}, {moveColumnPP}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 moves_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

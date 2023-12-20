@@ -50,7 +50,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final pokeMoveController = List.generate(4, (i) => TextEditingController());
   final pokePPController = List.generate(4, (i) => TextEditingController());
   final statsLabelTexts = ['HP', 'こうげき', 'ぼうぎょ', 'とくこう', 'とくぼう', 'すばやさ'];
-  final statNames = ['', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
 
   bool firstBuild = true;
   bool canChangeTeraType = true;
@@ -225,8 +224,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           onSuggestionSelected: (suggestion) {
                             pokeNoController.text = suggestion.no.toString();
                             myPokemon
-                            ..name = suggestion.name
-                            ..no = suggestion.no
+                            //..name = suggestion.name
+                            ..no = suggestion.no    // nameも変わる
                             ..type1 = suggestion.type1
                             ..type2 = suggestion.type2
                             ..ability = suggestion.ability[0]
@@ -246,7 +245,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             pokeStatRaceController[4].text = 'D ${myPokemon.d.race}';
                             pokeStatRaceController[5].text = 'S ${myPokemon.s.race}';
                             updateRealStat();
-                            myPokemon.move1 = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
+                            myPokemon.move1 = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
                             myPokemon.move2 = null;
                             myPokemon.move3 = null;
                             myPokemon.move4 = null;
@@ -419,8 +418,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                                   style: theme.textTheme.bodyMedium,
                                   children: [
                                     TextSpan(text: suggestion.displayName),
-                                    suggestion.increasedAlphabet != '' ? TextSpan(style: TextStyle(color: Colors.red,), text: ' ${suggestion.increasedAlphabet}') : TextSpan(),
-                                    suggestion.decreasedAlphabet != '' ? TextSpan(style: TextStyle(color: Colors.blue,), text: ' ${suggestion.decreasedAlphabet}') : TextSpan(),
+                                    suggestion.increasedStat.alphabet != '' ? TextSpan(style: TextStyle(color: Colors.red,), text: ' ${suggestion.increasedStat.alphabet}') : TextSpan(),
+                                    suggestion.decreasedStat.alphabet != '' ? TextSpan(style: TextStyle(color: Colors.blue,), text: ' ${suggestion.decreasedStat.alphabet}') : TextSpan(),
                                   ],
                                 ),
                               ),
@@ -489,7 +488,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             updateStatsRefReal(i);
                           },
                           effectTemper: i != 0,
-                          statName: statNames[i],
+                          statIndex: getStatIndexFromIndex(i),
                         ),
                         pokemonState != null ?
                         Row(
@@ -537,7 +536,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             else {
                               pokeMoveController[j].text = '';
                               myPokemon.moves[j] = j == 0 ?
-                                Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
+                                Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
                                 null;
                               pokePPController[j].text = '0';
                               myPokemon.pps[j] = 0;

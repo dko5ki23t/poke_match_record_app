@@ -43,7 +43,6 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   final pokeStatEffortController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatRealController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final statsLabelTexts = ['HP', 'こうげき', 'ぼうぎょ', 'とくこう', 'とくぼう', 'すばやさ'];
-  final statNames = ['', 'attack', 'defense', 'special-attack', 'special-defense', 'speed'];
   bool isFirstBuild = true;
   int listIndex = 0;
 
@@ -285,7 +284,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                         pokeStatEffortController[i],
                         pokeStatRealController[i],
                         effectTemper: i != 0,
-                        statName: statNames[i],
+                        statIndex: getStatIndexFromIndex(i),
                       ),
                     ]
                   ),

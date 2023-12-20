@@ -1,7 +1,6 @@
 import argparse
 import sqlite3
 import pandas as pd
-from plyer import notification
 
 ###### タマゴグループのリストをcsvファイルから取得してsqliteファイルに保存 ######
 

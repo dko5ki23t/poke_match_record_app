@@ -22,6 +22,8 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+const int pokeRecoVersion = 2;      // バージョン1.0.1
+
 enum TabItem {
   battles,
   pokemons,
@@ -700,6 +702,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
 class SettingTabNavigatorRoutes {
   static const String root = '/';
   static const String reset = '/reset';
+  static const String language = '/language';
   static const String license = '/license';
   static const String policy = '/policy';
 }
@@ -723,6 +726,9 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
     switch (route) {
       case SettingTabNavigatorRoutes.reset:
         pushPage = SettingResetPage();
+        break;
+      case SettingTabNavigatorRoutes.language:
+        pushPage = SettingLanguagePage();
         break;
       case SettingTabNavigatorRoutes.license:
         pushPage = SettingLicensePage();
@@ -775,6 +781,7 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
               default:
                 return SettingsPage(
                   onReset: () => _push(context, SettingTabNavigatorRoutes.reset),
+                  viewLanguage: () => _push(context, SettingTabNavigatorRoutes.language),
                   viewLicense: () => _push(context, SettingTabNavigatorRoutes.license),
                   viewPolicy: () => _push(context, SettingTabNavigatorRoutes.policy),
                 );

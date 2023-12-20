@@ -251,8 +251,8 @@ class BattleBasicListView extends ListView {
                           () {
                             battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
                             battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
-                            ..name = suggestion.name
-                            ..no = suggestion.no
+                            //..name = suggestion.name
+                            ..no = suggestion.no      // nameも変わる
                             ..type1 = suggestion.type1
                             ..type2 = suggestion.type2
                             ..sex = suggestion.sex[0]
@@ -274,8 +274,8 @@ class BattleBasicListView extends ListView {
                   else {
                     battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
                     battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
-                    ..name = suggestion.name
-                    ..no = suggestion.no
+                    //..name = suggestion.name
+                    ..no = suggestion.no      // nameも変わる
                     ..type1 = suggestion.type1
                     ..type2 = suggestion.type2
                     ..sex = suggestion.sex[0]

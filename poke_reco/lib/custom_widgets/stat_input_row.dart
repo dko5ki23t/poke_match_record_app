@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 
 class StatInputRow extends Row {
@@ -29,7 +30,7 @@ class StatInputRow extends Row {
     void Function(num)? realChangeFunc,
     {
       bool effectTemper = false,
-      String statName = '',
+      StatIndex statIndex = StatIndex.none,
     }
   ) : 
   super(
@@ -44,8 +45,8 @@ class StatInputRow extends Row {
           controller: raceController,
           enabled: false,
           style: effectTemper ?
-            pokemon.temper.increasedStat == statName ? increaseStateStyle :
-              pokemon.temper.decreasedStat == statName ? decreaseStateStyle : null
+            pokemon.temper.increasedStat == statIndex ? increaseStateStyle :
+              pokemon.temper.decreasedStat == statIndex ? decreaseStateStyle : null
             : null,
         ),
       ),

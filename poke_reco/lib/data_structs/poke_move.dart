@@ -137,7 +137,7 @@ class TurnMove {
   PlayerType playerType = PlayerType(PlayerType.none);
   TurnMoveType type = TurnMoveType(TurnMoveType.none);
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
-  Move move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+  Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
   List<MoveHit> moveHits = [MoveHit(MoveHit.hit)];   // 命中した/急所/外した
@@ -5216,7 +5216,7 @@ class TurnMove {
                         matches.removeWhere((element) => element.id == item.id);
                       }
                       matches.add(Item(
-                        id: 0, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                        id: 0, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                         timing: AbilityTiming(0), isBerry: false, imageUrl: '',
                       ));
                     }
@@ -7096,7 +7096,7 @@ class TurnMove {
     playerType = PlayerType(PlayerType.none);
     type = TurnMoveType(TurnMoveType.none);
     teraType = PokeType.createFromId(0);
-    move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+    move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
     moveHits = [MoveHit(MoveHit.hit)];
@@ -7113,7 +7113,7 @@ class TurnMove {
   }
 
   // SQLに保存された文字列からTurnMoveをパース
-  static TurnMove deserialize(dynamic str, String split1, String split2) {
+  static TurnMove deserialize(dynamic str, String split1, String split2, {int version = -1}) {    // -1は最新バージョン
     TurnMove turnMove = TurnMove();
     final turnMoveElements = str.split(split1);
     // playerType
@@ -7123,20 +7123,26 @@ class TurnMove {
     // teraType
     turnMove.teraType = PokeType.createFromId(int.parse(turnMoveElements[2]));
     // move
-    var moveElements = turnMoveElements[3].split(split2);
-    turnMove.move = Move(
-      int.parse(moveElements[0]),
-      moveElements[1],
-      PokeType.createFromId(int.parse(moveElements[2])),
-      int.parse(moveElements[3]),
-      int.parse(moveElements[4]),
-      int.parse(moveElements[5]),
-      Target(int.parse(moveElements[6])),
-      DamageClass(int.parse(moveElements[7])),
-      MoveEffect(int.parse(moveElements[8])),
-      int.parse(moveElements[9]),
-      int.parse(moveElements[10]),
-    );
+    if (version == 1) {
+      var moveElements = turnMoveElements[3].split(split2);
+      turnMove.move = Move(
+        int.parse(moveElements[0]),
+        moveElements[1],
+        '',
+        PokeType.createFromId(int.parse(moveElements[2])),
+        int.parse(moveElements[3]),
+        int.parse(moveElements[4]),
+        int.parse(moveElements[5]),
+        Target(int.parse(moveElements[6])),
+        DamageClass(int.parse(moveElements[7])),
+        MoveEffect(int.parse(moveElements[8])),
+        int.parse(moveElements[9]),
+        int.parse(moveElements[10]),
+      );
+    }
+    else {
+      turnMove.move = PokeDB().moves[int.parse(turnMoveElements[3])]!;
+    }
     // isSuccess
     turnMove.isSuccess = int.parse(turnMoveElements[4]) != 0;
     // actionFailure
@@ -7228,6 +7234,7 @@ class TurnMove {
     ret += teraType.id.toString();
     ret += split1;
     // move
+/*    // version==1
       // id
       ret += move.id.toString();
       ret += split2;
@@ -7260,7 +7267,8 @@ class TurnMove {
       ret += split2;
       // pp
       ret += move.pp.toString();
-
+*/
+    ret += move.id.toString();
     ret += split1;
     // isSuccess
     ret += isSuccess ? '1' : '0';

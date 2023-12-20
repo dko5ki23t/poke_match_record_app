@@ -16,23 +16,35 @@ import 'package:poke_reco/data_structs/weather.dart';
 
 class Ability {
   final int id;
-  final String displayName;
+  final String _displayName;
+  final String _displayNameEn;
   final AbilityTiming timing;
   final Target target;
   final AbilityEffect effect;
 //  final int chance;               // 発動確率
 
   const Ability(
-    this.id, this.displayName, this.timing, this.target, this.effect
+    this.id, this._displayName, this._displayNameEn, this.timing, this.target, this.effect
   );
 
   Ability copyWith() =>
-    Ability(id, displayName, timing, target, effect);
+    Ability(id, _displayName, _displayNameEn, timing, target, effect);
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.english:
+        return _displayNameEn;
+      case Language.japanese:
+      default:
+        return _displayName;
+    }
+  }
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       abilityColumnId: id,
-      abilityColumnName: displayName,
+      abilityColumnName: _displayName,
+      abilityColumnEnglishName: _displayNameEn,
       abilityColumnTiming: timing.id,
       abilityColumnTarget: target.id,
       abilityColumnEffect: effect.id,
@@ -1559,6 +1571,7 @@ class Ability {
     return Ability(
       int.parse(elements[0]),
       elements[1],
+      '',
       AbilityTiming(int.parse(elements[2])),
       Target(int.parse(elements[3])),
       AbilityEffect(int.parse(elements[4]))
@@ -1567,6 +1580,6 @@ class Ability {
 
   // SQL保存用の文字列に変換
   String serialize(String split1) {
-    return '$id$split1$displayName$split1${timing.id}$split1${target.id}$split1${effect.id}';
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.id}$split1${target.id}$split1${effect.id}';
   }
 }

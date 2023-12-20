@@ -3,7 +3,8 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 
 class PokeBase {    // 各ポケモンの種族ごとの値
-  final String name;              // ポケモン名
+  late final String _name;             // ポケモン名(日本語)
+  late final String _nameEn;           // ポケモン名(英語)
   final List<Sex> sex;            // せいべつの種類
   final int no;                   // 図鑑No.
   final PokeType type1;           // タイプ1
@@ -22,7 +23,8 @@ class PokeBase {    // 各ポケモンの種族ごとの値
   final String imageUrl;          // 画像
 
   PokeBase({
-    required this.name,
+    required String name,
+    required String nameEn,
     required this.sex,
     required this.no,
     required this.type1,
@@ -39,7 +41,11 @@ class PokeBase {    // 各ポケモンの種族ごとの値
     required this.weight,
     required this.eggGroups,
     required this.imageUrl,
-  });
+  })
+  {
+    _name = name;
+    _nameEn = nameEn;
+  }
 
   // 特徴的なポケモンのNo
   static int zoruaNo = 570;
@@ -47,6 +53,15 @@ class PokeBase {    // 各ポケモンの種族ごとの値
   static int zoruaHisuiNo = 10238;
   static int zoroarkHisuiNo = 10239;
 
+  String get name {
+    switch (PokeDB().language) {
+      case Language.english:
+        return _nameEn;
+      case Language.japanese:
+      default:
+        return _name;
+    }
+  }
   // TODO:しんかのきせきが適用できるかどうか
   bool get isEvolvable => true;
 

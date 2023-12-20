@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 
 class StatViewRow extends Row {
@@ -18,7 +19,7 @@ class StatViewRow extends Row {
     TextEditingController realController,
     {
       bool effectTemper = false,
-      String statName = '',
+      StatIndex statIndex = StatIndex.none,
     }
   ) : 
   super(
@@ -33,8 +34,8 @@ class StatViewRow extends Row {
           controller: raceController,
           readOnly: true,
           style: effectTemper ?
-            pokemon.temper.increasedStat == statName ? increaseStateStyle :
-              pokemon.temper.decreasedStat == statName ? decreaseStateStyle : null
+            pokemon.temper.increasedStat == statIndex ? increaseStateStyle :
+              pokemon.temper.decreasedStat == statIndex ? decreaseStateStyle : null
             : null,
         ),
       ),

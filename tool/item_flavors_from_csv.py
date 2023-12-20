@@ -1,7 +1,6 @@
 import argparse
 import sqlite3
 import pandas as pd
-from plyer import notification
 
 ###### もちものの説明文リストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -10,6 +9,7 @@ itemFlavorDBFile = 'ItemFlavors.db'
 itemFlavorDBTable = 'itemFlavorDB'
 itemFlavorColumnId = 'id'
 itemFlavorColumnFlavor = 'flavor'
+itemFlavorColumnEnglishFlavor = 'englishFlavor'
 
 # CSVファイル(PokeAPI)の列名
 itemFlavorCSVItemIDColumn = 'item_id'
@@ -25,6 +25,7 @@ itemFlavorCSVFlavorIndex = 4
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
+englishID = 9
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='もちものの説明をCSVからデータベース化')
@@ -52,29 +53,37 @@ def main():
         # アイテム説明文ファイル読み込み
         item_flavors_df = pd.read_csv(args.item_flavor_text)
         item_flavors_df = item_flavors_df.fillna(0)
-        current_append = (0, '')
+        #current_append = (0, '')
         current_id = 0
+        current_japanese = ''
+        current_english = ''
         for row in item_flavors_df.itertuples():
             id = row[itemFlavorCSVItemIDIndex]
             if type(id) != int:
                 continue
-            if id > current_id and current_append[0] > 0:
-                flavors_list.append(current_append)
-                current_append = (0, '')
+            if id > current_id and current_japanese != '' and current_english != '':
+                flavors_list.append((current_id, current_japanese, current_english))
+                current_japanese = ''
+                current_english = ''
             lang = row[itemFlavorCSVLangIDIndex]
             current_id = id
-            if lang != japaneseID:
+            if lang == englishID:
+                current_english = row[itemFlavorCSVFlavorIndex]
+            elif lang == japaneseID:
+                current_japanese = row[itemFlavorCSVFlavorIndex]
+            else:
                 continue
-            current_append = (id, row[itemFlavorCSVFlavorIndex])
-        if current_append[0] > 0:
-            flavors_list.append(current_append)
+            #current_append = (id, row[itemFlavorCSVFlavorIndex])
+        if current_id > 0 and current_japanese != '' and current_english != '':
+            flavors_list.append((current_id, current_japanese, current_english))
 
         # 作成(存在してたら作らない)
         try:
             con.execute(
             f'CREATE TABLE IF NOT EXISTS {itemFlavorDBTable} ('
             f'  {itemFlavorColumnId} integer primary key,'
-            f'  {itemFlavorColumnFlavor} text not null)'
+            f'  {itemFlavorColumnFlavor} text not null,'
+            f'  {itemFlavorColumnEnglishFlavor} text not null)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -82,7 +91,7 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemFlavorDBTable} ({itemFlavorColumnId}, {itemFlavorColumnFlavor}) VALUES ( ?, ? )',
+                f'INSERT INTO {itemFlavorDBTable} ({itemFlavorColumnId}, {itemFlavorColumnFlavor}, {itemFlavorColumnEnglishFlavor}) VALUES ( ?, ?, ? )',
                 flavors_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

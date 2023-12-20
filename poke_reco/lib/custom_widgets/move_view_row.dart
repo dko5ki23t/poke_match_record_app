@@ -25,7 +25,7 @@ class MoveViewRow extends Row {
                 ),
                 TextSpan(text: move.damageClass.id == 1 ? '　変化' : move.damageClass.id == 2 ? '　物理' : move.damageClass.id == 3 ? '　特殊' : '　？'),
                 TextSpan(text: '　威力：${move.power}　命中：${move.accuracy}'),
-                TextSpan(text: '\n${PokeDB().moveFlavors[move.id] ?? ''}'),
+                TextSpan(text: '\n${PokeDB().getMoveFlavor(move.id) ?? ''}'),
               ],
               style: theme.textTheme.bodyMedium,
             ),

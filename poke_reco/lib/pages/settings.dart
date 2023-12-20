@@ -10,10 +10,12 @@ class SettingsPage extends StatefulWidget {
   const SettingsPage({
     Key? key,
     required this.onReset,
+    required this.viewLanguage,
     required this.viewLicense,
     required this.viewPolicy,
   }) : super(key: key);
   final void Function() onReset;
+  final void Function() viewLanguage;
   final void Function() viewLicense;
   final void Function() viewPolicy;
 
@@ -53,6 +55,11 @@ class SettingsPageState extends State<SettingsPage> {
                 });
               },
             ),
+          ),
+          ListTile(
+            title: Text('言語'),
+            trailing: Icon(Icons.chevron_right),
+            onTap: () => widget.viewLanguage(),
           ),
           ListTile(
             title: Text('ライセンス情報'),
@@ -143,6 +150,53 @@ class SettingResetPageState extends State<SettingResetPage> {
                 });
               },
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class SettingLanguagePage extends StatefulWidget {
+  SettingLanguagePage({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  SettingLanguagePageState createState() => SettingLanguagePageState();
+}
+
+class SettingLanguagePageState extends State<SettingLanguagePage> {
+  @override
+  Widget build(BuildContext context) {
+    var appState = context.watch<MyAppState>();
+
+    appState.onBackKeyPushed = (){};
+    appState.onTabChange = (func) => func();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('言語'),
+      ),
+      body: Column(
+        children: [
+          ListTile(
+            title: Text('日本語'),
+            trailing: PokeDB().language == Language.japanese ?
+              Icon(Icons.check) : null,
+            onTap: () => setState(() {
+              PokeDB().language = Language.japanese;
+              PokeDB().saveConfig();
+            }),
+          ),
+          ListTile(
+            title: Text('English'),
+            trailing: PokeDB().language == Language.english ?
+              Icon(Icons.check) : null,
+            onTap: () => setState(() {
+              PokeDB().language = Language.english;
+              PokeDB().saveConfig();
+            }),
           ),
         ],
       ),
