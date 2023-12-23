@@ -59,8 +59,8 @@ class DamageIndicateRow extends Row {
         Flexible(child: Text('= ${loc.battleRecovery(-damage)}')) : Container() :
         damage != 0 ?
         damage > 0 ?
-        Flexible(child: Text('= ${loc.battleDamage(damage)}%')) :
-        Flexible(child: Text('= ${loc.battleRecovery(-damage)}%')) : Container(),
+        Flexible(child: Text('= ${loc.battleDamage('$damage%')}')) :
+        Flexible(child: Text('= ${loc.battleRecovery('${-damage}%')}')) : Container(),
     ],
   );
 }
