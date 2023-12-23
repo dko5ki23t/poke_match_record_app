@@ -4,11 +4,13 @@ import 'package:poke_reco/custom_dialogs/party_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_filter_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({
@@ -37,6 +39,7 @@ class PartiesPageState extends State<PartiesPage> {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
     var pokeData = appState.pokeData;
+    var loc = AppLocalizations.of(context)!;
     var ownerFilter = pokeData.partiesOwnerFilter;
     var winRateMinFilter = pokeData.partiesWinRateMinFilter;
     var winRateMaxFilter = pokeData.partiesWinRateMaxFilter;
@@ -69,7 +72,7 @@ class PartiesPageState extends State<PartiesPage> {
     if (!pokeData.isLoaded) {
       EasyLoading.instance.userInteractions = false;  // 操作禁止にする
       EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
-      EasyLoading.show(status: 'データ読み込み中です。しばらくお待ちください...');
+      EasyLoading.show(status: loc.commonLoading);
     }
     else {
       EasyLoading.dismiss();
@@ -92,7 +95,7 @@ class PartiesPageState extends State<PartiesPage> {
 
     if (sortedParties.isEmpty) {
       lists = Center(
-        child: Text('表示できるパーティがありません。'),
+        child: Text(loc.partiesTabNoParty),
       );
     }
     else {
@@ -125,6 +128,8 @@ class PartiesPageState extends State<PartiesPage> {
                       });
                     },
                   ),
+                  showNetworkImage: PokeDB().getPokeAPI,
+                  loc: loc,
                 )
             ],
           ),
@@ -144,6 +149,8 @@ class PartiesPageState extends State<PartiesPage> {
                     widget.onSelect!(sortedParties[i].value);
                   } : 
                   () => widget.onView([for (final e in sortedParties) e.value], i),
+                  showNetworkImage: PokeDB().getPokeAPI,
+                  loc: loc,
                 )
             ],
           ),
@@ -158,7 +165,7 @@ class PartiesPageState extends State<PartiesPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: widget.selectMode ? Text('パーティ選択') : Text('パーティ一覧'),
+          title: widget.selectMode ? Text(loc.partiesTabTitleSelectParty) : Text(loc.partiesTabTitlePartyList),
           actions: [
             !widget.selectMode ?
               isEditMode ?
@@ -169,7 +176,7 @@ class PartiesPageState extends State<PartiesPage> {
                   pokeData.partiesSort = null;
                 },
                 icon: Icon(Icons.check),
-                tooltip: '完了',
+                tooltip: loc.commonDone,
               ) :
               Align(
                 alignment: Alignment.centerRight,
@@ -202,7 +209,7 @@ class PartiesPageState extends State<PartiesPage> {
                             );
                           },
                       icon: Icon(Icons.filter_alt),
-                      tooltip: 'フィルタ',
+                      tooltip: loc.commonFilter,
                     ),
                     MyIconButton(
                       theme: theme,
@@ -249,13 +256,13 @@ class PartiesPageState extends State<PartiesPage> {
                         }
                       ),
                       icon: Icon(Icons.sort),
-                      tooltip: '並べ替え',
+                      tooltip: loc.commonSort,
                     ),
                     MyIconButton(
                       theme: theme,
                       onPressed: (sortedParties.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                       icon: Icon(Icons.edit),
-                      tooltip: '編集',
+                      tooltip: loc.commonEdit,
                     ),
                 ],
               ),
@@ -291,7 +298,7 @@ class PartiesPageState extends State<PartiesPage> {
                           );
                         },
                     icon: Icon(Icons.filter_alt),
-                    tooltip: 'フィルタ',
+                    tooltip: loc.commonFilter,
                   ),
                   MyIconButton(
                     theme: theme,
@@ -338,7 +345,7 @@ class PartiesPageState extends State<PartiesPage> {
                       }
                     ),
                     icon: Icon(Icons.sort),
-                    tooltip: '並べ替え',
+                    tooltip: loc.commonSort,
                   ),
                 ],
               ),
@@ -362,7 +369,7 @@ class PartiesPageState extends State<PartiesPage> {
                           child: Row(children: [
                             Icon(Icons.select_all),
                             SizedBox(width: 10),
-                            Text('すべて選択')
+                            Text(loc.commonSelectAll)
                           ]),
                           onPressed: () => setState(() {
                             selectAllMap(checkList!);
@@ -410,7 +417,7 @@ class PartiesPageState extends State<PartiesPage> {
                           child: Row(children: [
                             Icon(Icons.delete),
                             SizedBox(width: 10),
-                            Text('削除')
+                            Text(loc.commonDelete)
                           ]),
                         ),
                         SizedBox(width: 20,),
@@ -433,7 +440,7 @@ class PartiesPageState extends State<PartiesPage> {
                           child: Row(children: [
                             Icon(Icons.copy),
                             SizedBox(width: 10),
-                            Text('コピー作成'),
+                            Text(loc.commonCopy),
                           ]),
                         ),
                       ],
@@ -450,7 +457,7 @@ class PartiesPageState extends State<PartiesPage> {
               child: Align(
                 alignment: Alignment.bottomRight,
                 child: FloatingActionButton(
-                  tooltip: 'パーティ登録',
+                  tooltip: loc.partiesTabRegisterParty,
                   shape: CircleBorder(),
                   onPressed: (){
                     checkList = null;

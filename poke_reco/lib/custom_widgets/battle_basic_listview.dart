@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleBasicListView extends ListView {
   BattleBasicListView(
@@ -23,6 +24,7 @@ class BattleBasicListView extends ListView {
     {
       required bool isInput,
       bool showNetworkImage = false,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -39,9 +41,9 @@ class BattleBasicListView extends ListView {
                   child: isInput ?
                     TextFormField(
                       controller: battleNameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'バトル名'
+                        labelText: loc.battlesTabBattleName,
                       ),
                       onChanged: (value) {
                         battle.name = value;
@@ -51,9 +53,9 @@ class BattleBasicListView extends ListView {
                     ) :
                     TextField(
                       controller: battleNameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'バトル名'
+                        labelText: loc.battlesTabBattleName,
                       ),
                       maxLength: 20,
                       readOnly: true,
@@ -69,9 +71,9 @@ class BattleBasicListView extends ListView {
                   child: isInput ?
                     TextFormField(
                       controller: dateController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: '対戦日時'
+                        labelText: loc.battlesTabBattleDatetime,
                       ),
                       onTap: () {
                         // キーボードが出ないようにする
@@ -100,9 +102,9 @@ class BattleBasicListView extends ListView {
                     ) :
                     TextField(
                       controller: dateController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: '対戦日時'
+                        labelText: loc.battlesTabBattleDatetime,
                       ),
                       readOnly: true,
                     ),
@@ -111,9 +113,9 @@ class BattleBasicListView extends ListView {
                 Flexible(
                   child: isInput ?
                     DropdownButtonFormField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'バトルの種類'
+                        labelText: loc.battlesTabBattleType,
                       ),
                       items: <DropdownMenuItem>[
                         for (var type in BattleType.values)
@@ -126,9 +128,9 @@ class BattleBasicListView extends ListView {
                       onChanged: (value) {battle.type = BattleType.createFromId(value); setState();},
                     ) :
                     TextField(
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'バトルの種類'
+                        labelText: loc.battlesTabBattleType,
                       ),
                       controller: TextEditingController(text: battle.type.displayName),
                       readOnly: true,
@@ -145,7 +147,7 @@ class BattleBasicListView extends ListView {
                     TextFormField(
                       decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'あなたのパーティ',
+                        labelText: loc.battlesTabYourParty,
                         suffixIcon: Icon(Icons.arrow_drop_down),
                       ),
                       controller: ownPartyController,
@@ -158,7 +160,7 @@ class BattleBasicListView extends ListView {
                               context: context,
                               builder: (_) {
                                 return DeleteEditingCheckDialog(
-                                  'パーティを変更するにはこの後の各ターンの記録を削除する必要があります。\nパーティを変更してもいいですか？',
+                                  loc.battlesTabQuestionChangeParty,
                                   () {
                                     // 各ポケモンのレベルを50にするためコピー作成
                                     battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
@@ -190,7 +192,7 @@ class BattleBasicListView extends ListView {
                     TextField(
                       decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'あなたのパーティ',
+                        labelText: loc.battlesTabYourParty,
                       ),
                       controller: ownPartyController,
                       readOnly: true,
@@ -206,9 +208,9 @@ class BattleBasicListView extends ListView {
                   child: isInput ?
                     TextFormField(
                       controller: opponentNameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'あいての名前'
+                        labelText: loc.battlesTabOpponentName,
                       ),
                       onChanged: (value) {
                         battle.opponentName = value;
@@ -218,9 +220,9 @@ class BattleBasicListView extends ListView {
                     ) :
                     TextField(
                       controller: opponentNameController,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: 'あいての名前'
+                        labelText: loc.battlesTabOpponentName,
                       ),
                       maxLength: 20,
                       readOnly: true,
@@ -229,12 +231,12 @@ class BattleBasicListView extends ListView {
               ],
             ),
             SizedBox(height: 10),
-            Text('あいてのパーティ'),
+            Text(loc.battlesTabOpponentParty),
             SizedBox(height: 10),
             for (int i = 0; i < 6; i++)
               PokemonSexRow(
                 theme,
-                'ポケモン${i+1}',
+                '${loc.commonPokemon}${i+1}',
                 [for (int j = 0; j < 6; j++)
                   i != j ? PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j]?.no]
                   : null
@@ -247,12 +249,12 @@ class BattleBasicListView extends ListView {
                       context: context,
                       builder: (_) {
                         return DeleteEditingCheckDialog(
-                          '相手ポケモンを変更するにはこの後の各ターンの記録を削除する必要があります。\nポケモンを変更してもいいですか？',
+                          loc.battlesTabQuestionChangePokemon,
                           () {
                             battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
                             battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
-                            ..name = suggestion.name
-                            ..no = suggestion.no
+                            //..name = suggestion.name
+                            ..no = suggestion.no      // nameも変わる
                             ..type1 = suggestion.type1
                             ..type2 = suggestion.type2
                             ..sex = suggestion.sex[0]
@@ -274,8 +276,8 @@ class BattleBasicListView extends ListView {
                   else {
                     battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
                     battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
-                    ..name = suggestion.name
-                    ..no = suggestion.no
+                    //..name = suggestion.name
+                    ..no = suggestion.no      // nameも変わる
                     ..type1 = suggestion.type1
                     ..type2 = suggestion.type2
                     ..sex = suggestion.sex[0]
@@ -296,7 +298,7 @@ class BattleBasicListView extends ListView {
                       context: context,
                       builder: (_) {
                         return DeleteEditingCheckDialog(
-                          '相手ポケモンを変更するにはこの後の各ターンの記録を削除する必要があります。\nポケモンを変更してもいいですか？',
+                          loc.battlesTabQuestionChangePokemon,
                           () {
                             for (int j = i; j < 6; j++) {
                               if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
@@ -333,7 +335,7 @@ class BattleBasicListView extends ListView {
                     setState();
                   }
                 },
-                'せいべつ${i+1}',
+                '${loc.commonGender}${i+1}',
                 battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
                   PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]?.no]!.sex : [Sex.none],
                 battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?

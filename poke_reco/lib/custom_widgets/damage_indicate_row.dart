@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DamageIndicateRow extends Row {
   DamageIndicateRow(
@@ -13,6 +14,7 @@ class DamageIndicateRow extends Row {
     bool isInput,
     {
       bool enabled = true,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -25,7 +27,7 @@ class DamageIndicateRow extends Row {
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
-              labelText: '${pokemon.name}の残りHP',
+              labelText: loc.battleRemainHP(pokemon.name),
             ),
             enabled: enabled,
             keyboardType: TextInputType.number,
@@ -38,7 +40,7 @@ class DamageIndicateRow extends Row {
             textAlign: TextAlign.center,
             decoration: InputDecoration(
               border: UnderlineInputBorder(),
-              labelText: '${pokemon.name}の残りHP',
+              labelText: loc.battleRemainHP(pokemon.name),
             ),
             readOnly: true,
             keyboardType: TextInputType.number,
@@ -53,12 +55,12 @@ class DamageIndicateRow extends Row {
       isMe ?
         damage != 0 ?
         damage > 0 ?
-        Flexible(child: Text('= ダメージ $damage')) :
-        Flexible(child: Text('= 回復 ${-damage}')) : Container() :
+        Flexible(child: Text('= ${loc.battleDamage(damage)}')) :
+        Flexible(child: Text('= ${loc.battleRecovery(-damage)}')) : Container() :
         damage != 0 ?
         damage > 0 ?
-        Flexible(child: Text('= ダメージ $damage%')) :
-        Flexible(child: Text('= 回復 ${-damage}%')) : Container(),
+        Flexible(child: Text('= ${loc.battleDamage('$damage%')}')) :
+        Flexible(child: Text('= ${loc.battleRecovery('${-damage}%')}')) : Container(),
     ],
   );
 }

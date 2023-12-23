@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DeleteEditingCheckDialog extends StatelessWidget {
   final String? question;
@@ -15,18 +16,19 @@ class DeleteEditingCheckDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: question != null ? Text(question!) : Text('変更を破棄してもいいですか？'),
+      title: question != null ? Text(question!) : Text(loc.dialogQuestionDeleteChanges),
       actions: <Widget>[
         GestureDetector(
-          child: Text('いいえ'),
+          child: Text(loc.commonNo),
           onTap: () {
             Navigator.pop(context);
             if (onNoPressed != null) onNoPressed!();
           },
         ),
         GestureDetector(
-          child: Text('はい'),
+          child: Text(loc.commonYes),
           onTap: () {
             Navigator.pop(context);
             onYesPressed();
@@ -53,25 +55,26 @@ class DeleteEditingCheckDialogWithCancel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: question != null ? Text(question!) : Text('変更を破棄してもいいですか？'),
+      title: question != null ? Text(question!) : Text(loc.dialogQuestionDeleteChanges),
       actions: <Widget>[
         GestureDetector(
-          child: Text('キャンセル'),
+          child: Text(loc.commonCancel),
           onTap: () {
             Navigator.pop(context);
             if (onCancelPressed != null) onCancelPressed!();
           },
         ),
         GestureDetector(
-          child: Text('いいえ'),
+          child: Text(loc.commonNo),
           onTap: () {
             Navigator.pop(context);
             onNoPressed();
           },
         ),
         GestureDetector(
-          child: Text('はい'),
+          child: Text(loc.commonYes),
           onTap: () {
             Navigator.pop(context);
             onYesPressed();

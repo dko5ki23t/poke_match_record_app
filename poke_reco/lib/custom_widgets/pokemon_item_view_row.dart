@@ -55,6 +55,7 @@ class PokemonItemViewRow extends Row {
                 child: Icon(Icons.help),
               ),
             ),
+            readOnly: true,
           ),
         ),
         item != null && showNetworkImage ?

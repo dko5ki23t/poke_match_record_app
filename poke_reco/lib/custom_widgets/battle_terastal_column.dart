@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleTerastalColumn extends Column {
   BattleTerastalColumn(
@@ -26,7 +27,10 @@ class BattleTerastalColumn extends Column {
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,
     List<TextEditingController> textEditControllerList4,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -48,7 +52,7 @@ class BattleTerastalColumn extends Column {
                     isInput ?
                       Stack(
                         children: [
-                        Center(child: Text('テラスタル${i+1}')),
+                        Center(child: Text('${loc.commonTerastal}${i+1}')),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children:[
@@ -112,7 +116,7 @@ class BattleTerastalColumn extends Column {
                           ],
                         ),
                       ],) :
-                      Center(child: Text('テラスタル${i+1}')),
+                      Center(child: Text('${loc.commonTerastal}${i+1}')),
                     SizedBox(height: 10,),
                     Row(
                       children: [
@@ -120,15 +124,15 @@ class BattleTerastalColumn extends Column {
                           child: isInput ?
                             DropdownButtonFormField(
                               isExpanded: true,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '発動主',
+                                labelText: loc.battleEffectPlayer,
                               ),
                               items: <DropdownMenuItem>[
                                 _myDropDown(
                                   !_getPrevState(prevState, i, sameTimingList).hasOwnTerastal,
                                   PlayerType.me,
-                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/あなた',
+                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/${loc.battleYou}',
                                 ),
                                 _myDropDown(
                                   !_getPrevState(prevState, i, sameTimingList).hasOpponentTerastal,
@@ -151,13 +155,13 @@ class BattleTerastalColumn extends Column {
                               },
                             ) :
                             TextField(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '発動主',
+                                labelText: loc.battleEffectPlayer,
                               ),
                               controller: TextEditingController(
                                 text: turn.phases[firstIdx+i].playerType.id == PlayerType.me ?
-                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/あなた' :
+                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/${loc.battleYou}' :
                                       '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
                               ),
                               readOnly: true,
@@ -168,7 +172,7 @@ class BattleTerastalColumn extends Column {
                         Expanded(
                           child: isInput ?
                             TypeDropdownButton(
-                              'タイプ',
+                              loc.commonType,
                               turn.phases[firstIdx+i].effectId == 0 ||
                               _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType.id != 0 ?
                                 null : (val) {turn.phases[firstIdx+i].effectId = val;},
@@ -177,7 +181,7 @@ class BattleTerastalColumn extends Column {
                             TextField(
                               decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: 'タイプ',
+                                labelText: loc.commonType,
                                 prefixIcon: PokeType.createFromId(turn.phases[firstIdx+i].effectId).displayIcon,
                               ),
                               controller: TextEditingController(
@@ -218,7 +222,7 @@ class BattleTerastalColumn extends Column {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.add_circle),
-                  Text('テラスタルを追加'),
+                  Text(loc.battleAddTerastal),
                 ],
               ),
             ),

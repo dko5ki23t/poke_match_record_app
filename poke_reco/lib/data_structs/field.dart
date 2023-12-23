@@ -1,3 +1,7 @@
+// フィールド
+
+import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -12,18 +16,38 @@ class FieldEffect {
   static const int psychicTerrainEnd = 4;   // サイコフィールド終了
   static const int grassHeal = 5;           // グラスフィールドによる回復
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'エレキフィールド終了',
-    2: 'グラスフィールド終了',
-    3: 'ミストフィールド終了',
-    4: 'サイコフィールド終了',
-    5: 'グラスフィールドによる回復',
+  static const Map<int, Tuple2<String, String>> _displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('エレキフィールド終了', 'Electric Terrain ends'),
+    2: Tuple2('グラスフィールド終了', 'Grassy Terrain ends'),
+    3: Tuple2('ミストフィールド終了', 'Misty Terrain ends'),
+    4: Tuple2('サイコフィールド終了', 'Psychic Terrain ends'),
+    5: Tuple2('グラスフィールドによる回復', 'Recovery by Grassy Terrain'),
   };
 
   const FieldEffect(this.id);
 
-  String get displayName => _displayNameMap[id]!;
+  static int getIdFromField(Field field) {
+    switch (field.id) {
+      case Field.electricTerrain:
+      case Field.grassyTerrain:
+      case Field.mistyTerrain:
+      case Field.psychicTerrain:
+        return field.id;
+      default:
+        return 0;
+    }
+  }
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   final int id;
 }
@@ -36,24 +60,30 @@ class Field {
   static const int mistyTerrain = 3;       // ミストフィールド
   static const int psychicTerrain = 4;     // サイコフィールド
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'エレキフィールド',
-    2: 'グラスフィールド',
-    3: 'ミストフィールド',
-    4: 'サイコフィールド',
+  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
+    0:  Tuple4('', '', Colors.black, 0),
+    1:  Tuple4('エレキフィールド', 'Electric Terrain', PokeTypeColor.electric, 5),
+    2:  Tuple4('グラスフィールド', 'Grassy Terrain', PokeTypeColor.grass, 5),
+    3:  Tuple4('ミストフィールド', 'Misty Terrain', PokeTypeColor.fairy, 5),
+    4:  Tuple4('サイコフィールド', 'Psychic Terrain', PokeTypeColor.psychic, 5),
   };
 
-  static const _bgColorMap = {
-    0: Colors.black,
-    1: PokeTypeColor.electric,
-    2: PokeTypeColor.grass,
-    3: PokeTypeColor.fairy,
-    4: PokeTypeColor.psychic,
-  };
-
-  String get displayName => '${_displayNameMap[id]!} ($turns/5)';
-  Color get bgColor => _bgColorMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)';
+      case Language.english:
+      default:
+        return '${_nameColorTurnMap[id]!.item2} ($turns/$maxTurns)';
+    }
+  }
+  Color get bgColor => _nameColorTurnMap[id]!.item3;
+  int get maxTurns {
+    if (extraArg1 == 8) {
+      return 8;
+    }
+    return _nameColorTurnMap[id]!.item4;
+  }
 
   final int id;
   int turns = 0;        // 経過ターン

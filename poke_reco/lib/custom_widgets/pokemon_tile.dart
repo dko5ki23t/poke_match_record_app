@@ -66,32 +66,32 @@ class PokemonTile extends ListTile {
                     TextSpan(text: '${pokemon.h.real}/'),
                     TextSpan(
                       text: '${pokemon.a.real}',
-                      style: pokemon.temper.increasedStat == 'attack' ? increaseStateStyle :
-                        pokemon.temper.decreasedStat == 'attack' ? decreaseStateStyle : null,
+                      style: pokemon.temper.increasedStat == StatIndex.A ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == StatIndex.A ? decreaseStateStyle : null,
                     ),
                     TextSpan(text: '/'),
                     TextSpan(
                       text: '${pokemon.b.real}',
-                      style: pokemon.temper.increasedStat == 'defense' ? increaseStateStyle :
-                        pokemon.temper.decreasedStat == 'defense' ? decreaseStateStyle : null,
+                      style: pokemon.temper.increasedStat == StatIndex.B ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == StatIndex.B ? decreaseStateStyle : null,
                     ),
                     TextSpan(text: '/'),
                     TextSpan(
                       text: '${pokemon.c.real}',
-                      style: pokemon.temper.increasedStat == 'special-attack' ? increaseStateStyle :
-                        pokemon.temper.decreasedStat == 'special-attack' ? decreaseStateStyle : null,
+                      style: pokemon.temper.increasedStat == StatIndex.C ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == StatIndex.C ? decreaseStateStyle : null,
                     ),
                     TextSpan(text: '/'),
                     TextSpan(
                       text: '${pokemon.d.real}',
-                      style: pokemon.temper.increasedStat == 'special-defense' ? increaseStateStyle :
-                        pokemon.temper.decreasedStat == 'special-defense' ? decreaseStateStyle : null,
+                      style: pokemon.temper.increasedStat == StatIndex.D ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == StatIndex.D ? decreaseStateStyle : null,
                     ),
                     TextSpan(text: '/'),
                     TextSpan(
                       text: '${pokemon.s.real}',
-                      style: pokemon.temper.increasedStat == 'speed' ? increaseStateStyle :
-                        pokemon.temper.decreasedStat == 'speed' ? decreaseStateStyle : null,
+                      style: pokemon.temper.increasedStat == StatIndex.S ? increaseStateStyle :
+                        pokemon.temper.decreasedStat == StatIndex.S ? decreaseStateStyle : null,
                     ),
                   ],
                 ),

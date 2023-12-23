@@ -66,3 +66,23 @@
 
    https://pokemonote.com/calc-stats/
 
+### ライセンス等の参考資料
+
+https://note.com/hatanowf/n/n7f6ef8b0ea7c
+
+### アイコン作成の参考文献
+
+https://ja.stackoverflow.com/questions/51645/android-studio%E3%81%A7image-asset%E3%82%92%E8%B5%B7%E5%8B%95%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84
+
+https://icon.kitchen/
+
+### リリースビルドの方法
+
+https://enoiu.com/app-develop/flutter-release/
+
+### 英語対応
+
+https://qiita.com/kazutxt/items/936ebe7a21ede7e1ab20
+
+https://stackoverflow.com/questions/73766312/the-method-setlocale-isnt-defined-for-the-type-myappstate-flutter
+

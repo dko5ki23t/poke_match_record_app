@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 enum PokemonSort {
-  registerUp(1, '登録(昇)'),
-  registerDown(2, '登録(降)'),
-  nickNameUp(3, 'ニックネーム(昇)'),
-  nickNameDown(4, 'ニックネーム(降)'),
-  nameUp(5, 'ポケモン(昇)'),
-  nameDown(6, 'ポケモン(降)');
+  registerUp(1, '登録(昇)', 'Register(asc)'),
+  registerDown(2, '登録(降)', 'Register(desc)'),
+  nickNameUp(3, 'ニックネーム(昇)', 'NickName(asc)'),
+  nickNameDown(4, 'ニックネーム(降)', 'NickName(desc)'),
+  nameUp(5, 'ポケモン名(昇)', 'Pokémon\'s name(asc)'),
+  nameDown(6, 'ポケモン名(降)', 'Pokémon\'s name(desc)');
 
   final int id;
-  final String displayName;
-  const PokemonSort(this.id, this.displayName);
+  final String ja;
+  final String en;
+  const PokemonSort(this.id, this.ja, this.en);
 
   factory PokemonSort.createFromId(int id) {
     switch (id) {
@@ -28,6 +31,16 @@ enum PokemonSort {
         return nameDown;
       default:
         return registerUp;
+    }
+  }
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
     }
   }
 }
@@ -52,13 +65,14 @@ class PokemonSortDialogState extends State<PokemonSortDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       _pokemonSort = widget.currentSort;
       isFirstBuild = false;
     }
 
     return AlertDialog(
-      title: Text('並べ替え'),
+      title: Text(loc.commonSort),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -81,7 +95,7 @@ class PokemonSortDialogState extends State<PokemonSortDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },

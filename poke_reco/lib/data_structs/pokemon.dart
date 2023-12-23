@@ -8,21 +8,22 @@ import 'package:poke_reco/data_structs/poke_move.dart';
 class Pokemon {
   int id = 0;    // データベースのプライマリーキー
   int viewOrder = 0;      // 表示順
-  String name = '';       // ポケモン名
+  String _name = '';               // ポケモン名(日本語)
+  String _nameEn = '';             // ポケモン名(英語)
   String nickname = '';            // ニックネーム
   int level = 50;                  // レベル
   Sex sex = Sex.none;              // せいべつ
-  int no = 0;                      // 図鑑No.
+  int _no = 0;                     // 図鑑No.
   PokeType type1 = PokeType.createFromId(0);        // タイプ1
   PokeType? type2;                     // タイプ2(null OK)
   PokeType teraType = PokeType.createFromId(0);     // テラスタルタイプ
-  Temper temper = Temper(0, '', '', ''); // せいかく
+  Temper temper = Temper(0, '', '', StatIndex.none, StatIndex.none); // せいかく
   // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
   List<SixParams> _stats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, 0, 0));
-  Ability ability = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0));     // とくせい
+  Ability ability = Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0));     // とくせい
   Item? item;                      // もちもの(null OK)
   List<Move?> _moves = [
-    Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0),
+    Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0),
     null, null, null
   ];  // わざ
   List<int?> _pps = [0, null, null, null];  // PP
@@ -35,11 +36,22 @@ class Pokemon {
     int pokeNo = map[myPokemonColumnNo];
     id = map[myPokemonColumnId];
     viewOrder = map[myPokemonColumnViewOrder];
-    name = pokeData.pokeBase[pokeNo]!.name;
+    if (pokeData.language == Language.japanese) {
+      _name = pokeData.pokeBase[pokeNo]!.name;
+      pokeData.language = Language.english;
+      _nameEn = pokeData.pokeBase[pokeNo]!.name;
+      pokeData.language = Language.japanese;
+    }
+    else if (pokeData.language == Language.english) {
+      _nameEn = pokeData.pokeBase[pokeNo]!.name;
+      pokeData.language = Language.japanese;
+      _name = pokeData.pokeBase[pokeNo]!.name;
+      pokeData.language = Language.english;
+    }
     nickname = map[myPokemonColumnNickName];
     level = map[myPokemonColumnLevel];
     sex = Sex.createFromId(map[myPokemonColumnSex]);
-    no = pokeNo;
+    _no = pokeNo;
     type1 = pokeData.pokeBase[pokeNo]!.type1;
     type2 = pokeData.pokeBase[pokeNo]!.type2;
     teraType = PokeType.createFromId(map[myPokemonColumnTeraType]);
@@ -76,8 +88,7 @@ class Pokemon {
     );
     ability = pokeData.abilities[map[myPokemonColumnAbility]]!;
     item = (map[myPokemonColumnItem] != null) ?
-      Item(id: map[myPokemonColumnItem], displayName: '', flingPower: 0, flingEffectId: 0, timing: AbilityTiming(0), isBerry: false, imageUrl: '') :
-      null;
+      pokeData.items[map[myPokemonColumnItem]] : null;
     move1 = pokeData.moves[map[myPokemonColumnMove1]]!;
     pp1 = map[myPokemonColumnPP1];
     move2 = map[myPokemonColumnMove2] != null ? pokeData.moves[map[myPokemonColumnMove2]]! : null;
@@ -91,6 +102,20 @@ class Pokemon {
   }
 
   // getter
+  String get name {
+    switch (PokeDB().language) {
+      case Language.english:
+        return _nameEn;
+      case Language.japanese:
+      default:
+        return _name;
+    }
+  }
+  // getter
+  String get omittedName {
+    return name.split('(')[0];
+  }
+  int get no => _no;
   SixParams get h => _stats[StatIndex.H.index];
   SixParams get a => _stats[StatIndex.A.index];
   SixParams get b => _stats[StatIndex.B.index];
@@ -136,6 +161,22 @@ class Pokemon {
   bool get isEvolvable => true;
 
   // setter
+  set no(int n) {   // No変えると名前も変える
+    var pokeData = PokeDB();
+    _no = n;
+    if (pokeData.language == Language.japanese) {
+      _name = pokeData.pokeBase[n]!.name;
+      pokeData.language = Language.english;
+      _nameEn = pokeData.pokeBase[n]!.name;
+      pokeData.language = Language.japanese;
+    }
+    else if (pokeData.language == Language.english) {
+      _nameEn = pokeData.pokeBase[n]!.name;
+      pokeData.language = Language.japanese;
+      _name = pokeData.pokeBase[n]!.name;
+      pokeData.language = Language.english;
+    }
+  }
   set h(SixParams x) {_stats[StatIndex.H.index] = x;}
   set a(SixParams x) {_stats[StatIndex.A.index] = x;}
   set b(SixParams x) {_stats[StatIndex.B.index] = x;}
@@ -155,11 +196,12 @@ class Pokemon {
     Pokemon()
     ..id = id
     ..viewOrder = viewOrder
-    ..name = name
+    .._name = _name
+    .._nameEn = _nameEn
     ..nickname = nickname
     ..level = level
     ..sex = sex
-    ..no = no
+    .._no = _no
     ..type1 = type1
     ..type2 = type2
     ..teraType = teraType

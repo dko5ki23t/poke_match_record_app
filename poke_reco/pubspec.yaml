@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.2+7
+version: 1.0.1+9
 
 environment:
   sdk: '>=2.19.6 <4.0.0'
@@ -29,6 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   
   english_words: ^4.0.0
@@ -44,7 +46,7 @@ dependencies:
   quiver: ^3.2.1
   number_inc_dec: ^0.8.0
   flutter_datetime_picker_plus:
-  intl: ^0.18.1
+  intl: ^0.18.0
   expandable: ^5.0.1
   path_provider: 2.0.15
   sqflite_common_ffi_web: '>=0.1.0-dev.1'
@@ -75,10 +77,12 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/appIcon.png"
-  adaptive_icon_background: "#FBFBF3"
+  adaptive_icon_background: "#000000"
 
 # The following section is specific to Flutter packages.
 flutter:
+
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

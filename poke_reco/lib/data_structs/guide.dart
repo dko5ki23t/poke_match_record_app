@@ -14,6 +14,8 @@ class Guide {
   // 以下、別CSVに記載のIDと一致させる
   static const int leechSeedConfHP = 1;     // やどりぎのタネから相手のHP範囲確定
   static const int sapConfAttack = 2;       // ちからをすいとるから相手のこうげき確定
+  static const int moveDamagedToStatus = 3; // 被ダメージ→相手のこうげき/とくこう実数値範囲確定
+  static const int moveOrderConfSpeed = 4;  // わざの発生順序から相手のすばやさ範囲確定
 
   int guideId = 0;
   int categoryId = 0;     // カテゴリ別に表示のON/OFFができるように
@@ -53,6 +55,16 @@ class Guide {
         // TODO: この時点で努力値等を反映するのかどうかとか
         opponentState.minStats[1].real = args[0];
         opponentState.maxStats[1].real = args[1];
+        break;
+      case moveDamagedToStatus:
+        // TODO: この時点で努力値等を反映するのかどうかとか
+        opponentState.minStats[args[0]].real = args[1];
+        opponentState.maxStats[args[0]].real = args[2];
+        break;
+      case moveOrderConfSpeed:
+        // TODO: この時点で努力値等を反映するのかどうかとか
+        opponentState.minStats[5].real = args[0];
+        opponentState.maxStats[5].real = args[1];
         break;
     }
   }

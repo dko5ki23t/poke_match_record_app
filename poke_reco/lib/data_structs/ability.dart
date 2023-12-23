@@ -13,26 +13,39 @@ import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/weather.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Ability {
   final int id;
-  final String displayName;
+  final String _displayName;
+  final String _displayNameEn;
   final AbilityTiming timing;
   final Target target;
   final AbilityEffect effect;
 //  final int chance;               // 発動確率
 
   const Ability(
-    this.id, this.displayName, this.timing, this.target, this.effect
+    this.id, this._displayName, this._displayNameEn, this.timing, this.target, this.effect
   );
 
   Ability copyWith() =>
-    Ability(id, displayName, timing, target, effect);
+    Ability(id, _displayName, _displayNameEn, timing, target, effect);
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.english:
+        return _displayNameEn;
+      case Language.japanese:
+      default:
+        return _displayName;
+    }
+  }
 
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       abilityColumnId: id,
-      abilityColumnName: displayName,
+      abilityColumnName: _displayName,
+      abilityColumnEnglishName: _displayNameEn,
       abilityColumnTiming: timing.id,
       abilityColumnTarget: target.id,
       abilityColumnEffect: effect.id,
@@ -95,6 +108,9 @@ class Ability {
     int extraArg1,
     int extraArg2,
     int? changePokemonIndex,
+    {
+      required AppLocalizations loc,
+    }
   ) {
     final pokeData = PokeDB();
     List<Guide> ret = [];
@@ -109,7 +125,7 @@ class Ability {
         yourState.ailmentsAdd(Ailment(Ailment.flinch), state);  // ひるませる
         break;
       case 2:     // あめふらし
-        state.weather = Weather(Weather.rainy);
+        state.weather = Weather(Weather.rainy)..extraArg1 = myState.holdingItem?.id == 262 ? 8 : 5;
         break;
       case 3:     // かそく
       case 78:    // でんきエンジン
@@ -233,7 +249,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [abilityID]
-              ..guideStr = 'あいての${myState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[abilityID]!.displayName, myState.pokemon.omittedName)
             );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
@@ -241,7 +257,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [extraArg1]
-              ..guideStr = 'あいての${yourState.pokemon.name}のとくせいを${pokeData.abilities[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[extraArg1]!.displayName, yourState.pokemon.omittedName)
             );
             yourState.setCurrentAbility(yourState.pokemon.ability, myState, !isOwn, state);
           }
@@ -266,7 +282,7 @@ class Ability {
         break;
       case 45:    // すなおこし
       case 245:   // すなはき
-        state.weather = Weather(Weather.sandStorm);
+        state.weather = Weather(Weather.sandStorm)..extraArg1 = myState.holdingItem?.id == 260 ? 8 : 5;
         break;
       case 49:    // ほのおのからだ
         yourState.ailmentsAdd(Ailment(Ailment.burn), state);
@@ -287,7 +303,7 @@ class Ability {
         break;
       case 70:      // ひでり
       case 288:     // ひひいろのこどう
-        state.weather = Weather(Weather.sunny);
+        state.weather = Weather(Weather.sunny)..extraArg1 = myState.holdingItem?.id == 261 ? 8 : 5;
         break;
       case 83:    // いかりのつぼ
         myState.addStatChanges(true, 0, 6, yourState, abilityId: abilityID);
@@ -310,7 +326,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confMove
               ..canDelete = false
-              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のわざの1つを${pokeData.moves[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfMove(pokeData.moves[extraArg1]!.displayName, opponentPokemonState.pokemon.omittedName)
             );
           }
         }
@@ -324,7 +340,7 @@ class Ability {
         }
         break;
       case 117:     // ゆきふらし
-        state.weather = Weather(Weather.snowy);
+        state.weather = Weather(Weather.snowy)..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
         break;
       case 119:     // おみとおし
         // もちもの確定
@@ -336,7 +352,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confItem
               ..args = [extraArg1]
-              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfItem2(pokeData.items[extraArg1]!.displayName, opponentPokemonState.pokemon.omittedName)
             );
           }
           yourState.holdingItem = pokeData.items[extraArg1]!;
@@ -346,6 +362,9 @@ class Ability {
       case 170:     // マジシャン
         myState.holdingItem = pokeData.items[extraArg1]!;
         yourState.holdingItem = null;
+        break;
+      case 128:     // まけんき
+        myState.addStatChanges(true, 0, 2, yourState, abilityId: abilityID);
         break;
       case 130:     // のろわれボディ
         yourState.ailmentsAdd(Ailment(Ailment.disable)..extraArg1 = extraArg1, state);
@@ -368,6 +387,7 @@ class Ability {
           state.makePokemonOther(playerType, pokeNo);
           var newState = state.getPokemonState(playerType, null);
           newState.setCurrentAbility(pokeData.abilities[149]!, yourState, isOwn, state);
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.zoroappear));
           return ret;
         }
         break;
@@ -601,16 +621,16 @@ class Ability {
         break;
       case 226:   // エレキメイカー
       case 289:   // ハドロンエンジン
-        state.field = Field(Field.electricTerrain);
+        state.field = Field(Field.electricTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 227:   // サイコメイカー
-        state.field = Field(Field.psychicTerrain);
+        state.field = Field(Field.psychicTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 228:   // ミストメイカー
-        state.field = Field(Field.mistyTerrain);
+        state.field = Field(Field.mistyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 229:   // グラスメイカー
-        state.field = Field(Field.grassyTerrain);
+        state.field = Field(Field.grassyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 243:   // じょうききかん
         myState.addStatChanges(true, 4, 6, yourState, abilityId: abilityID);
@@ -679,7 +699,7 @@ class Ability {
         }
         break;
       case 269:   // こぼれダネ
-        state.field = Field(Field.grassyTerrain);
+        state.field = Field(Field.grassyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
         break;
       case 271:   // いかりのこうら
         myState.addStatChanges(true, 0, 1, yourState, abilityId: abilityID);
@@ -700,7 +720,7 @@ class Ability {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
-                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+                ..guideStr = loc.battleGuideConfItem2(pokeData.items[1696]!.displayName, opponentPokemonState.pokemon.omittedName)
               );
             }
             myState.holdingItem = null;   // アイテム消費
@@ -720,7 +740,7 @@ class Ability {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
-                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+                ..guideStr = loc.battleGuideConfItem2(pokeData.items[1696]!.displayName, opponentPokemonState.pokemon.omittedName)
               );
             }
             myState.holdingItem = null;   // アイテム消費
@@ -739,7 +759,7 @@ class Ability {
         ret.addAll(Item.processEffect(
           extraArg1, playerType, myState,
           yourState, state,
-          extraArg2, 0, changePokemonIndex,
+          extraArg2, 0, changePokemonIndex, loc: loc,
         ));
         break;
       case 293:   // そうだいしょう
@@ -803,7 +823,7 @@ class Ability {
       ret.add(Guide()
         ..guideId = Guide.confAbility
         ..args = [abilityID]
-        ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+        ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[abilityID]!.displayName, opponentPokemonState.pokemon.omittedName)
       );
       myState.setCurrentAbility(myState.pokemon.ability, yourState, isOwn, state);   // とくせい確定
     }
@@ -1506,6 +1526,25 @@ class Ability {
         if (timing.id == AbilityTiming.everyTurnEnd) {
           return -1;
         }
+        else {
+          bool isClear = true;
+          int ret = 0;
+          int maxReal = 0;
+          for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S,]) {
+            int i = statIndex.index;
+            if (myState.minStats[i].real != myState.maxStats[i].real) {
+              isClear = false;
+              break;
+            }
+            if (myState.getRankedStat(myState.minStats[i].real, statIndex) > maxReal) {
+              maxReal = myState.getRankedStat(myState.minStats[i].real, statIndex);
+              ret = statIndex.index - 1;
+            }
+          }
+          if (isClear) {
+            return ret;
+          }
+        }
         break;
       case 36:        // トレース
         return yourState.getCurrentAbility().id;
@@ -1536,6 +1575,7 @@ class Ability {
     return Ability(
       int.parse(elements[0]),
       elements[1],
+      '',
       AbilityTiming(int.parse(elements[2])),
       Target(int.parse(elements[3])),
       AbilityEffect(int.parse(elements[4]))
@@ -1544,6 +1584,6 @@ class Ability {
 
   // SQL保存用の文字列に変換
   String serialize(String split1) {
-    return '$id$split1$displayName$split1${timing.id}$split1${target.id}$split1${effect.id}';
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.id}$split1${target.id}$split1${effect.id}';
   }
 }

@@ -4,6 +4,7 @@ import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PokemonFilterDialog extends StatefulWidget {
   final Future<void> Function (
@@ -67,6 +68,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       ownerFilter = [...widget.ownerFilter];
       noFilter = [...widget.noFilter];
@@ -80,7 +82,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
     }
 
     return AlertDialog(
-      title: Text('フィルタ'),
+      title: Text(loc.commonFilter),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -90,7 +92,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('作成者'),),
+                  Center(child: Text(loc.filterDialogProducer),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: ownerExpanded ?
@@ -106,7 +108,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
             ),
             ownerExpanded ?
             ListTile(
-              title: Text('自分のポケモン'),
+              title: Text(loc.filterDialogOwnPokemon),
               leading: Checkbox(
                 value: ownerFilter.contains(Owner.mine),
                 onChanged: (value) {
@@ -124,7 +126,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
             ) : Container(),
             ownerExpanded ?
             ListTile(
-              title: Text('対戦相手のポケモン'),
+              title: Text(loc.filterDialogOpponentPokemon),
               leading: Checkbox(
                 value: ownerFilter.contains(Owner.fromBattle),
                 onChanged: (value) {
@@ -146,7 +148,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('名前'),),
+                  Center(child: Text(loc.filterDialogPokemonName),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: pokemonExpanded ?
@@ -184,9 +186,9 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               title: TypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: pokemonController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: 'ポケモン追加',
+                    labelText: loc.filterDialogAddPokemon,
                   ),
                 ),
                 autoFlipDirection: true,
@@ -217,7 +219,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('タイプ'),),
+                  Center(child: Text(loc.commonType),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: typeExpanded ?
@@ -261,7 +263,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('テラスタイプ'),),
+                  Center(child: Text(loc.commonTeraType),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: teraTypeExpanded ?
@@ -305,7 +307,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('わざ'),),
+                  Center(child: Text(loc.commonMove),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: moveExpanded ?
@@ -343,9 +345,9 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               title: TypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: moveController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: 'わざ追加',
+                    labelText: loc.filterDialogAddMove,
                   ),
                 ),
                 autoFlipDirection: true,
@@ -376,7 +378,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('せいべつ'),),
+                  Center(child: Text(loc.commonGender),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: sexExpanded ?
@@ -415,7 +417,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('とくせい'),),
+                  Center(child: Text(loc.commonAbility),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: abilityExpanded ?
@@ -453,9 +455,9 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               title: TypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: abilityController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: 'とくせい追加',
+                    labelText: loc.filterDialogAddAbility,
                   ),
                 ),
                 autoFlipDirection: true,
@@ -486,7 +488,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('せいかく'),),
+                  Center(child: Text(loc.commonNature),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: temperExpanded ?
@@ -524,9 +526,9 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               title: TypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: temperController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: 'せいかく追加',
+                    labelText: loc.filterDialogAddNature,
                   ),
                 ),
                 autoFlipDirection: true,
@@ -557,13 +559,13 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           GestureDetector(
-            child: Text('リセット'),
+            child: Text(loc.commonReset),
             onTap: () {
               setState(() {
                 ownerFilter = [Owner.mine];

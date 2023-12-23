@@ -14,6 +14,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleTimingPanel extends Column {
   BattleTimingPanel(
@@ -38,12 +39,15 @@ class BattleTimingPanel extends Column {
     PlayerType attacker,
     TurnMove turnMove,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
-      _getHeader(sameTimingList.first.turnEffect.timing, actionCount, sameTimingList),
+      _getHeader(sameTimingList.first.turnEffect.timing, actionCount, sameTimingList, loc),
       _getDivider(sameTimingList.first.turnEffect.timing, sameTimingList),
       Container(
         child: _getExpandedWidget(
@@ -55,55 +59,55 @@ class BattleTimingPanel extends Column {
           textEditControllerList3, textEditControllerList4,
           prevState, prevOwnPokemon, prevOpponentPokemon,
           refMove, continuousCount, attacker, turnMove,
-          nextSameTimingFirst, isInput: isInput,
+          nextSameTimingFirst, isInput: isInput, loc: loc,
         ),
       ),
       SizedBox(height: 20,),
     ],
   );
 
-  static Widget _getHeader(AbilityTiming timing, int actionCount, List<TurnEffectAndStateAndGuide> sameTimingList) {
+  static Widget _getHeader(AbilityTiming timing, int actionCount, List<TurnEffectAndStateAndGuide> sameTimingList, AppLocalizations loc) {
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
-          return Text('ポケモン登場時');
+          return Text(loc.battleTimingPokemonAppear);
         }
         break;
       case AbilityTiming.everyTurnEnd:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
-          return Text('ターン終了時');
+          return Text(loc.battleTimingTurnEnd);
         }
         break;
       case AbilityTiming.afterActionDecision:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
-          return Text('行動決定直後');
+          return Text(loc.battleTimingAfterActionDecision);
         }
         break;
       case AbilityTiming.terastaling:
-        return Text('テラスタル');
+        return Text(loc.commonTerastal);
       case AbilityTiming.action:
-        return Text('行動${actionCount+1}');
+        return Text('${loc.battleAction}${actionCount+1}');
       case AbilityTiming.beforeMove:
         return Column(
           children: [
-            Text('行動${actionCount+1}'),
+            Text('${loc.battleAction}${actionCount+1}'),
             const Divider(
               height: 10,
               thickness: 1,
             ),
             sameTimingList.first.candidateEffect.isNotEmpty ?
-            Text('わざ使用前') : Container(),
+            Text(loc.battleTimingBeforeMove) : Container(),
           ],
         );
       case AbilityTiming.afterMove:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
-          return Text('わざ使用後');
+          return Text(loc.battleTimingAfterMove);
         }
         break;
       case AbilityTiming.changeFaintingPokemon:
-        return Text('ポケモン交代');
+        return Text(loc.battlePokemonChange);
       case AbilityTiming.gameSet:
-        return Text('対戦終了！');
+        return Text(loc.battleTimingGameSet);
       case AbilityTiming.continuousMove:
       default:
         break;
@@ -162,7 +166,10 @@ class BattleTimingPanel extends Column {
     PlayerType attacker,
     TurnMove turnMove,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) {
     return 
     timing.id == AbilityTiming.action ?
@@ -181,6 +188,7 @@ class BattleTimingPanel extends Column {
       sameTimingList.first,
       nextSameTimingFirst,
       isInput: isInput,
+      loc: loc,
     ) :
     timing.id == AbilityTiming.continuousMove ?
     BattleContinuousMoveColumn(
@@ -199,6 +207,7 @@ class BattleTimingPanel extends Column {
       sameTimingList.first,
       nextSameTimingFirst,
       isInput: isInput,
+      loc: loc,
     ) :
     timing.id == AbilityTiming.changeFaintingPokemon ?
     BattleChangeFaintingPokemonColumn(
@@ -212,11 +221,12 @@ class BattleTimingPanel extends Column {
       textEditControllerList3,
       sameTimingList.first.guides,
       isInput: isInput,
+      loc: loc,
     ) :
     timing.id == AbilityTiming.gameSet ?
     BattleGamesetColumn(
       theme, sameTimingList.first.turnEffect,
-      battle.opponentName) :
+      battle.opponentName, loc: loc) :
     timing.id == AbilityTiming.terastaling ?
     BattleTerastalColumn(
       theme, battle, turn,
@@ -226,7 +236,7 @@ class BattleTimingPanel extends Column {
       sameTimingList.first.phaseIdx,
       timing, textEditControllerList1, textEditControllerList2,
       textEditControllerList3, textEditControllerList4,
-      isInput: isInput,
+      isInput: isInput, loc: loc
     ) :
     BattleEffectColumn(
       theme, battle, turn,
@@ -236,7 +246,7 @@ class BattleTimingPanel extends Column {
       sameTimingList.first.phaseIdx,
       timing, textEditControllerList1, textEditControllerList2,
       textEditControllerList3, textEditControllerList4,
-      attacker, turnMove, isInput: isInput,
+      attacker, turnMove, isInput: isInput, loc: loc,
     );
   }
 }

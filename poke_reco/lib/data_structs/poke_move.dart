@@ -22,6 +22,8 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:tuple/tuple.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // ダメージ
 class DamageClass {
@@ -53,6 +55,38 @@ class MoveHit {
   static const int fail = 3;
 
   const MoveHit(this.id);
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        switch (id) {
+          case hit:
+            return '命中';
+          case critical:
+            return '急所に命中';
+          case notHit:
+            return '当たらなかった';
+          case fail:
+            return 'うまく決まらなかった';
+          default:
+            return '';
+        }
+      case Language.english:
+      default:
+        switch (id) {
+          case hit:
+            return 'Hit';
+          case critical:
+            return 'Critical Hit';
+          case notHit:
+            return 'Missed';
+          case fail:
+            return 'Failed';
+          default:
+            return '';
+        }
+    }
+  }
 
   final int id;
 }
@@ -91,27 +125,35 @@ class ActionFailure {
   static const int other = 10;        // その他
   static const int size = 11;
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'わざの反動',
-    2: 'ねむり',
-    3: 'こおり',
-//    4: 'PPが残っていない',
-//    5: 'なまけ',
-//    6: 'きあいパンチ中にダメージを受けた',
-    4: 'ひるみ',
-//    11: 'じごくづき',
-//    12: 'こだわり中以外のわざを使った',
-    5: 'ちょうはつ',
-//    14: 'ふういん',
-    6: 'こんらん',
-    7: 'まひ',
-    8: 'メロメロ',
-    9: '相手にこうげきを防がれた',
-    10: 'その他',
+  static const Map<int, Tuple2<String, String>> _displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('わざの反動', 'Need recharge of move'),
+    2: Tuple2('ねむり', 'Sleep'),
+    3: Tuple2('こおり', 'Freeze'),
+//    4: Tuple2('PPが残っていない', ''),
+//    5: Tuple2('なまけ', ''),
+//    6: Tuple2('きあいパンチ中にダメージを受けた', ''),
+    4: Tuple2('ひるみ', 'Flinch'),
+//    11: Tuple2('じごくづき', ''),
+//    12: Tuple2('こだわり中以外のわざを使った', ''),
+    5: Tuple2('ちょうはつ', 'Taunt'),
+//    14: Tuple2('ふういん', ''),
+    6: Tuple2('こんらん', 'Confusion'),
+    7: Tuple2('まひ', 'Paralysis'),
+    8: Tuple2('メロメロ', 'Attract'),
+    9: Tuple2('相手にこうげきを防がれた', 'Prevented'),
+    10: Tuple2('その他', 'Others'),
   };
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   const ActionFailure(this.id);
 
@@ -127,7 +169,7 @@ class DamageGetter {
       return minDamage.toString();
     }
     else {
-      return '$minDamage～$maxDamage';
+      return '$minDamage ~ $maxDamage';
     }
   }
 }
@@ -136,7 +178,7 @@ class TurnMove {
   PlayerType playerType = PlayerType(PlayerType.none);
   TurnMoveType type = TurnMoveType(TurnMoveType.none);
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
-  Move move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+  Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
   List<MoveHit> moveHits = [MoveHit(MoveHit.hit)];   // 命中した/急所/外した
@@ -196,72 +238,97 @@ class TurnMove {
   }
 
   // 追加効果に対応する文字列
-  static const Map<int, String> moveEffectText = {
-    //2: 'ねむってしまった',
-    3: 'どくにかかった',
-    5: 'やけどをおった',
-    6: 'こおってしまった',
-    7: 'しびれてしまった',
-    32: 'ひるんで技がだせない',
-    //50: 'こんらんした',
-    69: 'こうげきが下がった',
-    70: 'ぼうぎょが下がった',
-    71: 'すばやさが下がった',
-    72: 'とくこうが下がった',
-    73: 'とくぼうが下がった',
-    74: '命中率が下がった',
-    76: 'ひるんで技がだせない',
-    77: 'こんらんした',
-    78: 'どくにかかった',
-    93: 'ひるんで技がだせない',
-    126: 'やけどをおった',
-    139: 'ぼうぎょが上がった',
-    140: 'こうげきが上がった',
-    141: 'こうげき・ぼうぎょ・とくこう・とくぼう・すばやさがあがった',
-    147: 'ひるんで技がだせない',
-    151: 'ひるんで技がだせない',
-    153: 'しびれてしまった',
-    201: 'やけどをおった',
-    203: 'もうどくにかかった',
-    210: 'どくにかかった',
-    254: 'やけどをおった',
-    261: 'こおってしまった',
-    263: 'しびれてしまった',
-    264: 'しびれてしまった',
-    268: 'こんらんした',
-    272: 'とくぼうががくっと下がった',
-    274: 'やけどをおった',
-    275: 'こおってしまった',
-    276: 'しびれてしまった',
-    277: 'とくこうが上がった',
-    330: 'ねむってしまった',
-    332: 'しびれてしまった',
-    333: 'やけどをおった',
-    334: 'こんらんした',
-    359: 'ぼうぎょがぐーんと上がった',
-    372: 'しびれてしまった',
-    380: 'こおってしまった',
-    449: 'どくにかかった',
-    454: 'やけどをおった',
-    460: 'やけどをおった',
-    466: 'どくにかかった',
-    468: 'ぼうぎょが下がった',
-    469: 'やけどをおった',
-    470: 'すばやさが下がった',
-    471: 'しびれてしまった',
-    472: 'やけどをおった',
-    475: 'こんらんした',
-    484: 'どくにかかった',
-    499: 'ねむってしまった',
-    500: 'やけどをおった',
-  };
+  String _getMoveEffectText(int id, String name, AppLocalizations loc) {
+    switch (id) {
+      //case 2:
+      case 330:
+      case 499:
+        return loc.battleFellAsleep(name);
+      case 3:
+      case 78:
+      case 210:
+      case 449:
+      case 466:
+      case 484:
+        return loc.battlePoisoned(name);
+      case 5:
+      case 126:
+      case 201:
+      case 254:
+      case 274:
+      case 333:
+      case 454:
+      case 460:
+      case 469:
+      case 472:
+      case 500:
+        return loc.battleBurned(name);
+      case 6:
+        return loc.battleFrozen(name);
+      case 7:
+      case 153:
+      case 263:
+      case 264:
+      case 276:
+      case 332:
+      case 372:
+      case 471:
+        return loc.battlePararised(name);
+      case 32:
+      case 76:
+      case 93:
+      case 147:
+      case 151:
+        return loc.battleFlinched(name);
+      //case 50:
+      case 77:
+      case 334:
+      case 475:
+        return loc.battleConfused(name);
+      case 69:
+        return loc.battleAttackDown1(name);
+      case 70:
+      case 468:
+        return loc.battleDefenseDown1(name);
+      case 71:
+      case 470:
+        return loc.battleSpeedDown1(name);
+      case 72:
+        return loc.battleSAttackDown1(name);
+      case 73:
+        return loc.battleSDefenseDown1(name);
+      case 74:
+        return loc.battleAccuracyDown1(name);
+      case 139:
+        return loc.battleDefenseUp1(name);
+      case 140:
+        return loc.battleAttackUp1(name);
+      case 141:
+        return loc.battleABCDSUp1(name);
+      case 203:
+        return loc.battleBadPoisoned(name);
+      case 272:
+        return loc.battleSDefenseDown2(name);
+      case 277:
+        return loc.battleSAttackUp1(name);
+      case 359:
+        return loc.battleDefenseUp2(name);
+      default:
+        return '';
+    }
+  }
 
-  static const Map<int, String> moveEffectText2 = {
-    274: 'ひるんで技がだせない',
-    275: 'ひるんで技がだせない',
-    276: 'ひるんで技がだせない',
-    468: 'ひるんで技がだせない',
-  };
+  String _getMoveEffectText2(int id, String name, AppLocalizations loc) {
+    switch (id) {
+      case 274:
+      case 275:
+      case 276:
+      case 468:
+        return loc.battleFlinched(name);
+      default:
+        return '';
+    }
+  }
 
   List<Guide> processMove(
     Party ownParty,
@@ -273,6 +340,7 @@ class TurnMove {
     List<int> invalidGuideIDs,
     {
       DamageGetter? damageGetter,
+      required AppLocalizations loc,
     }
   )
   {
@@ -286,6 +354,10 @@ class TurnMove {
     var yourState = playerType.id == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copyWith();
 
+    // 行動1の場合は登録
+    if (isFirst) {
+      state.firstAction = this;
+    }
     // みちづれ状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.destinyBond);
     // おんねん状態解除
@@ -366,7 +438,7 @@ class TurnMove {
           ret.add(Guide()
             ..guideId = Guide.confZoroark
             ..canDelete = true
-            ..guideStr = 'あいての${myState.pokemon.name}の正体を${pokeData.pokeBase[check]!.name}で確定しました。'
+            ..guideStr = loc.battleGuideConfZoroark(myState.pokemon.name, pokeData.pokeBase[check]!.name)
           );
           state.makePokemonOther(playerType, check);
           myState = state.getPokemonState(playerType, null);
@@ -390,7 +462,7 @@ class TurnMove {
       ret.add(Guide()
         ..guideId = Guide.confMove
         ..canDelete = false
-        ..guideStr = 'あいての${myState.pokemon.name}のわざの1つを${move.displayName}で確定しました。'
+        ..guideStr = loc.battleGuideConfMove(move.displayName, myState.pokemon.omittedName)
       );
       opponentPokemonState.moves.add(move);
     }
@@ -451,6 +523,8 @@ class TurnMove {
     bool isNormalized1_2 = false;
     // タイプ相性計算時、追加で計算するタイプ
     PokeType? additionalMoveType;
+    // 半減きのみを使用したか
+    double halvedBerry = 0.0;
 
     {
       Move replacedMove = getReplacedMove(move, continuousCount, myState);   // 必要に応じてわざの内容変更
@@ -553,6 +627,13 @@ class TurnMove {
       moveType = replacedMove.type;
       // ダメージ計算式文字列
       damageCalc = null;
+      // 半減きのみを使用したか
+      if (targetStates.isNotEmpty) {
+        int findIdx = targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.halvedBerry);
+        if (findIdx >= 0) {
+          halvedBerry = targetStates[0].buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
+        }
+      }
 
       switch (moveDamageClassID) {
         case 1:     // へんか
@@ -771,16 +852,16 @@ class TurnMove {
               if (targetPlayerTypeID == PlayerType.me) {
                 damage = (targetState.remainHP / 2).floor();
                 if (damage == 0) damage = 1;
-                damageCalc = 'ダメージ計算：$damage(固定ダメージ) = $damage';
+                damageCalc = loc.battleDamageFixed1(damage);
               }
               else {
                 damage = (targetState.remainHPPercent / 2).floor();
-                damageCalc = 'ダメージ計算：$damage%(固定ダメージ) = $damage%';
+                damageCalc = loc.battleDamageFixed2(damage);
               }
             }
             break;
           case 42:    // 40の固定ダメージ
-            damageCalc = 'ダメージ計算：40(固定ダメージ) = 40';
+            damageCalc = loc.battleDamageFixed3;
             break;
           case 43:    // バインド状態にする
             targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state);
@@ -936,7 +1017,7 @@ class TurnMove {
             }
             break;
           case 88:    // 使用者のレベル分の固定ダメージ
-            damageCalc = 'ダメージ計算：${myState.pokemon.level}(わざ使用者レベル) = ${myState.pokemon.level}';
+            damageCalc = loc.battleDamageFixed4(myState.pokemon.level);
             break;
           case 89:    // ランダムに決まった固定ダメージ
           case 90:    // 低優先度。ターンで最後に受けた物理わざによるダメージの2倍を与える
@@ -1068,7 +1149,7 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.perishSong), state);
             break;
           case 116:   // 天気をすなあらしにする
-            targetField!.weather = Weather(Weather.sandStorm);
+            targetField!.weather = Weather(Weather.sandStorm)..extraArg1 = myState.holdingItem?.id == 260 ? 8 : 5;
             effectOnce = true;
             break;
           case 117:   // ひんしダメージをHP1で耐える。連続使用で失敗しやすくなる
@@ -1159,7 +1240,7 @@ class TurnMove {
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
           case 131:   // 20の固定ダメージ
-            damageCalc = 'ダメージ計算：20(固定ダメージ) = 20';
+            damageCalc = loc.battleDamageFixed5;
             break;
           case 136:   // 個体値によってわざのタイプが変わる
             if (extraArg1[continuousCount] != 0) {
@@ -1167,11 +1248,11 @@ class TurnMove {
             }
             break;
           case 137:   // 天気を雨にする
-            targetField!.weather = Weather(Weather.rainy);
+            targetField!.weather = Weather(Weather.rainy)..extraArg1 = myState.holdingItem?.id == 262 ? 8 : 5;
             effectOnce = true;
             break;
           case 138:   // 天気をはれにする
-            targetField!.weather = Weather(Weather.sunny);
+            targetField!.weather = Weather(Weather.sunny)..extraArg1 = myState.holdingItem?.id == 261 ? 8 : 5;
             effectOnce = true;
             break;
           case 141:   // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさを1段階上げる(確率)
@@ -1388,6 +1469,11 @@ class TurnMove {
             if (extraArg1[continuousCount] > 0) {
               // もちもの確定のため、一度持たせる
               if (opponentPokemonState.getHoldingItem()?.id == 0) {
+                ret.add(Guide()
+                  ..guideId = Guide.confItem
+                  ..args = [extraArg1[continuousCount]]
+                  ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
+                );
                 opponentPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
               ownPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
@@ -1435,6 +1521,11 @@ class TurnMove {
           case 189:   // もちものを持っていれば失わせ、威力1.5倍
             // もちもの確定のため、一度持たせる
             if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
+              ret.add(Guide()
+                ..guideId = Guide.confItem
+                ..args = [extraArg1[continuousCount]]
+                ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
+              );
               if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
             }
             targetState.holdingItem = null;
@@ -1624,8 +1715,9 @@ class TurnMove {
               targetState.holdingItem = null;
               Item.processEffect(
                 usingItem.id, PlayerType(myPlayerTypeID),
-                myState, targetState,
-                state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+                myState, targetState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+              );
               myState.holdingItem = mySavingItem;
             }
             break;
@@ -1657,7 +1749,10 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               var flingItem = pokeData.items[extraArg1[continuousCount]]!;
               movePower = flingItem.flingPower;
-              flingItem.processFlingEffect(playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+              flingItem.processFlingEffect(
+                playerType, myState, yourState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+              );
               myState.holdingItem = null;
             }
             break;
@@ -2198,7 +2293,7 @@ class TurnMove {
             break;
           case 321:   // 使用者の残りHP分の固定ダメージを与える。使用者はひんしになる
             if (myPlayerTypeID == PlayerType.me) {
-              damageCalc = 'ダメージ計算：${myState.remainHP}(固定ダメージ) = ${myState.remainHP}';
+              damageCalc = loc.battleDamageFixed6(myState.remainHP);
             }
             else {
               showDamageCalc = false;
@@ -2365,11 +2460,11 @@ class TurnMove {
           case 351:   // 場のすべてのくさタイプポケモンのぼうぎょを1段階上げる(SV使用不可のため処理なし)
             break;
           case 352:   // 場をグラスフィールドにする
-            targetField!.field = Field(Field.grassyTerrain);
+            targetField!.field = Field(Field.grassyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
             effectOnce = true;
             break;
           case 353:   // 場をミストフィールドにする
-            targetField!.field = Field(Field.mistyTerrain);
+            targetField!.field = Field(Field.mistyTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
             effectOnce = true;
             break;
           case 354:   // そうでん状態にする
@@ -2429,7 +2524,7 @@ class TurnMove {
           case 368:   // トレーナー戦後にもらえる賞金が2倍になる
             break;
           case 369:   // 場をエレキフィールドにする
-            targetField!.field = Field(Field.electricTerrain);
+            targetField!.field = Field(Field.electricTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
             effectOnce = true;
             break;
           case 376:   // 相手のタイプにくさを追加する
@@ -2468,7 +2563,7 @@ class TurnMove {
                   ret.add(Guide()
                     ..guideId = Guide.sapConfAttack
                     ..args = [attack, attack]
-                    ..guideStr = 'あいての${targetState.pokemon.name}のこうげき実数値を$attackで確定しました。'
+                    ..guideStr = loc.battleGuideSapConfAttack(attack, targetState.pokemon.omittedName)
                   );
                 }
               }
@@ -2493,7 +2588,7 @@ class TurnMove {
             break;
           case 395:   // 場をサイコフィールドにする
           case 415:   // 場をサイコフィールドにする
-            targetField!.field = Field(Field.psychicTerrain);
+            targetField!.field = Field(Field.psychicTerrain)..extraArg1 = myState.holdingItem?.id == 896 ? 8 : 5;
             effectOnce = true;
             break;
           case 398:   // 使用者がほのおタイプでないと失敗する。成功するとほのおタイプを失う。こおり状態を治す
@@ -2601,7 +2696,9 @@ class TurnMove {
           case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
             if (extraArg1[continuousCount] != 0) {
               Item.processEffect(
-                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc
+              );
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState, moveId: replacedMove.id);
             }
@@ -2817,13 +2914,27 @@ class TurnMove {
           case 456:   // 対象にもちものがあるときのみ成功
             // もちもの確定のため、一度持たせる
             if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()!.id == 0) {
-              if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              if (extraArg1[continuousCount] != 0) {
+                ret.add(Guide()
+                  ..guideId = Guide.confItem
+                  ..args = [extraArg1[continuousCount]]
+                  ..guideStr = loc.battleGuideConfItem2(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
+                );
+                targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              }
             }
             break;
           case 457:   // 対象のもちものを消失させる
             // もちもの確定のため、一度持たせる
             if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
-              if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              if (extraArg1[continuousCount] != 0) {
+                ret.add(Guide()
+                  ..guideId = Guide.confItem
+                  ..args = [extraArg1[continuousCount]]
+                  ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
+                );
+                targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              }
             }
             targetState.holdingItem = null;
             break;
@@ -3002,7 +3113,7 @@ class TurnMove {
             }
             break;
           case 493:   // 天気をゆきにして控えと交代
-            state.weather = Weather(Weather.snowy);
+            state.weather = Weather(Weather.snowy)..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
             if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
               myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
               PokemonState newState;
@@ -3026,7 +3137,7 @@ class TurnMove {
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
           case 495:   // 天気をゆきにする
-            state.weather = Weather(Weather.snowy);
+            state.weather = Weather(Weather.snowy)..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
             effectOnce = true;
             break;
           case 496:   // その戦闘でこうげき技のダメージを受けるたびに威力+50。(最大350)
@@ -3117,383 +3228,17 @@ class TurnMove {
 
       // ダメージ計算式
       if (showDamageCalc) {
-        if (damageCalc == null) {
-          // じゅうでん補正&消費
-          int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
-          if (findIdx >= 0 && moveType.id == 13) {
-            movePower *= 2;
-            myState.ailmentsRemoveAt(findIdx);
-          }
-
-          if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-            myState = beforeChangeMyState;
-          }
-
-          // とくせい等によるわざタイプの変更
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) moveType = PokeType.createFromId(15);
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) moveType = PokeType.createFromId(18);
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) moveType = PokeType.createFromId(3);
-          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) moveType = PokeType.createFromId(11);
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) moveType = PokeType.createFromId(13);
-          if (replacedMove.id != 165 && moveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) moveType = PokeType.createFromId(PokeTypeId.electric);
-          
-          // とくせい等による威力変動
-          double tmpPow = movePower.toDouble();
-          // テクニシャン補正は一番最初
-          if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
-
-          if (isNormalized1_2) tmpPow *= 1.2;
-          if (moveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
-          if (moveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
-          if (moveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
-          if (moveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
-          if (myState.sex.id != 0 && targetStates[0].sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
-            if (myState.sex.id != targetStates[0].sex.id) {
-              tmpPow *= 1.25;
-            }
-            else {
-              tmpPow *= 0.75;
-            }
-          }
-          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) tmpPow *= 1.2;
-          if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) tmpPow *= 1.2;
-          if (replacedMove.isAdditionalEffect2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >= 0) tmpPow *= 1.3;
-          if (replacedMove.isWave && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0) tmpPow *= 1.5;
-          if (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >= 0) tmpPow *= 1.3;
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >= 0 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >= 0) tmpPow *= 2;
-          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
-          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
-          if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
-          if ((moveType.id == 5 || moveType.id == 6 || moveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
-          if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
-          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
-          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
-          if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
-          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
-          if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
-          int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-          if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
-          if (moveDamageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
-          if (moveDamageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
-          if (moveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
-          if (moveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
-          if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
-          if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >= 0) tmpPow *= 1.2;
-
-          if (moveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-          if (moveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-          if (moveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-          if (moveType.id == 16 && targetStates[0].isGround(targetIndiFields[0]) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
-          
-          if (moveType.id == 10 && targetStates[0].buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
-
-          if (moveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
-          if (moveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
-
-          movePower = tmpPow.floor();
-
-          // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
-          bool plusIgnore = targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
-          bool minusIgnore = isCritical || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
-          int calcMaxAttack =
-            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int calcMinAttack =
-            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-              myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          if (isFoulPlay) {
-            calcMaxAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-            calcMinAttack = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          }
-          else if (defenseAltAttack) {
-            calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-            calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                myState.finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          }
-          int attackVmax = moveDamageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int attackVmin = moveDamageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          String attackStr = '';
-          if (attackVmax == attackVmin) {
-            attackStr = attackVmax.toString();
-          }
-          else {
-            attackStr = '$attackVmin～$attackVmax';
-          }
-          if (isFoulPlay) {
-            attackStr += '(対象者のこうげき)';
-          }
-          else {
-            attackStr += moveDamageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
-          }
-          plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
-          minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
-          int calcMaxDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-                ignoreTargetRank ? targetStates[0].maxStats[2].real : targetStates[0].finalizedMaxStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) :
-                ignoreTargetRank ? targetStates[0].maxStats[1].real : targetStates[0].finalizedMaxStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int calcMaxSDefense = ignoreTargetRank ? targetStates[0].maxStats[4].real : targetStates[0].finalizedMaxStat(StatIndex.D, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int calcMinDefense = targetStates[0].ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-                ignoreTargetRank ? targetStates[0].minStats[2].real : targetStates[0].finalizedMinStat(StatIndex.B, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore) :
-                ignoreTargetRank ? targetStates[0].minStats[1].real : targetStates[0].finalizedMinStat(StatIndex.A, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int calcMinSDefense = ignoreTargetRank ? targetStates[0].minStats[4].real : targetStates[0].finalizedMinStat(StatIndex.D, moveType, targetStates[0], state, plusCut: plusIgnore, minusCut: minusIgnore);
-          int defenseVmax = moveDamageClassID == 2 ? 
-                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
-                  calcMaxDefense : calcMaxSDefense :
-                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
-                  invDeffense ? calcMaxDefense : calcMaxSDefense :
-                  invDeffense ? calcMaxSDefense : calcMaxDefense;
-          int defenseVmin = moveDamageClassID == 2 ? 
-                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
-                  calcMinDefense : calcMinSDefense : 
-                myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
-                  invDeffense ? calcMinDefense : calcMinSDefense :
-                  invDeffense ? calcMinSDefense : calcMinDefense ;
-          String defenseStr = '';
-          if (defenseVmax == defenseVmin) {
-            defenseStr = defenseVmax.toString();
-          }
-          else {
-            defenseStr = '$defenseVmin～$defenseVmax';
-          }
-          if (invDeffense) {
-            defenseStr += '(対象者のぼうぎょ)';
-          }
-          else {
-            defenseStr += moveDamageClassID == 2 ? '(対象者のぼうぎょ)' : '(対象者のとくぼう)';
-          }
-          int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmax / defenseVmin)).floor() / 50 + 2).floor();
-          int damageVmin = ((((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmin / defenseVmax)).floor() / 50 + 2).floor() * 0.85).floor();
-          damageCalc = 'ダメージ計算：${myState.pokemon.level}(わざ使用者レベル)×2÷5+2 ×$movePower(威力)×$attackStr÷$defenseStr ÷50+2 ×0.85～1.00(乱数) ';
-          // 天気補正(五捨五超入)
-          if (targetStates[0].holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
-            if (state.weather.id == Weather.sunny) {
-              if (moveType.id == 10) {   // はれ下ほのおわざ
-                damageVmax = roundOff5(damageVmax * 1.5);
-                damageVmin = roundOff5(damageVmin * 1.5);
-                damageCalc += '×1.5(天気) ';
-              }
-              else if (moveType.id == 11) {   // はれ下みずわざ
-                if (isSunny1_5) {
-                  damageVmax = roundOff5(damageVmax * 1.5);
-                  damageVmin = roundOff5(damageVmin * 1.5);
-                  damageCalc += '×1.5(天気) ';
-                }
-                else {
-                  damageVmax = roundOff5(damageVmax * 0.5);
-                  damageVmin = roundOff5(damageVmin * 0.5);
-                  damageCalc += '×0.5(天気) ';
-                }
-              }
-            }
-            else if (state.weather.id == Weather.rainy) {
-              if (moveType.id == 11) {   // 雨下みずわざ
-                damageVmax = roundOff5(damageVmax * 1.5);
-                damageVmin = roundOff5(damageVmin * 1.5);
-                damageCalc += '×1.5(天気) ';
-              }
-              else if (moveType.id == 10) {   // 雨下ほのおわざ
-                damageVmax = roundOff5(damageVmax * 0.5);
-                damageVmin = roundOff5(damageVmin * 0.5);
-                damageCalc += '×0.5(天気) ';
-              }
-            }
-          }
-          // 急所補正(五捨五超入)
-          if (moveHits[continuousCount].id == MoveHit.critical) {
-            damageVmax = roundOff5(damageVmax * 1.5);
-            damageVmin = roundOff5(damageVmin * 1.5);
-            damageCalc += '×1.5(急所) ';
-          }
-          // 乱数補正(切り捨て)
-          damageVmax = (damageVmax * 100 / 100).floor();
-          damageVmin = (damageVmin * 85 / 100).floor();
-          damageCalc += '×85～100÷100(乱数) ';
-          // タイプ一致補正(五捨五超入)
-          var rate = myState.typeBonusRate(moveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
-          if (rate > 1.0) {
-            damageVmax = roundOff5(damageVmax * rate);
-            damageVmin = roundOff5(damageVmin * rate);
-            damageCalc += '×$rate(タイプ一致) ';
-          }
-          // 相性補正(切り捨て)
-          rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
-            targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
-          if (additionalMoveType != null) {
-            rate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
-              targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, targetStates[0]);
-          }
-          damageVmax = (damageVmax * rate).floor();
-          damageVmin = (damageVmin * rate).floor();
-          damageCalc += '×$rate(相性) ';
-          // やけど補正(五捨五超入)
-          if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && moveDamageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
-            if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
-              damageVmax = roundOff5(damageVmax * 0.5);
-              damageVmin = roundOff5(damageVmin * 0.5);
-              damageCalc += '×0.5(やけど) ';
-            }
-          }
-          // タイプ相性を計算
-          double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, targetStates[0].holdingItem?.id == 586,
-            targetStates[0].ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, moveType, targetStates[0]);
-          // M(五捨五超入)
-          {
-            double tmpMax = damageVmax.toDouble();
-            double tmpMin = damageVmin.toDouble();
-            // 壁補正
-            if (
-              !isCritical && myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty && (
-              (moveDamageClassID == 2 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
-              (moveDamageClassID == 3 && targetIndiFields[0].where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty))
-            ) {
-              tmpMax *= 0.5;
-              tmpMin *= 0.5;
-              damageCalc += '×0.5(壁) ';
-            }
-            // ブレインフォース補正
-            if (typeRate >= 2.0 &&
-                myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_25).isNotEmpty
-            ) {
-              tmpMax *= 1.25;
-              tmpMin *= 1.25;
-              damageCalc += '×1.25(ブレインフォース) ';
-            }
-            // スナイパー補正
-            if (moveHits[continuousCount].id == MoveHit.critical &&
-                myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
-            ) {
-              tmpMax *= 1.5;
-              tmpMin *= 1.5;
-              damageCalc += '×1.5(スナイパー) ';
-            }
-            // いろめがね補正
-            if (typeRate > 0.0 && typeRate < 1.0 &&
-                myState.buffDebuffs.where((e) => e.id == BuffDebuff.notGoodType2).isNotEmpty
-            ) {
-              tmpMax *= 2;
-              tmpMin *= 2;
-              damageCalc += '×2(いろめがね) ';
-            }
-            // もふもふほのお補正
-            if (!ignoreAbility && (moveDamageClassID == 2 || moveDamageClassID == 3) &&
-                moveType.id == 10 &&
-                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
-            ) {
-              tmpMax *= 2;
-              tmpMin *= 2;
-              damageCalc += '×2(もふもふ) ';
-            }
-            // Mhalf
-            if (!ignoreAbility &&
-              // こおりのりんぷん
-              (moveDamageClassID == 3 &&
-               targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.specialDamaged0_5).isNotEmpty) ||
-              // パンクロック
-              (replacedMove.isSound && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.soundedDamage0_5).isNotEmpty) ||
-              // ファントムガード
-              // マルチスケイル
-              ((targetStates[0].remainHP >= targetStates[0].pokemon.h.real || targetStates[0].remainHPPercent >= 100) &&
-                targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty) ||
-              // もふもふ直接こうげき
-              (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-               targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
-              // たいねつ
-              (moveType.id == PokeTypeId.fire && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
-            ) {
-              tmpMax *= 0.5;
-              tmpMin *= 0.5;
-              damageCalc += '×0.5(とくせい) ';
-            }
-            // Mfilter
-            if (!ignoreAbility &&
-              // ハードロック
-              // フィルター
-              // プリズムアーマー
-              typeRate >= 2.0 && targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
-            ) {
-              tmpMax *= 0.75;
-              tmpMin *= 0.75;
-              damageCalc += '×0.75(とくせい) ';
-            }
-            // たつじんのおび補正
-            if (typeRate >= 2.0 && myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_2).isNotEmpty
-            ) {
-              tmpMax *= 1.2;
-              tmpMin *= 1.2;
-              damageCalc += '×1.2(たつじんのおび) ';
-            }
-            // メトロノーム補正
-            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2).isNotEmpty) {
-              int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
-              if (findIdx >= 0) {
-                int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
-                if (count > 0) {
-                  tmpMax *= (1.0 + 0.2 * count);
-                  tmpMin *= (1.0 + 0.2 * count);
-                  damageCalc += '×${(1.0 + 0.2 * count)}(メトロノーム) ';
-                }
-              }
-            }
-            // いのちのたま補正
-            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
-            {
-              tmpMax *= 1.3;
-              tmpMin *= 1.3;
-              damageCalc += '×1.3(いのちのたま) ';
-            }
-            // 半減きのみ補正
-            findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.halvedBerry);
-            if (findIdx >= 0) {
-              double mult = myState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
-              tmpMax *= mult;
-              tmpMin *= mult;
-              damageCalc += '×$mult(半減きのみ) ';
-              myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.halvedBerry);
-            }
-            // Mtwice
-            if (mTwice || targetStates[0].buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
-              tmpMax *= 2;
-              tmpMin *= 2;
-              damageCalc += '×2(その他補正) ';
-            }
-            
-            damageVmax = roundOff5(tmpMax);
-            damageVmin = roundOff5(tmpMin);
-          }
-          // Mprotect(五捨五超入)
-          // ダイマックスわざに関する計算のため、SVでは不要
-          { }
-          damageCalc += '= $damageVmin～$damageVmax';
-          damageGetter?.minDamage = damageVmin;
-          damageGetter?.maxDamage = damageVmax;
-        }
+        var damage = calcDamage(
+          myState, targetStates[0], state, continuousCount,
+          playerType, replacedMove, moveType, movePower,
+          moveDamageClassID, beforeChangeMyState, isNormalized1_2,
+          isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank,
+          invDeffense, isSunny1_5, ignoreAbility, mTwice,
+          additionalMoveType, halvedBerry, loc: loc,
+        );
+        damageCalc ??= damage.item1;
+        damageGetter?.maxDamage = damage.item2;
+        damageGetter?.minDamage = damage.item3;
 
         ret.add(Guide()
           ..guideId = Guide.damageCalc
@@ -3541,6 +3286,41 @@ class TurnMove {
                 else {
                   targetState.hiddenBuffs.add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
                 }
+                // あいてポケモンのステータス確定
+                if (playerType.id == PlayerType.opponent && realDamage[continuousCount] > 0 &&
+                    targetState.remainHP > 0
+                ) {
+                  var reals = calcRealFromDamage(
+                    realDamage[continuousCount], myState, targetStates[0],
+                    state, continuousCount, playerType, replacedMove,
+                    moveType, movePower, moveDamageClassID, beforeChangeMyState,
+                    isNormalized1_2, isCritical, isFoulPlay, defenseAltAttack,
+                    ignoreTargetRank, invDeffense, isSunny1_5, ignoreAbility,
+                    mTwice, additionalMoveType, halvedBerry, loc: loc,
+                  );
+                  if (reals.item1.index > StatIndex.H.index) {
+                    // もともとある範囲より狭まるようにのみ上書き
+                    int minS = opponentPokemonState.minStats[reals.item1.index].real;
+                    int maxS = opponentPokemonState.maxStats[reals.item1.index].real;
+                    bool addGuide = false;
+                    if (minS < reals.item3) {
+                      minS = reals.item3;
+                      addGuide = true;
+                    }
+                    if (maxS > reals.item2) {
+                      maxS = reals.item2;
+                      addGuide = true;
+                    }
+                    if (addGuide) {
+                      ret.add(Guide()
+                        ..guideId = Guide.moveDamagedToStatus
+                        ..guideStr = loc.battleGuideMoveDamagedToStatus(maxS, minS, opponentPokemonState.pokemon.omittedName, reals.item1.name)
+                        ..args = [reals.item1.index, minS, maxS,]
+                        ..canDelete = true
+                      );
+                    }
+                  }
+                }
               }
               else {
                 if (realDamage[continuousCount] > 0) {
@@ -3555,10 +3335,868 @@ class TurnMove {
       }
     }
 
+    // あいてポケモンのすばやさ確定
+    if (!isFirst && state.firstAction != null && state.firstAction!.type.id == TurnMoveType.move) {
+      if (move.priority == state.firstAction!.move.priority) {    // わざの優先度が同じ
+        // もともとある範囲より狭まるようにのみ上書き
+        int minS = opponentPokemonState.minStats[StatIndex.S.index].real;
+        int maxS = opponentPokemonState.maxStats[StatIndex.S.index].real;
+        bool addGuide = false;
+        if (playerType.id == PlayerType.me) {
+          if (minS < ownPokemonState.minStats[StatIndex.S.index].real) {   // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            minS = ownPokemonState.minStats[StatIndex.S.index].real;
+            addGuide = true;
+          }
+        }
+        else {
+          if (maxS > ownPokemonState.maxStats[StatIndex.S.index].real) {    // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            maxS = ownPokemonState.maxStats[StatIndex.S.index].real;
+            addGuide = true;
+          }
+        }
+        if (addGuide) {
+          ret.add(Guide()
+            ..guideId = Guide.moveOrderConfSpeed
+            ..guideStr = loc.battleGuideMoveOrderConfSpeed(maxS, minS, opponentPokemonState.pokemon.omittedName)
+            ..args = [minS, maxS,]
+            ..canDelete = true
+          );
+        }
+      }
+    }
+
     // 最後に使用した(PP消費した)わざセット
     myState.lastMove = move;
 
     return ret;
+  }
+
+  Tuple3<String, int, int> calcDamage(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    int continuousCount,
+    PlayerType myPlayerType,
+    Move move,
+    PokeType replacedMoveType,
+    int power,
+    int damageClassID,
+    PokemonState beforeChangeMyState,
+    bool isNormalized1_2,
+    bool isCritical,
+    bool isFoulPlay,
+    bool defenseAltAttack,
+    bool ignoreTargetRank,
+    bool invDeffense,
+    bool isSunny1_5,
+    bool ignoreAbility,
+    bool mTwice,
+    PokeType? additionalMoveType,
+    double halvedBerry,
+    {
+      required AppLocalizations loc,
+    }
+  ) {
+    int movePower = power;
+    Move replacedMove = move;
+    var myFields = myPlayerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+    var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
+    String ret = '';
+
+    // じゅうでん補正&消費
+    int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
+    if (findIdx >= 0 && replacedMoveType.id == 13) {
+      movePower *= 2;
+      myState.ailmentsRemoveAt(findIdx);
+    }
+
+    if (getChangePokemonIndex(myPlayerType) != null) {
+      myState = beforeChangeMyState;
+    }
+
+    // とくせい等によるわざタイプの変更
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.createFromId(15);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.createFromId(18);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.createFromId(3);
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.createFromId(11);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.createFromId(13);
+    if (replacedMove.id != 165 && replacedMoveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.createFromId(PokeTypeId.electric);
+    
+    // とくせい等による威力変動
+    double tmpPow = movePower.toDouble();
+    // テクニシャン補正は一番最初
+    if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
+
+    if (isNormalized1_2) tmpPow *= 1.2;
+    if (replacedMoveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
+    if (myState.sex.id != 0 && yourState.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
+      if (myState.sex.id != yourState.sex.id) {
+        tmpPow *= 1.25;
+      }
+      else {
+        tmpPow *= 0.75;
+      }
+    }
+    if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isAdditionalEffect2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >= 0) tmpPow *= 1.3;
+    if (replacedMove.isWave && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >= 0) tmpPow *= 1.3;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >= 0 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >= 0) tmpPow *= 2;
+    if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
+    if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
+    if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
+    if ((replacedMoveType.id == 5 || replacedMoveType.id == 6 || replacedMoveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
+    int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+    if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
+    if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
+    if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >= 0) tmpPow *= 1.2;
+
+    if (replacedMoveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 16 && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+    
+    if (replacedMoveType.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
+
+    if (replacedMoveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+
+    movePower = tmpPow.floor();
+
+    // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
+    bool plusIgnore = yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    bool minusIgnore = isCritical || yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    int calcMaxAttack =
+      myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+        myState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinAttack =
+      myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+        myState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    if (isFoulPlay) {
+      calcMaxAttack = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+      calcMinAttack = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    }
+    else if (defenseAltAttack) {
+      calcMaxAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          myState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+      calcMinAttack = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          myState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) : myState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    }
+    int attackVmax = damageClassID == 2 ? calcMaxAttack : myState.finalizedMaxStat(StatIndex.C, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int attackVmin = damageClassID == 2 ? calcMinAttack : myState.finalizedMinStat(StatIndex.C, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    String attackStr = '';
+    if (attackVmax == attackVmin) {
+      attackStr = attackVmax.toString();
+    }
+    else {
+      attackStr = '$attackVmin ~ $attackVmax';
+    }
+    if (isFoulPlay) {
+      attackStr += loc.battleDamageAttackerAttack;
+    }
+    else {
+      attackStr += damageClassID == 2 ? loc.battleDamageAttackerAttack : loc.battleDamageAttackerSAttack;
+    }
+    plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    int calcMaxDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
+          ignoreTargetRank ? yourState.maxStats[2].real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.maxStats[1].real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats[4].real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          ignoreTargetRank ? yourState.minStats[2].real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.minStats[1].real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinSDefense = ignoreTargetRank ? yourState.minStats[4].real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int defenseVmax = damageClassID == 2 ? 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            calcMaxDefense : calcMaxSDefense :
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            invDeffense ? calcMaxDefense : calcMaxSDefense :
+            invDeffense ? calcMaxSDefense : calcMaxDefense;
+    int defenseVmin = damageClassID == 2 ? 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            calcMinDefense : calcMinSDefense : 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            invDeffense ? calcMinDefense : calcMinSDefense :
+            invDeffense ? calcMinSDefense : calcMinDefense ;
+    String defenseStr = '';
+    if (defenseVmax == defenseVmin) {
+      defenseStr = defenseVmax.toString();
+    }
+    else {
+      defenseStr = '$defenseVmin ~ $defenseVmax';
+    }
+    if (invDeffense) {
+      defenseStr += loc.battleDamageDefenderDefense;
+    }
+    else {
+      defenseStr += damageClassID == 2 ? loc.battleDamageDefenderDefense : loc.battleDamageDefenderSDefense;
+    }
+    int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmax / defenseVmin)).floor() / 50 + 2).floor();
+    int damageVmin = ((((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmin / defenseVmax)).floor() / 50 + 2).floor() * 0.85).floor();
+    ret = loc.battleDamageCalcBase(myState.pokemon.level, movePower, attackStr, defenseStr);
+    // 天気補正(五捨五超入)
+    if (yourState.holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
+      if (state.weather.id == Weather.sunny) {
+        if (replacedMoveType.id == 10) {   // はれ下ほのおわざ
+          damageVmax = roundOff5(damageVmax * 1.5);
+          damageVmin = roundOff5(damageVmin * 1.5);
+          ret += loc.battleDamageWeather1_5;
+        }
+        else if (replacedMoveType.id == 11) {   // はれ下みずわざ
+          if (isSunny1_5) {
+            damageVmax = roundOff5(damageVmax * 1.5);
+            damageVmin = roundOff5(damageVmin * 1.5);
+            ret += loc.battleDamageWeather1_5;
+          }
+          else {
+            damageVmax = roundOff5(damageVmax * 0.5);
+            damageVmin = roundOff5(damageVmin * 0.5);
+            ret += loc.battleDamageWeather0_5;
+          }
+        }
+      }
+      else if (state.weather.id == Weather.rainy) {
+        if (replacedMoveType.id == 11) {   // 雨下みずわざ
+          damageVmax = roundOff5(damageVmax * 1.5);
+          damageVmin = roundOff5(damageVmin * 1.5);
+          ret += loc.battleDamageWeather1_5;
+        }
+        else if (replacedMoveType.id == 10) {   // 雨下ほのおわざ
+          damageVmax = roundOff5(damageVmax * 0.5);
+          damageVmin = roundOff5(damageVmin * 0.5);
+          ret += loc.battleDamageWeather0_5;
+        }
+      }
+    }
+    // 急所補正(五捨五超入)
+    if (moveHits[continuousCount].id == MoveHit.critical) {
+      damageVmax = roundOff5(damageVmax * 1.5);
+      damageVmin = roundOff5(damageVmin * 1.5);
+      ret += loc.battleDamageCritical1_5;
+    }
+    // 乱数補正(切り捨て)
+    damageVmax = (damageVmax * 100 / 100).floor();
+    damageVmin = (damageVmin * 85 / 100).floor();
+    ret += loc.battleDamageRandom85_100;
+    // タイプ一致補正(五捨五超入)
+    var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
+    if (rate > 1.0) {
+      damageVmax = roundOff5(damageVmax * rate);
+      damageVmin = roundOff5(damageVmin * rate);
+      ret += loc.battleDamageTypeBonus(rate);
+    }
+    // 相性補正(切り捨て)
+    rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+      yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
+    if (additionalMoveType != null) {
+      rate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
+    }
+    damageVmax = (damageVmax * rate).floor();
+    damageVmin = (damageVmin * rate).floor();
+    ret += loc.battleDamageTypeEffectiveness(rate);
+    // やけど補正(五捨五超入)
+    if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && damageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
+      if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
+        damageVmax = roundOff5(damageVmax * 0.5);
+        damageVmin = roundOff5(damageVmin * 0.5);
+        ret += loc.battleDamageBurned;
+      }
+    }
+    // タイプ相性を計算
+    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+      yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
+    // M(五捨五超入)
+    {
+      double tmpMax = damageVmax.toDouble();
+      double tmpMin = damageVmin.toDouble();
+      // 壁補正
+      if (
+        !isCritical && myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty && (
+        (damageClassID == 2 && yourFields.where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
+        (damageClassID == 3 && yourFields.where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty))
+      ) {
+        tmpMax *= 0.5;
+        tmpMin *= 0.5;
+        ret += loc.battleDamageWall;
+      }
+      // ブレインフォース補正
+      if (typeRate >= 2.0 &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_25).isNotEmpty
+      ) {
+        tmpMax *= 1.25;
+        tmpMin *= 1.25;
+        ret += loc.battleDamageBrainForce;
+      }
+      // スナイパー補正
+      if (moveHits[continuousCount].id == MoveHit.critical &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
+      ) {
+        tmpMax *= 1.5;
+        tmpMin *= 1.5;
+        ret += loc.battleDamageSniper;
+      }
+      // いろめがね補正
+      if (typeRate > 0.0 && typeRate < 1.0 &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.notGoodType2).isNotEmpty
+      ) {
+        tmpMax *= 2;
+        tmpMin *= 2;
+        ret += loc.battleDamageTintedLens;
+      }
+      // もふもふほのお補正
+      if (!ignoreAbility && (damageClassID == 2 || damageClassID == 3) &&
+          replacedMoveType.id == 10 &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
+      ) {
+        tmpMax *= 2;
+        tmpMin *= 2;
+        ret += loc.battleDamageFluffy;
+      }
+      // Mhalf
+      if (!ignoreAbility &&
+        // こおりのりんぷん
+        (damageClassID == 3 &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.specialDamaged0_5).isNotEmpty) ||
+        // パンクロック
+        (replacedMove.isSound && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.soundedDamage0_5).isNotEmpty) ||
+        // ファントムガード
+        // マルチスケイル
+        ((yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty) ||
+        // もふもふ直接こうげき
+        (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
+        // たいねつ
+        (replacedMoveType.id == PokeTypeId.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
+      ) {
+        tmpMax *= 0.5;
+        tmpMin *= 0.5;
+        ret += loc.battleDamageAbility0_5;
+      }
+      // Mfilter
+      if (!ignoreAbility &&
+        // ハードロック
+        // フィルター
+        // プリズムアーマー
+        typeRate >= 2.0 && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
+      ) {
+        tmpMax *= 0.75;
+        tmpMin *= 0.75;
+        ret += loc.battleDamageAbility0_75;
+      }
+      // たつじんのおび補正
+      if (typeRate >= 2.0 && myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_2).isNotEmpty
+      ) {
+        tmpMax *= 1.2;
+        tmpMin *= 1.2;
+        ret += loc.battleDamageExpertBelt;
+      }
+      // メトロノーム補正
+      if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2).isNotEmpty) {
+        int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+        if (findIdx >= 0) {
+          int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
+          if (count > 0) {
+            tmpMax *= (1.0 + 0.2 * count);
+            tmpMin *= (1.0 + 0.2 * count);
+            ret += loc.battleDamageMetronome(1.0 + 0.2 * count);
+          }
+        }
+      }
+      // いのちのたま補正
+      if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
+      {
+        tmpMax *= 1.3;
+        tmpMin *= 1.3;
+        ret += loc.battleDamageLifeOrb;
+      }
+      // 半減きのみ補正
+      if (halvedBerry > 0) {
+        //double mult = yourState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
+        tmpMax *= halvedBerry;
+        tmpMin *= halvedBerry;
+        ret += loc.battleDamageBerry(halvedBerry);
+        yourState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.halvedBerry);
+      }
+      // Mtwice
+      if (mTwice || yourState.buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
+        tmpMax *= 2;
+        tmpMin *= 2;
+        ret += loc.battleDamageOthers;
+      }
+      
+      damageVmax = roundOff5(tmpMax);
+      damageVmin = roundOff5(tmpMin);
+    }
+    // Mprotect(五捨五超入)
+    // ダイマックスわざに関する計算のため、SVでは不要
+    { }
+    ret += '= $damageVmin ~ $damageVmax';
+    return Tuple3(ret, damageVmax, damageVmin);
+  }
+
+  Tuple3<StatIndex, int, int> calcRealFromDamage(
+    int realDamage,
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    int continuousCount,
+    PlayerType myPlayerType,
+    Move move,
+    PokeType replacedMoveType,
+    int power,
+    int damageClassID,
+    PokemonState beforeChangeMyState,
+    bool isNormalized1_2,
+    bool isCritical,
+    bool isFoulPlay,
+    bool defenseAltAttack,
+    bool ignoreTargetRank,
+    bool invDeffense,
+    bool isSunny1_5,
+    bool ignoreAbility,
+    bool mTwice,
+    PokeType? additionalMoveType,
+    double halvedBerry,
+    {
+      required AppLocalizations loc,
+    }
+  ) {
+    // ダメージから逆算
+    if (isFoulPlay) return Tuple3(StatIndex.H, 0, 0);
+    int movePower = power;
+    Move replacedMove = move;
+    var myFields = myPlayerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+    var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
+
+    // タイプ相性を計算
+    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+      yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
+    if (additionalMoveType != null) {
+      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
+    }
+
+    double tmp = realDamage.toDouble();
+    int tmpInt = realDamage;
+    int tmpMax = realDamage;
+    int tmpMin = realDamage;
+    // Mprotect(五捨五超入)
+    // ダイマックスわざに関する計算のため、SVでは不要
+    { }
+    // M(五捨五超入)
+    {
+      // Mtwice
+      if (mTwice || yourState.buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
+        tmp /= 2;
+      }
+      // 半減きのみ補正
+      if (halvedBerry > 0) {
+        tmp /= halvedBerry;
+      }
+      // いのちのたま補正
+      if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.lifeOrb).isNotEmpty)
+      {
+        tmp /= 1.3;
+      }
+      // メトロノーム補正
+      if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2).isNotEmpty) {
+        int findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+        if (findIdx >= 0) {
+          int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
+          if (count > 0) {
+            tmp /= (1.0 + 0.2 * count);
+          }
+        }
+      }
+      // たつじんのおび補正
+      if (typeRate >= 2.0 && myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_2).isNotEmpty
+      ) {
+        tmp /= 1.2;
+      }
+      // Mfilter
+      if (!ignoreAbility &&
+        // ハードロック
+        // フィルター
+        // プリズムアーマー
+        typeRate >= 2.0 && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamaged0_75).isNotEmpty
+      ) {
+        tmp /= 0.75;
+      }
+      // Mhalf
+      if (!ignoreAbility &&
+        // こおりのりんぷん
+        (damageClassID == 3 &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.specialDamaged0_5).isNotEmpty) ||
+        // パンクロック
+        (replacedMove.isSound && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.soundedDamage0_5).isNotEmpty) ||
+        // ファントムガード
+        // マルチスケイル
+        ((yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.damaged0_5).isNotEmpty) ||
+        // もふもふ直接こうげき
+        (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
+        // たいねつ
+        (replacedMoveType.id == PokeTypeId.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
+      ) {
+        tmp /= 0.5;
+      }
+      // もふもふほのお補正
+      if (!ignoreAbility && (damageClassID == 2 || damageClassID == 3) &&
+          replacedMoveType.id == 10 &&
+          yourState.buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
+      ) {
+        tmp /= 2;
+      }
+      // いろめがね補正
+      if (typeRate > 0.0 && typeRate < 1.0 &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.notGoodType2).isNotEmpty
+      ) {
+        tmp /= 2;
+      }
+      // スナイパー補正
+      if (moveHits[continuousCount].id == MoveHit.critical &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
+      ) {
+        tmp /= 1.5;
+      }
+      // ブレインフォース補正
+      if (typeRate >= 2.0 &&
+          myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_25).isNotEmpty
+      ) {
+        tmp /= 1.25;
+      }
+      // 壁補正
+      if (
+        !isCritical && myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isEmpty && (
+        (damageClassID == 2 && yourFields.where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.reflector).isNotEmpty) ||
+        (damageClassID == 3 && yourFields.where((e) => e.id == IndividualField.auroraVeil || e.id == IndividualField.lightScreen).isNotEmpty))
+      ) {
+        tmp /= 0.5;
+      }
+
+      tmpInt = roundOff5(tmp);
+    }
+    // やけど補正(五捨五超入)
+    if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && damageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
+      if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
+        tmpInt = roundOff5(tmpInt / 0.5);
+      }
+    }
+    // 相性補正(切り捨て)
+    tmpInt = (tmpInt / typeRate).floor();
+    // タイプ一致補正(五捨五超入)
+    var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
+    if (rate > 1.0) {
+      tmpInt = roundOff5(tmpInt / rate);
+    }
+    // 乱数補正(切り捨て)
+    tmpMin = (tmpInt * 100 / 100).floor();
+    tmpMax = (tmpInt * 100 / 85).floor();
+    // 急所補正(五捨五超入)
+    if (moveHits[continuousCount].id == MoveHit.critical) {
+      tmpMax = roundOff5(tmpMax / 1.5);
+      tmpMin = roundOff5(tmpMin / 1.5);
+    }
+    // 天気補正(五捨五超入)
+    if (yourState.holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
+      if (state.weather.id == Weather.sunny) {
+        if (replacedMoveType.id == 10) {   // はれ下ほのおわざ
+          tmpMax = roundOff5(tmpMax / 1.5);
+          tmpMin = roundOff5(tmpMin / 1.5);
+        }
+        else if (replacedMoveType.id == 11) {   // はれ下みずわざ
+          if (isSunny1_5) {
+            tmpMax = roundOff5(tmpMax / 1.5);
+            tmpMin = roundOff5(tmpMin / 1.5);
+          }
+          else {
+            tmpMax = roundOff5(tmpMax / 0.5);
+            tmpMin = roundOff5(tmpMin / 0.5);
+          }
+        }
+      }
+      else if (state.weather.id == Weather.rainy) {
+        if (replacedMoveType.id == 11) {   // 雨下みずわざ
+          tmpMax = roundOff5(tmpMax / 1.5);
+          tmpMin = roundOff5(tmpMin / 1.5);
+        }
+        else if (replacedMoveType.id == 10) {   // 雨下ほのおわざ
+          tmpMax = roundOff5(tmpMax / 0.5);
+          tmpMin = roundOff5(tmpMin / 0.5);
+        }
+      }
+    }
+
+    // ここからわざ自体の威力等補正
+
+    // じゅうでん補正&消費
+    int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
+    if (findIdx >= 0 && replacedMoveType.id == 13) {
+      movePower *= 2;
+      myState.ailmentsRemoveAt(findIdx);
+    }
+
+    if (getChangePokemonIndex(myPlayerType) != null) {
+      myState = beforeChangeMyState;
+    }
+
+    // とくせい等によるわざタイプの変更
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.createFromId(15);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.createFromId(18);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.createFromId(3);
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.createFromId(11);
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.createFromId(13);
+    if (replacedMove.id != 165 && replacedMoveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.createFromId(PokeTypeId.electric);
+    
+    // とくせい等による威力変動
+    double tmpPow = movePower.toDouble();
+    // テクニシャン補正は一番最初
+    if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
+
+    if (isNormalized1_2) tmpPow *= 1.2;
+    if (replacedMoveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
+    if (myState.sex.id != 0 && yourState.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
+      if (myState.sex.id != yourState.sex.id) {
+        tmpPow *= 1.25;
+      }
+      else {
+        tmpPow *= 0.75;
+      }
+    }
+    if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isRecoil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isAdditionalEffect2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >= 0) tmpPow *= 1.3;
+    if (replacedMove.isWave && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >= 0) tmpPow *= 1.3;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >= 0 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >= 0) tmpPow *= 2;
+    if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
+    if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
+    if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
+    if ((replacedMoveType.id == 5 || replacedMoveType.id == 6 || replacedMoveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
+    int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+    if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
+    if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
+    if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
+    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >= 0) tmpPow *= 1.2;
+
+    if (replacedMoveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+    if (replacedMoveType.id == 16 && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+    
+    if (replacedMoveType.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
+
+    if (replacedMoveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+
+    movePower = tmpPow.floor();
+
+    bool plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    bool minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    int calcMaxDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
+          ignoreTargetRank ? yourState.maxStats[2].real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.maxStats[1].real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats[4].real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
+          ignoreTargetRank ? yourState.minStats[2].real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.minStats[1].real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinSDefense = ignoreTargetRank ? yourState.minStats[4].real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int defenseVmax = damageClassID == 2 ? 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            calcMaxDefense : calcMaxSDefense :
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            invDeffense ? calcMaxDefense : calcMaxSDefense :
+            invDeffense ? calcMaxSDefense : calcMaxDefense;
+    int defenseVmin = damageClassID == 2 ? 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            calcMinDefense : calcMinSDefense : 
+          myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
+            invDeffense ? calcMinDefense : calcMinSDefense :
+            invDeffense ? calcMinSDefense : calcMinDefense ;
+
+    int attackVmax = ((((tmpMax / 0.85).floor() - 2) * 50 * defenseVmax) / ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower)).floor();
+    int attackVmin = (((tmpMin - 2) * 50 * defenseVmin) / ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower)).floor();
+
+    plusIgnore = yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+    minusIgnore = isCritical || yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
+
+    StatIndex retStat = StatIndex.H;
+    int ret2 = 0;
+    int ret3 = 0;
+    if (damageClassID == 2) {
+      if (defenseAltAttack) {
+        if (myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty) {
+          retStat = StatIndex.B;
+        }
+        else {
+          retStat = StatIndex.A;
+        }
+      }
+      else {
+        if (myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty) {
+          retStat = StatIndex.A;
+        }
+        else {
+          retStat = StatIndex.B;
+        }
+      }
+    }
+    else {
+      retStat = StatIndex.C;
+    }
+    if ((plusIgnore && myState.statChanges(retStat.index-1) > 0) ||
+        (minusIgnore && myState.statChanges(retStat.index-1) < 0)
+    ) {
+      ret2 = attackVmax;
+      ret3 = attackVmin;
+    }
+    else {
+      ret2 = myState.getNotRankedStat(retStat, attackVmax);
+      ret3 = myState.getNotRankedStat(retStat, attackVmin);
+    }
+    int count = 0;  // 誤差20までなら修正
+    bool loop = true;
+    while (count < 20 && loop) {
+      loop = false;
+      var copiedMyState = myState.copyWith()..minStats[retStat.index].real = ret3..maxStats[retStat.index].real = ret3;
+      var ret = calcDamage(
+        copiedMyState, yourState, state, continuousCount, myPlayerType, move,
+        replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
+        isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
+      );
+      if (ret.item2 < realDamage) {
+        ret3++;
+        loop = true;
+      }
+      copiedMyState.minStats[retStat.index].real = ret2;
+      copiedMyState.maxStats[retStat.index].real = ret2;
+      ret = calcDamage(
+        copiedMyState, yourState, state, continuousCount, myPlayerType, move,
+        replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
+        isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
+      );
+      if (ret.item3 > realDamage) {
+        ret2--;
+        loop = true;
+      }
+      count++;
+    }
+
+    count = 0;
+    loop = true;
+    while (count < 20 && loop) {
+      loop = false;
+      var copiedMyState = myState.copyWith()..minStats[retStat.index].real = ret3..maxStats[retStat.index].real = ret3;
+      var ret = calcDamage(
+        copiedMyState, yourState, state, continuousCount, myPlayerType, move,
+        replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
+        isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
+      );
+      if (ret.item2 > realDamage) {
+        ret3--;
+        loop = true;
+      }
+      copiedMyState.minStats[retStat.index].real = ret2;
+      copiedMyState.maxStats[retStat.index].real = ret2;
+      ret = calcDamage(
+        copiedMyState, yourState, state, continuousCount, myPlayerType, move,
+        replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
+        isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
+      );
+      if (ret.item3 < realDamage) {
+        ret2++;
+        loop = true;
+      }
+      count++;
+    }
+    
+    return Tuple3(retStat, ret2, ret3);
   }
 
   Widget extraWidget1(
@@ -3579,7 +4217,10 @@ class TurnMove {
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     ThemeData theme,
     List<int> invalidGuideIDs,
-    {required bool isInput,}
+    {
+      required AppLocalizations loc,
+      required bool isInput,
+    }
   )
   {
     final pokeData = PokeDB();
@@ -3598,9 +4239,9 @@ class TurnMove {
             flex: 5,
             child: _myDropdownButtonFormField(
               isExpanded: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: UnderlineInputBorder(),
-                labelText: '失敗の原因',
+                labelText: loc.battleFailureCause,
               ),
               items: <DropdownMenuItem>[
                 for (int i = 1; i < ActionFailure.size; i++)
@@ -3627,9 +4268,9 @@ class TurnMove {
             child: _myTypeAheadField(
               textFieldConfiguration: TextFieldConfiguration(
                 controller: moveController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: '使用しようとしたわざ',
+                  labelText: loc.battleMoveTryToUse,
                 ),
               ),
               autoFlipDirection: true,
@@ -3684,7 +4325,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.move ? pressedStyle : null,
-                child: Text('わざ'),
+                child: Text(loc.commonMove),
               ),
               SizedBox(width: 10),
               TextButton(
@@ -3697,7 +4338,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.change ? pressedStyle : null,
-                child: Text('ポケモン交代'),
+                child: Text(loc.battlePokemonChange),
               ),
               SizedBox(width: 10,),
               TextButton(
@@ -3710,7 +4351,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.surrender ? pressedStyle : null,
-                child: Text('こうさん'),
+                child: Text(loc.battleSurrender),
               ),
             ],
           ),
@@ -3722,9 +4363,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: moveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                     enabled: playerType.id != PlayerType.none,
                   ),
@@ -3757,10 +4398,16 @@ class TurnMove {
                     DamageGetter getter = DamageGetter();
                     TurnMove tmp = copyWith();
                     tmp.move = getReplacedMove(suggestion, continuousCount, myState);
+                    tmp.moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
+                    tmp.moveAdditionalEffects[continuousCount] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
+                    tmp.moveEffectivenesses[continuousCount] = PokeType.effectiveness(
+                        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+                        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                        getReplacedMoveType(tmp.move, continuousCount, myState, state), yourState);
                     tmp.processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs,
-                      damageGetter: getter);
+                      damageGetter: getter, loc: loc,);
                     return ListTile(
                       leading: getReplacedMoveType(suggestion, continuousCount, myState, state).displayIcon,
                       title: Text(getReplacedMoveName(suggestion, continuousCount, myState)),
@@ -3771,14 +4418,14 @@ class TurnMove {
                     move = getReplacedMove(suggestion, continuousCount, myState);
                     moveController.text = move.displayName;
                     moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
-                    turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
                     moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
                     moveEffectivenesses[0] = PokeType.effectiveness(
                         myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
+                    turnEffectAndStateAndGuide.guides = processMove(
+                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     setAutoArgs(state, continuousCount);
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
@@ -3795,9 +4442,9 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -3868,7 +4515,10 @@ class TurnMove {
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     List<int> invalidGuideIDs,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   )
   {
     if (!isSuccess && actionFailure.id != ActionFailure.confusion) return Container();
@@ -3890,7 +4540,7 @@ class TurnMove {
           onFocus();
         },
         playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-        isInput,
+        isInput, loc: loc,
       );
     }
 
@@ -3913,9 +4563,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -3938,7 +4588,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -3958,9 +4608,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -3996,7 +4646,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4053,18 +4703,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4076,7 +4726,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4120,7 +4770,7 @@ class TurnMove {
               onFocus();
             },
             playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
@@ -4131,9 +4781,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4194,18 +4844,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('自身は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, myState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4217,7 +4867,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '自身は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, myState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4230,18 +4880,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('疲れ果ててこんらんした'),
+                      child: Text(loc.battleExhaustedConfused(myState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -4253,7 +4903,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == replacedMove.effect.id ?
-                    '疲れ果ててこんらんした' : 'なし',
+                    loc.battleExhaustedConfused(myState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4268,9 +4918,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.opponent ?
                     <DropdownMenuItem>[
@@ -4320,7 +4970,7 @@ class TurnMove {
             children: [
               Expanded(
                 child: _myTypeDropdownButton(
-                    '変更先タイプ',
+                    loc.battleTypeToChange,
                     (val) {extraArg1[continuousCount] = val;},
                     onFocus,
                     extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
@@ -4336,26 +4986,26 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: Ailment.burn,
-                      child: Text('相手はやけどをおった'),
+                      child: Text(loc.battleBurned(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.freeze,
-                      child: Text('相手はこおってしまった'),
+                      child: Text(loc.battleFrozen(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.paralysis,
-                      child: Text('相手はしびれてしまった'),
+                      child: Text(loc.battlePararised(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -4366,9 +5016,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.burn ? '相手はやけどをおった' :
-                    extraArg1[continuousCount] == Ailment.freeze ? '相手はこおってしまった' :
-                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' : 'なし',
+                  textValue: extraArg1[continuousCount] == Ailment.burn ? loc.battleBurned(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.freeze ? loc.battleFrozen(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.paralysis ? loc.battlePararised(yourState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4393,7 +5043,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-              isInput,
+              isInput, loc: loc,
             );
           }
           break;
@@ -4403,18 +5053,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをぬすんだ'),
+                      child: Text(loc.battleStealItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4426,7 +5076,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをぬすんだ' : 'なし',
+                    loc.battleStealItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4435,9 +5085,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -4502,7 +5152,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-              isInput,
+              isInput, loc: loc,
             );
           }
           break;
@@ -4524,18 +5174,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -4547,7 +5197,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4565,9 +5215,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -4616,7 +5266,7 @@ class TurnMove {
             children: [
               Expanded(
                 child: _myTypeDropdownButton(
-                  'わざのタイプ',
+                  loc.battleMoveType,
                   (val) {extraArg1[continuousCount] = val;},
                   onFocus,
                   extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
@@ -4633,9 +5283,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'あなたが手に入れたもちもの',
+                      labelText: loc.battleItemYouGet,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4651,7 +5301,7 @@ class TurnMove {
                         matches.removeWhere((element) => element.id == item.id);
                       }
                       matches.add(Item(
-                        id: 0, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                        id: 0, displayName: loc.commonNone, displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                         timing: AbilityTiming(0), isBerry: false, imageUrl: '',
                       ));
                     }
@@ -4685,9 +5335,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'とくせい',
+                      labelText: loc.commonAbility,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4738,9 +5388,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4773,18 +5423,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをはたきおとした'),
+                      child: Text(loc.battleKnockOffItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4796,7 +5446,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをはたきおとした' : 'なし',
+                    loc.battleKnockOffItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4805,9 +5455,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -4859,9 +5509,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'あなたが得たとくせい',
+                      labelText: loc.battleAbilityYouGet,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4906,18 +5556,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('相手のきのみを消費した'),
+                      child: Text(loc.battleConsumeOpponentBerry(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4929,7 +5579,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '相手のきのみを消費した' : 'なし',
+                    loc.battleConsumeOpponentBerry(yourState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4938,9 +5588,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5001,6 +5651,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 227:     // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
@@ -5009,34 +5660,34 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('自身はこうげきがぐーんと上がった'),
+                      child: Text(loc.battleAttackUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('自身はぼうぎょがぐーんと上がった'),
+                      child: Text(loc.battleDefenseUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 2,
-                      child: Text('自身はとくこうがぐーんと上がった'),
+                      child: Text(loc.battleSAttackUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 3,
-                      child: Text('自身はとくぼうがぐーんと上がった'),
+                      child: Text(loc.battleSDefenseUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 5,
-                      child: Text('自身はめいちゅうがぐーんと上がった'),
+                      child: Text(loc.battleAccuracyUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 6,
-                      child: Text('自身はかいひがぐーんと上がった'),
+                      child: Text(loc.battleEvasivenessUp2(myState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5047,12 +5698,12 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 0 ? '自身はこうげきがぐーんと上がった' :
-                    extraArg1[continuousCount] == 1 ? '自身はぼうぎょがぐーんと上がった' :
-                    extraArg1[continuousCount] == 2 ? '自身はとくこうがぐーんと上がった' :
-                    extraArg1[continuousCount] == 3 ? '自身はとくぼうがぐーんと上がった' :
-                    extraArg1[continuousCount] == 5 ? '自身はめいちゅうがぐーんと上がった' :
-                    '自身はかいひがぐーんと上がった',
+                  textValue: extraArg1[continuousCount] == 0 ? loc.battleAttackUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 1 ? loc.battleDefenseUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 2 ? loc.battleSAttackUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 3 ? loc.battleSDefenseUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 5 ? loc.battleAccuracyUp2(myState.pokemon.omittedName) :
+                    loc.battleEvasivenessUp2(myState.pokemon.omittedName),
                   theme: theme,
                 ),
               ),
@@ -5065,18 +5716,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものを投げつけた'),
+                      child: Text(loc.battleFlingItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5088,7 +5739,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものを投げつけた' : 'なし',
+                    loc.battleFlingItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5097,9 +5748,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5160,6 +5811,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
@@ -5171,18 +5823,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5194,7 +5846,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5216,7 +5868,7 @@ class TurnMove {
               onFocus();
             },
             extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
@@ -5228,18 +5880,18 @@ class TurnMove {
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果1',
+                    labelText: '${loc.battleAdditionalEffect}1',
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5251,7 +5903,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5259,18 +5911,18 @@ class TurnMove {
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果2',
+                    labelText: '${loc.battleAdditionalEffect}2',
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText2[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText2(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg2[continuousCount],
@@ -5282,7 +5934,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg2[continuousCount] == 1 ?
-                    '相手は${moveEffectText2[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText2(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5296,9 +5948,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'とくせい',
+                      labelText: loc.commonAbility,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5345,18 +5997,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをやきつくした'),
+                      child: Text(loc.battleBurnDownItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5368,7 +6020,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをやきつくした' : 'なし',
+                    loc.battleBurnDownItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5377,9 +6029,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5434,9 +6086,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: '消費したもちもの',
+                      labelText: loc.battleConsumedItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5499,6 +6151,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 464:     // どく・まひ・ねむりのいずれかにする(確率)
@@ -5507,26 +6160,26 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: Ailment.poison,
-                      child: Text('相手はどくにかかった'),
+                      child: Text(loc.battlePoisoned(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.paralysis,
-                      child: Text('相手はしびれてしまった'),
+                      child: Text(loc.battlePararised(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.sleep,
-                      child: Text('相手はねむってしまった'),
+                      child: Text(loc.battleFellAsleep(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5537,10 +6190,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.poison ? '相手はどくにかかった' :
-                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' :
-                    extraArg1[continuousCount] == Ailment.sleep ? '相手はねむってしまった' :
-                    'なし',
+                  textValue: extraArg1[continuousCount] == Ailment.poison ? loc.battlePoisoned(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.paralysis ? loc.battlePararised(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.sleep ? loc.battleFellAsleep(yourState.pokemon.omittedName) :
+                    loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5554,9 +6207,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battleRevivePokemon,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -5615,7 +6268,7 @@ class TurnMove {
               onFocus();
             },
             playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         default:
@@ -5631,9 +6284,9 @@ class TurnMove {
                   Expanded(
                     child: _myDropdownButtonFormField(
                       isExpanded: true,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: '復活させるポケモン',
+                        labelText: loc.battleRevivePokemon,
                       ),
                       items: playerType.id == PlayerType.me ?
                         <DropdownMenuItem>[
@@ -5680,22 +6333,22 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '命中',
+                            labelText: loc.battleSuccessFailure,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: MoveHit.hit,
-                              child: Text('成功'),
+                              child: Text(loc.battleSucceeded),
                             ),
                             DropdownMenuItem(
                               value: MoveHit.notHit,
-                              child: Text('当たらなかった'),
+                              child: Text(MoveHit(MoveHit.notHit).displayName),
                             ),
                             DropdownMenuItem(
                               value: MoveHit.fail,
-                              child: Text('うまく決まらなかった'),
+                              child: Text(MoveHit(MoveHit.fail).displayName),
                             ),
                           ],
                           value: moveHits[continuousCount].id,
@@ -5706,9 +6359,8 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '成功' :
-                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
-                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          textValue: moveHits[continuousCount].id == MoveHit.hit ? loc.battleSucceeded :
+                            moveHits[continuousCount].displayName,
                           theme: theme,
                         ),
                       ),
@@ -5734,21 +6386,21 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '成否',
+                            labelText: loc.battleHitFail,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: false,
-                              child: Text('うまく決まらなかった！'),
+                              child: Text(loc.battleFailed),
                             ),
                           ],
                           value: false,
                           onChanged: null,
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: 'うまく決まらなかった！',
+                          textValue: loc.battleFailed,
                           theme: theme,
                         ),
                       ),
@@ -5768,26 +6420,15 @@ class TurnMove {
                         flex: 5,
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '命中/失敗',
+                            labelText: loc.battleHitFail,
                           ),
                           items: <DropdownMenuItem>[
+                            for (int index = MoveHit.hit; index <= MoveHit.fail; index++)
                             DropdownMenuItem(
-                              value: MoveHit.hit,
-                              child: Text('命中'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.critical,
-                              child: Text('急所に命中'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.notHit,
-                              child: Text('当たらなかった'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.fail,
-                              child: Text('うまく決まらなかった'),
+                              value: index,
+                              child: Text(MoveHit(index).displayName),
                             ),
                           ],
                           value: moveHits[continuousCount].id,
@@ -5798,10 +6439,7 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '命中' :
-                            moveHits[continuousCount].id == MoveHit.critical ? '急所に命中' :
-                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
-                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          textValue: moveHits[continuousCount].displayName,
                           theme: theme,
                         ),
                       ),
@@ -5810,26 +6448,26 @@ class TurnMove {
                         flex: 5,
                         child: _myDropdownButtonFormField<int>(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '効果',
+                            labelText: loc.battleEffectiveness,
                           ),
                           items: <DropdownMenuItem<int>>[
                             DropdownMenuItem(
                               value: MoveEffectiveness.normal,
-                              child: Text('（テキストなし）', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNormal, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.great,
-                              child: Text('ばつぐんだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessGreat, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.notGood,
-                              child: Text('いまひとつのようだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNotGood, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.noEffect,
-                              child: Text('ないようだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNoEffect, overflow: TextOverflow.ellipsis,),
                             ),
                           ],
                           value: moveEffectivenesses[continuousCount].id,
@@ -5840,10 +6478,10 @@ class TurnMove {
                           } : null,
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? '（テキストなし）' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? 'ばつぐんだ' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? 'いまひとつのようだ' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? 'ないようだ' : '',
+                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
                           theme: theme,
                         ),
                       ),
@@ -5870,7 +6508,7 @@ class TurnMove {
                       onFocus();
                     },
                     playerType.id == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
-                    isInput,
+                    isInput, loc: loc,
                   ) :
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -5878,18 +6516,18 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'みがわり',
+                            labelText: loc.battleSubstitute,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: 0,
-                              child: Text('みがわりはのこった', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleSubstituteRemain, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: 1,
-                              child: Text('みがわりは消えてしまった', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleSubstituteBroke, overflow: TextOverflow.ellipsis,),
                             ),
                           ],
                           value: realDamage[continuousCount],
@@ -5900,7 +6538,7 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: realDamage[continuousCount] == 0 ? 'みがわりはのこった' : 'みがわりは消えてしまった',
+                          textValue: realDamage[continuousCount] == 0 ? loc.battleSubstituteRemain : loc.battleSubstituteBroke,
                           theme: theme,
                         ),
                       ),
@@ -6531,7 +7169,7 @@ class TurnMove {
     playerType = PlayerType(PlayerType.none);
     type = TurnMoveType(TurnMoveType.none);
     teraType = PokeType.createFromId(0);
-    move = Move(0, '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+    move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
     moveHits = [MoveHit(MoveHit.hit)];
@@ -6548,7 +7186,7 @@ class TurnMove {
   }
 
   // SQLに保存された文字列からTurnMoveをパース
-  static TurnMove deserialize(dynamic str, String split1, String split2) {
+  static TurnMove deserialize(dynamic str, String split1, String split2, {int version = -1}) {    // -1は最新バージョン
     TurnMove turnMove = TurnMove();
     final turnMoveElements = str.split(split1);
     // playerType
@@ -6558,20 +7196,26 @@ class TurnMove {
     // teraType
     turnMove.teraType = PokeType.createFromId(int.parse(turnMoveElements[2]));
     // move
-    var moveElements = turnMoveElements[3].split(split2);
-    turnMove.move = Move(
-      int.parse(moveElements[0]),
-      moveElements[1],
-      PokeType.createFromId(int.parse(moveElements[2])),
-      int.parse(moveElements[3]),
-      int.parse(moveElements[4]),
-      int.parse(moveElements[5]),
-      Target(int.parse(moveElements[6])),
-      DamageClass(int.parse(moveElements[7])),
-      MoveEffect(int.parse(moveElements[8])),
-      int.parse(moveElements[9]),
-      int.parse(moveElements[10]),
-    );
+    if (version == 1) {
+      var moveElements = turnMoveElements[3].split(split2);
+      turnMove.move = Move(
+        int.parse(moveElements[0]),
+        moveElements[1],
+        '',
+        PokeType.createFromId(int.parse(moveElements[2])),
+        int.parse(moveElements[3]),
+        int.parse(moveElements[4]),
+        int.parse(moveElements[5]),
+        Target(int.parse(moveElements[6])),
+        DamageClass(int.parse(moveElements[7])),
+        MoveEffect(int.parse(moveElements[8])),
+        int.parse(moveElements[9]),
+        int.parse(moveElements[10]),
+      );
+    }
+    else {
+      turnMove.move = PokeDB().moves[int.parse(turnMoveElements[3])]!;
+    }
     // isSuccess
     turnMove.isSuccess = int.parse(turnMoveElements[4]) != 0;
     // actionFailure
@@ -6663,6 +7307,7 @@ class TurnMove {
     ret += teraType.id.toString();
     ret += split1;
     // move
+/*    // version==1
       // id
       ret += move.id.toString();
       ret += split2;
@@ -6695,7 +7340,8 @@ class TurnMove {
       ret += split2;
       // pp
       ret += move.pp.toString();
-
+*/
+    ret += move.id.toString();
     ret += split1;
     // isSuccess
     ret += isSuccess ? '1' : '0';

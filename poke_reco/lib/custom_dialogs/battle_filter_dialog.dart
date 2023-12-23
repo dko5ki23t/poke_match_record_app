@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleFilterDialog extends StatefulWidget {
   final Future<void> Function (
@@ -31,6 +32,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       winFilter = [...widget.winFilter];
       partyIDFilter = [...widget.partyIDFilter];
@@ -38,7 +40,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
     }
 
     return AlertDialog(
-      title: Text('フィルタ'),
+      title: Text(loc.commonFilter),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -48,7 +50,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('勝敗'),),
+                  Center(child: Text(loc.filterDialogWinOrLose),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: winExpanded ?
@@ -64,7 +66,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
             ),
             winExpanded ?
             ListTile(
-              title: Text('未定'),
+              title: Text(loc.filterDialogUndecided),
               leading: Checkbox(
                 value: winFilter.contains(1),
                 onChanged: (value) {
@@ -82,7 +84,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
             ) : Container(),
             winExpanded ?
             ListTile(
-              title: Text('勝ち'),
+              title: Text(loc.filterDialogWin),
               leading: Checkbox(
                 value: winFilter.contains(2),
                 onChanged: (value) {
@@ -100,7 +102,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
             ) : Container(),
             winExpanded ?
             ListTile(
-              title: Text('負け'),
+              title: Text(loc.filterDialogLose),
               leading: Checkbox(
                 value: winFilter.contains(3),
                 onChanged: (value) {
@@ -122,7 +124,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('パーティ'),),
+                  Center(child: Text(loc.filterDialogParty),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: partyIDExpanded ?
@@ -158,9 +160,9 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
             partyIDExpanded ?
             ListTile(
               title: DropdownButtonFormField(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: 'パーティ追加'
+                  labelText: loc.filterDialogAddParty,
                 ),
                 selectedItemBuilder: (context) {
                   return [
@@ -172,7 +174,7 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
                   for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine))
                     DropdownMenuItem(
                       value: party.id,
-                      child: PartyTile(party, theme,),
+                      child: PartyTile(party, theme, loc: loc,),
                     ),
                 ],
                 value: null,
@@ -188,13 +190,13 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           GestureDetector(
-            child: Text('リセット'),
+            child: Text(loc.commonReset),
             onTap: () {
               winFilter = [for (int i = 1; i < 4; i++) i];
               partyIDFilter = [];

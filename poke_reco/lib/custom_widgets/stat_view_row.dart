@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StatViewRow extends Row {
   static const increaseStateStyle = TextStyle(
@@ -18,7 +20,8 @@ class StatViewRow extends Row {
     TextEditingController realController,
     {
       bool effectTemper = false,
-      String statName = '',
+      StatIndex statIndex = StatIndex.none,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -26,15 +29,15 @@ class StatViewRow extends Row {
     children: [
       Flexible(
         child: TextField(
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '種族値'
+            labelText: loc.commonStatRace,
           ),
           controller: raceController,
           readOnly: true,
           style: effectTemper ?
-            pokemon.temper.increasedStat == statName ? increaseStateStyle :
-              pokemon.temper.decreasedStat == statName ? decreaseStateStyle : null
+            pokemon.temper.increasedStat == statIndex ? increaseStateStyle :
+              pokemon.temper.decreasedStat == statIndex ? decreaseStateStyle : null
             : null,
         ),
       ),
@@ -43,9 +46,9 @@ class StatViewRow extends Row {
         child: TextField(
           controller: indiController,
           readOnly: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '個体値',
+            labelText: loc.commonStatIndividual,
           ),
         ),
       ),
@@ -54,9 +57,9 @@ class StatViewRow extends Row {
         child: TextField(
           controller: effortController,
           readOnly: true,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '努力値'
+            labelText: loc.commonStatEffort,
           ),
         ),
       ),

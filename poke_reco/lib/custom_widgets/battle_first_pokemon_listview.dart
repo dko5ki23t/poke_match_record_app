@@ -4,6 +4,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/register_battle.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/battle.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleFirstPokemonListView extends ListView {
   BattleFirstPokemonListView(
@@ -16,6 +17,7 @@ class BattleFirstPokemonListView extends ListView {
       bool showNetworkImage = false,
       List<PokemonState>? ownPokemonStates,
       int? opponentPokemonIndex,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -31,7 +33,7 @@ class BattleFirstPokemonListView extends ListView {
                 Expanded(
                   child: Align(
                     alignment: Alignment.center,
-                    child: Text('あなたの選出ポケモン3匹と相手の先頭ポケモンを選んでください。',),
+                    child: Text(loc.battleSelectPokemonPrompt),
                   ),
                 ),
               ],
@@ -42,7 +44,7 @@ class BattleFirstPokemonListView extends ListView {
                   flex: 5,
                   child: Align(
                     alignment: Alignment.center,
-                    child: Text('あなた', style: theme.textTheme.bodyLarge,),
+                    child: Text(loc.battleYou, style: theme.textTheme.bodyLarge,),
                   ),
                 ),
                 SizedBox(width: 10),

@@ -8,6 +8,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleActionColumn extends Column {
   BattleActionColumn(
@@ -29,7 +30,10 @@ class BattleActionColumn extends Column {
     List<TextEditingController> textEditingControllerList4,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -48,7 +52,7 @@ class BattleActionColumn extends Column {
                 Stack(
                   children: [
                   Center(child: Text(
-                    _getTitle(turn.phases[phaseIdx].move, ownPokemon, opponentPokemon)
+                    _getTitle(turn.phases[phaseIdx].move, ownPokemon, opponentPokemon, loc)
                   )),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -87,7 +91,7 @@ class BattleActionColumn extends Column {
                   ),
                 ],) :
                 Center(child: Text(
-                  _getTitle(turn.phases[phaseIdx].move, ownPokemon, opponentPokemon)
+                  _getTitle(turn.phases[phaseIdx].move, ownPokemon, opponentPokemon, loc)
                 )),
               SizedBox(height: 10,),
               Row(
@@ -97,14 +101,14 @@ class BattleActionColumn extends Column {
                     child: isInput ?
                       DropdownButtonFormField(
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動主',
+                          labelText: loc.battlePlayer,
                         ),
                         items: <DropdownMenuItem>[
                           DropdownMenuItem(
                             value: PlayerType.me,
-                            child: Text('${ownPokemon.name}/あなた', overflow: TextOverflow.ellipsis,),
+                            child: Text('${ownPokemon.name}/${loc.battleYou}', overflow: TextOverflow.ellipsis,),
                           ),
                           DropdownMenuItem(
                             value: PlayerType.opponent,
@@ -133,12 +137,12 @@ class BattleActionColumn extends Column {
                         },
                       ) :
                       TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動主',
+                          labelText: loc.battlePlayer,
                         ),
                         controller: TextEditingController(
-                          text: turn.phases[phaseIdx].move!.playerType.id == PlayerType.me ? '${ownPokemon.name}/あなた' :
+                          text: turn.phases[phaseIdx].move!.playerType.id == PlayerType.me ? '${ownPokemon.name}/${loc.battleYou}' :
                                 turn.phases[phaseIdx].move!.playerType.id == PlayerType.opponent ?'${opponentPokemon.name}/${battle.opponentName}' : '',
                         ),
                         readOnly: true,
@@ -151,18 +155,18 @@ class BattleActionColumn extends Column {
                     child: isInput ?
                       DropdownButtonFormField<bool>(
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動の成否',
+                          labelText: loc.battleSuccessFailureOfAction,
                         ),
                         items: <DropdownMenuItem<bool>>[
                           DropdownMenuItem(
                             value: true,
-                            child: Text('行動成功', overflow: TextOverflow.ellipsis,),
+                            child: Text(loc.battleActionSuccessed, overflow: TextOverflow.ellipsis,),
                           ),
                           DropdownMenuItem(
                             value: false,
-                            child: Text('行動失敗', overflow: TextOverflow.ellipsis,),
+                            child: Text(loc.battleActionFailed, overflow: TextOverflow.ellipsis,),
                           ),
                         ],
                         value: turn.phases[phaseIdx].move!.isSuccess,
@@ -175,13 +179,13 @@ class BattleActionColumn extends Column {
                           } : null,
                       ) :
                       TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動の成否',
+                          labelText: loc.battleSuccessFailureOfAction,
                         ),
                         controller: TextEditingController(
                           text: turn.phases[phaseIdx].move!.isSuccess ?
-                            '行動成功' : '行動失敗',
+                            loc.battleSucceeded : loc.battleFailed,
                         ),
                         readOnly: true,
                         onTap: () => onFocus(phaseIdx+1),
@@ -210,6 +214,7 @@ class BattleActionColumn extends Column {
                 appState, phaseIdx, 0, turnEffectAndStateAndGuide, theme,
                 turn.phases[phaseIdx].invalidGuideIDs,
                 isInput: isInput,
+                loc: loc,
               ),
               SizedBox(height: turn.phases[phaseIdx].move!.isSuccess ? 10 : 0,),
               turn.phases[phaseIdx].move!.isSuccess || turn.phases[phaseIdx].move!.actionFailure.id == ActionFailure.confusion ?
@@ -228,6 +233,7 @@ class BattleActionColumn extends Column {
                 turnEffectAndStateAndGuide, 
                 turn.phases[phaseIdx].invalidGuideIDs,
                 isInput: isInput,
+                loc: loc,
               ) : Container(),
               SizedBox(height: 10,),
               for (final e in turnEffectAndStateAndGuide.guides)
@@ -254,12 +260,12 @@ class BattleActionColumn extends Column {
     ],
   );
 
-  static String _getTitle(TurnMove? turnMove, Pokemon own, Pokemon opponent) {
+  static String _getTitle(TurnMove? turnMove, Pokemon own, Pokemon opponent, AppLocalizations loc,) {
     if (turnMove != null) {
       switch (turnMove.type.id) {
         case TurnMoveType.move:
           if (turnMove.move.id != 0) {
-            String continous = turnMove.move.maxMoveCount() > 1 ? '【1回目】' : '';
+            String continous = turnMove.move.maxMoveCount() > 1 ? loc.battleMoveTimes1 : '';
             if (turnMove.playerType.id == PlayerType.opponent) {
               return '$continous${turnMove.move.displayName}-${opponent.name}';
             }
@@ -269,14 +275,14 @@ class BattleActionColumn extends Column {
           }
           break;
         case TurnMoveType.change:
-          return 'ポケモン交代';
+          return loc.battlePokemonChange;
         case TurnMoveType.surrender:
-          return 'こうさん';
+          return loc.battleSurrender;
         default:
           break;
       }
     }
 
-    return '行動';
+    return loc.battleAction;
   }
 }

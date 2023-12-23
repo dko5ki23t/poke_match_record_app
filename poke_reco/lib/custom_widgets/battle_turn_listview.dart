@@ -10,6 +10,7 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleTurnListView extends ListView {
   BattleTurnListView(
@@ -28,7 +29,10 @@ class BattleTurnListView extends ListView {
     int focusPhaseIdx,
     void Function(int) onFocus,
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) : 
   super(
     controller: controller,
@@ -63,6 +67,7 @@ class BattleTurnListView extends ListView {
               i > 0 ? sameTimingList[i-1].first.turnEffect.move ?? TurnMove() : TurnMove(),
               i+1 < sameTimingList.length ? sameTimingList[i+1].first : null,
               isInput: isInput,
+              loc: loc,
             )
           ],
         ),

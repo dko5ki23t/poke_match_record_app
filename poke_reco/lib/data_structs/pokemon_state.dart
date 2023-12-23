@@ -21,13 +21,13 @@ class PokemonState {
   bool _isFainting = false;     // ひんしかどうか
   int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
   Item? _holdingItem = Item(
-    id: 0, displayName: '', flingPower: 0, flingEffectId: 0,
+    id: 0, displayName: '', displayNameEn: '', flingPower: 0, flingEffectId: 0,
     timing: AbilityTiming(0), isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability _currentAbility = Ability(0, '', AbilityTiming(0), Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
+  Ability _currentAbility = Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態変化
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
@@ -281,7 +281,7 @@ class PokemonState {
     buffDebuffs.addAll(unchangingForms);
     var unchangingHidden = hiddenBuffs.where((e) =>
       e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry ||
-      e.id == BuffDebuff.attackedCount
+      e.id == BuffDebuff.attackedCount || e.id == BuffDebuff.zoroappear
     ).toList();
     hiddenBuffs.clear();
     hiddenBuffs.addAll(unchangingHidden);
@@ -365,7 +365,7 @@ class PokemonState {
     holdingItem?.processPassiveEffect(this);
   
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
-    var indiField = isOwn ? state.ownFields : state.opponentFields;
+    var indiField = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     if (isGround(indiField) && isTypeContain(PokeTypeId.poison)) {
       indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
     }
@@ -948,7 +948,7 @@ class PokemonState {
   }
 
   // SQLに保存された文字列からPokemonStateをパース
-  static PokemonState deserialize(dynamic str, String split1, String split2, String split3) {
+  static PokemonState deserialize(dynamic str, String split1, String split2, String split3, {int version = -1}) {   // -1は最新バージョン
     final pokeData = PokeDB();
     PokemonState pokemonState = PokemonState();
     final stateElements = str.split(split1);
@@ -996,7 +996,12 @@ class PokemonState {
       pokemonState.hiddenBuffs.add(BuffDebuff.deserialize(buffDebuff, split3));
     }
     // currentAbility
-    pokemonState.setCurrentAbilityNoEffect(Ability.deserialize(stateElements[12], split2));
+    if (version == 1) {
+      pokemonState.setCurrentAbilityNoEffect(Ability.deserialize(stateElements[12], split2));
+    }
+    else {
+      pokemonState.setCurrentAbilityNoEffect(pokeData.abilities[int.parse(stateElements[12])]!);
+    }
     // ailments
     pokemonState._ailments = Ailments.deserialize(stateElements[13], split2, split3);
     // minStats
@@ -1013,7 +1018,12 @@ class PokemonState {
     final abilities = stateElements[16].split(split2);
     for (var ability in abilities) {
       if (ability == '') break;
-      pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
+      if (version == 1) {
+        pokemonState.possibleAbilities.add(Ability.deserialize(ability, split3));
+      }
+      else {
+        pokemonState.possibleAbilities.add(pokeData.abilities[int.parse(ability)]!);
+      }
     }
     // impossibleItems
     final items = stateElements[17].split(split2);
@@ -1093,7 +1103,8 @@ class PokemonState {
     }
     ret += split1;
     // currentAbility
-    ret += currentAbility.serialize(split2);
+    //ret += currentAbility.serialize(split2);    // version==1
+    ret += currentAbility.id.toString();
     ret += split1;
     // ailments
     ret += _ailments.serialize(split2, split3);
@@ -1112,7 +1123,8 @@ class PokemonState {
     ret += split1;
     // possibleAbilities
     for (final ability in possibleAbilities) {
-      ret += ability.serialize(split3);
+      //ret += ability.serialize(split3);     // version==1
+      ret += ability.id.toString();
       ret += split2;
     }
     ret += split1;

@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
@@ -49,6 +50,7 @@ class PokemonsPageState extends State<PokemonsPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokeData = appState.pokeData;
+    var loc = AppLocalizations.of(context)!;
     var ownerFilter = pokeData.pokemonsOwnerFilter;
     var noFilter = pokeData.pokemonsNoFilter;
     var typeFilter = pokeData.pokemonsTypeFilter;
@@ -93,7 +95,7 @@ class PokemonsPageState extends State<PokemonsPage> {
     if (!pokeData.isLoaded) {
       EasyLoading.instance.userInteractions = false;  // 操作禁止にする
       EasyLoading.instance.maskColor = Colors.black.withOpacity(0.5);
-      EasyLoading.show(status: 'データ読み込み中です。しばらくお待ちください...');
+      EasyLoading.show(status: loc.commonLoading);
     }
     else {
       EasyLoading.dismiss();
@@ -121,7 +123,7 @@ class PokemonsPageState extends State<PokemonsPage> {
 
     if (sortedPokemons.isEmpty) {
       lists = Center(
-        child: Text('表示できるポケモンのデータがありません。'),
+        child: Text(loc.pokemonsTabNoPokemon),
       );
     }
     else {
@@ -196,7 +198,7 @@ class PokemonsPageState extends State<PokemonsPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: widget.selectMode ? Text('ポケモン選択') : Text('ポケモン一覧'),
+          title: widget.selectMode ? Text(loc.pokemonsTabTitleSelectPokemon) : Text(loc.pokemonsTabTitlePokemonList),
           actions: [
             !widget.selectMode ?
               isEditMode ?
@@ -207,7 +209,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                   pokeData.pokemonsSort = null;
                 },
                 icon: Icon(Icons.check),
-                tooltip: '完了',
+                tooltip: loc.commonDone,
               ) :
               Align(
                 alignment: Alignment.centerRight,
@@ -254,7 +256,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                         );
                       },
                       icon: Icon(Icons.filter_alt),
-                      tooltip: 'フィルタ',
+                      tooltip: loc.commonFilter,
                     ),
                     MyIconButton(
                       theme: theme,
@@ -301,13 +303,13 @@ class PokemonsPageState extends State<PokemonsPage> {
                         }
                       ),
                       icon: Icon(Icons.sort),
-                      tooltip: '並べ替え',
+                      tooltip: loc.commonSort,
                     ),
                     MyIconButton(
                       theme: theme,
                       onPressed: (sortedPokemons.isNotEmpty) ? () => setState(() => isEditMode = true) : null,
                       icon: Icon(Icons.edit),
-                      tooltip: '編集',
+                      tooltip: loc.commonEdit,
                     ),
                   ],
                 ),
@@ -358,7 +360,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                       );
                     },
                     icon: Icon(Icons.filter_alt),
-                    tooltip: 'フィルタ',
+                    tooltip: loc.commonFilter,
                   ),
                   MyIconButton(
                     theme: theme,
@@ -405,7 +407,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                       }
                     ),
                     icon: Icon(Icons.sort),
-                    tooltip: '並べ替え',
+                    tooltip: loc.commonSort,
                   ),
                 ],
               ),
@@ -429,7 +431,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                           child: Row(children: [
                             Icon(Icons.select_all),
                             SizedBox(width: 10),
-                            Text('すべて選択')
+                            Text(loc.commonSelectAll)
                           ]),
                           onPressed: () => setState(() {
                             selectAllMap(checkList!);
@@ -472,7 +474,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                           child: Row(children: [
                             Icon(Icons.delete),
                             SizedBox(width: 10),
-                            Text('削除')
+                            Text(loc.commonDelete)
                           ]),
                         ),
                         SizedBox(width: 20,),
@@ -495,7 +497,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                           child: Row(children: [
                             Icon(Icons.copy),
                             SizedBox(width: 10),
-                            Text('コピー作成'),
+                            Text(loc.commonCopy),
                           ]),
                         ),
                       ],
@@ -512,7 +514,7 @@ class PokemonsPageState extends State<PokemonsPage> {
               child: Align(
                 alignment: Alignment.bottomRight,
                 child: FloatingActionButton(
-                  tooltip: 'ポケモン登録',
+                  tooltip: loc.pokemonsTabRegisterPokemon,
                   shape: CircleBorder(),
                   onPressed: (){
                     checkList = null;

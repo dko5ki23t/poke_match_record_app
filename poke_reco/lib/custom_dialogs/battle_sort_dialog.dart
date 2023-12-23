@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 enum BattleSort {
-  registerUp(1, '登録(昇)'),
-  registerDown(2, '登録(降)'),
-  dateUp(3, '対戦日時(昇)'),
-  dateDown(4, '対戦日時(降)');
+  registerUp(1, '登録(昇)', 'Register(asc)'),
+  registerDown(2, '登録(降)', 'Register(desc)'),
+  dateUp(3, '対戦日時(昇)', 'Battle datetime(asc)'),
+  dateDown(4, '対戦日時(降)', 'Battle datetime(desc)');
 
   final int id;
-  final String displayName;
-  const BattleSort(this.id, this.displayName);
+  final String ja;
+  final String en;
+  const BattleSort(this.id, this.ja, this.en);
 
   factory BattleSort.createFromId(int id) {
     switch (id) {
@@ -22,6 +25,16 @@ enum BattleSort {
         return dateDown;
       default:
         return registerUp;
+    }
+  }
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
     }
   }
 }
@@ -46,13 +59,14 @@ class BattleSortDialogState extends State<BattleSortDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       _battleSort = widget.currentSort;
       isFirstBuild = false;
     }
 
     return AlertDialog(
-      title: Text('並べ替え'),
+      title: Text(loc.commonSort),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -75,7 +89,7 @@ class BattleSortDialogState extends State<BattleSortDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },

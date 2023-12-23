@@ -26,6 +26,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum RegisterBattlePageType {
   basePage,
@@ -121,6 +122,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var parties = appState.parties;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
     const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
     const statusAlphabets = ['H ', 'A ', 'B ', 'C ', 'D ', 'S '];
     PhaseState? focusState;
@@ -135,7 +137,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     dateController.text = widget.battle.formattedDateTime;
     ownPartyController.text = widget.battle.getParty(PlayerType(PlayerType.me)).id != 0 ?
-      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : 'パーティ選択';
+      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : loc.battlesTabSelectParty;
 
     void onBack () {
       bool showAlert = false;
@@ -192,14 +194,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     ) {
       // フォーカスしているフェーズの状態を取得
       focusState = turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
+                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       if (appState.requestActionSwap) {
-        _onlySwapActionPhases();
+        _onlySwapActionPhases(loc);
         appState.requestActionSwap = false;
       }
       if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
-        sameTimingList = _adjustPhases(appState, isNewTurn);
+        sameTimingList = _adjustPhases(appState, isNewTurn, loc);
         isNewTurn = false;
         appState.needAdjustPhases = -1;
         appState.adjustPhaseByDelete = false;
@@ -228,10 +230,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         context: context,
         builder: (_) {
           return DeleteEditingCheckDialogWithCancel(
-            question: '相手パーティ・ポケモンを保存しますか？',
+            question: loc.battlesTabQuestionSavePartyPokemon,
             onYesPressed: () async {
               var lastState = turns.last.phases.isNotEmpty ?
-                turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty) :
+                turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty, loc) :
                 turns.last.copyInitialState(ownParty, opponentParty);
               var oppPokemonStates = lastState.getPokemonStates(PlayerType(PlayerType.opponent));
               // 現在無効のポケモンを有効化し、DBに保存
@@ -396,6 +398,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
                 ..type1 = poke.type1
                 ..type2 = poke.type2;
+              if (pokeData.pokeBase[poke.no]!.fixedItemID != 0) {
+                // もちもの確定
+                poke.item = pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID];
+              }
               if (state.possibleAbilities.length == 1) {    // 対象ポケモンのとくせいが1つしかあり得ないなら確定
                 opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
                 state.setCurrentAbilityNoEffect(state.possibleAbilities[0]);
@@ -430,7 +436,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -441,7 +447,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -452,7 +458,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText4(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 )
               )
             )
@@ -476,7 +482,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           PhaseState initialState =
             prevTurn.getProcessedStates(
               prevTurn.phases.length-1,
-              ownParty, opponentParty);
+              ownParty, opponentParty, loc);
           initialState.processTurnEnd(prevTurn);
           // 前ターンの最終状態を初期状態とする
           currentTurn.setInitialState(initialState, ownParty, opponentParty);
@@ -494,7 +500,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -505,7 +511,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -516,7 +522,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText4(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 )
               )
             )
@@ -561,7 +567,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText2(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                   _getPrevTimingEffect(index),
                 )
@@ -572,7 +578,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText3(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                   _getPrevTimingEffect(index),
                 )
@@ -583,7 +589,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText4(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                 ),
               )
@@ -607,7 +613,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             context: context,
             builder: (_) {
               return DeleteEditingCheckDialog(
-                '入力中の対戦記録の内容をすべて削除してもいいですか？\n（※現在の画面以降の入力もすべて削除されます。）',
+                loc.battlesTabQuestionDeleteAllEditing,
                 () {
                   widget.battle.clear();
                   setState(() {});
@@ -621,7 +627,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             context: context,
             builder: (_) {
               return DeleteEditingCheckDialog(
-                '入力中のターンの記録を削除してもいいですか？\n（※現在のターン以降の入力もすべて削除されます。）',
+                loc.battlesTabQuestionDeleteTurn,
                 () {
                   if (turnNum < turns.length) {
                     widget.battle.turns.removeRange(turnNum, widget.battle.turns.length);
@@ -654,7 +660,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     switch (pageType) {
       case RegisterBattlePageType.basePage:
-        title = Text('バトル基本情報');
+        title = Text(loc.battlesTabTitleBattleBase);
         lists = BattleBasicListView(
           context,
           () {setState(() {});},
@@ -667,26 +673,28 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           widget.onSelectParty,
           showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
+          loc: loc,
         );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
         deletePressed = () => onTurnDelete();
         break;
       case RegisterBattlePageType.firstPokemonPage:
-        title = Text('選出ポケモン');
+        title = Text(loc.battlesTabTitleSelectingPokemon);
         lists = BattleFirstPokemonListView(
           () {setState(() {});},
           widget.battle, theme,
           checkedPokemons,
           showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
+          loc: loc,
         );
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
         deletePressed = null;
         break;
       case RegisterBattlePageType.turnPage:
-        title = Text('$turnNumターン目');
+        title = Text('${loc.battlesTabTitleTurn}$turnNum');
         lists = Column(
           children: [
             Row(
@@ -790,11 +798,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             },
                             child: Row(children: [
                               viewMode == 0 ?
-                              Text('ランク') :
+                              Text(loc.battlesTabStatusModeRank) :
                               viewMode == 1 ?
-                              Text('種族値') :
+                              Text(loc.battlesTabStatusModeRace) :
                               viewMode == 2 ?
-                              Text('ステータス(補正前)') : Text('ステータス(補正後)'),
+                              Text(loc.battlesTabStatusModeStatusNoCorrection) : Text(loc.battlesTabStatusModeStatusWithCorrection),
                               SizedBox(width: 10),
                               Icon(Icons.sync),
                             ]),
@@ -810,8 +818,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   opponentPokeController.text = opp.pokemon.name;
                                   ownAbilityController.text = _abilityNameWithNull(own.currentAbility);
                                   opponentAbilityController.text = _abilityNameWithNull(opp.currentAbility);
-                                  ownItemController.text = _itemNameWithNull(own.holdingItem);
-                                  opponentItemController.text = _itemNameWithNull(opp.holdingItem);
+                                  ownItemController.text = _itemNameWithNull(loc, own.holdingItem);
+                                  opponentItemController.text = _itemNameWithNull(loc, opp.holdingItem);
                                   ownHPController.text = own.remainHP.toString();
                                   opponentHPController.text = opp.remainHPPercent.toString();
                                   for (int i = 0; i < 7; i++) {
@@ -841,12 +849,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               Row(children: [
                                 Icon(Icons.check),
                                 SizedBox(width: 10),
-                                Text('完了'),
+                                Text(loc.battlesTabStatusModeDone),
                               ]) :
                               Row(children: [
                                 Icon(Icons.edit),
                                 SizedBox(width: 10),
-                                Text('編集'),
+                                Text(loc.battlesTabStatusModeEdit),
                               ]),
                           ),
                         ],
@@ -860,7 +868,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             child:
                               focusState.getPokemonState(PlayerType(PlayerType.me), null).isTerastaling ?
                               Row(children: [
-                                Text('テラスタル'),
+                                Text(loc.commonTerastal),
                                 focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
@@ -874,7 +882,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             child:
                               focusState.getPokemonState(PlayerType(PlayerType.opponent), null).isTerastaling ?
                               Row(children: [
-                                Text('テラスタル'),
+                                Text(loc.commonTerastal),
                                 focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
@@ -897,25 +905,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   controller: ownAbilityController,
                                   decoration: InputDecoration(
                                     border: UnderlineInputBorder(),
-                                    labelText: 'とくせい',
+                                    labelText: loc.commonAbility,
                                   ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
                                   List<Ability> matches = pokeData.abilities.values.toList();
                                   matches.retainWhere((s){
-                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '?' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
                                 itemBuilder: (context, suggestion) {
                                   return ListTile(
-                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                    title: Text(suggestion.id == 0 ? '?' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
-                                    ownAbilityController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    ownAbilityController.text = suggestion.id == 0 ? '?' : suggestion.displayName;
                                     userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.me), UserForce.ability, suggestion.id));
                                   });
                                 },
@@ -930,25 +938,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   controller: opponentAbilityController,
                                   decoration: InputDecoration(
                                     border: UnderlineInputBorder(),
-                                    labelText: 'とくせい',
+                                    labelText: loc.commonAbility,
                                   ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
                                   List<Ability> matches = pokeData.abilities.values.toList();
                                   matches.retainWhere((s){
-                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '?' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
                                 itemBuilder: (context, suggestion) {
                                   return ListTile(
-                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                    title: Text(suggestion.id == 0 ? '?' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
-                                    opponentAbilityController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    opponentAbilityController.text = suggestion.id == 0 ? '?' : suggestion.displayName;
                                     userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.opponent), UserForce.ability, suggestion.id));
                                   });
                                 },
@@ -969,33 +977,33 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   controller: ownItemController,
                                   decoration: InputDecoration(
                                     border: UnderlineInputBorder(),
-                                    labelText: 'もちもの',
+                                    labelText: loc.commonItem,
                                   ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(
-                                    id: -1, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                                    id: -1, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                                     timing: AbilityTiming(0), isBerry: false, imageUrl: ''));
                                   matches.retainWhere((s){
-                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '?' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
                                 itemBuilder: (context, suggestion) {
                                   return ListTile(
-                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                    title: Text(suggestion.id == 0 ? '?' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
-                                    ownItemController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    ownItemController.text = suggestion.id == 0 ? '?' : suggestion.displayName;
                                     userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.me), UserForce.item, suggestion.id));
                                   });
                                 },
                               ) :
-                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true,),
+                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
@@ -1005,33 +1013,33 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   controller: opponentItemController,
                                   decoration: InputDecoration(
                                     border: UnderlineInputBorder(),
-                                    labelText: 'もちもの',
+                                    labelText: loc.commonItem,
                                   ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
                                   List<Item> matches = pokeData.items.values.toList();
                                   matches.add(Item(
-                                    id: -1, displayName: 'なし', flingPower: 0, flingEffectId: 0,
+                                    id: -1, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                                     timing: AbilityTiming(0), isBerry: false, imageUrl: ''));
                                   matches.retainWhere((s){
-                                    return toKatakana50(s.id == 0 ? '？' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+                                    return toKatakana50(s.id == 0 ? '?' : s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
                                   });
                                   return matches;
                                 },
                                 itemBuilder: (context, suggestion) {
                                   return ListTile(
-                                    title: Text(suggestion.id == 0 ? '？' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
+                                    title: Text(suggestion.id == 0 ? '?' : suggestion.displayName, overflow: TextOverflow.ellipsis,),
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
                                   setState(() {
-                                    opponentItemController.text = suggestion.id == 0 ? '？' : suggestion.displayName;
+                                    opponentItemController.text = suggestion.id == 0 ? '?' : suggestion.displayName;
                                     userForceAdd(focusPhaseIdx, UserForce(PlayerType(PlayerType.opponent), UserForce.item, suggestion.id));
                                   });
                                 },
                               ) :
-                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true,),
+                              ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                         ],
                       ),
@@ -1111,7 +1119,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       _MoveViewRow(
                         focusState.getPokemonState(PlayerType(PlayerType.me), null),
                         focusState.getPokemonState(PlayerType(PlayerType.opponent), null),
-                        i,
+                        i, loc: loc,
                       ),
                       SizedBox(height: 5),
                       // 状態異常・その他補正・場
@@ -1147,6 +1155,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 //_getSameTimingList(pokeData),
                 sameTimingList,
                 isInput: true,
+                loc: loc,
               ),
             ),
           ],
@@ -1157,7 +1166,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         deletePressed = () => onTurnDelete();
         break;
       default:
-        title = Text('バトル登録');
+        title = Text(loc.battlesTabTitleRegisterBattle);
         lists = Center();
         nextPressed = null;
         backPressed = null;
@@ -1177,19 +1186,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             MyIconButton(
               theme: theme,
               onPressed: backPressed,
-              tooltip: '前へ',
+              tooltip: loc.battlesTabToolTipPrev,
               icon: Icon(Icons.navigate_before),
             ),
             MyIconButton(
               theme: theme,
               onPressed: nextPressed,
-              tooltip: '次へ',
+              tooltip: loc.battlesTabToolTipNext,
               icon: Icon(Icons.navigate_next),
             ),
             MyIconButton(
               theme: theme,
               onPressed: deletePressed,
-              tooltip: '削除',
+              tooltip: loc.battlesTabToolTipDelete,
               icon: Icon(Icons.delete),
             ),
             SizedBox(
@@ -1201,7 +1210,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             MyIconButton(
               theme: theme,
               onPressed: (pageType == RegisterBattlePageType.turnPage && getSelectedNum(appState.editingPhase) == 0) ? () => onComplete() : null,
-              tooltip: '保存',
+              tooltip: loc.registerSave,
               icon: Icon(Icons.save),
             ),
           ],
@@ -1273,7 +1282,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     _removeRangePhase(index, endIdx, appState);
   }
 
-  List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn) {
+  List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
     int beginIdx = 0;
@@ -1340,6 +1349,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         currentTurn, AbilityTiming(currentTimingID),
         changeOwn, changeOpponent, currentState, lastAction, continuousCount,
       );
+      for (final effect in currentTurn.noAutoAddEffect) {
+        assistList.removeWhere((e) => effect.nearEqual(e));
+      }
     }
 
     var phases = widget.battle.turns[turnNum-1].phases;
@@ -2162,7 +2174,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         currentState.getPokemonState(PlayerType(PlayerType.me), null),
         widget.battle.getParty(PlayerType(PlayerType.opponent)),
         currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
-        currentState, lastAction, continuousCount,
+        currentState, lastAction, continuousCount, loc: loc,
       );
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
@@ -2241,6 +2253,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             currentTurn, AbilityTiming(nextTimingID),
             changeOwn, changeOpponent, currentState, tmpAction, continuousCount,
           );
+          for (final effect in currentTurn.noAutoAddEffect) {
+            assistList.removeWhere((e) => effect.nearEqual(e));
+          }
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
           // それ以外で入力済みの自動入力は削除
           List<int> removeIdxs = [];
@@ -2299,7 +2314,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     return ret;
   }
 
-  void _onlySwapActionPhases() {
+  void _onlySwapActionPhases(AppLocalizations loc,) {
     int action1BeginIdx = -1;
     int action1EndIdx = -1;
     int action2BeginIdx = -1;
@@ -2372,7 +2387,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           currentState.getPokemonState(PlayerType(PlayerType.me), null),
           widget.battle.getParty(PlayerType(PlayerType.opponent)),
           currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
-          currentState, lastAction, continuousCount
+          currentState, lastAction, continuousCount, loc: loc,
         );
         turnEffectAndStateAndGuides.add(
           TurnEffectAndStateAndGuide()
@@ -2410,12 +2425,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!;
   }
 
-  String _itemNameWithNull(Item? item) {
+  String _itemNameWithNull(AppLocalizations loc, Item? item) {
     if (item == null) {
-      return 'なし';
+      return loc.commonNone;
     }
     else if (item.id == 0) {
-      return '？';
+      return '';
     }
     else {
       return item.displayName;
@@ -2424,7 +2439,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   String _abilityNameWithNull(Ability ability) {
     if (ability.id == 0) {
-      return '？';
+      return '?';
     }
     else {
       return ability.displayName;
@@ -2541,7 +2556,7 @@ class _StatStatusViewRow extends Row {
           Text(label),
           ownStatusMin == ownStatusMax ?
           Text(ownStatusMin.toString()) :
-          Text('$ownStatusMin～$ownStatusMax'),
+          Text('$ownStatusMin ~ $ownStatusMax'),
         ],),
       ),
       SizedBox(width: 10,),
@@ -2550,7 +2565,7 @@ class _StatStatusViewRow extends Row {
           Text(label),
           opponentStatusMin == opponentStatusMax ?
           Text(opponentStatusMin.toString()) :
-          Text('$opponentStatusMin～$opponentStatusMax'),
+          Text('$opponentStatusMin ~ $opponentStatusMax'),
         ],),
       ),
     ],
@@ -2585,7 +2600,7 @@ class _StatStatusInputRow extends Row {
               },
             ),
           ),
-          Text('～'),
+          Text(' ~ '),
           Expanded(
             child: TextFormField(
               controller: ownStatusMaxController,
@@ -2614,7 +2629,7 @@ class _StatStatusInputRow extends Row {
               },
             ),
           ),
-          Text('～'),
+          Text(' ~ '),
           Expanded(
             child: TextFormField(
               controller: opponentStatusMaxController,
@@ -2633,14 +2648,14 @@ class _StatStatusInputRow extends Row {
 }
 
 class _MoveViewRow extends Row {
-  _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx) :
+  _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx, {required AppLocalizations loc,}) :
   super(
     children: [
       SizedBox(width: 10,),
       Expanded(
         child: Row(children: [
           ownState.moves.length > idx ?
-          MoveText(ownState.moves[idx]) : Text(''),
+          MoveText(ownState.moves[idx], loc: loc,) : Text(''),
         ],),
       ),
       ownState.moves.length > idx && ownState.usedPPs.length > idx ?
@@ -2650,7 +2665,7 @@ class _MoveViewRow extends Row {
       Expanded(
         child: Row(children: [
           opponentState.moves.length > idx ?
-          MoveText(opponentState.moves[idx]) : Text(''),
+          MoveText(opponentState.moves[idx], loc: loc,) : Text(''),
         ],),
       ),
       opponentState.moves.length > idx && opponentState.usedPPs.length > idx ?

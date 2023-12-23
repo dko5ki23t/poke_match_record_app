@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StatInputRow extends Row {
   static const increaseStateStyle = TextStyle(
@@ -29,7 +31,8 @@ class StatInputRow extends Row {
     void Function(num)? realChangeFunc,
     {
       bool effectTemper = false,
-      String statName = '',
+      StatIndex statIndex = StatIndex.none,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -37,15 +40,15 @@ class StatInputRow extends Row {
     children: [
       Flexible(
         child: TextFormField(
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '種族値'
+            labelText: loc.commonStatRace,
           ),
           controller: raceController,
           enabled: false,
           style: effectTemper ?
-            pokemon.temper.increasedStat == statName ? increaseStateStyle :
-              pokemon.temper.decreasedStat == statName ? decreaseStateStyle : null
+            pokemon.temper.increasedStat == statIndex ? increaseStateStyle :
+              pokemon.temper.decreasedStat == statIndex ? decreaseStateStyle : null
             : null,
         ),
       ),
@@ -53,9 +56,9 @@ class StatInputRow extends Row {
       Flexible(
         child: NumberInputWithIncrementDecrement(
           controller: indiController,
-          numberFieldDecoration: const InputDecoration(
+          numberFieldDecoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '個体値',
+            labelText: loc.commonStatIndividual,
           ),
           widgetContainerDecoration: const BoxDecoration(
             border: null,
@@ -72,9 +75,9 @@ class StatInputRow extends Row {
       Flexible(
         child: NumberInputWithIncrementDecrement(
           controller: effortController,
-          numberFieldDecoration: const InputDecoration(
+          numberFieldDecoration: InputDecoration(
             border: UnderlineInputBorder(),
-            labelText: '努力値'
+            labelText: loc.commonStatEffort,
           ),
           widgetContainerDecoration: const BoxDecoration(
             border: null,

@@ -4,6 +4,7 @@ import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PartyFilterDialog extends StatefulWidget {
   final Future<void> Function (
@@ -45,6 +46,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       ownerFilter = [...widget.ownerFilter];
       winRateMinFilter = widget.winRateMinFilter;
@@ -54,7 +56,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
     }
 
     return AlertDialog(
-      title: Text('フィルタ'),
+      title: Text(loc.commonFilter),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -64,7 +66,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('作成者'),),
+                  Center(child: Text(loc.filterDialogProducer),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: ownerExpanded ?
@@ -80,7 +82,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
             ),
             ownerExpanded ?
             ListTile(
-              title: Text('自分のパーティ'),
+              title: Text(loc.filterDialogOwnParty),
               leading: Checkbox(
                 value: ownerFilter.contains(Owner.mine),
                 onChanged: (value) {
@@ -98,7 +100,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
             ) : Container(),
             ownerExpanded ?
             ListTile(
-              title: Text('対戦相手のパーティ'),
+              title: Text(loc.filterDialogOpponentParty),
               leading: Checkbox(
                 value: ownerFilter.contains(Owner.fromBattle),
                 onChanged: (value) {
@@ -120,7 +122,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('勝率'),),
+                  Center(child: Text(loc.filterDialogWinningRate),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: winRateExpanded ?
@@ -155,7 +157,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
                       onChanged: (val) => winRateMinFilter = val as int,
                     ),
                   ),
-                  Text('%～'),
+                  Text('% ~ '),
                   Expanded(
                     child: NumberInputWithIncrementDecrement(
                       controller: winRateMaxController,
@@ -183,7 +185,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text('ポケモン'),),
+                  Center(child: Text(loc.commonPokemon),),
                   Align(
                     alignment: Alignment.centerRight,
                     child: pokemonNoExpanded ?
@@ -221,9 +223,9 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
               title: TypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: pokemonNoController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: 'ポケモン追加',
+                    labelText: loc.filterDialogAddPokemon,
                   ),
                 ),
                 autoFlipDirection: true,
@@ -254,13 +256,13 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           GestureDetector(
-            child: Text('リセット'),
+            child: Text(loc.commonReset),
             onTap: () {
               ownerFilter = [Owner.mine];
               winRateMinFilter = 0;

@@ -9,6 +9,7 @@ pokeBaseDBFile = 'PokeBases.db'
 pokeBaseDBTable = 'pokeBaseDB'
 pokeBaseColumnId = 'id'
 pokeBaseColumnName = 'name'
+pokeBaseColumnEnglishName = 'englishName'
 pokeBaseColumnAbility = 'ability'
 pokeBaseColumnForm = 'form'
 pokeBaseColumnFemaleRate = 'femaleRate'
@@ -82,6 +83,7 @@ pokeBaseCSVfemaleRate = 9
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
+englishID = 9
 HPID = 1
 attackID = 2
 defenseID = 3
@@ -167,11 +169,16 @@ def main():
                 form.append(pokemon_id)
 
             name = ''
+            name_en = ''
             base_name = ''
+            base_name_en = ''
             # 日本語名取得
             names = lang_df[(lang_df[pokemonsLangCSVPokemonIDColumn] == id) & (lang_df[pokemonsLangCSVLangIDColumn] == japaneseID)][pokemonsLangCSVNameColumn]
+            # 英語名取得
+            names_en = lang_df[(lang_df[pokemonsLangCSVPokemonIDColumn] == id) & (lang_df[pokemonsLangCSVLangIDColumn] == englishID)][pokemonsLangCSVNameColumn]
             if len(names) > 0:
                 base_name = names.iloc[0]
+                base_name_en = names_en.iloc[0]
             if len(form) > 1:
                 battle_only = True
                 for f in form:
@@ -185,16 +192,25 @@ def main():
                         poke_form_id = tmp.iloc[0]
                         # 日本語名取得
                         names = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == japaneseID)][formLangCSVNameColumn]
+                        # 英語名取得
+                        names_en = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == englishID)][formLangCSVNameColumn]
                         if len(names) > 0:
                             name = base_name + f'({names.iloc[0]})'
+                            if len(names_en) <= 0:
+                                print(name)
+                            name_en = base_name_en + f'({names_en.iloc[0]})'
                         else:
                             name = base_name
+                            name_en = base_name_en
                     else:
                         name = base_name
+                        name_en = base_name_en
                 else:
                     name = base_name
+                    name_en = base_name_en
             else:
                 name = base_name
+                name_en = base_name_en
             # とくせい取得
             abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == id][pokemonsAbilityCSVAbilityIDColumn].to_list()
             # 重複削除
@@ -231,24 +247,29 @@ def main():
             # 画像URL作成
             imageUrl = f'{imageUrlBase}{id}.png'
 
-            pokemons_list.append((id, name, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups, imageUrl))
+            pokemons_list.append((id, name, name_en, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups, imageUrl))
 
             for form_id in form:
                 if form_id == id:
                     continue
                 form_name = ''
+                form_name_en = ''
                 # フォームID取得
                 tmp = forms_df[forms_df[pokemonFormsCSVPokemonIDColumn] == form_id][pokemonFormsCSVPokemonFormIDColumn]
                 if len(tmp) > 0:
                     poke_form_id = tmp.iloc[0]
                     # 日本語名取得
                     names = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == japaneseID)][formLangCSVNameColumn]
+                    # 英語名取得
+                    names_en = form_lang_df[(form_lang_df[formLangCSVPokemonIDColumn] == poke_form_id) & (form_lang_df[formLangCSVLangIDColumn] == englishID)][formLangCSVNameColumn]
                     if len(names) > 0:
                         form_name = f'{base_name}({names.iloc[0]})'
+                        form_name_en = f'{base_name_en}({names_en.iloc[0]})'
                         if names.iloc[0] == 'メスのすがた':
                             female_rate = 8
                 else:
                     form_name = base_name
+                    form_name_en = base_name_en
                     print(form_id, form_name)
                 # とくせい取得
                 form_abilities = ability_df[ability_df[pokemonsAbilityCSVPokemonIDColumn] == form_id][pokemonsAbilityCSVAbilityIDColumn].to_list()
@@ -286,7 +307,7 @@ def main():
                 # 画像URL作成
                 form_imageUrl = f'{imageUrlBase}{form_id}.png'
 
-                pokemons_list.append((form_id, form_name, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups, form_imageUrl))
+                pokemons_list.append((form_id, form_name, form_name_en, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups, form_imageUrl))
 
 
         # 作成(存在してたら作らない)
@@ -298,6 +319,7 @@ def main():
             f'CREATE TABLE IF NOT EXISTS {pokeBaseDBTable} ('
             f'  {pokeBaseColumnId} integer primary key,'
             f'  {pokeBaseColumnName} text not null,'
+            f'  {pokeBaseColumnEnglishName} text not null,'
             f'  {pokeBaseColumnAbility} IntList,'
             f'  {pokeBaseColumnForm} IntList,'
             f'  {pokeBaseColumnFemaleRate} integer, '
@@ -320,11 +342,11 @@ def main():
         try:
             con.executemany(
                 f'INSERT INTO {pokeBaseDBTable} ('
-                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnAbility}, '
+                f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnEnglishName}, {pokeBaseColumnAbility}, '
                 f'{pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, '
                 f'{statsColumn}, {pokeBaseColumnType}, {pokeBaseColumnHeight}, '
                 f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}, {pokeBaseColumnImageUrl}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 pokemons_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

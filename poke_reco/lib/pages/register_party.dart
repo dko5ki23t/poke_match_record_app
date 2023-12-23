@@ -8,6 +8,7 @@ import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPartyPage extends StatefulWidget {
   RegisterPartyPage({
@@ -35,7 +36,7 @@ class RegisterPartyPage extends StatefulWidget {
 
 class RegisterPartyPageState extends State<RegisterPartyPage> {
   final partyNameController = TextEditingController();
-  final pokemonController = List.generate(6, (i) => TextEditingController(text: 'ポケモン選択'));
+  final pokemonController = List.generate(6, (i) => TextEditingController());
   final itemController = List.generate(6, (i) => TextEditingController());
 
   bool firstBuild = true;
@@ -45,6 +46,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var appState = context.watch<MyAppState>();
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
     void onBack () {
       bool showAlert = false;
       if (widget.party.pokemons[0]!.no != 0) {
@@ -96,6 +98,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       appState.onBackKeyPushed = onBack;
       appState.onTabChange = onTabChange;
       partyNameController.text = widget.party.name;
+      for (final controller in pokemonController) {
+        controller.text = loc.partiesTabSelectPokemon;
+      }
       firstBuild = false;
     }
 
@@ -126,11 +131,11 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: widget.isNew ? Text('パーティ登録') : Text('パーティ編集'),
+          title: widget.isNew ? Text(loc.partiesTabRegisterParty) : Text(loc.partiesTabEditParty),
           actions: [
             TextButton(
               onPressed: ((widget.isEditPokemon && widget.party.name != '') || widget.party.isValid) ? () => onComplete() : null,
-              child: Text('保存'),
+              child: Text(loc.registerSave),
             ),
           ],
         ),
@@ -146,9 +151,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                     children: [
                       Flexible(
                         child: TextFormField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'パーティ名'
+                            labelText: loc.partiesTabPartyName,
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -164,7 +169,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   SizedBox(height: 10),
                   for (int i = 0; i < 6; i++)
                     PokemonItemInputRow(
-                      'ポケモン${i+1}',
+                      '${loc.commonPokemon}${i+1}',
                       pokemonController[i],
                       () async {
                         // キーボードが出ないようにする
@@ -195,7 +200,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                             widget.party.items[j] = widget.party.items[j+1];
                           }
                           else {
-                            pokemonController[j].text = 'ポケモン選択';
+                            pokemonController[j].text = loc.partiesTabSelectPokemon;
                             widget.party.pokemons[j] = j == 0 ?
                               Pokemon() : null;
                             itemController[j].text = '';
@@ -205,7 +210,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         }
                         setState(() {});
                       },
-                      'もちもの${i+1}',
+                      '${loc.commonItem}${i+1}',
                       itemController[i],
                       [for (int j = 0; j < 6; j++) i != j ? widget.party.items[j] : null, pokeData.items[0]],
                       (suggestion) {

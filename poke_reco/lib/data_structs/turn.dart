@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Turn {
   List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
@@ -24,6 +25,7 @@ class Turn {
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
   List<List<PokemonState>> _initialLastExitedStates = [[], []];
+  List<TurnEffect> noAutoAddEffect = [];
 
   PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
   PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
@@ -92,6 +94,10 @@ class Turn {
     .._initialLastExitedStates[1] = [
       for (final state in _initialLastExitedStates[1])
       state.copyWith()
+    ]
+    ..noAutoAddEffect = [
+      for (final effect in noAutoAddEffect)
+      effect.copyWith()
     ];
 
   PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
@@ -201,7 +207,7 @@ class Turn {
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
-    int phaseIdx, Party ownParty, Party opponentParty)
+    int phaseIdx, Party ownParty, Party opponentParty, AppLocalizations loc,)
   {
     PhaseState ret = copyInitialState(ownParty, opponentParty,);
     int continousCount = 0;
@@ -223,7 +229,7 @@ class Turn {
         ret.getPokemonState(PlayerType(PlayerType.me), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         opponentParty,
         ret.getPokemonState(PlayerType(PlayerType.opponent), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
-        ret, lastAction, continousCount,
+        ret, lastAction, continousCount, loc: loc,
       );
     }
     return ret;
@@ -244,7 +250,8 @@ class Turn {
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
     dynamic str, String split1, String split2,
-    String split3, String split4, String split5, String split6)
+    String split3, String split4, String split5,
+    String split6, {int version = -1})  // -1は最新バージョン
   {
     Turn ret = Turn();
     final turnElements = str.split(split1);
@@ -266,7 +273,7 @@ class Turn {
       for (final state in states) {
         if (state == '') break;
         adding.add(
-          PokemonState.deserialize(state, split4, split5, split6)
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
           ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
         i++;
       }
@@ -302,7 +309,7 @@ class Turn {
     var turnEffects = turnElements[7].split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5));
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5, version: version));
     }
     // canZorua
     ret.canZorua = int.parse(turnElements[8]) != 0;
@@ -323,11 +330,18 @@ class Turn {
       for (final state in states) {
         if (state == '') break;
         adding.add(
-          PokemonState.deserialize(state, split4, split5, split6)
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
           ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
         i++;
       }
       ret._initialLastExitedStates.add(adding);
+    }
+    // noAutoAddEffect
+    var effects = turnElements[13].split(split2);
+    ret.noAutoAddEffect.clear();
+    for (final effect in effects) {
+      if (effect == '') break;
+      ret.noAutoAddEffect.add(TurnEffect.deserialize(effect, split3, split4, split5, version: version));
     }
 
     return ret;
@@ -399,6 +413,12 @@ class Turn {
         ret += state.serialize(split4, split5, split6);
         ret += split3;
       }
+      ret += split2;
+    }
+    ret += split1;
+    // noAutoAddEffect
+    for (final effect in noAutoAddEffect) {
+      ret += effect.serialize(split3, split4, split5);
       ret += split2;
     }
 

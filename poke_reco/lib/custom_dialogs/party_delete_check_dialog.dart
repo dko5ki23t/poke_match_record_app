@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PartyDeleteCheckDialog extends StatefulWidget {
   final bool containedParty;
@@ -16,19 +17,20 @@ class PartyDeleteCheckDialog extends StatefulWidget {
 class PartyDeleteCheckDialogState extends State<PartyDeleteCheckDialog> {
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: Text('選択したパーティを削除してもいいですか？'),
+      title: Text(loc.dialogQuestionDeleteParties1),
       content: widget.containedParty ?
-        Text('対戦記録に含まれているパーティを選択しています') : Text(''),
+        Text(loc.dialogQuestionDeleteParties2) : Text(''),
       actions: <Widget>[
           GestureDetector(
-            child: Text('いいえ'),
+            child: Text(loc.commonNo),
             onTap: () {
               Navigator.pop(context);
             },
           ),
           GestureDetector(
-            child: Text('はい'),
+            child: Text(loc.commonYes),
             onTap: () {
               Navigator.pop(context);
               widget.onClearPressed();

@@ -4,11 +4,11 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 
 enum BattleType {
-  //casual(0, 'カジュアルバトル'),
-  rankmatch(0, 'ランクバトル'),
+  //casual(0, 'カジュアルバトル', 'Casual Battle'),
+  rankmatch(0, 'ランクバトル', 'Ranked Battle'),
   ;
 
-  const BattleType(this.id, this.displayName);
+  const BattleType(this.id, this.ja, this.en);
 
   factory BattleType.createFromId(int id) {
     switch (id) {
@@ -20,8 +20,19 @@ enum BattleType {
     }
   }
 
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
+    }
+  }
+
   final int id;
-  final String displayName;
+  final String ja;
+  final String en;
 }
 
 class Battle {
@@ -40,7 +51,7 @@ class Battle {
 
   Battle();
 
-  Battle.createFromDBMap(Map<String, dynamic> map) {
+  Battle.createFromDBMap(Map<String, dynamic> map, {int version = -1}) {  // -1は最新バージョン
     var pokeData = PokeDB();
     id = map[battleColumnId];
     viewOrder = map[battleColumnViewOrder];
@@ -67,7 +78,7 @@ class Battle {
     final strTurns = map[battleColumnTurns].split(sqlSplit1);
     for (final strTurn in strTurns) {
       if (strTurn == '') break;
-      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7));
+      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, version: version));
     }
   }
 

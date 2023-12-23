@@ -5,7 +5,6 @@ import pandas as pd
 import os
 import tqdm
 import time
-from plyer import notification
 import datetime
 
 ###### もちもののリストをcsvファイルから取得してsqliteファイルに保存 ######
@@ -15,6 +14,7 @@ itemDBFile = 'Items.db'
 itemDBTable = 'itemDB'
 itemColumnId = 'id'
 itemColumnName = 'name'
+itemColumnEnglishName = 'englishName'
 itemColumnFlingPower = 'fling_power'
 itemColumnFlingEffect = 'fling_effect'
 itemColumnTiming = 'timing'
@@ -40,6 +40,7 @@ itemCSVisBerryIndex = 8
 # CSVファイル(PokeAPI)で必要となる各ID
 validItemIDs = [i for i in range(1, 8)]       # バトルでポケモンに持たせられるアイテムの種類
 japaneseID = 1
+englishID = 9
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='もちものの情報をCSVからデータベース化')
@@ -81,12 +82,14 @@ def main():
             is_berry = row[itemCSVisBerryIndex]
             # 日本語名取得
             names = lang_df[(lang_df[itemLangCSVItemIDColumn] == id) & (lang_df[itemLangCSVLangIDColumn] == japaneseID)][itemLangCSVNameColumn]
+            # 英語名取得
+            names_en = lang_df[(lang_df[itemLangCSVItemIDColumn] == id) & (lang_df[itemLangCSVLangIDColumn] == englishID)][itemLangCSVNameColumn]
             if len(names) > 0:
                 # 属性について
                 #att = [a for a in flags_df[flags_df['item_id'] == id]['item_flag_id']]
                 #if len(att) > 0:
                 imageUrl = f'{imageUrlBase}{row[itemCSVIdentifierIndex]}.png'
-                items_list.append((id, names.iloc[0], fling_power, fling_effect, timing, is_berry, imageUrl))
+                items_list.append((id, names.iloc[0], names_en.iloc[0], fling_power, fling_effect, timing, is_berry, imageUrl))
 
         # 作成(存在してたら作らない)
         try:
@@ -94,6 +97,7 @@ def main():
             f'CREATE TABLE IF NOT EXISTS {itemDBTable} ('
             f'  {itemColumnId} integer primary key,'
             f'  {itemColumnName} text not null,'
+            f'  {itemColumnEnglishName} text not null,'
             f'  {itemColumnFlingPower} integer,'
             f'  {itemColumnFlingEffect} integer,'
             f'  {itemColumnTiming} integer,'
@@ -106,8 +110,8 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}, {itemColumnImageUrl})'
-                f' VALUES ( ?, ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnEnglishName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}, {itemColumnImageUrl})'
+                f' VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )',
                 items_list)
         except sqlite3.OperationalError:
             print('failed to insert table')
