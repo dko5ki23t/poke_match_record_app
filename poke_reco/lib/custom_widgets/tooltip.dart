@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // 長押しで説明が表示されるテキスト
 
@@ -32,7 +33,7 @@ class AbilityText extends AbilityTooltip {
   super(
     ability: ability,
     child: Text(
-      showHatena && ability.id == 0 ? '？' :
+      showHatena && ability.id == 0 ? '?' :
       ability.displayName
     ),
     triggerMode: triggerMode,
@@ -59,6 +60,7 @@ class ItemText extends ItemTooltip {
   ItemText(
     Item? item,
     {
+      required AppLocalizations loc,
       bool showHatena = false,
       bool showNone = false,
       TooltipTriggerMode? triggerMode,
@@ -67,8 +69,8 @@ class ItemText extends ItemTooltip {
   super(
     item: item,
     child: Text(
-      showNone && item == null ? 'なし' :
-      showHatena && item?.id == 0 ? '？' :
+      showNone && item == null ? loc.commonNone :
+      showHatena && item?.id == 0 ? '?' :
       item == null ? '' : item.displayName
     ),
     triggerMode: triggerMode,
@@ -80,6 +82,7 @@ class MoveTooltip extends Tooltip {
     {
       required Move move,
       required Widget child,
+      required AppLocalizations loc,
       TooltipTriggerMode? triggerMode,
     }
   ) : 
@@ -91,8 +94,8 @@ class MoveTooltip extends Tooltip {
           child: move.type.displayIcon,
         ),
       ),
-      TextSpan(text: move.damageClass.id == 1 ? '　変化' : move.damageClass.id == 2 ? '　物理' : move.damageClass.id == 3 ? '　特殊' : '　？'),
-      TextSpan(text: '　威力：${move.power}　命中：${move.accuracy}'),
+      TextSpan(text: move.damageClass.id == 1 ? ' ${loc.commonMoveStatus}' : move.damageClass.id == 2 ? ' ${loc.commonMovePhysical}' : move.damageClass.id == 3 ? ' ${loc.commonMoveSpecial}' : ' ?'),
+      TextSpan(text: ' ${loc.commonMovePower} : ${move.power} ${loc.commonMoveAccuracy} : ${move.accuracy}'),
       TextSpan(text: '\n${PokeDB().getMoveFlavor(move.id) ?? ''}'),
     ]),
     child: child,
@@ -106,11 +109,12 @@ class MoveText extends MoveTooltip {
     Move move,
     {
       TooltipTriggerMode? triggerMode,
+      required AppLocalizations loc,
     }
   ) :
   super(
     move: move,
     child: Text(move.displayName),
-    triggerMode: triggerMode,
+    triggerMode: triggerMode, loc: loc,
   );
 }

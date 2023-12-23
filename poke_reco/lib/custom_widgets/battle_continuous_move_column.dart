@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleContinuousMoveColumn extends Column {
   BattleContinuousMoveColumn(
@@ -32,7 +33,10 @@ class BattleContinuousMoveColumn extends Column {
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     TurnEffectAndStateAndGuide? nextSameTimingFirst,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -52,7 +56,7 @@ class BattleContinuousMoveColumn extends Column {
                 Stack(
                   children: [
                   Center(child: Text(
-                    _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon, continuousCount)
+                    _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon, continuousCount, loc)
                   )),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -88,7 +92,7 @@ class BattleContinuousMoveColumn extends Column {
                   ),
                 ],) :
                 Center(child: Text(
-                  _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon, continuousCount)
+                  _getTitle(turn.phases[phaseIdx].move!, ownPokemon, opponentPokemon, continuousCount, loc)
                 )),
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraWidget2(
@@ -107,6 +111,7 @@ class BattleContinuousMoveColumn extends Column {
                 turnEffectAndStateAndGuide,
                 turn.phases[phaseIdx].invalidGuideIDs,
                 isInput: isInput,
+                loc: loc,
               ),
               SizedBox(height: 10,),
               for (final e in turnEffectAndStateAndGuide.guides)
@@ -171,7 +176,7 @@ class BattleContinuousMoveColumn extends Column {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.add_circle),
-                Text('${refMove.move.displayName}(${continuousCount+1}回目)を追加'),
+                Text(continuousCount == 1 ? loc.battleAddMoveTimes2(refMove.move.displayName) : continuousCount == 2 ? loc.battleAddMoveTimes3(refMove.move.displayName) : loc.battleAddMoveTimes4(continuousCount+1, refMove.move.displayName)),
               ],
             ),
           ),
@@ -180,26 +185,29 @@ class BattleContinuousMoveColumn extends Column {
     ],
   );
 
-  static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent, int continuousCount) {
+  static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent, int continuousCount, AppLocalizations loc) {
     switch (turnMove.type.id) {
       case TurnMoveType.move:
         if (turnMove.move.id != 0) {
+          var str = continuousCount == 0 ? loc.battleMoveTimes1 :
+            continuousCount == 1 ? loc.battleMoveTimes2 :
+            continuousCount == 2 ? loc.battleMoveTimes3 : loc.battleMoveTimes4;
           if (turnMove.playerType.id == PlayerType.opponent) {
-            return '【${continuousCount+1}回目】${turnMove.move.displayName}-${opponent.name}';
+            return '$str${turnMove.move.displayName}-${opponent.name}';
           }
           else {
-            return '【${continuousCount+1}回目】${turnMove.move.displayName}-${own.name}';
+            return '$str${turnMove.move.displayName}-${own.name}';
           }
         }
         break;
       case TurnMoveType.change:
-        return 'ポケモン交代';
+        return loc.battlePokemonChange;
       case TurnMoveType.surrender:
-        return 'こうさん';
+        return loc.battleSurrender;
       default:
         break;
     }
 
-    return '行動';
+    return loc.battleAction;
   }
 }

@@ -5,6 +5,7 @@ import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/link.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({
@@ -27,24 +28,25 @@ class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var loc = AppLocalizations.of(context)!;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('設定'),
+        title: Text(loc.settingsTabTitleTop),
       ),
       body: Column(
         children: [
           /*ListTile(
-            title: Text('リセット'),
+            title: Text(loc.settingsTabReset),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.onReset(),
           ),*/
           ListTile(
-            title: Text('画像をインターネットで取得'),
-            subtitle: Text('チェックするとポケモンやもちものの画像をインターネットに接続して取得します。\nチェックを外すと画像の代わりにインストール済みのアイコンが表示されます。'),
+            title: Text(loc.settingsTabGetWebImage),
+            subtitle: Text(loc.settingsTabGetWebImageDescription),
             trailing: Checkbox(
               value: PokeDB().getPokeAPI,
               onChanged: (value) {
@@ -57,23 +59,23 @@ class SettingsPageState extends State<SettingsPage> {
             ),
           ),
           ListTile(
-            title: Text('言語'),
+            title: Text(loc.settingsTabLanguage),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.viewLanguage(),
           ),
           ListTile(
-            title: Text('ライセンス情報'),
+            title: Text(loc.settingsTabLicenses),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.viewLicense(),
           ),
           ListTile(
-            title: Text('プライバシーポリシー'),
+            title: Text(loc.settingsTabPrivacyPolicy),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.viewPolicy(),
           ),
           ListTile(
-            title: Text('バージョン'),
-            trailing: Text('1.0.1'),
+            title: Text(loc.settingsTabVersion),
+            trailing: Text(pokeRecoVersion),
           ),
         ],
       ),
@@ -98,25 +100,26 @@ class SettingResetPageState extends State<SettingResetPage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var loc = AppLocalizations.of(context)!;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('リセット'),
+        title: Text(loc.settingsTabReset),
         actions: [
           TextButton(
             onPressed: getSelectedNum(checkList) > 0 ?
               (){} : null,
-            child: Text('実行'),
+            child: Text(loc.settingsTabResetDone),
           ),
         ],
       ),
       body: Column(
         children: [
           ListTile(
-            title: Text('対戦記録削除'),
+            title: Text(loc.settingsTabDeleteBattles),
             leading: Checkbox(
               value: checkList[0],
               onChanged: (value) {
@@ -128,7 +131,7 @@ class SettingResetPageState extends State<SettingResetPage> {
             ),
           ),
           ListTile(
-            title: Text('ポケモン情報削除'),
+            title: Text(loc.settingsTabDeletePokemons),
             leading: Checkbox(
               value: checkList[1],
               onChanged: (value) {
@@ -140,7 +143,7 @@ class SettingResetPageState extends State<SettingResetPage> {
             ),
           ),
           ListTile(
-            title: Text('パーティ情報削除'),
+            title: Text(loc.settingsTabDeleteParties),
             leading: Checkbox(
               value: checkList[2],
               onChanged: (value) {
@@ -170,13 +173,14 @@ class SettingLanguagePageState extends State<SettingLanguagePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var loc = AppLocalizations.of(context)!;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('言語'),
+        title: Text(loc.settingsTabLanguage),
       ),
       body: Column(
         children: [
@@ -187,6 +191,7 @@ class SettingLanguagePageState extends State<SettingLanguagePage> {
             onTap: () => setState(() {
               PokeDB().language = Language.japanese;
               PokeDB().saveConfig();
+              MyApp.of(context)!.setLocale(Locale('ja', ''));
             }),
           ),
           ListTile(
@@ -196,6 +201,7 @@ class SettingLanguagePageState extends State<SettingLanguagePage> {
             onTap: () => setState(() {
               PokeDB().language = Language.english;
               PokeDB().saveConfig();
+              MyApp.of(context)!.setLocale(Locale('en', ''));
             }),
           ),
         ],
@@ -242,13 +248,14 @@ class SettingLicensePageState extends State<SettingLicensePage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
 
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('ライセンス情報'),
+        title: Text(loc.settingsTabLicenses),
       ),
       body: Container(
         padding: const EdgeInsets.all(20),
@@ -261,7 +268,7 @@ class SettingLicensePageState extends State<SettingLicensePage> {
                 }),
                 child: Stack(
                   children: [
-                    Text('本アプリOSSライセンス', style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
+                    Text(loc.settingsTabOSSLicense, style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
                     Align(
                       alignment: Alignment.centerRight,
                       child: ossExpanded ?
@@ -280,7 +287,7 @@ class SettingLicensePageState extends State<SettingLicensePage> {
                 }),
                 child: Stack(
                   children: [
-                    Text('使用フォントライセンス', style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
+                    Text(loc.settingsTabFontLicense, style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
                     Align(
                       alignment: Alignment.centerRight,
                       child: fontExpanded ?
@@ -303,22 +310,23 @@ class SettingLicensePageState extends State<SettingLicensePage> {
 class SettingPolicyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: Text('プライバシーポリシー'),
+        title: Text(loc.settingsTabPrivacyPolicy),
       ),
       body: Container(
         padding: const EdgeInsets.all(20),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              Text('以下のURLからプライバシーポリシーをご確認ください。'),
+              Text(loc.settingsTabPrivacyPolicyPrompt),
               Link(
                 uri: Uri.parse('https://dko5ki23t.wixsite.com/my-site'),
                 builder: (context, openLink) {
                   return TextButton(
                     onPressed: openLink,
-                    child: Text('Webサイト表示'),
+                    child: Text(loc.settingsTabPrivacyPolicyButton),
                   );
                 },),
             ],

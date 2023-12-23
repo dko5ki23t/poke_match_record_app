@@ -233,23 +233,23 @@ const String sqlSplit5 = '!';
 const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
 
-/*
-pokeBaseNameToIdx = {     # (pokeAPIでの名称/tableの列名 : idx)
-    'hp': 0,
-    'attack' : 1,
-    'defense' : 2,
-    'special-attack' : 3,
-    'special-defense' : 4,
-    'speed' : 5,
-}*/
-
 enum Sex {
-  none(0, 'なし', Icon(Icons.remove, color: Colors.grey)),
-  male(1, 'オス', Icon(Icons.male, color: Colors.blue)),
-  female(2, 'メス', Icon(Icons.female, color: Colors.red)),
+  none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
+  male(1, 'オス', 'Male', Icon(Icons.male, color: Colors.blue)),
+  female(2, 'メス', 'Female', Icon(Icons.female, color: Colors.red)),
   ;
 
-  const Sex(this.id, this.displayName, this.displayIcon);
+  const Sex(this.id, this.ja, this.en, this.displayIcon);
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
+    }
+  }
 
   factory Sex.createFromId(int id) {
     switch (id) {
@@ -264,7 +264,8 @@ enum Sex {
   }
 
   final int id;
-  final String displayName;
+  final String ja;
+  final String en;
   final Icon displayIcon;
 }
 
@@ -322,19 +323,6 @@ class Temper {
 
     return ret;
   }
-
-/*
-  Map<String, Object?> toMap() {
-    var map = <String, Object?>{
-      temperColumnId: id,
-      temperColumnName: _displayName,
-      temperColumnEnglishName: _displayNameEn,
-      temperColumnDe: decreasedStat,
-      temperColumnIn: increasedStat,
-    };
-    return map;
-  }
-*/
 }
 
 class SixParams {
@@ -789,21 +777,42 @@ StatIndex getStatIndexFromIndex(int index) {
 
 extension StatStr on StatIndex {
   String get name {
-    switch (this) {
-      case StatIndex.H:
-        return 'HP';
-      case StatIndex.A:
-        return 'こうげき';
-      case StatIndex.B:
-        return 'ぼうぎょ';
-      case StatIndex.C:
-        return 'とくこう';
-      case StatIndex.D:
-        return 'とくぼう';
-      case StatIndex.S:
-        return 'すばやさ';
+    switch (PokeDB().language) {
+      case Language.japanese:
+        switch (this) {
+          case StatIndex.H:
+            return 'HP';
+          case StatIndex.A:
+            return 'こうげき';
+          case StatIndex.B:
+            return 'ぼうぎょ';
+          case StatIndex.C:
+            return 'とくこう';
+          case StatIndex.D:
+            return 'とくぼう';
+          case StatIndex.S:
+            return 'すばやさ';
+          default:
+            return '';
+        }
+      case Language.english:
       default:
-        return '';
+        switch (this) {
+          case StatIndex.H:
+            return 'HP';
+          case StatIndex.A:
+            return 'Attack';
+          case StatIndex.B:
+            return 'Defense';
+          case StatIndex.C:
+            return 'Special Attack';
+          case StatIndex.D:
+            return 'Special Defense';
+          case StatIndex.S:
+            return 'Speed';
+          default:
+            return '';
+        }
     }
   }
 
@@ -950,7 +959,7 @@ class PokeDB {
     return ret;
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize(Locale locale) async {
     /////////// 各種設定
     String localPath ='';
     if (kIsWeb) {
@@ -1068,20 +1077,14 @@ class PokeDB {
         battlesSort = null;
         await saveConfig();
       }
-      try {
-        switch (configJson[configKeyLanguage] as int) {
-          case 1:
-            language = Language.english;
-            break;
-          case 0:
-          default:
-            language = Language.japanese;
-            break;
-        }
-      }
-      catch (e) {
-        language = Language.japanese;
-        await saveConfig();
+      switch (locale.languageCode) {
+        case 'ja':
+          language = Language.japanese;
+          break;
+        case 'en':
+        default:
+          language = Language.english;
+          break;
       }
     }
 
@@ -1623,11 +1626,11 @@ class PokeDB {
 
   Future<void> _fillMyPokemonVersionDiff(Database database) async {
     int v = await database.getVersion();
-    if (v != pokeRecoVersion) {
+    if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1:   // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
           // バージョン変えるだけでいい
-          database.setVersion(pokeRecoVersion);
+          database.setVersion(pokeRecoInternalVersion);
           break;
         default:
           break;
@@ -1637,11 +1640,11 @@ class PokeDB {
 
   Future<void> _fillPartyVersionDiff(Database database) async {
     int v = await database.getVersion();
-    if (v != pokeRecoVersion) {
+    if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1:   // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
           // バージョン変えるだけでいい
-          database.setVersion(pokeRecoVersion);
+          database.setVersion(pokeRecoInternalVersion);
           break;
         default:
           break;
@@ -1651,7 +1654,7 @@ class PokeDB {
 
   Future<void> _fillBattleVersionDiff(Database database) async {
     int v = await database.getVersion();
-    if (v != pokeRecoVersion) {
+    if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1:   // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
           {
@@ -1680,7 +1683,7 @@ class PokeDB {
               await addBattle(battle, false);
             }
             // バージョン変更
-            database.setVersion(pokeRecoVersion);
+            database.setVersion(pokeRecoInternalVersion);
           }
           break;
         default:
@@ -1923,7 +1926,7 @@ class PokeDB {
       return databaseFactoryFfiWeb.openDatabase(
         myPokemonDBPath,
         options: OpenDatabaseOptions(
-          version: pokeRecoVersion,
+          version: pokeRecoInternalVersion,
           onCreate: (db, version) {
             return db.execute(text);
           }
@@ -1933,7 +1936,7 @@ class PokeDB {
     else {
       return openDatabase(
         myPokemonDBPath,
-        version: pokeRecoVersion,
+        version: pokeRecoInternalVersion,
         onCreate: (db, version) {
           return db.execute(text);
         }
@@ -1969,7 +1972,7 @@ class PokeDB {
       return databaseFactoryFfiWeb.openDatabase(
         partyDBPath,
         options: OpenDatabaseOptions(
-          version: pokeRecoVersion,
+          version: pokeRecoInternalVersion,
           onCreate: (db, version) {
             return db.execute(text);
           }
@@ -1979,7 +1982,7 @@ class PokeDB {
     else {
       return openDatabase(
         partyDBPath,
-        version: pokeRecoVersion,
+        version: pokeRecoInternalVersion,
         onCreate: (db, version) {
           return db.execute(text);
         }
@@ -2010,7 +2013,7 @@ class PokeDB {
       return databaseFactoryFfiWeb.openDatabase(
         battleDBPath,
         options: OpenDatabaseOptions(
-          version: pokeRecoVersion,
+          version: pokeRecoInternalVersion,
           onCreate: (db, version) {
             return db.execute(text);
           }
@@ -2020,7 +2023,7 @@ class PokeDB {
     else {
       return openDatabase(
         battleDBPath,
-        version: pokeRecoVersion,
+        version: pokeRecoInternalVersion,
         onCreate: (db, version) {
           return db.execute(text);
         }

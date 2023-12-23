@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StatTotalRow extends Row {
   static const notAllowedStyle = TextStyle(
@@ -9,13 +10,16 @@ class StatTotalRow extends Row {
   StatTotalRow(
     int totalRace,
     int totalEffort,
+    {
+      required AppLocalizations loc,
+    }
   ) : 
   super(
     mainAxisSize: MainAxisSize.min,
     children: [
       Flexible(
         child: Text(
-            '合計：$totalRace'
+            '${loc.commonTotal} : $totalRace'
           ),
       ),
       SizedBox(width: 10),
@@ -23,7 +27,7 @@ class StatTotalRow extends Row {
       SizedBox(width: 10),
       Flexible(
           child: Text(
-            '合計：$totalEffort/$pokemonMaxEffortTotal',
+            '${loc.commonTotal} : $totalEffort/$pokemonMaxEffortTotal',
             style: totalEffort > pokemonMaxEffortTotal ? notAllowedStyle : null,
           ),
       ),

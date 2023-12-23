@@ -111,6 +111,10 @@ class Pokemon {
         return _name;
     }
   }
+  // getter
+  String get omittedName {
+    return name.split('(')[0];
+  }
   int get no => _no;
   SixParams get h => _stats[StatIndex.H.index];
   SixParams get a => _stats[StatIndex.A.index];

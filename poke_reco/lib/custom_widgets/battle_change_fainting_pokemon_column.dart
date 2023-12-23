@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleChangeFaintingPokemonColumn extends Column {
   BattleChangeFaintingPokemonColumn(
@@ -23,7 +24,10 @@ class BattleChangeFaintingPokemonColumn extends Column {
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
     List<Guide> guides,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -41,7 +45,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
               isInput ?
                 Stack(
                   children: [
-                  Center(child: Text('ポケモン交代')),
+                  Center(child: Text(loc.battlePokemonChange)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children:[
@@ -63,7 +67,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                     ],
                   ),
                 ],) :
-                Center(child: Text('ポケモン交代')),
+                Center(child: Text(loc.battlePokemonChange)),
               SizedBox(height: 10,),
               Row(
                 children: [
@@ -72,14 +76,14 @@ class BattleChangeFaintingPokemonColumn extends Column {
                     child: isInput ?
                       DropdownButtonFormField(
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動主',
+                          labelText: loc.battlePlayer,
                         ),
                         items: <DropdownMenuItem>[
                           DropdownMenuItem(
                             value: PlayerType.me,
-                            child: Text('あなた', overflow: TextOverflow.ellipsis,),
+                            child: Text(loc.battleYou, overflow: TextOverflow.ellipsis,),
                           ),
                           DropdownMenuItem(
                             value: PlayerType.opponent,
@@ -90,13 +94,13 @@ class BattleChangeFaintingPokemonColumn extends Column {
                         onChanged: null,
                       ) :
                       TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動主',
+                          labelText: loc.battlePlayer,
                         ),
                         controller: TextEditingController(
                           text: turn.phases[phaseIdx].playerType.id == PlayerType.me ?
-                                  'あなた' : battle.opponentName,
+                                  loc.battleYou : battle.opponentName,
                         ),
                         readOnly: true,
                         onTap: () => onFocus(phaseIdx+1),
@@ -108,29 +112,29 @@ class BattleChangeFaintingPokemonColumn extends Column {
                     child: isInput ?
                       DropdownButtonFormField<bool>(
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動の成否',
+                          labelText: loc.battleSuccessFailureOfAction,
                         ),
                         items: <DropdownMenuItem<bool>>[
                           DropdownMenuItem(
                             value: true,
-                            child: Text('行動成功', overflow: TextOverflow.ellipsis,),
+                            child: Text(loc.battleActionSuccessed, overflow: TextOverflow.ellipsis,),
                           ),
                           DropdownMenuItem(
                             value: false,
-                            child: Text('行動失敗', overflow: TextOverflow.ellipsis,),
+                            child: Text(loc.battleActionFailed, overflow: TextOverflow.ellipsis,),
                           ),
                         ],
                         value: true,
                         onChanged: null,
                       ) :
                       TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '行動の成否',
+                          labelText: loc.battleSuccessFailureOfAction,
                         ),
-                        controller: TextEditingController(text: '行動成功'),
+                        controller: TextEditingController(text: loc.battleActionSuccessed),
                         readOnly: true,
                         onTap: () => onFocus(phaseIdx+1),
                       ),
@@ -144,9 +148,9 @@ class BattleChangeFaintingPokemonColumn extends Column {
                     child: isInput ?
                       DropdownButtonFormField(
                         isExpanded: true,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '交代先ポケモン',
+                          labelText: loc.battlePokemonToChange,
                         ),
                         items: 
                           <DropdownMenuItem>[
@@ -169,7 +173,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                       TextField(
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: '交代先ポケモン',
+                          labelText: loc.battlePokemonToChange,
                           prefixIcon: PokeDB().getPokeAPI ?
                             Image.network(
                               PokeDB().pokeBase[battle.getParty(turn.phases[phaseIdx].playerType).pokemons[turn.phases[phaseIdx].effectId-1]!.no]!.imageUrl,

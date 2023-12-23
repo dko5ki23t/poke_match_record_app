@@ -19,6 +19,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ViewBattlePage extends StatefulWidget {
   ViewBattlePage({
@@ -85,6 +86,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
+    var loc = AppLocalizations.of(context)!;
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
@@ -101,14 +103,14 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     }
     dateController.text = widget.battle.formattedDateTime;
     ownPartyController.text = widget.battle.getParty(PlayerType(PlayerType.me)).id != 0 ?
-      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : 'パーティ選択';
+      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : loc.battlesTabSelectParty;
     
     if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage
     ) {
       // フォーカスしているフェーズの状態を取得
-      focusState = turns[turnNum-1].getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty);
-      sameTimingList = _createSameTimingList(appState);
+      focusState = turns[turnNum-1].getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
+      sameTimingList = _createSameTimingList(appState, loc);
       //appState.needAdjustPhases = -1;
       //appState.adjustPhaseByDelete = false;
     }
@@ -143,7 +145,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -154,7 +156,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -165,7 +167,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText4(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 )
               )
             )
@@ -192,7 +194,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText2(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -203,7 +205,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText3(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 ),
                 _getPrevTimingEffect(index),
               )
@@ -214,7 +216,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             (index) => TextEditingController(text:
               currentTurn.phases[index].getEditingControllerText4(
                 currentTurn.getProcessedStates(
-                  index, ownParty, opponentParty
+                  index, ownParty, opponentParty, loc
                 )
               )
             )
@@ -252,7 +254,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText2(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                   _getPrevTimingEffect(index),
                 )
@@ -263,7 +265,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText3(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                   _getPrevTimingEffect(index),
                 )
@@ -274,7 +276,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
               (index) => TextEditingController(text:
                 currentTurn.phases[index].getEditingControllerText4(
                   currentTurn.getProcessedStates(
-                    index, ownParty, opponentParty
+                    index, ownParty, opponentParty, loc
                   ),
                 ),
               )
@@ -293,7 +295,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
 
     switch (pageType) {
       case RegisterBattlePageType.basePage:
-        title = Text('バトル基本情報 - ${widget.battle.name}');
+        title = Text('${loc.battlesTabTitleBattleBase} - ${widget.battle.name}');
         lists = BattleBasicListView(
           context, () {},
           widget.battle, 
@@ -306,6 +308,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
           ownPartyController, () {return Future<Party?>.value(null);},
           showNetworkImage: pokeData.getPokeAPI,
           isInput: false,
+          loc: loc,
         );
         nextPressed = turns.isNotEmpty ?
           () {
@@ -317,14 +320,14 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         break;
 
       case RegisterBattlePageType.firstPokemonPage:
-        title = Text('選出ポケモン - ${widget.battle.name}');
+        title = Text('${loc.battlesTabTitleSelectingPokemon} - ${widget.battle.name}');
         assert(turns.isNotEmpty);
         lists = BattleFirstPokemonListView(
           () {}, widget.battle, theme, CheckedPokemons(),
           ownPokemonStates: turns.first.getInitialPokemonStates(PlayerType(PlayerType.me)),
           opponentPokemonIndex: turns.first.getInitialPokemonIndex(PlayerType(PlayerType.opponent)),
           showNetworkImage: pokeData.getPokeAPI,
-          isInput: false,
+          isInput: false, loc: loc,
         );
         nextPressed = () => onNext();
         backPressed = () {
@@ -334,7 +337,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         };
         break;
       case RegisterBattlePageType.turnPage:
-        title = Text('$turnNumターン目 - ${widget.battle.name}');
+        title = Text('${loc.battlesTabTitleTurn}$turnNum - ${widget.battle.name}');
         lists = Column(
           children: [
             Row(
@@ -395,11 +398,12 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                             },
                             child: Row(children: [
                               viewMode == 0 ?
-                              Text('ランク') :
+                              Text(loc.battlesTabStatusModeRank) :
                               viewMode == 1 ?
-                              Text('種族値') :
+                              Text(loc.battlesTabStatusModeRace) :
                               viewMode == 2 ?
-                              Text('ステータス(補正前)') : Text('ステータス(補正後)'),
+                              Text(loc.battlesTabStatusModeStatusNoCorrection) :
+                              Text(loc.battlesTabStatusModeStatusWithCorrection),
                               SizedBox(width: 10),
                               Icon(Icons.sync),
                             ]),
@@ -415,7 +419,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                             child:
                               focusState.getPokemonState(PlayerType(PlayerType.me), null).isTerastaling ?
                               Row(children: [
-                                Text('テラスタル'),
+                                Text(loc.commonTerastal),
                                 focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
@@ -429,7 +433,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                             child:
                               focusState.getPokemonState(PlayerType(PlayerType.opponent), null).isTerastaling ?
                               Row(children: [
-                                Text('テラスタル'),
+                                Text(loc.commonTerastal),
                                 focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
@@ -460,11 +464,11 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                         children: [
                           SizedBox(width: 10,),
                           Expanded(
-                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true,),
+                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
-                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true,),
+                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                         ],
                       ),
@@ -508,7 +512,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                       _MoveViewRow(
                         focusState.getPokemonState(PlayerType(PlayerType.me), null),
                         focusState.getPokemonState(PlayerType(PlayerType.opponent), null),
-                        i,
+                        i, loc: loc,
                       ),
                       SizedBox(height: 5),
                       // 状態異常・その他補正・場
@@ -544,6 +548,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                 //_getSameTimingList(pokeData),
                 sameTimingList,
                 isInput: false,
+                loc: loc,
               ),
             ),
           ],
@@ -552,7 +557,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         backPressed = () => onturnBack();
         break;
       default:
-        title = Text('バトル登録');
+        title = Text(loc.battlesTabTitleRegisterBattle);
         lists = Center();
         nextPressed = null;
         backPressed = null;
@@ -566,13 +571,13 @@ class ViewBattlePageState extends State<ViewBattlePage> {
           MyIconButton(
             theme: theme,
             onPressed: backPressed,
-            tooltip: '前へ',
+            tooltip: loc.viewToolTipPrev,
             icon: Icon(Icons.navigate_before),
           ),
           MyIconButton(
             theme: theme,
             onPressed: nextPressed,
-            tooltip: '次へ',
+            tooltip: loc.viewToolTipNext,
             icon: Icon(Icons.navigate_next),
           ),
           SizedBox(
@@ -586,7 +591,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
             // TODO
             // onPressed: () => widget.onEdit(widget.battle, pageType, turnNum),
             onPressed: () => widget.onEdit(widget.battle, RegisterBattlePageType.basePage, 1),
-            tooltip: '編集',
+            tooltip: loc.viewToolTipEdit,
             icon: Icon(Icons.edit),
           ),
         ],
@@ -599,7 +604,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!;
   }
 
-  List<List<TurnEffectAndStateAndGuide>> _createSameTimingList(MyAppState appState) {
+  List<List<TurnEffectAndStateAndGuide>> _createSameTimingList(MyAppState appState, AppLocalizations loc,) {
     List<List<TurnEffectAndStateAndGuide>> ret = [];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
     Battle battle = widget.battle;
@@ -627,7 +632,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
       final guides = phases[i].processEffect(
         ownParty, currentState.getPokemonState(PlayerType(PlayerType.me), null),
         opponentParty, currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
-        currentState, lastAction, continuousCount
+        currentState, lastAction, continuousCount, loc: loc
       );
       turnEffectAndStateAndGuides.add(
         TurnEffectAndStateAndGuide()
@@ -724,7 +729,7 @@ class _StatStatusViewRow extends Row {
           Text(label),
           ownStatusMin == ownStatusMax ?
           Text(ownStatusMin.toString()) :
-          Text('$ownStatusMin～$ownStatusMax'),
+          Text('$ownStatusMin ~ $ownStatusMax'),
         ],),
       ),
       SizedBox(width: 10,),
@@ -733,7 +738,7 @@ class _StatStatusViewRow extends Row {
           Text(label),
           opponentStatusMin == opponentStatusMax ?
           Text(opponentStatusMin.toString()) :
-          Text('$opponentStatusMin～$opponentStatusMax'),
+          Text('$opponentStatusMin ~ $opponentStatusMax'),
         ],),
       ),
     ],
@@ -741,14 +746,14 @@ class _StatStatusViewRow extends Row {
 }
 
 class _MoveViewRow extends Row {
-  _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx) :
+  _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx, {required AppLocalizations loc,}) :
   super(
     children: [
       SizedBox(width: 10,),
       Expanded(
         child: Row(children: [
           ownState.moves.length > idx ?
-          MoveText(ownState.moves[idx]) : Text(''),
+          MoveText(ownState.moves[idx], loc: loc,) : Text(''),
         ],),
       ),
       ownState.moves.length > idx && ownState.usedPPs.length > idx ?
@@ -758,7 +763,7 @@ class _MoveViewRow extends Row {
       Expanded(
         child: Row(children: [
           opponentState.moves.length > idx ?
-          MoveText(opponentState.moves[idx]) : Text(''),
+          MoveText(opponentState.moves[idx], loc: loc,) : Text(''),
         ],),
       ),
       opponentState.moves.length > idx && opponentState.usedPPs.length > idx ?

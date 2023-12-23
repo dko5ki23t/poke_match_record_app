@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:poke_reco/appopen_admanager.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
@@ -21,8 +24,11 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-const int pokeRecoVersion = 2;      // バージョン1.0.1
+const String pokeRecoVersion = '1.0.1';
+const int pokeRecoInternalVersion = 2;      // 主にSQLのテーブルバージョンに使用
 
 enum TabItem {
   battles,
@@ -31,13 +37,6 @@ enum TabItem {
   settings,
 }
 
-const Map<TabItem, String> tabName = {
-  TabItem.battles: '対戦',
-  TabItem.pokemons: 'ポケモン',
-  TabItem.parties: 'パーティ',
-  TabItem.settings: '設定',
-};
-
 const Map<TabItem, IconData> tabIcon = {
   TabItem.battles: Icons.list,
   TabItem.pokemons: Icons.catching_pokemon,
@@ -45,21 +44,69 @@ const Map<TabItem, IconData> tabIcon = {
   TabItem.settings: Icons.settings,
 };
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
-  runApp(const MyApp());
+  final directory = await getApplicationDocumentsDirectory();
+  final localPath = directory.path;
+  final saveDataFile = File('$localPath/poke_reco.json');
+  String configText;
+  dynamic configJson;
+  Locale? locale;
+  try {
+    configText = await saveDataFile.readAsString();
+    configJson = jsonDecode(configText);
+    switch (configJson[configKeyLanguage] as int) {
+      case 1:
+        locale = Locale('en');
+        break;
+      case 0:
+      default:
+        locale = Locale('ja');
+        break;
+    }
+  }
+  catch (e) {
+    locale = null;
+  }
+  runApp(MyApp(initialLocale: locale));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  final Locale? initialLocale;
+  const MyApp({required this.initialLocale, super.key});
+
+  @override
+  State<MyApp> createState() => MyAppStateForLocale();
+  static MyAppStateForLocale? of(BuildContext context) =>
+      context.findAncestorStateOfType<MyAppStateForLocale>();
+}
+
+class MyAppStateForLocale extends State<MyApp> {
+  Locale? _locale;
+  bool firstBuild = true;
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    if (firstBuild) {
+      _locale = widget.initialLocale;
+      firstBuild = false;
+    }
     return ChangeNotifierProvider(
-      create: (context) => MyAppState(context),
+      create: (context) => MyAppState(context, _locale),
       child: MaterialApp(
+        localizationsDelegates: [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: [
+          const Locale('ja', ''),
+          const Locale('en', ''),
+        ],
+        locale: _locale,
         title: 'Poke Reco',
         theme: ThemeData(
           useMaterial3: true,
@@ -70,6 +117,12 @@ class MyApp extends StatelessWidget {
         builder: EasyLoading.init(),
       ),
     );
+  }
+
+  void setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
   }
 }
 
@@ -93,13 +146,13 @@ class MyAppState extends ChangeNotifier {
   // 広告表示フラグ
   bool showAd = false;
 
-  MyAppState(BuildContext context) {
+  MyAppState(BuildContext context, Locale? locale) {
     changeTab = (func) {onTabChange(func);};
-    fetchPokeData();
+    fetchPokeData(locale ?? Locale(Platform.localeName.substring(0,2), ''));
   }
 
-  Future<void> fetchPokeData() async {
-    await pokeData.initialize();
+  Future<void> fetchPokeData(Locale locale) async {
+    await pokeData.initialize(locale);
     pokemons = pokeData.pokemons;
     parties = pokeData.parties;
     battles = pokeData.battles;
@@ -802,6 +855,19 @@ class BottomNavigation extends StatelessWidget {
   final TabItem currentTab;
   final void Function(TabItem) onSelectTab;
 
+  String _tabName(TabItem item, BuildContext context) {
+    switch (item) {
+      case TabItem.battles:
+        return AppLocalizations.of(context)!.tabBattles;
+      case TabItem.pokemons:
+        return AppLocalizations.of(context)!.tabPokemons;
+      case TabItem.parties:
+        return AppLocalizations.of(context)!.tabParties;
+      case TabItem.settings:
+        return AppLocalizations.of(context)!.tabSettings;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
@@ -810,7 +876,7 @@ class BottomNavigation extends StatelessWidget {
         for (var tab in TabItem.values)
           BottomNavigationBarItem(
             icon: Icon(tabIcon[tab]),
-            label: tabName[tab],
+            label: _tabName(tab, context),
           ),
       ],
       currentIndex: currentTab.index,

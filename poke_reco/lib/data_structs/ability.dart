@@ -13,6 +13,7 @@ import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/weather.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Ability {
   final int id;
@@ -107,6 +108,9 @@ class Ability {
     int extraArg1,
     int extraArg2,
     int? changePokemonIndex,
+    {
+      required AppLocalizations loc,
+    }
   ) {
     final pokeData = PokeDB();
     List<Guide> ret = [];
@@ -245,7 +249,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [abilityID]
-              ..guideStr = 'あいての${myState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[abilityID]!.displayName, myState.pokemon.omittedName)
             );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
@@ -253,7 +257,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [extraArg1]
-              ..guideStr = 'あいての${yourState.pokemon.name}のとくせいを${pokeData.abilities[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[extraArg1]!.displayName, yourState.pokemon.omittedName)
             );
             yourState.setCurrentAbility(yourState.pokemon.ability, myState, !isOwn, state);
           }
@@ -322,7 +326,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confMove
               ..canDelete = false
-              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のわざの1つを${pokeData.moves[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfMove(pokeData.moves[extraArg1]!.displayName, opponentPokemonState.pokemon.omittedName)
             );
           }
         }
@@ -348,7 +352,7 @@ class Ability {
             ret.add(Guide()
               ..guideId = Guide.confItem
               ..args = [extraArg1]
-              ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[extraArg1]!.displayName}で確定しました。'
+              ..guideStr = loc.battleGuideConfItem2(pokeData.items[extraArg1]!.displayName, opponentPokemonState.pokemon.omittedName)
             );
           }
           yourState.holdingItem = pokeData.items[extraArg1]!;
@@ -716,7 +720,7 @@ class Ability {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
-                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+                ..guideStr = loc.battleGuideConfItem2(pokeData.items[1696]!.displayName, opponentPokemonState.pokemon.omittedName)
               );
             }
             myState.holdingItem = null;   // アイテム消費
@@ -736,7 +740,7 @@ class Ability {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
-                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[1696]!.displayName}で確定しました。'
+                ..guideStr = loc.battleGuideConfItem2(pokeData.items[1696]!.displayName, opponentPokemonState.pokemon.omittedName)
               );
             }
             myState.holdingItem = null;   // アイテム消費
@@ -755,7 +759,7 @@ class Ability {
         ret.addAll(Item.processEffect(
           extraArg1, playerType, myState,
           yourState, state,
-          extraArg2, 0, changePokemonIndex,
+          extraArg2, 0, changePokemonIndex, loc: loc,
         ));
         break;
       case 293:   // そうだいしょう
@@ -819,7 +823,7 @@ class Ability {
       ret.add(Guide()
         ..guideId = Guide.confAbility
         ..args = [abilityID]
-        ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のとくせいを${pokeData.abilities[abilityID]!.displayName}で確定しました。'
+        ..guideStr = loc.battleGuideConfAbility(pokeData.abilities[abilityID]!.displayName, opponentPokemonState.pokemon.omittedName)
       );
       myState.setCurrentAbility(myState.pokemon.ability, yourState, isOwn, state);   // とくせい確定
     }

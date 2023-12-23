@@ -1,4 +1,5 @@
 import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -67,32 +68,36 @@ class PokeTypeColor {
 // TODO:これもPokeAPIから取得すべき。変な感じになってしまった。
 class PokeType {
   final int id;
-  final String displayName;
+  late final String _displayName;
+  late final String _displayNameEn;
   final Icon displayIcon;
 
-  static const Map<int, Tuple2<String, Icon>> officialTypes = {
-    0 : Tuple2('不明', Icon(Icons.question_mark, color: Colors.grey)),
-    PokeTypeId.normal : Tuple2('ノーマル', Icon(Icons.radio_button_unchecked, color: PokeTypeColor.normal)),
-    PokeTypeId.fight : Tuple2('かくとう', Icon(Icons.sports_mma, color: PokeTypeColor.fight)),
-    PokeTypeId.fly : Tuple2('ひこう', Icon(Icons.air, color: PokeTypeColor.fly)),
-    PokeTypeId.poison : Tuple2('どく', Icon(Icons.coronavirus, color: PokeTypeColor.poison)),
-    PokeTypeId.ground : Tuple2('じめん', Icon(Icons.landscape, color: PokeTypeColor.ground)),
-    PokeTypeId.rock : Tuple2('いわ', Icon(Icons.diamond, color: PokeTypeColor.rock)),
-    PokeTypeId.bug : Tuple2('むし', Icon(Icons.bug_report, color: PokeTypeColor.bug)),
-    PokeTypeId.ghost : Tuple2('ゴースト', Icon(Icons.nightlight, color: PokeTypeColor.ghost)),
-    PokeTypeId.steel : Tuple2('はがね', Icon(Icons.hexagon, color: PokeTypeColor.steel)),
-    PokeTypeId.fire : Tuple2('ほのお', Icon(Icons.whatshot, color: PokeTypeColor.fire)),
-    PokeTypeId.water : Tuple2('みず', Icon(Icons.opacity, color: PokeTypeColor.water)),
-    PokeTypeId.grass : Tuple2('くさ', Icon(Icons.grass, color: PokeTypeColor.grass)),
-    PokeTypeId.electric : Tuple2('でんき', Icon(Icons.bolt, color: PokeTypeColor.electric)),
-    PokeTypeId.psychic : Tuple2('エスパー', Icon(Icons.psychology, color: PokeTypeColor.psychic)),
-    PokeTypeId.ice : Tuple2('こおり', Icon(Icons.ac_unit, color: PokeTypeColor.ice)),
-    PokeTypeId.dragon : Tuple2('ドラゴン', Icon(Icons.cruelty_free, color: PokeTypeColor.dragon)),
-    PokeTypeId.evil : Tuple2('あく', Icon(Icons.remove_red_eye, color: PokeTypeColor.evil)),
-    PokeTypeId.fairy : Tuple2('フェアリー', Icon(Icons.emoji_nature, color: PokeTypeColor.fairy)),
+  static const Map<int, Tuple3<String, String, Icon>> officialTypes = {
+    0 : Tuple3('不明', 'Unknown', Icon(Icons.question_mark, color: Colors.grey)),
+    PokeTypeId.normal : Tuple3('ノーマル', 'Normal', Icon(Icons.radio_button_unchecked, color: PokeTypeColor.normal)),
+    PokeTypeId.fight : Tuple3('かくとう', 'Fighting', Icon(Icons.sports_mma, color: PokeTypeColor.fight)),
+    PokeTypeId.fly : Tuple3('ひこう', 'Flying', Icon(Icons.air, color: PokeTypeColor.fly)),
+    PokeTypeId.poison : Tuple3('どく', 'Poison', Icon(Icons.coronavirus, color: PokeTypeColor.poison)),
+    PokeTypeId.ground : Tuple3('じめん', 'Ground', Icon(Icons.landscape, color: PokeTypeColor.ground)),
+    PokeTypeId.rock : Tuple3('いわ', 'Rock', Icon(Icons.diamond, color: PokeTypeColor.rock)),
+    PokeTypeId.bug : Tuple3('むし', 'Bug', Icon(Icons.bug_report, color: PokeTypeColor.bug)),
+    PokeTypeId.ghost : Tuple3('ゴースト', 'Ghost', Icon(Icons.nightlight, color: PokeTypeColor.ghost)),
+    PokeTypeId.steel : Tuple3('はがね', 'Steel', Icon(Icons.hexagon, color: PokeTypeColor.steel)),
+    PokeTypeId.fire : Tuple3('ほのお', 'Fire', Icon(Icons.whatshot, color: PokeTypeColor.fire)),
+    PokeTypeId.water : Tuple3('みず', 'Water', Icon(Icons.opacity, color: PokeTypeColor.water)),
+    PokeTypeId.grass : Tuple3('くさ', 'Grass', Icon(Icons.grass, color: PokeTypeColor.grass)),
+    PokeTypeId.electric : Tuple3('でんき', 'Electric', Icon(Icons.bolt, color: PokeTypeColor.electric)),
+    PokeTypeId.psychic : Tuple3('エスパー', 'Psychic', Icon(Icons.psychology, color: PokeTypeColor.psychic)),
+    PokeTypeId.ice : Tuple3('こおり', 'Ice', Icon(Icons.ac_unit, color: PokeTypeColor.ice)),
+    PokeTypeId.dragon : Tuple3('ドラゴン', 'Dragon', Icon(Icons.cruelty_free, color: PokeTypeColor.dragon)),
+    PokeTypeId.evil : Tuple3('あく', 'Dark', Icon(Icons.remove_red_eye, color: PokeTypeColor.evil)),
+    PokeTypeId.fairy : Tuple3('フェアリー', 'Fairy', Icon(Icons.emoji_nature, color: PokeTypeColor.fairy)),
   };
 
-  const PokeType(this.id, this.displayName, this.displayIcon);
+  PokeType(this.id, String displayName, String displayNameEn, this.displayIcon) {
+    _displayName = displayName;
+    _displayNameEn = displayNameEn;
+  }
 
   factory PokeType.createFromId(int id) {
     final tuple = officialTypes[id];
@@ -101,7 +106,18 @@ class PokeType {
       id,
       tuple!.item1,
       tuple.item2,
+      tuple.item3,
     );
+  }
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayName;
+      case Language.english:
+      default:
+        return _displayNameEn;
+    }
   }
 
   // タイプ相性

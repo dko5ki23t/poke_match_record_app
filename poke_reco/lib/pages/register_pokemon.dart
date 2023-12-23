@@ -15,6 +15,7 @@ import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPokemonPage extends StatefulWidget {
   RegisterPokemonPage({
@@ -49,7 +50,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final pokeStatRealController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeMoveController = List.generate(4, (i) => TextEditingController());
   final pokePPController = List.generate(4, (i) => TextEditingController());
-  final statsLabelTexts = ['HP', 'こうげき', 'ぼうぎょ', 'とくこう', 'とくぼう', 'すばやさ'];
 
   bool firstBuild = true;
   bool canChangeTeraType = true;
@@ -84,6 +84,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var pokemonState = widget.pokemonState;
     var myPokemon = widget.myPokemon;
     var theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
     void onBack () {
       bool showAlert = false;
       if (myPokemon.no != 0) {
@@ -176,11 +177,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: myPokemon.id == 0 ? Text('ポケモン登録') : Text('ポケモン編集'),
+          title: myPokemon.id == 0 ? Text(loc.pokemonsTabRegisterPokemon) : Text(loc.pokemonsTabEditPokemon),
           actions: [
             TextButton(
               onPressed: (myPokemon.isValid) ? () => onComplete() : null,
-              child: Text('保存'),
+              child: Text(loc.registerSave),
             ),
           ]
         ),
@@ -200,9 +201,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeAheadField(
                           textFieldConfiguration: TextFieldConfiguration(
                             controller: pokeNameController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               border: UnderlineInputBorder(),
-                              labelText: 'ポケモン名'
+                              labelText: loc.pokemonsTabPokemonName,
                             ),
                           ),
                           autoFlipDirection: true,
@@ -278,9 +279,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     children: [
                       Flexible(
                         child:TextFormField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'ニックネーム(任意)'
+                            labelText: loc.pokemonsTabNickName,
                           ),
                           onChanged: (value) {myPokemon.nickname = value;},
                           maxLength: 20,
@@ -295,7 +296,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     children: [
                       Flexible(
                         child: TypeDropdownButton(
-                          'タイプ1',
+                          loc.commonType1,
                           null,
                           myPokemon.type1.id == 0 ? null : myPokemon.type1.id,
                         ),
@@ -303,7 +304,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: TypeDropdownButton(
-                          'タイプ2',
+                          loc.commonType2,
                           null,
                           myPokemon.type2?.id == 0 ? null : myPokemon.type2?.id,
                         ),
@@ -311,7 +312,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: TypeDropdownButton(
-                          'テラスタイプ',
+                          loc.commonTeraType,
                           canChangeTeraType ? (value) {setState(() {
                             myPokemon.teraType = pokeData.types[value - 1];
                           });} : null,
@@ -329,7 +330,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '対戦で確認できたテラスタイプ：${pokemonState.teraType1.id != 0 ? pokemonState.teraType1.displayName : 'なし'}',
+                            '${loc.pokemonsTabConfTeraType} : ${pokemonState.teraType1.id != 0 ? pokemonState.teraType1.displayName : loc.commonNone}',
                             style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                           ),
                         ),
@@ -343,9 +344,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       Flexible(
                         child: NumberInputWithIncrementDecrement(
                           controller: pokeLevelController,
-                          numberFieldDecoration: const InputDecoration(
+                          numberFieldDecoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'レベル'
+                            labelText: loc.commonLevel,
                           ),
                           widgetContainerDecoration: const BoxDecoration(
                             border: null,
@@ -370,9 +371,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: DropdownButtonFormField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'せいべつ'
+                            labelText: loc.commonGender,
                           ),
                           items: <DropdownMenuItem<Sex>>[
                             for (var type in pokeData.pokeBase[myPokemon.no]!.sex)
@@ -397,7 +398,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             controller: pokeTemperController,
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
-                              labelText: 'せいかく',
+                              labelText: loc.commonNature,
                               labelStyle: myPokemon.no != 0 && myPokemon.temper.id == 0 ? notAllowedStyle : null,
                             ),
                           ),
@@ -435,9 +436,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       SizedBox(width: 10),
                       Flexible(
                         child: DropdownButtonFormField(
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'とくせい'
+                            labelText: loc.commonAbility,
                           ),
                           items: <DropdownMenuItem>[
                             for (var ab in pokeData.pokeBase[myPokemon.no]!.ability)
@@ -462,7 +463,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     Column(
                       children: [
                         StatInputRow(
-                          statsLabelTexts[i],
+                          getStatIndexFromIndex(i).name,
                           myPokemon,
                           pokeStatRaceController[i],
                           pokeStatIndiController[i],
@@ -489,6 +490,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           },
                           effectTemper: i != 0,
                           statIndex: getStatIndexFromIndex(i),
+                          loc: loc,
                         ),
                         pokemonState != null ?
                         Row(
@@ -498,7 +500,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  '対戦で確認できた実数値の範囲：${pokemonState.minStats[i].real}～${pokemonState.maxStats[i].real}',
+                                  '${loc.pokemonsTabConfValueRange} : ${pokemonState.minStats[i].real} ~ ${pokemonState.maxStats[i].real}',
                                   style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                                 ),
                               ),
@@ -508,14 +510,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       ]
                     ),
                   // ステータスの合計値
-                  StatTotalRow(myPokemon.totalRace(), myPokemon.totalEffort()),
+                  StatTotalRow(myPokemon.totalRace(), myPokemon.totalEffort(), loc: loc,),
 
                   // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                   for (int i = 0; i < 4; i++)
                     Column(children: [
                       MoveInputRow(
                         myPokemon,
-                        'わざ${i+1}', 'PP',
+                        '${loc.commonMove}${i+1}', 'PP',
                         pokeMoveController[i],
                         [for (int j = 0; j < 4; j++) i != j ? myPokemon.moves[j] : null],
                         (suggestion) {
@@ -562,7 +564,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  i < pokemonState.moves.length ? '対戦で確認できたわざ${i+1}：${pokeData.moves[pokemonState.moves[i].id]!.displayName}' : '',
+                                  i < pokemonState.moves.length ? '${loc.pokemonsTabConfMove}${i+1} : ${pokeData.moves[pokemonState.moves[i].id]!.displayName}' : '',
                                   style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                                 ),
                               ),

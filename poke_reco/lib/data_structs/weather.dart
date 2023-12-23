@@ -1,5 +1,6 @@
 // 天気
 
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -14,13 +15,13 @@ class WeatherEffect {
   static const int snowyEnd = 4;          // ゆき終了
   static const int sandStormDamage = 5;   // すなあらしダメージ
 
-  static const _displayNameMap = {
-    0: '',
-    1: '晴れ終了',
-    2: 'あめ終了',
-    3: 'すなあらし終了',
-    4: 'ゆき終了',
-    5: 'すなあらしによるダメージ',
+  static const Map<int, Tuple2<String, String>>_displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('晴れ終了', 'Sunny End'),
+    2: Tuple2('あめ終了', 'Rainy End'),
+    3: Tuple2('すなあらし終了', 'Sandstorm End'),
+    4: Tuple2('ゆき終了', 'Snowy End'),
+    5: Tuple2('すなあらしによるダメージ', 'Sandstorm Damage'),
   };
 
   const WeatherEffect(this.id);
@@ -37,7 +38,15 @@ class WeatherEffect {
     }
   }
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   final int id;
 }
@@ -52,21 +61,40 @@ class Weather {
   
   static const int invalid = 100;          // 天気無効化
 
-  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
-    0:  Tuple3('', Colors.black, 0),
-    1:  Tuple3('晴れ', Colors.orange, 5),
-    2:  Tuple3('あめ', Colors.blueAccent, 5),
-    3:  Tuple3('すなあらし', Colors.brown, 5),
-    4:  Tuple3('ゆき', Colors.blue, 5),
+  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
+    0:  Tuple4('', '', Colors.black, 0),
+    1:  Tuple4('晴れ', 'Sunny', Colors.orange, 5),
+    2:  Tuple4('あめ', 'Rainy', Colors.blueAccent, 5),
+    3:  Tuple4('すなあらし', 'Sandstorm', Colors.brown, 5),
+    4:  Tuple4('ゆき', 'Snowy', Colors.blue, 5),
   };
 
-  String get displayName => isValid ? '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)' : '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)(無効)';
-  Color get bgColor => isValid ? _nameColorTurnMap[id]!.item2 : Colors.grey;
+  String get displayName {
+    if (isValid) {
+      switch (PokeDB().language) {
+        case Language.japanese:
+          return '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)';
+        case Language.english:
+        default:
+          return '${_nameColorTurnMap[id]!.item2} ($turns/$maxTurns)';
+      }
+    }
+    else {
+      switch (PokeDB().language) {
+        case Language.japanese:
+          return '${_nameColorTurnMap[id]!.item1} ($turns/$maxTurns)(無効)';
+        case Language.english:
+        default:
+          return '${_nameColorTurnMap[id]!.item2} ($turns/$maxTurns)(Invalid)';
+      }
+    }
+  }
+  Color get bgColor => isValid ? _nameColorTurnMap[id]!.item3 : Colors.grey;
   int get maxTurns {
     if (extraArg1 == 8) {
       return 8;
     }
-    return _nameColorTurnMap[id]!.item3;
+    return _nameColorTurnMap[id]!.item4;
   }
 
   int id;

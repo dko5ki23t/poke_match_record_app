@@ -22,6 +22,8 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:tuple/tuple.dart';
 
 class EffectType {
   static const int none = 0;
@@ -38,21 +40,29 @@ class EffectType {
 
   const EffectType(this.id);
 
-  static const _displayNameMap = {
-    0:  '',
-    1:  'とくせい',
-    2:  'もちもの',
-    3:  '場',
-    4:  '状態変化',
-    5:  '',
-    6:  '',
-    7:  '',
-    8:  '',
-    9:  '',
-    10: 'わざ',
+  static const Map<int, Tuple2<String, String>>_displayNameMap = {
+    0:  Tuple2('', ''),
+    1:  Tuple2('とくせい', 'Ability'),
+    2:  Tuple2('もちもの', 'Item'),
+    3:  Tuple2('場', 'Individual Field'),
+    4:  Tuple2('状態変化', 'Status conditions'),
+    5:  Tuple2('', ''),
+    6:  Tuple2('', ''),
+    7:  Tuple2('', ''),
+    8:  Tuple2('', ''),
+    9:  Tuple2('', ''),
+    10: Tuple2('わざ', 'Move'),
   };
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   final int id;
 }
@@ -260,6 +270,9 @@ class TurnEffect {
     PhaseState state,
     TurnEffect? prevAction,
     int continuousCount,
+    {
+      required AppLocalizations loc,
+    }
   )
   {
     final pokeData = PokeDB();
@@ -298,6 +311,7 @@ class TurnEffect {
           effectId, playerType, myState, yourState, state,
           myParty, myPokemonIndex, opponentPokemonState,
           extraArg1, extraArg2, getChangePokemonIndex(playerType),
+          loc: loc,
         ));
         break;
       case EffectType.individualField:
@@ -389,8 +403,8 @@ class TurnEffect {
       case EffectType.item:
         ret.addAll(Item.processEffect(
           effectId, playerType, myState,
-          yourState, state,
-          extraArg1, extraArg2, getChangePokemonIndex(playerType),
+          yourState, state, extraArg1, extraArg2,
+          getChangePokemonIndex(playerType), loc: loc,
         ));
         break;
       case EffectType.move:
@@ -402,7 +416,7 @@ class TurnEffect {
           ret.addAll(
             move!.processMove(
               ownParty, opponentParty, ownPokemonState, opponentPokemonState,
-              state, continuousCount, invalidGuideIDs)
+              state, continuousCount, invalidGuideIDs, loc: loc,)
           );
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
           if (move!.type.id == TurnMoveType.change) {
@@ -478,7 +492,7 @@ class TurnEffect {
                   ret.add(Guide()
                     ..guideId = Guide.leechSeedConfHP
                     ..args = [hpMin, hpMax]
-                    ..guideStr = 'あいての${myState.pokemon.name}のHP実数値を$hpMin～$hpMaxで確定しました。'
+                    ..guideStr = loc.battleGuideLeechSeedConfHP(hpMax, hpMin, myState.pokemon.omittedName)
                   );
                 }
               }
@@ -1569,7 +1583,10 @@ class TurnEffect {
     TextEditingController controller2,
     MyAppState appState,
     int phaseIdx,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   )
   {
     var myPokemon = prevAction != null && timing.id == AbilityTiming.afterMove ?
@@ -1615,6 +1632,7 @@ class TurnEffect {
             },
             extraArg1,
             isInput,
+            loc: loc,
           );
         case 16:      // へんしょく
         case 168:     // へんげんじざい
@@ -1624,7 +1642,7 @@ class TurnEffect {
             children: [
               Flexible(
                 child: _myTypeDropdownButton(
-                  '変化後のタイプ',
+                  loc.battleTypeToChange,
                   (value) {
                     extraArg1 = value;
                     appState.editingPhase[phaseIdx] = true;
@@ -1658,6 +1676,7 @@ class TurnEffect {
             },
             extraArg1,
             isInput,
+            loc: loc,
           );
         case 27:    // ほうし
           return Row(
@@ -1666,22 +1685,22 @@ class TurnEffect {
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    label: Text('相手が起こした状態異常'),
+                    label: Text(loc.battleOpponentAilments),
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: Ailment.poison,
-                      child: Text('どく'),
+                      child: Text(Ailment(Ailment.poison).displayName),
                     ),
                     DropdownMenuItem(
                       value: Ailment.paralysis,
-                      child: Text('まひ'),
+                      child: Text(Ailment(Ailment.paralysis).displayName),
                     ),
                     DropdownMenuItem(
                       value: Ailment.sleep,
-                      child: Text('ねむり'),
+                      child: Text(Ailment(Ailment.sleep).displayName),
                     ),
                   ],
                   value: extraArg1 == 0 ? null : extraArg1,
@@ -1704,9 +1723,9 @@ class TurnEffect {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'トレース後のとくせい',
+                      labelText: loc.battleAbilityTraced,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -1754,9 +1773,9 @@ class TurnEffect {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -1797,11 +1816,11 @@ class TurnEffect {
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('こうげき'),
+                      child: Text(loc.commonAttack),
                     ),
                     DropdownMenuItem(
                       value: 2,
-                      child: Text('とくこう'),
+                      child: Text(loc.commonSAttack),
                     ),
                   ],
                   value: extraArg1,
@@ -1812,10 +1831,10 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1 == 0 ? 'こうげき' : 'とくこう',
+                  textValue: extraArg1 == 0 ? loc.commonAttack : loc.commonSAttack,
                 ),
               ),
-              Text('があがった'),
+              Text(loc.battleRankUp1),
             ],
           );
         case 108:     // よちむ
@@ -1826,9 +1845,9 @@ class TurnEffect {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -1874,9 +1893,9 @@ class TurnEffect {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -1930,25 +1949,10 @@ class TurnEffect {
                         border: UnderlineInputBorder(),
                       ),
                       items: <DropdownMenuItem>[
+                        for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
                         DropdownMenuItem(
-                          value: 0,
-                          child: Text('こうげき'),
-                        ),
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text('ぼうぎょ'),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text('とくこう'),
-                        ),
-                        DropdownMenuItem(
-                          value: 3,
-                          child: Text('とくぼう'),
-                        ),
-                        DropdownMenuItem(
-                          value: 4,
-                          child: Text('すばやさ'),
+                          value: statIndex.index-1,
+                          child: Text(statIndex.name),
                         ),
                       ],
                       value: extraArg1,
@@ -1959,11 +1963,10 @@ class TurnEffect {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
-                        extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : 'すばやさ',
+                      textValue: getStatIndexFromIndex(extraArg1+1).name,
                     ),
                   ),
-                  Text('がぐーんとあがった'),
+                  Text(loc.battleRankUp2),
                 ],
               ),
               SizedBox(height: 10,),
@@ -1976,25 +1979,10 @@ class TurnEffect {
                         border: UnderlineInputBorder(),
                       ),
                       items: <DropdownMenuItem>[
+                        for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
                         DropdownMenuItem(
-                          value: 0,
-                          child: Text('こうげき'),
-                        ),
-                        DropdownMenuItem(
-                          value: 1,
-                          child: Text('ぼうぎょ'),
-                        ),
-                        DropdownMenuItem(
-                          value: 2,
-                          child: Text('とくこう'),
-                        ),
-                        DropdownMenuItem(
-                          value: 3,
-                          child: Text('とくぼう'),
-                        ),
-                        DropdownMenuItem(
-                          value: 4,
-                          child: Text('すばやさ'),
+                          value: statIndex.index-1,
+                          child: Text(statIndex.name),
                         ),
                       ],
                       value: extraArg2,
@@ -2005,11 +1993,10 @@ class TurnEffect {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: extraArg2 == 0 ? 'こうげき' : extraArg2 == 1 ? 'ぼうぎょ' :
-                        extraArg2 == 2 ? 'とくこう' : extraArg2 == 3 ? 'とくぼう' : 'すばやさ',
+                      textValue: getStatIndexFromIndex(extraArg2+1).name,
                     ),
                   ),
-                  Text('がさがった'),
+                  Text(loc.battleRankDown1),
                 ],
               ),
             ],
@@ -2021,9 +2008,9 @@ class TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'イリュージョンしていたポケモン',
+                      labelText: loc.battleIllusionedPokemon,
                     ),
                     items: <DropdownMenuItem>[
                       for (int i = 0; i < opponentParty.pokemonNum; i++)
@@ -2067,27 +2054,12 @@ class TurnEffect {
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: -1,
-                      child: Text('効果が切れた'),
+                      child: Text(loc.battleEffectExpired),
                     ),
+                    for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
                     DropdownMenuItem(
-                      value: 0,
-                      child: Text('こうげき'),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('ぼうぎょ'),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text('とくこう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text('とくぼう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 4,
-                      child: Text('すばやさ'),
+                      value: statIndex.index-1,
+                      child: Text(statIndex.name),
                     ),
                   ],
                   value: extraArg1,
@@ -2098,11 +2070,10 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
-                    extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : extraArg1 == 4 ? 'すばやさ' : '効果が切れた',
+                  textValue: extraArg1 == -1 ? loc.battleEffectExpired : getStatIndexFromIndex(extraArg1+1).name,
                 ),
               ),
-              extraArg1 >= 0 ? Text('が高まった') : Text(''),
+              extraArg1 >= 0 ? Text(loc.battleStatIncrease) : Text(''),
             ],
           );
         case 290:     // びんじょう
@@ -2115,25 +2086,10 @@ class TurnEffect {
                     border: UnderlineInputBorder(),
                   ),
                   items: <DropdownMenuItem>[
+                    for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
                     DropdownMenuItem(
-                      value: 0,
-                      child: Text('こうげき'),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text('ぼうぎょ'),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text('とくこう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text('とくぼう'),
-                    ),
-                    DropdownMenuItem(
-                      value: 4,
-                      child: Text('すばやさ'),
+                      value: statIndex.index-1,
+                      child: Text(statIndex.name),
                     ),
                   ],
                   value: extraArg1,
@@ -2144,11 +2100,10 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
-                    extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : 'すばやさ',
+                  textValue: getStatIndexFromIndex(extraArg1+1).name,
                 ),
               ),
-              Text('が'),
+              Text(loc.battleOpportunist1),
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
@@ -2192,7 +2147,7 @@ class TurnEffect {
                   textValue: extraArg2.toString(),
                 ),
               ),
-              Text('段階あがった'),
+              Text(loc.battleOpportunist2),
             ],
           );
         case 216:   // おどりこ
@@ -2202,9 +2157,9 @@ class TurnEffect {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -2254,6 +2209,7 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+                loc: loc,
               ) :
               extraArg1 == 775 ?
               DamageIndicateRow(
@@ -2272,6 +2228,7 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+                loc: loc,
               ) :
               Container(),
               extraArg1 == 552 || extraArg1 == 10552 ? SizedBox(height: 10,) : Container(),
@@ -2279,18 +2236,18 @@ class TurnEffect {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 552,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 10552,
-                      child: Text('とくこうがあがった'),
+                      child: Text(loc.battleSAttackUp1(myState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1,
@@ -2301,7 +2258,7 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1 == 552 ? 'なし' : 'とくこうがあがった',
+                  textValue: extraArg1 == 552 ? loc.commonNone : loc.battleSAttackUp1(myState.pokemon.omittedName),
                 ),
               ) : Container(),
             ],
@@ -2332,6 +2289,7 @@ class TurnEffect {
         },
         isInput,
         showNetworkImage: PokeDB().getPokeAPI,
+        loc: loc,
       );
     }
     else if (effect.id == EffectType.individualField) {   // 各ポケモンの場による効果
@@ -2358,6 +2316,7 @@ class TurnEffect {
             },
             extraArg1,
             isInput,
+            loc: loc,
           );
       }
     }
@@ -2385,6 +2344,7 @@ class TurnEffect {
             },
             extraArg1,
             isInput,
+            loc: loc,
           );
         case AilmentEffect.leechSeed:   // やどりぎのタネ
           return Column(
@@ -2406,6 +2366,7 @@ class TurnEffect {
                 },
                 extraArg1,
                 isInput,
+                loc: loc,
               ),
               SizedBox(height: 10,),
               DamageIndicateRow(
@@ -2424,6 +2385,7 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+                loc: loc,
               ),
             ],
           );
@@ -2432,18 +2394,18 @@ class TurnEffect {
             children: [
               _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: '効果',
+                  labelText: loc.battleEffect,
                 ),
                 items: <DropdownMenuItem>[
                   DropdownMenuItem(
                     value: 0,
-                    child: Text('ダメージを負った'),
+                    child: Text(loc.battleDamaged),
                   ),
                   DropdownMenuItem(
                     value: 1,
-                    child: Text('効果が解けた'),
+                    child: Text(loc.battleEffectExpired),
                   ),
                 ],
                 value: extraArg2,
@@ -2454,7 +2416,7 @@ class TurnEffect {
                 },
                 onFocus: onFocus,
                 isInput: isInput,
-                textValue: extraArg2 == 1 ? '効果が解けた' : 'ダメージを負った',
+                textValue: extraArg2 == 1 ? loc.battleEffectExpired : loc.battleDamaged,
               ),
               SizedBox(height: 10,),
               extraArg2 == 0 ?
@@ -2474,6 +2436,7 @@ class TurnEffect {
                 },
                 extraArg1,
                 isInput,
+                loc: loc,
               ) : Container(),
             ],
           );
@@ -2483,18 +2446,18 @@ class TurnEffect {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '効果',
+                    labelText: loc.battleEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('すばやさが下がった'),
+                      child: Text(loc.battleSpeedDown1(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('効果が解けた'),
+                      child: Text(loc.battleEffectExpired),
                     ),
                   ],
                   value: extraArg2,
@@ -2505,7 +2468,7 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg2 == 1 ? '効果が解けた' : 'すばやさが下がった',
+                  textValue: extraArg2 == 1 ? loc.battleEffectExpired : loc.battleSpeedDown1(myState.pokemon.omittedName),
                 ),
               ),
             ],
@@ -2529,6 +2492,7 @@ class TurnEffect {
                 },
                 extraArg1,
                 isInput,
+                loc: loc,
               ),
               SizedBox(height: 10,),
               DamageIndicateRow(
@@ -2542,6 +2506,7 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+                loc: loc,
               ),
             ],
           );
@@ -2564,6 +2529,7 @@ class TurnEffect {
                 },
                 extraArg1,
                 isInput,
+                loc: loc,
               ),
               SizedBox(height: 10,),
               DamageIndicateRow(
@@ -2577,6 +2543,7 @@ class TurnEffect {
                 },
                 extraArg2,
                 isInput,
+                loc: loc,
               ),
             ],
           );
@@ -2601,6 +2568,7 @@ class TurnEffect {
             },
             extraArg1,
             isInput,
+            loc: loc,
           );
       }
     }

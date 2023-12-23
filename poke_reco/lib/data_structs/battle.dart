@@ -2,14 +2,13 @@ import 'package:intl/intl.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/turn.dart';
-import 'package:poke_reco/main.dart';
 
 enum BattleType {
-  //casual(0, 'カジュアルバトル'),
-  rankmatch(0, 'ランクバトル'),
+  //casual(0, 'カジュアルバトル', 'Casual Battle'),
+  rankmatch(0, 'ランクバトル', 'Ranked Battle'),
   ;
 
-  const BattleType(this.id, this.displayName);
+  const BattleType(this.id, this.ja, this.en);
 
   factory BattleType.createFromId(int id) {
     switch (id) {
@@ -21,8 +20,19 @@ enum BattleType {
     }
   }
 
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
+    }
+  }
+
   final int id;
-  final String displayName;
+  final String ja;
+  final String en;
 }
 
 class Battle {

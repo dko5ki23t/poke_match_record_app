@@ -41,36 +41,45 @@ class IndiFieldEffect {
   static const int spikes2 = 27;            // まきびし(重ね掛け2回)
   static const int spikes3 = 28;            // まきびし(重ね掛け3回)
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'どくをあびた',
-    2: 'まきびし',
-    3: 'ステルスロック',
-    4: 'ねばねばネット',
-    5: 'いやしのねがい',
-    6: 'みかづきのまい',
-    7: 'もうどくをあびた',
-    10: 'ねがいごと',
-    12: 'リフレクターがなくなった',
-    13: 'ひかりのかべがなくなった',
-    14: 'しんぴのまもり終了',
-    15: 'しろいきりが消えた',
-    16: 'おいかぜがやんだ',
-    18: 'オーロラベールがなくなった',
-    19: 'じゅうりょく終了',
-    20: 'トリックルーム終了',   // ゆがんだ時空がもとにもどった
-    21: 'みずあそび終了',
-    22: 'どろあそび終了',
-    23: 'ワンダールーム終了',
-    24: 'マジックルーム終了',
-    26: 'フェアリーロック終了',
-    27: 'まきびし',
-    28: 'まきびし',
+  static const Map<int, Tuple2<String, String>> _displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('どくをあびた', 'Poisoned'),
+    2: Tuple2('まきびし', 'Spikes'),
+    3: Tuple2('ステルスロック', 'Stealth Rock'),
+    4: Tuple2('ねばねばネット', 'Sticky Web'),
+    5: Tuple2('いやしのねがい', 'Healing Wish'),
+    6: Tuple2('みかづきのまい', 'Lunar Dance'),
+    7: Tuple2('もうどくをあびた', 'Badly poisoned'),
+    8: Tuple2('みらいにこうげき', 'Future Sight'),
+    10: Tuple2('ねがいごと', 'Wish'),
+    12: Tuple2('リフレクターがなくなった', 'Reflector is gone'),
+    13: Tuple2('ひかりのかべがなくなった', 'Light Screen is gone'),
+    14: Tuple2('しんぴのまもり終了', 'Safe Guard ends'),
+    15: Tuple2('しろいきりが消えた', 'Mist is gone'),
+    16: Tuple2('おいかぜがやんだ', 'Tailwind is gone'),
+    18: Tuple2('オーロラベールがなくなった', 'Aurora Veil is gone'),
+    19: Tuple2('じゅうりょく終了', 'Gravity ends'),
+    20: Tuple2('トリックルーム終了', 'Trick Room ends'),   // ゆがんだ時空がもとにもどった
+    21: Tuple2('みずあそび終了', 'Water Sport ends'),
+    22: Tuple2('どろあそび終了', 'Mud Sport ends'),
+    23: Tuple2('ワンダールーム終了', 'Wonder Room ends'),
+    24: Tuple2('マジックルーム終了', 'Magic Room ends'),
+    26: Tuple2('フェアリーロック終了', 'Fairy Lock ends'),
+    27: Tuple2('まきびし', 'Spikes'),
+    28: Tuple2('まきびし', 'Spikes'),
   };
 
   const IndiFieldEffect(this.id);
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   static int getIdFromIndiField(IndividualField field) {
     switch (field.id) {
@@ -143,32 +152,32 @@ class IndividualField {
   static const int fairyLock = 26;        // フェアリーロック
   static const int noBerry = 27;          // きのみを食べられない状態(きんちょうかん)
 
-  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
-    0: Tuple3('', Colors.black, 0),
-    1: Tuple3('どくびし', PokeTypeColor.poison, 0),
-    2: Tuple3('まきびし', PokeTypeColor.rock, 0),
-    3: Tuple3('ステルスロック', PokeTypeColor.rock, 0),
-    4: Tuple3('ねばねばネット', PokeTypeColor.bug, 0),
-    5: Tuple3('いやしのねがい', Colors.green, 0),
-    6: Tuple3('みかづきのまい', Colors.green, 0),
-    8: Tuple3('みらいにこうげき', PokeTypeColor.psychic, 3),
-    10: Tuple3('ねがいごと', Colors.green, 2),
-    12: Tuple3('リフレクター', Colors.green, 5),
-    13: Tuple3('ひかりのかべ', Colors.green, 5),
-    14: Tuple3('しんぴのまもり', Colors.green, 5),
-    15: Tuple3('しろいきり', Colors.green, 5),
-    16: Tuple3('おいかぜ', Colors.green, 4),
-//    17: Tuple3('おまじない', Colors.green, 0),
-    18: Tuple3('オーロラベール', Colors.green, 5),
-    19: Tuple3('じゅうりょく', PokeTypeColor.psychic, 5),
-    20: Tuple3('トリックルーム', PokeTypeColor.psychic, 5),
-    21: Tuple3('みずあそび', PokeTypeColor.water, 5),
-    22: Tuple3('どろあそび', PokeTypeColor.ground, 5),
-    23: Tuple3('ワンダールーム', PokeTypeColor.psychic, 5),
-    24: Tuple3('マジックルーム', PokeTypeColor.psychic, 5),
-    25: Tuple3('プラズマシャワー', PokeTypeColor.electric, 0),
-    26: Tuple3('フェアリーロック', PokeTypeColor.fairy, 2),
-    27: Tuple3('きのみを食べられない状態', PokeTypeColor.evil, 0),
+  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
+    0: Tuple4('', '', Colors.black, 0),
+    1: Tuple4('どくびし', 'Toxic Spikes', PokeTypeColor.poison, 0),
+    2: Tuple4('まきびし', 'Spikes', PokeTypeColor.rock, 0),
+    3: Tuple4('ステルスロック', 'Stealth Rock', PokeTypeColor.rock, 0),
+    4: Tuple4('ねばねばネット', 'Sticky Web', PokeTypeColor.bug, 0),
+    5: Tuple4('いやしのねがい', 'Healing Wish', Colors.green, 0),
+    6: Tuple4('みかづきのまい', 'Lunar Dance', Colors.green, 0),
+    8: Tuple4('みらいにこうげき', 'Future Sight', PokeTypeColor.psychic, 3),
+    10: Tuple4('ねがいごと', 'Wish', Colors.green, 2),
+    12: Tuple4('リフレクター', 'Reflector', Colors.green, 5),
+    13: Tuple4('ひかりのかべ', 'Light Screen', Colors.green, 5),
+    14: Tuple4('しんぴのまもり', 'Safe Guard', Colors.green, 5),
+    15: Tuple4('しろいきり', 'Mist', Colors.green, 5),
+    16: Tuple4('おいかぜ', 'Tailwind', Colors.green, 4),
+//    17: Tuple4('おまじない', 'Lucky Chant', Colors.green, 0),
+    18: Tuple4('オーロラベール', 'Aurora Veil', Colors.green, 5),
+    19: Tuple4('じゅうりょく', 'Gravity', PokeTypeColor.psychic, 5),
+    20: Tuple4('トリックルーム', 'Trick Room', PokeTypeColor.psychic, 5),
+    21: Tuple4('みずあそび', 'Water Sport', PokeTypeColor.water, 5),
+    22: Tuple4('どろあそび', 'Mud Sport', PokeTypeColor.ground, 5),
+    23: Tuple4('ワンダールーム', 'Wonder Room', PokeTypeColor.psychic, 5),
+    24: Tuple4('マジックルーム', 'Magic Room', PokeTypeColor.psychic, 5),
+    25: Tuple4('プラズマシャワー', 'Ion Deluge', PokeTypeColor.electric, 0),
+    26: Tuple4('フェアリーロック', 'Fairy Lock', PokeTypeColor.fairy, 2),
+    27: Tuple4('きのみを食べられない状態', 'Cannot eat berrys', PokeTypeColor.evil, 0),
   };
 
   final int id;
@@ -186,7 +195,15 @@ class IndividualField {
     String extraStr = '';
     switch (id) {
       case toxicSpikes:
-        extraStr = extraArg1 >= 2 ? '(もうどく)' : '(どく)';
+        switch (PokeDB().language) {
+          case Language.japanese:
+            extraStr = extraArg1 >= 2 ? '(もうどく)' : '(どく)';
+            break;
+          case Language.english:
+          default:
+            extraStr = extraArg1 >= 2 ? '(Bad Poison)' : '(Poison)';
+            break;
+        }
         break;
       case spikes:
         extraStr = extraArg1 > 0 ? '($extraArg1)' : '';
@@ -197,11 +214,17 @@ class IndividualField {
     if (maxTurn > 0) {
       extraStr += ' ($turns/$maxTurn)';
     }
-    return _nameColorTurnMap[id]!.item1 + extraStr;
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _nameColorTurnMap[id]!.item1 + extraStr;
+      case Language.english:
+      default:
+        return _nameColorTurnMap[id]!.item2 + extraStr;
+    }
   }
-  Color get bgColor => _nameColorTurnMap[id]!.item2;
+  Color get bgColor => _nameColorTurnMap[id]!.item3;
   int get maxTurn {
-    int ret = _nameColorTurnMap[id]!.item3;
+    int ret = _nameColorTurnMap[id]!.item4;
     if (id == reflector || id == lightScreen || id == auroraVeil) {
       ret = extraArg1;
     }

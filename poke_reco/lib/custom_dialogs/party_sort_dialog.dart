@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 
 enum PartySort {
-  registerUp(1, '登録(昇)'),
-  registerDown(2, '登録(降)'),
-  nameUp(3, 'パーティ名(昇)'),
-  nameDown(4, 'パーティ名(降)'),
-  winRateUp(5, '勝率(昇)'),
-  winRateDown(6, '勝率(降)');
+  registerUp(1, '登録(昇)', 'Register(asc)'),
+  registerDown(2, '登録(降)', 'Register(desc)'),
+  nameUp(3, 'パーティ名(昇)', 'Party\'s name(asc)'),
+  nameDown(4, 'パーティ名(降)', 'Party\'s name(desc)'),
+  winRateUp(5, '勝率(昇)', 'Winning rate(asc)'),
+  winRateDown(6, '勝率(降)', 'Winning rate(desc)');
 
   final int id;
-  final String displayName;
-  const PartySort(this.id, this.displayName);
+  final String ja;
+  final String en;
+  const PartySort(this.id, this.ja, this.en);
 
   factory PartySort.createFromId(int id) {
     switch (id) {
@@ -28,6 +31,16 @@ enum PartySort {
         return winRateDown;
       default:
         return registerUp;
+    }
+  }
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return ja;
+      case Language.english:
+      default:
+        return en;
     }
   }
 }
@@ -52,13 +65,14 @@ class PartySortDialogState extends State<PartySortDialog> {
 
   @override
   Widget build(BuildContext context) {
+    var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       _partySort = widget.currentSort;
       isFirstBuild = false;
     }
 
     return AlertDialog(
-      title: Text('並べ替え'),
+      title: Text(loc.commonSort),
       content: SingleChildScrollView(
         child: Column(
           children: [
@@ -81,7 +95,7 @@ class PartySortDialogState extends State<PartySortDialog> {
       actions:
         <Widget>[
           GestureDetector(
-            child: Text('キャンセル'),
+            child: Text(loc.commonCancel),
             onTap: () {
               Navigator.pop(context);
             },

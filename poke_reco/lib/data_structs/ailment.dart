@@ -89,75 +89,83 @@ class AilmentEffect {
     return ailment.id;
   }
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'やけど',
-    2: 'こおりが溶けた',
-    3: 'まひ',
-    4: 'どく',
-    5: 'もうどく',
-    6: 'ねむり',
-    7: 'こんらんが解けた',
-    8: 'のろい',
-    9: 'アンコールが解けた',
-    10: 'ひるみ',
-    11: 'みやぶられている',
-    12: 'メロメロ',
-    13: 'やどりぎのタネ',
-    15: 'ロックオン終了',
-//    16: 'あくむ',
-    17: 'バインド',
-    18: 'ほろびのうた',
-    19: 'ちょうはつ終了',   // 挑発の効果が解けた
-    20: 'いちゃもん',
-    22: 'しおづけ',
-    23: 'かなしばりが解けた',
-    24: 'でんじふゆう終了',
-    25: 'テレキネシス終了',
-    26: 'かいふくふうじ終了',
-    27: 'さしおさえ終了',
-    28: 'ねむってしまった',
-    29: 'ねをはる',
-    30: 'さわぐ終了',
-    31: 'うちおとす',
-    32: 'マジックコート',
-    33: 'じゅうでん',
-    34: 'あばれる',
-//    35: 'がまん',
-    36: 'みちづれ',
-    37: 'にげられない',
-    38: 'ちいさくなる',
-    39: 'そらをとぶ',
-    40: 'あなをほる',
-    41: 'まるくなる',
-    42: 'たくわえる(1)',
-    43: 'たくわえる(2)',
-    44: 'たくわえる(3)',
-    45: 'ちゅうもくのまと',
-//    46: 'てだすけ',
-    47: 'ふういん',
-    48: 'おんねん',
-    49: 'はねやすめ',
-    50: 'ミラクルアイ',
-    51: 'パワートリック',
-    52: 'とくせいなし',
-    53: 'アクアリング',
-    54: 'ダイビング',
-    55: 'シャドーダイブ',
-    56: 'そうでん',
-//    57: 'ふんじん',
-    58: 'じごくづき',
-    59: 'タールショット',
-    60: 'たこがため',
-    61: 'まもる',
-    62: 'あめまみれ',
-    63: 'ハロウィン',
-    64: 'もりののろい',
+  static const Map<int, Tuple2<String, String>> _displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('やけど', 'Burn'),
+    2: Tuple2('こおりが溶けた', 'Defrosted'),
+    3: Tuple2('まひ', 'Paralysis'),
+    4: Tuple2('どく', 'Poison'),
+    5: Tuple2('もうどく', 'Bad poison'),
+    6: Tuple2('ねむり', 'Sleep'),
+    7: Tuple2('こんらんが解けた', 'Confused no more'),
+    8: Tuple2('のろい', 'Curse'),
+    9: Tuple2('アンコールが解けた', 'Encore is resolved'),
+    10: Tuple2('ひるみ', 'Flinch'),
+    11: Tuple2('みやぶられている', 'Foresighted'),
+    12: Tuple2('メロメロ', 'Attracted'),
+    13: Tuple2('やどりぎのタネ', 'Leech Seed'),
+    15: Tuple2('ロックオン終了', 'Lock-On end'),
+//    16: Tuple2('あくむ', 'Nightmare'),
+    17: Tuple2('バインド', 'Partially Trapped'),
+    18: Tuple2('ほろびのうた', 'Perish Song'),
+    19: Tuple2('ちょうはつ終了', 'Taunt is resolved'),   // 挑発の効果が解けた
+    20: Tuple2('いちゃもん', 'Torment'),
+    22: Tuple2('しおづけ', 'Salt Cure'),
+    23: Tuple2('かなしばりが解けた', 'Disable is resolved'),
+    24: Tuple2('でんじふゆう終了', 'Magnet Rise end'),
+    25: Tuple2('テレキネシス終了', 'Telekinesis end'),
+    26: Tuple2('かいふくふうじ終了', 'Heal Block end'),
+    27: Tuple2('さしおさえ終了', 'Embargo end'),
+    28: Tuple2('ねむってしまった', 'Fell asleap'),
+    29: Tuple2('ねをはる', 'Ingrain'),
+    30: Tuple2('さわぐ終了', 'Uproar end'),
+    31: Tuple2('うちおとす', 'Anti Air'),
+    32: Tuple2('マジックコート', 'Magic Coat'),
+    33: Tuple2('じゅうでん', 'Charging'),
+    34: Tuple2('あばれる', 'Thrash'),
+//    35: Tuple2('がまん', 'Bide'),
+    36: Tuple2('みちづれ', 'Destiny Bond'),
+    37: Tuple2('にげられない', 'Cannot run away'),
+    38: Tuple2('ちいさくなる', 'Minimize'),
+    39: Tuple2('そらをとぶ', 'Flying'),
+    40: Tuple2('あなをほる', 'Digging'),
+    41: Tuple2('まるくなる', 'Curl'),
+    42: Tuple2('たくわえる(1)', 'Stock(1)'),
+    43: Tuple2('たくわえる(2)', 'Stock(2)'),
+    44: Tuple2('たくわえる(3)', 'Stock(3)'),
+    45: Tuple2('ちゅうもくのまと', 'Attention'),
+//    46: Tuple2('てだすけ', 'Help Hand'),
+    47: Tuple2('ふういん', 'Imprison'),
+    48: Tuple2('おんねん', 'Grudge'),
+    49: Tuple2('はねやすめ', 'Roost'),
+    50: Tuple2('ミラクルアイ', 'Miracle Eye'),
+    51: Tuple2('パワートリック', 'Power Trick'),
+    52: Tuple2('とくせいなし', 'Ability no effect'),
+    53: Tuple2('アクアリング', 'Aqua Ring'),
+    54: Tuple2('ダイビング', 'Diving'),
+    55: Tuple2('シャドーダイブ', 'Shadow Forcing'),
+    56: Tuple2('そうでん', 'Electrify'),
+//    57: Tuple2('ふんじん', 'Powder'),
+    58: Tuple2('じごくづき', 'Throat Chop end'),
+    59: Tuple2('タールショット', 'Tar Shot'),
+    60: Tuple2('たこがため', 'Octo Lock'),
+    61: Tuple2('まもる', 'Protect'),
+    62: Tuple2('あめまみれ', 'Covered in candy'),
+    63: Tuple2('ハロウィン', 'Halloween'),
+    64: Tuple2('もりののろい', 'Forest Curse'),
   };
 
   const AilmentEffect(this.id);
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   // ただ状態変化を終了させるだけの処理を行う
   static void processRemove(int effectId, PokemonState pokemonState) {
@@ -252,70 +260,70 @@ class Ailment {
   static const int halloween = 63;          // ハロウィン(ゴーストタイプ)
   static const int forestCurse = 64;        // もりののろい(くさタイプ)
 
-  static const Map<int, Tuple3<String, Color, int>> _nameColorTurnMap = {
-    0: Tuple3('', Colors.black, 0),
-    1: Tuple3('やけど', PokeTypeColor.fire, 0),
-    2: Tuple3('こおり', PokeTypeColor.ice, 0),
-    3: Tuple3('まひ', PokeTypeColor.electric, 0),
-    4: Tuple3('どく', PokeTypeColor.poison, 0),
-    5: Tuple3('もうどく', PokeTypeColor.poison, 0),
-    6: Tuple3('ねむり', PokeTypeColor.fly, 4),
-    7: Tuple3('こんらん', PokeTypeColor.electric, 0),
-    8: Tuple3('のろい', PokeTypeColor.ghost, 0),
-    9: Tuple3('アンコール', PokeTypeColor.evil, 3),
-    10: Tuple3('ひるみ', PokeTypeColor.evil, 0),
-    11: Tuple3('みやぶられている', PokeTypeColor.evil, 0),
-    12: Tuple3('メロメロ', PokeTypeColor.fairy, 0),
-    13: Tuple3('やどりぎのタネ', PokeTypeColor.grass, 0),
-    15: Tuple3('ロックオン', PokeTypeColor.fight, 2),
-//    16: Tuple3('あくむ', PokeTypeColor.evil, 0),
-    17: Tuple3('バインド', PokeTypeColor.evil, 5),
-    18: Tuple3('ほろびのうた', PokeTypeColor.evil, 3),
-    19: Tuple3('ちょうはつ', PokeTypeColor.ghost, 4),
-    20: Tuple3('いちゃもん', PokeTypeColor.evil, 0),
-    22: Tuple3('しおづけ', PokeTypeColor.rock, 0),
-    23: Tuple3('かなしばり', PokeTypeColor.ghost, 5),
-    24: Tuple3('でんじふゆう', PokeTypeColor.electric, 5),
-    25: Tuple3('テレキネシス', PokeTypeColor.psychic, 3),
-    26: Tuple3('かいふくふうじ', PokeTypeColor.evil, 5),
-    27: Tuple3('さしおさえ', PokeTypeColor.evil, 5),
-    28: Tuple3('ねむけ', PokeTypeColor.fly, 0),
-    29: Tuple3('ねをはる', PokeTypeColor.grass, 0),
-    30: Tuple3('さわぐ', PokeTypeColor.evil, 3),
-    31: Tuple3('うちおとす', PokeTypeColor.ground, 0),
-    32: Tuple3('マジックコート', PokeTypeColor.psychic, 0),
-    33: Tuple3('じゅうでん', PokeTypeColor.electric, 0),
-    34: Tuple3('あばれる', PokeTypeColor.dragon, 0),
-//    35: Tuple3('がまん', PokeTypeColor.fight, 0),
-    36: Tuple3('みちづれ', PokeTypeColor.ghost, 0),
-    37: Tuple3('にげられない', PokeTypeColor.evil, 0),
-    38: Tuple3('ちいさくなる', PokeTypeColor.psychic, 0),
-    39: Tuple3('そらをとぶ', PokeTypeColor.fly, 0),
-    40: Tuple3('あなをほる', PokeTypeColor.ground, 0),
-    41: Tuple3('まるくなる', PokeTypeColor.fight, 0),
-    42: Tuple3('たくわえる(1)', PokeTypeColor.fight, 0),
-    43: Tuple3('たくわえる(2)', PokeTypeColor.fight, 0),
-    44: Tuple3('たくわえる(3)', PokeTypeColor.fight, 0),
-    45: Tuple3('ちゅうもくのまと', PokeTypeColor.psychic, 0),
-//    46: Tuple3('てだすけ', PokeTypeColor.fairy, 0),
-    47: Tuple3('ふういん', PokeTypeColor.evil, 0),
-    48: Tuple3('おんねん', PokeTypeColor.ghost, 0),
-    49: Tuple3('はねやすめ', PokeTypeColor.fly, 0),
-    50: Tuple3('ミラクルアイ', PokeTypeColor.psychic, 0),
-    51: Tuple3('パワートリック', PokeTypeColor.psychic, 0),
-    52: Tuple3('とくせいなし', PokeTypeColor.evil, 0),
-    53: Tuple3('アクアリング', PokeTypeColor.water, 0),
-    54: Tuple3('ダイビング', PokeTypeColor.water, 0),
-    55: Tuple3('シャドーダイブ', PokeTypeColor.ghost, 0),
-    56: Tuple3('そうでん', PokeTypeColor.electric, 0),
-//    57: Tuple3('ふんじん', PokeTypeColor.rock, 0),
-    58: Tuple3('じごくづき', PokeTypeColor.evil, 2),
-    59: Tuple3('タールショット', PokeTypeColor.evil, 0),
-    60: Tuple3('たこがため', PokeTypeColor.evil, 0),
-    61: Tuple3('まもる', Colors.green, 0),
-    62: Tuple3('あめまみれ', PokeTypeColor.poison, 3),
-    63: Tuple3('ハロウィン', PokeTypeColor.ghost, 0),
-    64: Tuple3('もりののろい', PokeTypeColor.grass, 0),
+  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
+    0: Tuple4('', '', Colors.black, 0),
+    1: Tuple4('やけど', 'Burn', PokeTypeColor.fire, 0),
+    2: Tuple4('こおり', 'Freeze', PokeTypeColor.ice, 0),
+    3: Tuple4('まひ', 'Paralysis', PokeTypeColor.electric, 0),
+    4: Tuple4('どく', 'Poison', PokeTypeColor.poison, 0),
+    5: Tuple4('もうどく', 'Bad poison', PokeTypeColor.poison, 0),
+    6: Tuple4('ねむり', 'Sleep', PokeTypeColor.fly, 4),
+    7: Tuple4('こんらん', 'Confusion', PokeTypeColor.electric, 0),
+    8: Tuple4('のろい', 'Curse', PokeTypeColor.ghost, 0),
+    9: Tuple4('アンコール', 'Encore', PokeTypeColor.evil, 3),
+    10: Tuple4('ひるみ', 'Flinch', PokeTypeColor.evil, 0),
+    11: Tuple4('みやぶられている', 'Foresighted', PokeTypeColor.evil, 0),
+    12: Tuple4('メロメロ', 'Attracted', PokeTypeColor.fairy, 0),
+    13: Tuple4('やどりぎのタネ', 'Leech Seed', PokeTypeColor.grass, 0),
+    15: Tuple4('ロックオン', 'Lock-On', PokeTypeColor.fight, 2),
+//    16: Tuple4('あくむ', 'Nightmare', PokeTypeColor.evil, 0),
+    17: Tuple4('バインド', 'Partially Trapped', PokeTypeColor.evil, 5),
+    18: Tuple4('ほろびのうた', 'Perish Song', PokeTypeColor.evil, 3),
+    19: Tuple4('ちょうはつ', 'Taunt', PokeTypeColor.ghost, 4),
+    20: Tuple4('いちゃもん', 'Torment', PokeTypeColor.evil, 0),
+    22: Tuple4('しおづけ', 'Salt Cure', PokeTypeColor.rock, 0),
+    23: Tuple4('かなしばり', 'Disable', PokeTypeColor.ghost, 5),
+    24: Tuple4('でんじふゆう', 'Magnet Rise', PokeTypeColor.electric, 5),
+    25: Tuple4('テレキネシス', 'Telekinesis', PokeTypeColor.psychic, 3),
+    26: Tuple4('かいふくふうじ', 'Heal Block', PokeTypeColor.evil, 5),
+    27: Tuple4('さしおさえ', 'Embargo', PokeTypeColor.evil, 5),
+    28: Tuple4('ねむけ', 'Sleepy', PokeTypeColor.fly, 0),
+    29: Tuple4('ねをはる', 'Ingrain', PokeTypeColor.grass, 0),
+    30: Tuple4('さわぐ', 'Uproar', PokeTypeColor.evil, 3),
+    31: Tuple4('うちおとす', 'Anti Air', PokeTypeColor.ground, 0),
+    32: Tuple4('マジックコート', 'Magic Coat', PokeTypeColor.psychic, 0),
+    33: Tuple4('じゅうでん', 'Charging', PokeTypeColor.electric, 0),
+    34: Tuple4('あばれる', 'Thrash', PokeTypeColor.dragon, 0),
+//    35: Tuple4('がまん', 'Bide', PokeTypeColor.fight, 0),
+    36: Tuple4('みちづれ', 'Destiny Bond', PokeTypeColor.ghost, 0),
+    37: Tuple4('にげられない', 'Cannot run away', PokeTypeColor.evil, 0),
+    38: Tuple4('ちいさくなる', 'Minimize', PokeTypeColor.psychic, 0),
+    39: Tuple4('そらをとぶ', 'Flying', PokeTypeColor.fly, 0),
+    40: Tuple4('あなをほる', 'Digging', PokeTypeColor.ground, 0),
+    41: Tuple4('まるくなる', 'Curl', PokeTypeColor.fight, 0),
+    42: Tuple4('たくわえる(1)', 'Stock(1)', PokeTypeColor.fight, 0),
+    43: Tuple4('たくわえる(2)', 'Stock(2)', PokeTypeColor.fight, 0),
+    44: Tuple4('たくわえる(3)', 'Stock(3)', PokeTypeColor.fight, 0),
+    45: Tuple4('ちゅうもくのまと', 'Attention', PokeTypeColor.psychic, 0),
+//    46: Tuple4('てだすけ', 'Help Hand', PokeTypeColor.fairy, 0),
+    47: Tuple4('ふういん', 'Imprison', PokeTypeColor.evil, 0),
+    48: Tuple4('おんねん', 'Grudge', PokeTypeColor.ghost, 0),
+    49: Tuple4('はねやすめ', 'Roost', PokeTypeColor.fly, 0),
+    50: Tuple4('ミラクルアイ', 'Miracle Eye', PokeTypeColor.psychic, 0),
+    51: Tuple4('パワートリック', 'Power Trick', PokeTypeColor.psychic, 0),
+    52: Tuple4('とくせいなし', 'Ability no effect', PokeTypeColor.evil, 0),
+    53: Tuple4('アクアリング', 'Aqua Ring', PokeTypeColor.water, 0),
+    54: Tuple4('ダイビング', 'Diving', PokeTypeColor.water, 0),
+    55: Tuple4('シャドーダイブ', 'Shadow Forcing', PokeTypeColor.ghost, 0),
+    56: Tuple4('そうでん', 'Electrify', PokeTypeColor.electric, 0),
+//    57: Tuple4('ふんじん', 'Powder', PokeTypeColor.rock, 0),
+    58: Tuple4('じごくづき', 'Throat Chop', PokeTypeColor.evil, 2),
+    59: Tuple4('タールショット', 'Tar Shot', PokeTypeColor.evil, 0),
+    60: Tuple4('たこがため', 'Octo Lock', PokeTypeColor.evil, 0),
+    61: Tuple4('まもる', 'Protect', Colors.green, 0),
+    62: Tuple4('あめまみれ', 'Covered in candy', PokeTypeColor.poison, 3),
+    63: Tuple4('ハロウィン', 'Halloween', PokeTypeColor.ghost, 0),
+    64: Tuple4('もりののろい', 'Forest Curse', PokeTypeColor.grass, 0),
   };
 
   final int id;
@@ -332,32 +340,39 @@ class Ailment {
   String get displayName {
     final pokeData = PokeDB();
     String extraStr = '';
-    if (_nameColorTurnMap[id]!.item3 > 0) extraStr = ' ($turns/?)';
+    if (_nameColorTurnMap[id]!.item4 > 0) extraStr = ' ($turns/?)';
     switch (id) {
       case Ailment.badPoison:
         extraStr = ' (${(turns + 1).clamp(1, 15)}';
         break;
       case Ailment.sleep:
-        extraStr = ' ($turns/${extraArg1 == 3 ? '3' : '2～4'})';
+        extraStr = ' ($turns/${extraArg1 == 3 ? '3' : '2 ~ 4'})';
         break;
       case Ailment.confusion:
-        extraStr = ' ($turns/2～5)';
+        extraStr = ' ($turns/2 ~ 5)';
         break;
       case Ailment.disable:
-        extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/4～5)';
+        extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/4 ~ 5)';
         break;
       case Ailment.encore:
         extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/3)';
         break;
       case Ailment.partiallyTrapped:
-        extraStr = ' ($turns/${extraArg1 % 10 == 7 ? '7' : '4～5'})';
+        extraStr = ' ($turns/${extraArg1 % 10 == 7 ? '7' : '4 ~ 5'})';
         break;
     }
-    return _nameColorTurnMap[id]!.item1 + extraStr;
+
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _nameColorTurnMap[id]!.item1 + extraStr;
+      case Language.english:
+      default:
+        return _nameColorTurnMap[id]!.item2 + extraStr;
+    }
   }
-  Color get bgColor => _nameColorTurnMap[id]!.item2;
+  Color get bgColor => _nameColorTurnMap[id]!.item3;
   int get maxTurn {
-    int ret = _nameColorTurnMap[id]!.item3;
+    int ret = _nameColorTurnMap[id]!.item4;
     if (id == sleep && extraArg1 == 3) ret = 3;
     if (id == partiallyTrapped && extraArg1 % 10 == 7) ret = 7;
     return ret;

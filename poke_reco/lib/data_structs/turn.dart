@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Turn {
   List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
@@ -206,7 +207,7 @@ class Turn {
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
-    int phaseIdx, Party ownParty, Party opponentParty)
+    int phaseIdx, Party ownParty, Party opponentParty, AppLocalizations loc,)
   {
     PhaseState ret = copyInitialState(ownParty, opponentParty,);
     int continousCount = 0;
@@ -228,7 +229,7 @@ class Turn {
         ret.getPokemonState(PlayerType(PlayerType.me), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         opponentParty,
         ret.getPokemonState(PlayerType(PlayerType.opponent), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
-        ret, lastAction, continousCount,
+        ret, lastAction, continousCount, loc: loc,
       );
     }
     return ret;

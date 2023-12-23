@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleGamesetColumn extends Column {
   BattleGamesetColumn(
     ThemeData theme,
     TurnEffect turnEffect,
     String opponentName,
+    {
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -19,12 +23,12 @@ class BattleGamesetColumn extends Column {
         child: Column(
           children: [
             turnEffect.isMyWin && turnEffect.isYourWin ?
-            Text('引き分け') :
+            Text(loc.battleResultDraw) :
             turnEffect.isMyWin ?
-            Text('あなたの勝利！') :
+            Text(loc.battleResultYouWin) :
             turnEffect.isYourWin ?
-            Text('$opponentNameの勝利！') :
-            Text('引き分け'),
+            Text(loc.battleResultOpponentWin(opponentName)) :
+            Text(loc.battleResultDraw),
           ],
         ),
       ),

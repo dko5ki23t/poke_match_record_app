@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ViewPartyPage extends StatefulWidget {
   ViewPartyPage({
@@ -27,7 +28,7 @@ class ViewPartyPage extends StatefulWidget {
 
 class ViewPartyPageState extends State<ViewPartyPage> {
   final partyNameController = TextEditingController();
-  final pokemonController = List.generate(6, (i) => TextEditingController(text: 'ポケモン選択'));
+  final pokemonController = List.generate(6, (i) => TextEditingController());
   final itemController = List.generate(6, (i) => TextEditingController());
 
   bool firstBuild = true;
@@ -37,9 +38,13 @@ class ViewPartyPageState extends State<ViewPartyPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
     var party = widget.partyList[widget.listIndex];
 
     if (firstBuild) {
+      for (final controller in pokemonController) {
+        controller.text = loc.partiesTabSelectPokemon;
+      }
       listIndex = widget.listIndex;
       firstBuild = false;
     }
@@ -77,7 +82,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
             }) : null,
             theme: theme,
             icon: Icon(Icons.arrow_upward),
-            tooltip: '前へ',
+            tooltip: loc.viewToolTipPrev,
           ),
           MyIconButton(
             onPressed: listIndex + 1 < widget.partyList.length ? () => setState(() {
@@ -85,13 +90,13 @@ class ViewPartyPageState extends State<ViewPartyPage> {
             }) : null,
             theme: theme,
             icon: Icon(Icons.arrow_downward),
-            tooltip: '次へ',
+            tooltip: loc.viewToolTipNext,
           ),
           MyIconButton(
             onPressed: () => widget.onEdit(party),
             theme: theme,
             icon: Icon(Icons.edit),
-            tooltip: '編集',
+            tooltip: loc.viewToolTipEdit,
           ),
         ],
       ),
@@ -107,9 +112,9 @@ class ViewPartyPageState extends State<ViewPartyPage> {
                   children: [
                     Flexible(
                       child: TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'パーティ名'
+                          labelText: loc.partiesTabPartyName,
                         ),
                         maxLength: 20,
                         controller: partyNameController,
@@ -121,8 +126,8 @@ class ViewPartyPageState extends State<ViewPartyPage> {
                 SizedBox(height: 10),
                 for (int i = 0; i < party.pokemonNum; i++)
                   PokemonItemViewRow(
-                    'ポケモン${i+1}',
-                    'もちもの${i+1}',
+                    '${loc.commonPokemon}${i+1}',
+                    '${loc.commonItem}${i+1}',
                     pokemonController[i],
                     itemController[i],
                     party.pokemons[i]!,

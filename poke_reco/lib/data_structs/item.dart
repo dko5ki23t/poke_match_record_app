@@ -11,6 +11,7 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // なげつけたときの効果
 class FlingItemEffect {
@@ -79,6 +80,7 @@ class Item {
     int? changePokemonIndex,
     {
       bool autoConsume = true,
+      required AppLocalizations loc,
     }
 //    TurnEffect? prevAction,
   ) {
@@ -88,7 +90,7 @@ class Item {
       ret.add(Guide()
         ..guideId = Guide.confItem
         ..args = [itemID]
-        ..guideStr = 'あいての${myState.pokemon.name}のもちものを${pokeData.items[itemID]!.displayName}で確定しました。'
+        ..guideStr = loc.battleGuideConfItem2(pokeData.items[itemID]!.displayName, myState.pokemon.omittedName)
       );
     }
     // 既にもちものがわかっている場合は代入しない(代入によってbuffを追加してしまうから)
@@ -388,6 +390,9 @@ class Item {
     int extraArg1,
     int extraArg2,
     int? changePokemonIndex,
+    {
+      required AppLocalizations loc,
+    }
   ) {
     switch (flingEffectId) {
       case FlingItemEffect.badPoison:
@@ -398,7 +403,11 @@ class Item {
         break;
       case FlingItemEffect.berry:
       case FlingItemEffect.herb:
-        processEffect(id, playerType, yourState, myState, state, extraArg1, extraArg2, changePokemonIndex, autoConsume: false);
+        processEffect(
+          id, playerType, yourState, myState, state,
+          extraArg1, extraArg2, changePokemonIndex,
+          autoConsume: false, loc: loc
+        );
         break;
       case FlingItemEffect.paralysis:
         yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
@@ -987,6 +996,7 @@ class Item {
     bool isInput,
     {
       bool showNetworkImage = false,
+      required AppLocalizations loc,
     }
   ) {
     switch (id) {
@@ -1000,36 +1010,20 @@ class Item {
                   border: UnderlineInputBorder(),
                 ),
                 items: <DropdownMenuItem>[
+                  for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
                   DropdownMenuItem(
-                    value: 0,
-                    child: Text('こうげき'),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text('ぼうぎょ'),
-                  ),
-                  DropdownMenuItem(
-                    value: 2,
-                    child: Text('とくこう'),
-                  ),
-                  DropdownMenuItem(
-                    value: 3,
-                    child: Text('とくぼう'),
-                  ),
-                  DropdownMenuItem(
-                    value: 4,
-                    child: Text('すばやさ'),
+                    value: statIndex.index-1,
+                    child: Text(statIndex.name),
                   ),
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: extraArg1 == 0 ? 'こうげき' : extraArg1 == 1 ? 'ぼうぎょ' :
-                  extraArg1 == 2 ? 'とくこう' : extraArg1 == 3 ? 'とくぼう' : extraArg1 == 4 ? 'すばやさ' : '',
+                textValue: getStatIndexFromIndex(extraArg1+1).name,
                 isInput: isInput,
                 onFocus: onFocus,
               ),
             ),
-            Text('があがった'),
+            Text(loc.battleRankUp1),
           ],
         );
       case 247:     // いのちのたま
@@ -1052,7 +1046,7 @@ class Item {
             }
             extraArg1ChangeFunc(val);
           },
-          extraArg1, isInput,);
+          extraArg1, isInput, loc: loc,);
       case 136:     // フィラのみ
       case 137:     // ウイのみ
       case 138:     // マゴのみ
@@ -1071,16 +1065,16 @@ class Item {
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('HPが回復した'),
+                      child: Text(loc.battleHPRecovery),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('こんらんした'),
+                      child: Text(loc.battleConfused2),
                     ),
                   ],
                   value: extraArg2,
                   onChanged: (value) => extraArg2ChangeFunc(value),
-                  textValue: extraArg2 == 0 ? 'HPが回復した' : extraArg1 == 1 ? 'こんらんした' : '',
+                  textValue: extraArg2 == 0 ? loc.battleHPRecovery : extraArg1 == 1 ? loc.battleConfused2 : '',
                   isInput: isInput,
                   onFocus: onFocus,
                 ),
@@ -1099,7 +1093,7 @@ class Item {
                 }
                 extraArg1ChangeFunc(val);
               },
-              extraArg1, isInput,
+              extraArg1, isInput, loc: loc,
             ) : Container(),
           ],
         );
@@ -1117,7 +1111,7 @@ class Item {
             }
             extraArg1ChangeFunc(val);
           },
-          extraArg1, isInput,
+          extraArg1, isInput, loc: loc,
         );
       case 584:     // ふうせん
         return Row(
@@ -1132,16 +1126,16 @@ class Item {
                 items: <DropdownMenuItem>[
                   DropdownMenuItem(
                     value: 0,
-                    child: Text('ふうせんで浮いている'),
+                    child: Text(loc.battleBalloonFloat),
                   ),
                   DropdownMenuItem(
                     value: 1,
-                    child: Text('ふうせんが割れた'),
+                    child: Text(loc.battleBalloonBurst),
                   ),
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: extraArg1 == 0 ? 'ふうせんで浮いている' : extraArg1 == 1 ? 'ふうせんが割れた' : '',
+                textValue: extraArg1 == 0 ? loc.battleBalloonFloat : extraArg1 == 1 ? loc.battleBalloonBurst : '',
                 isInput: isInput,
                 onFocus: onFocus,
               ),
@@ -1155,9 +1149,9 @@ class Item {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: '交代先ポケモン',
+                  labelText: loc.battlePokemonToChange,
                 ),
                 items: <DropdownMenuItem>[
                   for (int i = 0; i < yourParty.pokemonNum; i++)
@@ -1187,7 +1181,7 @@ class Item {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('こうげき:'),
+                Text('${loc.commonAttack}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1213,7 +1207,7 @@ class Item {
                     onFocus: onFocus,
                   ),
                 ),
-                Text('ぼうぎょ:'),
+                Text('${loc.commonDefense}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1239,7 +1233,7 @@ class Item {
                     onFocus: onFocus,
                   ),
                 ),
-                Text('とくこう:'),
+                Text('${loc.commonSAttack}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1270,7 +1264,7 @@ class Item {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('とくぼう:'),
+                Text('${loc.commonSDefense}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1297,7 +1291,7 @@ class Item {
                   ),
                 ),
                 SizedBox(width: 10,),
-                Text('すばやさ:'),
+                Text('${loc.commonSpeed}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1328,7 +1322,7 @@ class Item {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('めいちゅう:'),
+                Text('${loc.commonAccuracy}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1355,7 +1349,7 @@ class Item {
                   ),
                 ),
                 SizedBox(width: 10,),
-                Text('かいひ:'),
+                Text('${loc.commonEvasiveness}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
@@ -1393,9 +1387,9 @@ class Item {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: '交代先ポケモン',
+                  labelText: loc.battlePokemonToChange,
                 ),
                 items: <DropdownMenuItem>[
                   for (int i = 0; i < myParty.pokemonNum; i++)

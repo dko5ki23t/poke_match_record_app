@@ -23,6 +23,7 @@ import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // ダメージ
 class DamageClass {
@@ -54,6 +55,38 @@ class MoveHit {
   static const int fail = 3;
 
   const MoveHit(this.id);
+
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        switch (id) {
+          case hit:
+            return '命中';
+          case critical:
+            return '急所に命中';
+          case notHit:
+            return '当たらなかった';
+          case fail:
+            return 'うまく決まらなかった';
+          default:
+            return '';
+        }
+      case Language.english:
+      default:
+        switch (id) {
+          case hit:
+            return 'Hit';
+          case critical:
+            return 'Critical Hit';
+          case notHit:
+            return 'Missed';
+          case fail:
+            return 'Failed';
+          default:
+            return '';
+        }
+    }
+  }
 
   final int id;
 }
@@ -92,27 +125,35 @@ class ActionFailure {
   static const int other = 10;        // その他
   static const int size = 11;
 
-  static const _displayNameMap = {
-    0: '',
-    1: 'わざの反動',
-    2: 'ねむり',
-    3: 'こおり',
-//    4: 'PPが残っていない',
-//    5: 'なまけ',
-//    6: 'きあいパンチ中にダメージを受けた',
-    4: 'ひるみ',
-//    11: 'じごくづき',
-//    12: 'こだわり中以外のわざを使った',
-    5: 'ちょうはつ',
-//    14: 'ふういん',
-    6: 'こんらん',
-    7: 'まひ',
-    8: 'メロメロ',
-    9: '相手にこうげきを防がれた',
-    10: 'その他',
+  static const Map<int, Tuple2<String, String>> _displayNameMap = {
+    0: Tuple2('', ''),
+    1: Tuple2('わざの反動', 'Need recharge of move'),
+    2: Tuple2('ねむり', 'Sleep'),
+    3: Tuple2('こおり', 'Freeze'),
+//    4: Tuple2('PPが残っていない', ''),
+//    5: Tuple2('なまけ', ''),
+//    6: Tuple2('きあいパンチ中にダメージを受けた', ''),
+    4: Tuple2('ひるみ', 'Flinch'),
+//    11: Tuple2('じごくづき', ''),
+//    12: Tuple2('こだわり中以外のわざを使った', ''),
+    5: Tuple2('ちょうはつ', 'Taunt'),
+//    14: Tuple2('ふういん', ''),
+    6: Tuple2('こんらん', 'Confusion'),
+    7: Tuple2('まひ', 'Paralysis'),
+    8: Tuple2('メロメロ', 'Attract'),
+    9: Tuple2('相手にこうげきを防がれた', 'Prevented'),
+    10: Tuple2('その他', 'Others'),
   };
 
-  String get displayName => _displayNameMap[id]!;
+  String get displayName {
+    switch (PokeDB().language) {
+      case Language.japanese:
+        return _displayNameMap[id]!.item1;
+      case Language.english:
+      default:
+        return _displayNameMap[id]!.item2;
+    }
+  }
 
   const ActionFailure(this.id);
 
@@ -128,7 +169,7 @@ class DamageGetter {
       return minDamage.toString();
     }
     else {
-      return '$minDamage～$maxDamage';
+      return '$minDamage ~ $maxDamage';
     }
   }
 }
@@ -197,72 +238,97 @@ class TurnMove {
   }
 
   // 追加効果に対応する文字列
-  static const Map<int, String> moveEffectText = {
-    //2: 'ねむってしまった',
-    3: 'どくにかかった',
-    5: 'やけどをおった',
-    6: 'こおってしまった',
-    7: 'しびれてしまった',
-    32: 'ひるんで技がだせない',
-    //50: 'こんらんした',
-    69: 'こうげきが下がった',
-    70: 'ぼうぎょが下がった',
-    71: 'すばやさが下がった',
-    72: 'とくこうが下がった',
-    73: 'とくぼうが下がった',
-    74: '命中率が下がった',
-    76: 'ひるんで技がだせない',
-    77: 'こんらんした',
-    78: 'どくにかかった',
-    93: 'ひるんで技がだせない',
-    126: 'やけどをおった',
-    139: 'ぼうぎょが上がった',
-    140: 'こうげきが上がった',
-    141: 'こうげき・ぼうぎょ・とくこう・とくぼう・すばやさがあがった',
-    147: 'ひるんで技がだせない',
-    151: 'ひるんで技がだせない',
-    153: 'しびれてしまった',
-    201: 'やけどをおった',
-    203: 'もうどくにかかった',
-    210: 'どくにかかった',
-    254: 'やけどをおった',
-    261: 'こおってしまった',
-    263: 'しびれてしまった',
-    264: 'しびれてしまった',
-    268: 'こんらんした',
-    272: 'とくぼうががくっと下がった',
-    274: 'やけどをおった',
-    275: 'こおってしまった',
-    276: 'しびれてしまった',
-    277: 'とくこうが上がった',
-    330: 'ねむってしまった',
-    332: 'しびれてしまった',
-    333: 'やけどをおった',
-    334: 'こんらんした',
-    359: 'ぼうぎょがぐーんと上がった',
-    372: 'しびれてしまった',
-    380: 'こおってしまった',
-    449: 'どくにかかった',
-    454: 'やけどをおった',
-    460: 'やけどをおった',
-    466: 'どくにかかった',
-    468: 'ぼうぎょが下がった',
-    469: 'やけどをおった',
-    470: 'すばやさが下がった',
-    471: 'しびれてしまった',
-    472: 'やけどをおった',
-    475: 'こんらんした',
-    484: 'どくにかかった',
-    499: 'ねむってしまった',
-    500: 'やけどをおった',
-  };
+  String _getMoveEffectText(int id, String name, AppLocalizations loc) {
+    switch (id) {
+      //case 2:
+      case 330:
+      case 499:
+        return loc.battleFellAsleep(name);
+      case 3:
+      case 78:
+      case 210:
+      case 449:
+      case 466:
+      case 484:
+        return loc.battlePoisoned(name);
+      case 5:
+      case 126:
+      case 201:
+      case 254:
+      case 274:
+      case 333:
+      case 454:
+      case 460:
+      case 469:
+      case 472:
+      case 500:
+        return loc.battleBurned(name);
+      case 6:
+        return loc.battleFrozen(name);
+      case 7:
+      case 153:
+      case 263:
+      case 264:
+      case 276:
+      case 332:
+      case 372:
+      case 471:
+        return loc.battlePararised(name);
+      case 32:
+      case 76:
+      case 93:
+      case 147:
+      case 151:
+        return loc.battleFlinched(name);
+      //case 50:
+      case 77:
+      case 334:
+      case 475:
+        return loc.battleConfused(name);
+      case 69:
+        return loc.battleAttackDown1(name);
+      case 70:
+      case 468:
+        return loc.battleDefenseDown1(name);
+      case 71:
+      case 470:
+        return loc.battleSpeedDown1(name);
+      case 72:
+        return loc.battleSAttackDown1(name);
+      case 73:
+        return loc.battleSDefenseDown1(name);
+      case 74:
+        return loc.battleAccuracyDown1(name);
+      case 139:
+        return loc.battleDefenseUp1(name);
+      case 140:
+        return loc.battleAttackUp1(name);
+      case 141:
+        return loc.battleABCDSUp1(name);
+      case 203:
+        return loc.battleBadPoisoned(name);
+      case 272:
+        return loc.battleSDefenseDown2(name);
+      case 277:
+        return loc.battleSAttackUp1(name);
+      case 359:
+        return loc.battleDefenseUp2(name);
+      default:
+        return '';
+    }
+  }
 
-  static const Map<int, String> moveEffectText2 = {
-    274: 'ひるんで技がだせない',
-    275: 'ひるんで技がだせない',
-    276: 'ひるんで技がだせない',
-    468: 'ひるんで技がだせない',
-  };
+  String _getMoveEffectText2(int id, String name, AppLocalizations loc) {
+    switch (id) {
+      case 274:
+      case 275:
+      case 276:
+      case 468:
+        return loc.battleFlinched(name);
+      default:
+        return '';
+    }
+  }
 
   List<Guide> processMove(
     Party ownParty,
@@ -274,6 +340,7 @@ class TurnMove {
     List<int> invalidGuideIDs,
     {
       DamageGetter? damageGetter,
+      required AppLocalizations loc,
     }
   )
   {
@@ -371,7 +438,7 @@ class TurnMove {
           ret.add(Guide()
             ..guideId = Guide.confZoroark
             ..canDelete = true
-            ..guideStr = 'あいての${myState.pokemon.name}の正体を${pokeData.pokeBase[check]!.name}で確定しました。'
+            ..guideStr = loc.battleGuideConfZoroark(myState.pokemon.name, pokeData.pokeBase[check]!.name)
           );
           state.makePokemonOther(playerType, check);
           myState = state.getPokemonState(playerType, null);
@@ -395,7 +462,7 @@ class TurnMove {
       ret.add(Guide()
         ..guideId = Guide.confMove
         ..canDelete = false
-        ..guideStr = 'あいての${myState.pokemon.name}のわざの1つを${move.displayName}で確定しました。'
+        ..guideStr = loc.battleGuideConfMove(move.displayName, myState.pokemon.omittedName)
       );
       opponentPokemonState.moves.add(move);
     }
@@ -785,16 +852,16 @@ class TurnMove {
               if (targetPlayerTypeID == PlayerType.me) {
                 damage = (targetState.remainHP / 2).floor();
                 if (damage == 0) damage = 1;
-                damageCalc = 'ダメージ計算：$damage(固定ダメージ) = $damage';
+                damageCalc = loc.battleDamageFixed1(damage);
               }
               else {
                 damage = (targetState.remainHPPercent / 2).floor();
-                damageCalc = 'ダメージ計算：$damage%(固定ダメージ) = $damage%';
+                damageCalc = loc.battleDamageFixed2(damage);
               }
             }
             break;
           case 42:    // 40の固定ダメージ
-            damageCalc = 'ダメージ計算：40(固定ダメージ) = 40';
+            damageCalc = loc.battleDamageFixed3;
             break;
           case 43:    // バインド状態にする
             targetState.ailmentsAdd(Ailment(Ailment.partiallyTrapped), state);
@@ -950,7 +1017,7 @@ class TurnMove {
             }
             break;
           case 88:    // 使用者のレベル分の固定ダメージ
-            damageCalc = 'ダメージ計算：${myState.pokemon.level}(わざ使用者レベル) = ${myState.pokemon.level}';
+            damageCalc = loc.battleDamageFixed4(myState.pokemon.level);
             break;
           case 89:    // ランダムに決まった固定ダメージ
           case 90:    // 低優先度。ターンで最後に受けた物理わざによるダメージの2倍を与える
@@ -1173,7 +1240,7 @@ class TurnMove {
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
           case 131:   // 20の固定ダメージ
-            damageCalc = 'ダメージ計算：20(固定ダメージ) = 20';
+            damageCalc = loc.battleDamageFixed5;
             break;
           case 136:   // 個体値によってわざのタイプが変わる
             if (extraArg1[continuousCount] != 0) {
@@ -1405,7 +1472,7 @@ class TurnMove {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
                   ..args = [extraArg1[continuousCount]]
-                  ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の持っていたもちものを${pokeData.items[extraArg1[continuousCount]]!.displayName}で確定しました。'
+                  ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
                 );
                 opponentPokemonState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
@@ -1457,7 +1524,7 @@ class TurnMove {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [extraArg1[continuousCount]]
-                ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の持っていたもちものを${pokeData.items[extraArg1[continuousCount]]!.displayName}で確定しました。'
+                ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
               );
               if (extraArg1[continuousCount] != 0) targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
             }
@@ -1648,8 +1715,9 @@ class TurnMove {
               targetState.holdingItem = null;
               Item.processEffect(
                 usingItem.id, PlayerType(myPlayerTypeID),
-                myState, targetState,
-                state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+                myState, targetState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+              );
               myState.holdingItem = mySavingItem;
             }
             break;
@@ -1681,7 +1749,10 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               var flingItem = pokeData.items[extraArg1[continuousCount]]!;
               movePower = flingItem.flingPower;
-              flingItem.processFlingEffect(playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+              flingItem.processFlingEffect(
+                playerType, myState, yourState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+              );
               myState.holdingItem = null;
             }
             break;
@@ -2222,7 +2293,7 @@ class TurnMove {
             break;
           case 321:   // 使用者の残りHP分の固定ダメージを与える。使用者はひんしになる
             if (myPlayerTypeID == PlayerType.me) {
-              damageCalc = 'ダメージ計算：${myState.remainHP}(固定ダメージ) = ${myState.remainHP}';
+              damageCalc = loc.battleDamageFixed6(myState.remainHP);
             }
             else {
               showDamageCalc = false;
@@ -2492,7 +2563,7 @@ class TurnMove {
                   ret.add(Guide()
                     ..guideId = Guide.sapConfAttack
                     ..args = [attack, attack]
-                    ..guideStr = 'あいての${targetState.pokemon.name}のこうげき実数値を$attackで確定しました。'
+                    ..guideStr = loc.battleGuideSapConfAttack(attack, targetState.pokemon.omittedName)
                   );
                 }
               }
@@ -2625,7 +2696,9 @@ class TurnMove {
           case 424:   // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
             if (extraArg1[continuousCount] != 0) {
               Item.processEffect(
-                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0, getChangePokemonIndex(PlayerType(myPlayerTypeID)));
+                extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0,
+                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc
+              );
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState, moveId: replacedMove.id);
             }
@@ -2845,7 +2918,7 @@ class TurnMove {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
                   ..args = [extraArg1[continuousCount]]
-                  ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のもちものを${pokeData.items[extraArg1[continuousCount]]!.displayName}で確定しました。'
+                  ..guideStr = loc.battleGuideConfItem2(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
                 );
                 targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
@@ -2858,7 +2931,7 @@ class TurnMove {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
                   ..args = [extraArg1[continuousCount]]
-                  ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の持っていたもちものを${pokeData.items[extraArg1[continuousCount]]!.displayName}で確定しました。'
+                  ..guideStr = loc.battleGuideConfItem1(pokeData.items[extraArg1[continuousCount]]!.displayName, opponentPokemonState.pokemon.omittedName)
                 );
                 targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
               }
@@ -3161,7 +3234,7 @@ class TurnMove {
           moveDamageClassID, beforeChangeMyState, isNormalized1_2,
           isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank,
           invDeffense, isSunny1_5, ignoreAbility, mTwice,
-          additionalMoveType, halvedBerry,
+          additionalMoveType, halvedBerry, loc: loc,
         );
         damageCalc ??= damage.item1;
         damageGetter?.maxDamage = damage.item2;
@@ -3223,7 +3296,7 @@ class TurnMove {
                     moveType, movePower, moveDamageClassID, beforeChangeMyState,
                     isNormalized1_2, isCritical, isFoulPlay, defenseAltAttack,
                     ignoreTargetRank, invDeffense, isSunny1_5, ignoreAbility,
-                    mTwice, additionalMoveType, halvedBerry,
+                    mTwice, additionalMoveType, halvedBerry, loc: loc,
                   );
                   if (reals.item1.index > StatIndex.H.index) {
                     // もともとある範囲より狭まるようにのみ上書き
@@ -3241,7 +3314,7 @@ class TurnMove {
                     if (addGuide) {
                       ret.add(Guide()
                         ..guideId = Guide.moveDamagedToStatus
-                        ..guideStr = 'あいての${opponentPokemonState.pokemon.name}の${reals.item1.name}実数値を$minS～$maxSで確定しました。'
+                        ..guideStr = loc.battleGuideMoveDamagedToStatus(maxS, minS, opponentPokemonState.pokemon.omittedName, reals.item1.name)
                         ..args = [reals.item1.index, minS, maxS,]
                         ..canDelete = true
                       );
@@ -3284,7 +3357,7 @@ class TurnMove {
         if (addGuide) {
           ret.add(Guide()
             ..guideId = Guide.moveOrderConfSpeed
-            ..guideStr = 'あいての${opponentPokemonState.pokemon.name}のすばやさ実数値を$minS～$maxSで確定しました。'
+            ..guideStr = loc.battleGuideMoveOrderConfSpeed(maxS, minS, opponentPokemonState.pokemon.omittedName)
             ..args = [minS, maxS,]
             ..canDelete = true
           );
@@ -3320,6 +3393,9 @@ class TurnMove {
     bool mTwice,
     PokeType? additionalMoveType,
     double halvedBerry,
+    {
+      required AppLocalizations loc,
+    }
   ) {
     int movePower = power;
     Move replacedMove = move;
@@ -3454,13 +3530,13 @@ class TurnMove {
       attackStr = attackVmax.toString();
     }
     else {
-      attackStr = '$attackVmin～$attackVmax';
+      attackStr = '$attackVmin ~ $attackVmax';
     }
     if (isFoulPlay) {
-      attackStr += '(対象者のこうげき)';
+      attackStr += loc.battleDamageAttackerAttack;
     }
     else {
-      attackStr += damageClassID == 2 ? '(使用者のこうげき)' : '(使用者のとくこう)';
+      attackStr += damageClassID == 2 ? loc.battleDamageAttackerAttack : loc.battleDamageAttackerSAttack;
     }
     plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
@@ -3489,35 +3565,35 @@ class TurnMove {
       defenseStr = defenseVmax.toString();
     }
     else {
-      defenseStr = '$defenseVmin～$defenseVmax';
+      defenseStr = '$defenseVmin ~ $defenseVmax';
     }
     if (invDeffense) {
-      defenseStr += '(対象者のぼうぎょ)';
+      defenseStr += loc.battleDamageDefenderDefense;
     }
     else {
-      defenseStr += damageClassID == 2 ? '(対象者のぼうぎょ)' : '(対象者のとくぼう)';
+      defenseStr += damageClassID == 2 ? loc.battleDamageDefenderDefense : loc.battleDamageDefenderSDefense;
     }
     int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmax / defenseVmin)).floor() / 50 + 2).floor();
     int damageVmin = ((((myState.pokemon.level * 2 / 5 + 2).floor() * movePower * (attackVmin / defenseVmax)).floor() / 50 + 2).floor() * 0.85).floor();
-    ret = 'ダメージ計算：${myState.pokemon.level}(わざ使用者レベル)×2÷5+2 ×$movePower(威力)×$attackStr÷$defenseStr ÷50+2 ×0.85～1.00(乱数) ';
+    ret = loc.battleDamageCalcBase(myState.pokemon.level, movePower, attackStr, defenseStr);
     // 天気補正(五捨五超入)
     if (yourState.holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
       if (state.weather.id == Weather.sunny) {
         if (replacedMoveType.id == 10) {   // はれ下ほのおわざ
           damageVmax = roundOff5(damageVmax * 1.5);
           damageVmin = roundOff5(damageVmin * 1.5);
-          ret += '×1.5(天気) ';
+          ret += loc.battleDamageWeather1_5;
         }
         else if (replacedMoveType.id == 11) {   // はれ下みずわざ
           if (isSunny1_5) {
             damageVmax = roundOff5(damageVmax * 1.5);
             damageVmin = roundOff5(damageVmin * 1.5);
-            ret += '×1.5(天気) ';
+            ret += loc.battleDamageWeather1_5;
           }
           else {
             damageVmax = roundOff5(damageVmax * 0.5);
             damageVmin = roundOff5(damageVmin * 0.5);
-            ret += '×0.5(天気) ';
+            ret += loc.battleDamageWeather0_5;
           }
         }
       }
@@ -3525,12 +3601,12 @@ class TurnMove {
         if (replacedMoveType.id == 11) {   // 雨下みずわざ
           damageVmax = roundOff5(damageVmax * 1.5);
           damageVmin = roundOff5(damageVmin * 1.5);
-          ret += '×1.5(天気) ';
+          ret += loc.battleDamageWeather1_5;
         }
         else if (replacedMoveType.id == 10) {   // 雨下ほのおわざ
           damageVmax = roundOff5(damageVmax * 0.5);
           damageVmin = roundOff5(damageVmin * 0.5);
-          ret += '×0.5(天気) ';
+          ret += loc.battleDamageWeather0_5;
         }
       }
     }
@@ -3538,18 +3614,18 @@ class TurnMove {
     if (moveHits[continuousCount].id == MoveHit.critical) {
       damageVmax = roundOff5(damageVmax * 1.5);
       damageVmin = roundOff5(damageVmin * 1.5);
-      ret += '×1.5(急所) ';
+      ret += loc.battleDamageCritical1_5;
     }
     // 乱数補正(切り捨て)
     damageVmax = (damageVmax * 100 / 100).floor();
     damageVmin = (damageVmin * 85 / 100).floor();
-    ret += '×85～100÷100(乱数) ';
+    ret += loc.battleDamageRandom85_100;
     // タイプ一致補正(五捨五超入)
     var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
     if (rate > 1.0) {
       damageVmax = roundOff5(damageVmax * rate);
       damageVmin = roundOff5(damageVmin * rate);
-      ret += '×$rate(タイプ一致) ';
+      ret += loc.battleDamageTypeBonus(rate);
     }
     // 相性補正(切り捨て)
     rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
@@ -3560,13 +3636,13 @@ class TurnMove {
     }
     damageVmax = (damageVmax * rate).floor();
     damageVmin = (damageVmin * rate).floor();
-    ret += '×$rate(相性) ';
+    ret += loc.battleDamageTypeEffectiveness(rate);
     // やけど補正(五捨五超入)
     if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && damageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
       if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
         damageVmax = roundOff5(damageVmax * 0.5);
         damageVmin = roundOff5(damageVmin * 0.5);
-        ret += '×0.5(やけど) ';
+        ret += loc.battleDamageBurned;
       }
     }
     // タイプ相性を計算
@@ -3584,7 +3660,7 @@ class TurnMove {
       ) {
         tmpMax *= 0.5;
         tmpMin *= 0.5;
-        ret += '×0.5(壁) ';
+        ret += loc.battleDamageWall;
       }
       // ブレインフォース補正
       if (typeRate >= 2.0 &&
@@ -3592,7 +3668,7 @@ class TurnMove {
       ) {
         tmpMax *= 1.25;
         tmpMin *= 1.25;
-        ret += '×1.25(ブレインフォース) ';
+        ret += loc.battleDamageBrainForce;
       }
       // スナイパー補正
       if (moveHits[continuousCount].id == MoveHit.critical &&
@@ -3600,7 +3676,7 @@ class TurnMove {
       ) {
         tmpMax *= 1.5;
         tmpMin *= 1.5;
-        ret += '×1.5(スナイパー) ';
+        ret += loc.battleDamageSniper;
       }
       // いろめがね補正
       if (typeRate > 0.0 && typeRate < 1.0 &&
@@ -3608,7 +3684,7 @@ class TurnMove {
       ) {
         tmpMax *= 2;
         tmpMin *= 2;
-        ret += '×2(いろめがね) ';
+        ret += loc.battleDamageTintedLens;
       }
       // もふもふほのお補正
       if (!ignoreAbility && (damageClassID == 2 || damageClassID == 3) &&
@@ -3617,7 +3693,7 @@ class TurnMove {
       ) {
         tmpMax *= 2;
         tmpMin *= 2;
-        ret += '×2(もふもふ) ';
+        ret += loc.battleDamageFluffy;
       }
       // Mhalf
       if (!ignoreAbility &&
@@ -3638,7 +3714,7 @@ class TurnMove {
       ) {
         tmpMax *= 0.5;
         tmpMin *= 0.5;
-        ret += '×0.5(とくせい) ';
+        ret += loc.battleDamageAbility0_5;
       }
       // Mfilter
       if (!ignoreAbility &&
@@ -3649,14 +3725,14 @@ class TurnMove {
       ) {
         tmpMax *= 0.75;
         tmpMin *= 0.75;
-        ret += '×0.75(とくせい) ';
+        ret += loc.battleDamageAbility0_75;
       }
       // たつじんのおび補正
       if (typeRate >= 2.0 && myState.buffDebuffs.where((e) => e.id == BuffDebuff.greatDamage1_2).isNotEmpty
       ) {
         tmpMax *= 1.2;
         tmpMin *= 1.2;
-        ret += '×1.2(たつじんのおび) ';
+        ret += loc.battleDamageExpertBelt;
       }
       // メトロノーム補正
       if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2).isNotEmpty) {
@@ -3666,7 +3742,7 @@ class TurnMove {
           if (count > 0) {
             tmpMax *= (1.0 + 0.2 * count);
             tmpMin *= (1.0 + 0.2 * count);
-            ret += '×${(1.0 + 0.2 * count)}(メトロノーム) ';
+            ret += loc.battleDamageMetronome(1.0 + 0.2 * count);
           }
         }
       }
@@ -3675,21 +3751,21 @@ class TurnMove {
       {
         tmpMax *= 1.3;
         tmpMin *= 1.3;
-        ret += '×1.3(いのちのたま) ';
+        ret += loc.battleDamageLifeOrb;
       }
       // 半減きのみ補正
       if (halvedBerry > 0) {
         //double mult = yourState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
         tmpMax *= halvedBerry;
         tmpMin *= halvedBerry;
-        ret += '×$halvedBerry(半減きのみ) ';
+        ret += loc.battleDamageBerry(halvedBerry);
         yourState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.halvedBerry);
       }
       // Mtwice
       if (mTwice || yourState.buffDebuffs.where((e) => e.id == BuffDebuff.certainlyHittedDamage2).isNotEmpty) {
         tmpMax *= 2;
         tmpMin *= 2;
-        ret += '×2(その他補正) ';
+        ret += loc.battleDamageOthers;
       }
       
       damageVmax = roundOff5(tmpMax);
@@ -3698,7 +3774,7 @@ class TurnMove {
     // Mprotect(五捨五超入)
     // ダイマックスわざに関する計算のため、SVでは不要
     { }
-    ret += '= $damageVmin～$damageVmax';
+    ret += '= $damageVmin ~ $damageVmax';
     return Tuple3(ret, damageVmax, damageVmin);
   }
 
@@ -3725,6 +3801,9 @@ class TurnMove {
     bool mTwice,
     PokeType? additionalMoveType,
     double halvedBerry,
+    {
+      required AppLocalizations loc,
+    }
   ) {
     // ダメージから逆算
     if (isFoulPlay) return Tuple3(StatIndex.H, 0, 0);
@@ -4066,7 +4145,7 @@ class TurnMove {
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
         isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
-        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
       );
       if (ret.item2 < realDamage) {
         ret3++;
@@ -4078,7 +4157,7 @@ class TurnMove {
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
         isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
-        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
       );
       if (ret.item3 > realDamage) {
         ret2--;
@@ -4096,7 +4175,7 @@ class TurnMove {
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
         isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
-        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
       );
       if (ret.item2 > realDamage) {
         ret3--;
@@ -4108,7 +4187,7 @@ class TurnMove {
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
         isCritical, isFoulPlay, defenseAltAttack, ignoreTargetRank, invDeffense,
-        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry,
+        isSunny1_5, ignoreAbility, mTwice, additionalMoveType, halvedBerry, loc: loc,
       );
       if (ret.item3 < realDamage) {
         ret2++;
@@ -4138,7 +4217,10 @@ class TurnMove {
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     ThemeData theme,
     List<int> invalidGuideIDs,
-    {required bool isInput,}
+    {
+      required AppLocalizations loc,
+      required bool isInput,
+    }
   )
   {
     final pokeData = PokeDB();
@@ -4157,9 +4239,9 @@ class TurnMove {
             flex: 5,
             child: _myDropdownButtonFormField(
               isExpanded: true,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 border: UnderlineInputBorder(),
-                labelText: '失敗の原因',
+                labelText: loc.battleFailureCause,
               ),
               items: <DropdownMenuItem>[
                 for (int i = 1; i < ActionFailure.size; i++)
@@ -4186,9 +4268,9 @@ class TurnMove {
             child: _myTypeAheadField(
               textFieldConfiguration: TextFieldConfiguration(
                 controller: moveController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   border: UnderlineInputBorder(),
-                  labelText: '使用しようとしたわざ',
+                  labelText: loc.battleMoveTryToUse,
                 ),
               ),
               autoFlipDirection: true,
@@ -4243,7 +4325,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.move ? pressedStyle : null,
-                child: Text('わざ'),
+                child: Text(loc.commonMove),
               ),
               SizedBox(width: 10),
               TextButton(
@@ -4256,7 +4338,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.change ? pressedStyle : null,
-                child: Text('ポケモン交代'),
+                child: Text(loc.battlePokemonChange),
               ),
               SizedBox(width: 10,),
               TextButton(
@@ -4269,7 +4351,7 @@ class TurnMove {
                   } : null :
                   () {},
                 style: type.id == TurnMoveType.surrender ? pressedStyle : null,
-                child: Text('こうさん'),
+                child: Text(loc.battleSurrender),
               ),
             ],
           ),
@@ -4281,9 +4363,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: moveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                     enabled: playerType.id != PlayerType.none,
                   ),
@@ -4325,7 +4407,7 @@ class TurnMove {
                     tmp.processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
                       opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs,
-                      damageGetter: getter);
+                      damageGetter: getter, loc: loc,);
                     return ListTile(
                       leading: getReplacedMoveType(suggestion, continuousCount, myState, state).displayIcon,
                       title: Text(getReplacedMoveName(suggestion, continuousCount, myState)),
@@ -4343,7 +4425,7 @@ class TurnMove {
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     setAutoArgs(state, continuousCount);
                     appState.editingPhase[phaseIdx] = true;
                     onFocusTextUpdate();
@@ -4360,9 +4442,9 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -4433,7 +4515,10 @@ class TurnMove {
     int continuousCount,
     TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
     List<int> invalidGuideIDs,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   )
   {
     if (!isSuccess && actionFailure.id != ActionFailure.confusion) return Container();
@@ -4455,7 +4540,7 @@ class TurnMove {
           onFocus();
         },
         playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-        isInput,
+        isInput, loc: loc,
       );
     }
 
@@ -4478,9 +4563,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4503,7 +4588,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4523,9 +4608,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: preMoveController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4561,7 +4646,7 @@ class TurnMove {
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
                       ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs);
+                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -4618,18 +4703,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4641,7 +4726,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4685,7 +4770,7 @@ class TurnMove {
               onFocus();
             },
             playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         case 83:    // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
@@ -4696,9 +4781,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'わざ',
+                      labelText: loc.commonMove,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -4759,18 +4844,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('自身は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, myState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4782,7 +4867,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '自身は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, myState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4795,18 +4880,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('疲れ果ててこんらんした'),
+                      child: Text(loc.battleExhaustedConfused(myState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -4818,7 +4903,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == replacedMove.effect.id ?
-                    '疲れ果ててこんらんした' : 'なし',
+                    loc.battleExhaustedConfused(myState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4833,9 +4918,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.opponent ?
                     <DropdownMenuItem>[
@@ -4885,7 +4970,7 @@ class TurnMove {
             children: [
               Expanded(
                 child: _myTypeDropdownButton(
-                    '変更先タイプ',
+                    loc.battleTypeToChange,
                     (val) {extraArg1[continuousCount] = val;},
                     onFocus,
                     extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
@@ -4901,26 +4986,26 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: Ailment.burn,
-                      child: Text('相手はやけどをおった'),
+                      child: Text(loc.battleBurned(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.freeze,
-                      child: Text('相手はこおってしまった'),
+                      child: Text(loc.battleFrozen(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.paralysis,
-                      child: Text('相手はしびれてしまった'),
+                      child: Text(loc.battlePararised(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -4931,9 +5016,9 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.burn ? '相手はやけどをおった' :
-                    extraArg1[continuousCount] == Ailment.freeze ? '相手はこおってしまった' :
-                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' : 'なし',
+                  textValue: extraArg1[continuousCount] == Ailment.burn ? loc.battleBurned(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.freeze ? loc.battleFrozen(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.paralysis ? loc.battlePararised(yourState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -4958,7 +5043,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-              isInput,
+              isInput, loc: loc,
             );
           }
           break;
@@ -4968,18 +5053,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをぬすんだ'),
+                      child: Text(loc.battleStealItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -4991,7 +5076,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをぬすんだ' : 'なし',
+                    loc.battleStealItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5000,9 +5085,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5067,7 +5152,7 @@ class TurnMove {
                 onFocus();
               },
               playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-              isInput,
+              isInput, loc: loc,
             );
           }
           break;
@@ -5089,18 +5174,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5112,7 +5197,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5130,9 +5215,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battlePokemonToChange,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -5181,7 +5266,7 @@ class TurnMove {
             children: [
               Expanded(
                 child: _myTypeDropdownButton(
-                  'わざのタイプ',
+                  loc.battleMoveType,
                   (val) {extraArg1[continuousCount] = val;},
                   onFocus,
                   extraArg1[continuousCount] == 0 ? null : extraArg1[continuousCount],
@@ -5198,9 +5283,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'あなたが手に入れたもちもの',
+                      labelText: loc.battleItemYouGet,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5216,7 +5301,7 @@ class TurnMove {
                         matches.removeWhere((element) => element.id == item.id);
                       }
                       matches.add(Item(
-                        id: 0, displayName: 'なし', displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
+                        id: 0, displayName: loc.commonNone, displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
                         timing: AbilityTiming(0), isBerry: false, imageUrl: '',
                       ));
                     }
@@ -5250,9 +5335,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'とくせい',
+                      labelText: loc.commonAbility,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5303,9 +5388,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5338,18 +5423,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをはたきおとした'),
+                      child: Text(loc.battleKnockOffItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5361,7 +5446,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをはたきおとした' : 'なし',
+                    loc.battleKnockOffItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5370,9 +5455,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5424,9 +5509,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'あなたが得たとくせい',
+                      labelText: loc.battleAbilityYouGet,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5471,18 +5556,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('相手のきのみを消費した'),
+                      child: Text(loc.battleConsumeOpponentBerry(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5494,7 +5579,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    '相手のきのみを消費した' : 'なし',
+                    loc.battleConsumeOpponentBerry(yourState.pokemon.omittedName) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5503,9 +5588,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5566,6 +5651,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 227:     // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
@@ -5574,34 +5660,34 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('自身はこうげきがぐーんと上がった'),
+                      child: Text(loc.battleAttackUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('自身はぼうぎょがぐーんと上がった'),
+                      child: Text(loc.battleDefenseUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 2,
-                      child: Text('自身はとくこうがぐーんと上がった'),
+                      child: Text(loc.battleSAttackUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 3,
-                      child: Text('自身はとくぼうがぐーんと上がった'),
+                      child: Text(loc.battleSDefenseUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 5,
-                      child: Text('自身はめいちゅうがぐーんと上がった'),
+                      child: Text(loc.battleAccuracyUp2(myState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: 6,
-                      child: Text('自身はかいひがぐーんと上がった'),
+                      child: Text(loc.battleEvasivenessUp2(myState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5612,12 +5698,12 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 0 ? '自身はこうげきがぐーんと上がった' :
-                    extraArg1[continuousCount] == 1 ? '自身はぼうぎょがぐーんと上がった' :
-                    extraArg1[continuousCount] == 2 ? '自身はとくこうがぐーんと上がった' :
-                    extraArg1[continuousCount] == 3 ? '自身はとくぼうがぐーんと上がった' :
-                    extraArg1[continuousCount] == 5 ? '自身はめいちゅうがぐーんと上がった' :
-                    '自身はかいひがぐーんと上がった',
+                  textValue: extraArg1[continuousCount] == 0 ? loc.battleAttackUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 1 ? loc.battleDefenseUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 2 ? loc.battleSAttackUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 3 ? loc.battleSDefenseUp2(myState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == 5 ? loc.battleAccuracyUp2(myState.pokemon.omittedName) :
+                    loc.battleEvasivenessUp2(myState.pokemon.omittedName),
                   theme: theme,
                 ),
               ),
@@ -5630,18 +5716,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものを投げつけた'),
+                      child: Text(loc.battleFlingItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5653,7 +5739,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものを投げつけた' : 'なし',
+                    loc.battleFlingItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5662,9 +5748,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5725,6 +5811,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 254:   // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
@@ -5736,18 +5823,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5759,7 +5846,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5781,7 +5868,7 @@ class TurnMove {
               onFocus();
             },
             extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         case 274:   // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
@@ -5793,18 +5880,18 @@ class TurnMove {
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果1',
+                    labelText: '${loc.battleAdditionalEffect}1',
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -5816,7 +5903,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg1[continuousCount] == 1 ?
-                    '相手は${moveEffectText[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5824,18 +5911,18 @@ class TurnMove {
               Flexible(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果2',
+                    labelText: '${loc.battleAdditionalEffect}2',
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: 0,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: 1,
-                      child: Text('相手は${moveEffectText2[replacedMove.effect.id]!}'),
+                      child: Text(_getMoveEffectText2(replacedMove.effect.id, yourState.pokemon.omittedName, loc)),
                     ),
                   ],
                   value: extraArg2[continuousCount],
@@ -5847,7 +5934,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: extraArg2[continuousCount] == 1 ?
-                    '相手は${moveEffectText2[replacedMove.effect.id]!}' : 'なし',
+                    _getMoveEffectText2(replacedMove.effect.id, yourState.pokemon.omittedName, loc) : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5861,9 +5948,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'とくせい',
+                      labelText: loc.commonAbility,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -5910,18 +5997,18 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: replacedMove.effect.id,
-                      child: Text('もちものをやきつくした'),
+                      child: Text(loc.battleBurnDownItem),
                     ),
                   ],
                   value: moveAdditionalEffects[continuousCount].id,
@@ -5933,7 +6020,7 @@ class TurnMove {
                   onFocus: onFocus,
                   isInput: isInput,
                   textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
-                    'もちものをやきつくした' : 'なし',
+                    loc.battleBurnDownItem : loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -5942,9 +6029,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: 'もちもの',
+                      labelText: loc.commonItem,
                     ),
                     enabled: moveAdditionalEffects[continuousCount].id != MoveEffect.none,
                   ),
@@ -5999,9 +6086,9 @@ class TurnMove {
                 child: _myTypeAheadField(
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: hpController2,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: UnderlineInputBorder(),
-                      labelText: '消費したもちもの',
+                      labelText: loc.battleConsumedItem,
                     ),
                   ),
                   autoFlipDirection: true,
@@ -6064,6 +6151,7 @@ class TurnMove {
             },
             isInput,
             showNetworkImage: PokeDB().getPokeAPI,
+            loc: loc,
           );
           break;
         case 464:     // どく・まひ・ねむりのいずれかにする(確率)
@@ -6072,26 +6160,26 @@ class TurnMove {
               Expanded(
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '追加効果',
+                    labelText: loc.battleAdditionalEffect,
                   ),
                   items: <DropdownMenuItem>[
                     DropdownMenuItem(
                       value: MoveEffect.none,
-                      child: Text('なし'),
+                      child: Text(loc.commonNone),
                     ),
                     DropdownMenuItem(
                       value: Ailment.poison,
-                      child: Text('相手はどくにかかった'),
+                      child: Text(loc.battlePoisoned(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.paralysis,
-                      child: Text('相手はしびれてしまった'),
+                      child: Text(loc.battlePararised(yourState.pokemon.omittedName)),
                     ),
                     DropdownMenuItem(
                       value: Ailment.sleep,
-                      child: Text('相手はねむってしまった'),
+                      child: Text(loc.battleFellAsleep(yourState.pokemon.omittedName)),
                     ),
                   ],
                   value: extraArg1[continuousCount],
@@ -6102,10 +6190,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.poison ? '相手はどくにかかった' :
-                    extraArg1[continuousCount] == Ailment.paralysis ? '相手はしびれてしまった' :
-                    extraArg1[continuousCount] == Ailment.sleep ? '相手はねむってしまった' :
-                    'なし',
+                  textValue: extraArg1[continuousCount] == Ailment.poison ? loc.battlePoisoned(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.paralysis ? loc.battlePararised(yourState.pokemon.omittedName) :
+                    extraArg1[continuousCount] == Ailment.sleep ? loc.battleFellAsleep(yourState.pokemon.omittedName) :
+                    loc.commonNone,
                   theme: theme,
                 ),
               ),
@@ -6119,9 +6207,9 @@ class TurnMove {
                 flex: 5,
                 child: _myDropdownButtonFormField(
                   isExpanded: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     border: UnderlineInputBorder(),
-                    labelText: '交代先ポケモン',
+                    labelText: loc.battleRevivePokemon,
                   ),
                   items: playerType.id == PlayerType.me ?
                     <DropdownMenuItem>[
@@ -6180,7 +6268,7 @@ class TurnMove {
               onFocus();
             },
             playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-            isInput,
+            isInput, loc: loc,
           );
           break;
         default:
@@ -6196,9 +6284,9 @@ class TurnMove {
                   Expanded(
                     child: _myDropdownButtonFormField(
                       isExpanded: true,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         border: UnderlineInputBorder(),
-                        labelText: '復活させるポケモン',
+                        labelText: loc.battleRevivePokemon,
                       ),
                       items: playerType.id == PlayerType.me ?
                         <DropdownMenuItem>[
@@ -6245,22 +6333,22 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '命中',
+                            labelText: loc.battleSuccessFailure,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: MoveHit.hit,
-                              child: Text('成功'),
+                              child: Text(loc.battleSucceeded),
                             ),
                             DropdownMenuItem(
                               value: MoveHit.notHit,
-                              child: Text('当たらなかった'),
+                              child: Text(MoveHit(MoveHit.notHit).displayName),
                             ),
                             DropdownMenuItem(
                               value: MoveHit.fail,
-                              child: Text('うまく決まらなかった'),
+                              child: Text(MoveHit(MoveHit.fail).displayName),
                             ),
                           ],
                           value: moveHits[continuousCount].id,
@@ -6271,9 +6359,8 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '成功' :
-                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
-                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          textValue: moveHits[continuousCount].id == MoveHit.hit ? loc.battleSucceeded :
+                            moveHits[continuousCount].displayName,
                           theme: theme,
                         ),
                       ),
@@ -6299,21 +6386,21 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '成否',
+                            labelText: loc.battleHitFail,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: false,
-                              child: Text('うまく決まらなかった！'),
+                              child: Text(loc.battleFailed),
                             ),
                           ],
                           value: false,
                           onChanged: null,
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: 'うまく決まらなかった！',
+                          textValue: loc.battleFailed,
                           theme: theme,
                         ),
                       ),
@@ -6333,26 +6420,15 @@ class TurnMove {
                         flex: 5,
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '命中/失敗',
+                            labelText: loc.battleHitFail,
                           ),
                           items: <DropdownMenuItem>[
+                            for (int index = MoveHit.hit; index <= MoveHit.fail; index++)
                             DropdownMenuItem(
-                              value: MoveHit.hit,
-                              child: Text('命中'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.critical,
-                              child: Text('急所に命中'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.notHit,
-                              child: Text('当たらなかった'),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.fail,
-                              child: Text('うまく決まらなかった'),
+                              value: index,
+                              child: Text(MoveHit(index).displayName),
                             ),
                           ],
                           value: moveHits[continuousCount].id,
@@ -6363,10 +6439,7 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveHits[continuousCount].id == MoveHit.hit ? '命中' :
-                            moveHits[continuousCount].id == MoveHit.critical ? '急所に命中' :
-                            moveHits[continuousCount].id == MoveHit.notHit ? '当たらなかった' :
-                            moveHits[continuousCount].id == MoveHit.fail ? 'うまく決まらなかった' : '',
+                          textValue: moveHits[continuousCount].displayName,
                           theme: theme,
                         ),
                       ),
@@ -6375,26 +6448,26 @@ class TurnMove {
                         flex: 5,
                         child: _myDropdownButtonFormField<int>(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: '効果',
+                            labelText: loc.battleEffectiveness,
                           ),
                           items: <DropdownMenuItem<int>>[
                             DropdownMenuItem(
                               value: MoveEffectiveness.normal,
-                              child: Text('（テキストなし）', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNormal, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.great,
-                              child: Text('ばつぐんだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessGreat, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.notGood,
-                              child: Text('いまひとつのようだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNotGood, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: MoveEffectiveness.noEffect,
-                              child: Text('ないようだ', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleEffectivenessNoEffect, overflow: TextOverflow.ellipsis,),
                             ),
                           ],
                           value: moveEffectivenesses[continuousCount].id,
@@ -6405,10 +6478,10 @@ class TurnMove {
                           } : null,
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? '（テキストなし）' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? 'ばつぐんだ' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? 'いまひとつのようだ' :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? 'ないようだ' : '',
+                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
+                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
                           theme: theme,
                         ),
                       ),
@@ -6435,7 +6508,7 @@ class TurnMove {
                       onFocus();
                     },
                     playerType.id == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
-                    isInput,
+                    isInput, loc: loc,
                   ) :
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -6443,18 +6516,18 @@ class TurnMove {
                       Expanded(
                         child: _myDropdownButtonFormField(
                           isExpanded: true,
-                          decoration: const InputDecoration(
+                          decoration: InputDecoration(
                             border: UnderlineInputBorder(),
-                            labelText: 'みがわり',
+                            labelText: loc.battleSubstitute,
                           ),
                           items: <DropdownMenuItem>[
                             DropdownMenuItem(
                               value: 0,
-                              child: Text('みがわりはのこった', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleSubstituteRemain, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
                               value: 1,
-                              child: Text('みがわりは消えてしまった', overflow: TextOverflow.ellipsis,),
+                              child: Text(loc.battleSubstituteBroke, overflow: TextOverflow.ellipsis,),
                             ),
                           ],
                           value: realDamage[continuousCount],
@@ -6465,7 +6538,7 @@ class TurnMove {
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: realDamage[continuousCount] == 0 ? 'みがわりはのこった' : 'みがわりは消えてしまった',
+                          textValue: realDamage[continuousCount] == 0 ? loc.battleSubstituteRemain : loc.battleSubstituteBroke,
                           theme: theme,
                         ),
                       ),

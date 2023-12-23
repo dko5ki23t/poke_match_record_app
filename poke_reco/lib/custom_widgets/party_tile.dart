@@ -3,6 +3,7 @@ import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class PartyTile extends ListTile {
   PartyTile(
@@ -14,6 +15,7 @@ class PartyTile extends ListTile {
       onTap,
       onLongPress,
       bool showNetworkImage = false,
+      required AppLocalizations loc,
     }
   ) : 
   super(
@@ -79,7 +81,7 @@ class PartyTile extends ListTile {
         ),
         Row(
           children: [
-            Text('勝率：${party.winRate}% ${party.winCount}/${party.usedCount}')
+            Text('${loc.partiesTabWinningRate} : ${party.winRate}% ${party.winCount}/${party.usedCount}')
           ],
         ),
       ],

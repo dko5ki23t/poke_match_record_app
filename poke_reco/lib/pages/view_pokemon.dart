@@ -8,6 +8,7 @@ import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ViewPokemonPage extends StatefulWidget {
   ViewPokemonPage({
@@ -42,7 +43,6 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   final pokeStatIndiController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatEffortController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatRealController = List.generate(StatIndex.size.index, (i) => TextEditingController());
-  final statsLabelTexts = ['HP', 'こうげき', 'ぼうぎょ', 'とくこう', 'とくぼう', 'すばやさ'];
   bool isFirstBuild = true;
   int listIndex = 0;
 
@@ -52,6 +52,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
     var pokeData = appState.pokeData;
     var myPokemon = widget.pokemonList[widget.listIndex];
     var theme = Theme.of(context);
+    var loc = AppLocalizations.of(context)!;
 
     if (isFirstBuild) {
       listIndex = widget.listIndex;
@@ -95,7 +96,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
             }) : null,
             theme: theme,
             icon: Icon(Icons.arrow_upward),
-            tooltip: '前へ',
+            tooltip: loc.viewToolTipPrev,
           ),
           MyIconButton(
             onPressed: listIndex + 1 < widget.pokemonList.length ? () => setState(() {
@@ -103,13 +104,13 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
             }) : null,
             theme: theme,
             icon: Icon(Icons.arrow_downward),
-            tooltip: '次へ',
+            tooltip: loc.viewToolTipNext,
           ),
           MyIconButton(
             onPressed: () => widget.onEdit(myPokemon),
             theme: theme,
             icon: Icon(Icons.edit),
-            tooltip: '編集',
+            tooltip: loc.viewToolTipEdit,
           ),
         ]
       ),
@@ -127,9 +128,9 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       flex: 7,
                       child: TextField(
                         controller: pokeNameController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ポケモン名'
+                          labelText: loc.pokemonsTabPokemonName,
                         ),
                         readOnly: true,
                       ),
@@ -153,9 +154,9 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                   children: [
                     Flexible(
                       child: TextField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'ニックネーム(任意)'
+                          labelText: loc.pokemonsTabNickName,
                         ),
                         readOnly: true,
                         maxLength: 20,
@@ -172,7 +173,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       child: TextField(
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'タイプ1',
+                          labelText: loc.commonType1,
                           prefixIcon: myPokemon.type1.displayIcon,
                         ),
                         readOnly: true,
@@ -184,7 +185,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       child: TextField(
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'タイプ2',
+                          labelText: loc.commonType2,
                           prefixIcon: myPokemon.type2?.displayIcon,
                         ),
                         readOnly: true,
@@ -196,7 +197,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       child: TextField(
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'テラスタイプ',
+                          labelText: loc.commonTeraType,
                           prefixIcon: myPokemon.teraType.displayIcon,
                         ),
                         readOnly: true,
@@ -212,9 +213,9 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                     Flexible(
                       child: TextField(
                         controller: pokeLevelController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'レベル'
+                          labelText: loc.commonLevel,
                         ),
                         readOnly: true,
                       ),
@@ -222,9 +223,9 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                     SizedBox(width: 10),
                     Flexible(
                       child: DropdownButtonFormField(
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'せいべつ'
+                          labelText: loc.commonGender,
                         ),
                         items: <DropdownMenuItem<Sex>>[
                           for (var type in pokeData.pokeBase[myPokemon.no]!.sex)
@@ -246,9 +247,9 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                     Flexible(
                       child: TextField(
                         controller: pokeTemperController,
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'せいかく',
+                          labelText: loc.commonNature,
                         ),
                         readOnly: true,
                       ),
@@ -258,7 +259,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       child: TextField(
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
-                          labelText: 'とくせい',
+                          labelText: loc.commonAbility,
                           suffix: AbilityTooltip(
                             ability: myPokemon.ability,
                             triggerMode: TooltipTriggerMode.tap,
@@ -277,7 +278,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                   Column(
                     children: [
                       StatViewRow(
-                        statsLabelTexts[i],
+                        getStatIndexFromIndex(i).name,
                         myPokemon,
                         pokeStatRaceController[i],
                         pokeStatIndiController[i],
@@ -285,13 +286,14 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                         pokeStatRealController[i],
                         effectTemper: i != 0,
                         statIndex: getStatIndexFromIndex(i),
+                        loc: loc,
                       ),
                     ]
                   ),
                 // ステータスの合計値
-                StatTotalRow(myPokemon.totalRace(), myPokemon.totalEffort()),
+                StatTotalRow(myPokemon.totalRace(), myPokemon.totalEffort(), loc: loc,),
                 SizedBox(height: 10,),
-                Text('覚えているわざ'),
+                Text(loc.pokemonsTabRememberingMoves,),
                 SizedBox(height: 5,),
                 // わざ1, PP1, わざ2, PP2, わざ3, PP3, わざ4, PP4
                 for (int i = 0; i < myPokemon.moveNum; i++)
@@ -300,6 +302,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       theme,
                       myPokemon.moves[i]!,
                       myPokemon.pps[i]!,
+                      loc: loc,
                     ),
                   ],),
 

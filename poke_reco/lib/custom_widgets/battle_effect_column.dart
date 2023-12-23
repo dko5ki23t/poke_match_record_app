@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleEffectColumn extends Column {
   BattleEffectColumn(
@@ -28,7 +29,10 @@ class BattleEffectColumn extends Column {
     List<TextEditingController> textEditControllerList4,
     PlayerType attacker,
     TurnMove turnMove,
-    {required bool isInput,}
+    {
+      required bool isInput,
+      required AppLocalizations loc,
+    }
   ) :
   super(
     mainAxisSize: MainAxisSize.min,
@@ -50,7 +54,7 @@ class BattleEffectColumn extends Column {
                     isInput ?
                       Stack(
                         children: [
-                        Center(child: Text('処理${i+1}')),
+                        Center(child: Text('${loc.battleProcess}${i+1}')),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children:[
@@ -117,7 +121,7 @@ class BattleEffectColumn extends Column {
                           ],
                         ),
                       ],) :
-                      Center(child: Text('処理${i+1}')),
+                      Center(child: Text('${loc.battleProcess}${i+1}')),
                     SizedBox(height: 10,),
                     Row(
                       children: [
@@ -126,9 +130,9 @@ class BattleEffectColumn extends Column {
                           child: isInput ?
                             DropdownButtonFormField(
                               isExpanded: true,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '発動主',
+                                labelText: loc.battleEffectPlayer,
                               ),
                               items: <DropdownMenuItem>[
                                 _myDropDown(
@@ -137,7 +141,7 @@ class BattleEffectColumn extends Column {
                                   '${sameTimingList[i].phaseState.getPokemonState(
                                     PlayerType(PlayerType.me),
                                     sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
-                                  ).pokemon.name}/あなた',
+                                  ).pokemon.name}/${loc.battleYou}',
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) => e.playerType.id == PlayerType.opponent).isNotEmpty,
@@ -150,7 +154,7 @@ class BattleEffectColumn extends Column {
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) => e.playerType.id == PlayerType.entireField).isNotEmpty,
                                   PlayerType.entireField,
-                                  '天気・フィールド',
+                                  loc.battleWeatherField,
                                 ),
                               ],
                               value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
@@ -184,22 +188,22 @@ class BattleEffectColumn extends Column {
                               },
                             ) :
                             TextField(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '発動主',
+                                labelText: loc.battleEffectPlayer,
                               ),
                               controller: TextEditingController(
                                 text: turn.phases[firstIdx+i].playerType.id == PlayerType.me ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
                                         PlayerType(PlayerType.me),
                                         sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
-                                      ).pokemon.name}/あなた' :
+                                      ).pokemon.name}/${loc.battleYou}' :
                                       turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
                                         PlayerType(PlayerType.opponent),
                                         sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                       ).pokemon.name}/${battle.opponentName}' :
-                                      '天気・フィールド',
+                                      loc.battleWeatherField,
                               ),
                               readOnly: true,
                               onTap: () => onFocus(firstIdx+i+1),
@@ -211,9 +215,9 @@ class BattleEffectColumn extends Column {
                           child: isInput ?
                             DropdownButtonFormField<int>(
                               isExpanded: true,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '種別',
+                                labelText: loc.battleEffectPlayer,
                               ),
                               items: timing.id == AbilityTiming.afterMove ?
                               <DropdownMenuItem<int>>[
@@ -222,35 +226,35 @@ class BattleEffectColumn extends Column {
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.afterMove
                                   ).isNotEmpty,
-                                  EffectType.afterMove, 'わざ',
+                                  EffectType.afterMove, EffectType(EffectType.afterMove).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.ability
                                   ).isNotEmpty,
-                                  EffectType.ability, 'とくせい',
+                                  EffectType.ability, EffectType(EffectType.ability).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.item
                                   ).isNotEmpty,
-                                  EffectType.item, 'もちもの',
+                                  EffectType.item, EffectType(EffectType.item).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.individualField
                                   ).isNotEmpty,
-                                  EffectType.individualField, '場',
+                                  EffectType.individualField, EffectType(EffectType.individualField).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.ailment
                                   ).isNotEmpty,
-                                  EffectType.ailment, '状態変化',
+                                  EffectType.ailment, EffectType(EffectType.ailment).displayName,
                                 ),
                               ] :
                               <DropdownMenuItem<int>>[
@@ -259,28 +263,28 @@ class BattleEffectColumn extends Column {
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.ability
                                   ).isNotEmpty,
-                                  EffectType.ability, 'とくせい',
+                                  EffectType.ability, EffectType(EffectType.ability).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.item
                                   ).isNotEmpty,
-                                  EffectType.item, 'もちもの',
+                                  EffectType.item, EffectType(EffectType.item).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.individualField
                                   ).isNotEmpty,
-                                  EffectType.individualField, '場',
+                                  EffectType.individualField, EffectType(EffectType.individualField).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
                                     e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
                                     e.effect.id == EffectType.ailment
                                   ).isNotEmpty,
-                                  EffectType.ailment, '状態変化',
+                                  EffectType.ailment, EffectType(EffectType.ailment).displayName,
                                 ),
                               ],
                               value: (turn.phases[firstIdx+i].effect.id == EffectType.none ||
@@ -318,9 +322,9 @@ class BattleEffectColumn extends Column {
                               } : null,
                             ) :
                             TextField(
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '種別',
+                                labelText: loc.battleEffectType,
                               ),
                               controller: TextEditingController(
                                 text: turn.phases[firstIdx+i].effect.displayName,
@@ -340,9 +344,9 @@ class BattleEffectColumn extends Column {
                             TypeAheadField(
                               textFieldConfiguration: TextFieldConfiguration(
                                 controller: textEditControllerList1[firstIdx+i],
-                                decoration: const InputDecoration(
+                                decoration: InputDecoration(
                                   border: UnderlineInputBorder(),
-                                  labelText: '発動効果',
+                                  labelText: loc.battleEffect,
                                 ),
                               ),
                               autoFlipDirection: true,
@@ -376,9 +380,9 @@ class BattleEffectColumn extends Column {
                             ) :
                             TextField(
                               controller: textEditControllerList1[firstIdx+i],
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: '発動効果',
+                                labelText: loc.battleEffect,
                               ),
                               readOnly: true,
                               onTap: () => onFocus(firstIdx+i+1),
@@ -401,7 +405,7 @@ class BattleEffectColumn extends Column {
                       _getPrevState(prevState, firstIdx, i, sameTimingList),
                       firstIdx-1 >= 0 ? turn.phases[firstIdx-1] : null,
                       textEditControllerList2[firstIdx+i], textEditControllerList3[firstIdx+i],
-                      appState, firstIdx+i, isInput: isInput,
+                      appState, firstIdx+i, isInput: isInput, loc: loc,
                     ),
                     SizedBox(height: 10),
                     for (final e in sameTimingList[i].guides)
@@ -448,7 +452,7 @@ class BattleEffectColumn extends Column {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(Icons.add_circle),
-                Text('${_getTimingText(timing)}処理を追加'),
+                Text(loc.battleAddProcess(_getTimingText(timing, loc))),
               ],
             ),
           ),
@@ -456,20 +460,20 @@ class BattleEffectColumn extends Column {
     ],
   );
 
-  static String _getTimingText(AbilityTiming timing) {
+  static String _getTimingText(AbilityTiming timing, AppLocalizations loc) {
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:
-        return 'ポケモン登場時';
+        return loc.battleTimingPokemonAppear;
       case AbilityTiming.everyTurnEnd:
-        return 'ターン終了時';
+        return loc.battleTimingTurnEnd;
       case AbilityTiming.afterActionDecision:
-        return '行動決定直後';
+        return loc.battleTimingAfterActionDecision;
       case AbilityTiming.beforeMove:
-        return 'わざ使用前';
+        return loc.battleTimingBeforeMove;
       case AbilityTiming.afterMove:
-        return 'わざ使用後';
+        return loc.battleTimingAfterMove;
       case AbilityTiming.afterTerastal:
-        return 'テラスタル後';
+        return loc.battleTimingAfterTerastal;
       default:
         return '';
     }
