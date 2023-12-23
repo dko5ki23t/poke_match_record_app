@@ -80,3 +80,9 @@ https://icon.kitchen/
 
 https://enoiu.com/app-develop/flutter-release/
 
+### 英語対応
+
+https://qiita.com/kazutxt/items/936ebe7a21ede7e1ab20
+
+https://stackoverflow.com/questions/73766312/the-method-setlocale-isnt-defined-for-the-type-myappstate-flutter
+
