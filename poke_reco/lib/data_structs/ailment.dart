@@ -77,6 +77,7 @@ class AilmentEffect {
                                             // 661:トーチカ(直接攻撃してきた相手をどく状態にする)
                                             // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
+                                            // 908:かえんのまもり(直接攻撃してきた相手をやけど状態にする)
   static const int candyCandy = 62;         // あめまみれ / 終了も含む
   static const int halloween = 63;          // ハロウィン(ゴーストタイプ)
   static const int forestCurse = 64;        // もりののろい(くさタイプ)
@@ -215,7 +216,7 @@ class Ailment {
   static const int disable = 23;            // かなしばり
   static const int magnetRise = 24;         // でんじふゆう
   static const int telekinesis = 25;        // テレキネシス
-  static const int healBlock = 26;          // かいふくふうじ
+  static const int healBlock = 26;          // かいふくふうじ(extraArgに継続ターン数)
   static const int embargo = 27;            // さしおさえ
   static const int sleepy = 28;             // ねむけ
   static const int ingrain = 29;            // ねをはる
@@ -256,6 +257,7 @@ class Ailment {
                                             // 661:トーチカ(直接攻撃してきた相手をどく状態にする)
                                             // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
                                             // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
+                                            // 908:かえんのまもり(直接攻撃してきた相手をやけど状態にする)
   static const int candyCandy = 62;         // あめまみれ
   static const int halloween = 63;          // ハロウィン(ゴーストタイプ)
   static const int forestCurse = 64;        // もりののろい(くさタイプ)
@@ -375,6 +377,7 @@ class Ailment {
     int ret = _nameColorTurnMap[id]!.item4;
     if (id == sleep && extraArg1 == 3) ret = 3;
     if (id == partiallyTrapped && extraArg1 % 10 == 7) ret = 7;
+    if (id == healBlock) ret = extraArg1;
     return ret;
   }
 

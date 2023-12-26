@@ -10,6 +10,7 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:tuple/tuple.dart';
 
 class PokemonState {
   PlayerType playerType = PlayerType(0);    // ポケモンの所有者
@@ -206,7 +207,7 @@ class PokemonState {
 
   // タイプが含まれるか判定(テラスタル後ならテラスタイプで判定)
   bool isTypeContain(int typeId) {
-    if (isTerastaling) {
+    if (isTerastaling && teraType1.id != PokeTypeId.stellar) {
       return teraType1.id == typeId;
     }
     else {
@@ -222,17 +223,38 @@ class PokemonState {
   double typeBonusRate(int moveTypeId, bool isAdaptability) {
     double rate = 1.0;
     if (isTerastaling) {
-      if (isAdaptability) {
-        if (teraType1.id == moveTypeId) rate += 1.0;
-        if (type1.id == moveTypeId || type2?.id == moveTypeId) {
-          rate += 0.5;
+      if (teraType1.id == PokeTypeId.stellar) {   // ステラタイプ
+        if (canGetStellarHosei(moveTypeId)) {
+          if (isTypeContain(moveTypeId)) {
+            rate += 1.0;
+          }
+          else {
+            rate += 0.2;
+          }
         }
-        if (rate > 2.25) rate = 2.25;
+        else {
+          if (isTypeContain(moveTypeId)) {
+            rate += 0.5;
+          }
+        }
       }
-      else {
-        if (teraType1.id == moveTypeId) rate += 0.5;
-        if (type1.id == moveTypeId || type2?.id == moveTypeId) {
-          rate += 0.5;
+      else {      // その他のタイプ
+        if (isAdaptability) {
+          if (teraType1.id == moveTypeId) {
+            rate += 1.0;
+          }
+          if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+            rate += 0.5;
+          }
+          if (rate > 2.25) rate = 2.25;
+        }
+        else {
+          if (teraType1.id == moveTypeId) {
+            rate += 0.5;
+          }
+          if (type1.id == moveTypeId || type2?.id == moveTypeId) {
+            rate += 0.5;
+          }
         }
       }
     }
@@ -244,6 +266,29 @@ class PokemonState {
     }
 
     return rate;
+  }
+
+  bool canGetTerastalHosei(int typeId) {
+    if (!isTerastaling || teraType1.id == PokeTypeId.stellar) return false;   // 前提
+    if (teraType1.id == typeId) return true;
+    return false;
+  }
+
+  bool canGetStellarHosei(int typeId) {
+    if (!isTerastaling || teraType1.id != PokeTypeId.stellar) return false;   // 前提
+    int findIdx = hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.stellarUsed);
+    if (pokemon.no == 1024 || findIdx < 0) return true;
+    if (hiddenBuffs[findIdx].extraArg1 & (1 << (typeId-1)) != 0) return false;   // すでに使ったことがあるタイプ
+    return true;
+  }
+
+  void addStellarUsed(int typeId) {
+    if (!isTerastaling || teraType1.id != PokeTypeId.stellar || pokemon.no == 1024) return;   // 前提
+    int findIdx = hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.stellarUsed);
+    if (findIdx < 0) {
+      hiddenBuffs.add(BuffDebuff(BuffDebuff.stellarUsed)..extraArg1 = 1 << (typeId-1));
+    }
+    hiddenBuffs[findIdx].extraArg1 |= 1 << (typeId-1);
   }
 
   // すなあらしダメージを受けるか判定
@@ -275,13 +320,15 @@ class PokemonState {
       e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace ||
       e.id == BuffDebuff.manpukuForm || e.id == BuffDebuff.harapekoForm ||
       e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm ||
-      e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm
+      e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm ||
+      e.id == BuffDebuff.terastalForm || e.id == BuffDebuff.stellarForm
     ).toList();
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
     var unchangingHidden = hiddenBuffs.where((e) =>
       e.id == BuffDebuff.lastLostItem || e.id == BuffDebuff.lastLostBerry ||
-      e.id == BuffDebuff.attackedCount || e.id == BuffDebuff.zoroappear
+      e.id == BuffDebuff.attackedCount || e.id == BuffDebuff.zoroappear ||
+      e.id == BuffDebuff.stellarUsed
     ).toList();
     hiddenBuffs.clear();
     hiddenBuffs.addAll(unchangingHidden);
@@ -483,6 +530,10 @@ class PokemonState {
     else if (isAdded && ailment.id == Ailment.burn) {    // やけど時
       if (currentAbility.id == 138) buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));         // ねつぼうそう
     }
+    if (yourState.currentAbility.id == 307 && yourState.pokemon.id == 1025 && (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
+      // モモワロウのどくぐくつによってどく/もうどくになった場合、こんらんも併発させる
+      ailmentsAdd(Ailment(Ailment.confusion), state, forceAdd: forceAdd);
+    }
     return true;
   }
 
@@ -641,6 +692,7 @@ class PokemonState {
     if (!isMyEffect && currentAbility.id == 52 && index == 0 && num < 0) return false;   // かいりきバサミ
     if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0) return false;   // はとむね
     if (!isMyEffect && currentAbility.id == 166 && isTypeContain(12) && num < 0) return false;   // フラワーベール
+    if (currentAbility.id == 299 && index == 5 && num < 0) return false;    //しんがん
     if (!isMyEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {    // ミラーアーマー
       yourState.addStatChanges(isMyEffect, index, num, this, myFields: yourFields, yourFields: myFields, lastMirror: true);
       return false;

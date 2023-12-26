@@ -250,6 +250,8 @@ class PhaseState {
         var attackerPlayerTypeId = prevAction != null ? prevAction.playerType.id : PlayerType.me;
         var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
         var defenderTimingIDList = [];
+        bool isDefenderFull = defenderPlayerTypeId == PlayerType.me ? defenderState.remainHP >= defenderState.pokemon.h.real :
+          defenderState.remainHPPercent >= 100;
 
         // 状態変化
         for (final ailment in attackerState.ailmentsIterable) {
@@ -284,12 +286,16 @@ class PhaseState {
           if (replacedMoveType.id == 1) {
             defenderTimingIDList.add(148);
           }
-          if (PokeType.effectiveness(
-              attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
-              defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-              replacedMoveType, defenderState
-            ).id == MoveEffectiveness.great
-          ) {
+          var effectiveness = PokeType.effectiveness(
+            attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
+            defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+            replacedMoveType, defenderState
+          );
+          if (isDefenderFull && (effectiveness.id == MoveEffectiveness.normal || effectiveness.id == MoveEffectiveness.great)) {
+            // HPが満タンで等倍以上のタイプ相性わざを受ける前
+            defenderTimingIDList.add(168);
+          }
+          if (effectiveness.id == MoveEffectiveness.great) {
             // 効果ばつぐんのわざを受けたとき
             defenderTimingIDList.addAll([AbilityTiming.greatAttacked]);
             var moveTypeId = replacedMoveType.id;
@@ -496,7 +502,7 @@ class PhaseState {
               }
             }
             if (PokeType.effectiveness(
-                  attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+                  attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
                   defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                   replacedMoveType, defenderState
                 ).id == MoveEffectiveness.great
@@ -749,12 +755,12 @@ class PhaseState {
             bool isMe = player.id == PlayerType.me;
             bool isTerastal = myState.isTerastaling && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
 
-            if (isTerastal && myState.currentAbility.id == 303) {
+            if (isTerastal && (myState.currentAbility.id == 303 || myState.currentAbility.id == 306)) { // おもかげやどし/ゼロフォーミング
               ret.add(TurnEffect()
                 ..playerType = player
                 ..timing = AbilityTiming(AbilityTiming.afterTerastal)
                 ..effect = EffectType(EffectType.ability)
-                ..effectId = 303
+                ..effectId = myState.currentAbility.id
               );
             }
           }

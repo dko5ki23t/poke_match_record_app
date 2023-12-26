@@ -41,6 +41,7 @@ class PokeTypeId {
   static const int dragon = 16;
   static const int evil = 17;
   static const int fairy = 18;
+  static const int stellar = 19;
 }
 
 class PokeTypeColor {
@@ -62,6 +63,7 @@ class PokeTypeColor {
   static const dragon = Color(0xff6881d4);
   static const evil = Colors.black54;
   static const fairy = Color(0xfffc7799);
+  static const stellar = Colors.white;
 }
 
 // 使い方：print(PokeType.normal.displayName) -> 'ノーマル'
@@ -70,9 +72,9 @@ class PokeType {
   final int id;
   late final String _displayName;
   late final String _displayNameEn;
-  final Icon displayIcon;
+  final Widget displayIcon;
 
-  static const Map<int, Tuple3<String, String, Icon>> officialTypes = {
+  static Map<int, Tuple3<String, String, Widget>> officialTypes = {
     0 : Tuple3('不明', 'Unknown', Icon(Icons.question_mark, color: Colors.grey)),
     PokeTypeId.normal : Tuple3('ノーマル', 'Normal', Icon(Icons.radio_button_unchecked, color: PokeTypeColor.normal)),
     PokeTypeId.fight : Tuple3('かくとう', 'Fighting', Icon(Icons.sports_mma, color: PokeTypeColor.fight)),
@@ -92,6 +94,26 @@ class PokeType {
     PokeTypeId.dragon : Tuple3('ドラゴン', 'Dragon', Icon(Icons.cruelty_free, color: PokeTypeColor.dragon)),
     PokeTypeId.evil : Tuple3('あく', 'Dark', Icon(Icons.remove_red_eye, color: PokeTypeColor.evil)),
     PokeTypeId.fairy : Tuple3('フェアリー', 'Fairy', Icon(Icons.emoji_nature, color: PokeTypeColor.fairy)),
+    PokeTypeId.stellar : Tuple3(
+      'ステラ', 'Stellar',
+      ShaderMask(
+        child: Icon(Icons.hive, color: PokeTypeColor.stellar),
+        shaderCallback: (Rect rect) {
+          return SweepGradient(
+            center: FractionalOffset.center,
+            colors: [
+              Colors.purple,
+              Colors.blue,
+              Colors.green,
+              Colors.yellow,
+              Colors.red,
+              Colors.purple,
+            ],
+            stops: <double>[0.0, 0.25, 0.5, 0.75, 0.875, 1.0],
+          ).createShader(rect);
+        },
+      ),
+    ),
   };
 
   PokeType(this.id, String displayName, String displayNameEn, this.displayIcon) {
@@ -122,11 +144,11 @@ class PokeType {
 
   // タイプ相性
   static MoveEffectiveness effectiveness(
-    bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState defenseState,
-    // きもったま, ねらいのまと, ミラクルアイ
+    bool isScrappyMindEye, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState defenseState,
+    // きもったま/しんがん, ねらいのまと, ミラクルアイ
   )
   {
-    double rate = effectivenessRate(isScrappy, isRingTarget, isMiracleEye, attackType, defenseState);
+    double rate = effectivenessRate(isScrappyMindEye, isRingTarget, isMiracleEye, attackType, defenseState);
     if (rate == 0) {
       return MoveEffectiveness(MoveEffectiveness.noEffect);
     }
@@ -142,12 +164,12 @@ class PokeType {
   }
 
   static double effectivenessRate(
-    bool isScrappy, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState state,
+    bool isScrappyMindEye, bool isRingTarget, bool isMiracleEye, PokeType attackType, PokemonState state,
   )
   {
-    bool canNormalFightToGhost = isScrappy || state.ailmentsWhere((e) => e.id == Ailment.identify).isNotEmpty;
+    bool canNormalFightToGhost = isScrappyMindEye || state.ailmentsWhere((e) => e.id == Ailment.identify).isNotEmpty;
     List<PokeType> types = [];
-    if (state.isTerastaling) {
+    if (state.isTerastaling && state.teraType1.id != PokeTypeId.stellar) {
       types = [state.teraType1];
     }
     else {
@@ -157,89 +179,96 @@ class PokeType {
       if (state.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) types.add(PokeType.createFromId(PokeTypeId.grass));
     }
     int deg = 0;
-    for (final type in types) {
-      switch (attackType.id) {
-        case 1:
-          if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
-          if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;   // ノーマル->ゴースト
-          break;
-        case 2:
-          if (type.id == 1 || type.id == 15 || type.id == 6 || type.id == 17 || type.id == 9) deg++;
-          if (type.id == 4 || type.id == 3 || type.id == 14 || type.id == 7 || type.id == 18) deg--;
-          if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;
-          break;
-        case 3:
-          if (type.id == 2 || type.id == 12 || type.id == 7) deg++;
-          if (type.id == 13 || type.id == 6 || type.id == 9) deg--;
-          break;
-        case 4:
-          if (type.id == 12 || type.id == 18) deg++;
-          if (type.id == 4 || type.id == 5 || type.id == 6 || type.id == 8) deg--;
-          if (!isRingTarget && type.id == 9) return 0;
-          break;
-        case 5:
-          if (type.id == 10 || type.id == 13 || type.id == 4 || type.id == 6 || type.id == 9) deg++;
-          if (type.id == 12 || type.id == 7) deg--;
-          if (!isRingTarget && (type.id == 3 || state.holdingItem?.id == 584)) return 0;
-          break;
-        case 6:
-          if (type.id == 10 || type.id == 3 || type.id == 15 || type.id == 7) deg++;
-          if (type.id == 2 || type.id == 5 || type.id == 9) deg--;
-          break;
-        case 7:
-          if (type.id == 12 || type.id == 14 || type.id == 17) deg++;
-          if (type.id == 10 || type.id == 2 || type.id == 4 || type.id == 3 || type.id == 8 || type.id == 9 || type.id == 18) deg--;
-          break;
-        case 8:
-          if (type.id == 14 || type.id == 8) deg++;
-          if (type.id == 17) deg--;
-          if (!isRingTarget && type.id == 1) return 0;
-          break;
-        case 9:
-          if (type.id == 15 || type.id == 6 || type.id == 18) deg++;
-          if (type.id == 10 || type.id == 11 || type.id == 13 || type.id == 9) deg--;
-          break;
-        case 10:
-          if (type.id == 12 || type.id == 15 || type.id == 7 || type.id == 9) deg++;
-          if (type.id == 10 || type.id == 11 || type.id == 6 || type.id == 16) deg--;
-          break;
-        case 11:
-          if (type.id == 10 || type.id == 5 || type.id == 6) deg++;
-          if (type.id == 11 || type.id == 12 || type.id == 16) deg--;
-          break;
-        case 12:
-          if (type.id == 11 || type.id == 5 || type.id == 6) deg++;
-          if (type.id == 10 || type.id == 12 || type.id == 4 || type.id == 3 || type.id == 7 || type.id == 16 || type.id == 9) deg--;
-          break;
-        case 13:
-          if (type.id == 11 || type.id == 3) deg++;
-          if (type.id == 13 || type.id == 12 || type.id == 16) deg--;
-          if (!isRingTarget && type.id == 5) return 0;
-          break;
-        case 14:
-          if (type.id == 2 || type.id == 4) deg++;
-          if (type.id == 14 || type.id == 9) deg--;
-          if (!isRingTarget && !isMiracleEye && type.id == 17) return 0;
-          break;
-        case 15:
-          if (type.id == 12 || type.id == 5 || type.id == 3 || type.id == 16) deg++;
-          if (type.id == 10 || type.id == 11 || type.id == 15 || type.id == 9) deg--;
-          break;
-        case 16:
-          if (type.id == 16) deg++;
-          if (type.id == 9) deg--;
-          if (!isRingTarget && type.id == 18) return 0;
-          break;
-        case 17:
-          if (type.id == 14 || type.id == 8) deg++;
-          if (type.id == 2 || type.id == 17 || type.id == 18) deg--;
-          break;
-        case 18:
-          if (type.id == 2 || type.id == 16 || type.id == 17) deg++;
-          if (type.id == 10 || type.id == 4 || type.id == 9) deg--;
-          break;
-        default:
-          break;
+    if (attackType.id == 19) {
+      if (state.isTerastaling) {    // ステラ->テラスタルしたポケモン
+        deg = 1;
+      }
+    }
+    else {
+      for (final type in types) {
+        switch (attackType.id) {
+          case 1:
+            if (type.id == 6 || type.id == 9) deg--;    // ノーマル->いわ/はがね
+            if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;   // ノーマル->ゴースト
+            break;
+          case 2:
+            if (type.id == 1 || type.id == 15 || type.id == 6 || type.id == 17 || type.id == 9) deg++;
+            if (type.id == 4 || type.id == 3 || type.id == 14 || type.id == 7 || type.id == 18) deg--;
+            if (!isRingTarget && !canNormalFightToGhost && type.id == 8) return 0;
+            break;
+          case 3:
+            if (type.id == 2 || type.id == 12 || type.id == 7) deg++;
+            if (type.id == 13 || type.id == 6 || type.id == 9) deg--;
+            break;
+          case 4:
+            if (type.id == 12 || type.id == 18) deg++;
+            if (type.id == 4 || type.id == 5 || type.id == 6 || type.id == 8) deg--;
+            if (!isRingTarget && type.id == 9) return 0;
+            break;
+          case 5:
+            if (type.id == 10 || type.id == 13 || type.id == 4 || type.id == 6 || type.id == 9) deg++;
+            if (type.id == 12 || type.id == 7) deg--;
+            if (!isRingTarget && (type.id == 3 || state.holdingItem?.id == 584)) return 0;
+            break;
+          case 6:
+            if (type.id == 10 || type.id == 3 || type.id == 15 || type.id == 7) deg++;
+            if (type.id == 2 || type.id == 5 || type.id == 9) deg--;
+            break;
+          case 7:
+            if (type.id == 12 || type.id == 14 || type.id == 17) deg++;
+            if (type.id == 10 || type.id == 2 || type.id == 4 || type.id == 3 || type.id == 8 || type.id == 9 || type.id == 18) deg--;
+            break;
+          case 8:
+            if (type.id == 14 || type.id == 8) deg++;
+            if (type.id == 17) deg--;
+            if (!isRingTarget && type.id == 1) return 0;
+            break;
+          case 9:
+            if (type.id == 15 || type.id == 6 || type.id == 18) deg++;
+            if (type.id == 10 || type.id == 11 || type.id == 13 || type.id == 9) deg--;
+            break;
+          case 10:
+            if (type.id == 12 || type.id == 15 || type.id == 7 || type.id == 9) deg++;
+            if (type.id == 10 || type.id == 11 || type.id == 6 || type.id == 16) deg--;
+            break;
+          case 11:
+            if (type.id == 10 || type.id == 5 || type.id == 6) deg++;
+            if (type.id == 11 || type.id == 12 || type.id == 16) deg--;
+            break;
+          case 12:
+            if (type.id == 11 || type.id == 5 || type.id == 6) deg++;
+            if (type.id == 10 || type.id == 12 || type.id == 4 || type.id == 3 || type.id == 7 || type.id == 16 || type.id == 9) deg--;
+            break;
+          case 13:
+            if (type.id == 11 || type.id == 3) deg++;
+            if (type.id == 13 || type.id == 12 || type.id == 16) deg--;
+            if (!isRingTarget && type.id == 5) return 0;
+            break;
+          case 14:
+            if (type.id == 2 || type.id == 4) deg++;
+            if (type.id == 14 || type.id == 9) deg--;
+            if (!isRingTarget && !isMiracleEye && type.id == 17) return 0;
+            break;
+          case 15:
+            if (type.id == 12 || type.id == 5 || type.id == 3 || type.id == 16) deg++;
+            if (type.id == 10 || type.id == 11 || type.id == 15 || type.id == 9) deg--;
+            break;
+          case 16:
+            if (type.id == 16) deg++;
+            if (type.id == 9) deg--;
+            if (!isRingTarget && type.id == 18) return 0;
+            break;
+          case 17:
+            if (type.id == 14 || type.id == 8) deg++;
+            if (type.id == 2 || type.id == 17 || type.id == 18) deg--;
+            break;
+          case 18:
+            if (type.id == 2 || type.id == 16 || type.id == 17) deg++;
+            if (type.id == 10 || type.id == 4 || type.id == 9) deg--;
+            break;
+          default:
+            break;
+        }
       }
     }
     if (!state.isTerastaling && attackType.id == PokeTypeId.fire && state.ailmentsWhere((e) => e.id == Ailment.tarShot).isNotEmpty) deg++;

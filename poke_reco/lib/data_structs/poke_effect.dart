@@ -146,6 +146,7 @@ const List<int> beforeMoveAttackerTimingIDs = [
   164,    // わざ使用前(確率・条件)
 ];
 const List<int> beforeMoveDefenderTimingIDs = [
+  168,    // HPが満タンで等倍以上のタイプ相性わざを受ける前
 ];
 
 // わざ使用後
@@ -442,6 +443,28 @@ class TurnEffect {
             yourState, playerType.id == PlayerType.me, state
           );
         }
+        if (myState.pokemon.id == 1024) {   //テラパゴスがテラスタルした場合
+          int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.terastalForm);
+          if (findIdx < 0) {
+            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.stellarForm));
+          }
+          else {
+            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stellarForm);
+          }
+          // TODO この2行csvに移したい
+          myState.maxStats[StatIndex.H.index].race = 160; myState.maxStats[StatIndex.A.index].race = 105; myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.C.index].race = 130; myState.maxStats[StatIndex.D.index].race = 110; myState.maxStats[StatIndex.S.index].race = 85;
+          myState.minStats[StatIndex.H.index].race = 160; myState.minStats[StatIndex.A.index].race = 105; myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.C.index].race = 130; myState.minStats[StatIndex.D.index].race = 110; myState.minStats[StatIndex.S.index].race = 85;
+          for (int i = StatIndex.H.index; i <= StatIndex.S.index; i++) {
+            var biases = Temper.getTemperBias(myState.pokemon.temper);
+            myState.maxStats[i].real = SixParams.getRealABCDS(
+              myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+            myState.minStats[i].real = SixParams.getRealABCDS(
+              myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+          }
+          if (playerType.id == PlayerType.me) {
+            myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();
+          }
+        }
         if (playerType.id == PlayerType.me) {
           state.hasOwnTerastal = true;
         }
@@ -559,6 +582,9 @@ class TurnEffect {
             break;
           case 852:   // スレッドトラップ
             myState.addStatChanges(false, 4, -1, yourState, myFields: myFields, yourFields: yourFields, moveId: effectId);
+            break;
+          case 508:   // かえんのまもり
+            myState.ailmentsAdd(Ailment(Ailment.burn), state);
             break;
         }
         break;
@@ -853,7 +879,7 @@ class TurnEffect {
               defenderTimingIDs.addAll([148]);
             }
             if (PokeType.effectiveness(
-                attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+                attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
                 defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                 replacedMoveType, pokemonState!
               ).id == MoveEffectiveness.great
@@ -984,7 +1010,7 @@ class TurnEffect {
             defenderTimingIDs.addAll([115]);
           }
           if (PokeType.effectiveness(
-              attackerState.currentAbility.id == 113, defenderState.holdingItem?.id == 586,
+              attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
               defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
               replacedMoveType, pokemonState!
             ).id == MoveEffectiveness.great
@@ -2705,13 +2731,14 @@ class TurnEffect {
     {
       required bool isInput,
       bool isError = false,
+      bool isTeraType = false,
     }
   )
   {
     if (isInput) {
       return TypeDropdownButton(
         labelText, onChanged, value,
-        isError: isError,
+        isError: isError, isTeraType: isTeraType,
       );
     }
     else {

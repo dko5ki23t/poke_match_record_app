@@ -277,7 +277,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               height: 10,
               thickness: 1,
             ),
-            for (final type in widget.pokeData.types)
+            for (final type in widget.pokeData.teraTypes)
             teraTypeExpanded ?
             ListTile(
               title: Row(

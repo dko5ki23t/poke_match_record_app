@@ -27,8 +27,8 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-const String pokeRecoVersion = '1.0.1';
-const int pokeRecoInternalVersion = 2;      // 主にSQLのテーブルバージョンに使用
+const String pokeRecoVersion = '1.0.2';
+const int pokeRecoInternalVersion = 2;      // SQLのテーブルバージョンに使用
 
 enum TabItem {
   battles,
@@ -167,6 +167,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   AppOpenAdManager appOpenAdManager = AppOpenAdManager();
+  late final AppLifecycleListener _listener;
 
   var _currentTab = TabItem.battles;
   Widget page = Container();
@@ -188,23 +189,35 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     appOpenAdManager.loadAd();
-    Timer.periodic(
+    /*Timer.periodic(
       Duration(minutes: 1),
       (timer) {
         var appState = context.read<MyAppState>();
         appState.showAd = true;
       }
+    );*/
+    _listener = AppLifecycleListener(
+      //onShow: () => _handleTransition('show'),
+      //onResume: () => appOpenAdManager.loadAd(),
+      //onHide: () => _handleTransition('hide'),
+      //onInactive: () => _handleTransition('inactive'),
+      //onPause: () => _handleTransition('pause'),
+      //onDetach: () => _handleTransition('detach'),
+      onRestart: () => appOpenAdManager.loadAd(),
+      // This fires for each state change. Callbacks above fire only for
+      // specific state transitions.
+      //onStateChange: _handleStateChange,
     );
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.read<MyAppState>();
-    if (appState.showAd) {
-      appOpenAdManager.loadAd();
-      appState.showAd = false;
-    }
+    //var appState = context.read<MyAppState>();
+    //if (appState.showAd) {
+      //appOpenAdManager.loadAd();
+      //appState.showAd = false;
+    //}
     switch (_currentTab) {
       case TabItem.battles:
         page = BattleTabNavigator(

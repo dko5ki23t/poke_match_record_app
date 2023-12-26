@@ -204,6 +204,9 @@ class BuffDebuff {
   static const int magicRoom = 195;       // マジックルーム時、もちものが使えないことを示すフラグ(隠しステータス。場の効果にすると使いづらいため、こちらと併用)
   static const int attackedCount = 196;   // こうげきわざを受けた回数(隠しステータス。交代・ひんしでも消えない)
   static const int zoroappear = 197;      // ゾロア系だとバレたあと(隠しステータス。交代でも消えない)
+  static const int terastalForm = 198;    // テラスタルフォルム
+  static const int stellarForm = 199;     // ステラフォルム
+  static const int stellarUsed = 200;     // ステラ補正を使用したタイプのフラグ(隠しステータス。交代でも消えない)
 
   static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
     0:  Tuple4('', '', Colors.black, 0),
@@ -392,6 +395,8 @@ class BuffDebuff {
     184: Tuple4('相手わざ必中・ダメージ2倍', 'Opponent Move guaranteed to hit/damage 2x',  Colors.blue, 0),
     186: Tuple4('こうげきわざ威力1.2倍', 'Attack Move Power 1.2x', Colors.red, 0),
     189: Tuple4('へんしん', 'Transform',  Colors.orange, 0),
+    198: Tuple4('テラスタルフォルム', 'Terastal Form',  Colors.orange, 0),
+    199: Tuple4('ステラフォルム', 'Stellar Form',  Colors.orange, 0),
   };
 
   final int id;

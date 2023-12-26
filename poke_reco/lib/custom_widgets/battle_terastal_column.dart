@@ -177,6 +177,7 @@ class BattleTerastalColumn extends Column {
                               _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType.id != 0 ?
                                 null : (val) {turn.phases[firstIdx+i].effectId = val;},
                               turn.phases[firstIdx+i].effectId == 0 ? null : turn.phases[firstIdx+i].effectId,
+                              isTeraType: true,
                             ) :
                             TextField(
                               decoration: InputDecoration(
