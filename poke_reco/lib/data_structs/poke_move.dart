@@ -279,11 +279,14 @@ class TurnMove {
       case 93:
       case 147:
       case 151:
+      case 512:
         return loc.battleFlinched(name);
       //case 50:
       case 77:
+      case 268:
       case 334:
       case 475:
+      case 510:
         return loc.battleConfused(name);
       case 69:
         return loc.battleAttackDown1(name);
@@ -525,6 +528,8 @@ class TurnMove {
     PokeType? additionalMoveType;
     // 半減きのみを使用したか
     double halvedBerry = 0.0;
+    // ダメージ計算時、テラスタルまたはステラの補正がかかったか
+    bool isTeraStellarHosei = false;
 
     {
       Move replacedMove = getReplacedMove(move, continuousCount, myState);   // 必要に応じてわざの内容変更
@@ -1768,7 +1773,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 237:   // かいふくふうじ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.healBlock), state);
+            targetState.ailmentsAdd(Ailment(Ailment.healBlock)..extraArg1 = 5, state);
             break;
           case 238:   // 相手の残りHPが多いほど威力が高くなる(120×相手の残りHP/相手の最大HP)
             if (targetPlayerTypeID == PlayerType.me) {
@@ -2795,8 +2800,14 @@ class TurnMove {
             break;
           case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
                       // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
+                      // ステラタイプにテラスタルしたときのみ威力が100になり、成功すると自分のこうげき・とくこうが1段階ずつ下がる
             if (myState.isTerastaling) {
               moveType = myState.teraType1;
+            }
+            if (myState.teraType1.id == PokeTypeId.stellar) {   // ステラタイプの場合
+              movePower = 100;
+              myState.addStatChanges(true, 0, -1, targetState, moveId: replacedMove.id);
+              myState.addStatChanges(true, 2, -1, targetState, moveId: replacedMove.id);
             }
             // ステータスが確定している場合
             if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
@@ -2840,7 +2851,7 @@ class TurnMove {
               var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
               if (findIdx < 0) {    // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
-                myState.addStatChanges(true, 2, 2, targetState, moveId: replacedMove.id);
+                myState.addStatChanges(true, 2, 1, targetState, moveId: replacedMove.id);
                 showDamageCalc = false;
               }
               else {  // こうげきする
@@ -3092,7 +3103,7 @@ class TurnMove {
             break;
           case 491:   // 効果がばつぐんの場合、威力4/3倍
             if (PokeType.effectiveness(
-              myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+              myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
               yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
               moveType, targetState).id == MoveEffectiveness.great
             ) {
@@ -3199,6 +3210,53 @@ class TurnMove {
               }
             }
             break;
+          case 503:   // 1ターン目に使用者のとくこうを1段階上げて(ためて)、2ターン目にこうげきする。1ターン目の天気があめ→ためずにこうげき。
+            {
+              var findIdx = myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
+              if (findIdx < 0) {    // 溜め状態にする
+                myState.addStatChanges(true, 2, 1, targetState, moveId: replacedMove.id);
+                if (state.weather.id != Weather.rainy) {
+                  myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)..extraArg1 = replacedMove.id);
+                  showDamageCalc = false;
+                }
+              }
+              else {  // こうげきする
+                myState.hiddenBuffs.removeAt(findIdx);
+              }
+            }
+            break;
+          case 504:   // ステラフォルムのテラパゴスが使用した場合、ステラタイプの攻撃になり、相手全員が対象になる
+            if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.stellarForm).isNotEmpty) {
+              moveType = PokeType.createFromId(PokeTypeId.stellar);
+            }
+            break;
+          case 505:   // 威力が2倍になる(確率)
+            movePower *= 2;
+            break;
+          case 506:   // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手をやけど状態にする
+            myState.ailmentsAdd(Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
+            break;
+          case 507:   // 2回連続こうげき。必中
+            break;
+          case 508:   // 相手の残りHPが多いほど威力が高くなる(100×相手の残りHP/相手の最大HP)
+            if (targetPlayerTypeID == PlayerType.me) {
+              movePower = (100 * targetState.remainHP / targetState.pokemon.h.real).floor();
+            }
+            else {
+              movePower = (100 * targetState.remainHPPercent / 100).floor();
+            }
+            break;
+          case 509:   // 使用者以外の味方全員をきゅうしょアップ状態にする(ドラゴンタイプは+2,それ以外は+1)
+            break;
+          case 510:   // 対象がそのターンに能力が上がっているとこんらん状態にする(確率)
+            targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
+            break;
+          case 511:   // かいふくふうじ状態にする
+            targetState.ailmentsAdd(Ailment(Ailment.healBlock)..extraArg1 = 2, state);
+            break;
+          case 512:   // 対象が先制攻撃技を使おうとしているとき、かつ使用者の方が先に行動する場合のみ成功。ひるませる(確率)。
+            targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
+            break;
           default:
             break;
         }
@@ -3217,7 +3275,7 @@ class TurnMove {
 
         // わざの相性をここで変えちゃう
         moveEffectivenesses[continuousCount] = PokeType.effectiveness(
-          myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+          myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
           yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
           moveType, targetState,
         );
@@ -3239,6 +3297,7 @@ class TurnMove {
         damageCalc ??= damage.item1;
         damageGetter?.maxDamage = damage.item2;
         damageGetter?.minDamage = damage.item3;
+        isTeraStellarHosei = damage.item4;
 
         ret.add(Guide()
           ..guideId = Guide.damageCalc
@@ -3296,7 +3355,7 @@ class TurnMove {
                     moveType, movePower, moveDamageClassID, beforeChangeMyState,
                     isNormalized1_2, isCritical, isFoulPlay, defenseAltAttack,
                     ignoreTargetRank, invDeffense, isSunny1_5, ignoreAbility,
-                    mTwice, additionalMoveType, halvedBerry, loc: loc,
+                    mTwice, additionalMoveType, halvedBerry, isTeraStellarHosei, loc: loc,
                   );
                   if (reals.item1.index > StatIndex.H.index) {
                     // もともとある範囲より狭まるようにのみ上書き
@@ -3371,7 +3430,7 @@ class TurnMove {
     return ret;
   }
 
-  Tuple3<String, int, int> calcDamage(
+  Tuple4<String, int, int, bool> calcDamage(
     PokemonState myState,
     PokemonState yourState,
     PhaseState state,
@@ -3402,6 +3461,7 @@ class TurnMove {
     var myFields = myPlayerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
     var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
     String ret = '';
+    bool isTeraStellarHosei = false;
 
     // じゅうでん補正&消費
     int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
@@ -3501,6 +3561,10 @@ class TurnMove {
     if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
 
     movePower = tmpPow.floor();
+    // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
+    if (movePower < 60 && (myState.canGetStellarHosei(replacedMoveType.id) || myState.canGetTerastalHosei(replacedMoveType.id))) {
+      movePower = 60;
+    }
 
     // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
     bool plusIgnore = yourState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
@@ -3621,6 +3685,11 @@ class TurnMove {
     damageVmin = (damageVmin * 85 / 100).floor();
     ret += loc.battleDamageRandom85_100;
     // タイプ一致補正(五捨五超入)
+    if (myState.canGetStellarHosei(replacedMoveType.id)) {
+      myState.addStellarUsed(replacedMoveType.id);
+      isTeraStellarHosei = true;
+    }
+    if (myState.canGetTerastalHosei(replacedMoveType.id)) isTeraStellarHosei = true;
     var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
     if (rate > 1.0) {
       damageVmax = roundOff5(damageVmax * rate);
@@ -3628,15 +3697,18 @@ class TurnMove {
       ret += loc.battleDamageTypeBonus(rate);
     }
     // 相性補正(切り捨て)
-    rate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
       yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
+    if (yourState.currentAbility.id == 305 && (yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) && typeRate > 0.5) { // テラスシェル
+      typeRate = 0.5;
+    }
     if (additionalMoveType != null) {
-      rate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
     }
-    damageVmax = (damageVmax * rate).floor();
-    damageVmin = (damageVmin * rate).floor();
-    ret += loc.battleDamageTypeEffectiveness(rate);
+    damageVmax = (damageVmax * typeRate).floor();
+    damageVmin = (damageVmin * typeRate).floor();
+    ret += loc.battleDamageTypeEffectiveness(typeRate);
     // やけど補正(五捨五超入)
     if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty && damageClassID == 2 && move.id != 263) {  // からげんき以外のぶつりわざ
       if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) < 0) {
@@ -3645,9 +3717,6 @@ class TurnMove {
         ret += loc.battleDamageBurned;
       }
     }
-    // タイプ相性を計算
-    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
-      yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
     // M(五捨五超入)
     {
       double tmpMax = damageVmax.toDouble();
@@ -3775,7 +3844,7 @@ class TurnMove {
     // ダイマックスわざに関する計算のため、SVでは不要
     { }
     ret += '= $damageVmin ~ $damageVmax';
-    return Tuple3(ret, damageVmax, damageVmin);
+    return Tuple4(ret, damageVmax, damageVmin, isTeraStellarHosei);
   }
 
   Tuple3<StatIndex, int, int> calcRealFromDamage(
@@ -3801,6 +3870,7 @@ class TurnMove {
     bool mTwice,
     PokeType? additionalMoveType,
     double halvedBerry,
+    bool isTeraStellarHosei,
     {
       required AppLocalizations loc,
     }
@@ -3813,10 +3883,13 @@ class TurnMove {
     var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
 
     // タイプ相性を計算
-    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
       yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
+    if (yourState.currentAbility.id == 305 && (yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) && typeRate > 0.5) { // テラスシェル
+      typeRate = 0.5;
+    }
     if (additionalMoveType != null) {
-      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
     }
 
@@ -3931,6 +4004,11 @@ class TurnMove {
     tmpInt = (tmpInt / typeRate).floor();
     // タイプ一致補正(五捨五超入)
     var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
+    // ステラタイプ補正を使ってしまったために、再度計算したら値に補正が反映されてない場合
+    if (isTeraStellarHosei && myState.teraType1.id == PokeTypeId.stellar) {
+      if (rate - 1.5 < 0.1) rate = 2.0;
+      if (rate - 1.0 < 0.1) rate = 1.2;
+    }
     if (rate > 1.0) {
       tmpInt = roundOff5(tmpInt / rate);
     }
@@ -4072,6 +4150,10 @@ class TurnMove {
     if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
 
     movePower = tmpPow.floor();
+    // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
+    if (movePower < 60 && isTeraStellarHosei) {
+      movePower = 60;
+    }
 
     bool plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     bool minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
@@ -4401,7 +4483,7 @@ class TurnMove {
                     tmp.moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     tmp.moveAdditionalEffects[continuousCount] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
                     tmp.moveEffectivenesses[continuousCount] = PokeType.effectiveness(
-                        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+                        myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(tmp.move, continuousCount, myState, state), yourState);
                     tmp.processMove(
@@ -4420,7 +4502,7 @@ class TurnMove {
                     moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
                     moveEffectivenesses[0] = PokeType.effectiveness(
-                        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+                        myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
                     turnEffectAndStateAndGuide.guides = processMove(
@@ -4698,6 +4780,8 @@ class TurnMove {
         case 471:   // まひにする(確率)。天気があめの時は必中
         case 472:   // やけどにする(確率)。天気があめの時は必中
         case 499:   // 眠らせる(確率)
+        case 510:   // 対象がそのターンに能力が上がっているとこんらん状態にする(確率)
+        case 512:   // 対象が先制攻撃技を使おうとしているとき、かつ使用者の方が先に行動する場合のみ成功。ひるませる(確率)。
           effectInputRow = Row(
             children: [
               Expanded(
@@ -6271,6 +6355,42 @@ class TurnMove {
             isInput, loc: loc,
           );
           break;
+        case 505:   // 威力が2倍になる(確率)
+          effectInputRow = Row(
+            children: [
+              Expanded(
+                child: _myDropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.battleAdditionalEffect,
+                  ),
+                  items: <DropdownMenuItem>[
+                    DropdownMenuItem(
+                      value: MoveEffect.none,
+                      child: Text(loc.commonNone),
+                    ),
+                    DropdownMenuItem(
+                      value: replacedMove.effect.id,
+                      child: Text(loc.battleGoAllOut),
+                    ),
+                  ],
+                  value: moveAdditionalEffects[continuousCount].id,
+                  onChanged: (value) {
+                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
+                    appState.editingPhase[phaseIdx] = true;
+                    onFocus();
+                  },
+                  onFocus: onFocus,
+                  isInput: isInput,
+                  textValue: moveAdditionalEffects[continuousCount].id == replacedMove.effect.id ?
+                    loc.battleGoAllOut : loc.commonNone,
+                  theme: theme,
+                ),
+              ),
+            ],
+          );
+          break;
         default:
           break;
       }
@@ -6555,7 +6675,7 @@ class TurnMove {
     return Container();
   }
 
-    Widget _myTypeAheadField<T>({
+  Widget _myTypeAheadField<T>({
     required SuggestionsCallback<T> suggestionsCallback,
     required ItemBuilder<T> itemBuilder,
     required SuggestionSelectionCallback<T> onSuggestionSelected,
@@ -6698,13 +6818,14 @@ class TurnMove {
     {
       required bool isInput,
       bool isError = false,
+      bool isTeraType = false,
     }
   )
   {
     if (isInput) {
       return TypeDropdownButton(
         labelText, onChanged, value,
-        isError: isError,
+        isError: isError, isTeraType: isTeraType,
       );
     }
     else {
@@ -6780,7 +6901,7 @@ class TurnMove {
     if (isMoveChanged) {
       moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
       moveEffectivenesses[0] = PokeType.effectiveness(
-        myState.currentAbility.id == 113, yourState.holdingItem?.id == 586,
+        myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
         move.type, yourState);
     }

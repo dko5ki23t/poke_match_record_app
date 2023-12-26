@@ -314,10 +314,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           loc.commonTeraType,
                           canChangeTeraType ? (value) {setState(() {
-                            myPokemon.teraType = pokeData.types[value - 1];
+                            myPokemon.teraType = pokeData.teraTypes[value - 1];
                           });} : null,
                           myPokemon.teraType.id == 0 ? null : myPokemon.teraType.id,
                           isError: myPokemon.no != 0 && myPokemon.teraType.id == 0,
+                          isTeraType: true,
                         ),
                       ),
                     ],

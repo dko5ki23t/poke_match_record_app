@@ -12,6 +12,7 @@ class TypeDropdownButton extends DropdownButtonFormField {
     int? value,
     {
       bool isError = false,
+      bool isTeraType = false,
     }
   ) :
   super (
@@ -22,18 +23,18 @@ class TypeDropdownButton extends DropdownButtonFormField {
       labelStyle: isError ? notAllowedStyle : null,
     ),
     items: <DropdownMenuItem>[
-      for (var type in PokeDB().types)
-        DropdownMenuItem(
-          value: type.id,
-          child: FittedBox(
-            fit: BoxFit.fitWidth,
-            child: Row(
-              children: [
-                type.displayIcon,
-                Text(type.displayName)
-              ],
-            ),
+      for (var type in isTeraType ? PokeDB().teraTypes : PokeDB().types)
+      DropdownMenuItem(
+        value: type.id,
+        child: FittedBox(
+          fit: BoxFit.fitWidth,
+          child: Row(
+            children: [
+              type.displayIcon,
+              Text(type.displayName)
+            ],
           ),
+        ),
       ),
     ],
     onChanged: onChanged,

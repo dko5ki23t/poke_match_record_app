@@ -169,6 +169,7 @@ class AbilityTiming {
   static const int powdered = 165;              // こなやほうしわざを受けた時
   static const int bulleted = 166;              // 弾のわざを受けた時
   static const int attackedNotZoroappeared = 167;   // ゾロアーク系がばれていない状態でこうげきを受けたとき
+  static const int beforeTypeNormalOrGreatAttackedWithFullHP = 168;   // HPが満タンで等倍以上のタイプ相性わざを受ける前
 
   const AbilityTiming(this.id);
 

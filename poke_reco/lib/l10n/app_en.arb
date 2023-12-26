@@ -246,6 +246,7 @@
   "battleStealItem": "Steal item",
   "battleTypeToChange": "Type after change",
   "battleExhaustedConfused": "{name} became confused",
+  "battleGoAllOut": "Go all out for this attack!",
   "battlePokemonChange": "Pokémon change",
   "battleSurrender": "Surrender",
   "battleFailureCause": "Cause of failure",

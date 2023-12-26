@@ -546,7 +546,7 @@ class Move {
     const soundMoveIDs = [
       547, 173, 215, 103, 47, 664, 497, 786, 448, 568, 319, 320,
       253, 691, 575, 775, 10016, 574, 48, 336, 590, 45, 555, 304,
-      586, 826, 871, 728, 46, 195, 405, 496, 463,
+      586, 826, 871, 728, 46, 195, 405, 496, 463, 914,
     ];
     return soundMoveIDs.contains(id);
   }
@@ -640,6 +640,7 @@ class Move {
     const cutMoveIDs = [
       895, 15, 314, 403, 830, 781, 163, 440, 427, 875, 534, 404,
       548, 533, 669, 400, 332, 869, 860, 75, 845, 891, 348, 210,
+      910, 911,
     ];
     return cutMoveIDs.contains(id);
   }
@@ -685,6 +686,7 @@ class Move {
     if (effect.id == 462) return 3;
     if (effect.id == 480) return 10;
     if (effect.id == 483) return 3;
+    if (effect.id == 507) return 2;
     return 1;
   }
 
@@ -912,6 +914,9 @@ class PokeDB {
   late Database moveFlavorDb;
   List<PokeType> types = [
     for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
+  ];
+  List<PokeType> teraTypes = [
+    for (final i in range(1, 20)) PokeType.createFromId(i.toInt())
   ];
   Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')};  // 無効なタマゴグループ
   late Database eggGroupDb;

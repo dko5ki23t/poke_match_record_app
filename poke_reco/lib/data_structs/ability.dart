@@ -66,7 +66,7 @@ class Ability {
   bool get canOverWrite {
     const ids = [
       225, 248, 241, 210, 208, 282, 281, 266, 211, 213,
-      161, 209, 176, 278, 121, 197,
+      161, 209, 176, 278, 121, 197, 304,
     ];
     return !ids.contains(id);
   }
@@ -76,7 +76,7 @@ class Ability {
     const ids = [
       225, 248, 149, 241, 303, 223, 256, 150, 210, 208, 282,
       281, 279, 266, 211, 213, 161, 59, 36, 209, 176, 258,
-      122, 278, 121, 197, 222,
+      122, 278, 121, 197, 222, 305,
     ];
     return !ids.contains(id);
   }
@@ -779,6 +779,12 @@ class Ability {
           yourFields[findIdx].extraArg1 = 2;
         }
         break;
+      case 300:   // かんろなミツ
+        yourState.addStatChanges(false, 6, -1, myState, myFields: yourFields, yourFields: myFields, abilityId: abilityID);
+        break;
+      case 302:   // どくのくさり
+        yourState.ailmentsAdd(Ailment(Ailment.badPoison), state);
+        break;
       case 303:     // おもかげやどし
         int statIdx = 4;    // みどりのめん->すばやさ
         switch (myState.pokemon.no) {
@@ -795,6 +801,28 @@ class Ability {
             break;
         }
         myState.addStatChanges(true, statIdx, 1, yourState, abilityId: abilityID);
+        break;
+      case 304:   // テラスチェンジ
+        int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.terastalForm);
+        if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.terastalForm));
+        // TODO この2行csvに移したい
+        myState.maxStats[StatIndex.H.index].race = 95; myState.maxStats[StatIndex.A.index].race = 95; myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.C.index].race = 105; myState.maxStats[StatIndex.D.index].race = 110; myState.maxStats[StatIndex.S.index].race = 85;
+        myState.minStats[StatIndex.H.index].race = 95; myState.minStats[StatIndex.A.index].race = 95; myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.C.index].race = 105; myState.minStats[StatIndex.D.index].race = 110; myState.minStats[StatIndex.S.index].race = 85;
+        for (int i = StatIndex.H.index; i <= StatIndex.S.index; i++) {
+          var biases = Temper.getTemperBias(myState.pokemon.temper);
+          myState.maxStats[i].real = SixParams.getRealABCDS(
+            myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
+          myState.minStats[i].real = SixParams.getRealABCDS(
+            myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+        }
+        if (playerType.id == PlayerType.me) {
+          myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();
+        }
+        myState.setCurrentAbility(pokeData.abilities[305]!, yourState, isOwn, state);   // とくせいをテラスシェルに変更
+        break;
+      case 306:   // ゼロフォーミング
+        state.weather = Weather(0);
+        state.field = Field(0);
         break;
       case 10000 + BuffDebuff.unomiForm:    // うのミサイル(うのみのすがた)
         if (isOwn) {
