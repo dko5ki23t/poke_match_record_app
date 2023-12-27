@@ -166,15 +166,15 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
                 ),
                 selectedItemBuilder: (context) {
                   return [
-                    for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine))
+                    for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine && !partyIDFilter.contains(element.id)))
                       Text(party.name),
                   ];
                 },
                 items: <DropdownMenuItem>[
-                  for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine))
+                  for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine && !partyIDFilter.contains(element.id)))
                     DropdownMenuItem(
                       value: party.id,
-                      child: PartyTile(party, theme, loc: loc,),
+                      child: Text(party.name),
                     ),
                 ],
                 value: null,

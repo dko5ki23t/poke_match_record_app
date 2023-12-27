@@ -217,7 +217,7 @@ class BattleEffectColumn extends Column {
                               isExpanded: true,
                               decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
-                                labelText: loc.battleEffectPlayer,
+                                labelText: loc.battleEffectType,
                               ),
                               items: timing.id == AbilityTiming.afterMove ?
                               <DropdownMenuItem<int>>[
