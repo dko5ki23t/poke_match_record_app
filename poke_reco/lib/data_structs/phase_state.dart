@@ -900,4 +900,192 @@ class PhaseState {
       }
     }
   }
+
+  // SQLに保存された文字列からTurnをパース
+  static PhaseState deserialize(
+    dynamic str, String split1, String split2,
+    String split3, String split4, String split5,
+    String split6, {int version = -1})  // -1は最新バージョン
+  {
+    PhaseState ret = PhaseState();
+    final List stateElements = str.split(split1);
+    // _pokemonIndexes
+    var indexes = stateElements.removeAt(0).split(split2);
+    ret._pokemonIndexes.clear();
+    for (final index in indexes) {
+      if (index == '') break;
+      ret._pokemonIndexes.add(int.parse(index));
+    }
+    // _pokemonStates
+    var pokeStates = stateElements.removeAt(0).split(split2);
+    ret._pokemonStates.clear();
+    for (final pokeState in pokeStates) {
+      if (pokeState == '') break;
+      var states = pokeState.split(split3);
+      List<PokemonState> adding = [];
+      int i = 0;
+      for (final state in states) {
+        if (state == '') break;
+        adding.add(
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
+          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
+        i++;
+      }
+      ret._pokemonStates.add(adding);
+    }
+    // lastExitedStates
+    pokeStates = stateElements.removeAt(0).split(split2);
+    ret.lastExitedStates.clear();
+    for (final pokeState in pokeStates) {
+      if (pokeState == '') break;
+      var states = pokeState.split(split3);
+      List<PokemonState> adding = [];
+      int i = 0;
+      for (final state in states) {
+        if (state == '') break;
+        adding.add(
+          PokemonState.deserialize(state, split4, split5, split6, version: version)
+          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
+        i++;
+      }
+      ret.lastExitedStates.add(adding);
+    }
+    // indiFields
+    var fields = stateElements.removeAt(0).split(split2);
+    ret.indiFields = [[], []];
+    for (int i = 0; i < fields.length; i++) {
+      if (fields[i] == '') break;
+      var fs = fields[i].split(split3);
+      List<IndividualField> adding = [];
+      for (final f in fs) {
+        if (f == '') break;
+        adding.add(IndividualField.deserialize(f, split4));
+      }
+      ret.indiFields[i] = adding;
+    }
+    // _weather
+    ret._weather = Weather.deserialize(stateElements.removeAt(0), split2);
+    // _field
+    ret._field = Field.deserialize(stateElements.removeAt(0), split2);
+    // phases
+    var turnEffects = stateElements.removeAt(0).split(split2);
+    for (var turnEffect in turnEffects) {
+      if (turnEffect == '') break;
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5, version: version));
+    }
+    // phaseIndex
+    ret.phaseIndex = int.parse(stateElements.removeAt(0));
+    // userForces
+    ret.userForces = UserForces.deserialize(stateElements.removeAt(0), split2, split3);
+    // hasOwnTerastal
+    ret.hasOwnTerastal = stateElements.removeAt(0) == '1';
+    // hasOpponentTerastal
+    ret.hasOpponentTerastal = stateElements.removeAt(0) == '1';
+    // canZorua
+    ret.canZorua = stateElements.removeAt(0) == '1';
+    // canZoroark
+    ret.canZoroark = stateElements.removeAt(0) == '1';
+    // canZoruaHisui
+    ret.canZoruaHisui = stateElements.removeAt(0) == '1';
+    // canZoroarkHisui
+    ret.canZoroarkHisui = stateElements.removeAt(0) == '1';
+    // _faintingCount
+    final counts = stateElements.removeAt(0).split(split2);
+    ret._faintingCount.clear();
+    for (final count in counts) {
+      if (count == '') break;
+      ret._faintingCount.add(int.parse(count));
+    }
+    // firstAction
+    final element = stateElements.removeAt(0);
+    if (element != '') {
+      ret.firstAction = TurnMove.deserialize(element, split2, split3, version: version);
+    }
+
+    return ret;
+  }
+
+  // SQL保存用の文字列に変換
+  String serialize(String split1, String split2, String split3, String split4, String split5, String split6) {
+    String ret = '';
+    // _pokemonIndexes
+    for (final index in _pokemonIndexes) {
+      ret += index.toString();
+      ret += split2;
+    }
+    ret += split1;
+    // _pokemonStates
+    for (final states in _pokemonStates) {
+      for (final state in states) {
+        ret += state.serialize(split4, split5, split6);
+        ret += split3;
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // lastExitedStates
+    for (final states in lastExitedStates) {
+      for (final state in states) {
+        ret += state.serialize(split4, split5, split6);
+        ret += split3;
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // indiFields
+    for (final fields in indiFields) {
+      for (final field in fields) {
+        ret += field.serialize(split4);
+        ret += split3;
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // _weather
+    ret += _weather.serialize(split2);
+    ret += split1;
+    // _field
+    ret += _field.serialize(split2);
+    ret += split1;
+    // phases
+    for (final phase in phases) {
+      ret += phase.serialize(split3, split4, split5);
+      ret += split2;
+    }
+    ret += split1;
+    // phaseIndex
+    ret += phaseIndex.toString();
+    ret += split1;
+    // userForces
+    ret += userForces.serialize(split2, split3);
+    ret += split1;
+    // hasOwnTerastal
+    ret += hasOwnTerastal ? '1' : '0';
+    ret += split1;
+    // hasOpponentTerastal
+    ret += hasOpponentTerastal ? '1' : '0';
+    ret += split1;
+    // canZorua
+    ret += canZorua ? '1' : '0';
+    ret += split1;
+    // canZoroark
+    ret += canZoroark ? '1' : '0';
+    ret += split1;
+    // canZoruaHisui
+    ret += canZoruaHisui ? '1' : '0';
+    ret += split1;
+    // canZoroarkHisui
+    ret += canZoroarkHisui ? '1' : '0';
+    ret += split1;
+    // _faintingCount
+    for (final count in _faintingCount) {
+      ret += count.toString();
+      ret += split2;
+    }
+    ret += split1;
+    // firstAction
+    ret += firstAction != null ? firstAction!.serialize(split2, split3) : '';
+
+    return ret;
+  }
 }

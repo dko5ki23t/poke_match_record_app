@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -31,7 +30,6 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
     if (isFirstBuild) {
       winFilter = [...widget.winFilter];

@@ -1,145 +1,54 @@
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
-import 'package:poke_reco/data_structs/field.dart';
-import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class Turn {
-  List<int> _initialPokemonIndexes = [0, 0];    // 0は無効値
-  List<List<PokemonState>> _initialPokemonStates = [[], []];
-  List<List<IndividualField>> _initialIndiFields = [[], []];
-  Weather initialWeather = Weather(0);
-  Field initialField = Field(0);
-  List<bool> _initialHasTerastal = [false, false];
-  UserForces initialUserForces = UserForces();
+  PhaseState _initialState = PhaseState();
   List<TurnEffect> phases = [];
-  bool canZorua = false;    // 正体を明かしていないゾロアがいるかどうか
-  bool canZoroark = false;
-  bool canZoruaHisui = false;
-  bool canZoroarkHisui = false;
-  List<List<PokemonState>> _initialLastExitedStates = [[], []];
+  PhaseState _endingState = PhaseState();
   List<TurnEffect> noAutoAddEffect = [];
 
-  PokemonState get initialOwnPokemonState => _initialPokemonStates[0][_initialPokemonIndexes[0]-1];
-  PokemonState get initialOpponentPokemonState => _initialPokemonStates[1][_initialPokemonIndexes[1]-1];
-  List<IndividualField> get initialOwnIndiField => _initialIndiFields[0];
-  List<IndividualField> get initialOpponentIndiField => _initialIndiFields[1];
-  bool get initialOwnHasTerastal => _initialHasTerastal[0];
-  bool get initialOpponentHasTerastal => _initialHasTerastal[1];
+  PokemonState get initialOwnPokemonState => _initialState.getPokemonState(PlayerType.me, null);
+  PokemonState get initialOpponentPokemonState => _initialState.getPokemonState(PlayerType.opponent, null);
+  List<IndividualField> get initialOwnIndiField => _initialState.indiFields[0];
+  List<IndividualField> get initialOpponentIndiField => _initialState.indiFields[1];
+  bool get initialOwnHasTerastal => _initialState.hasOwnTerastal;
+  bool get initialOpponentHasTerastal => _initialState.hasOpponentTerastal;
 
   int getInitialPokemonIndex(PlayerType player) {
-    return player == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
+    return _initialState.getPokemonIndex(player, null);
   }
 
   void setInitialPokemonIndex(PlayerType player, int index) {
-    if (player == PlayerType.me) {
-      _initialPokemonIndexes[0] = index;
-    }
-    else {
-      _initialPokemonIndexes[1] = index;
-    }
+    _initialState.setPokemonIndex(player, index);
   }
 
   List<PokemonState> getInitialPokemonStates(PlayerType player) {
-    return player == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
+    return _initialState.getPokemonStates(player);
   }
 
   List<PokemonState> getInitialLastExitedStates(PlayerType player) {
-    return player == PlayerType.me ? _initialLastExitedStates[0] : _initialLastExitedStates[1];
+    return player == PlayerType.me ? _initialState.lastExitedStates[0] : _initialState.lastExitedStates[1];
   }
 
 
   Turn copyWith() =>
     Turn()
-    .._initialPokemonIndexes = [..._initialPokemonIndexes]
-    .._initialPokemonStates[0] = [
-      for (final state in _initialPokemonStates[0])
-      state.copyWith()
-    ]
-    .._initialPokemonStates[1] = [
-      for (final state in _initialPokemonStates[1])
-      state.copyWith()
-    ]
-    .._initialIndiFields[0] = [
-      for (final field in _initialIndiFields[0])
-      field.copyWith()
-    ]
-    .._initialIndiFields[1] = [
-      for (final field in _initialIndiFields[1])
-      field.copyWith()
-    ]
-    ..initialWeather = initialWeather.copyWith()
-    ..initialField = initialField.copyWith()
-    .._initialHasTerastal = [..._initialHasTerastal]
-    ..initialUserForces = initialUserForces.copyWith()
-    ..phases = [
-      for (final phase in phases)
-      phase.copyWith()
-    ]
-    ..canZorua = canZorua
-    ..canZoroark = canZoroark
-    ..canZoruaHisui = canZoruaHisui
-    ..canZoroarkHisui = canZoroarkHisui
-    .._initialLastExitedStates[0] = [
-      for (final state in _initialLastExitedStates[0])
-      state.copyWith()
-    ]
-    .._initialLastExitedStates[1] = [
-      for (final state in _initialLastExitedStates[1])
-      state.copyWith()
-    ]
+    .._initialState = _initialState.copyWith()
+    ..phases = [...phases]
+    .._endingState = _endingState.copyWith()
     ..noAutoAddEffect = [
       for (final effect in noAutoAddEffect)
       effect.copyWith()
     ];
 
   PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
-    var ret = PhaseState()
-    ..setPokemonIndex(PlayerType.me, _initialPokemonIndexes[0])
-    ..setPokemonIndex(PlayerType.opponent, _initialPokemonIndexes[1])
-    ..indiFields[0] = [for (final field in _initialIndiFields[0]) field.copyWith()]
-    ..indiFields[1] = [for (final field in _initialIndiFields[1]) field.copyWith()]
-    ..hasOwnTerastal = _initialHasTerastal[0]
-    ..hasOpponentTerastal = _initialHasTerastal[1]
-    ..canZorua = canZorua
-    ..canZoroark = canZoroark
-    ..canZoruaHisui = canZoruaHisui
-    ..canZoroarkHisui = canZoroarkHisui;
-    ret.getPokemonStates(PlayerType.me).clear();
-    ret.getPokemonStates(PlayerType.me).addAll([
-      for (final state in _initialPokemonStates[0])
-      state.copyWith()
-    ]);
-    ret.getPokemonStates(PlayerType.opponent).clear();
-    ret.getPokemonStates(PlayerType.opponent).addAll([
-      for (final state in _initialPokemonStates[1])
-      state.copyWith()
-    ]);
-    ret.forceSetWeather(initialWeather.copyWith());
-    ret.forceSetField(initialField.copyWith());
-    initialUserForces.processEffect(
-      ret.getPokemonState(PlayerType.me, null),
-      ret.getPokemonState(PlayerType.opponent, null),
-      ret, ownParty, opponentParty,
-    );
-    ret.lastExitedStates[0].clear();
-    ret.lastExitedStates[0].addAll([
-      for (final state in _initialLastExitedStates[0])
-      state.copyWith()
-    ]);
-    ret.lastExitedStates[1].clear();
-    ret.lastExitedStates[1].addAll([
-      for (final state in _initialLastExitedStates[1])
-      state.copyWith()
-    ]);
-    return ret;
+    return _initialState.copyWith();
   }
 
   bool isValid() {
@@ -157,52 +66,7 @@ class Turn {
   }
 
   void setInitialState(PhaseState state, Party ownParty, Party opponentParty,) {
-    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType.me, null);
-    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType.opponent, null);
-    _initialPokemonStates[0] = [
-      for (final s in state.getPokemonStates(PlayerType.me))
-      s.copyWith()
-    ];
-    _initialPokemonStates[1] = [
-      for (final s in state.getPokemonStates(PlayerType.opponent))
-      s.copyWith()
-    ];
-    _initialIndiFields[0] = [
-      for (final f in state.indiFields[0])
-      f.copyWith()
-    ];
-    _initialIndiFields[1] = [
-      for (final f in state.indiFields[1])
-      f.copyWith()
-    ];
-    // ひるみ状態は自動的に解除
-    // TODO これするなら他にも？
-    for (var player in [PlayerType.me, PlayerType.opponent]) {
-      var pokeIdx = getInitialPokemonIndex(player) - 1;
-      var idx = getInitialPokemonStates(player)[pokeIdx].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
-      if (idx >= 0) getInitialPokemonStates(player)[pokeIdx].ailmentsRemoveAt(idx);
-    }
-    initialWeather = state.weather;
-    initialField = state.field;
-    _initialHasTerastal[0] = state.hasOwnTerastal;
-    _initialHasTerastal[1] = state.hasOpponentTerastal;
-    initialUserForces.processEffect(
-      state.getPokemonState(PlayerType.me, null),
-      state.getPokemonState(PlayerType.opponent, null),
-      state, ownParty, opponentParty,
-    );
-    canZorua = state.canZorua;
-    canZoroark = state.canZoroark;
-    canZoruaHisui = state.canZoruaHisui;
-    canZoroarkHisui = state.canZoroarkHisui;
-    _initialLastExitedStates[0] = [
-      for (final s in state.lastExitedStates[0])
-      s.copyWith()
-    ];
-    _initialLastExitedStates[1] = [
-      for (final s in state.lastExitedStates[1])
-      s.copyWith()
-    ];
+    _initialState = state.copyWith();
   }
 
   // とある時点(フェーズ)での状態を取得
@@ -237,107 +101,31 @@ class Turn {
 
   // 初期状態のみ残してクリア
   void clearWithInitialState() {
-    //_initialPokemonIndexes = [0, 0];    // 0は無効値
-    //_initialPokemonStates = [[], []];
-    //_initialIndiFields = [[], []];
-    //initialWeather = Weather(0);
-    //initialField = Field(0);
-    //_initialHasTerastal = [false, false];
-    initialUserForces = UserForces();
     phases = [];
+    _endingState = PhaseState();
+    noAutoAddEffect = [];
   }
 
   // SQLに保存された文字列からTurnをパース
   static Turn deserialize(
     dynamic str, String split1, String split2,
     String split3, String split4, String split5,
-    String split6, {int version = -1})  // -1は最新バージョン
+    String split6, String split7, {int version = -1})  // -1は最新バージョン
   {
     Turn ret = Turn();
-    final turnElements = str.split(split1);
-    // _initialPokemonIndexes
-    var indexes = turnElements[0].split(split2);
-    ret._initialPokemonIndexes.clear();
-    for (final index in indexes) {
-      if (index == '') break;
-      ret._initialPokemonIndexes.add(int.parse(index));
-    }
-    // _initialPokemonStates
-    var pokeStates = turnElements[1].split(split2);
-    ret._initialPokemonStates.clear();
-    for (final pokeState in pokeStates) {
-      if (pokeState == '') break;
-      var states = pokeState.split(split3);
-      List<PokemonState> adding = [];
-      int i = 0;
-      for (final state in states) {
-        if (state == '') break;
-        adding.add(
-          PokemonState.deserialize(state, split4, split5, split6, version: version)
-          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
-        i++;
-      }
-      ret._initialPokemonStates.add(adding);
-    }
-    // _initialIndiFields
-    var indiFields = turnElements[2].split(split2);
-    ret._initialIndiFields = [[], []];
-    for (int i = 0; i < indiFields.length; i++) {
-      if (indiFields[i] == '') break;
-      var fields = indiFields[i].split(split3);
-      List<IndividualField> adding = [];
-      for (final field in fields) {
-        if (field == '') break;
-        adding.add(IndividualField.deserialize(field, split4));
-      }
-      ret._initialIndiFields[i] = adding;
-    }
-    // initialWeather
-    ret.initialWeather = Weather.deserialize(turnElements[3], split2);
-    // initialField
-    ret.initialField = Field.deserialize(turnElements[4], split2);
-    // _initialHasTerastal
-    var hasTerastals = turnElements[5].split(split2);
-    ret._initialHasTerastal.clear();
-    for (final hasTerastal in hasTerastals) {
-      if (hasTerastal == '') break;
-      ret._initialHasTerastal.add(hasTerastal == '1');
-    }
-    // initialUserForces
-    ret.initialUserForces = UserForces.deserialize(turnElements[6], split2, split3);
+    final List turnElements = str.split(split1);
+    // _initialState
+    ret._initialState = PhaseState.deserialize(turnElements.removeAt(0), split2, split3, split4, split5, split6, split7);
     // phases
-    var turnEffects = turnElements[7].split(split2);
+    var turnEffects = turnElements.removeAt(0).split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
       ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5, version: version));
     }
-    // canZorua
-    ret.canZorua = int.parse(turnElements[8]) != 0;
-    // canZoroark
-    ret.canZoroark = int.parse(turnElements[9]) != 0;
-    // canZoruaHisui
-    ret.canZoruaHisui = int.parse(turnElements[10]) != 0;
-    // canZoroarkHisui
-    ret.canZoroarkHisui = int.parse(turnElements[11]) != 0;
-    // _initialLastExitedStates
-    pokeStates = turnElements[12].split(split2);
-    ret._initialLastExitedStates.clear();
-    for (final pokeState in pokeStates) {
-      if (pokeState == '') break;
-      var states = pokeState.split(split3);
-      List<PokemonState> adding = [];
-      int i = 0;
-      for (final state in states) {
-        if (state == '') break;
-        adding.add(
-          PokemonState.deserialize(state, split4, split5, split6, version: version)
-          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
-        i++;
-      }
-      ret._initialLastExitedStates.add(adding);
-    }
+    // _endingState
+    ret._endingState = PhaseState.deserialize(turnElements.removeAt(0), split2, split3, split4, split5, split6, split7);
     // noAutoAddEffect
-    var effects = turnElements[13].split(split2);
+    var effects = turnElements.removeAt(0).split(split2);
     ret.noAutoAddEffect.clear();
     for (final effect in effects) {
       if (effect == '') break;
@@ -348,46 +136,13 @@ class Turn {
   }
 
   // SQL保存用の文字列に変換
-  String serialize(String split1, String split2, String split3, String split4, String split5, String split6) {
+  String serialize(
+    String split1, String split2, String split3, String split4,
+    String split5, String split6, String split7
+  ) {
     String ret = '';
-    // _initialOwnPokemonIndexes
-    for (final index in _initialPokemonIndexes) {
-      ret += index.toString();
-      ret += split2;
-    }
-    ret += split1;
-    // _initialPokemonStates
-    for (final states in _initialPokemonStates) {
-      for (final state in states) {
-        ret += state.serialize(split4, split5, split6);
-        ret += split3;
-      }
-      ret += split2;
-    }
-    ret += split1;
-    // _initialIndiFields
-    for (final fields in _initialIndiFields) {
-      for (final field in fields) {
-        ret += field.serialize(split4);
-        ret += split3;
-      }
-      ret += split2;
-    }
-    ret += split1;
-    // initialWeather
-    ret += initialWeather.serialize(split2);
-    ret += split1;
-    // initialField
-    ret += initialField.serialize(split2);
-    ret += split1;
-    // _initialHasTerastal
-    for (final hasTerastal in _initialHasTerastal) {
-      ret += hasTerastal ? '1' : '0';
-      ret += split2;
-    }
-    ret += split1;
-    // initialUserForces
-    ret += initialUserForces.serialize(split2, split3);
+    // _initialState
+    ret += _initialState.serialize(split2, split3, split4, split5, split6, split7);
     ret += split1;
     // phases
     for (final turnEffect in phases) {
@@ -395,26 +150,8 @@ class Turn {
       ret += split2;
     }
     ret += split1;
-    // canZorua
-    ret += canZorua ? '1' : '0';
-    ret += split1;
-    // canZoroark
-    ret += canZoroark ? '1' : '0';
-    ret += split1;
-    // canZoruaHisui
-    ret += canZoruaHisui ? '1' : '0';
-    ret += split1;
-    // canZoroarkHisui
-    ret += canZoroarkHisui ? '1' : '0';
-    ret += split1;
-    // _initialLastExitedStates
-    for (final states in _initialLastExitedStates) {
-      for (final state in states) {
-        ret += state.serialize(split4, split5, split6);
-        ret += split3;
-      }
-      ret += split2;
-    }
+    // _endingState
+    ret += _endingState.serialize(split2, split3, split4, split5, split6, split7);
     ret += split1;
     // noAutoAddEffect
     for (final effect in noAutoAddEffect) {

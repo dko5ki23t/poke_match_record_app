@@ -54,7 +54,7 @@ class BattleCommandPageState extends State<BattleCommandPage> {
           children: [
             // 行動
             FittedBox(
-              fit: BoxFit.contain,
+              fit: BoxFit.scaleDown,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -151,7 +151,7 @@ class BattleCommandPageState extends State<BattleCommandPage> {
             // ダメージ入力
             FittedBox(
               alignment: Alignment.centerLeft,
-              fit: BoxFit.contain,
+              fit: BoxFit.scaleDown,
               child: Row(
                 children: [
                   Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: (){}, icon: Icon(Icons.arrow_back))),

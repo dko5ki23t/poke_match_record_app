@@ -232,6 +232,7 @@ const String sqlSplit4 = '*';
 const String sqlSplit5 = '!';
 const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
+const String sqlSplit8 = '|';
 
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),

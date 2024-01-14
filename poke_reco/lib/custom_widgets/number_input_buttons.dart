@@ -26,7 +26,7 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
     return Column(
       children: [
         FittedBox(
-          fit: BoxFit.contain,
+          fit: BoxFit.scaleDown,
           child: Padding(
             padding: EdgeInsets.all(10),
             child: SizedBox(
@@ -44,7 +44,7 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
           ),
         ),
         FittedBox(
-          fit: BoxFit.contain,
+          fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -76,7 +76,7 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
           ),
         ),
         FittedBox(
-          fit: BoxFit.contain,
+          fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -108,7 +108,7 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
           ),
         ),
         FittedBox(
-          fit: BoxFit.contain,
+          fit: BoxFit.scaleDown,
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
