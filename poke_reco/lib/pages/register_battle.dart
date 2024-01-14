@@ -12,8 +12,10 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
@@ -1111,7 +1113,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   ),
                 ],
               ),
-            ),
+            ),*/
           ],
         );
         nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
