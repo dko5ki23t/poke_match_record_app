@@ -1113,7 +1113,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   ),
                 ],
               ),
-            ),*/
+            ),
           ],
         );
         nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
