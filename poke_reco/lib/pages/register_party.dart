@@ -228,7 +228,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                       widget.isEditPokemon,
                       () {
                         if (widget.isEditPokemon && widget.party.pokemons[i] != null && widget.phaseState != null) {
-                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType(PlayerType.opponent))[i]);
+                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType.opponent)[i]);
                         }
                       },
                       enabledPokemon: i == 0 || (widget.party.pokemons[i-1] != null && (widget.isEditPokemon || widget.party.pokemons[i-1]!.isValid)),

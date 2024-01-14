@@ -269,19 +269,62 @@ enum Sex {
   final Icon displayIcon;
 }
 
-class PlayerType {
+class OldPlayerType {
   static const int none = 0;
   static const int me = 1;          // 自身
   static const int opponent = 2;    // 相手
   static const int entireField = 3; // 全体の場(両者に影響あり)
 
-  const PlayerType(this.id);
+  const OldPlayerType(this.id);
 
-  PlayerType get opposite {
-    return id == me ? PlayerType(opponent) : PlayerType(me);
+  OldPlayerType get opposite {
+    return id == me ? OldPlayerType(opponent) : OldPlayerType(me);
   }
 
   final int id;
+}
+
+enum PlayerType {
+  none,
+  me,          // 自身
+  opponent,    // 相手
+  entireField, // 全体の場(両者に影響あり)
+}
+
+extension PlayerTypeOpp on PlayerType {
+  PlayerType get opposite {
+    return this == PlayerType.me ? PlayerType.opponent : PlayerType.me;
+  }
+}
+
+// リストのインデックス等に使う
+extension PlayerTypeNum on PlayerType {
+  int get number {
+    switch (this) {
+      case PlayerType.me:
+        return 0;
+      case PlayerType.opponent:
+        return 1;
+      case PlayerType.entireField:
+        return 2;
+      case PlayerType.none:
+      default:
+        return -1;
+    }
+  }
+
+  static PlayerType createFromNumber(int number) {
+    switch (number) {
+      case 0:
+        return PlayerType.me;
+      case 1:
+        return PlayerType.opponent;
+      case 2:
+        return PlayerType.entireField;
+      default:
+        return PlayerType.none;
+    }
+  }
 }
 
 class Temper {
@@ -1415,7 +1458,7 @@ class PokeDB {
       party.winCount = 0;
     }
     for (final battle in battles.values) {
-      int partyID = battle.getParty(PlayerType(PlayerType.me)).id;
+      int partyID = battle.getParty(PlayerType.me).id;
       parties[partyID]!.usedCount++;
       if (battle.isMyWin) parties[partyID]!.winCount++;
     }
@@ -1521,8 +1564,8 @@ class PokeDB {
       partyRefs[e] = false;
     }
     for (final e in battles.values) {
-      partyRefs[e.getParty(PlayerType(PlayerType.me)).id] = true;
-      partyRefs[e.getParty(PlayerType(PlayerType.opponent)).id] = true;
+      partyRefs[e.getParty(PlayerType.me).id] = true;
+      partyRefs[e.getParty(PlayerType.opponent).id] = true;
     }
     // 参照されておらず、削除可なら削除する
     List<int> deleteIDs = [];

@@ -95,15 +95,15 @@ class ViewBattlePageState extends State<ViewBattlePage> {
 
     // エイリアス
     List<Turn> turns = widget.battle.turns;
-    Party ownParty = widget.battle.getParty(PlayerType(PlayerType.me));
-    Party opponentParty = widget.battle.getParty(PlayerType(PlayerType.opponent));
+    Party ownParty = widget.battle.getParty(PlayerType.me);
+    Party opponentParty = widget.battle.getParty(PlayerType.opponent);
 
     for (int i = 0; i < opponentParty.pokemonNum; i++) {
       opponentPokemonController[i].text = opponentParty.pokemons[i]!.name;
     }
     dateController.text = widget.battle.formattedDateTime;
-    ownPartyController.text = widget.battle.getParty(PlayerType(PlayerType.me)).id != 0 ?
-      pokeData.parties[widget.battle.getParty(PlayerType(PlayerType.me)).id]!.name : loc.battlesTabSelectParty;
+    ownPartyController.text = widget.battle.getParty(PlayerType.me).id != 0 ?
+      pokeData.parties[widget.battle.getParty(PlayerType.me).id]!.name : loc.battlesTabSelectParty;
     
     if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage
@@ -324,8 +324,8 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         assert(turns.isNotEmpty);
         lists = BattleFirstPokemonListView(
           () {}, widget.battle, theme, CheckedPokemons(),
-          ownPokemonStates: turns.first.getInitialPokemonStates(PlayerType(PlayerType.me)),
-          opponentPokemonIndex: turns.first.getInitialPokemonIndex(PlayerType(PlayerType.opponent)),
+          ownPokemonStates: turns.first.getInitialPokemonStates(PlayerType.me),
+          opponentPokemonIndex: turns.first.getInitialPokemonIndex(PlayerType.opponent),
           showNetworkImage: pokeData.getPokeAPI,
           isInput: false, loc: loc,
         );
@@ -347,14 +347,14 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                   child: Row(children: [
                     pokeData.getPokeAPI ?
                     Image.network(
-                      pokeData.pokeBase[focusState!.getPokemonState(PlayerType(PlayerType.me), null).pokemon.no]!.imageUrl,
+                      pokeData.pokeBase[focusState!.getPokemonState(PlayerType.me, null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
                       errorBuilder: (c, o, s) {
                         return const Icon(Icons.catching_pokemon);
                       },
                     ) : const Icon(Icons.catching_pokemon),
-                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.me), focusState!).name, overflow: TextOverflow.ellipsis,)),
-                    focusState.getPokemonState(PlayerType(PlayerType.me), null).sex.displayIcon,
+                    Flexible(child: Text(_focusingPokemon(PlayerType.me, focusState!).name, overflow: TextOverflow.ellipsis,)),
+                    focusState.getPokemonState(PlayerType.me, null).sex.displayIcon,
                   ],),
                 ),
                 SizedBox(width: 10,),
@@ -362,14 +362,14 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                   child: Row(children: [
                     pokeData.getPokeAPI ?
                     Image.network(
-                      pokeData.pokeBase[focusState.getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.no]!.imageUrl,
+                      pokeData.pokeBase[focusState.getPokemonState(PlayerType.opponent, null).pokemon.no]!.imageUrl,
                       height: theme.buttonTheme.height,
                       errorBuilder: (c, o, s) {
                         return const Icon(Icons.catching_pokemon);
                       },
                     ) : const Icon(Icons.catching_pokemon),
-                    Flexible(child: Text(_focusingPokemon(PlayerType(PlayerType.opponent), focusState).name, overflow: TextOverflow.ellipsis,)),
-                    focusState.getPokemonState(PlayerType(PlayerType.opponent), null).sex.displayIcon,
+                    Flexible(child: Text(_focusingPokemon(PlayerType.opponent, focusState).name, overflow: TextOverflow.ellipsis,)),
+                    focusState.getPokemonState(PlayerType.opponent, null).sex.displayIcon,
                   ],),
                 ),
                 IconButton(
@@ -417,29 +417,29 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                           SizedBox(width: 10,),
                           Expanded(
                             child:
-                              focusState.getPokemonState(PlayerType(PlayerType.me), null).isTerastaling ?
+                              focusState.getPokemonState(PlayerType.me, null).isTerastaling ?
                               Row(children: [
                                 Text(loc.commonTerastal),
-                                focusState.getPokemonState(PlayerType(PlayerType.me), null).teraType1.displayIcon,
+                                focusState.getPokemonState(PlayerType.me, null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
-                                focusState.getPokemonState(PlayerType(PlayerType.me), null).type1.displayIcon,
-                                focusState.getPokemonState(PlayerType(PlayerType.me), null).type2 != null ?
-                                focusState.getPokemonState(PlayerType(PlayerType.me), null).type2!.displayIcon : Container(),
+                                focusState.getPokemonState(PlayerType.me, null).type1.displayIcon,
+                                focusState.getPokemonState(PlayerType.me, null).type2 != null ?
+                                focusState.getPokemonState(PlayerType.me, null).type2!.displayIcon : Container(),
                               ],),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
                             child:
-                              focusState.getPokemonState(PlayerType(PlayerType.opponent), null).isTerastaling ?
+                              focusState.getPokemonState(PlayerType.opponent, null).isTerastaling ?
                               Row(children: [
                                 Text(loc.commonTerastal),
-                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).teraType1.displayIcon,
+                                focusState.getPokemonState(PlayerType.opponent, null).teraType1.displayIcon,
                               ],) :
                               Row(children: [
-                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).type1.displayIcon,
-                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).type2 != null ?
-                                focusState.getPokemonState(PlayerType(PlayerType.opponent), null).type2!.displayIcon : Container(),
+                                focusState.getPokemonState(PlayerType.opponent, null).type1.displayIcon,
+                                focusState.getPokemonState(PlayerType.opponent, null).type2 != null ?
+                                focusState.getPokemonState(PlayerType.opponent, null).type2!.displayIcon : Container(),
                               ],),
                           ),
                         ],
@@ -450,11 +450,11 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                         children: [
                           SizedBox(width: 10,),
                           Expanded(
-                            child: AbilityText(focusState.getPokemonState(PlayerType(PlayerType.me), null).currentAbility, showHatena: true,),
+                            child: AbilityText(focusState.getPokemonState(PlayerType.me, null).currentAbility, showHatena: true,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
-                            child: AbilityText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).currentAbility, showHatena: true,),
+                            child: AbilityText(focusState.getPokemonState(PlayerType.opponent, null).currentAbility, showHatena: true,),
                           ),
                         ],
                       ),
@@ -464,27 +464,27 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                         children: [
                           SizedBox(width: 10,),
                           Expanded(
-                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.me), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
+                            child: ItemText(focusState.getPokemonState(PlayerType.me, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                           SizedBox(width: 10,),
                           Expanded(
-                            child: ItemText(focusState.getPokemonState(PlayerType(PlayerType.opponent), null).holdingItem, showHatena: true, showNone: true, loc: loc,),
+                            child: ItemText(focusState.getPokemonState(PlayerType.opponent, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
                           ),
                         ],
                       ),
                       SizedBox(height: 5),
                       // HP
                       _HPBarRow(
-                        focusState.getPokemonState(PlayerType(PlayerType.me), null).remainHP, _focusingPokemon(PlayerType(PlayerType.me), focusState).h.real,
-                        focusState.getPokemonState(PlayerType(PlayerType.opponent), null).remainHPPercent),
+                        focusState.getPokemonState(PlayerType.me, null).remainHP, _focusingPokemon(PlayerType.me, focusState).h.real,
+                        focusState.getPokemonState(PlayerType.opponent, null).remainHPPercent),
                       SizedBox(height: 5),
                       // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
                       // TODO
                       for (int i = 0; i < 7; i++)
                         viewMode == 0 ?   // ランク表示
                         _StatChangeViewRow(
-                          statAlphabets[i], focusState.getPokemonState(PlayerType(PlayerType.me), null).statChanges(i),
-                          focusState.getPokemonState(PlayerType(PlayerType.opponent), null).statChanges(i),
+                          statAlphabets[i], focusState.getPokemonState(PlayerType.me, null).statChanges(i),
+                          focusState.getPokemonState(PlayerType.opponent, null).statChanges(i),
                           (idx) {},
                           (idx) {},
                         ) :
@@ -492,35 +492,35 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType(PlayerType.me), null).minStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.me), null).maxStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).minStats[i].race,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
+                            focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
+                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
                           ) : Container() :
                           // ステータス(補正前/補正後)
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType(PlayerType.me), null).minStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.me), null).maxStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).minStats[i].real,
-                            focusState.getPokemonState(PlayerType(PlayerType.opponent), null).maxStats[i].real,
+                            focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
+                            focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
+                            focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
+                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
                           ) : Container(),
                       SizedBox(height: 5),
                       // わざ
                       for (int i = 0; i < 4; i++)
                       _MoveViewRow(
-                        focusState.getPokemonState(PlayerType(PlayerType.me), null),
-                        focusState.getPokemonState(PlayerType(PlayerType.opponent), null),
+                        focusState.getPokemonState(PlayerType.me, null),
+                        focusState.getPokemonState(PlayerType.opponent, null),
                         i, loc: loc,
                       ),
                       SizedBox(height: 5),
                       // 状態異常・その他補正・場
-                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me), null).ailmentsLength, focusState.getPokemonState(PlayerType(PlayerType.opponent), null).ailmentsLength); i++)
-                      _AilmentsRow(focusState.getPokemonState(PlayerType(PlayerType.me), null), focusState.getPokemonState(PlayerType(PlayerType.opponent), null), i),
-                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType(PlayerType.me), null).buffDebuffs.length, focusState.getPokemonState(PlayerType(PlayerType.opponent), null).buffDebuffs.length); i++)
-                      _BuffDebuffsRow(focusState.getPokemonState(PlayerType(PlayerType.me), null), focusState.getPokemonState(PlayerType(PlayerType.opponent), null), i),
-                      for (int i = 0; i < max(focusState.ownFields.length, focusState.opponentFields.length); i++)
+                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType.me, null).ailmentsLength, focusState.getPokemonState(PlayerType.opponent, null).ailmentsLength); i++)
+                      _AilmentsRow(focusState.getPokemonState(PlayerType.me, null), focusState.getPokemonState(PlayerType.opponent, null), i),
+                      for (int i = 0; i < max(focusState.getPokemonState(PlayerType.me, null).buffDebuffs.length, focusState.getPokemonState(PlayerType.opponent, null).buffDebuffs.length); i++)
+                      _BuffDebuffsRow(focusState.getPokemonState(PlayerType.me, null), focusState.getPokemonState(PlayerType.opponent, null), i),
+                      for (int i = 0; i < max(focusState.indiFields[0].length, focusState.indiFields[1].length); i++)
                       _IndiFieldRow(focusState, i),
                       _WeatherFieldRow(focusState)
                     ],
@@ -534,8 +534,8 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                 turnScrollController,
                 () {setState(() {});},
                 widget.battle, turnNum, theme, 
-                ownParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType(PlayerType.me))-1]!,
-                opponentParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType(PlayerType.opponent))-1]!,
+                ownParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType.me)-1]!,
+                opponentParty.pokemons[turns[turnNum-1].getInitialPokemonIndex(PlayerType.opponent)-1]!,
                 textEditingControllerList1,
                 textEditingControllerList2,
                 textEditingControllerList3,
@@ -608,8 +608,8 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     List<List<TurnEffectAndStateAndGuide>> ret = [];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
     Battle battle = widget.battle;
-    Party ownParty = battle.getParty(PlayerType(PlayerType.me));
-    Party opponentParty = battle.getParty(PlayerType(PlayerType.opponent));
+    Party ownParty = battle.getParty(PlayerType.me);
+    Party opponentParty = battle.getParty(PlayerType.opponent);
     Turn currentTurn = battle.turns[turnNum-1];
     PhaseState currentState = currentTurn.copyInitialState(ownParty, opponentParty);
     int continuousCount = 0;
@@ -630,8 +630,8 @@ class ViewBattlePageState extends State<ViewBattlePage> {
         continuousCount++;
       }
       final guides = phases[i].processEffect(
-        ownParty, currentState.getPokemonState(PlayerType(PlayerType.me), null),
-        opponentParty, currentState.getPokemonState(PlayerType(PlayerType.opponent), null),
+        ownParty, currentState.getPokemonState(PlayerType.me, null),
+        opponentParty, currentState.getPokemonState(PlayerType.opponent, null),
         currentState, lastAction, continuousCount, loc: loc
       );
       turnEffectAndStateAndGuides.add(
@@ -959,10 +959,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.ownFields.length > index ?
+                state.indiFields[0].length > index ?
                 Container(
-                  color: state.ownFields[index].bgColor,
-                  child: Text(state.ownFields[index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.indiFields[0][index].bgColor,
+                  child: Text(state.indiFields[0][index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
             Expanded(child: Container(),),
@@ -976,10 +976,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.opponentFields.length > index ?
+                state.indiFields[1].length > index ?
                 Container(
-                  color: state.opponentFields[index].bgColor,
-                  child: Text(state.opponentFields[index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.indiFields[1][index].bgColor,
+                  child: Text(state.indiFields[1][index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
           ],

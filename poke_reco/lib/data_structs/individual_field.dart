@@ -239,7 +239,7 @@ class IndividualField {
   bool isActive(AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
     switch (timing.id) {
       case AbilityTiming.pokemonAppear: // ポケモン登場時発動する場
-        var indiField = pokemonState.isMe ? state.ownFields : state.opponentFields;
+        var indiField = pokemonState.isMe ? state.indiFields[0] : state.indiFields[1];
         switch (id) {
           case healingWish:   // いやしのねがい
             return pokemonState.isMe && (pokemonState.remainHP < pokemonState.pokemon.h.real || pokemonState.ailmentsWhere((e) => e.id <= Ailment.sleep).isNotEmpty) ||
@@ -298,7 +298,7 @@ class IndividualField {
     int fieldEffectId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
     TurnEffect? prevAction, AbilityTiming timing,
   ) {
-    bool isMe = player.id == PlayerType.me;
+    bool isMe = player == PlayerType.me;
 
     switch (fieldEffectId) {
       case IndiFieldEffect.spikes1:     // まきびし(重ね掛けなし)

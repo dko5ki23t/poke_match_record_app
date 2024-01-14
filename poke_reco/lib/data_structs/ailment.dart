@@ -482,7 +482,7 @@ class Ailment {
     int ailmentId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
     TurnEffect? prevAction, AbilityTiming timing, int turns,
   ) {
-    bool isMe = player.id == PlayerType.me;
+    bool isMe = player == PlayerType.me;
 
     switch (ailmentId) {
       case burn:

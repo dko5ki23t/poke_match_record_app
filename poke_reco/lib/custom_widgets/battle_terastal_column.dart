@@ -131,18 +131,18 @@ class BattleTerastalColumn extends Column {
                               items: <DropdownMenuItem>[
                                 _myDropDown(
                                   !_getPrevState(prevState, i, sameTimingList).hasOwnTerastal,
-                                  PlayerType.me,
-                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/${loc.battleYou}',
+                                  PlayerType.me.number,
+                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType.me, null).pokemon.name}/${loc.battleYou}',
                                 ),
                                 _myDropDown(
                                   !_getPrevState(prevState, i, sameTimingList).hasOpponentTerastal,
-                                  PlayerType.opponent,
-                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
+                                  PlayerType.opponent.number,
+                                  '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType.opponent, null).pokemon.name}/${battle.opponentName}',
                                 ),
                               ],
-                              value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
+                              value: turn.phases[firstIdx+i].playerType == PlayerType.none ? null : turn.phases[firstIdx+i].playerType,
                               onChanged: (value) {
-                                turn.phases[firstIdx+i].playerType = PlayerType(value);
+                                turn.phases[firstIdx+i].playerType = PlayerTypeNum.createFromNumber(value);
                                 var teraType = _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType;
                                 if (teraType.id != 0) {
                                   turn.phases[firstIdx+i].effectId = teraType.id;
@@ -160,9 +160,9 @@ class BattleTerastalColumn extends Column {
                                 labelText: loc.battleEffectPlayer,
                               ),
                               controller: TextEditingController(
-                                text: turn.phases[firstIdx+i].playerType.id == PlayerType.me ?
-                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null).pokemon.name}/${loc.battleYou}' :
-                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent), null).pokemon.name}/${battle.opponentName}',
+                                text: turn.phases[firstIdx+i].playerType == PlayerType.me ?
+                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType.me, null).pokemon.name}/${loc.battleYou}' :
+                                      '${_getPrevState(prevState, i, sameTimingList).getPokemonState(PlayerType.opponent, null).pokemon.name}/${battle.opponentName}',
                               ),
                               readOnly: true,
                               onTap: () => onFocus(firstIdx+i+1),

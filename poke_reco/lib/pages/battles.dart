@@ -67,7 +67,7 @@ class BattlesPageState extends State<BattlesPage> {
       (element) => winFilter.contains(element.value.isMyWin ? 2 : element.value.isYourWin ? 3: 1)
     );
     if (partyIDFilter.isNotEmpty) {
-      filteredBattles = filteredBattles.where((element) => partyIDFilter.contains(element.value.getParty(PlayerType(PlayerType.me)).id));
+      filteredBattles = filteredBattles.where((element) => partyIDFilter.contains(element.value.getParty(PlayerType.me).id));
     }
     var sort = pokeData.battlesSort;
     sortedBattles = filteredBattles.toList();

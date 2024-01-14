@@ -114,11 +114,11 @@ class Ability {
   ) {
     final pokeData = PokeDB();
     List<Guide> ret = [];
-    var myPlayerID = playerType.id;
-    var yourPlayerID = playerType.opposite.id;
-    var myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
-    var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
-    var isOwn = playerType.id == PlayerType.me;
+    var myPlayer = playerType;
+    var yourPlayer = playerType.opposite;
+    var myFields = playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
+    var yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    var isOwn = playerType == PlayerType.me;
 
     switch (abilityID) {
       case 1:     // あくしゅう
@@ -150,7 +150,7 @@ class Ability {
       case 94:    // サンパワー
       case 115:   // アイスボディ
       case 297:   // どしょく
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP -= extraArg1;
         }
         else {
@@ -214,7 +214,7 @@ class Ability {
       case 123:   // ナイトメア
       case 160:   // てつのトゲ
       case 215:   // とびだすなかみ
-        if (yourPlayerID == PlayerType.me) {
+        if (yourPlayer == PlayerType.me) {
           yourState.remainHP -= extraArg1;
         }
         else {
@@ -245,7 +245,7 @@ class Ability {
         break;
       case 36:    // トレース
         {
-          if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
+          if (playerType == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [abilityID]
@@ -253,7 +253,7 @@ class Ability {
             );
           }
           myState.setCurrentAbility(pokeData.abilities[extraArg1]!, yourState, isOwn, state);
-          if (playerType.id == PlayerType.me && yourState.getCurrentAbility().id == 0) {
+          if (playerType == PlayerType.me && yourState.getCurrentAbility().id == 0) {
             ret.add(Guide()
               ..guideId = Guide.confAbility
               ..args = [extraArg1]
@@ -319,7 +319,7 @@ class Ability {
                 (element) => element.id != 0 && element.id == extraArg1
               );
           if (extraArg1 != 165 &&     // わるあがきは除外
-              myPlayerID == PlayerType.me &&
+              myPlayer == PlayerType.me &&
               opponentPokemonState.moves.length < 4 &&
               tmp.isEmpty
           ) {
@@ -346,7 +346,7 @@ class Ability {
         // もちもの確定
         {
           if (extraArg1 != 0 &&
-              myPlayerID == PlayerType.me &&
+              myPlayer == PlayerType.me &&
               opponentPokemonState.getHoldingItem()?.id == 0
           ) {
             ret.add(Guide()
@@ -378,8 +378,8 @@ class Ability {
         myState.addStatChanges(true, extraArg2, -1, yourState, abilityId: abilityID);
         break;
       case 149:     // イリュージョン
-        if (playerType.id == PlayerType.opponent && extraArg1 > 0) {
-          var pokeNo = state.getPokemonStates(PlayerType(PlayerType.opponent))[extraArg1-1].pokemon.no;
+        if (playerType == PlayerType.opponent && extraArg1 > 0) {
+          var pokeNo = state.getPokemonStates(PlayerType.opponent)[extraArg1-1].pokemon.no;
           if (pokeNo == PokeBase.zoruaNo) state.canZorua = false;
           if (pokeNo == PokeBase.zoroarkNo) state.canZoroark = false;
           if (pokeNo == PokeBase.zoruaHisuiNo) state.canZoruaHisui = false;
@@ -510,7 +510,7 @@ class Ability {
           if (findIdx >= 0) {
             myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.revealedForm);
           }
-          if (playerType.id == PlayerType.me) {
+          if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           }
           else {
@@ -527,7 +527,7 @@ class Ability {
         {
           int findIdx = myState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.perfectForm);
           if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.perfectForm));
-          if (playerType.id == PlayerType.me) {
+          if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           }
           else {
@@ -539,7 +539,7 @@ class Ability {
         switch (extraArg1) {
           case 872:   // アクアステップ
           case 10552: // ほのおのまい(とくこう1段階上昇)
-            if (yourPlayerID == PlayerType.me) {
+            if (yourPlayer == PlayerType.me) {
               yourState.remainHP -= extraArg2;
             }
             else {
@@ -548,7 +548,7 @@ class Ability {
             myState.addStatChanges(true, extraArg1 == 872 ? 4 : 2, 1, yourState, moveId: extraArg1);
             break;
           case 80:    // はなびらのまい
-            if (yourPlayerID == PlayerType.me) {
+            if (yourPlayer == PlayerType.me) {
               yourState.remainHP -= extraArg2;
             }
             else {
@@ -558,7 +558,7 @@ class Ability {
             break;
           case 552:   // ほのおのまい
           case 686:   // めざめるダンス
-            if (yourPlayerID == PlayerType.me) {
+            if (yourPlayer == PlayerType.me) {
               yourState.remainHP -= extraArg2;
             }
             else {
@@ -585,7 +585,7 @@ class Ability {
             yourState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 461:   // みかづきのまい
-            if (myPlayerID == PlayerType.me) {
+            if (myPlayer == PlayerType.me) {
               myState.remainHP = 0;
             }
             else {
@@ -599,7 +599,7 @@ class Ability {
             break;
           case 775:   // ソウルビート
             {
-              if (myPlayerID == PlayerType.me) {
+              if (myPlayer == PlayerType.me) {
                 myState.remainHP -= extraArg2;
               }
               else {
@@ -716,7 +716,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.weather.id != Weather.sunny) {  // 晴れではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
+            if (playerType == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -736,7 +736,7 @@ class Ability {
         if (extraArg1 >= 0) {
           int arg = 0;
           if (state.field.id != Field.electricTerrain) {  // エレキフィールドではないのに発動したら
-            if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
+            if (playerType == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [1696]
@@ -815,7 +815,7 @@ class Ability {
           myState.minStats[i].real = SixParams.getRealABCDS(
             myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
         }
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();
         }
         myState.setCurrentAbility(pokeData.abilities[305]!, yourState, isOwn, state);   // とくせいをテラスシェルに変更
@@ -847,7 +847,7 @@ class Ability {
       default:
         break;
     }
-    if (playerType.id == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
+    if (playerType == PlayerType.opponent && myState.getCurrentAbility().id == 0) {
       ret.add(Guide()
         ..guideId = Guide.confAbility
         ..args = [abilityID]
@@ -860,7 +860,7 @@ class Ability {
   }
 
   void processPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var yourFields = isOwn ? state.opponentFields : state.ownFields;
+    var yourFields = isOwn ? state.indiFields[1] : state.indiFields[0];
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
@@ -1211,7 +1211,7 @@ class Ability {
   }
 
   void clearPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var yourFields = isOwn ? state.opponentFields : state.ownFields;
+    var yourFields = isOwn ? state.indiFields[1] : state.indiFields[0];
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_3);
@@ -1513,7 +1513,7 @@ class Ability {
     int abilityID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
     TurnEffect? prevAction, AbilityTiming timing,
   ) {
-    bool isMe = player.id == PlayerType.me;
+    bool isMe = player == PlayerType.me;
 
     switch (abilityID) {
       case 10:        // ちくでん

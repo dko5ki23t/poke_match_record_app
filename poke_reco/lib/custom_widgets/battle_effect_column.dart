@@ -136,32 +136,32 @@ class BattleEffectColumn extends Column {
                               ),
                               items: <DropdownMenuItem>[
                                 _myDropDown(
-                                  sameTimingList.first.candidateEffect.where((e) => e.playerType.id == PlayerType.me).isNotEmpty,
-                                  PlayerType.me,
+                                  sameTimingList.first.candidateEffect.where((e) => e.playerType == PlayerType.me).isNotEmpty,
+                                  PlayerType.me.number,
                                   '${sameTimingList[i].phaseState.getPokemonState(
-                                    PlayerType(PlayerType.me),
+                                    PlayerType.me,
                                     sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                   ).pokemon.name}/${loc.battleYou}',
                                 ),
                                 _myDropDown(
-                                  sameTimingList.first.candidateEffect.where((e) => e.playerType.id == PlayerType.opponent).isNotEmpty,
-                                  PlayerType.opponent,
+                                  sameTimingList.first.candidateEffect.where((e) => e.playerType == PlayerType.opponent).isNotEmpty,
+                                  PlayerType.opponent.number,
                                   '${sameTimingList[i].phaseState.getPokemonState(
-                                    PlayerType(PlayerType.opponent),
+                                    PlayerType.opponent,
                                     sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                   ).pokemon.name}/${battle.opponentName}',
                                 ),
                                 _myDropDown(
-                                  sameTimingList.first.candidateEffect.where((e) => e.playerType.id == PlayerType.entireField).isNotEmpty,
-                                  PlayerType.entireField,
+                                  sameTimingList.first.candidateEffect.where((e) => e.playerType == PlayerType.entireField).isNotEmpty,
+                                  PlayerType.entireField.number,
                                   loc.battleWeatherField,
                                 ),
                               ],
-                              value: turn.phases[firstIdx+i].playerType.id == PlayerType.none ? null : turn.phases[firstIdx+i].playerType.id,
+                              value: turn.phases[firstIdx+i].playerType == PlayerType.none ? null : turn.phases[firstIdx+i].playerType,
                               onChanged: (value) {
-                                turn.phases[firstIdx+i].playerType = PlayerType(value);
+                                turn.phases[firstIdx+i].playerType = PlayerTypeNum.createFromNumber(value);
                                 var candidates = sameTimingList.first.candidateEffect.where((e) => 
-                                      e.playerType.id == value);
+                                      e.playerType == value);
                                 if (candidates.length == 1) {       // 候補が1つだけなら
                                   turn.phases[firstIdx+i].effect = candidates.first.effect;
                                   turn.phases[firstIdx+i].effectId = candidates.first.effectId;
@@ -193,14 +193,14 @@ class BattleEffectColumn extends Column {
                                 labelText: loc.battleEffectPlayer,
                               ),
                               controller: TextEditingController(
-                                text: turn.phases[firstIdx+i].playerType.id == PlayerType.me ?
+                                text: turn.phases[firstIdx+i].playerType == PlayerType.me ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
-                                        PlayerType(PlayerType.me),
+                                        PlayerType.me,
                                         sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                       ).pokemon.name}/${loc.battleYou}' :
-                                      turn.phases[firstIdx+i].playerType.id == PlayerType.opponent ?
+                                      turn.phases[firstIdx+i].playerType == PlayerType.opponent ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
-                                        PlayerType(PlayerType.opponent),
+                                        PlayerType.opponent,
                                         sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                       ).pokemon.name}/${battle.opponentName}' :
                                       loc.battleWeatherField,
@@ -223,35 +223,35 @@ class BattleEffectColumn extends Column {
                               <DropdownMenuItem<int>>[
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.afterMove
                                   ).isNotEmpty,
                                   EffectType.afterMove, EffectType(EffectType.afterMove).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.ability
                                   ).isNotEmpty,
                                   EffectType.ability, EffectType(EffectType.ability).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.item
                                   ).isNotEmpty,
                                   EffectType.item, EffectType(EffectType.item).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.individualField
                                   ).isNotEmpty,
                                   EffectType.individualField, EffectType(EffectType.individualField).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.ailment
                                   ).isNotEmpty,
                                   EffectType.ailment, EffectType(EffectType.ailment).displayName,
@@ -260,28 +260,28 @@ class BattleEffectColumn extends Column {
                               <DropdownMenuItem<int>>[
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.ability
                                   ).isNotEmpty,
                                   EffectType.ability, EffectType(EffectType.ability).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.item
                                   ).isNotEmpty,
                                   EffectType.item, EffectType(EffectType.item).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.individualField
                                   ).isNotEmpty,
                                   EffectType.individualField, EffectType(EffectType.individualField).displayName,
                                 ),
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                    e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                    e.playerType == turn.phases[firstIdx+i].playerType &&
                                     e.effect.id == EffectType.ailment
                                   ).isNotEmpty,
                                   EffectType.ailment, EffectType(EffectType.ailment).displayName,
@@ -291,11 +291,11 @@ class BattleEffectColumn extends Column {
                                       turn.phases[firstIdx+i].effect.id == EffectType.weather ||
                                       turn.phases[firstIdx+i].effect.id == EffectType.field ||
                                       turn.phases[firstIdx+i].effect.id == EffectType.move) ? null : turn.phases[firstIdx+i].effect.id,
-                              onChanged: turn.phases[firstIdx+i].playerType.id != PlayerType.entireField && turn.phases[firstIdx+i].playerType.id != PlayerType.none ?
+                              onChanged: turn.phases[firstIdx+i].playerType != PlayerType.entireField && turn.phases[firstIdx+i].playerType != PlayerType.none ?
                               (value) {
                                 turn.phases[firstIdx+i].effect = EffectType(value!);
                                 var candidates = sameTimingList.first.candidateEffect.where((e) =>
-                                  e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
+                                  e.playerType == turn.phases[firstIdx+i].playerType &&
                                   e.effect.id == turn.phases[firstIdx+i].effect.id
                                 );
                                 if (candidates.length == 1) {   // 候補が一つしかないならそれに決めてしまう
@@ -353,8 +353,8 @@ class BattleEffectColumn extends Column {
                               suggestionsCallback: (pattern) async {
                                 List<TurnEffect> matches =
                                   sameTimingList.first.candidateEffect.where((e) =>
-                                  e.playerType.id == turn.phases[firstIdx+i].playerType.id &&
-                                  (e.playerType.id == PlayerType.entireField || e.effect.id == turn.phases[firstIdx+i].effect.id)
+                                  e.playerType == turn.phases[firstIdx+i].playerType &&
+                                  (e.playerType == PlayerType.entireField || e.effect.id == turn.phases[firstIdx+i].effect.id)
                                 ).toList();
                                 matches.retainWhere((s){
                                   return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
@@ -396,12 +396,12 @@ class BattleEffectColumn extends Column {
                         onFocus(firstIdx+i+1);
                       },
                       theme,
-                      battle.getParty(PlayerType(PlayerType.me)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.me), null)-1]!,
-                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType(PlayerType.opponent), null)-1]!,
-                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.me), null),
-                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType(PlayerType.opponent), null),
-                      battle.getParty(PlayerType(PlayerType.me)),
-                      battle.getParty(PlayerType(PlayerType.opponent)),
+                      battle.getParty(PlayerType.me).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType.me, null)-1]!,
+                      battle.getParty(PlayerType.opponent).pokemons[_getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonIndex(PlayerType.opponent, null)-1]!,
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType.me, null),
+                      _getPrevState(prevState, firstIdx, i, sameTimingList).getPokemonState(PlayerType.opponent, null),
+                      battle.getParty(PlayerType.me),
+                      battle.getParty(PlayerType.opponent),
                       _getPrevState(prevState, firstIdx, i, sameTimingList),
                       firstIdx-1 >= 0 ? turn.phases[firstIdx-1] : null,
                       textEditControllerList2[firstIdx+i], textEditControllerList3[firstIdx+i],

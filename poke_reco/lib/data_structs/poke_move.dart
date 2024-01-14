@@ -175,7 +175,7 @@ class DamageGetter {
 }
 
 class TurnMove {
-  PlayerType playerType = PlayerType(PlayerType.none);
+  PlayerType playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType(TurnMoveType.none);
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
   Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
@@ -214,12 +214,12 @@ class TurnMove {
     ..isFirst = isFirst;
 
   int? getChangePokemonIndex(PlayerType player) {
-    if (player.id == PlayerType.me) return _changePokemonIndexes[0];
+    if (player == PlayerType.me) return _changePokemonIndexes[0];
     return _changePokemonIndexes[1];
   }
 
   void setChangePokemonIndex(PlayerType player, int? val) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       _changePokemonIndexes[0] = val;
     }
     else {
@@ -349,12 +349,12 @@ class TurnMove {
   {
     final pokeData = PokeDB();
     List<Guide> ret = [];
-    if (playerType.id == PlayerType.none) return ret;
+    if (playerType == PlayerType.none) return ret;
 
     var ownPokemonState = ownState;
     var opponentPokemonState = opponentState;
-    var myState = playerType.id == PlayerType.me ? ownState : opponentState;
-    var yourState = playerType.id == PlayerType.me ? opponentState : ownState;
+    var myState = playerType == PlayerType.me ? ownState : opponentState;
+    var yourState = playerType == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copyWith();
 
     // 行動1の場合は登録
@@ -383,7 +383,7 @@ class TurnMove {
     if (teraType.id != 0) {
       myState.isTerastaling = true;
       myState.teraType1 = teraType;
-      if (playerType.id == PlayerType.me) {
+      if (playerType == PlayerType.me) {
         state.hasOwnTerastal = true;
       }
       else {
@@ -394,7 +394,7 @@ class TurnMove {
     // ポケモン交代
     if (type.id == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-      myState.processExitEffect(playerType.id == PlayerType.me, yourState, state);
+      myState.processExitEffect(playerType == PlayerType.me, yourState, state);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state.getPokemonState(playerType, null).processEnterEffect(true, state, yourState);
       state.getPokemonState(playerType, null).hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
@@ -445,9 +445,9 @@ class TurnMove {
           );
           state.makePokemonOther(playerType, check);
           myState = state.getPokemonState(playerType, null);
-          myState.setCurrentAbility(pokeData.abilities[149]!, yourState, playerType.id == PlayerType.me, state);
-          ownPokemonState = state.getPokemonState(PlayerType(PlayerType.me), null);
-          opponentPokemonState = state.getPokemonState(PlayerType(PlayerType.opponent), null);
+          myState.setCurrentAbility(pokeData.abilities[149]!, yourState, playerType == PlayerType.me, state);
+          ownPokemonState = state.getPokemonState(PlayerType.me, null);
+          opponentPokemonState = state.getPokemonState(PlayerType.opponent, null);
         }
       }
     }
@@ -457,7 +457,7 @@ class TurnMove {
       (element) => element.id != 0 && element.id == move.id
     );
     if (move.id != 165 &&     // わるあがきは除外
-        playerType.id == PlayerType.opponent &&
+        playerType == PlayerType.opponent &&
         type.id == TurnMoveType.move &&
         opponentPokemonState.moves.length < 4 &&
         tmp.isEmpty
@@ -493,10 +493,10 @@ class TurnMove {
 
     if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
 
-    List<IndividualField> myFields = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
-    List<IndividualField> yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
-    int myPlayerTypeID = playerType.id;
-    int yourPlayerTypeID = playerType.id == PlayerType.me ? PlayerType.opponent : PlayerType.me;
+    List<IndividualField> myFields = playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
+    List<IndividualField> yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    PlayerType myPlayerType = playerType;
+    PlayerType yourPlayerType = playerType == PlayerType.me ? PlayerType.opponent : PlayerType.me;
 
     // ダメージ計算式を表示するかどうか
     bool showDamageCalc = false;
@@ -538,7 +538,7 @@ class TurnMove {
       // わざの対象決定
       List<PokemonState> targetStates = [yourState];
       List<List<IndividualField>> targetIndiFields = [yourFields];
-      List<int> targetPlayerTypeIDs = [yourPlayerTypeID];
+      List<PlayerType> targetPlayerTypes = [yourPlayerType];
       PhaseState? targetField;
       switch (replacedMove.target.id) {
         case 1:     // TODO:不定、わざによって異なる のろいとかカウンターとか
@@ -548,7 +548,7 @@ class TurnMove {
         case 3:     // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
           targetStates = [];
           targetIndiFields = [];
-          targetPlayerTypeIDs = [];
+          targetPlayerTypes = [];
           break;
         case 4:     // 使用者の場
         case 7:     // 使用者自身
@@ -557,7 +557,7 @@ class TurnMove {
         case 15:    // すべての味方
           targetStates = [myState];
           targetIndiFields = [myFields];
-          targetPlayerTypeIDs = [myPlayerTypeID];
+          targetPlayerTypes = [myPlayerType];
           break;
         case 6:     // 相手の場
         case 8:     // ランダムな相手
@@ -568,23 +568,23 @@ class TurnMove {
         case 12:    // 全体の場
           targetStates = [myState, yourState];
           targetIndiFields = [myFields, yourFields];
-          targetPlayerTypeIDs = [myPlayerTypeID, yourPlayerTypeID];
+          targetPlayerTypes = [myPlayerType, yourPlayerType];
           targetField = state;
           break;
         case 14:    // 場にいるすべてのポケモン
           targetStates.add(myState);
           targetIndiFields.add(myFields);
-          targetPlayerTypeIDs.add(myPlayerTypeID);
+          targetPlayerTypes.add(myPlayerType);
           break;
         case 16:    // ひんしの(味方)ポケモン
           targetStates.clear();
           targetIndiFields.clear();
-          targetPlayerTypeIDs.clear();  // 使わない
+          targetPlayerTypes.clear();  // 使わない
           for (int i = 0; i < state.getPokemonStates(playerType).length; i++) {
             if (i != state.getPokemonIndex(playerType, null)-1 && state.getPokemonStates(playerType)[i].isFainting) {
               targetStates.add(state.getPokemonStates(playerType)[i]);
               targetIndiFields.add(myFields);
-              targetPlayerTypeIDs.add(myPlayerTypeID);
+              targetPlayerTypes.add(myPlayerType);
             }
           }
           break;
@@ -660,7 +660,7 @@ class TurnMove {
         if (effectOnce) break;
         var targetState = targetStates[i];
         var targetIndiField = targetIndiFields[i];
-        var targetPlayerTypeID = targetPlayerTypeIDs[i];
+        var targetPlayerType = targetPlayerTypes[i];
         switch (moveAdditionalEffects[continuousCount].id) {
           case 1:     // 追加効果なし
           case 104:   // 追加効果なし
@@ -785,12 +785,12 @@ class TurnMove {
             break;
           case 29:    // 相手ポケモンをランダムに交代させる
           case 314:   // 相手ポケモンをランダムに交代させる
-            if (getChangePokemonIndex(PlayerType(targetPlayerTypeID)) != null) {
-              targetState.processExitEffect(targetPlayerTypeID == PlayerType.me, myState, state);
+            if (getChangePokemonIndex(targetPlayerType) != null) {
+              targetState.processExitEffect(targetPlayerType == PlayerType.me, myState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType.opposite, getChangePokemonIndex(PlayerType(targetPlayerTypeID))!);
+              state.setPokemonIndex(playerType.opposite, getChangePokemonIndex(targetPlayerType)!);
               newState = state.getPokemonState(playerType.opposite, null);
-              newState.processEnterEffect(targetPlayerTypeID == PlayerType.me, state, myState);
+              newState.processEnterEffect(targetPlayerType == PlayerType.me, state, myState);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -826,7 +826,7 @@ class TurnMove {
             break;
           case 38:    // 使用者はHP満タン・状態異常を回復して2ターン眠る
             myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP = myState.pokemon.h.real;
             }
             else {
@@ -854,7 +854,7 @@ class TurnMove {
           case 41:    // 残りHPの半分のダメージ(残り1の場合は1)
             {
               int damage = 0;
-              if (targetPlayerTypeID == PlayerType.me) {
+              if (targetPlayerType == PlayerType.me) {
                 damage = (targetState.remainHP / 2).floor();
                 if (damage == 0) damage = 1;
                 damageCalc = loc.battleDamageFixed1(damage);
@@ -917,7 +917,7 @@ class TurnMove {
               myState.type2 = targetState.type2;
               if (targetState.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.halloween), state);
               if (targetState.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) myState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
-              myState.setCurrentAbility(targetState.currentAbility, targetState, playerType.id == PlayerType.me, state);
+              myState.setCurrentAbility(targetState.currentAbility, targetState, playerType == PlayerType.me, state);
               for (int i = 0; i < targetState.moves.length; i++) {
                 if (i >= myState.moves.length) {
                   myState.moves.add(targetState.moves[i]);
@@ -1049,7 +1049,7 @@ class TurnMove {
           case 100:   // 使用者の残りHPが少ないほど威力が大きくなる
             {
               int x = 0;
-              if (myPlayerTypeID == PlayerType.me) {
+              if (myPlayerType == PlayerType.me) {
                 x = (myState.remainHP * 48 / myState.pokemon.h.real).floor();
               }
               else {
@@ -1095,7 +1095,7 @@ class TurnMove {
           case 106:   // もちものを盗む
             if (extraArg1[continuousCount] != 0) {
               // もちもの確定のため、一度持たせる
-              if (targetPlayerTypeID == PlayerType.opponent &&
+              if (targetPlayerType == PlayerType.opponent &&
                   opponentPokemonState.getHoldingItem()?.id == 0
               ) {
                 targetState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
@@ -1208,7 +1208,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 128:   // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
-            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
+            if (getChangePokemonIndex(myPlayerType) != null) {
               List<int> statChanges = List.generate(7, (i) => myState.statChanges(i));
               var takeOverAilments = [...myState.ailmentsWhere((e) => e.id == Ailment.confusion ||
                 e.id == Ailment.leechSeed || e.id == Ailment.curse || e.id == Ailment.perishSong ||
@@ -1219,11 +1219,11 @@ class TurnMove {
               var takeOverBuffDebuffs = [...myState.buffDebuffs.where((e) => e.id == BuffDebuff.vital1 ||
                 e.id == BuffDebuff.vital2 || e.id == BuffDebuff.vital3 || e.id == BuffDebuff.substitute
               )];
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
+              myState.processExitEffect(myPlayerType == PlayerType.me, yourState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.processEnterEffect(myPlayerType == PlayerType.me, state, yourState);
               for (int i = 0; i < 7; i++) {
                 newState.forceSetStatChanges(i, statChanges[i]);
               }
@@ -1268,7 +1268,7 @@ class TurnMove {
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
           case 143:   // 使用者は最大HPの1/2だけHPが減る。こうげきランクが最大まで上がる
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP -= (myState.pokemon.h.real / 2).floor();
             }
             else {
@@ -1345,12 +1345,12 @@ class TurnMove {
             break;
           case 154:   // 控えのポケモンと交代する
           case 229:   // 控えのポケモンと交代する
-            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
+            if (getChangePokemonIndex(myPlayerType) != null) {
+              myState.processExitEffect(myPlayerType == PlayerType.me, yourState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.processEnterEffect(myPlayerType == PlayerType.me, state, yourState);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -1490,7 +1490,7 @@ class TurnMove {
             break;
           case 179:   // 相手と同じとくせいになる
             if (extraArg1[continuousCount] != 0) {
-              myState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, yourState, playerType.id == PlayerType.me, state);
+              myState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, yourState, playerType == PlayerType.me, state);
             }
             break;
           case 180:   // 使用者の場に「ねがいごと」を発生させる
@@ -1525,7 +1525,7 @@ class TurnMove {
             break;
           case 189:   // もちものを持っていれば失わせ、威力1.5倍
             // もちもの確定のため、一度持たせる
-            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
+            if (targetPlayerType == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
                 ..args = [extraArg1[continuousCount]]
@@ -1540,7 +1540,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 191:   // 威力=150×使用者の残りHP/最大HP
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               movePower = (150 * myState.remainHP / myState.pokemon.h.real).floor();
             }
             else {
@@ -1702,10 +1702,10 @@ class TurnMove {
             myState.isFainting = true;
             break;
           case 222:   // 相手のHPが最大HPの1/2以下なら威力2倍
-            if (targetPlayerTypeID == PlayerType.me && targetState.remainHP <= (targetState.pokemon.h.real / 2).floor()) {
+            if (targetPlayerType == PlayerType.me && targetState.remainHP <= (targetState.pokemon.h.real / 2).floor()) {
               movePower *= 2;
             }
-            else if (targetPlayerTypeID == PlayerType.opponent && targetState.remainHPPercent <= 50) {
+            else if (targetPlayerType == PlayerType.opponent && targetState.remainHPPercent <= 50) {
               movePower *= 2;
             }
             break;
@@ -1719,9 +1719,9 @@ class TurnMove {
               Item? mySavingItem = myState.holdingItem;
               targetState.holdingItem = null;
               Item.processEffect(
-                usingItem.id, PlayerType(myPlayerTypeID),
+                usingItem.id, myPlayerType,
                 myState, targetState, state, extraArg2[continuousCount], 0,
-                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+                getChangePokemonIndex(myPlayerType), loc: loc,
               );
               myState.holdingItem = mySavingItem;
             }
@@ -1756,7 +1756,7 @@ class TurnMove {
               movePower = flingItem.flingPower;
               flingItem.processFlingEffect(
                 playerType, myState, yourState, state, extraArg2[continuousCount], 0,
-                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc,
+                getChangePokemonIndex(myPlayerType), loc: loc,
               );
               myState.holdingItem = null;
             }
@@ -1776,7 +1776,7 @@ class TurnMove {
             targetState.ailmentsAdd(Ailment(Ailment.healBlock)..extraArg1 = 5, state);
             break;
           case 238:   // 相手の残りHPが多いほど威力が高くなる(120×相手の残りHP/相手の最大HP)
-            if (targetPlayerTypeID == PlayerType.me) {
+            if (targetPlayerType == PlayerType.me) {
               movePower = (120 * targetState.remainHP / targetState.pokemon.h.real).floor();
             }
             else {
@@ -1822,7 +1822,7 @@ class TurnMove {
           case 247:   // 他に覚えているわざをそれぞれ1回以上使っていないと失敗
             break;
           case 248:   // とくせいをふみんにする
-            targetState.setCurrentAbility(pokeData.abilities[15]!, myState, targetPlayerTypeID == PlayerType.me, state);
+            targetState.setCurrentAbility(pokeData.abilities[15]!, myState, targetPlayerType == PlayerType.me, state);
             break;
           case 249:   // 相手より先に発動し、相手がこうげきわざを選んでいる場合のみ成功
             break;
@@ -1855,7 +1855,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
             }
             else {
@@ -1875,7 +1875,7 @@ class TurnMove {
                 myState.hiddenBuffs.removeAt(findIdx);
                 if (myState.currentAbility.id == 241) {   // うのミサイル
                   if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm).isEmpty) {
-                    if (myPlayerTypeID == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
+                    if (myPlayerType == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
                       myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
                     }
                     else {
@@ -1904,7 +1904,7 @@ class TurnMove {
             if (targetState.ailmentsWhere((e) => e.id == Ailment.diving).isNotEmpty) mTwice = true;
             if (myState.currentAbility.id == 241) {   // うのミサイル
               if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm).isEmpty) {
-                if (myPlayerTypeID == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
+                if (myPlayerType == PlayerType.me ? myState.remainHP > myState.pokemon.h.real / 2 : myState.remainHPPercent > 50) {                
                   myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
                 }
                 else {
@@ -1940,7 +1940,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             }
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
             }
             else {
@@ -2208,11 +2208,11 @@ class TurnMove {
             isFoulPlay = true;
             break;
           case 299:   // 相手のとくせいをたんじゅんに変える
-            targetState.setCurrentAbility(pokeData.abilities[86]!, myState, targetPlayerTypeID == PlayerType.me, state);
+            targetState.setCurrentAbility(pokeData.abilities[86]!, myState, targetPlayerType == PlayerType.me, state);
             break;
           case 300:   // 相手のとくせいを使用者のとくせいと同じにする
             if (extraArg1[continuousCount] != 0) {
-              targetState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, myState, targetPlayerTypeID == PlayerType.me, state);
+              targetState.setCurrentAbility(pokeData.abilities[extraArg1[continuousCount]]!, myState, targetPlayerType == PlayerType.me, state);
             }
             break;
           case 301:   // 選択対象の行動順を、このわざの直後に変更する
@@ -2246,7 +2246,7 @@ class TurnMove {
             break;
           case 310:   // 相手のHPを最大HP1/2だけ回復する
             bool isMegaLauncher = myState.buffDebuffs.where((e) => e.id == BuffDebuff.wave1_5).isNotEmpty;
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               targetState.remainHPPercent += isMegaLauncher ? 75 : 50;
             }
             else {
@@ -2297,7 +2297,7 @@ class TurnMove {
             showDamageCalc = false;
             break;
           case 321:   // 使用者の残りHP分の固定ダメージを与える。使用者はひんしになる
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               damageCalc = loc.battleDamageFixed6(myState.remainHP);
             }
             else {
@@ -2423,8 +2423,8 @@ class TurnMove {
             }
             break;
           case 342:   // このわざで相手を倒すと使用者のこうげきが3段階上がる
-            if ((targetPlayerTypeID == PlayerType.me && targetState.remainHP - realDamage[continuousCount] <= 0) ||
-                (targetPlayerTypeID == PlayerType.opponent && targetState.remainHPPercent - percentDamage[continuousCount] <= 0)) {
+            if ((targetPlayerType == PlayerType.me && targetState.remainHP - realDamage[continuousCount] <= 0) ||
+                (targetPlayerType == PlayerType.opponent && targetState.remainHPPercent - percentDamage[continuousCount] <= 0)) {
               myState.addStatChanges(true, 0, 3, targetState, moveId: replacedMove.id);
             }
             break;
@@ -2446,12 +2446,12 @@ class TurnMove {
           case 347:   // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
             targetState.addStatChanges(targetState == myState, 0, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
             targetState.addStatChanges(targetState == myState, 2, -1, myState, myFields: yourFields, yourFields: myFields, moveId: replacedMove.id);
-            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
+            if (getChangePokemonIndex(myPlayerType) != null) {
+              myState.processExitEffect(myPlayerType == PlayerType.me, yourState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.processEnterEffect(myPlayerType == PlayerType.me, state, yourState);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -2554,7 +2554,7 @@ class TurnMove {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             // 相手こうげき確定
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               int drain = extraArg1[continuousCount].abs();
               if (myState.remainHP < myState.pokemon.h.real && drain > 0) {
                 if (myState.holdingItem?.id == 273) {   // おおきなねっこ
@@ -2702,7 +2702,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               Item.processEffect(
                 extraArg1[continuousCount], playerType, myState, yourState, state, extraArg2[continuousCount], 0,
-                getChangePokemonIndex(PlayerType(myPlayerTypeID)), loc: loc
+                getChangePokemonIndex(myPlayerType), loc: loc
               );
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState, moveId: replacedMove.id);
@@ -2827,8 +2827,8 @@ class TurnMove {
             {
               int targetIdx = extraArg1[continuousCount];
               if (targetIdx != 0) {
-                var target = state.getPokemonStates(PlayerType(myPlayerTypeID))[targetIdx-1];
-                if (myPlayerTypeID == PlayerType.me) {
+                var target = state.getPokemonStates(myPlayerType)[targetIdx-1];
+                if (myPlayerType == PlayerType.me) {
                   target.remainHP = (target.pokemon.h.real / 2).floor();
                 }
                 else {
@@ -2839,7 +2839,7 @@ class TurnMove {
             }
             break;
           case 446:   // サイコフィールドの効果を受けているとき威力1.5倍・相手全体へのこうげきになる
-            if (state.field.id == Field.psychicTerrain && myState.isGround(myPlayerTypeID == PlayerType.me ? state.ownFields : state.opponentFields)) {
+            if (state.field.id == Field.psychicTerrain && myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
               movePower = (movePower * 1.5).floor();
             }
             break;
@@ -2878,7 +2878,7 @@ class TurnMove {
             }
             break;
           case 450:   // 使用者はひんしになる。ミストフィールドの効果を受けているとき威力1.5倍
-            if (state.field.id == Field.mistyTerrain && myState.isGround(myPlayerTypeID == PlayerType.me ? state.ownFields : state.opponentFields)) {
+            if (state.field.id == Field.mistyTerrain && myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
               movePower = (movePower * 1.5).floor();
             }
             myState.remainHP = 0;
@@ -2888,12 +2888,12 @@ class TurnMove {
           case 451:   // グラスフィールドの効果を受けているとき優先度が高くなる
             break;
           case 452:   // 対象がエレキフィールドの効果を受けているとき威力2倍
-            if (state.field.id == Field.electricTerrain && targetState.isGround(targetPlayerTypeID == PlayerType.me ? state.ownFields : state.opponentFields)) {
+            if (state.field.id == Field.electricTerrain && targetState.isGround(targetPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
               movePower *= 2;
             }
             break;
           case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
-            if (myState.isGround(myPlayerTypeID == PlayerType.me ? state.ownFields : state.opponentFields)) {
+            if (myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
               switch (state.field.id) {
                 case Field.electricTerrain:
                   moveType = PokeType.createFromId(13);
@@ -2924,7 +2924,7 @@ class TurnMove {
             break;
           case 456:   // 対象にもちものがあるときのみ成功
             // もちもの確定のため、一度持たせる
-            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()!.id == 0) {
+            if (targetPlayerType == PlayerType.opponent && targetState.getHoldingItem()!.id == 0) {
               if (extraArg1[continuousCount] != 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
@@ -2937,7 +2937,7 @@ class TurnMove {
             break;
           case 457:   // 対象のもちものを消失させる
             // もちもの確定のため、一度持たせる
-            if (targetPlayerTypeID == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
+            if (targetPlayerType == PlayerType.opponent && targetState.getHoldingItem()?.id == 0) {
               if (extraArg1[continuousCount] != 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
@@ -3022,7 +3022,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             }
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
             }
             else {
@@ -3113,24 +3113,24 @@ class TurnMove {
           case 492:   // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
-            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
+            if (getChangePokemonIndex(myPlayerType) != null) {
+              myState.processExitEffect(myPlayerType == PlayerType.me, yourState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.processEnterEffect(myPlayerType == PlayerType.me, state, yourState);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 493:   // 天気をゆきにして控えと交代
             state.weather = Weather(Weather.snowy)..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
-            if (getChangePokemonIndex(PlayerType(myPlayerTypeID)) != null) {
-              myState.processExitEffect(myPlayerTypeID == PlayerType.me, yourState, state);
+            if (getChangePokemonIndex(myPlayerType) != null) {
+              myState.processExitEffect(myPlayerType == PlayerType.me, yourState, state);
               PokemonState newState;
-              state.setPokemonIndex(playerType, getChangePokemonIndex(PlayerType(myPlayerTypeID))!);
+              state.setPokemonIndex(playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(myPlayerTypeID == PlayerType.me, state, yourState);
+              newState.processEnterEffect(myPlayerType == PlayerType.me, state, yourState);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             effectOnce = true;
@@ -3180,7 +3180,7 @@ class TurnMove {
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
-            if (myPlayerTypeID == PlayerType.me) {
+            if (myPlayerType == PlayerType.me) {
               myState.remainHP -= extraArg2[continuousCount];
             }
             else {
@@ -3239,7 +3239,7 @@ class TurnMove {
           case 507:   // 2回連続こうげき。必中
             break;
           case 508:   // 相手の残りHPが多いほど威力が高くなる(100×相手の残りHP/相手の最大HP)
-            if (targetPlayerTypeID == PlayerType.me) {
+            if (targetPlayerType == PlayerType.me) {
               movePower = (100 * targetState.remainHP / targetState.pokemon.h.real).floor();
             }
             else {
@@ -3346,7 +3346,7 @@ class TurnMove {
                   targetState.hiddenBuffs.add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
                 }
                 // あいてポケモンのステータス確定
-                if (playerType.id == PlayerType.opponent && realDamage[continuousCount] > 0 &&
+                if (playerType == PlayerType.opponent && realDamage[continuousCount] > 0 &&
                     targetState.remainHP > 0
                 ) {
                   var reals = calcRealFromDamage(
@@ -3401,7 +3401,7 @@ class TurnMove {
         int minS = opponentPokemonState.minStats[StatIndex.S.index].real;
         int maxS = opponentPokemonState.maxStats[StatIndex.S.index].real;
         bool addGuide = false;
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           if (minS < ownPokemonState.minStats[StatIndex.S.index].real) {   // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
             minS = ownPokemonState.minStats[StatIndex.S.index].real;
             addGuide = true;
@@ -3458,8 +3458,8 @@ class TurnMove {
   ) {
     int movePower = power;
     Move replacedMove = move;
-    var myFields = myPlayerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
-    var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
+    var myFields = myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
+    var yourFields = myPlayerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
     String ret = '';
     bool isTeraStellarHosei = false;
 
@@ -3879,8 +3879,8 @@ class TurnMove {
     if (isFoulPlay) return Tuple3(StatIndex.H, 0, 0);
     int movePower = power;
     Move replacedMove = move;
-    var myFields = myPlayerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
-    var yourFields = myPlayerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
+    var myFields = myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
+    var yourFields = myPlayerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
 
     // タイプ相性を計算
     double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
@@ -4306,9 +4306,9 @@ class TurnMove {
   )
   {
     final pokeData = PokeDB();
-    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
-    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    var yourFields = playerType.id == PlayerType.me ? state.opponentFields : state.ownFields;
+    var myState = playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    var yourState = playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    var yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
     ButtonStyle pressedStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
@@ -4358,7 +4358,7 @@ class TurnMove {
               autoFlipDirection: true,
               suggestionsCallback: (pattern) async {
                 List<Move> matches = [];
-                if (playerType.id == PlayerType.me) {
+                if (playerType == PlayerType.me) {
                   matches.add(ownPokemon.move1);
                   if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
                   if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
@@ -4399,7 +4399,7 @@ class TurnMove {
             children: [
               TextButton(
                 onPressed: isInput ?
-                  playerType.id != PlayerType.none ?
+                  playerType != PlayerType.none ?
                   () {
                     type = TurnMoveType(TurnMoveType.move);
                     appState.editingPhase[phaseIdx] = true;
@@ -4412,7 +4412,7 @@ class TurnMove {
               SizedBox(width: 10),
               TextButton(
                 onPressed: isInput ?
-                  playerType.id != PlayerType.none ?
+                  playerType != PlayerType.none ?
                   () {
                     type = TurnMoveType(TurnMoveType.change);
                     appState.editingPhase[phaseIdx] = true;
@@ -4425,7 +4425,7 @@ class TurnMove {
               SizedBox(width: 10,),
               TextButton(
                 onPressed: isInput ?
-                  playerType.id != PlayerType.none ?
+                  playerType != PlayerType.none ?
                   () {
                     type = TurnMoveType(TurnMoveType.surrender);
                     appState.editingPhase[phaseIdx] = true;
@@ -4449,12 +4449,12 @@ class TurnMove {
                       border: UnderlineInputBorder(),
                       labelText: loc.commonMove,
                     ),
-                    enabled: playerType.id != PlayerType.none,
+                    enabled: playerType != PlayerType.none,
                   ),
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Move> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       matches.add(ownPokemon.move1);
                       if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
                       if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
@@ -4528,7 +4528,7 @@ class TurnMove {
                     border: UnderlineInputBorder(),
                     labelText: loc.battlePokemonToChange,
                   ),
-                  items: playerType.id == PlayerType.me ?
+                  items: playerType == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
                         PokemonDropdownMenuItem(
@@ -4558,10 +4558,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                  textValue: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
-                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                  prefixIconPokemon: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
                   showNetworkImage: pokeData.getPokeAPI,
@@ -4607,12 +4607,12 @@ class TurnMove {
 
     if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
       return DamageIndicateRow(
-        playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+        playerType == PlayerType.me ? ownPokemon : opponentPokemon,
         hpController2,
-        playerType.id == PlayerType.me,
+        playerType == PlayerType.me,
         onFocus,
         (value) {
-          if (playerType.id == PlayerType.me) {
+          if (playerType == PlayerType.me) {
             extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
           }
           else {
@@ -4621,15 +4621,15 @@ class TurnMove {
           appState.editingPhase[phaseIdx] = true;
           onFocus();
         },
-        playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+        playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
         isInput, loc: loc,
       );
     }
 
-    var myState = playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState;
-    var yourState = playerType.id == PlayerType.me ? opponentPokemonState : ownPokemonState;
+    var myState = playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
+    var yourState = playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
 
-    if (playerType.id != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
+    if (playerType != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
       // 追加効果
       Row effectInputPrevRow = Row();
       bool insertPrevRow = false;
@@ -4698,7 +4698,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Move> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       matches.add(ownPokemon.move1);
                       if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
                       if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
@@ -4744,7 +4744,7 @@ class TurnMove {
       }
       
       // 必要に応じてわざの内容変更
-      Move replacedMove = getReplacedMove(move, continuousCount, playerType.id == PlayerType.me ? ownPokemonState : opponentPokemonState);
+      Move replacedMove = getReplacedMove(move, continuousCount, playerType == PlayerType.me ? ownPokemonState : opponentPokemonState);
 
       // 追加効果
       Row effectInputRow = Row();
@@ -4839,12 +4839,12 @@ class TurnMove {
         case 461:   // 最大HP1/4回復、状態異常を治す
         case 485:   // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
           effectInputRow2 = DamageIndicateRow(
-            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
-            playerType.id == PlayerType.me,
+            playerType == PlayerType.me,
             onFocus,
             (value) {
-              if (playerType.id == PlayerType.me) {
+              if (playerType == PlayerType.me) {
                 extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
               }
               else {
@@ -4853,7 +4853,7 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
-            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+            playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
             isInput, loc: loc,
           );
           break;
@@ -4873,7 +4873,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Move> matches = [];
-                    if (playerType.id == PlayerType.opponent) {
+                    if (playerType == PlayerType.opponent) {
                       matches.add(ownPokemon.move1);
                       if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
                       if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
@@ -5006,7 +5006,7 @@ class TurnMove {
                     border: UnderlineInputBorder(),
                     labelText: loc.battlePokemonToChange,
                   ),
-                  items: playerType.id == PlayerType.opponent ?
+                  items: playerType == PlayerType.opponent ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
                         PokemonDropdownMenuItem(
@@ -5035,10 +5035,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: isInput ? null : playerType.id == PlayerType.opponent ?
+                  textValue: isInput ? null : playerType == PlayerType.opponent ?
                     ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1]?.name,
-                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.opponent ?
+                  prefixIconPokemon: isInput ? null : playerType == PlayerType.opponent ?
                     ownParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType.opposite)??1-1],
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -5112,12 +5112,12 @@ class TurnMove {
         case 46:    // わざを外すと使用者に、使用者の最大HP1/2のダメージ
           if (moveHits[continuousCount].id == MoveHit.notHit || moveHits[continuousCount].id == MoveHit.fail) {
             effectInputRow2 = DamageIndicateRow(
-              playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+              playerType == PlayerType.me ? ownPokemon : opponentPokemon,
               hpController2,
-              playerType.id == PlayerType.me,
+              playerType == PlayerType.me,
               onFocus,
               (value) {
-                if (playerType.id == PlayerType.me) {
+                if (playerType == PlayerType.me) {
                   extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
                 }
                 else {
@@ -5126,7 +5126,7 @@ class TurnMove {
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
-              playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+              playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
               isInput, loc: loc,
             );
           }
@@ -5178,7 +5178,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
                         matches.add(opponentPokemonState.getHoldingItem()!);
                       }
@@ -5217,16 +5217,16 @@ class TurnMove {
           );
           break;
         case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-          if ((playerType.id == PlayerType.me && ownPokemonState.isTypeContain(8)) ||
-              (playerType.id == PlayerType.opponent && opponentPokemonState.isTypeContain(8))
+          if ((playerType == PlayerType.me && ownPokemonState.isTypeContain(8)) ||
+              (playerType == PlayerType.opponent && opponentPokemonState.isTypeContain(8))
           ) {
             effectInputRow2 = DamageIndicateRow(
-              playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+              playerType == PlayerType.me ? ownPokemon : opponentPokemon,
               hpController2,
-              playerType.id == PlayerType.me,
+              playerType == PlayerType.me,
               onFocus,
               (value) {
-                if (playerType.id == PlayerType.me) {
+                if (playerType == PlayerType.me) {
                   extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
                 }
                 else {
@@ -5235,7 +5235,7 @@ class TurnMove {
                 appState.editingPhase[phaseIdx] = true;
                 onFocus();
               },
-              playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+              playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
               isInput, loc: loc,
             );
           }
@@ -5303,7 +5303,7 @@ class TurnMove {
                     border: UnderlineInputBorder(),
                     labelText: loc.battlePokemonToChange,
                   ),
-                  items: playerType.id == PlayerType.me ?
+                  items: playerType == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
                         PokemonDropdownMenuItem(
@@ -5332,10 +5332,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                  textValue: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
-                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                  prefixIconPokemon: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -5427,7 +5427,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Ability> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       if (opponentPokemonState.currentAbility.id != 0) {
                         matches.add(opponentPokemonState.currentAbility);
                       }
@@ -5548,7 +5548,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
                         matches.add(opponentPokemonState.getHoldingItem()!);
                       }
@@ -5681,7 +5681,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    if (playerType.id == PlayerType.me) {
+                    if (playerType == PlayerType.me) {
                       if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
                         matches.add(opponentPokemonState.getHoldingItem()!);
                       }
@@ -5841,7 +5841,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    if (playerType.id == PlayerType.opponent) {
+                    if (playerType == PlayerType.opponent) {
                       if (opponentPokemonState.getHoldingItem() != null && opponentPokemonState.getHoldingItem()!.id != 0) {
                         matches.add(opponentPokemonState.getHoldingItem()!);
                       }
@@ -5937,12 +5937,12 @@ class TurnMove {
             ],
           );
           effectInputRow2 = DamageIndicateRow(
-            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
-            playerType.id == PlayerType.me,
+            playerType == PlayerType.me,
             onFocus,
             (value) {
-              if (playerType.id == PlayerType.me) {
+              if (playerType == PlayerType.me) {
                 extraArg2[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
               }
               else {
@@ -6040,7 +6040,7 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Ability> matches = [];
-                    if (playerType.id == PlayerType.opponent) {
+                    if (playerType == PlayerType.opponent) {
                       if (opponentPokemonState.currentAbility.id != 0) {
                         matches.add(opponentPokemonState.currentAbility);
                       }
@@ -6122,8 +6122,8 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    Item? holdingItem = playerType.id == PlayerType.me ? opponentPokemonState.getHoldingItem() : ownPokemonState.getHoldingItem();
-                    if (playerType.id == PlayerType.me) {
+                    Item? holdingItem = playerType == PlayerType.me ? opponentPokemonState.getHoldingItem() : ownPokemonState.getHoldingItem();
+                    if (playerType == PlayerType.me) {
                       if (holdingItem != null && holdingItem.id != 0) {
                         if (holdingItem.isBerry || holdingItem.id == 669) {
                           matches.add(holdingItem);
@@ -6178,8 +6178,8 @@ class TurnMove {
                   autoFlipDirection: true,
                   suggestionsCallback: (pattern) async {
                     List<Item> matches = [];
-                    Item? holdingItem = playerType.id == PlayerType.me ? ownPokemonState.getHoldingItem() : opponentPokemonState.getHoldingItem();
-                    if (playerType.id == PlayerType.opponent) {
+                    Item? holdingItem = playerType == PlayerType.me ? ownPokemonState.getHoldingItem() : opponentPokemonState.getHoldingItem();
+                    if (playerType == PlayerType.opponent) {
                       if (holdingItem != null && holdingItem.id != 0) {
                         if (holdingItem.isBerry) {
                           matches.add(holdingItem);
@@ -6295,7 +6295,7 @@ class TurnMove {
                     border: UnderlineInputBorder(),
                     labelText: loc.battleRevivePokemon,
                   ),
-                  items: playerType.id == PlayerType.me ?
+                  items: playerType == PlayerType.me ?
                     <DropdownMenuItem>[
                       for (int i = 0; i < ownParty.pokemonNum; i++)
                         PokemonDropdownMenuItem(
@@ -6324,10 +6324,10 @@ class TurnMove {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: isInput ? null : playerType.id == PlayerType.me ?
+                  textValue: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
-                  prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
+                  prefixIconPokemon: isInput ? null : playerType == PlayerType.me ?
                     ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
                     opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6337,12 +6337,12 @@ class TurnMove {
             ],
           );
           effectInputRow2 = DamageIndicateRow(
-            playerType.id == PlayerType.me ? ownPokemon : opponentPokemon,
+            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
-            playerType.id == PlayerType.me,
+            playerType == PlayerType.me,
             onFocus,
             (value) {
-              if (playerType.id == PlayerType.me) {
+              if (playerType == PlayerType.me) {
                 extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
               }
               else {
@@ -6351,7 +6351,7 @@ class TurnMove {
               appState.editingPhase[phaseIdx] = true;
               onFocus();
             },
-            playerType.id == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
+            playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
             isInput, loc: loc,
           );
           break;
@@ -6408,7 +6408,7 @@ class TurnMove {
                         border: UnderlineInputBorder(),
                         labelText: loc.battleRevivePokemon,
                       ),
-                      items: playerType.id == PlayerType.me ?
+                      items: playerType == PlayerType.me ?
                         <DropdownMenuItem>[
                           for (int i = 0; i < ownParty.pokemonNum; i++)
                             PokemonDropdownMenuItem(
@@ -6437,7 +6437,7 @@ class TurnMove {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: isInput ? null : playerType.id == PlayerType.me ?
+                      textValue: isInput ? null : playerType == PlayerType.me ?
                         ownParty.pokemons[extraArg1[continuousCount]-1]?.name :
                         opponentParty.pokemons[extraArg1[continuousCount]-1]?.name,
                       theme: theme,
@@ -6613,12 +6613,12 @@ class TurnMove {
                   yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ||
                   replacedMove.isSound || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isNotEmpty ?
                   DamageIndicateRow(
-                    playerType.id == PlayerType.me ? opponentPokemon : ownPokemon,
+                    playerType == PlayerType.me ? opponentPokemon : ownPokemon,
                     hpController,
-                    playerType.id != PlayerType.me,
+                    playerType != PlayerType.me,
                     onFocus,
                     (value) {
-                      if (playerType.id == PlayerType.me) {
+                      if (playerType == PlayerType.me) {
                         percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
                       }
                       else {
@@ -6627,7 +6627,7 @@ class TurnMove {
                       appState.editingPhase[phaseIdx] = true;
                       onFocus();
                     },
-                    playerType.id == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
+                    playerType == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
                     isInput, loc: loc,
                   ) :
                   Row(
@@ -6926,7 +6926,7 @@ class TurnMove {
   void setAutoArgs(PhaseState state, int continuousCount) {
     var myState = state.getPokemonState(playerType, null);
     var yourState = state.getPokemonState(playerType.opposite, null);
-    var opponentState = state.getPokemonState(PlayerType(PlayerType.opponent), null);
+    var opponentState = state.getPokemonState(PlayerType.opponent, null);
     
     switch (moveAdditionalEffects[continuousCount].id) {
       case 33:    // 最大HPの半分だけ回復する
@@ -7224,7 +7224,7 @@ class TurnMove {
         }
         break;
       case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
-        if (myState.isGround(playerType.id == PlayerType.me ? state.ownFields : state.opponentFields)) {
+        if (myState.isGround(playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
           switch (state.field.id) {
             case Field.electricTerrain:
               ret = PokeType.createFromId(13);
@@ -7287,7 +7287,7 @@ class TurnMove {
   }
 
   void clear() {
-    playerType = PlayerType(PlayerType.none);
+    playerType = PlayerType.none;
     type = TurnMoveType(TurnMoveType.none);
     teraType = PokeType.createFromId(0);
     move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
@@ -7311,7 +7311,7 @@ class TurnMove {
     TurnMove turnMove = TurnMove();
     final turnMoveElements = str.split(split1);
     // playerType
-    turnMove.playerType = PlayerType(int.parse(turnMoveElements[0]));
+    turnMove.playerType = PlayerTypeNum.createFromNumber(int.parse(turnMoveElements[0]));
     // type
     turnMove.type = TurnMoveType(int.parse(turnMoveElements[1]));
     // teraType
@@ -7419,7 +7419,7 @@ class TurnMove {
   String serialize(String split1, String split2) {
     String ret = '';
     // playerType
-    ret += playerType.id.toString();
+    ret += playerType.number.toString();
     ret += split1;
     // type
     ret += type.id.toString();
@@ -7535,12 +7535,12 @@ class TurnMove {
 
   bool isValid() {
     if (!isSuccess) {
-      return playerType.id != PlayerType.none && actionFailure.id != 0;
+      return playerType != PlayerType.none && actionFailure.id != 0;
     }
     switch (type.id) {
       case TurnMoveType.move:
         return
-        playerType.id != PlayerType.none &&
+        playerType != PlayerType.none &&
         move.id != 0;
       case TurnMoveType.change:
         return getChangePokemonIndex(playerType) != null;

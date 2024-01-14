@@ -97,12 +97,12 @@ class BattleContinuousMoveColumn extends Column {
               SizedBox(height: 10,),
               turn.phases[phaseIdx].move!.extraWidget2(
                 () => onFocus(phaseIdx+1), theme, ownPokemon, opponentPokemon,
-                battle.getParty(PlayerType(PlayerType.me)),
-                battle.getParty(PlayerType(PlayerType.opponent)),
-                prevState.getPokemonState(PlayerType(PlayerType.me), null),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
-                prevState.getPokemonStates(PlayerType(PlayerType.me)),
-                prevState.getPokemonStates(PlayerType(PlayerType.opponent)),
+                battle.getParty(PlayerType.me),
+                battle.getParty(PlayerType.opponent),
+                prevState.getPokemonState(PlayerType.me, null),
+                prevState.getPokemonState(PlayerType.opponent, null),
+                prevState.getPokemonStates(PlayerType.me),
+                prevState.getPokemonStates(PlayerType.opponent),
                 prevState,
                 hpControllerList[phaseIdx],
                 textEditingControllerList3[phaseIdx],
@@ -144,7 +144,7 @@ class BattleContinuousMoveColumn extends Column {
             () {
               var myState = prevState.getPokemonState(refMove.playerType, null);
               var yourState = prevState.getPokemonState(refMove.playerType.opposite, null);
-              var yourFields = refMove.playerType.id == PlayerType.me ? prevState.opponentFields : prevState.ownFields;
+              var yourFields = refMove.playerType == PlayerType.me ? prevState.indiFields[1] : prevState.indiFields[0];
               refMove.moveHits.add(refMove.getMoveHit(refMove.move, continuousCount, myState, yourState, yourFields));
               refMove.moveEffectivenesses.add(refMove.moveEffectivenesses[0]);
               refMove.moveAdditionalEffects.add(MoveEffect(refMove.move.effect.id));
@@ -192,7 +192,7 @@ class BattleContinuousMoveColumn extends Column {
           var str = continuousCount == 0 ? loc.battleMoveTimes1 :
             continuousCount == 1 ? loc.battleMoveTimes2 :
             continuousCount == 2 ? loc.battleMoveTimes3 : loc.battleMoveTimes4;
-          if (turnMove.playerType.id == PlayerType.opponent) {
+          if (turnMove.playerType == PlayerType.opponent) {
             return '$str${turnMove.move.displayName}-${opponent.name}';
           }
           else {

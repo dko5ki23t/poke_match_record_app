@@ -62,7 +62,7 @@ class BattleFirstPokemonListView extends ListView {
                 children: [
                   Expanded(
                     flex: 5,
-                    child: battle.getParty(PlayerType(PlayerType.me)).pokemons[i] != null ?
+                    child: battle.getParty(PlayerType.me).pokemons[i] != null ?
                     Badge(
                       smallSize: 0,
                       offset: Offset(-10, 0),
@@ -70,11 +70,11 @@ class BattleFirstPokemonListView extends ListView {
                         checkedPokemons.own.indexWhere((e) => e == i+1) >= 0 ? Text('${checkedPokemons.own.indexWhere((e) => e == i+1)+1}') : null :
                         ownPokemonStates![i].battlingNum != 0 ? Text('${ownPokemonStates[i].battlingNum}') : null,
                       child: PokemonMiniTile(
-                        battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!,
+                        battle.getParty(PlayerType.me).pokemons[i]!,
                         theme,
                         leading: showNetworkImage ?
                           Image.network(
-                            PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.no]!.imageUrl,
+                            PokeDB().pokeBase[battle.getParty(PlayerType.me).pokemons[i]!.no]!.imageUrl,
                             height: theme.buttonTheme.height,
                             errorBuilder: (c, o, s) {
                               return const Icon(Icons.catching_pokemon);
@@ -99,13 +99,13 @@ class BattleFirstPokemonListView extends ListView {
                   SizedBox(width: 10),
                   Expanded(
                     flex: 5,
-                    child: battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
+                    child: battle.getParty(PlayerType.opponent).pokemons[i] != null ?
                     PokemonMiniTile(
-                      battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!,
+                      battle.getParty(PlayerType.opponent).pokemons[i]!,
                       theme,
                       leading: showNetworkImage ?
                         Image.network(
-                          PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.no]!.imageUrl,
+                          PokeDB().pokeBase[battle.getParty(PlayerType.opponent).pokemons[i]!.no]!.imageUrl,
                           height: theme.buttonTheme.height,
                           errorBuilder: (c, o, s) {
                             return const Icon(Icons.catching_pokemon);

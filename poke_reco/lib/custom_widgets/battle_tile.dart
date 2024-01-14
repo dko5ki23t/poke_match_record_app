@@ -34,7 +34,7 @@ class BattleTile extends ListTile {
           child: Text('vs ${battle.opponentName}'),
         ),
         Expanded(
-          child: Text(battle.getParty(PlayerType(PlayerType.me)).name),
+          child: Text(battle.getParty(PlayerType.me).name),
         ),
         Expanded(
           child: Text(battle.formattedDateTime),

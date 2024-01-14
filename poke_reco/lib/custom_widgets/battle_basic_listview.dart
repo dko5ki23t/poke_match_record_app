@@ -155,7 +155,7 @@ class BattleBasicListView extends ListView {
                         var party = await onSelectParty();
                         if (!context.mounted) return;     // クラッシュ回避用 https://dart.dev/tools/linter-rules/use_build_context_synchronously
                         if (party != null) {
-                          if (battle.getParty(PlayerType(PlayerType.me)).id != party.id && battle.turns.isNotEmpty) {
+                          if (battle.getParty(PlayerType.me).id != party.id && battle.turns.isNotEmpty) {
                             showDialog(
                               context: context,
                               builder: (_) {
@@ -163,11 +163,11 @@ class BattleBasicListView extends ListView {
                                   loc.battlesTabQuestionChangeParty,
                                   () {
                                     // 各ポケモンのレベルを50にするためコピー作成
-                                    battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
-                                    for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                                      battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                                    battle.setParty(PlayerType.me, parties.values.where((element) => element.id == party.id).first.copyWith());
+                                    for (int i = 0; i < battle.getParty(PlayerType.me).pokemonNum; i++) {
+                                      battle.getParty(PlayerType.me).pokemons[i] = battle.getParty(PlayerType.me).pokemons[i]!.copyWith();
+                                      battle.getParty(PlayerType.me).pokemons[i]!.level = 50;
+                                      battle.getParty(PlayerType.me).pokemons[i]!.updateRealStats();
                                     }
                                     battle.turns.clear();
                                     setState();
@@ -178,11 +178,11 @@ class BattleBasicListView extends ListView {
                           }
                           else {
                             // 各ポケモンのレベルを50にするためコピー作成
-                            battle.setParty(PlayerType(PlayerType.me), parties.values.where((element) => element.id == party.id).first.copyWith());
-                            for (int i = 0; i < battle.getParty(PlayerType(PlayerType.me)).pokemonNum; i++) {
-                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i] = battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.copyWith();
-                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.level = 50;
-                              battle.getParty(PlayerType(PlayerType.me)).pokemons[i]!.updateRealStats();
+                            battle.setParty(PlayerType.me, parties.values.where((element) => element.id == party.id).first.copyWith());
+                            for (int i = 0; i < battle.getParty(PlayerType.me).pokemonNum; i++) {
+                              battle.getParty(PlayerType.me).pokemons[i] = battle.getParty(PlayerType.me).pokemons[i]!.copyWith();
+                              battle.getParty(PlayerType.me).pokemons[i]!.level = 50;
+                              battle.getParty(PlayerType.me).pokemons[i]!.updateRealStats();
                             }
                             setState();
                           }
@@ -238,10 +238,10 @@ class BattleBasicListView extends ListView {
                 theme,
                 '${loc.commonPokemon}${i+1}',
                 [for (int j = 0; j < 6; j++)
-                  i != j ? PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j]?.no]
+                  i != j ? PokeDB().pokeBase[battle.getParty(PlayerType.opponent).pokemons[j]?.no]
                   : null
                 ],
-                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ? battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.no : 0,
+                battle.getParty(PlayerType.opponent).pokemons[i] != null ? battle.getParty(PlayerType.opponent).pokemons[i]!.no : 0,
                 opponentPokemonController[i],
                 (suggestion) {
                   if (battle.turns.isNotEmpty) {
@@ -251,8 +251,8 @@ class BattleBasicListView extends ListView {
                         return DeleteEditingCheckDialog(
                           loc.battlesTabQuestionChangePokemon,
                           () {
-                            battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
-                            battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
+                            battle.getParty(PlayerType.opponent).pokemons[i] ??= Pokemon();
+                            battle.getParty(PlayerType.opponent).pokemons[i]!
                             //..name = suggestion.name
                             ..no = suggestion.no      // nameも変わる
                             ..type1 = suggestion.type1
@@ -274,8 +274,8 @@ class BattleBasicListView extends ListView {
                     );
                   }
                   else {
-                    battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] ??= Pokemon();
-                    battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!
+                    battle.getParty(PlayerType.opponent).pokemons[i] ??= Pokemon();
+                    battle.getParty(PlayerType.opponent).pokemons[i]!
                     //..name = suggestion.name
                     ..no = suggestion.no      // nameも変わる
                     ..type1 = suggestion.type1
@@ -301,13 +301,13 @@ class BattleBasicListView extends ListView {
                           loc.battlesTabQuestionChangePokemon,
                           () {
                             for (int j = i; j < 6; j++) {
-                              if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
-                                opponentPokemonController[j].text = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1]!.name;
-                                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1];
+                              if (j+1 < 6 && battle.getParty(PlayerType.opponent).pokemons[j+1] != null) {
+                                opponentPokemonController[j].text = battle.getParty(PlayerType.opponent).pokemons[j+1]!.name;
+                                battle.getParty(PlayerType.opponent).pokemons[j] = battle.getParty(PlayerType.opponent).pokemons[j+1];
                               }
                               else {
                                 opponentPokemonController[j].text = '';
-                                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = j == 0 ?
+                                battle.getParty(PlayerType.opponent).pokemons[j] = j == 0 ?
                                   Pokemon() : null;
                                 break; 
                               }
@@ -321,13 +321,13 @@ class BattleBasicListView extends ListView {
                   }
                   else {
                     for (int j = i; j < 6; j++) {
-                      if (j+1 < 6 && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1] != null) {
-                        opponentPokemonController[j].text = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1]!.name;
-                        battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j+1];
+                      if (j+1 < 6 && battle.getParty(PlayerType.opponent).pokemons[j+1] != null) {
+                        opponentPokemonController[j].text = battle.getParty(PlayerType.opponent).pokemons[j+1]!.name;
+                        battle.getParty(PlayerType.opponent).pokemons[j] = battle.getParty(PlayerType.opponent).pokemons[j+1];
                       }
                       else {
                         opponentPokemonController[j].text = '';
-                        battle.getParty(PlayerType(PlayerType.opponent)).pokemons[j] = j == 0 ?
+                        battle.getParty(PlayerType.opponent).pokemons[j] = j == 0 ?
                           Pokemon() : null;
                         break; 
                       }
@@ -336,14 +336,14 @@ class BattleBasicListView extends ListView {
                   }
                 },
                 '${loc.commonGender}${i+1}',
-                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
-                  PokeDB().pokeBase[battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]?.no]!.sex : [Sex.none],
-                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
-                  battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.sex : Sex.none,
-                battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i] != null ?
-                  (value) {battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i]!.sex = value;}
+                battle.getParty(PlayerType.opponent).pokemons[i] != null ?
+                  PokeDB().pokeBase[battle.getParty(PlayerType.opponent).pokemons[i]?.no]!.sex : [Sex.none],
+                battle.getParty(PlayerType.opponent).pokemons[i] != null ?
+                  battle.getParty(PlayerType.opponent).pokemons[i]!.sex : Sex.none,
+                battle.getParty(PlayerType.opponent).pokemons[i] != null ?
+                  (value) {battle.getParty(PlayerType.opponent).pokemons[i]!.sex = value;}
                   : null,
-                enabledPokemon: i != 0 ? battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1] != null && battle.getParty(PlayerType(PlayerType.opponent)).pokemons[i-1]!.no >= pokemonMinNo : true,
+                enabledPokemon: i != 0 ? battle.getParty(PlayerType.opponent).pokemons[i-1] != null && battle.getParty(PlayerType.opponent).pokemons[i-1]!.no >= pokemonMinNo : true,
                 showNetworkImage: showNetworkImage,
                 isInput: isInput,
               ),

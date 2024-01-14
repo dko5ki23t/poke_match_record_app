@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/field.dart';
+import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -14,14 +15,17 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 
 // ある時点(ターン内のフェーズ)での状態
+// これ単体ではSQLに保存しない
 class PhaseState {
-  List<int> _pokemonIndexes = [0, 0];   // 0は無効値
+  List<int> _pokemonIndexes = [-1, -1];     // 0始まりのインデックス。-1は無効値
   List<List<PokemonState>> _pokemonStates = [[], []];
   List<List<PokemonState>> lastExitedStates =[[], []];  // 最後に退場したときの状態
-  List<IndividualField> ownFields = [];        // 場(天気やフィールドを含まない、かべ等)
-  List<IndividualField> opponentFields = [];        // 場(天気やフィールドを含まない、かべ等)
+  List<List<IndividualField>> indiFields = [[], []];    // 場(天気やフィールドを含まない、かべ等)
   Weather _weather = Weather(0);
   Field _field = Field(0);
+  List<TurnEffect> phases = [];
+  int phaseIndex = 0;
+  UserForces userForces = UserForces();     // TODO
   bool hasOwnTerastal = false;        // これまでのフェーズでテラスタルをしたことがあるか
   bool hasOpponentTerastal = false;
   bool canZorua = false;    // 正体を明かしていないゾロアがいるかどうか
@@ -29,26 +33,26 @@ class PhaseState {
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
   List<int> _faintingCount = [0, 0];   // ひんしになった回数
-  TurnMove? firstAction;     // 行動2が行動1を参照するために使う
+  TurnMove? firstAction;     // 行動2が行動1を参照するために使う(TODO:不要？)
 
   Weather get weather => _weather;
   Field get field => _field;
   bool get canAnyZoroark => canZorua || canZoroark || canZoruaHisui || canZoroarkHisui;
 
   set weather(Weather w) {
-    Weather.processWeatherEffect(_weather, w, getPokemonState(PlayerType(PlayerType.me), null), getPokemonState(PlayerType(PlayerType.opponent), null));
+    Weather.processWeatherEffect(_weather, w, getPokemonState(PlayerType.me, null), getPokemonState(PlayerType.opponent, null));
 
     _weather = w;
   }
   set field(Field f) {
-    Field.processFieldEffect(_field, f, getPokemonState(PlayerType(PlayerType.me), null), getPokemonState(PlayerType(PlayerType.opponent), null));
+    Field.processFieldEffect(_field, f, getPokemonState(PlayerType.me, null), getPokemonState(PlayerType.opponent, null));
 
     _field = f;
   }
 
   int getPokemonIndex(PlayerType player, TurnEffect? prevAction) {
     if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) return prevAction.getPrevPokemonIndex(player);
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       return _pokemonIndexes[0];
     }
     else {
@@ -57,16 +61,16 @@ class PhaseState {
   }
 
   void setPokemonIndex(PlayerType player, int index) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       _pokemonIndexes[0] = index;
     }
-    else if (player.id == PlayerType.opponent) {
+    else if (player == PlayerType.opponent) {
       _pokemonIndexes[1] = index;
     }
   }
 
   List<PokemonState> getPokemonStates(PlayerType player) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       return _pokemonStates[0];
     }
     else {
@@ -77,14 +81,14 @@ class PhaseState {
   PokemonState getPokemonState(PlayerType player, TurnEffect? prevAction) {
     if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
       int idx = prevAction.getPrevPokemonIndex(player);
-      if (player.id == PlayerType.me) {
+      if (player == PlayerType.me) {
         return _pokemonStates[0][idx-1];
       }
       else {
         return _pokemonStates[1][idx-1];
       }
     }
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       return _pokemonStates[0][_pokemonIndexes[0]-1];
     }
     else {
@@ -93,7 +97,7 @@ class PhaseState {
   }
 
   int getFaintingCount(PlayerType player) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       return _faintingCount[0];
     }
     else {
@@ -102,7 +106,7 @@ class PhaseState {
   }
 
   void incFaintingCount(PlayerType player, int delta) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       _faintingCount[0] += delta;
     }
     else {
@@ -136,17 +140,27 @@ class PhaseState {
       for (final state in lastExitedStates[1])
       state.copyWith()
     ]
-    ..ownFields = [for (final e in ownFields) e.copyWith()]
-    ..opponentFields = [for (final e in opponentFields) e.copyWith()]
+    ..indiFields[0] = [
+      for (final e in indiFields[0])
+      e.copyWith()
+    ]
+    ..indiFields[1] = [
+      for (final e in indiFields[1])
+      e.copyWith()
+    ]
     ..weather = weather.copyWith()
     ..field = field.copyWith()
+    ..phases = [for (final phase in phases) phase.copyWith()]
+    ..phaseIndex = phaseIndex
+    ..userForces = userForces.copyWith()
     ..hasOwnTerastal = hasOwnTerastal
     ..hasOpponentTerastal = hasOpponentTerastal
     ..canZorua = canZorua
     ..canZoroark = canZoroark
     ..canZoruaHisui = canZoruaHisui
     ..canZoroarkHisui = canZoroarkHisui
-    .._faintingCount = [..._faintingCount];
+    .._faintingCount = [..._faintingCount]
+    ..firstAction = firstAction?.copyWith();
   
   bool get isMyWin {
     var n = _pokemonStates[1].where((element) => element.isFainting).length;
@@ -171,23 +185,21 @@ class PhaseState {
     // 行動1削除
     firstAction = null;
     // 各々の場のターン経過
-    for (var e in ownFields) {
-      e.turns++;
+    for (int i = 0; i < indiFields.length; i++) {
+      for (var e in indiFields[i]) {
+        e.turns++;
+      }
+      indiFields[i].removeWhere((element) => element.id == IndividualField.ionDeluge);  // プラズマシャワー消失
     }
-    ownFields.removeWhere((element) => element.id == IndividualField.ionDeluge);  // プラズマシャワー消失
-    for (var e in opponentFields) {
-      e.turns++;
-    }
-    opponentFields.removeWhere((element) => element.id == IndividualField.ionDeluge); // プラズマシャワー消失
     // 各々のポケモンの状態のターン経過
-    int initialIndex = currentTurn.getInitialPokemonIndex(PlayerType(PlayerType.me));
-    bool isFaintingChange = getPokemonIndex(PlayerType(PlayerType.me), null) != initialIndex &&
-      getPokemonStates(PlayerType(PlayerType.me))[initialIndex-1].isFainting;   // 死に出しかどうか
-    getPokemonState(PlayerType(PlayerType.me), null).processTurnEnd(this, isFaintingChange);
-    initialIndex = currentTurn.getInitialPokemonIndex(PlayerType(PlayerType.opponent));
-    isFaintingChange = getPokemonIndex(PlayerType(PlayerType.opponent), null) != initialIndex &&
-      getPokemonStates(PlayerType(PlayerType.opponent))[initialIndex-1].isFainting;   // 死に出しかどうか
-    getPokemonState(PlayerType(PlayerType.opponent), null).processTurnEnd(this, isFaintingChange);
+    int initialIndex = currentTurn.getInitialPokemonIndex(PlayerType.me);
+    bool isFaintingChange = getPokemonIndex(PlayerType.me, null) != initialIndex &&
+      getPokemonStates(PlayerType.me)[initialIndex-1].isFainting;   // 死に出しかどうか
+    getPokemonState(PlayerType.me, null).processTurnEnd(this, isFaintingChange);
+    initialIndex = currentTurn.getInitialPokemonIndex(PlayerType.opponent);
+    isFaintingChange = getPokemonIndex(PlayerType.opponent, null) != initialIndex &&
+      getPokemonStates(PlayerType.opponent)[initialIndex-1].isFainting;   // 死に出しかどうか
+    getPokemonState(PlayerType.opponent, null).processTurnEnd(this, isFaintingChange);
     // 天気のターン経過
     _weather.turns++;
     // フィールドのターン経過
@@ -200,7 +212,7 @@ class PhaseState {
     PhaseState state, TurnEffect? prevAction, int continuousCount
   ) {
     List<TurnEffect> ret = [];
-    var players = [PlayerType(PlayerType.me), PlayerType(PlayerType.opponent)];
+    var players = [PlayerType.me, PlayerType.opponent];
 
     switch (timing.id) {
       case AbilityTiming.pokemonAppear:   // ポケモン登場時
@@ -213,7 +225,7 @@ class PhaseState {
           if (weather.id != Weather.sunny) timingIDs.add(AbilityTiming.pokemonAppearNotSunny);
           if (weather.id != Weather.snowy) timingIDs.add(AbilityTiming.pokemonAppearNotSnowed);
           for (final player in players) {
-            bool changed = player.id == PlayerType.me ? changedOwn : changedOpponent;
+            bool changed = player == PlayerType.me ? changedOwn : changedOpponent;
             if (changed) {
               var myState = getPokemonState(player, null);
               var yourState = getPokemonState(player.opposite, null);
@@ -229,7 +241,7 @@ class PhaseState {
               }
               // 各ポケモンの場
               addingBase.effect = EffectType(EffectType.individualField);
-              var indiField = player.id == PlayerType.me ? ownFields : opponentFields;
+              var indiField = player == PlayerType.me ? indiFields[0] : indiFields[1];
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
                   var adding = addingBase.copyWith()
@@ -244,20 +256,20 @@ class PhaseState {
         break;
       case AbilityTiming.beforeMove:  // わざ使用前
         var attackerState = prevAction != null ?
-          getPokemonState(prevAction.playerType, prevAction) : getPokemonState(PlayerType(PlayerType.me), prevAction);
+          getPokemonState(prevAction.playerType, prevAction) : getPokemonState(PlayerType.me, prevAction);
         var defenderState = prevAction != null ?
-          getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType(PlayerType.opponent), prevAction);
-        var attackerPlayerTypeId = prevAction != null ? prevAction.playerType.id : PlayerType.me;
-        var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
+          getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType.opponent, prevAction);
+        var attackerPlayerType = prevAction != null ? prevAction.playerType : PlayerType.me;
+        var defenderPlayerType = prevAction != null ? prevAction.playerType.opposite : PlayerType.opponent;
         var defenderTimingIDList = [];
-        bool isDefenderFull = defenderPlayerTypeId == PlayerType.me ? defenderState.remainHP >= defenderState.pokemon.h.real :
+        bool isDefenderFull = defenderPlayerType == PlayerType.me ? defenderState.remainHP >= defenderState.pokemon.h.real :
           defenderState.remainHPPercent >= 100;
 
         // 状態変化
         for (final ailment in attackerState.ailmentsIterable) {
-          if (ailment.isActive(attackerPlayerTypeId == PlayerType.me, timing, attackerState, state)) {
+          if (ailment.isActive(attackerPlayerType == PlayerType.me, timing, attackerState, state)) {
             var adding = TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..playerType = attackerPlayerType
               ..timing = timing
               ..effect = EffectType(EffectType.ailment)
               ..effectId = AilmentEffect.getIdFromAilment(ailment);
@@ -275,7 +287,7 @@ class PhaseState {
               (attackerState.currentAbility.id == 168 || attackerState.currentAbility.id == 236)
           ) {
             ret.add(TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..playerType = attackerPlayerType
               ..timing = AbilityTiming(AbilityTiming.beforeMove)
               ..effect = EffectType(EffectType.ability)
               ..effectId = attackerState.currentAbility.id
@@ -319,7 +331,7 @@ class PhaseState {
           }
           if (defenderState.holdingItem != null && defenderTimingIDList.contains(defenderState.holdingItem!.timing.id)) {
             var addingItem = TurnEffect()
-              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..playerType = defenderPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
               ..effectId = defenderState.holdingItem!.id;
@@ -331,11 +343,11 @@ class PhaseState {
       case AbilityTiming.afterMove:   // わざ使用後
         {
           var attackerState = prevAction != null ?
-            getPokemonState(prevAction.playerType, prevAction) : getPokemonState(PlayerType(PlayerType.me), prevAction);
+            getPokemonState(prevAction.playerType, prevAction) : getPokemonState(PlayerType.me, prevAction);
           var defenderState = prevAction != null ?
-            getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType(PlayerType.opponent), prevAction);
-          var attackerPlayerTypeId = prevAction != null ? prevAction.playerType.id : PlayerType.me;
-          var defenderPlayerTypeId = prevAction != null ? prevAction.playerType.opposite.id : PlayerType.opponent;
+            getPokemonState(prevAction.playerType.opposite, prevAction) : getPokemonState(PlayerType.opponent, prevAction);
+          var attackerPlayerType = prevAction != null ? prevAction.playerType : PlayerType.me;
+          var defenderPlayerType = prevAction != null ? prevAction.playerType.opposite : PlayerType.opponent;
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
           var replacedMove = prevAction?.move?.getReplacedMove(prevAction.move!.move, 0, attackerState);
@@ -350,7 +362,7 @@ class PhaseState {
               var id = defenderState.ailments(findIdx).extraArg1;
               int extraArg1 = 0;
               if (id == 596) {
-                if (attackerPlayerTypeId == PlayerType.me) {
+                if (attackerPlayerType == PlayerType.me) {
                   extraArg1 = (attackerState.pokemon.h.real / 8).floor();
                 }
                 else {
@@ -358,7 +370,7 @@ class PhaseState {
                 }
               }
               ret.add(TurnEffect()
-                ..playerType = PlayerType(attackerPlayerTypeId)
+                ..playerType = attackerPlayerType
                 ..timing = AbilityTiming(AbilityTiming.afterMove)
                 ..effect = EffectType(EffectType.afterMove)
                 ..effectId = id
@@ -369,7 +381,7 @@ class PhaseState {
           // みちづれ状態の相手をひんしにしたとき
           if (prevAction != null && defenderState.isFainting && defenderState.ailmentsWhere((e) => e.id == Ailment.destinyBond).isNotEmpty) {
             ret.add(TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..playerType = attackerPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.afterMove)
               ..effectId = 194
@@ -389,7 +401,7 @@ class PhaseState {
               int findIdx = defenderState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unomiForm || e.id == BuffDebuff.marunomiForm);
               if (findIdx >= 0) {
                 ret.add(TurnEffect()
-                  ..playerType = PlayerType(defenderPlayerTypeId)
+                  ..playerType = defenderPlayerType
                   ..timing = AbilityTiming(AbilityTiming.afterMove)
                   ..effect = EffectType(EffectType.ability)
                   ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
@@ -537,7 +549,7 @@ class PhaseState {
           // 対応するタイミングに該当するとくせい
           if (attackerTimingIDList.contains(attackerState.currentAbility.timing.id)) {
             ret.add(TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..playerType = attackerPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.ability)
               ..effectId = attackerState.currentAbility.id
@@ -549,7 +561,7 @@ class PhaseState {
                attackerState.buffDebuffs.where((e) => e.id == BuffDebuff.noAbilityEffect || e.id == BuffDebuff.myceliumMight).isEmpty)
           ) {
             var addingAbility = TurnEffect()
-              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..playerType = defenderPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.ability)
               ..effectId = defenderState.currentAbility.id;
@@ -559,7 +571,7 @@ class PhaseState {
           // 対応するタイミングに該当するもちもの
           if (attackerState.holdingItem != null && attackerTimingIDList.contains(attackerState.holdingItem!.timing.id)) {
             var addingItem = TurnEffect()
-              ..playerType = PlayerType(attackerPlayerTypeId)
+              ..playerType = attackerPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
               ..effectId = attackerState.holdingItem!.id;
@@ -568,7 +580,7 @@ class PhaseState {
           }
           if (defenderState.holdingItem != null && defenderTimingIDList.contains(defenderState.holdingItem!.timing.id)) {
             var addingItem = TurnEffect()
-              ..playerType = PlayerType(defenderPlayerTypeId)
+              ..playerType = defenderPlayerType
               ..timing = AbilityTiming(AbilityTiming.afterMove)
               ..effect = EffectType(EffectType.item)
               ..effectId = defenderState.holdingItem!.id;
@@ -585,7 +597,7 @@ class PhaseState {
             var player = players[i];
             var myState = getPokemonState(player, null);
             var yourState = getPokemonState(player.opposite, null);
-            bool isMe = player.id == PlayerType.me;
+            bool isMe = player == PlayerType.me;
 
             // 死に出しなら発動する効果はない
             if (getPokemonStates(player)[currentTurn.getInitialPokemonIndex(player)-1].isFainting) continue;
@@ -647,7 +659,7 @@ class PhaseState {
 
             // 状態異常
             for (final ailment in myState.ailmentsIterable) {
-              if (ailment.isActive(player.id == PlayerType.me, timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
+              if (ailment.isActive(player == PlayerType.me, timing, myState, state)) {   // ターン経過で効果が現れる状態変化の判定
                 var adding = TurnEffect()
                   ..playerType = player
                   ..timing = timing
@@ -660,11 +672,11 @@ class PhaseState {
             }
 
             // 各ポケモンの場の効果
-            var fields = player.id == PlayerType.me ? ownFields : opponentFields;
+            var fields = player == PlayerType.me ? indiFields[0] : indiFields[1];
             for (final field in fields) {
               if (field.isActive(timing, myState, state)) {   // ターン経過で終了する場の判定
                 var adding = TurnEffect()
-                  ..playerType = field.isEntireField ? PlayerType(PlayerType.entireField) : player
+                  ..playerType = field.isEntireField ? PlayerType.entireField : player
                   ..timing = timing
                   ..effect = EffectType(EffectType.individualField)
                   ..effectId = IndiFieldEffect.getIdFromIndiField(field);
@@ -679,8 +691,8 @@ class PhaseState {
           // 両者に効果があるもの
           var weatherEffectIDs = [];
           if (weather.id == Weather.sandStorm) {    // すなあらしによるダメージ
-            if (getPokemonState(PlayerType(PlayerType.me), null).isSandstormDamaged() ||
-                getPokemonState(PlayerType(PlayerType.opponent), null).isSandstormDamaged())
+            if (getPokemonState(PlayerType.me, null).isSandstormDamaged() ||
+                getPokemonState(PlayerType.opponent, null).isSandstormDamaged())
             {
               weatherEffectIDs.add(WeatherEffect.sandStormDamage);
             }
@@ -691,8 +703,8 @@ class PhaseState {
           }
           var fieldEffectIDs = [];
           if (field.id == Field.grassyTerrain) {    // グラスフィールドによる回復
-            if (getPokemonState(PlayerType(PlayerType.me), null).isGround(state.ownFields) ||
-                getPokemonState(PlayerType(PlayerType.opponent), null).isGround(state.opponentFields))
+            if (getPokemonState(PlayerType.me, null).isGround(state.indiFields[0]) ||
+                getPokemonState(PlayerType.opponent, null).isGround(state.indiFields[1]))
             {
               fieldEffectIDs.add(FieldEffect.grassHeal);
             }
@@ -707,15 +719,15 @@ class PhaseState {
             int extraArg1 = 0;
             int extraArg2 = 0;
             if (e == WeatherEffect.sandStormDamage) {
-              if (getPokemonState(PlayerType(PlayerType.me), null).isSandstormDamaged()) {    // すなあらしによるダメージ
-                extraArg1 = (getPokemonState(PlayerType(PlayerType.me), null).pokemon.h.real / 16).floor();
+              if (getPokemonState(PlayerType.me, null).isSandstormDamaged()) {    // すなあらしによるダメージ
+                extraArg1 = (getPokemonState(PlayerType.me, null).pokemon.h.real / 16).floor();
               }
-              if (getPokemonState(PlayerType(PlayerType.opponent), null).isSandstormDamaged()) {
+              if (getPokemonState(PlayerType.opponent, null).isSandstormDamaged()) {
                 extraArg2 = 6;
               }
             }
             ret.add(TurnEffect()
-              ..playerType = PlayerType(PlayerType.entireField)
+              ..playerType = PlayerType.entireField
               ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
               ..effect = EffectType(EffectType.weather)
               ..effectId = e
@@ -728,15 +740,15 @@ class PhaseState {
             int extraArg1 = 0;
             int extraArg2 = 0;
             if (e == FieldEffect.grassHeal) {
-              if (getPokemonState(PlayerType(PlayerType.me), null).isGround(state.ownFields)) {   // グラスフィールドによる回復
-                extraArg1 = -(getPokemonState(PlayerType(PlayerType.me), null).pokemon.h.real / 16).floor();
+              if (getPokemonState(PlayerType.me, null).isGround(state.indiFields[0])) {   // グラスフィールドによる回復
+                extraArg1 = -(getPokemonState(PlayerType.me, null).pokemon.h.real / 16).floor();
               }
-              if (getPokemonState(PlayerType(PlayerType.opponent), null).isGround(state.opponentFields)) {
+              if (getPokemonState(PlayerType.opponent, null).isGround(state.indiFields[1])) {
                 extraArg2 = -6;
               }
             }
             ret.add(TurnEffect()
-              ..playerType = PlayerType(PlayerType.entireField)
+              ..playerType = PlayerType.entireField
               ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
               ..effect = EffectType(EffectType.field)
               ..effectId = e
@@ -752,7 +764,7 @@ class PhaseState {
           for (int i = 0; i < 2; i++) {
             var player = players[i];
             var myState = getPokemonState(player, null);
-            bool isMe = player.id == PlayerType.me;
+            bool isMe = player == PlayerType.me;
             bool isTerastal = myState.isTerastaling && (isMe ? !currentTurn.initialOwnHasTerastal : !currentTurn.initialOpponentHasTerastal);
 
             if (isTerastal && (myState.currentAbility.id == 303 || myState.currentAbility.id == 306)) { // おもかげやどし/ゼロフォーミング
@@ -775,7 +787,7 @@ class PhaseState {
       var player = players[i];
       var myState = getPokemonState(player, timing.id == AbilityTiming.afterMove ? prevAction : null);
       var yourState = getPokemonState(player.opposite, timing.id == AbilityTiming.afterMove ? prevAction : null);
-      bool isMe = player.id == PlayerType.me;
+      bool isMe = player == PlayerType.me;
 
       if ((isMe && myState.remainHP <= myState.pokemon.h.real / 4 && myState.remainHP > 0)  || (!isMe && myState.remainHPPercent <= 25 && myState.remainHPPercent > 0)) {
         playerTimingIDs.add(AbilityTiming.hp025);
@@ -850,7 +862,7 @@ class PhaseState {
       getPokemonStates(player)[index] = getPokemonState(player, null).copyWith()..pokemon = pokemon;
       // Aのステータスを、最後に場にいた状態に戻す
       int currentIndex = getPokemonIndex(player, null);
-      getPokemonStates(player)[currentIndex-1] = lastExitedStates[player.id == PlayerType.me ? 0 : 1][currentIndex-1].copyWith();
+      getPokemonStates(player)[currentIndex-1] = lastExitedStates[player == PlayerType.me ? 0 : 1][currentIndex-1].copyWith();
       // 現在のインデックス変更(Bを指すように)
       setPokemonIndex(player, index+1);
     }
@@ -858,7 +870,7 @@ class PhaseState {
       // 現在のポケモンをまんま変えてしまう(TODO: 不具合でるかも？)
       var pokemonState = getPokemonState(player, null);
       var base = PokeDB().pokeBase[no]!;
-      var party = player.id == PlayerType.me ? ownParty : opponentParty;
+      var party = player == PlayerType.me ? ownParty : opponentParty;
       if (party == null) {
         print("arienai");
         return;

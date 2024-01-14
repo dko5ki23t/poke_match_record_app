@@ -52,8 +52,8 @@ class BattleTurnListView extends ListView {
               textEditControllerList3, textEditControllerList4,
               _getPrevPhase(
                 battle.turns[turnNum-1], i, sameTimingList,
-                battle.getParty(PlayerType(PlayerType.me)),
-                battle.getParty(PlayerType(PlayerType.opponent)),
+                battle.getParty(PlayerType.me),
+                battle.getParty(PlayerType.opponent),
               ),
               _getPrevPhasePokemon(PlayerType.me, battle, battle.turns[turnNum-1], i, sameTimingList),
               _getPrevPhasePokemon(PlayerType.opponent, battle, battle.turns[turnNum-1], i, sameTimingList),
@@ -63,7 +63,7 @@ class BattleTurnListView extends ListView {
               sameTimingList[i].first.turnEffect.timing.id == AbilityTiming.beforeMove && i < sameTimingList.length-1 ?
                 sameTimingList[i+1].first.turnEffect.playerType :           // わざ使用前の場合、そのわざの発動主を渡す
                 i > 0 ? sameTimingList[i-1].first.turnEffect.playerType :   // わざ使用後の場合、そのわざの発動主を渡す
-                PlayerType(PlayerType.none),
+                PlayerType.none,
               i > 0 ? sameTimingList[i-1].first.turnEffect.move ?? TurnMove() : TurnMove(),
               i+1 < sameTimingList.length ? sameTimingList[i+1].first : null,
               isInput: isInput,
@@ -76,13 +76,13 @@ class BattleTurnListView extends ListView {
   );
 
   static Pokemon _getPrevPhasePokemon(
-    int playerID, Battle battle, Turn turn, int i,
+    PlayerType player, Battle battle, Turn turn, int i,
     List<List<TurnEffectAndStateAndGuide>> sameTimingList,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
-      return battle.getParty(PlayerType(playerID)).pokemons[turn.getInitialPokemonIndex(PlayerType(playerID))-1]!;
+      return battle.getParty(player).pokemons[turn.getInitialPokemonIndex(player)-1]!;
     }
-    return battle.getParty(PlayerType(playerID)).pokemons[sameTimingList[i-1].last.phaseState.getPokemonIndex(PlayerType(playerID), null)-1]!;
+    return battle.getParty(player).pokemons[sameTimingList[i-1].last.phaseState.getPokemonIndex(player, null)-1]!;
   }
 
   static PhaseState _getPrevPhase(

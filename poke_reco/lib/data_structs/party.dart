@@ -55,8 +55,8 @@ class Party {
   }
   bool get refs {
     for (final e in PokeDB().battles.values) {
-      if (e.getParty(PlayerType(PlayerType.me)).id == id) return true;
-      if (e.getParty(PlayerType(PlayerType.opponent)).id == id) return true;
+      if (e.getParty(PlayerType.me).id == id) return true;
+      if (e.getParty(PlayerType.opponent).id == id) return true;
     }
     return false;
   }

@@ -162,13 +162,13 @@ class Battle {
   }
 
   Party getParty(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
-    return player.id == PlayerType.me ? _parties[0] : _parties[1];
+    assert(player == PlayerType.me || player == PlayerType.opponent);
+    return player == PlayerType.me ? _parties[0] : _parties[1];
   }
 
   void setParty(PlayerType player, Party party) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
-    if (player.id == PlayerType.me) {
+    assert(player == PlayerType.me || player == PlayerType.opponent);
+    if (player == PlayerType.me) {
       _parties[0] = party;
     }
     else {

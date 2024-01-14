@@ -10,10 +10,9 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:tuple/tuple.dart';
 
 class PokemonState {
-  PlayerType playerType = PlayerType(0);    // ポケモンの所有者
+  PlayerType playerType = PlayerType.none;    // ポケモンの所有者
   Pokemon pokemon = Pokemon();  // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
@@ -83,7 +82,7 @@ class PokemonState {
     var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
-  bool get isMe => playerType.id == PlayerType.me;
+  bool get isMe => playerType == PlayerType.me;
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
   bool get canUseItem {
     return ailmentsWhere((e) => e.id == Ailment.embargo).isEmpty &&
@@ -173,7 +172,7 @@ class PokemonState {
 
   // 交代可能な状態かどうか
   bool canChange(PokemonState yourState, PhaseState state) {
-    var fields = isMe ? state.ownFields : state.opponentFields;
+    var fields = isMe ? state.indiFields[0] : state.indiFields[1];
     return isTypeContain(PokeTypeId.ghost) ||   // ゴーストタイプならOK
        holdingItem?.id == 272 ||            // きれいなぬけがらを持っていればOK
     (fields.where((element) => element.id == IndividualField.fairyLock).isEmpty &&
@@ -412,7 +411,7 @@ class PokemonState {
     holdingItem?.processPassiveEffect(this);
   
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
-    var indiField = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+    var indiField = playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
     if (isGround(indiField) && isTypeContain(PokeTypeId.poison)) {
       indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
     }
@@ -463,7 +462,7 @@ class PokemonState {
 
   // 状態異常に関する関数群ここから
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
-    var indiFields = isMe ? state.ownFields : state.opponentFields;
+    var indiFields = isMe ? state.indiFields[0] : state.indiFields[1];
     var yourState = state.getPokemonState(playerType.opposite, null);
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;

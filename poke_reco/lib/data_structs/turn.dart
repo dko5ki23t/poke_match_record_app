@@ -35,11 +35,11 @@ class Turn {
   bool get initialOpponentHasTerastal => _initialHasTerastal[1];
 
   int getInitialPokemonIndex(PlayerType player) {
-    return player.id == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
+    return player == PlayerType.me ? _initialPokemonIndexes[0] : _initialPokemonIndexes[1];
   }
 
   void setInitialPokemonIndex(PlayerType player, int index) {
-    if (player.id == PlayerType.me) {
+    if (player == PlayerType.me) {
       _initialPokemonIndexes[0] = index;
     }
     else {
@@ -48,11 +48,11 @@ class Turn {
   }
 
   List<PokemonState> getInitialPokemonStates(PlayerType player) {
-    return player.id == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
+    return player == PlayerType.me ? _initialPokemonStates[0] : _initialPokemonStates[1];
   }
 
   List<PokemonState> getInitialLastExitedStates(PlayerType player) {
-    return player.id == PlayerType.me ? _initialLastExitedStates[0] : _initialLastExitedStates[1];
+    return player == PlayerType.me ? _initialLastExitedStates[0] : _initialLastExitedStates[1];
   }
 
 
@@ -102,31 +102,31 @@ class Turn {
 
   PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
     var ret = PhaseState()
-    ..setPokemonIndex(PlayerType(PlayerType.me), _initialPokemonIndexes[0])
-    ..setPokemonIndex(PlayerType(PlayerType.opponent), _initialPokemonIndexes[1])
-    ..ownFields = [for (final field in _initialIndiFields[0]) field.copyWith()]
-    ..opponentFields = [for (final field in _initialIndiFields[1]) field.copyWith()]
+    ..setPokemonIndex(PlayerType.me, _initialPokemonIndexes[0])
+    ..setPokemonIndex(PlayerType.opponent, _initialPokemonIndexes[1])
+    ..indiFields[0] = [for (final field in _initialIndiFields[0]) field.copyWith()]
+    ..indiFields[1] = [for (final field in _initialIndiFields[1]) field.copyWith()]
     ..hasOwnTerastal = _initialHasTerastal[0]
     ..hasOpponentTerastal = _initialHasTerastal[1]
     ..canZorua = canZorua
     ..canZoroark = canZoroark
     ..canZoruaHisui = canZoruaHisui
     ..canZoroarkHisui = canZoroarkHisui;
-    ret.getPokemonStates(PlayerType(PlayerType.me)).clear();
-    ret.getPokemonStates(PlayerType(PlayerType.me)).addAll([
+    ret.getPokemonStates(PlayerType.me).clear();
+    ret.getPokemonStates(PlayerType.me).addAll([
       for (final state in _initialPokemonStates[0])
       state.copyWith()
     ]);
-    ret.getPokemonStates(PlayerType(PlayerType.opponent)).clear();
-    ret.getPokemonStates(PlayerType(PlayerType.opponent)).addAll([
+    ret.getPokemonStates(PlayerType.opponent).clear();
+    ret.getPokemonStates(PlayerType.opponent).addAll([
       for (final state in _initialPokemonStates[1])
       state.copyWith()
     ]);
     ret.forceSetWeather(initialWeather.copyWith());
     ret.forceSetField(initialField.copyWith());
     initialUserForces.processEffect(
-      ret.getPokemonState(PlayerType(PlayerType.me), null),
-      ret.getPokemonState(PlayerType(PlayerType.opponent), null),
+      ret.getPokemonState(PlayerType.me, null),
+      ret.getPokemonState(PlayerType.opponent, null),
       ret, ownParty, opponentParty,
     );
     ret.lastExitedStates[0].clear();
@@ -157,38 +157,38 @@ class Turn {
   }
 
   void setInitialState(PhaseState state, Party ownParty, Party opponentParty,) {
-    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType(PlayerType.me), null);
-    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType(PlayerType.opponent), null);
+    _initialPokemonIndexes[0] = state.getPokemonIndex(PlayerType.me, null);
+    _initialPokemonIndexes[1] = state.getPokemonIndex(PlayerType.opponent, null);
     _initialPokemonStates[0] = [
-      for (final s in state.getPokemonStates(PlayerType(PlayerType.me)))
+      for (final s in state.getPokemonStates(PlayerType.me))
       s.copyWith()
     ];
     _initialPokemonStates[1] = [
-      for (final s in state.getPokemonStates(PlayerType(PlayerType.opponent)))
+      for (final s in state.getPokemonStates(PlayerType.opponent))
       s.copyWith()
     ];
     _initialIndiFields[0] = [
-      for (final f in state.ownFields)
+      for (final f in state.indiFields[0])
       f.copyWith()
     ];
     _initialIndiFields[1] = [
-      for (final f in state.opponentFields)
+      for (final f in state.indiFields[1])
       f.copyWith()
     ];
     // ひるみ状態は自動的に解除
     // TODO これするなら他にも？
-    for (var id in [PlayerType.me, PlayerType.opponent]) {
-      var pokeIdx = getInitialPokemonIndex(PlayerType(id)) - 1;
-      var idx = getInitialPokemonStates(PlayerType(id))[pokeIdx].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
-      if (idx >= 0) getInitialPokemonStates(PlayerType(id))[pokeIdx].ailmentsRemoveAt(idx);
+    for (var player in [PlayerType.me, PlayerType.opponent]) {
+      var pokeIdx = getInitialPokemonIndex(player) - 1;
+      var idx = getInitialPokemonStates(player)[pokeIdx].ailmentsIndexWhere((element) => element.id == Ailment.flinch);
+      if (idx >= 0) getInitialPokemonStates(player)[pokeIdx].ailmentsRemoveAt(idx);
     }
     initialWeather = state.weather;
     initialField = state.field;
     _initialHasTerastal[0] = state.hasOwnTerastal;
     _initialHasTerastal[1] = state.hasOpponentTerastal;
     initialUserForces.processEffect(
-      state.getPokemonState(PlayerType(PlayerType.me), null),
-      state.getPokemonState(PlayerType(PlayerType.opponent), null),
+      state.getPokemonState(PlayerType.me, null),
+      state.getPokemonState(PlayerType.opponent, null),
       state, ownParty, opponentParty,
     );
     canZorua = state.canZorua;
@@ -226,9 +226,9 @@ class Turn {
       }
       effect.processEffect(
         ownParty,
-        ret.getPokemonState(PlayerType(PlayerType.me), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
+        ret.getPokemonState(PlayerType.me, effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         opponentParty,
-        ret.getPokemonState(PlayerType(PlayerType.opponent), effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
+        ret.getPokemonState(PlayerType.opponent, effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
         ret, lastAction, continousCount, loc: loc,
       );
     }
@@ -274,7 +274,7 @@ class Turn {
         if (state == '') break;
         adding.add(
           PokemonState.deserialize(state, split4, split5, split6, version: version)
-          ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
+          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
         i++;
       }
       ret._initialPokemonStates.add(adding);
@@ -331,7 +331,7 @@ class Turn {
         if (state == '') break;
         adding.add(
           PokemonState.deserialize(state, split4, split5, split6, version: version)
-          ..playerType = i == 0 ? PlayerType(PlayerType.me) : PlayerType(PlayerType.opponent));
+          ..playerType = i == 0 ? PlayerType.me : PlayerType.opponent);
         i++;
       }
       ret._initialLastExitedStates.add(adding);
