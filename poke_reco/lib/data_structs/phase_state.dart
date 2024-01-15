@@ -234,13 +234,13 @@ class PhaseState {
               // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing)) {
                 var addingAbility = addingBase.copyWith()
-                  ..effect = EffectType(EffectType.ability)
+                  ..effectType = EffectType.ability
                   ..effectId = myState.currentAbility.id;
                 addingAbility.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(addingAbility);
               }
               // 各ポケモンの場
-              addingBase.effect = EffectType(EffectType.individualField);
+              addingBase.effectType = EffectType.individualField;
               var indiField = player == PlayerType.me ? indiFields[0] : indiFields[1];
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
@@ -271,7 +271,7 @@ class PhaseState {
             var adding = TurnEffect()
               ..playerType = attackerPlayerType
               ..timing = timing
-              ..effect = EffectType(EffectType.ailment)
+              ..effectType = EffectType.ailment
               ..effectId = AilmentEffect.getIdFromAilment(ailment);
             adding.setAutoArgs(attackerState, defenderState, state, prevAction);
             ret.add(adding);
@@ -289,7 +289,7 @@ class PhaseState {
             ret.add(TurnEffect()
               ..playerType = attackerPlayerType
               ..timing = Timing.beforeMove
-              ..effect = EffectType(EffectType.ability)
+              ..effectType = EffectType.ability
               ..effectId = attackerState.currentAbility.id
               ..extraArg1 = replacedMoveType.id
             );
@@ -333,7 +333,7 @@ class PhaseState {
             var addingItem = TurnEffect()
               ..playerType = defenderPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.item)
+              ..effectType = EffectType.item
               ..effectId = defenderState.holdingItem!.id;
             addingItem.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
@@ -372,7 +372,7 @@ class PhaseState {
               ret.add(TurnEffect()
                 ..playerType = attackerPlayerType
                 ..timing = Timing.afterMove
-                ..effect = EffectType(EffectType.afterMove)
+                ..effectType = EffectType.afterMove
                 ..effectId = id
                 ..extraArg1 = extraArg1
               );
@@ -383,7 +383,7 @@ class PhaseState {
             ret.add(TurnEffect()
               ..playerType = attackerPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.afterMove)
+              ..effectType = EffectType.afterMove
               ..effectId = 194
             );
           }
@@ -403,7 +403,7 @@ class PhaseState {
                 ret.add(TurnEffect()
                   ..playerType = defenderPlayerType
                   ..timing = Timing.afterMove
-                  ..effect = EffectType(EffectType.ability)
+                  ..effectType = EffectType.ability
                   ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
                 );
               }
@@ -551,7 +551,7 @@ class PhaseState {
             ret.add(TurnEffect()
               ..playerType = attackerPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.ability)
+              ..effectType = EffectType.ability
               ..effectId = attackerState.currentAbility.id
             );
           }
@@ -563,7 +563,7 @@ class PhaseState {
             var addingAbility = TurnEffect()
               ..playerType = defenderPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.ability)
+              ..effectType = EffectType.ability
               ..effectId = defenderState.currentAbility.id;
             addingAbility.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingAbility);
@@ -573,7 +573,7 @@ class PhaseState {
             var addingItem = TurnEffect()
               ..playerType = attackerPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.item)
+              ..effectType = EffectType.item
               ..effectId = attackerState.holdingItem!.id;
             addingItem.setAutoArgs(attackerState, defenderState, state, prevAction);
             ret.add(addingItem);
@@ -582,7 +582,7 @@ class PhaseState {
             var addingItem = TurnEffect()
               ..playerType = defenderPlayerType
               ..timing = Timing.afterMove
-              ..effect = EffectType(EffectType.item)
+              ..effectType = EffectType.item
               ..effectId = defenderState.holdingItem!.id;
             addingItem.setAutoArgs(defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
@@ -640,7 +640,7 @@ class PhaseState {
               var addingAbility = TurnEffect()
                 ..playerType = player
                 ..timing = timing
-                ..effect = EffectType(EffectType.ability)
+                ..effectType = EffectType.ability
                 ..effectId = myState.currentAbility.id;
               addingAbility.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingAbility);
@@ -651,7 +651,7 @@ class PhaseState {
               var addingItem = TurnEffect()
                 ..playerType = player
                 ..timing = timing
-                ..effect = EffectType(EffectType.item)
+                ..effectType = EffectType.item
                 ..effectId = myState.holdingItem!.id;
               addingItem.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingItem);
@@ -663,7 +663,7 @@ class PhaseState {
                 var adding = TurnEffect()
                   ..playerType = player
                   ..timing = timing
-                  ..effect = EffectType(EffectType.ailment)
+                  ..effectType = EffectType.ailment
                   ..effectId = AilmentEffect.getIdFromAilment(ailment)
                   ..extraArg1 = ailment.id == Ailment.partiallyTrapped ? ailment.extraArg1 : ailment.turns;
                 adding.setAutoArgs(myState, yourState, state, prevAction);
@@ -678,7 +678,7 @@ class PhaseState {
                 var adding = TurnEffect()
                   ..playerType = field.isEntireField ? PlayerType.entireField : player
                   ..timing = timing
-                  ..effect = EffectType(EffectType.individualField)
+                  ..effectType = EffectType.individualField
                   ..effectId = IndiFieldEffect.getIdFromIndiField(field);
                 adding.setAutoArgs(myState, yourState, state, prevAction);
                 if (ret.where((element) => element.nearEqual(adding)).isEmpty) {  // 両者の場の場合に重複がないようにする
@@ -729,7 +729,7 @@ class PhaseState {
             ret.add(TurnEffect()
               ..playerType = PlayerType.entireField
               ..timing = Timing.everyTurnEnd
-              ..effect = EffectType(EffectType.weather)
+              ..effectType = EffectType.weather
               ..effectId = e
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2
@@ -750,7 +750,7 @@ class PhaseState {
             ret.add(TurnEffect()
               ..playerType = PlayerType.entireField
               ..timing = Timing.everyTurnEnd
-              ..effect = EffectType(EffectType.field)
+              ..effectType = EffectType.field
               ..effectId = e
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2
@@ -771,12 +771,14 @@ class PhaseState {
               ret.add(TurnEffect()
                 ..playerType = player
                 ..timing = Timing.afterTerastal
-                ..effect = EffectType(EffectType.ability)
+                ..effectType = EffectType.ability
                 ..effectId = myState.currentAbility.id
               );
             }
           }
         }
+        break;
+      default:
         break;
     }
 
@@ -816,7 +818,7 @@ class PhaseState {
         var addingAbility = TurnEffect()
           ..playerType = player
           ..timing = timing
-          ..effect = EffectType(EffectType.ability)
+          ..effectType = EffectType.ability
           ..effectId = myState.currentAbility.id;
         addingAbility.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingAbility);
@@ -830,7 +832,7 @@ class PhaseState {
         var addingItem = TurnEffect()
           ..playerType = player
           ..timing = timing
-          ..effect = EffectType(EffectType.item)
+          ..effectType = EffectType.item
           ..effectId = myState.holdingItem!.id;
         addingItem.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingItem);

@@ -154,7 +154,7 @@ class BattleContinuousMoveColumn extends Column {
               refMove.realDamage.add(0);
               refMove.percentDamage.add(0);
               turn.phases[phaseIdx]
-              ..effect = EffectType(EffectType.move)
+              ..effectType = EffectType.move
               ..move = refMove
               ..playerType = refMove.playerType
               ..isAdding = false;

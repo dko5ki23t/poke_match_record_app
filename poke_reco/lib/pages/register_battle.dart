@@ -1,21 +1,14 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_command_page.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
-import 'package:poke_reco/custom_widgets/battle_turn_listview.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/poke_base.dart';
-import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
@@ -430,8 +423,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             TurnMove opponentAction = TurnMove()
               ..playerType = PlayerType.opponent
               ..type = TurnMoveType(TurnMoveType.move);
-            turn.phases.add(TurnEffect()..move = ownAction);
-            turn.phases.add(TurnEffect()..move = opponentAction);
+            turn.phases.add(
+              TurnEffect()
+              ..playerType = PlayerType.me
+              ..timing = Timing.action
+              ..move = ownAction
+            );
+            turn.phases.add(
+              TurnEffect()
+              ..playerType = PlayerType.opponent
+              ..timing = Timing.action
+              ..move = opponentAction
+            );
             // 初期状態設定ここまで
             turns.add(turn);
             isNewTurn = true;
@@ -810,6 +813,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
+        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
+                       widget.battle.turns[turnNum-1].phases.last.timing != Timing.gameSet) ? () => onNext() : null;
         lists = Stack(
           children: [
             Column(
@@ -1060,8 +1065,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     fit: BoxFit.scaleDown,
                     child: TextButton(
                       style: TextButton.styleFrom(backgroundColor: Colors.white),
-                      child: Text('次のターン'),
-                      onPressed: () {},
+                      onPressed: nextPressed,
+                      child: Text(loc.battlesTabToolTipNext),
                     ),
                   ),
                 ),
@@ -1069,8 +1074,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ),
           ],
         );
-        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
-                       getSelectedNum(appState.editingPhase) == 0 && widget.battle.turns[turnNum-1].phases.last.timing != Timing.gameSet) ? () => onNext() : null;
         backPressed = () => onturnBack();
         deletePressed = () => onTurnDelete();
         break;
@@ -1330,7 +1333,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOwnFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.me
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1352,7 +1355,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOpponentFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1448,7 +1451,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOwnFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.me
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1464,7 +1467,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOpponentFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1544,7 +1547,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOpponentFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1589,7 +1592,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   isOpponentFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
-                    ..effect = EffectType(EffectType.changeFaintingPokemon)
+                    ..effectType = EffectType.changeFaintingPokemon
                     ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
@@ -1683,7 +1686,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 if (i >= phases.length || phases[i].timing != Timing.terastaling) {
                   _insertPhase(i, TurnEffect()
                     ..timing = Timing.terastaling
-                    ..effect = EffectType(EffectType.terastal)
+                    ..effectType = EffectType.terastal
                     ..isAdding = true,
                     appState
                   );
@@ -1757,7 +1760,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   if (i >= phases.length || phases[i].timing != Timing.action) {
                     _insertPhase(i, TurnEffect()
                       ..timing = Timing.action
-                      ..effect = EffectType(EffectType.move)
+                      ..effectType = EffectType.move
                       ..move = TurnMove(),
                       appState
                     );
@@ -1983,7 +1986,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 if (i >= phases.length || phases[i].timing != Timing.continuousMove) {
                   _insertPhase(i, TurnEffect()
                     ..timing = Timing.continuousMove
-                    ..effect = EffectType(EffectType.move)
+                    ..effectType = EffectType.move
                     ..isAdding = true,
                     appState
                   );
