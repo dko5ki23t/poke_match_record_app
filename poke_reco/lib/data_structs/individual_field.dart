@@ -236,9 +236,9 @@ class IndividualField {
   }
 
   // 発動するタイミング・条件かどうかを返す
-  bool isActive(AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する場
+  bool isActive(Timing timing, PokemonState pokemonState, PhaseState state) {
+    switch (timing) {
+      case Timing.pokemonAppear: // ポケモン登場時発動する場
         var indiField = pokemonState.isMe ? state.indiFields[0] : state.indiFields[1];
         switch (id) {
           case healingWish:   // いやしのねがい
@@ -264,7 +264,7 @@ class IndividualField {
           default:
             return false;
         }
-      case AbilityTiming.everyTurnEnd:  // ターン経過で終了する場
+      case Timing.everyTurnEnd:  // ターン経過で終了する場
         return maxTurn > 0 && turns >= maxTurn-1;
       default:
         return false;
@@ -272,9 +272,9 @@ class IndividualField {
   }
 
   // 発動する可能性のあるタイミング・条件かどうかを返す
-  bool possiblyActive(AbilityTiming timing) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する場
+  bool possiblyActive(Timing timing) {
+    switch (timing) {
+      case Timing.pokemonAppear: // ポケモン登場時発動する場
         switch (id) {
           case healingWish:   // いやしのねがい
           case lunarDance:    // みかづきのまい
@@ -286,7 +286,7 @@ class IndividualField {
           default:
             return false;
         }
-      case AbilityTiming.everyTurnEnd:  // ターン経過で終了する場
+      case Timing.everyTurnEnd:  // ターン経過で終了する場
         return maxTurn > 0;
       default:
         return false;
@@ -296,7 +296,7 @@ class IndividualField {
   // TurnEffectのarg1が決定できる場合はその値を返す
   static int getAutoArg1(
     int fieldEffectId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     bool isMe = player == PlayerType.me;
 
@@ -323,7 +323,7 @@ class IndividualField {
   // TurnEffectのarg2が決定できる場合はその値を返す
   static int getAutoArg2(
     int fieldEffectId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     return 0;
   }

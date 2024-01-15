@@ -934,7 +934,7 @@ class PokeDB {
   List<int> battlesPartyIDFilter = [];
   BattleSort? battlesSort;
 
-  Map<int, Ability> abilities = {0: Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
+  Map<int, Ability> abilities = {0: Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''};  // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''};  // 無効なとくせい
@@ -944,7 +944,7 @@ class PokeDB {
   Map<int, Item> items = {
     0: Item(
       id: 0, displayName: '', displayNameEn: '', flingPower: 0, flingEffectId: 0,
-      timing: AbilityTiming(0), isBerry: false, imageUrl: ''
+      timing: Timing.none, isBerry: false, imageUrl: ''
     )
   };  // 無効なもちもの
   late Database itemDb;
@@ -1153,7 +1153,7 @@ class PokeDB {
         map[abilityColumnId],
         map[abilityColumnName],
         map[abilityColumnEnglishName],
-        AbilityTiming(map[abilityColumnTiming]),
+        Timing.values[map[abilityColumnTiming]],
         Target(map[abilityColumnTarget]),
         AbilityEffect(map[abilityColumnEffect]),
       );
@@ -1216,7 +1216,7 @@ class PokeDB {
         displayNameEn: map[itemColumnEnglishName],
         flingPower: map[itemColumnFlingPower],
         flingEffectId: map[itemColumnFlingEffect],
-        timing: AbilityTiming(map[itemColumnTiming]),
+        timing: Timing.values[map[itemColumnTiming]],
         isBerry: map[itemColumnIsBerry] == 1,
         imageUrl: map[itemColumnImageUrl]
       );

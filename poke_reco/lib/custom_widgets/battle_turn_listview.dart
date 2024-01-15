@@ -60,7 +60,7 @@ class BattleTurnListView extends ListView {
               _getRefMove(sameTimingList, i, battle.turns[turnNum-1]),
               _getContinuousCount(sameTimingList, i, battle.turns[turnNum-1]),
               _getActionCount(sameTimingList, i),
-              sameTimingList[i].first.turnEffect.timing.id == AbilityTiming.beforeMove && i < sameTimingList.length-1 ?
+              sameTimingList[i].first.turnEffect.timing == Timing.beforeMove && i < sameTimingList.length-1 ?
                 sameTimingList[i+1].first.turnEffect.playerType :           // わざ使用前の場合、そのわざの発動主を渡す
                 i > 0 ? sameTimingList[i-1].first.turnEffect.playerType :   // わざ使用後の場合、そのわざの発動主を渡す
                 PlayerType.none,
@@ -97,11 +97,11 @@ class BattleTurnListView extends ListView {
   }
 
   static TurnMove? _getRefMove(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i, Turn turn) {
-    if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.continuousMove) return null;
+    if (sameTimingList[i].last.turnEffect.timing != Timing.continuousMove) return null;
     TurnMove? ret;
     for (int j = 0; j < i; j++) {
       var turnMove = sameTimingList[j].first.turnEffect.move;
-      if (sameTimingList[j].first.turnEffect.timing.id == AbilityTiming.action &&
+      if (sameTimingList[j].first.turnEffect.timing == Timing.action &&
           turnMove?.type.id == TurnMoveType.move
       ) {
         ret = turnMove;
@@ -111,16 +111,16 @@ class BattleTurnListView extends ListView {
   }
 
   static int _getContinuousCount(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i, Turn turn) {
-    if (sameTimingList[i].last.turnEffect.timing.id != AbilityTiming.continuousMove) return 0;
+    if (sameTimingList[i].last.turnEffect.timing != Timing.continuousMove) return 0;
     int ret = 0;
     for (int j = 0; j <= i; j++) {
       var turnMove = sameTimingList[j].first.turnEffect.move;
-      if (sameTimingList[j].first.turnEffect.timing.id == AbilityTiming.action &&
+      if (sameTimingList[j].first.turnEffect.timing == Timing.action &&
           turnMove?.type.id == TurnMoveType.move
       ) {
         ret = 0;
       }
-      else if (sameTimingList[j].first.turnEffect.timing.id == AbilityTiming.continuousMove) {
+      else if (sameTimingList[j].first.turnEffect.timing == Timing.continuousMove) {
         ret++;
       }
     }
@@ -130,7 +130,7 @@ class BattleTurnListView extends ListView {
   static int _getActionCount(List<List<TurnEffectAndStateAndGuide>> sameTimingList, int i,) {
     int ret = 0;
     for (int j = 0; j < i; j++) {
-      if (sameTimingList[j].first.turnEffect.timing.id == AbilityTiming.action) {
+      if (sameTimingList[j].first.turnEffect.timing == Timing.action) {
         ret++;
       }
     }

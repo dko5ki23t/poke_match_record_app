@@ -19,7 +19,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
     int focusPhaseIdx,
     void Function(int) onFocus,
     int phaseIdx,
-    AbilityTiming timing,
+    Timing timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,

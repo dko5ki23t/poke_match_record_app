@@ -183,7 +183,7 @@ const List<int> everyTurnEndTimingIDs = [
 
 class TurnEffect {
   PlayerType playerType = PlayerType.none;
-  AbilityTiming timing = AbilityTiming(AbilityTiming.none);
+  Timing timing = Timing.none;
   EffectType effect = EffectType(EffectType.none);
   int effectId = 0;
   int extraArg1 = 0;
@@ -203,7 +203,7 @@ class TurnEffect {
   TurnEffect copyWith() =>
     TurnEffect()
     ..playerType = playerType
-    ..timing = AbilityTiming(timing.id)
+    ..timing = timing
     ..effect = effect
     ..effectId = effectId
     ..extraArg1 = extraArg1
@@ -257,7 +257,7 @@ class TurnEffect {
 
   bool nearEqual(TurnEffect other) {
     return playerType == other.playerType &&
-      timing.id == other.timing.id &&
+      timing == other.timing &&
       effect.id == other.effect.id &&
       effectId == other.effectId;
   }
@@ -297,14 +297,14 @@ class TurnEffect {
     setPrevPokemonIndex(PlayerType.opponent, state.getPokemonIndex(PlayerType.opponent, null));
 
     bool isMe = playerType == PlayerType.me;
-    var myState = timing.id == AbilityTiming.afterMove && prevAction != null ?
+    var myState = timing == Timing.afterMove && prevAction != null ?
       state.getPokemonState(playerType, prevAction) : isMe ? ownPokemonState : opponentPokemonState;
-    var yourState = timing.id == AbilityTiming.afterMove && prevAction != null ?
+    var yourState = timing == Timing.afterMove && prevAction != null ?
       state.getPokemonState(playerType.opposite, prevAction) : isMe ? opponentPokemonState : ownPokemonState;
     var myFields = isMe ? state.indiFields[0] : state.indiFields[1];
     var yourFields = isMe ? state.indiFields[1] : state.indiFields[0];
     var myParty = isMe ? ownParty : opponentParty;
-    var myPokemonIndex = state.getPokemonIndex(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
+    var myPokemonIndex = state.getPokemonIndex(playerType, timing == Timing.afterMove ? prevAction : null);
 
     switch (effect.id) {
       case EffectType.ability:
@@ -730,7 +730,7 @@ class TurnEffect {
 
   // 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
   static List<TurnEffect> getPossibleEffects(
-    AbilityTiming timing, PlayerType playerType,
+    Timing timing, PlayerType playerType,
     EffectType type, Pokemon? pokemon, PokemonState? pokemonState, PhaseState phaseState,
     PlayerType attacker, TurnMove turnMove, Turn currentTurn, TurnEffect? prevAction)
   {
@@ -752,8 +752,8 @@ class TurnEffect {
       defenderTimingIDs.add(74);
     }
 
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear:   // ポケモンを繰り出すとき
+    switch (timing) {
+      case Timing.pokemonAppear:   // ポケモンを繰り出すとき
         {
           timingIDs.addAll(pokemonAppearTimingIDs);
           attackerTimingIDs.clear();
@@ -774,7 +774,7 @@ class TurnEffect {
           }
         }
         break;
-      case AbilityTiming.everyTurnEnd:           // 毎ターン終了時
+      case Timing.everyTurnEnd:           // 毎ターン終了時
         {
           timingIDs.addAll(everyTurnEndTimingIDs);
           attackerTimingIDs.clear();
@@ -857,14 +857,14 @@ class TurnEffect {
           }
         }
         break;
-      case AbilityTiming.afterActionDecision:    // 行動決定直後
+      case Timing.afterActionDecision:    // 行動決定直後
         {
           timingIDs.addAll(afterActionDecisionTimingIDs);
           attackerTimingIDs.clear();
           defenderTimingIDs.clear();
         }
         break;
-      case AbilityTiming.beforeMove:    // わざ使用前
+      case Timing.beforeMove:    // わざ使用前
         {
           timingIDs.clear();
           attackerTimingIDs.clear();
@@ -912,7 +912,7 @@ class TurnEffect {
           }
         }
         break;
-      case AbilityTiming.afterMove:     // わざ使用後
+      case Timing.afterMove:     // わざ使用後
         if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
           timingIDs.clear();    // atacker/defenderに統合するするため削除
           attackerTimingIDs.addAll(afterMoveAttackerTimingIDs);
@@ -933,7 +933,7 @@ class TurnEffect {
             if (findIdx >= 0) {
               ret.add(TurnEffect()
                 ..playerType = attacker.opposite
-                ..timing = AbilityTiming(AbilityTiming.afterMove)
+                ..timing = Timing.afterMove
                 ..effect = EffectType(EffectType.ability)
                 ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id
               );
@@ -1052,7 +1052,7 @@ class TurnEffect {
           }
         }
         break;
-      case AbilityTiming.afterTerastal:   // テラスタル後
+      case Timing.afterTerastal:   // テラスタル後
         {
           timingIDs.clear();
           attackerTimingIDs.clear();
@@ -1078,24 +1078,24 @@ class TurnEffect {
     if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
       if (type.id == EffectType.ability) {
         if (pokemonState!.currentAbility.id != 0) {   // とくせいが確定している場合
-          if (timingIDs.contains(pokemonState.currentAbility.timing.id)) {
+          if (timingIDs.contains(pokemonState.currentAbility.timing)) {
             retAbilityIDs.add(pokemonState.currentAbility.id);
           }
           // わざ使用後に発動する効果
-          if (attacker == playerType && attackerTimingIDs.contains(pokemonState.currentAbility.timing.id) ||
-              attacker != playerType && defenderTimingIDs.contains(pokemonState.currentAbility.timing.id)
+          if (attacker == playerType && attackerTimingIDs.contains(pokemonState.currentAbility.timing) ||
+              attacker != playerType && defenderTimingIDs.contains(pokemonState.currentAbility.timing)
           ) {
             retAbilityIDs.add(pokemonState.currentAbility.id);
           }
         }
         else {      // とくせいが確定していない場合
           for (final ability in pokemonState.possibleAbilities) {
-            if (timingIDs.contains(ability.timing.id)) {
+            if (timingIDs.contains(ability.timing)) {
               retAbilityIDs.add(ability.id);
             }
             // わざ使用後に発動する効果
-            if (attacker == playerType && attackerTimingIDs.contains(ability.timing.id) ||
-                attacker != playerType && defenderTimingIDs.contains(ability.timing.id)
+            if (attacker == playerType && attackerTimingIDs.contains(ability.timing) ||
+                attacker != playerType && defenderTimingIDs.contains(ability.timing)
             ) {
               retAbilityIDs.add(ability.id);
             }
@@ -1143,7 +1143,7 @@ class TurnEffect {
       if (type.id == EffectType.item) {
         if (pokemonState!.holdingItem != null) {
           if (pokemonState.holdingItem!.id != 0) {   // もちものが確定している場合
-            if (timingIDs.contains(pokemonState.holdingItem!.timing.id)) {
+            if (timingIDs.contains(pokemonState.holdingItem!.timing)) {
               ret.add(TurnEffect()
                 ..playerType = playerType
                 ..effect = EffectType(EffectType.item)
@@ -1151,8 +1151,8 @@ class TurnEffect {
               );
             }
             // わざ使用後に発動する効果
-            if (attacker == playerType && attackerTimingIDs.contains(pokemonState.holdingItem!.timing.id) ||
-                attacker != playerType && defenderTimingIDs.contains(pokemonState.holdingItem!.timing.id)
+            if (attacker == playerType && attackerTimingIDs.contains(pokemonState.holdingItem!.timing) ||
+                attacker != playerType && defenderTimingIDs.contains(pokemonState.holdingItem!.timing)
             ) {
               ret.add(TurnEffect()
                 ..playerType = playerType
@@ -1167,7 +1167,7 @@ class TurnEffect {
               allItems.removeWhere((e) => e.id == item.id);
             }
             for (final item in allItems) {
-              if (timingIDs.contains(item.timing.id)) {
+              if (timingIDs.contains(item.timing)) {
                 ret.add(TurnEffect()
                   ..playerType = playerType
                   ..effect = EffectType(EffectType.item)
@@ -1175,8 +1175,8 @@ class TurnEffect {
                 );
               }
               // わざ使用後に発動する効果
-              if (attacker == playerType && attackerTimingIDs.contains(item.timing.id) ||
-                  attacker != playerType && defenderTimingIDs.contains(item.timing.id)
+              if (attacker == playerType && attackerTimingIDs.contains(item.timing) ||
+                  attacker != playerType && defenderTimingIDs.contains(item.timing)
               ) {
                 ret.add(TurnEffect()
                   ..playerType = playerType
@@ -1270,15 +1270,15 @@ class TurnEffect {
   }
 
   String getEditingControllerText1() {
-    switch (timing.id) {
-      case AbilityTiming.action:
-      case AbilityTiming.continuousMove:
+    switch (timing) {
+      case Timing.action:
+      case Timing.continuousMove:
         return move == null ? '' : move!.move.displayName;
-      case AbilityTiming.afterActionDecision:
-      case AbilityTiming.afterMove:
-      case AbilityTiming.pokemonAppear:
-      case AbilityTiming.everyTurnEnd:
-      case AbilityTiming.afterTerastal:
+      case Timing.afterActionDecision:
+      case Timing.afterMove:
+      case Timing.pokemonAppear:
+      case Timing.everyTurnEnd:
+      case Timing.afterTerastal:
         return displayName;
       default:
         return '';
@@ -1287,11 +1287,11 @@ class TurnEffect {
 
   String getEditingControllerText2(PhaseState state, TurnEffect? prevAction) {
     final pokeData = PokeDB();
-    var myState = state.getPokemonState(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
-    var yourState = state.getPokemonState(playerType.opposite, timing.id == AbilityTiming.afterMove ? prevAction : null);
-    switch (timing.id) {
-      case AbilityTiming.action:
-      case AbilityTiming.continuousMove:
+    var myState = state.getPokemonState(playerType, timing == Timing.afterMove ? prevAction : null);
+    var yourState = state.getPokemonState(playerType.opposite, timing == Timing.afterMove ? prevAction : null);
+    switch (timing) {
+      case Timing.action:
+      case Timing.continuousMove:
         {
           if (move == null) return '';
           if (move!.playerType == PlayerType.me) {
@@ -1421,15 +1421,15 @@ class TurnEffect {
       bool isOnMoveSelected = false,
     }
   ) {
-    var myState = state.getPokemonState(playerType, timing.id == AbilityTiming.afterMove ? prevAction : null);
-    var yourState = state.getPokemonState(playerType.opposite, timing.id == AbilityTiming.afterMove ? prevAction : null);
+    var myState = state.getPokemonState(playerType, timing == Timing.afterMove ? prevAction : null);
+    var yourState = state.getPokemonState(playerType.opposite, timing == Timing.afterMove ? prevAction : null);
     var pokeData = PokeDB();
 
     // わざが選択されたときのみ、extraArgを引いたHPの値をセット
     if (isOnMoveSelected) {
-      switch (timing.id) {
-        case AbilityTiming.action:
-        case AbilityTiming.continuousMove:
+      switch (timing) {
+        case Timing.action:
+        case Timing.continuousMove:
           {
             if (move == null) return '';
             switch (move!.moveAdditionalEffects[0].id) {
@@ -1472,9 +1472,9 @@ class TurnEffect {
       }
     }
 
-    switch (timing.id) {
-      case AbilityTiming.action:
-      case AbilityTiming.continuousMove:
+    switch (timing) {
+      case Timing.action:
+      case Timing.continuousMove:
         {
           if (move == null) return '';
           switch (move!.moveAdditionalEffects[0].id) {
@@ -1583,9 +1583,9 @@ class TurnEffect {
   }
 
   String getEditingControllerText4(PhaseState state) {
-    switch (timing.id) {
-      case AbilityTiming.action:
-      case AbilityTiming.continuousMove:
+    switch (timing) {
+      case Timing.action:
+      case Timing.continuousMove:
         if (move == null) break;
         return move!.getEditingControllerText4(state);
       default:
@@ -1615,16 +1615,16 @@ class TurnEffect {
     }
   )
   {
-    var myPokemon = prevAction != null && timing.id == AbilityTiming.afterMove ?
+    var myPokemon = prevAction != null && timing == Timing.afterMove ?
       state.getPokemonState(playerType, prevAction).pokemon :
       playerType == PlayerType.me ? ownPokemon : opponentPokemon;
-    var yourPokemon = prevAction != null && timing.id == AbilityTiming.afterMove ?
+    var yourPokemon = prevAction != null && timing == Timing.afterMove ?
       state.getPokemonState(playerType.opposite, prevAction).pokemon :
       playerType == PlayerType.me ? opponentPokemon : ownPokemon;
-    var myState = prevAction != null && timing.id == AbilityTiming.afterMove ?
+    var myState = prevAction != null && timing == Timing.afterMove ?
       state.getPokemonState(playerType, prevAction) :
       playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
-    var yourState = prevAction != null && timing.id == AbilityTiming.afterMove ?
+    var yourState = prevAction != null && timing == Timing.afterMove ?
       state.getPokemonState(playerType.opposite, prevAction) :
       playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
     var myParty = playerType == PlayerType.me ? ownParty : opponentParty;
@@ -2762,7 +2762,7 @@ class TurnEffect {
     // playerType
     effect.playerType = PlayerTypeNum.createFromNumber(int.parse(effectElements[0]));
     // timing
-    effect.timing = AbilityTiming(int.parse(effectElements[1]));
+    effect.timing = Timing.values[int.parse(effectElements[1])];
     // effect
     effect.effect = EffectType(int.parse(effectElements[2]));
     // effectId
@@ -2824,7 +2824,7 @@ class TurnEffect {
     ret += playerType.number.toString();
     ret += split1;
     // timing
-    ret += timing.id.toString();
+    ret += timing.index.toString();
     ret += split1;
     // effect
     ret += '${effect.id}';
@@ -2914,7 +2914,7 @@ class TurnEffectAndStateAndGuide {
   }
 
   List<TurnEffect> _getEffectCandidates(
-    AbilityTiming timing,
+    Timing timing,
     PlayerType playerType,
     EffectType? effectType,
     Turn turn,
@@ -2924,24 +2924,24 @@ class TurnEffectAndStateAndGuide {
     
     // prevActionを設定
     TurnEffect? prevAction;
-    if (timing.id == AbilityTiming.afterMove) {
+    if (timing == Timing.afterMove) {
       for (int i = phaseIdx-1; i >= 0; i--) {
-        if (turn.phases[i].timing.id == AbilityTiming.action) {
+        if (turn.phases[i].timing == Timing.action) {
           prevAction = turn.phases[i];
           break;
         }
-        else if (turn.phases[i].timing.id != timing.id) {
+        else if (turn.phases[i].timing != timing) {
           break;
         }
       }
     }
-    else if (timing.id == AbilityTiming.beforeMove) {
+    else if (timing == Timing.beforeMove) {
       for (int i = phaseIdx+1; i < turn.phases.length; i++) {
-        if (turn.phases[i].timing.id == AbilityTiming.action) {
+        if (turn.phases[i].timing == Timing.action) {
           prevAction = turn.phases[i];
           break;
         }
-        else if (turn.phases[i].timing.id != timing.id) {
+        else if (turn.phases[i].timing != timing) {
           break;
         }
       }
@@ -2974,7 +2974,7 @@ class TurnEffectAndStateAndGuide {
   }
 
   List<TurnEffect> _getEffectCandidatesWithEffectType(
-    AbilityTiming timing,
+    Timing timing,
     PlayerType playerType,
     EffectType effectType,
     PlayerType attacker,

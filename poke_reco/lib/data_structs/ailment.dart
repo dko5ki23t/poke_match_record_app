@@ -382,18 +382,18 @@ class Ailment {
   }
 
   // 発動するタイミング・条件かどうかを返す
-  bool isActive(bool isMe, AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する状態変化
+  bool isActive(bool isMe, Timing timing, PokemonState pokemonState, PhaseState state) {
+    switch (timing) {
+      case Timing.pokemonAppear: // ポケモン登場時発動する状態変化
         return false;
-      case AbilityTiming.beforeMove:    // わざ使用前に発動する状態変化
+      case Timing.beforeMove:    // わざ使用前に発動する状態変化
         switch (id) {
           case confusion:
             return turns >= 4;
           default:
             return false;
         }
-      case AbilityTiming.everyTurnEnd:  // ターン終了時に発動する状態変化
+      case Timing.everyTurnEnd:  // ターン終了時に発動する状態変化
         switch (id) {
           case burn:
           case curse:
@@ -433,18 +433,18 @@ class Ailment {
   }
 
   // 発動する可能性のあるタイミング・条件かどうかを返す
-  bool possiblyActive(AbilityTiming timing, PokemonState pokemonState, PhaseState state) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear: // ポケモン登場時発動する状態変化
+  bool possiblyActive(Timing timing, PokemonState pokemonState, PhaseState state) {
+    switch (timing) {
+      case Timing.pokemonAppear: // ポケモン登場時発動する状態変化
         return false;
-      case AbilityTiming.beforeMove:    // わざ使用前に発動する状態変化
+      case Timing.beforeMove:    // わざ使用前に発動する状態変化
         switch (id) {
           case confusion:
             return true;
           default:
             return false;
         }
-      case AbilityTiming.everyTurnEnd:  // ターン終了時に発動する状態変化
+      case Timing.everyTurnEnd:  // ターン終了時に発動する状態変化
         switch (id) {
           case burn:
           case poison:
@@ -480,7 +480,7 @@ class Ailment {
   // TurnEffectのarg1が決定できる場合はその値を返す
   static int getAutoArg1(
     int ailmentId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing, int turns,
+    TurnEffect? prevAction, Timing timing, int turns,
   ) {
     bool isMe = player == PlayerType.me;
 
@@ -523,7 +523,7 @@ class Ailment {
   // TurnEffectのarg2が決定できる場合はその値を返す
   static int getAutoArg2(
     int ailmentId, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     return 0;
   }

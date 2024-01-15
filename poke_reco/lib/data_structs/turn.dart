@@ -55,8 +55,8 @@ class Turn {
     int actionCount = 0;
     int validCount = 0;
     for (final phase in phases) {
-      if (phase.timing.id == AbilityTiming.action ||
-          phase.timing.id == AbilityTiming.changeFaintingPokemon
+      if (phase.timing == Timing.action ||
+          phase.timing == Timing.changeFaintingPokemon
       ) {
         actionCount++;
         if (phase.isValid()) validCount++;
@@ -80,19 +80,19 @@ class Turn {
     for (int i = 0; i < phaseIdx+1; i++) {
       final effect = phases[i];
       if (effect.isAdding) continue;
-      if (effect.timing.id == AbilityTiming.continuousMove) {
+      if (effect.timing == Timing.continuousMove) {
         lastAction = effect;
         continousCount++;
       }
-      else if (effect.timing.id == AbilityTiming.action) {
+      else if (effect.timing == Timing.action) {
         lastAction = effect;
         continousCount = 0;
       }
       effect.processEffect(
         ownParty,
-        ret.getPokemonState(PlayerType.me, effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
+        ret.getPokemonState(PlayerType.me, effect.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
-        ret.getPokemonState(PlayerType.opponent, effect.timing.id == AbilityTiming.afterMove ? lastAction : null),
+        ret.getPokemonState(PlayerType.opponent, effect.timing == Timing.afterMove ? lastAction : null),
         ret, lastAction, continousCount, loc: loc,
       );
     }

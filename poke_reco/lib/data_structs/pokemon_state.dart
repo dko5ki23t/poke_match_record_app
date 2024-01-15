@@ -22,12 +22,12 @@ class PokemonState {
   int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
   Item? _holdingItem = Item(
     id: 0, displayName: '', displayNameEn: '', flingPower: 0, flingEffectId: 0,
-    timing: AbilityTiming(0), isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
+    timing: Timing.none, isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability _currentAbility = Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
+  Ability _currentAbility = Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態変化
   List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
   List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値

@@ -112,9 +112,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   TurnEffect? _getPrevTimingEffect(int index) {
     TurnEffect? ret;
     var currentTurn = widget.battle.turns[turnNum-1];
-    AbilityTiming nowTiming = currentTurn.phases[index].timing;
+    Timing nowTiming = currentTurn.phases[index].timing;
     for (int i = index-1; i >= 0; i--) {
-      if (currentTurn.phases[i].timing.id != nowTiming.id) {
+      if (currentTurn.phases[i].timing != nowTiming) {
         ret = currentTurn.phases[i];
         break;
       }
@@ -1070,7 +1070,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ],
         );
         nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
-                       getSelectedNum(appState.editingPhase) == 0 && widget.battle.turns[turnNum-1].phases.last.timing.id != AbilityTiming.gameSet) ? () => onNext() : null;
+                       getSelectedNum(appState.editingPhase) == 0 && widget.battle.turns[turnNum-1].phases.last.timing != Timing.gameSet) ? () => onNext() : null;
         backPressed = () => onturnBack();
         deletePressed = () => onTurnDelete();
         break;
@@ -1182,9 +1182,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var phases = widget.battle.turns[turnNum-1].phases;
     int endIdx = index;
     for (; endIdx < phases.length; endIdx++) {
-      if (pokemonAppear && phases[endIdx].timing.id == AbilityTiming.pokemonAppear) {
+      if (pokemonAppear && phases[endIdx].timing == Timing.pokemonAppear) {
       }
-      else if (afterMove && phases[endIdx].timing.id == AbilityTiming.afterMove) {
+      else if (afterMove && phases[endIdx].timing == Timing.afterMove) {
       }
       else {
         break;
@@ -1197,7 +1197,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
     int beginIdx = 0;
-    int timingId = 0;
+    Timing timing = Timing.none;
     List<List<TurnEffectAndStateAndGuide>> ret = [];
     List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
     Turn currentTurn = widget.battle.turns[turnNum-1];
@@ -1222,32 +1222,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     bool isYourWin = false;
     bool changeOwn = turnNum == 1;
     bool changeOpponent = turnNum == 1;
-    const Map<int, int> s1TimingMap = {
-      0: AbilityTiming.pokemonAppear,
-      1: AbilityTiming.afterActionDecision,
-      2: AbilityTiming.action,
-      3: AbilityTiming.pokemonAppear,
-      4: AbilityTiming.afterMove,
-      5: AbilityTiming.continuousMove,
-      6: AbilityTiming.afterMove,
-      7: AbilityTiming.changePokemonMove,
-      8: AbilityTiming.everyTurnEnd,
-      9: AbilityTiming.gameSet,
-      10: AbilityTiming.terastaling,
-      11: AbilityTiming.afterTerastal,
-      12: AbilityTiming.beforeMove,
+    const Map<int, Timing> s1TimingMap = {
+      0: Timing.pokemonAppear,
+      1: Timing.afterActionDecision,
+      2: Timing.action,
+      3: Timing.pokemonAppear,
+      4: Timing.afterMove,
+      5: Timing.continuousMove,
+      6: Timing.afterMove,
+      7: Timing.changePokemonMove,
+      8: Timing.everyTurnEnd,
+      9: Timing.gameSet,
+      10: Timing.terastaling,
+      11: Timing.afterTerastal,
+      12: Timing.beforeMove,
     };
-    const Map<int, int> s2TimingMap = {
-      1: AbilityTiming.afterMove,
-      2: AbilityTiming.changeFaintingPokemon,
-      3: AbilityTiming.pokemonAppear,
-      4: AbilityTiming.changeFaintingPokemon,
-      5: AbilityTiming.pokemonAppear,
-      6: AbilityTiming.changeFaintingPokemon,
-      7: AbilityTiming.changeFaintingPokemon,
+    const Map<int, Timing> s2TimingMap = {
+      1: Timing.afterMove,
+      2: Timing.changeFaintingPokemon,
+      3: Timing.pokemonAppear,
+      4: Timing.changeFaintingPokemon,
+      5: Timing.pokemonAppear,
+      6: Timing.changeFaintingPokemon,
+      7: Timing.changeFaintingPokemon,
     };
     int timingListIdx = 0;
-    int currentTimingID = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+    Timing currentTiming = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
     List<TurnEffect> assistList = [];
     //List<TurnEffect> delAssistList = [];
     PlayerType? firstActionPlayer;
@@ -1257,7 +1257,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     // 自動入力リスト作成
     if (isNewTurn) {
       assistList = currentState.getDefaultEffectList(
-        currentTurn, AbilityTiming(currentTimingID),
+        currentTurn, currentTiming,
         changeOwn, changeOpponent, currentState, lastAction, continuousCount,
       );
       for (final effect in currentTurn.noAutoAddEffect) {
@@ -1268,10 +1268,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var phases = widget.battle.turns[turnNum-1].phases;
 
     while (s1 != end) {
-      currentTimingID = changingState ? AbilityTiming.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+      currentTiming = changingState ? Timing.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
       bool isInserted = false;
       if (changingState) {    // ポケモン交代後状態
-        if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+        if (i >= phases.length || phases[i].timing != Timing.pokemonAppear) {
           // 自動追加
           if (assistList.isNotEmpty) {
             _insertPhase(i, assistList.first, appState);
@@ -1281,7 +1281,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
           else {
             _insertPhase(i, TurnEffect()
-              ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+              ..timing = Timing.pokemonAppear
               ..isAdding = true,
               appState
             );
@@ -1298,7 +1298,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       else {
         switch (s2) {
           case 1:       // わざでひんし状態
-            if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+            if (i >= phases.length || phases[i].timing != Timing.afterMove) {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
@@ -1308,7 +1308,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               else {
                 _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.afterMove)
+                  ..timing = Timing.afterMove
                   ..isAdding = true,
                   appState
                 );
@@ -1325,13 +1325,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           case 2:       // わざでひんし交代状態
             {
               changeOwn = changeOpponent = false;
-              if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon) {
+              if (i >= phases.length || phases[i].timing != Timing.changeFaintingPokemon) {
                 if (isOwnFainting) {
                   isOwnFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.me
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
@@ -1353,7 +1353,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
@@ -1403,7 +1403,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             break;
           case 3:       // わざでひんし交代後状態
-            if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+            if (i >= phases.length || phases[i].timing != Timing.pokemonAppear) {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
@@ -1413,7 +1413,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               else {
                 _insertPhase(i,TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..timing = Timing.pokemonAppear
                   ..isAdding = true,
                   appState
                 );
@@ -1443,13 +1443,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           case 4:       // わざ以外でひんし状態
             {
               changeOwn = changeOpponent = false;
-              if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon) {
+              if (i >= phases.length || phases[i].timing != Timing.changeFaintingPokemon) {
                 if (isOwnFainting) {
                   isOwnFainting = false;
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.me
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
@@ -1465,14 +1465,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
                   s2 = 0;
                 }
               }
-              else if (phases[i].timing.id == AbilityTiming.changeFaintingPokemon) {
+              else if (phases[i].timing == Timing.changeFaintingPokemon) {
                 if (isOwnFainting) {
                   phases[i].playerType = PlayerType.me;
                   isOwnFainting = false;
@@ -1503,7 +1503,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             break;
           case 5:       // わざ以外でひんし交代後状態
-            if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+            if (i >= phases.length || phases[i].timing != Timing.pokemonAppear) {
               // 自動追加
               if (assistList.isNotEmpty) {
                 _insertPhase(i, assistList.first, appState);
@@ -1513,7 +1513,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               }
               else {
                 _insertPhase(i,TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                  ..timing = Timing.pokemonAppear
                   ..isAdding = true,
                   appState
                 );
@@ -1537,7 +1537,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           case 6:       // わざでひんし交代状態(2匹目)
             {
               changeOwn = changeOpponent = false;
-              if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon ||
+              if (i >= phases.length || phases[i].timing != Timing.changeFaintingPokemon ||
                   (isOpponentFainting && phases[i].playerType == PlayerType.me)
               ) {
                 if (isOpponentFainting) {
@@ -1545,7 +1545,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
@@ -1582,7 +1582,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           case 7:       // わざ以外でひんし状態(2匹目)
             {
               changeOwn = changeOpponent = false;
-              if (i >= phases.length || phases[i].timing.id != AbilityTiming.changeFaintingPokemon ||
+              if (i >= phases.length || phases[i].timing != Timing.changeFaintingPokemon ||
                   (isOpponentFainting && phases[i].playerType == PlayerType.me)
               ) {
                 if (isOpponentFainting) {
@@ -1590,7 +1590,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   _insertPhase(i,TurnEffect()
                     ..playerType = PlayerType.opponent
                     ..effect = EffectType(EffectType.changeFaintingPokemon)
-                    ..timing = AbilityTiming(AbilityTiming.changeFaintingPokemon),
+                    ..timing = Timing.changeFaintingPokemon,
                     appState
                   );
                   isInserted = true;
@@ -1625,7 +1625,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           case 0:       // どちらもひんしでない状態
             switch (s1) {
               case 0:         // 試合最初のポケモン登場時処理状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+                if (i >= phases.length || phases[i].timing != Timing.pokemonAppear) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1635,7 +1635,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                      ..timing = Timing.pokemonAppear
                       ..isAdding = true,
                       appState
                     );
@@ -1650,7 +1650,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 1:       // 行動決定直後処理状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterActionDecision) {
+                if (i >= phases.length || phases[i].timing != Timing.afterActionDecision) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1660,7 +1660,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.afterActionDecision)
+                      ..timing = Timing.afterActionDecision
                       ..isAdding = true,
                       appState
                     );
@@ -1680,9 +1680,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 10:      // テラスタル処理状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.terastaling) {
+                if (i >= phases.length || phases[i].timing != Timing.terastaling) {
                   _insertPhase(i, TurnEffect()
-                    ..timing = AbilityTiming(AbilityTiming.terastaling)
+                    ..timing = Timing.terastaling
                     ..effect = EffectType(EffectType.terastal)
                     ..isAdding = true,
                     appState
@@ -1700,7 +1700,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 11:      // テラスタル後状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterTerastal) {
+                if (i >= phases.length || phases[i].timing != Timing.afterTerastal) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1710,7 +1710,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.afterTerastal)
+                      ..timing = Timing.afterTerastal
                       ..isAdding = true,
                       appState
                     );
@@ -1725,7 +1725,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 12:      // 行動選択前状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.beforeMove) {
+                if (i >= phases.length || phases[i].timing != Timing.beforeMove) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1735,7 +1735,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.beforeMove)
+                      ..timing = Timing.beforeMove
                       ..isAdding = true,
                       appState
                     );
@@ -1754,9 +1754,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   _clearInvalidPhase(appState, i, true, true);
                   changeOwn = changeOpponent = false;
                   actionCount++;
-                  if (i >= phases.length || phases[i].timing.id != AbilityTiming.action) {
+                  if (i >= phases.length || phases[i].timing != Timing.action) {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.action)
+                      ..timing = Timing.action
                       ..effect = EffectType(EffectType.move)
                       ..move = TurnMove(),
                       appState
@@ -1900,7 +1900,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 3:       // ポケモン交代後状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.pokemonAppear) {
+                if (i >= phases.length || phases[i].timing != Timing.pokemonAppear) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1910,7 +1910,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.pokemonAppear)
+                      ..timing = Timing.pokemonAppear
                       ..isAdding = true,
                       appState
                     );
@@ -1932,7 +1932,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 4:         // わざ使用後状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+                if (i >= phases.length || phases[i].timing != Timing.afterMove) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -1942,7 +1942,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.afterMove)
+                      ..timing = Timing.afterMove
                       ..isAdding = true,
                       appState
                     );
@@ -1980,9 +1980,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 5:         // 連続わざ状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.continuousMove) {
+                if (i >= phases.length || phases[i].timing != Timing.continuousMove) {
                   _insertPhase(i, TurnEffect()
-                    ..timing = AbilityTiming(AbilityTiming.continuousMove)
+                    ..timing = Timing.continuousMove
                     ..effect = EffectType(EffectType.move)
                     ..isAdding = true,
                     appState
@@ -2015,7 +2015,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 timingListIdx++;
                 break;
               case 6:         // 交代わざ使用後状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.afterMove) {
+                if (i >= phases.length || phases[i].timing != Timing.afterMove) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -2025,7 +2025,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.afterMove)
+                      ..timing = Timing.afterMove
                       ..isAdding = true,
                       appState
                     );
@@ -2040,7 +2040,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }
                 break;
               case 8:       // ターン終了状態
-                if (i >= phases.length || phases[i].timing.id != AbilityTiming.everyTurnEnd) {
+                if (i >= phases.length || phases[i].timing != Timing.everyTurnEnd) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     _insertPhase(i, assistList.first, appState);
@@ -2051,7 +2051,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   }
                   else {
                     _insertPhase(i, TurnEffect()
-                      ..timing = AbilityTiming(AbilityTiming.everyTurnEnd)
+                      ..timing = Timing.everyTurnEnd
                       ..isAdding = true,
                       appState
                     );
@@ -2067,7 +2067,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 break;
               case 9:     // 試合終了状態
                 _insertPhase(i, TurnEffect()
-                  ..timing = AbilityTiming(AbilityTiming.gameSet)
+                  ..timing = Timing.gameSet
                   ..isMyWin = isMyWin
                   ..isYourWin = isYourWin,
                   appState
@@ -2118,7 +2118,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         if (s1 != end && (!isInserted || isAssisting) && i < phases.length && (phases[i].isOwnFainting || phases[i].isOpponentFainting)) {    // どちらかがひんしになる場合
           if (phases[i].isOwnFainting) isOwnFainting = true;
           if (phases[i].isOpponentFainting) isOpponentFainting = true;
-          if (s2 == 1 || phases[i].timing.id == AbilityTiming.action || phases[i].timing.id == AbilityTiming.continuousMove) {
+          if (s2 == 1 || phases[i].timing == Timing.action || phases[i].timing == Timing.continuousMove) {
             if ((isOwnFainting && !isOpponentFainting && phases[i].playerType == PlayerType.me) ||
                 (isOpponentFainting && !isOwnFainting && phases[i].playerType == PlayerType.opponent)
             ) {}
@@ -2138,18 +2138,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // 自動入力効果を作成
       // 前回までと違うタイミング、かつ更新要求インデックス以降のとき作成
       if (s1 != end) {
-        var nextTimingID = changingState ? AbilityTiming.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+        var nextTiming = changingState ? Timing.pokemonAppear : s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
         if (/*(timingListIdx >= sameTimingList.length ||
-            sameTimingList[timingListIdx].first.turnEffect.timing.id != nextTimingID ||*/
-            ((currentTimingID != nextTimingID)/*||
+            sameTimingList[timingListIdx].first.turnEffect.timing != nextTiming ||*/
+            ((currentTiming != nextTiming)/*||
             sameTimingList[timingListIdx].first.needAssist*/) &&
             appState.needAdjustPhases <= i &&
             !appState.adjustPhaseByDelete
         ) {
           var tmpAction = lastAction;
-          if (nextTimingID == AbilityTiming.beforeMove) {   // わざの先読みをする
+          if (nextTiming == Timing.beforeMove) {   // わざの先読みをする
             for (int j = i; j < phases.length; j++) {
-              if (phases[j].timing.id == AbilityTiming.action) {
+              if (phases[j].timing == Timing.action) {
                 if (phases[j].isValid() && phases[j].move != null) {
                   tmpAction = phases[j];
                   break;
@@ -2161,8 +2161,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
           }
           assistList = currentState.getDefaultEffectList(
-            currentTurn, AbilityTiming(nextTimingID),
-            changeOwn, changeOpponent, currentState, tmpAction, continuousCount,
+            currentTurn, nextTiming, changeOwn, changeOpponent, currentState, tmpAction, continuousCount,
           );
           for (final effect in currentTurn.noAutoAddEffect) {
             assistList.removeWhere((e) => effect.nearEqual(e));
@@ -2171,7 +2170,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // それ以外で入力済みの自動入力は削除
           List<int> removeIdxs = [];
           for (int j = i; j < phases.length; j++) {
-            if (phases[j].timing.id != nextTimingID) break;
+            if (phases[j].timing != nextTiming) break;
             int findIdx = assistList.indexWhere((element) => element.nearEqual(phases[j]));
             if (findIdx >= 0) {
               assistList.removeAt(findIdx);
@@ -2194,7 +2193,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           //changeOwn = false;
           //changeOpponent = false;
         }
-        else if (currentTimingID != nextTimingID) {
+        else if (currentTiming != nextTiming) {
           assistList.clear();
           //delAssistList.clear();
         }
@@ -2203,9 +2202,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
       turnEffectAndStateAndGuides[i].phaseIdx = i;
-      if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
+      if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
       ) {
         if (i != 0) {
           turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
@@ -2213,7 +2212,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
         }
         beginIdx = i;
-        timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
+        timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
       }
     }
 
@@ -2233,8 +2232,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var phases = widget.battle.turns[turnNum-1].phases;
     bool actioned = false;
     for (int i = 0; i < phases.length; i++) {
-      if (phases[i].timing.id == AbilityTiming.beforeMove || phases[i].timing.id == AbilityTiming.action) {
-        if (phases[i].timing.id == AbilityTiming.action) {
+      if (phases[i].timing == Timing.beforeMove || phases[i].timing == Timing.action) {
+        if (phases[i].timing == Timing.action) {
           if (!actioned) {
             phases[i].move!.isFirst = true;
             actioned = true;
@@ -2252,7 +2251,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           action2BeginIdx = i;
         }
       }
-      else if (phases[i].timing.id == AbilityTiming.everyTurnEnd) {
+      else if (phases[i].timing == Timing.everyTurnEnd) {
         assert(i >= 1);
         action2EndIdx = i-1;
         break;
@@ -2284,11 +2283,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       TurnEffect? lastAction;
 
       for (int i = 0; i < phases.length; i++) {
-        if (phases[i].timing.id == AbilityTiming.action) {
+        if (phases[i].timing == Timing.action) {
           lastAction = phases[i];
           continuousCount = 0;
         }
-        else if (phases[i].timing.id == AbilityTiming.continuousMove) {
+        else if (phases[i].timing == Timing.continuousMove) {
           lastAction = phases[i];
           continuousCount++;
         }
@@ -2315,16 +2314,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
 
       sameTimingList.clear();
-      int timingId = turnEffectAndStateAndGuides.first.turnEffect.timing.id;
+      Timing timing = turnEffectAndStateAndGuides.first.turnEffect.timing;
       int beginIdx = 0;
       for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
-        if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
-            turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
-            turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
+        if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
+            turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
+            turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
         ) {
           sameTimingList.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
           beginIdx = i;
-          timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
+          timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
         }
       }
 

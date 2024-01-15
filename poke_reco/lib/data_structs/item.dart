@@ -30,7 +30,7 @@ class Item {
   late final String _displayNameEn;
   final int flingPower;
   final int flingEffectId;
-  final AbilityTiming timing;
+  final Timing timing;
   final bool isBerry;
   final String imageUrl;
 
@@ -881,7 +881,7 @@ class Item {
   // TurnEffectのarg1が決定できる場合はその値を返す
   static int getAutoArg1(
     int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     bool isMe = player == PlayerType.me;
     bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
@@ -895,7 +895,7 @@ class Item {
       case 189:       // レンブのみ
         return !isMe ? (yourState.pokemon.h.real / (doubleBerry ? 4 : 8)).floor() : (doubleBerry ? 25 : 12);
       case 584:       // ふうせん
-        if (timing.id != AbilityTiming.pokemonAppear) {
+        if (timing != Timing.pokemonAppear) {
           return 1;
         }
         break;
@@ -937,7 +937,7 @@ class Item {
   // TurnEffectのarg2が決定できる場合はその値を返す
   static int getAutoArg2(
     int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     return 0;
   }
@@ -1496,7 +1496,7 @@ class Item {
     var map = <String, Object?>{
       itemColumnId: id,
       itemColumnName: displayName,
-      itemColumnTiming: timing.id,
+      itemColumnTiming: timing,
     };
     return map;
   }

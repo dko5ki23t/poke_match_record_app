@@ -5386,7 +5386,7 @@ class TurnMove {
                       }
                       matches.add(Item(
                         id: 0, displayName: loc.commonNone, displayNameEn: 'None', flingPower: 0, flingEffectId: 0,
-                        timing: AbilityTiming(0), isBerry: false, imageUrl: '',
+                        timing: Timing.none, isBerry: false, imageUrl: '',
                       ));
                     }
                     matches.retainWhere((s){

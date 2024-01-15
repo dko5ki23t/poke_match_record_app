@@ -19,7 +19,7 @@ class Ability {
   final int id;
   final String _displayName;
   final String _displayNameEn;
-  final AbilityTiming timing;
+  final Timing timing;
   final Target target;
   final AbilityEffect effect;
 //  final int chance;               // 発動確率
@@ -46,7 +46,7 @@ class Ability {
       abilityColumnId: id,
       abilityColumnName: _displayName,
       abilityColumnEnglishName: _displayNameEn,
-      abilityColumnTiming: timing.id,
+      abilityColumnTiming: timing.index,
       abilityColumnTarget: target.id,
       abilityColumnEffect: effect.id,
     };
@@ -1511,7 +1511,7 @@ class Ability {
   // TurnEffectのarg1が決定できる場合はその値を返す
   static int getAutoArg1(
     int abilityID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     bool isMe = player == PlayerType.me;
 
@@ -1551,7 +1551,7 @@ class Ability {
         return isMe ? -((myState.pokemon.h.real / 8).floor()) : -12;
       case 281:       // こだいかっせい
       case 282:       // ブーストエナジー
-        if (timing.id == AbilityTiming.everyTurnEnd) {
+        if (timing == Timing.everyTurnEnd) {
           return -1;
         }
         else {
@@ -1592,7 +1592,7 @@ class Ability {
   // TurnEffectのarg2が決定できる場合はその値を返す
   static int getAutoArg2(
     int abilityID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     return 0;
   }
@@ -1604,7 +1604,7 @@ class Ability {
       int.parse(elements[0]),
       elements[1],
       '',
-      AbilityTiming(int.parse(elements[2])),
+      Timing.values[int.parse(elements[2])],
       Target(int.parse(elements[3])),
       AbilityEffect(int.parse(elements[4]))
     );
@@ -1612,6 +1612,6 @@ class Ability {
 
   // SQL保存用の文字列に変換
   String serialize(String split1) {
-    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.id}$split1${target.id}$split1${effect.id}';
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.id}$split1${effect.id}';
   }
 }

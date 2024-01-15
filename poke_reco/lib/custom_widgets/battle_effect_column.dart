@@ -22,7 +22,7 @@ class BattleEffectColumn extends Column {
     PhaseState prevState,       // 直前までの状態
     List<TurnEffectAndStateAndGuide> sameTimingList,
     int firstIdx,
-    AbilityTiming timing,
+    Timing timing,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,
@@ -140,7 +140,7 @@ class BattleEffectColumn extends Column {
                                   PlayerType.me.number,
                                   '${sameTimingList[i].phaseState.getPokemonState(
                                     PlayerType.me,
-                                    sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
+                                    sameTimingList.first.phaseIdx-1 >= 0 && timing == Timing.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                   ).pokemon.name}/${loc.battleYou}',
                                 ),
                                 _myDropDown(
@@ -148,7 +148,7 @@ class BattleEffectColumn extends Column {
                                   PlayerType.opponent.number,
                                   '${sameTimingList[i].phaseState.getPokemonState(
                                     PlayerType.opponent,
-                                    sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
+                                    sameTimingList.first.phaseIdx-1 >= 0 && timing == Timing.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                   ).pokemon.name}/${battle.opponentName}',
                                 ),
                                 _myDropDown(
@@ -196,12 +196,12 @@ class BattleEffectColumn extends Column {
                                 text: turn.phases[firstIdx+i].playerType == PlayerType.me ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
                                         PlayerType.me,
-                                        sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
+                                        sameTimingList.first.phaseIdx-1 >= 0 && timing == Timing.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                       ).pokemon.name}/${loc.battleYou}' :
                                       turn.phases[firstIdx+i].playerType == PlayerType.opponent ?
                                       '${sameTimingList[i].phaseState.getPokemonState(
                                         PlayerType.opponent,
-                                        sameTimingList.first.phaseIdx-1 >= 0 && timing.id == AbilityTiming.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
+                                        sameTimingList.first.phaseIdx-1 >= 0 && timing == Timing.afterMove ? turn.phases[sameTimingList.first.phaseIdx-1] : null
                                       ).pokemon.name}/${battle.opponentName}' :
                                       loc.battleWeatherField,
                               ),
@@ -219,7 +219,7 @@ class BattleEffectColumn extends Column {
                                 border: UnderlineInputBorder(),
                                 labelText: loc.battleEffectType,
                               ),
-                              items: timing.id == AbilityTiming.afterMove ?
+                              items: timing == Timing.afterMove ?
                               <DropdownMenuItem<int>>[
                                 _myDropDown(
                                   sameTimingList.first.candidateEffect.where((e) =>
@@ -460,19 +460,19 @@ class BattleEffectColumn extends Column {
     ],
   );
 
-  static String _getTimingText(AbilityTiming timing, AppLocalizations loc) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear:
+  static String _getTimingText(Timing timing, AppLocalizations loc) {
+    switch (timing) {
+      case Timing.pokemonAppear:
         return loc.battleTimingPokemonAppear;
-      case AbilityTiming.everyTurnEnd:
+      case Timing.everyTurnEnd:
         return loc.battleTimingTurnEnd;
-      case AbilityTiming.afterActionDecision:
+      case Timing.afterActionDecision:
         return loc.battleTimingAfterActionDecision;
-      case AbilityTiming.beforeMove:
+      case Timing.beforeMove:
         return loc.battleTimingBeforeMove;
-      case AbilityTiming.afterMove:
+      case Timing.afterMove:
         return loc.battleTimingAfterMove;
-      case AbilityTiming.afterTerastal:
+      case Timing.afterTerastal:
         return loc.battleTimingAfterTerastal;
       default:
         return '';

@@ -22,7 +22,7 @@ class BattleTerastalColumn extends Column {
     PhaseState prevState,       // 直前までの状態
     List<TurnEffectAndStateAndGuide> sameTimingList,
     int firstIdx,
-    AbilityTiming timing,
+    Timing timing,
     List<TextEditingController> textEditControllerList1,
     List<TextEditingController> textEditControllerList2,
     List<TextEditingController> textEditControllerList3,

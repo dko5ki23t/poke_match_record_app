@@ -73,9 +73,9 @@ class ViewBattlePageState extends State<ViewBattlePage> {
   TurnEffect? _getPrevTimingEffect(int index) {
     TurnEffect? ret;
     var currentTurn = widget.battle.turns[turnNum-1];
-    AbilityTiming nowTiming = currentTurn.phases[index].timing;
+    Timing nowTiming = currentTurn.phases[index].timing;
     for (int i = index-1; i >= 0; i--) {
-      if (currentTurn.phases[i].timing.id != nowTiming.id) {
+      if (currentTurn.phases[i].timing != nowTiming) {
         ret = currentTurn.phases[i];
         break;
       }
@@ -615,17 +615,17 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     int continuousCount = 0;
     TurnEffect? lastAction;
     int beginIdx = 0;
-    int timingId = 0;
+    Timing timing = Timing.none;
     var phases = battle.turns[turnNum-1].phases;
 
     for (int i = 0; i < phases.length; i++) {
-      if (phases[i].timing.id == AbilityTiming.action){
+      if (phases[i].timing == Timing.action){
         lastAction = phases[i];
         if (phases[i].move!.type.id == TurnMoveType.move) {
           continuousCount = 0;
         }       
       }
-      else if (phases[i].timing.id == AbilityTiming.continuousMove && phases[i].isValid()) {
+      else if (phases[i].timing == Timing.continuousMove && phases[i].isValid()) {
         lastAction = phases[i];
         continuousCount++;
       }
@@ -651,9 +651,9 @@ class ViewBattlePageState extends State<ViewBattlePage> {
 
     for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
       turnEffectAndStateAndGuides[i].phaseIdx = i;
-      if (turnEffectAndStateAndGuides[i].turnEffect.timing.id != timingId ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.action ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing.id == AbilityTiming.changeFaintingPokemon
+      if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
       ) {
         if (i != 0) {
           turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
@@ -661,7 +661,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
           ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
         }
         beginIdx = i;
-        timingId = turnEffectAndStateAndGuides[i].turnEffect.timing.id;
+        timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
       }
     }
 
