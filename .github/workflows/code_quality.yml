@@ -21,6 +21,7 @@ jobs:
         with:
           flutter-version: '3.16.5'
           channel: 'stable'
+      - run: flutter --version
       - run: cd poke_reco
       - name: Install packages
         run: flutter pub get
