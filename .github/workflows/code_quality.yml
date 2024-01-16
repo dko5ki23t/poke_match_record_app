@@ -23,6 +23,7 @@ jobs:
           channel: 'stable'
       - run: flutter --version
       - run: cd poke_reco
+      - run: ls
       - name: Install packages
         run: flutter pub get
       - name: Linter
