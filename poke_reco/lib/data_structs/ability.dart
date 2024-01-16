@@ -1599,14 +1599,14 @@ class Ability {
 
   // SQLに保存された文字列からabilityをパース
   static Ability deserialize(dynamic str, String split1) {
-    final elements = str.split(split1);
+    final List elements = str.split(split1);
     return Ability(
-      int.parse(elements[0]),
-      elements[1],
-      '',
-      Timing.values[int.parse(elements[2])],
-      Target(int.parse(elements[3])),
-      AbilityEffect(int.parse(elements[4]))
+      int.parse(elements.removeAt(0)),
+      elements.removeAt(0),
+      elements.removeAt(0),
+      Timing.values[int.parse(elements.removeAt(0))],
+      Target(int.parse(elements.removeAt(0))),
+      AbilityEffect(int.parse(elements.removeAt(0)))
     );
   }
 

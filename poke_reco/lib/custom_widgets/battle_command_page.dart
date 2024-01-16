@@ -6,12 +6,12 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class BattleCommandPage extends StatefulWidget {
   const BattleCommandPage({
     Key? key,
-    required this.ownTurnMove,
-    required this.ownMoveListTiles,
+    required this.turnMove,
+    required this.moveListTiles,
   }) : super(key: key);
 
-  final TurnMove ownTurnMove;
-  final List<ListTile> ownMoveListTiles;
+  final TurnMove turnMove;
+  final List<ListTile> moveListTiles;
 
   @override
   BattleCommandPageState createState() => BattleCommandPageState();
@@ -26,12 +26,12 @@ class BattleCommandPageState extends State<BattleCommandPage> {
     final ButtonStyle pressedStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
-    var ownTurnMove = widget.ownTurnMove;
-    var ownMoveListTiles = widget.ownMoveListTiles;
+    var turnMove = widget.turnMove;
+    var moveListTiles = widget.moveListTiles;
     var loc = AppLocalizations.of(context)!;
 
     List<ListTile> copiedTiles = [];
-    for (var tile in ownMoveListTiles) {
+    for (var tile in moveListTiles) {
       copiedTiles.add(
         // TODO
         ListTile(
@@ -60,25 +60,25 @@ class BattleCommandPageState extends State<BattleCommandPage> {
                 children: [
                   TextButton(
                     onPressed: () => setState(() {
-                      ownTurnMove.type = TurnMoveType(TurnMoveType.move);
+                      turnMove.type = TurnMoveType(TurnMoveType.move);
                     }),
-                    style: ownTurnMove.type.id == TurnMoveType.move ? pressedStyle : null,
+                    style: turnMove.type.id == TurnMoveType.move ? pressedStyle : null,
                     child: Text(loc.commonMove),
                   ),
                   SizedBox(width: 10),
                   TextButton(
                     onPressed: () => setState(() {
-                      ownTurnMove.type = TurnMoveType(TurnMoveType.change);
+                      turnMove.type = TurnMoveType(TurnMoveType.change);
                     }),
-                    style: ownTurnMove.type.id == TurnMoveType.change ? pressedStyle : null,
+                    style: turnMove.type.id == TurnMoveType.change ? pressedStyle : null,
                     child: Text(loc.battlePokemonChange),
                   ),
                   SizedBox(width: 10,),
                   TextButton(
                     onPressed: () => setState(() {
-                      ownTurnMove.type = TurnMoveType(TurnMoveType.surrender);
+                      turnMove.type = TurnMoveType(TurnMoveType.surrender);
                     }),
-                    style: ownTurnMove.type.id == TurnMoveType.surrender ? pressedStyle : null,
+                    style: turnMove.type.id == TurnMoveType.surrender ? pressedStyle : null,
                     child: Text(loc.battleSurrender),
                   ),
                 ],
@@ -86,7 +86,7 @@ class BattleCommandPageState extends State<BattleCommandPage> {
             ),
             SizedBox(height: 10,),
             for (final tile in copiedTiles)
-            ownTurnMove.type.id == TurnMoveType.move ?
+            turnMove.type.id == TurnMoveType.move ?
             tile : Container(),
     /*
             type.id == TurnMoveType.change ?     // 行動が交代の場合

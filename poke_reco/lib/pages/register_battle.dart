@@ -679,16 +679,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     // TODO
     var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[0].move! : TurnMove();
     var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[1].move! : TurnMove();
-    var ownPrevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState(ownParty, opponentParty) : null;
+    var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState(ownParty, opponentParty) : null;
     List<Move> ownMoves = [];
     List<ListTile> ownMoveListTiles = [];
-    if (ownPrevState != null) {
-      var ownPokemonState = ownPrevState.getPokemonState(PlayerType.me, null);
+    if (prevState != null) {
+      var ownPokemonState = prevState.getPokemonState(PlayerType.me, null);
       var ownPokemon = ownPokemonState.pokemon;
-      var opponentPokemonState = ownPrevState.getPokemonState(PlayerType.opponent, null);
+      var opponentPokemonState = prevState.getPokemonState(PlayerType.opponent, null);
       var myState = ownPokemonState;
       var yourState = opponentPokemonState;
-      var yourFields = ownPrevState.indiFields[1];
+      var yourFields = prevState.indiFields[1];
       ownMoves.add(ownPokemon.move1);
       if (ownPokemon.move2 != null) ownMoves.add(ownPokemon.move2!);
       if (ownPokemon.move3 != null) ownMoves.add(ownPokemon.move3!);
@@ -702,15 +702,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         tmp.moveEffectivenesses[0] = PokeType.effectiveness(
             myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
             yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-            ownTurnMove.getReplacedMoveType(tmp.move, 0, myState, ownPrevState), yourState);
+            ownTurnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
         tmp.processMove(
           ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-          opponentPokemonState.copyWith(), ownPrevState.copyWith(), 0, [],
+          opponentPokemonState.copyWith(), prevState.copyWith(), 0, [],
           damageGetter: getter, loc: loc,);
         ownMoveListTiles.add(
           ListTile(
             dense: true,
-            leading: ownTurnMove.getReplacedMoveType(ownMove, 0, myState, ownPrevState).displayIcon,
+            leading: ownTurnMove.getReplacedMoveType(ownMove, 0, myState, prevState).displayIcon,
             title: Text(ownMove.displayName),
             subtitle: Text(getter.rangeString),
             trailing: Icon(Icons.arrow_forward_ios),
@@ -721,60 +721,56 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               ownTurnMove.moveEffectivenesses[0] = PokeType.effectiveness(
                   myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                   yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                  ownTurnMove.getReplacedMoveType(ownMove, 0, myState, ownPrevState), yourState);
+                  ownTurnMove.getReplacedMoveType(ownMove, 0, myState, prevState), yourState);
             },
           ),
         );
       }
     }
-/*    List<Move> opponentMoves = [];
+    List<Move> opponentMoves = [];
     List<ListTile> opponentMoveListTiles = [];
-    if (ownPrevState != null && instantTurns.isNotEmpty) {
-      var instantTurn = instantTurns[turnNum-1];
-      var ownPokemonState = instantTurn.ownPokemonStates[instantTurn.ownPokemonIndex-1];
-      var ownPokemon = ownPokemonState.pokemon;
-      var opponentPokemonState = instantTurn.opponentPokemonStates[instantTurn.opponentPokemonIndex-1];
-      var myState = ownPokemonState;
-      var yourState = opponentPokemonState;
-      var yourFields = ownPrevState.opponentFields;
-      ownMoves.add(ownPokemon.move1);
-      if (ownPokemon.move2 != null) ownMoves.add(ownPokemon.move2!);
-      if (ownPokemon.move3 != null) ownMoves.add(ownPokemon.move3!);
-      if (ownPokemon.move4 != null) ownMoves.add(ownPokemon.move4!);
-      for (final ownMove in ownMoves) {
+    if (prevState != null) {
+      var opponentPokemonState = prevState.getPokemonState(PlayerType.opponent, null);
+      var opponentPokemon = opponentPokemonState.pokemon;
+      var ownPokemonState = prevState.getPokemonState(PlayerType.me, null);
+      var myState = opponentPokemonState;
+      var yourState = ownPokemonState;
+      var yourFields = prevState.indiFields[0];
+      opponentMoves.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
+      for (final opponentMove in opponentMoves) {
         DamageGetter getter = DamageGetter();
-        TurnMove tmp = ownTurnMove.copyWith();
-        tmp.move = ownTurnMove.getReplacedMove(ownMove, 0, myState);
-        tmp.moveHits[0] = ownTurnMove.getMoveHit(ownMove, 0, myState, yourState, yourFields);
+        TurnMove tmp = opponentTurnMove.copyWith();
+        tmp.move = opponentTurnMove.getReplacedMove(opponentMove, 0, myState);
+        tmp.moveHits[0] = opponentTurnMove.getMoveHit(opponentMove, 0, myState, yourState, yourFields);
         tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
         tmp.moveEffectivenesses[0] = PokeType.effectiveness(
             myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
             yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-            ownTurnMove.getReplacedMoveType(tmp.move, 0, myState, ownPrevState), yourState);
+            opponentTurnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
         tmp.processMove(
           ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-          opponentPokemonState.copyWith(), ownPrevState.copyWith(), 0, ownEffectAndGuide!.turnEffect.invalidGuideIDs,
+          opponentPokemonState.copyWith(), prevState.copyWith(), 0, [],
           damageGetter: getter, loc: loc,);
-        ownMoveListTiles.add(
+        opponentMoveListTiles.add(
           ListTile(
             dense: true,
-            leading: ownTurnMove.getReplacedMoveType(ownMove, 0, myState, ownPrevState).displayIcon,
-            title: Text(ownMove.displayName),
+            leading: opponentTurnMove.getReplacedMoveType(opponentMove, 0, myState, prevState).displayIcon,
+            title: Text(opponentMove.displayName),
             subtitle: Text(getter.rangeString),
             trailing: Icon(Icons.arrow_forward_ios),
             onTap: () {
-              ownTurnMove.move = ownMove;
-              ownTurnMove.moveHits[0] = ownTurnMove.getMoveHit(ownMove, 0, myState, yourState, yourFields);
-              ownTurnMove.moveAdditionalEffects[0] = ownMove.isSurelyEffect() ? MoveEffect(ownMove.effect.id) : MoveEffect(0);
-              ownTurnMove.moveEffectivenesses[0] = PokeType.effectiveness(
+              opponentTurnMove.move = opponentMove;
+              opponentTurnMove.moveHits[0] = opponentTurnMove.getMoveHit(opponentMove, 0, myState, yourState, yourFields);
+              opponentTurnMove.moveAdditionalEffects[0] = opponentMove.isSurelyEffect() ? MoveEffect(opponentMove.effect.id) : MoveEffect(0);
+              opponentTurnMove.moveEffectivenesses[0] = PokeType.effectiveness(
                   myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                   yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                  ownTurnMove.getReplacedMoveType(ownMove, 0, myState, ownPrevState), yourState);
+                  opponentTurnMove.getReplacedMoveType(opponentMove, 0, myState, prevState), yourState);
             },
           ),
         );
       }
-    }*/
+    }
 
     switch (pageType) {
       case RegisterBattlePageType.basePage:
@@ -926,8 +922,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           Expanded(
                             flex: 6,
                             child: BattleCommandPage(
-                              ownTurnMove: ownTurnMove,
-                              ownMoveListTiles: ownMoveListTiles,
+                              turnMove: ownTurnMove,
+                              moveListTiles: ownMoveListTiles,
                             ),
                           ),
                         ],
@@ -1041,8 +1037,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           Expanded(
                             flex: 6,
                             child: BattleCommandPage(
-                              ownTurnMove: opponentTurnMove,
-                              ownMoveListTiles: ownMoveListTiles,
+                              turnMove: opponentTurnMove,
+                              moveListTiles: opponentMoveListTiles,
                             ),
                           ),
                         ],
