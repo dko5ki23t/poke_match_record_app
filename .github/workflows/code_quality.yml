@@ -26,9 +26,11 @@ jobs:
         run: |
           cd poke_reco
           flutter pub get
-      - name: Linter
+      - name: Prepare AdHelper
         run: |
-          cd poke_reco
+          
+      - name: Linter
+        run: echo -e "::add-mask::${{ secrets.AD_HELPER }}" >> poke_reco/lib/ad_helper.dart
           flutter analyze
       - name: Test
         run: |
