@@ -22,6 +22,7 @@ import 'package:quiver/iterables.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -1366,6 +1367,44 @@ class PokeDB {
       for (var map in maps) {
         var pokemon = Pokemon.createFromDBMap(map);
         pokemons[pokemon.id] = pokemon;
+      }
+    }
+
+    // デバッグ時のみ
+    if (kDebugMode) {
+      bool replacePrepared = false;
+      // 用意しているポケモンデータベースに置き換える
+      if (replacePrepared) {
+        final preparedDb = await openAssetDatabase(myPokemonDBFile);
+        // 内部データに変換
+        maps = await preparedDb.query(myPokemonDBTable,
+          columns: [
+            myPokemonColumnId, myPokemonColumnViewOrder,
+            myPokemonColumnNo, myPokemonColumnNickName,
+            myPokemonColumnTeraType, myPokemonColumnLevel,
+            myPokemonColumnSex, myPokemonColumnTemper,
+            myPokemonColumnAbility, myPokemonColumnItem,
+            for (var e in myPokemonColumnIndividual) e,
+            for (var e in myPokemonColumnEffort) e,
+            myPokemonColumnMove1, myPokemonColumnPP1,
+            myPokemonColumnMove2, myPokemonColumnPP2,
+            myPokemonColumnMove3, myPokemonColumnPP3,
+            myPokemonColumnMove4, myPokemonColumnPP4,
+            myPokemonColumnOwnerID,
+          ],
+        );
+
+        pokemons = {0: Pokemon()};
+        for (var map in maps) {
+          var pokemon = Pokemon.createFromDBMap(map);
+          pokemons[pokemon.id] = pokemon;
+        }
+
+        await deleteDatabase(myPokemonDBPath);
+        await _createMyPokemonDB();
+        for (final pokemon in pokemons.values) {
+          addMyPokemon(pokemon, false);
+        }
       }
     }
 

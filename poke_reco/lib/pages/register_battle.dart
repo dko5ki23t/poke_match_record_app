@@ -817,231 +817,221 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               children: [
                 Expanded(
                   flex: 5,
-                  child: Column(
+                  child: Row(
                     children: [
-                      SizedBox(height: 5),
-                      Row(
-                        children: [
-                          SizedBox(width: 10,),
-                          Expanded(
-                            flex: 4,
-                            child: Column(
-                              children: [
-                                // ポケモン画像/アイコン
-                                FittedBox(fit: BoxFit.scaleDown, child: 
-                                pokeData.getPokeAPI ?
-                                Image.network(
-                                  pokeData.pokeBase[focusState!.getPokemonState(PlayerType.me, null).pokemon.no]!.imageUrl,
-                                  height: theme.buttonTheme.height * 1.5,
-                                  errorBuilder: (c, o, s) {
-                                    return const Icon(Icons.catching_pokemon);
-                                  },
-                                ) : const Icon(Icons.catching_pokemon),),
-                                // ポケモン名
-                                FittedBox(fit: BoxFit.scaleDown, child: Text('${_focusingPokemon(PlayerType.me, focusState!).name}/${loc.battleYou}', overflow: TextOverflow.ellipsis,)),
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: Text('Lv.${_focusingPokemon(PlayerType.me, focusState).level}', overflow: TextOverflow.ellipsis,)),
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).sex.displayIcon),
-                                ],),),
-                                // タイプ
-                                focusState.getPokemonState(PlayerType.me, null).isTerastaling ?
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: Text(loc.commonTerastal)),
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).teraType1.displayIcon),
-                                ],)) :
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).type1.displayIcon),
-                                  focusState.getPokemonState(PlayerType.me, null).type2 != null ?
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).type2!.displayIcon) : Container(),
-                                ],),),
-                                // とくせい/もちもの
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: AbilityText(focusState.getPokemonState(PlayerType.me, null).currentAbility, showHatena: true,),),
-                                  ItemText(focusState.getPokemonState(PlayerType.me, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
-                                ],),),
-                                // HP
+                      SizedBox(width: 10),
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          children: [
+                            // ポケモン画像/アイコン
+                            FittedBox(fit: BoxFit.scaleDown, child: 
+                            pokeData.getPokeAPI ?
+                            Image.network(
+                              pokeData.pokeBase[focusState!.getPokemonState(PlayerType.me, null).pokemon.no]!.imageUrl,
+                              height: theme.buttonTheme.height * 1.5,
+                              errorBuilder: (c, o, s) {
+                                return const Icon(Icons.catching_pokemon);
+                              },
+                            ) : const Icon(Icons.catching_pokemon),),
+                            // ポケモン名
+                            FittedBox(fit: BoxFit.scaleDown, child: Text('${_focusingPokemon(PlayerType.me, focusState!).name}/${loc.battleYou}', overflow: TextOverflow.ellipsis,)),
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: Text('Lv.${_focusingPokemon(PlayerType.me, focusState).level}', overflow: TextOverflow.ellipsis,)),
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).sex.displayIcon),
+                            ],),),
+                            // タイプ
+                            focusState.getPokemonState(PlayerType.me, null).isTerastaling ?
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: Text(loc.commonTerastal)),
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).teraType1.displayIcon),
+                            ],)) :
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).type1.displayIcon),
+                              focusState.getPokemonState(PlayerType.me, null).type2 != null ?
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.me, null).type2!.displayIcon) : Container(),
+                            ],),),
+                            // とくせい/もちもの
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: AbilityText(focusState.getPokemonState(PlayerType.me, null).currentAbility, showHatena: true,),),
+                              ItemText(focusState.getPokemonState(PlayerType.me, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
+                            ],),),
+                            // HP
+                            isEditMode ?
+                            _HPInputRow(
+                              ownHPController, opponentHPController,
+                              (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
+                            FittedBox(fit: BoxFit.scaleDown, child: _OwnHPBarRow(
+                              focusState.getPokemonState(PlayerType.me, null).remainHP,
+                              _focusingPokemon(PlayerType.me, focusState).h.real,
+                            ),),
+                            //SizedBox(height: 5),
+                            // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
+                            // TODO
+                            for (int i = 0; i < 7; i++)
+                              viewMode == 0 ?   // ランク表示
+                              FittedBox(fit: BoxFit.scaleDown, child: _OwnStatChangeViewRow(
+                                statAlphabets[i], isEditMode ? ownStatChanges[i] : focusState.getPokemonState(PlayerType.me, null).statChanges(i),
+                                isEditMode ? (idx) => setState(() {
+                                  if (ownStatChanges[i].abs() == idx+1) {
+                                    if (ownStatChanges[i] > 0) {
+                                      ownStatChanges[i] = -ownStatChanges[i];
+                                    }
+                                    else {
+                                      ownStatChanges[i] = 0;
+                                    }
+                                  }
+                                  else {
+                                    ownStatChanges[i] = idx+1;
+                                  }
+                                }) : (idx) {},
+                              )) :
+                              viewMode == 1 ?   // 種族値表示
+                                i < 6 ?
+                                _StatStatusViewRow(
+                                  statusAlphabets[i],
+                                  focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
+                                  focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
+                                  focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
+                                  focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
+                                ) : Container() :
+                                // ステータス(補正前/補正後)
+                                i < 6 ?
                                 isEditMode ?
-                                _HPInputRow(
-                                  ownHPController, opponentHPController,
-                                  (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
-                                FittedBox(fit: BoxFit.scaleDown, child: _OwnHPBarRow(
-                                  focusState.getPokemonState(PlayerType.me, null).remainHP,
-                                  _focusingPokemon(PlayerType.me, focusState).h.real,
-                                ),),
-                                //SizedBox(height: 5),
-                                // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
-                                // TODO
-                                for (int i = 0; i < 7; i++)
-                                  viewMode == 0 ?   // ランク表示
-                                  FittedBox(fit: BoxFit.scaleDown, child: _OwnStatChangeViewRow(
-                                    statAlphabets[i], isEditMode ? ownStatChanges[i] : focusState.getPokemonState(PlayerType.me, null).statChanges(i),
-                                    isEditMode ? (idx) => setState(() {
-                                      if (ownStatChanges[i].abs() == idx+1) {
-                                        if (ownStatChanges[i] > 0) {
-                                          ownStatChanges[i] = -ownStatChanges[i];
-                                        }
-                                        else {
-                                          ownStatChanges[i] = 0;
-                                        }
-                                      }
-                                      else {
-                                        ownStatChanges[i] = idx+1;
-                                      }
-                                    }) : (idx) {},
-                                  )) :
-                                  viewMode == 1 ?   // 種族値表示
-                                    i < 6 ?
-                                    _StatStatusViewRow(
-                                      statusAlphabets[i],
-                                      focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
-                                      focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
-                                      focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
-                                      focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
-                                    ) : Container() :
-                                    // ステータス(補正前/補正後)
-                                    i < 6 ?
-                                    isEditMode ?
-                                    _StatStatusInputRow(
-                                      statusAlphabets[i],
-                                      ownStatusMinControllers[i], ownStatusMaxControllers[i],
-                                      opponentStatusMinControllers[i], opponentStatusMaxControllers[i],
-                                      UserForce.statMinH+i, UserForce.statMaxH+i,
-                                      (userForce) => userForceAdd(focusPhaseIdx, userForce),
-                                    ) :
-                                    _StatStatusViewRow(
-                                      statusAlphabets[i],
-                                      focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
-                                      focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
-                                      focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
-                                      focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
-                                    ) : Container(),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 10,),
-                          Expanded(
-                            flex: 6,
-                            child: BattleCommandPage(
-                              turnMove: ownTurnMove,
-                              moveListTiles: ownMoveListTiles,
-                            ),
-                          ),
-                        ],
+                                _StatStatusInputRow(
+                                  statusAlphabets[i],
+                                  ownStatusMinControllers[i], ownStatusMaxControllers[i],
+                                  opponentStatusMinControllers[i], opponentStatusMaxControllers[i],
+                                  UserForce.statMinH+i, UserForce.statMaxH+i,
+                                  (userForce) => userForceAdd(focusPhaseIdx, userForce),
+                                ) :
+                                _StatStatusViewRow(
+                                  statusAlphabets[i],
+                                  focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
+                                  focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
+                                  focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
+                                  focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
+                                ) : Container(),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 10,),
+                      Expanded(
+                        flex: 6,
+                        child: BattleCommandPage(
+                          turnMove: ownTurnMove,
+                          moveListTiles: ownMoveListTiles,
+                        ),
                       ),
                     ],
                   ),
                 ),
                 Expanded(
                   flex: 5,
-                  child: Column(
+                  child: Row(
                     children: [
-                      SizedBox(height: 5),
-                      Row(
-                        children: [
-                          SizedBox(width: 10,),
-                          Expanded(
-                            flex: 4,
-                            child: Column(
-                              children: [
-                                // ポケモン画像/アイコン
-                                FittedBox(fit: BoxFit.scaleDown, child: 
-                                pokeData.getPokeAPI ?
-                                Image.network(
-                                  pokeData.pokeBase[focusState.getPokemonState(PlayerType.opponent, null).pokemon.no]!.imageUrl,
-                                  height: theme.buttonTheme.height * 1.5,
-                                  errorBuilder: (c, o, s) {
-                                    return const Icon(Icons.catching_pokemon);
-                                  },
-                                ) : const Icon(Icons.catching_pokemon),),
-                                // ポケモン名
-                                FittedBox(fit: BoxFit.scaleDown, child: Text('${_focusingPokemon(PlayerType.opponent, focusState).name}/${widget.battle.opponentName}', overflow: TextOverflow.ellipsis,)),
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: Text('Lv.${_focusingPokemon(PlayerType.opponent, focusState).level}', overflow: TextOverflow.ellipsis,)),
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).sex.displayIcon),
-                                ],),),
-                                // タイプ
-                                focusState.getPokemonState(PlayerType.opponent, null).isTerastaling ?
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: Text(loc.commonTerastal)),
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).teraType1.displayIcon),
-                                ],)) :
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).type1.displayIcon),
-                                  focusState.getPokemonState(PlayerType.opponent, null).type2 != null ?
-                                  Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).type2!.displayIcon) : Container(),
-                                ],),),
-                                // とくせい/もちもの
-                                FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                  Flexible(fit:FlexFit.loose, child: AbilityText(focusState.getPokemonState(PlayerType.opponent, null).currentAbility, showHatena: true,),),
-                                  ItemText(focusState.getPokemonState(PlayerType.opponent, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
-                                ],),),
-                                // HP
+                      SizedBox(width: 10,),
+                      Expanded(
+                        flex: 4,
+                        child: Column(
+                          children: [
+                            // ポケモン画像/アイコン
+                            FittedBox(fit: BoxFit.scaleDown, child: 
+                            pokeData.getPokeAPI ?
+                            Image.network(
+                              pokeData.pokeBase[focusState.getPokemonState(PlayerType.opponent, null).pokemon.no]!.imageUrl,
+                              height: theme.buttonTheme.height * 1.5,
+                              errorBuilder: (c, o, s) {
+                                return const Icon(Icons.catching_pokemon);
+                              },
+                            ) : const Icon(Icons.catching_pokemon),),
+                            // ポケモン名
+                            FittedBox(fit: BoxFit.scaleDown, child: Text('${_focusingPokemon(PlayerType.opponent, focusState).name}/${widget.battle.opponentName}', overflow: TextOverflow.ellipsis,)),
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: Text('Lv.${_focusingPokemon(PlayerType.opponent, focusState).level}', overflow: TextOverflow.ellipsis,)),
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).sex.displayIcon),
+                            ],),),
+                            // タイプ
+                            focusState.getPokemonState(PlayerType.opponent, null).isTerastaling ?
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: Text(loc.commonTerastal)),
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).teraType1.displayIcon),
+                            ],)) :
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).type1.displayIcon),
+                              focusState.getPokemonState(PlayerType.opponent, null).type2 != null ?
+                              Flexible(fit:FlexFit.loose, child: focusState.getPokemonState(PlayerType.opponent, null).type2!.displayIcon) : Container(),
+                            ],),),
+                            // とくせい/もちもの
+                            FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                              Flexible(fit:FlexFit.loose, child: AbilityText(focusState.getPokemonState(PlayerType.opponent, null).currentAbility, showHatena: true,),),
+                              ItemText(focusState.getPokemonState(PlayerType.opponent, null).holdingItem, showHatena: true, showNone: true, loc: loc,),
+                            ],),),
+                            // HP
+                            isEditMode ?
+                            _HPInputRow(
+                              ownHPController, opponentHPController,
+                              (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
+                            FittedBox(fit: BoxFit.scaleDown, child: _OpponentHPBarRow(
+                              focusState.getPokemonState(PlayerType.opponent, null).remainHPPercent,
+                            ),),
+                            //SizedBox(height: 5),
+                            // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
+                            // TODO
+                            for (int i = 0; i < 7; i++)
+                              viewMode == 0 ?   // ランク表示
+                              FittedBox(fit: BoxFit.scaleDown, child: _OwnStatChangeViewRow(
+                                statAlphabets[i], isEditMode ? ownStatChanges[i] : focusState.getPokemonState(PlayerType.opponent, null).statChanges(i),
+                                isEditMode ? (idx) => setState(() {
+                                  if (ownStatChanges[i].abs() == idx+1) {
+                                    if (ownStatChanges[i] > 0) {
+                                      ownStatChanges[i] = -ownStatChanges[i];
+                                    }
+                                    else {
+                                      ownStatChanges[i] = 0;
+                                    }
+                                  }
+                                  else {
+                                    ownStatChanges[i] = idx+1;
+                                  }
+                                }) : (idx) {},
+                              )) :
+                              viewMode == 1 ?   // 種族値表示
+                                i < 6 ?
+                                _StatStatusViewRow(
+                                  statusAlphabets[i],
+                                  focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
+                                  focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
+                                  focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
+                                  focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
+                                ) : Container() :
+                                // ステータス(補正前/補正後)
+                                i < 6 ?
                                 isEditMode ?
-                                _HPInputRow(
-                                  ownHPController, opponentHPController,
-                                  (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
-                                FittedBox(fit: BoxFit.scaleDown, child: _OpponentHPBarRow(
-                                  focusState.getPokemonState(PlayerType.opponent, null).remainHPPercent,
-                                ),),
-                                //SizedBox(height: 5),
-                                // 各ステータス(ABCDSAcEv)の変化/各ステータス(HABCDS)の実数値/
-                                // TODO
-                                for (int i = 0; i < 7; i++)
-                                  viewMode == 0 ?   // ランク表示
-                                  FittedBox(fit: BoxFit.scaleDown, child: _OwnStatChangeViewRow(
-                                    statAlphabets[i], isEditMode ? ownStatChanges[i] : focusState.getPokemonState(PlayerType.opponent, null).statChanges(i),
-                                    isEditMode ? (idx) => setState(() {
-                                      if (ownStatChanges[i].abs() == idx+1) {
-                                        if (ownStatChanges[i] > 0) {
-                                          ownStatChanges[i] = -ownStatChanges[i];
-                                        }
-                                        else {
-                                          ownStatChanges[i] = 0;
-                                        }
-                                      }
-                                      else {
-                                        ownStatChanges[i] = idx+1;
-                                      }
-                                    }) : (idx) {},
-                                  )) :
-                                  viewMode == 1 ?   // 種族値表示
-                                    i < 6 ?
-                                    _StatStatusViewRow(
-                                      statusAlphabets[i],
-                                      focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
-                                      focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
-                                      focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
-                                      focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
-                                    ) : Container() :
-                                    // ステータス(補正前/補正後)
-                                    i < 6 ?
-                                    isEditMode ?
-                                    _StatStatusInputRow(
-                                      statusAlphabets[i],
-                                      ownStatusMinControllers[i], ownStatusMaxControllers[i],
-                                      opponentStatusMinControllers[i], opponentStatusMaxControllers[i],
-                                      UserForce.statMinH+i, UserForce.statMaxH+i,
-                                      (userForce) => userForceAdd(focusPhaseIdx, userForce),
-                                    ) :
-                                    _StatStatusViewRow(
-                                      statusAlphabets[i],
-                                      focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
-                                      focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
-                                      focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
-                                      focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
-                                    ) : Container(),
-                              ],
-                            ),
-                          ),
-                          SizedBox(width: 10,),
-                          Expanded(
-                            flex: 6,
-                            child: BattleCommandPage(
-                              turnMove: opponentTurnMove,
-                              moveListTiles: opponentMoveListTiles,
-                            ),
-                          ),
-                        ],
+                                _StatStatusInputRow(
+                                  statusAlphabets[i],
+                                  ownStatusMinControllers[i], ownStatusMaxControllers[i],
+                                  opponentStatusMinControllers[i], opponentStatusMaxControllers[i],
+                                  UserForce.statMinH+i, UserForce.statMaxH+i,
+                                  (userForce) => userForceAdd(focusPhaseIdx, userForce),
+                                ) :
+                                _StatStatusViewRow(
+                                  statusAlphabets[i],
+                                  focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
+                                  focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
+                                  focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
+                                  focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
+                                ) : Container(),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 10,),
+                      Expanded(
+                        flex: 6,
+                        child: BattleCommandPage(
+                          turnMove: opponentTurnMove,
+                          moveListTiles: opponentMoveListTiles,
+                        ),
                       ),
                     ],
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -53,9 +54,11 @@ class BattleCommandPageState extends State<BattleCommandPage> {
         commandColumn = Column(
           children: [
             // 行動
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Row(
+            Expanded(
+              flex: 1,
+              child: FittedBox(
+                fit: BoxFit.contain,
+                child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
@@ -82,12 +85,15 @@ class BattleCommandPageState extends State<BattleCommandPage> {
                     child: Text(loc.battleSurrender),
                   ),
                 ],
-              ),
+              ),),
             ),
-            SizedBox(height: 10,),
-            for (final tile in copiedTiles)
-            turnMove.type.id == TurnMoveType.move ?
-            tile : Container(),
+            Expanded(
+              flex: 5,
+              child: ListViewWithViewItemCount(
+                viewItemCount: 4,
+                children: turnMove.type.id == TurnMoveType.move ? copiedTiles : [],
+              )
+            ),
     /*
             type.id == TurnMoveType.change ?     // 行動が交代の場合
             Row(
