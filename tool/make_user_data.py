@@ -4,8 +4,9 @@ from enum import IntEnum
 ###### ユーザが登録するデータをSQLテーブルとして保存する ######
 
 # 保存先SQLiteの各種名前
-myPokemonDBFile = 'MyPokemons.db'
-myPokemonDBTable = 'myPokemonDB'
+preparedDBFile = 'Prepared.db'
+
+myPokemonDBTable = 'PreparedMyPokemonDB'
 myPokemonColumnId = 'id'
 myPokemonColumnViewOrder = 'viewOrder'
 myPokemonColumnNo = 'no'
@@ -43,8 +44,7 @@ myPokemonColumnPP4 = 'pp4'
 myPokemonColumnOwnerID = 'owner'
 
 
-partyDBFile = 'parties.db'
-partyDBTable = 'partyDB'
+partyDBTable = 'preparedPartyDB'
 partyColumnId = 'id'
 partyColumnViewOrder = 'viewOrder'
 partyColumnName = 'name'
@@ -61,6 +61,7 @@ partyColumnPokemonItem5 = 'pokemonItem5'
 partyColumnPokemonId6 = 'pokemonID6'
 partyColumnPokemonItem6 = 'pokemonItem6'
 partyColumnOwnerID = 'owner'
+
 
 battleDBFile = 'battles.db'
 battleDBTable = 'battleDB'
@@ -162,92 +163,173 @@ class Pokemon:
     def toSet(self):
         return (self.id, self.viewOrder, self.no, self.nickname, int(self.teraType), self.level, int(self.sex), int(self.temper), self.abilityID, self.itemID, self.hIE[0], self.aIE[0], self.bIE[0], self.cIE[0], self.dIE[0], self.sIE[0], self.hIE[1], self.aIE[1], self.bIE[1], self.cIE[1], self.dIE[1], self.sIE[1], self.moveIDs[0], self.pps[0], self.moveIDs[1], self.pps[1], self.moveIDs[2], self.pps[2], self.moveIDs[3], self.pps[3], int(self.owner))
 
+class Party:
+    def __init__(
+            self, id:int, viewOrder:int, name:str, pokemonID1:int, itemID1:int, pokemonID2:int, itemID2:int,
+            pokemonID3:int, itemID3:int, pokemonID4:int, itemID4:int, pokemonID5:int, itemID5:int, pokemonID6:int, itemID6:int, owner:Owner):
+        self.id = id
+        self.viewOrder = viewOrder
+        self.name = name
+        self.pokemonID1 = pokemonID1
+        self.itemID1 = itemID1
+        self.pokemonID2 = pokemonID2
+        self.itemID2 = itemID2
+        self.pokemonID3 = pokemonID3
+        self.itemID3 = itemID3
+        self.pokemonID4 = pokemonID4
+        self.itemID4 = itemID4
+        self.pokemonID5 = pokemonID5
+        self.itemID5 = itemID5
+        self.pokemonID6 = pokemonID6
+        self.itemID6 = itemID6
+        self.owner = owner
+
+    def toSet(self):
+        return (self.id, self.viewOrder, self.name, self.pokemonID1, self.itemID1, self.pokemonID2, self.itemID2, self.pokemonID3, self.itemID3, self.pokemonID4, self.itemID4, self.pokemonID5, self.itemID5, self.pokemonID6, self.itemID6, int(self.owner))
+
+
 # SQLiteでintの配列をvalueにした場合の変換方法
 IntList = list
 sqlite3.register_adapter(IntList, lambda l: ';'.join([str(i) for i in l]))
 sqlite3.register_converter("IntList", lambda s: [int(i) for i in s.split(';')])
 
+myPokemons = [
+    Pokemon(1, 1, 197, "のろいーブイ", PokeType.ghost, 50,  Sex.male,   Temper.odayaka,  39,  0, [31, 244], [6, 0], [31, 252], [31, 0], [31, 12], [31, 0], [347, 500, 174, 273], [20, 16, 16, 16],  Owner.mine).toSet(),
+    Pokemon(2, 2, 136, "げんきーブイ", PokeType.grass, 50,  Sex.male,   Temper.yoki,     62,  0, [31, 4], [31, 252], [31, 0], [8, 0], [31, 0], [31, 252], [394, 851, 885, 263], [15, 16, 20, 20],   Owner.mine).toSet(),
+    Pokemon(3, 3, 196, "むすびーブイ", PokeType.fight, 55,  Sex.female, Temper.hikaeme,  156, 0, [31, 4], [10, 0], [31, 0], [31, 252], [31, 0], [31, 252], [94, 851, 247, 447], [16, 16, 15, 20],   Owner.mine).toSet(),
+    Pokemon(4, 4, 700, "うたいーブイ", PokeType.fire,  77,  Sex.male,   Temper.hikaeme,  182, 0, [31, 100], [31, 0], [31, 156], [31, 252], [31, 0], [31, 0], [98, 281, 851, 304], [36, 16, 16, 16], Owner.mine).toSet(),
+    Pokemon(5, 5, 470, "まいーブイ",   PokeType.rock,  54,  Sex.male,   Temper.ijippari, 34,  0, [31, 184], [31, 232], [31, 0], [23, 0], [31, 4], [31, 88], [14, 73, 348, 851], [20, 16, 24, 16],   Owner.mine).toSet(),
+    Pokemon(6, 6, 134, "かたいーブイ", PokeType.normal,75,  Sex.male,   Temper.zubutoi,  11,  0, [31, 212], [28, 0], [31, 236], [31, 12], [31, 20], [31, 28], [57, 151, 347, 156], [24, 20, 20, 5], Owner.mine).toSet(),
+    Pokemon(7, 7, 135, "かいひーブイ", PokeType.fly,   100, Sex.female, Temper.okubyou,  10,  0, [31, 244], [31, 0], [31, 12], [31, 0], [31, 0], [31, 252], [189, 86, 164, 226], [16, 16, 15, 20],  Owner.mine).toSet(),
+    Pokemon(8, 8, 471, "ドライーブイ", PokeType.ice,   100, Sex.male,   Temper.hikaeme,  81,  0, [31, 100], [7, 0], [31, 4], [31, 252], [31, 132], [31, 20], [573, 59, 247, 341], [20, 8, 15, 15],  Owner.mine).toSet()
+]
+
+parties = [
+    Party(1, 1, "ブイズ", 1, 211, 2, 250, 3, 245, 4, 135, 5, 247, 6, 127, Owner.mine).toSet()
+]
+
 def main():
-    # 登録したポケモン
-    conn = sqlite3.connect(myPokemonDBFile)
+    conn = sqlite3.connect(preparedDBFile)
     con = conn.cursor()
 
+    # 登録したポケモン
     # 読み込み
     try:
         # テーブルがあれば削除
         con.execute(f'DROP TABLE {myPokemonDBTable}')
-        print('[myPokemon]delete existing table')
-        print('[myPokemon]create new table')
+        print('[myPokemon]deleted existing table')
     except sqlite3.OperationalError:
-        print('[myPokemon]create new table')
+        print('[myPokemon]could not find exisiting table')
 
-        # 作成(存在してたら作らない)
-        try:
-            con.execute(
-            f'CREATE TABLE IF NOT EXISTS {myPokemonDBTable} ('
-            f'  {myPokemonColumnId} INTEGER PRIMARY KEY, '
-            f'  {myPokemonColumnViewOrder} INTEGER, '
-            f'  {myPokemonColumnNo} INTEGER, '
-            f'  {myPokemonColumnNickName} TEXT, '
-            f'  {myPokemonColumnTeraType} INTEGER, '
-            f'  {myPokemonColumnLevel} INTEGER, '
-            f'  {myPokemonColumnSex} INTEGER, '
-            f'  {myPokemonColumnTemper} INTEGER, '
-            f'  {myPokemonColumnAbility} INTEGER, '
-            f'  {myPokemonColumnItem} INTEGER, '
-            f'  {myPokemonColumnIndividual[0]} INTEGER, '
-            f'  {myPokemonColumnIndividual[1]} INTEGER, '
-            f'  {myPokemonColumnIndividual[2]} INTEGER, '
-            f'  {myPokemonColumnIndividual[3]} INTEGER, '
-            f'  {myPokemonColumnIndividual[4]} INTEGER, '
-            f'  {myPokemonColumnIndividual[5]} INTEGER, '
-            f'  {myPokemonColumnEffort[0]} INTEGER, '
-            f'  {myPokemonColumnEffort[1]} INTEGER, '
-            f'  {myPokemonColumnEffort[2]} INTEGER, '
-            f'  {myPokemonColumnEffort[3]} INTEGER, '
-            f'  {myPokemonColumnEffort[4]} INTEGER, '
-            f'  {myPokemonColumnEffort[5]} INTEGER, '
-            f'  {myPokemonColumnMove1} INTEGER, '
-            f'  {myPokemonColumnPP1} INTEGER, '
-            f'  {myPokemonColumnMove2} INTEGER, '
-            f'  {myPokemonColumnPP2} INTEGER, '
-            f'  {myPokemonColumnMove3} INTEGER, '
-            f'  {myPokemonColumnPP3} INTEGER, '
-            f'  {myPokemonColumnMove4} INTEGER, '
-            f'  {myPokemonColumnPP4} INTEGER, '
-            f'  {myPokemonColumnOwnerID} INTEGER)'
-            )
-        except sqlite3.OperationalError:
-            print('failed to create table')
+    # 作成
+    try:
+        con.execute(
+        f'CREATE TABLE {myPokemonDBTable} ('
+        f'  {myPokemonColumnId} INTEGER PRIMARY KEY, '
+        f'  {myPokemonColumnViewOrder} INTEGER, '
+        f'  {myPokemonColumnNo} INTEGER, '
+        f'  {myPokemonColumnNickName} TEXT, '
+        f'  {myPokemonColumnTeraType} INTEGER, '
+        f'  {myPokemonColumnLevel} INTEGER, '
+        f'  {myPokemonColumnSex} INTEGER, '
+        f'  {myPokemonColumnTemper} INTEGER, '
+        f'  {myPokemonColumnAbility} INTEGER, '
+        f'  {myPokemonColumnItem} INTEGER, '
+        f'  {myPokemonColumnIndividual[0]} INTEGER, '
+        f'  {myPokemonColumnIndividual[1]} INTEGER, '
+        f'  {myPokemonColumnIndividual[2]} INTEGER, '
+        f'  {myPokemonColumnIndividual[3]} INTEGER, '
+        f'  {myPokemonColumnIndividual[4]} INTEGER, '
+        f'  {myPokemonColumnIndividual[5]} INTEGER, '
+        f'  {myPokemonColumnEffort[0]} INTEGER, '
+        f'  {myPokemonColumnEffort[1]} INTEGER, '
+        f'  {myPokemonColumnEffort[2]} INTEGER, '
+        f'  {myPokemonColumnEffort[3]} INTEGER, '
+        f'  {myPokemonColumnEffort[4]} INTEGER, '
+        f'  {myPokemonColumnEffort[5]} INTEGER, '
+        f'  {myPokemonColumnMove1} INTEGER, '
+        f'  {myPokemonColumnPP1} INTEGER, '
+        f'  {myPokemonColumnMove2} INTEGER, '
+        f'  {myPokemonColumnPP2} INTEGER, '
+        f'  {myPokemonColumnMove3} INTEGER, '
+        f'  {myPokemonColumnPP3} INTEGER, '
+        f'  {myPokemonColumnMove4} INTEGER, '
+        f'  {myPokemonColumnPP4} INTEGER, '
+        f'  {myPokemonColumnOwnerID} INTEGER)'
+        )
+        print('[myPokemon]created table')
+    except sqlite3.OperationalError:
+        print('[myPokemon]failed to create table')
 
-        # 挿入
-        myPokemons = [
-            Pokemon(1, 1, 197, "のろいーブイ", PokeType.ghost, 50, Sex.male, Temper.odayaka, 39, 0, [31, 244], [6, 0], [31, 252], [31, 0], [31, 12], [31, 0], [347, 500, 174, 273], [20, 16, 16, 16], Owner.mine).toSet(),
-            Pokemon(2, 2, 136, "げんきーブイ", PokeType.grass, 50, Sex.male, Temper.yoki, 62, 0, [31, 4], [31, 252], [31, 0], [8, 0], [31, 0], [31, 252], [394, 851, 885, 263], [15, 16, 20, 20], Owner.mine).toSet(),
-            Pokemon(3, 3, 196, "むすびーブイ", PokeType.fight, 55, Sex.female, Temper.hikaeme, 156, 0, [31, 4], [10, 0], [31, 0], [31, 252], [31, 0], [31, 252], [94, 851, 247, 447], [16, 16, 15, 20], Owner.mine).toSet(),
-            Pokemon(4, 4, 700, "うたいーブイ", PokeType.fire, 77, Sex.male, Temper.hikaeme, 182, 0, [31, 100], [31, 0], [31, 156], [31, 252], [31, 0], [31, 0], [98, 281, 851, 304], [36, 16, 16, 16], Owner.mine).toSet(),
-            Pokemon(5, 5, 470, "まいーブイ", PokeType.rock, 54, Sex.male, Temper.ijippari, 34, 0, [31, 184], [31, 232], [31, 0], [23, 0], [31, 4], [31, 88], [14, 73, 348, 851], [20, 16, 24, 16], Owner.mine).toSet(),
-            Pokemon(6, 6, 134, "かたいーブイ", PokeType.normal, 75, Sex.male, Temper.zubutoi, 11, 0, [31, 212], [28, 0], [31, 236], [31, 12], [31, 20], [31, 28], [57, 151, 347, 156], [24, 20, 20, 5], Owner.mine).toSet(),
-            Pokemon(7, 7, 135, "かいひーブイ", PokeType.fly, 100, Sex.female, Temper.okubyou, 10, 0, [31, 244], [31, 0], [31, 12], [31, 0], [31, 0], [31, 252], [189, 86, 164, 226], [16, 16, 15, 20], Owner.mine).toSet(),
-            Pokemon(8, 8, 471, "ドライーブイ", PokeType.ice, 100, Sex.male, Temper.hikaeme, 81, 0, [31, 100], [7, 0], [31, 4], [31, 252], [31, 132], [31, 20], [573, 59, 247, 341], [20, 8, 15, 15], Owner.mine).toSet(),
-        ]
-        try:
-            con.executemany(
-                f'INSERT INTO {myPokemonDBTable} ('
-                f'{myPokemonColumnId}, {myPokemonColumnViewOrder}, {myPokemonColumnNo}, {myPokemonColumnNickName}, '
-                f'{myPokemonColumnTeraType}, {myPokemonColumnLevel}, {myPokemonColumnSex}, {myPokemonColumnTemper}, '
-                f'{myPokemonColumnAbility}, {myPokemonColumnItem}, {myPokemonColumnIndividual[0]}, {myPokemonColumnIndividual[1]}, '
-                f'{myPokemonColumnIndividual[2]}, {myPokemonColumnIndividual[3]}, {myPokemonColumnIndividual[4]}, '
-                f'{myPokemonColumnIndividual[5]}, {myPokemonColumnEffort[0]}, {myPokemonColumnEffort[1]}, {myPokemonColumnEffort[2]}, '
-                f'{myPokemonColumnEffort[3]}, {myPokemonColumnEffort[4]}, {myPokemonColumnEffort[5]}, {myPokemonColumnMove1}, '
-                f'{myPokemonColumnPP1}, {myPokemonColumnMove2}, {myPokemonColumnPP2}, {myPokemonColumnMove3}, {myPokemonColumnPP3}, '
-                f'{myPokemonColumnMove4}, {myPokemonColumnPP4}, {myPokemonColumnOwnerID})'
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
-                myPokemons)
-        except sqlite3.OperationalError:
-            print('failed to insert table')
+    # 挿入
+    try:
+        con.executemany(
+            f'INSERT INTO {myPokemonDBTable} ('
+            f'{myPokemonColumnId}, {myPokemonColumnViewOrder}, {myPokemonColumnNo}, {myPokemonColumnNickName}, '
+            f'{myPokemonColumnTeraType}, {myPokemonColumnLevel}, {myPokemonColumnSex}, {myPokemonColumnTemper}, '
+            f'{myPokemonColumnAbility}, {myPokemonColumnItem}, {myPokemonColumnIndividual[0]}, {myPokemonColumnIndividual[1]}, '
+            f'{myPokemonColumnIndividual[2]}, {myPokemonColumnIndividual[3]}, {myPokemonColumnIndividual[4]}, '
+            f'{myPokemonColumnIndividual[5]}, {myPokemonColumnEffort[0]}, {myPokemonColumnEffort[1]}, {myPokemonColumnEffort[2]}, '
+            f'{myPokemonColumnEffort[3]}, {myPokemonColumnEffort[4]}, {myPokemonColumnEffort[5]}, {myPokemonColumnMove1}, '
+            f'{myPokemonColumnPP1}, {myPokemonColumnMove2}, {myPokemonColumnPP2}, {myPokemonColumnMove3}, {myPokemonColumnPP3}, '
+            f'{myPokemonColumnMove4}, {myPokemonColumnPP4}, {myPokemonColumnOwnerID})'
+            f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+            myPokemons)
+        print('[myPokemon]inserted data')
+    except sqlite3.OperationalError:
+        print('[myPokemon]failed to insert table')
 
-        conn.commit()
+    #################################
+
+    # 登録したパーティ
+    # 読み込み
+    try:
+        # テーブルがあれば削除
+        con.execute(f'DROP TABLE {partyDBTable}')
+        print('[party]deleted existing table')
+    except sqlite3.OperationalError:
+        print('[party]could not find exisiting table')
+
+    # 作成
+    try:
+        con.execute(
+        f'CREATE TABLE {partyDBTable} ('
+        f'  {partyColumnId} INTEGER PRIMARY KEY, '
+        f'  {partyColumnViewOrder} INTEGER, '
+        f'  {partyColumnName} TEXT, '
+        f'  {partyColumnPokemonId1} INTEGER, '
+        f'  {partyColumnPokemonItem1} INTEGER, '
+        f'  {partyColumnPokemonId2} INTEGER, '
+        f'  {partyColumnPokemonItem2} INTEGER, '
+        f'  {partyColumnPokemonId3} INTEGER, '
+        f'  {partyColumnPokemonItem3} INTEGER, '
+        f'  {partyColumnPokemonId4} INTEGER, '
+        f'  {partyColumnPokemonItem4} INTEGER, '
+        f'  {partyColumnPokemonId5} INTEGER, '
+        f'  {partyColumnPokemonItem5} INTEGER, '
+        f'  {partyColumnPokemonId6} INTEGER, '
+        f'  {partyColumnPokemonItem6} INTEGER, '
+        f'  {partyColumnOwnerID} INTEGER)'
+        )
+        print('[party]created table')
+    except sqlite3.OperationalError:
+        print('[party]failed to create table')
+
+    # 挿入
+    try:
+        con.executemany(
+            f'INSERT INTO {partyDBTable} ('
+            f'{partyColumnId}, {partyColumnViewOrder}, {partyColumnName}, '
+            f'{partyColumnPokemonId1}, {partyColumnPokemonItem1}, {partyColumnPokemonId2}, {partyColumnPokemonItem2}, '
+            f'{partyColumnPokemonId3}, {partyColumnPokemonItem3}, {partyColumnPokemonId4}, {partyColumnPokemonItem4}, '
+            f'{partyColumnPokemonId5}, {partyColumnPokemonItem5}, {partyColumnPokemonId6}, {partyColumnPokemonItem6}, {partyColumnOwnerID})'
+            f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+            parties)
+        print('[party]inserted data')
+    except sqlite3.OperationalError:
+        print('[party]failed to insert table')
+
+    conn.commit()
 
     con.close()
     conn.close()

@@ -4,8 +4,13 @@ import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-class BattleCommandPage extends StatefulWidget {
-  const BattleCommandPage({
+enum CommandState {
+  home,
+  inputNum,
+}
+
+class BattleCommand extends StatefulWidget {
+  const BattleCommand({
     Key? key,
     required this.turnMove,
     required this.moveListTiles,
@@ -15,11 +20,11 @@ class BattleCommandPage extends StatefulWidget {
   final List<ListTile> moveListTiles;
 
   @override
-  BattleCommandPageState createState() => BattleCommandPageState();
+  BattleCommandState createState() => BattleCommandState();
 }
 
-class BattleCommandPageState extends State<BattleCommandPage> {
-  int mode = 0;
+class BattleCommandState extends State<BattleCommand> {
+  CommandState state = CommandState.home;
 
   @override
   Widget build(BuildContext context) {
@@ -39,19 +44,23 @@ class BattleCommandPageState extends State<BattleCommandPage> {
           dense: tile.dense,
           title: tile.title,
           subtitle: tile.subtitle,
+          leading: tile.leading,
           trailing: tile.trailing,
           onTap: () {
             tile.onTap ?? 0;
-            push();
+            setState(() {
+              state = CommandState.inputNum;
+            });
           }
         ),
       );
     }
 
     Widget commandColumn;
-    switch (mode) {
-      case 0:
+    switch (state) {
+      case CommandState.home:
         commandColumn = Column(
+          key: ValueKey<int>(state.index),
           children: [
             // 行動
             Expanded(
@@ -88,11 +97,23 @@ class BattleCommandPageState extends State<BattleCommandPage> {
               ),),
             ),
             Expanded(
-              flex: 5,
+              flex: 1,
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: TextField(
+                  decoration: InputDecoration(
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ),
+            ),
+            Expanded(
+              flex: 6,
               child: ListViewWithViewItemCount(
                 viewItemCount: 4,
                 children: turnMove.type.id == TurnMoveType.move ? copiedTiles : [],
-              )
+              ),
             ),
     /*
             type.id == TurnMoveType.change ?     // 行動が交代の場合
@@ -151,25 +172,36 @@ class BattleCommandPageState extends State<BattleCommandPage> {
           ],
         );
         break;
-      case 1:
+      case CommandState.inputNum:
         commandColumn = Column(
+          key: ValueKey<int>(state.index),
           children: [
-            // ダメージ入力
-            FittedBox(
-              alignment: Alignment.centerLeft,
-              fit: BoxFit.scaleDown,
+            Expanded(
+              flex: 1,
               child: Row(
                 children: [
-                  Align(alignment: Alignment.centerLeft, child: IconButton(onPressed: (){}, icon: Icon(Icons.arrow_back))),
+                  IconButton(
+                    onPressed: () => setState(() {
+                      state = CommandState.home;
+                    }),
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                  Expanded(
+                    child: Text('ああ'),
+                  )
                 ],
               ),
             ),
-            NumberInputButtons(initialNum: 100,),
+            // ダメージ入力
+            Expanded(
+              flex: 5,
+              child: NumberInputButtons(initialNum: 100,),
+            ),
           ],
         );
         break;
       default:
-        commandColumn = Container();
+        commandColumn = Container(key: ValueKey<int>(state.index),);
         break;
     }
 
@@ -188,11 +220,5 @@ class BattleCommandPageState extends State<BattleCommandPage> {
       },
       child: commandColumn,
     );
-  }
-
-  void push() {
-    setState(() {
-      mode = 1;
-    });
   }
 }

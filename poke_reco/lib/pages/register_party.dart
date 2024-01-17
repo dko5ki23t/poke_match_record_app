@@ -223,7 +223,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         setState(() {});
                       },
                       widget.party.pokemons[i] != null ? widget.party.pokemons[i]!.no : 0,
-                      widget.party.items[i] != null ? widget.party.items[i]!.id : null,
+                      widget.party.items[i]?.id,
                       theme,
                       widget.isEditPokemon,
                       () {

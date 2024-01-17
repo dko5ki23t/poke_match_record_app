@@ -110,7 +110,7 @@ flutter:
      - assets/AbilityFlavors.db
      - assets/ItemFlavors.db
      - assets/MoveFlavors.db
-     - assets/MyPokemons.db
+     - assets/Prepared.db
      - assets/licenses/LICENSE
      - assets/licenses/OFL.txt
 

@@ -143,8 +143,11 @@ const String pokeBaseColumnWeight = 'weight';
 const String pokeBaseColumnEggGroup = 'eggGroup';
 const String pokeBaseColumnImageUrl = 'imageUrl';
 
+const String preparedDBFile = 'Prepared.db';
+
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
+const String preparedMyPokemonDBTable = 'PreparedMyPokemonDB';
 const String myPokemonColumnId = 'id';
 const String myPokemonColumnViewOrder = 'viewOrder';
 const String myPokemonColumnNo = 'no';
@@ -184,6 +187,7 @@ const String myPokemonColumnOwnerID = 'owner';
 
 const String partyDBFile = 'parties.db';
 const String partyDBTable = 'partyDB';
+const String preparedPartyDBTable = 'PreparedPartyDB';
 const String partyColumnId = 'id';
 const String partyColumnViewOrder = 'viewOrder';
 const String partyColumnName = 'name';
@@ -1370,44 +1374,6 @@ class PokeDB {
       }
     }
 
-    // デバッグ時のみ
-    if (kDebugMode) {
-      bool replacePrepared = false;
-      // 用意しているポケモンデータベースに置き換える
-      if (replacePrepared) {
-        final preparedDb = await openAssetDatabase(myPokemonDBFile);
-        // 内部データに変換
-        maps = await preparedDb.query(myPokemonDBTable,
-          columns: [
-            myPokemonColumnId, myPokemonColumnViewOrder,
-            myPokemonColumnNo, myPokemonColumnNickName,
-            myPokemonColumnTeraType, myPokemonColumnLevel,
-            myPokemonColumnSex, myPokemonColumnTemper,
-            myPokemonColumnAbility, myPokemonColumnItem,
-            for (var e in myPokemonColumnIndividual) e,
-            for (var e in myPokemonColumnEffort) e,
-            myPokemonColumnMove1, myPokemonColumnPP1,
-            myPokemonColumnMove2, myPokemonColumnPP2,
-            myPokemonColumnMove3, myPokemonColumnPP3,
-            myPokemonColumnMove4, myPokemonColumnPP4,
-            myPokemonColumnOwnerID,
-          ],
-        );
-
-        pokemons = {0: Pokemon()};
-        for (var map in maps) {
-          var pokemon = Pokemon.createFromDBMap(map);
-          pokemons[pokemon.id] = pokemon;
-        }
-
-        await deleteDatabase(myPokemonDBPath);
-        await _createMyPokemonDB();
-        for (final pokemon in pokemons.values) {
-          addMyPokemon(pokemon, false);
-        }
-      }
-    }
-
     //////////// 登録したパーティ
     final partyDBPath = join(await getDatabasesPath(), partyDBFile);
     //await deleteDatabase(partyDBPath);
@@ -1483,6 +1449,76 @@ class PokeDB {
       for (var map in maps) {
         var battle = Battle.createFromDBMap(map);
         battles[battle.id] = battle;
+      }
+    }
+
+    // デバッグ時のみ
+    if (kDebugMode) {
+      bool replacePrepared = false;
+      // 用意しているポケモンデータベースに置き換える
+      if (replacePrepared) {
+        final preparedDb = await openAssetDatabase(preparedDBFile);
+        ///////// 登録したポケモン
+        {
+          // 内部データに変換
+          maps = await preparedDb.query(preparedMyPokemonDBTable,
+            columns: [
+              myPokemonColumnId, myPokemonColumnViewOrder,
+              myPokemonColumnNo, myPokemonColumnNickName,
+              myPokemonColumnTeraType, myPokemonColumnLevel,
+              myPokemonColumnSex, myPokemonColumnTemper,
+              myPokemonColumnAbility, myPokemonColumnItem,
+              for (var e in myPokemonColumnIndividual) e,
+              for (var e in myPokemonColumnEffort) e,
+              myPokemonColumnMove1, myPokemonColumnPP1,
+              myPokemonColumnMove2, myPokemonColumnPP2,
+              myPokemonColumnMove3, myPokemonColumnPP3,
+              myPokemonColumnMove4, myPokemonColumnPP4,
+              myPokemonColumnOwnerID,
+            ],
+          );
+
+          pokemons = {0: Pokemon()};
+          for (var map in maps) {
+            var pokemon = Pokemon.createFromDBMap(map);
+            pokemons[pokemon.id] = pokemon;
+          }
+
+          await deleteDatabase(myPokemonDBPath);
+          await _createMyPokemonDB();
+          for (final pokemon in pokemons.values) {
+            addMyPokemon(pokemon, false);
+          }
+        }
+
+        ///////// 登録したパーティ
+        {
+          // 内部データに変換
+          maps = await preparedDb.query(preparedPartyDBTable,
+            columns: [
+              partyColumnId, partyColumnViewOrder, partyColumnName,
+              partyColumnPokemonId1, partyColumnPokemonItem1,
+              partyColumnPokemonId2, partyColumnPokemonItem2,
+              partyColumnPokemonId3, partyColumnPokemonItem3,
+              partyColumnPokemonId4, partyColumnPokemonItem4,
+              partyColumnPokemonId5, partyColumnPokemonItem5,
+              partyColumnPokemonId6, partyColumnPokemonItem6,
+              partyColumnOwnerID,
+            ],
+          );
+
+          parties = {0: Party()};
+          for (var map in maps) {
+            var party = Party.createFromDBMap(map);
+            parties[party.id] = party;
+          }
+
+          await deleteDatabase(partyDBPath);
+          await _createPartyDB();
+          for (final party in parties.values) {
+            addParty(party, false);
+          }
+        }
       }
     }
 
