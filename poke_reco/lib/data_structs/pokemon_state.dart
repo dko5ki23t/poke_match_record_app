@@ -10,10 +10,9 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:tuple/tuple.dart';
 
 class PokemonState {
-  PlayerType playerType = PlayerType(0);    // ポケモンの所有者
+  PlayerType playerType = PlayerType.none;    // ポケモンの所有者
   Pokemon pokemon = Pokemon();  // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0;             // 残りHP
   int remainHPPercent = 100;    // 残りHP割合
@@ -23,15 +22,15 @@ class PokemonState {
   int battlingNum = 0;          // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
   Item? _holdingItem = Item(
     id: 0, displayName: '', displayNameEn: '', flingPower: 0, flingEffectId: 0,
-    timing: AbilityTiming(0), isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
+    timing: Timing.none, isBerry: false, imageUrl: '');  // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0);       // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability _currentAbility = Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
+  Ability _currentAbility = Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態変化
-  List<SixParams> minStats = List.generate(StatIndex.size.index, (i) => SixParams(0, 0, 0, 0));     // 個体値や努力値のあり得る範囲の最小値
-  List<SixParams> maxStats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));   // 個体値や努力値のあり得る範囲の最大値
+  SixStats minStats = SixStats.generateMinStat();     // 個体値や努力値のあり得る範囲の最小値
+  SixStats maxStats = SixStats.generateMaxStat();     // 個体値や努力値のあり得る範囲の最大値
   List<Ability> possibleAbilities = [];     // 候補のとくせい
   List<Item> impossibleItems = [];          // 候補から外れたもちもの(他ポケモンが持ってる等)
   List<Move> moves = [];        // 判明しているわざ
@@ -56,8 +55,8 @@ class PokemonState {
     ..hiddenBuffs = [for (final e in hiddenBuffs) e.copyWith()]
     .._currentAbility = _currentAbility.copyWith()
     .._ailments = _ailments.copyWith()
-    ..minStats = [for (final e in minStats) e.copyWith()]
-    ..maxStats = [for (final e in maxStats) e.copyWith()]
+    ..minStats = minStats.copyWith()
+    ..maxStats = maxStats.copyWith()
     ..possibleAbilities = [for (final e in possibleAbilities) e.copyWith()]
     ..impossibleItems = [for (final e in impossibleItems) e.copyWith()]
     ..moves = [...moves]
@@ -83,7 +82,7 @@ class PokemonState {
     var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
-  bool get isMe => playerType.id == PlayerType.me;
+  bool get isMe => playerType == PlayerType.me;
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
   bool get canUseItem {
     return ailmentsWhere((e) => e.id == Ailment.embargo).isEmpty &&
@@ -173,7 +172,7 @@ class PokemonState {
 
   // 交代可能な状態かどうか
   bool canChange(PokemonState yourState, PhaseState state) {
-    var fields = isMe ? state.ownFields : state.opponentFields;
+    var fields = isMe ? state.getIndiFields(PlayerType.me) : state.getIndiFields(PlayerType.opponent);
     return isTypeContain(PokeTypeId.ghost) ||   // ゴーストタイプならOK
        holdingItem?.id == 272 ||            // きれいなぬけがらを持っていればOK
     (fields.where((element) => element.id == IndividualField.fairyLock).isEmpty &&
@@ -338,14 +337,14 @@ class PokemonState {
       if (findIdx >= 0) {
         buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.mightyForm);   // マイティフォルム
         // TODO この2行csvに移したい
-        maxStats[StatIndex.A.index].race = 160; maxStats[StatIndex.B.index].race = 97; maxStats[StatIndex.C.index].race = 106; maxStats[StatIndex.D.index].race = 87;
-        minStats[StatIndex.A.index].race = 160; minStats[StatIndex.B.index].race = 97; minStats[StatIndex.C.index].race = 106; minStats[StatIndex.D.index].race = 87;
-        for (int i = StatIndex.A.index; i <= StatIndex.D.index; i++) {
+        maxStats.a.race = 160; maxStats.b.race = 97; maxStats.c.race = 106; maxStats.d.race = 87;
+        minStats.a.race = 160; minStats.b.race = 97; minStats.c.race = 106; minStats.d.race = 87;
+        for (final stat in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D]) {
           var biases = Temper.getTemperBias(pokemon.temper);
-          maxStats[i].real = SixParams.getRealABCDS(
-            pokemon.level, maxStats[i].race, maxStats[i].indi, maxStats[i].effort, biases[i-1]);
-          minStats[i].real = SixParams.getRealABCDS(
-            pokemon.level, minStats[i].race, minStats[i].indi, minStats[i].effort, biases[i-1]);
+          maxStats[stat].real = SixParams.getRealABCDS(
+            pokemon.level, maxStats[stat].race, maxStats[stat].indi, maxStats[stat].effort, biases[stat.index-1]);
+          minStats[stat].real = SixParams.getRealABCDS(
+            pokemon.level, minStats[stat].race, minStats[stat].indi, minStats[stat].effort, biases[stat.index-1]);
         }
       }
     }
@@ -412,7 +411,7 @@ class PokemonState {
     holdingItem?.processPassiveEffect(this);
   
     // 地面にいるどくポケモンによるどくびし/どくどくびしの消去
-    var indiField = playerType.id == PlayerType.me ? state.ownFields : state.opponentFields;
+    var indiField = playerType == PlayerType.me ? state.getIndiFields(PlayerType.me) : state.getIndiFields(PlayerType.opponent);
     if (isGround(indiField) && isTypeContain(PokeTypeId.poison)) {
       indiField.removeWhere((e) => e.id == IndividualField.toxicSpikes);
     }
@@ -463,7 +462,7 @@ class PokemonState {
 
   // 状態異常に関する関数群ここから
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
-    var indiFields = isMe ? state.ownFields : state.opponentFields;
+    var indiFields = isMe ? state.getIndiFields(PlayerType.me) : state.getIndiFields(PlayerType.opponent);
     var yourState = state.getPokemonState(playerType.opposite, null);
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
@@ -851,16 +850,16 @@ class PokemonState {
   // ランク補正等込みのHABCDSを返す(※やけど・まひの補正は入ってないので注意)
   int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
-      return maxStats[StatIndex.H.index].real;
+      return maxStats[StatIndex.H].real;
     }
-    return _finalizedStat(maxStats[statIdx.index].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
+    return _finalizedStat(maxStats[statIdx].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
   }
   
   int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
-      return minStats[StatIndex.H.index].real;
+      return minStats[StatIndex.H].real;
     }
-    return _finalizedStat(minStats[statIdx.index].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
+    return _finalizedStat(minStats[statIdx].real, statIdx, type, yourState, state, plusCut: plusCut, minusCut: minusCut);
   }
 
   int _finalizedStat(int val, StatIndex statIdx, PokeType type, PokemonState yourState, PhaseState state, {bool plusCut = false, bool minusCut = false}) {
@@ -992,10 +991,10 @@ class PokemonState {
 
   // ガードシェア等によって変更された実数値を元に戻す
   void resetRealSixParams() {
-    SixParams.getRealH(pokemon.level, maxStats[StatIndex.H.index].race, maxStats[StatIndex.H.index].indi, maxStats[StatIndex.H.index].effort);
+    SixParams.getRealH(pokemon.level, maxStats[StatIndex.H].race, maxStats[StatIndex.H].indi, maxStats[StatIndex.H].effort);
     final temperBiases = Temper.getTemperBias(pokemon.temper);
-    for (int i = StatIndex.A.index; i < StatIndex.size.index; i++) {
-      SixParams.getRealABCDS(pokemon.level, maxStats[i].race, maxStats[i].indi, maxStats[i].effort, temperBiases[i-1]);
+    for (final stat in StatIndexList.listAtoS) {
+      SixParams.getRealABCDS(pokemon.level, maxStats[stat].race, maxStats[stat].indi, maxStats[stat].effort, temperBiases[stat.index-1]);
     }
   }
 
@@ -1058,13 +1057,13 @@ class PokemonState {
     pokemonState._ailments = Ailments.deserialize(stateElements[13], split2, split3);
     // minStats
     final minStatElements = stateElements[14].split(split2);
-    for (int i = 0; i < 6; i++) {
-      pokemonState.minStats[i] = SixParams.deserialize(minStatElements[i], split3);
+    for (final stat in StatIndexList.listHtoS) {
+      pokemonState.minStats[stat] = SixParams.deserialize(minStatElements[stat], split3);
     }
     // maxStats
     final maxStatElements = stateElements[15].split(split2);
-    for (int i = 0; i < 6; i++) {
-      pokemonState.maxStats[i] = SixParams.deserialize(maxStatElements[i], split3);
+    for (final stat in StatIndexList.listHtoS) {
+      pokemonState.maxStats[stat] = SixParams.deserialize(maxStatElements[stat], split3);
     }
     // possibleAbilities
     final abilities = stateElements[16].split(split2);
@@ -1162,14 +1161,14 @@ class PokemonState {
     ret += _ailments.serialize(split2, split3);
     ret += split1;
     // minStats
-    for (int i = 0; i < 6; i++) {
-      ret += minStats[i].serialize(split3);
+    for (final stat in StatIndexList.listHtoS) {
+      ret += minStats[stat].serialize(split3);
       ret += split2;
     }
     ret += split1;
     // maxStats
-    for (int i = 0; i < 6; i++) {
-      ret += maxStats[i].serialize(split3);
+    for (final stat in StatIndexList.listHtoS) {
+      ret += maxStats[stat].serialize(split3);
       ret += split2;
     }
     ret += split1;

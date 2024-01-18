@@ -48,23 +48,23 @@ class Guide {
         break;
       case leechSeedConfHP:
         // TODO: この時点で努力値等を反映するのかどうかとか
-        opponentState.minStats[0].real = args[0];
-        opponentState.maxStats[0].real = args[1];
+        opponentState.minStats.h.real = args[0];
+        opponentState.maxStats.h.real = args[1];
         break;
       case sapConfAttack:
         // TODO: この時点で努力値等を反映するのかどうかとか
-        opponentState.minStats[1].real = args[0];
-        opponentState.maxStats[1].real = args[1];
+        opponentState.minStats.a.real = args[0];
+        opponentState.maxStats.a.real = args[1];
         break;
       case moveDamagedToStatus:
         // TODO: この時点で努力値等を反映するのかどうかとか
-        opponentState.minStats[args[0]].real = args[1];
-        opponentState.maxStats[args[0]].real = args[2];
+        opponentState.minStats[StatIndexNumber.getStatIndexFromIndex(args[0])].real = args[1];
+        opponentState.maxStats[StatIndexNumber.getStatIndexFromIndex(args[0])].real = args[2];
         break;
       case moveOrderConfSpeed:
         // TODO: この時点で努力値等を反映するのかどうかとか
-        opponentState.minStats[5].real = args[0];
-        opponentState.maxStats[5].real = args[1];
+        opponentState.minStats.s.real = args[0];
+        opponentState.maxStats.s.real = args[1];
         break;
     }
   }

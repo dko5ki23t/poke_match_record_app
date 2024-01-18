@@ -66,28 +66,28 @@ class BattleTimingPanel extends Column {
     ],
   );
 
-  static Widget _getHeader(AbilityTiming timing, int actionCount, List<TurnEffectAndStateAndGuide> sameTimingList, AppLocalizations loc) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear:
+  static Widget _getHeader(Timing timing, int actionCount, List<TurnEffectAndStateAndGuide> sameTimingList, AppLocalizations loc) {
+    switch (timing) {
+      case Timing.pokemonAppear:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
           return Text(loc.battleTimingPokemonAppear);
         }
         break;
-      case AbilityTiming.everyTurnEnd:
+      case Timing.everyTurnEnd:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
           return Text(loc.battleTimingTurnEnd);
         }
         break;
-      case AbilityTiming.afterActionDecision:
+      case Timing.afterActionDecision:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
           return Text(loc.battleTimingAfterActionDecision);
         }
         break;
-      case AbilityTiming.terastaling:
+      case Timing.terastaling:
         return Text(loc.commonTerastal);
-      case AbilityTiming.action:
+      case Timing.action:
         return Text('${loc.battleAction}${actionCount+1}');
-      case AbilityTiming.beforeMove:
+      case Timing.beforeMove:
         return Column(
           children: [
             Text('${loc.battleAction}${actionCount+1}'),
@@ -99,27 +99,27 @@ class BattleTimingPanel extends Column {
             Text(loc.battleTimingBeforeMove) : Container(),
           ],
         );
-      case AbilityTiming.afterMove:
+      case Timing.afterMove:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
           return Text(loc.battleTimingAfterMove);
         }
         break;
-      case AbilityTiming.changeFaintingPokemon:
+      case Timing.changeFaintingPokemon:
         return Text(loc.battlePokemonChange);
-      case AbilityTiming.gameSet:
+      case Timing.gameSet:
         return Text(loc.battleTimingGameSet);
-      case AbilityTiming.continuousMove:
+      case Timing.continuousMove:
       default:
         break;
     }
     return Container();
   }
 
-  static Widget _getDivider(AbilityTiming timing, List<TurnEffectAndStateAndGuide> sameTimingList) {
-    switch (timing.id) {
-      case AbilityTiming.pokemonAppear:
-      case AbilityTiming.everyTurnEnd:
-      case AbilityTiming.afterActionDecision:
+  static Widget _getDivider(Timing timing, List<TurnEffectAndStateAndGuide> sameTimingList) {
+    switch (timing) {
+      case Timing.pokemonAppear:
+      case Timing.everyTurnEnd:
+      case Timing.afterActionDecision:
         if (sameTimingList.first.candidateEffect.isNotEmpty) {
           return const Divider(
             height: 10,
@@ -127,17 +127,17 @@ class BattleTimingPanel extends Column {
           );
         }
         break;
-      case AbilityTiming.terastaling:
-      case AbilityTiming.changeFaintingPokemon:
-      case AbilityTiming.gameSet:
+      case Timing.terastaling:
+      case Timing.changeFaintingPokemon:
+      case Timing.gameSet:
         return const Divider(
           height: 10,
           thickness: 1,
         );
-      case AbilityTiming.beforeMove:
-      case AbilityTiming.action:
-      case AbilityTiming.afterMove:
-      case AbilityTiming.continuousMove:
+      case Timing.beforeMove:
+      case Timing.action:
+      case Timing.afterMove:
+      case Timing.continuousMove:
       default:
         break;
     }
@@ -145,7 +145,7 @@ class BattleTimingPanel extends Column {
   }
 
   static Widget _getExpandedWidget(
-    AbilityTiming timing,
+    Timing timing,
     void Function() setState,
     ThemeData theme,
     Battle battle,
@@ -172,7 +172,7 @@ class BattleTimingPanel extends Column {
     }
   ) {
     return 
-    timing.id == AbilityTiming.action ?
+    timing == Timing.action ?
     BattleActionColumn(
       prevState,
       sameTimingList.first.phaseState,
@@ -190,7 +190,7 @@ class BattleTimingPanel extends Column {
       isInput: isInput,
       loc: loc,
     ) :
-    timing.id == AbilityTiming.continuousMove ?
+    timing == Timing.continuousMove ?
     BattleContinuousMoveColumn(
       prevState,
       sameTimingList.first.phaseState,
@@ -209,7 +209,7 @@ class BattleTimingPanel extends Column {
       isInput: isInput,
       loc: loc,
     ) :
-    timing.id == AbilityTiming.changeFaintingPokemon ?
+    timing == Timing.changeFaintingPokemon ?
     BattleChangeFaintingPokemonColumn(
       prevState,
       theme, battle, turn,
@@ -223,11 +223,11 @@ class BattleTimingPanel extends Column {
       isInput: isInput,
       loc: loc,
     ) :
-    timing.id == AbilityTiming.gameSet ?
+    timing == Timing.gameSet ?
     BattleGamesetColumn(
       theme, sameTimingList.first.turnEffect,
       battle.opponentName, loc: loc) :
-    timing.id == AbilityTiming.terastaling ?
+    timing == Timing.terastaling ?
     BattleTerastalColumn(
       theme, battle, turn,
       appState, focusPhaseIdx,

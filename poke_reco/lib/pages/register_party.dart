@@ -223,12 +223,12 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                         setState(() {});
                       },
                       widget.party.pokemons[i] != null ? widget.party.pokemons[i]!.no : 0,
-                      widget.party.items[i] != null ? widget.party.items[i]!.id : null,
+                      widget.party.items[i]?.id,
                       theme,
                       widget.isEditPokemon,
                       () {
                         if (widget.isEditPokemon && widget.party.pokemons[i] != null && widget.phaseState != null) {
-                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType(PlayerType.opponent))[i]);
+                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType.opponent)[i]);
                         }
                       },
                       enabledPokemon: i == 0 || (widget.party.pokemons[i-1] != null && (widget.isEditPokemon || widget.party.pokemons[i-1]!.isValid)),

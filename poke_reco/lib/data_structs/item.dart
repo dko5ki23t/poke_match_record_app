@@ -30,7 +30,7 @@ class Item {
   late final String _displayNameEn;
   final int flingPower;
   final int flingEffectId;
-  final AbilityTiming timing;
+  final Timing timing;
   final bool isBerry;
   final String imageUrl;
 
@@ -86,7 +86,7 @@ class Item {
   ) {
     final pokeData = PokeDB();
     List<Guide> ret = [];
-    if (playerType.id == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
+    if (playerType == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
       ret.add(Guide()
         ..guideId = Guide.confItem
         ..args = [itemID]
@@ -191,7 +191,7 @@ class Item {
         break;
       case 188:   // ジャポのみ
       case 189:   // レンブのみ
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           yourState.remainHPPercent -= extraArg1;
         }
         else {
@@ -213,7 +213,7 @@ class Item {
       case 258:     // くろいヘドロ
       case 211:     // たべのこし
       case 230:     // かいがらのすず
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP -= extraArg1;
         }
         else {
@@ -224,7 +224,7 @@ class Item {
       case 43:      // きのみジュース
       case 135:     // オボンのみ
       case 185:     // ナゾのみ
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP -= extraArg1;
         }
         else {
@@ -238,7 +238,7 @@ class Item {
       case 139:     // バンジのみ
       case 140:     // イアのみ
         if (extraArg2 == 0) {
-          if (playerType.id == PlayerType.me) {
+          if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           }
           else {
@@ -311,7 +311,7 @@ class Item {
         yourState.ailmentsAdd(Ailment(Ailment.infatuation), state);
         break;
       case 207:   // きあいのハチマキ
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP == 1;
         }
         else {
@@ -319,7 +319,7 @@ class Item {
         }
         break;
       case 252:   // きあいのタスキ
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           myState.remainHP == 1;
         }
         else {
@@ -328,7 +328,7 @@ class Item {
         if (autoConsume) myState.holdingItem = null;   // アイテム消費
         break;
       case 583:   // ゴツゴツメット
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           yourState.remainHPPercent -= extraArg1;
         }
         else {
@@ -342,22 +342,22 @@ class Item {
         break;
       case 585:     // レッドカード
         if (changePokemonIndex != null) {
-          yourState.processExitEffect(playerType.opposite.id == PlayerType.me, myState, state);
+          yourState.processExitEffect(playerType.opposite == PlayerType.me, myState, state);
           state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite, null);
-          newState.processEnterEffect(playerType.opposite.id == PlayerType.me, state, myState);
+          newState.processEnterEffect(playerType.opposite == PlayerType.me, state, myState);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
       case 1177:    // だっしゅつパック
       case 590:     // だっしゅつボタン
         if (changePokemonIndex != null) {
-          myState.processExitEffect(playerType.id == PlayerType.me, yourState, state);
+          myState.processExitEffect(playerType == PlayerType.me, yourState, state);
           state.setPokemonIndex(playerType, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType, null);
-          newState.processEnterEffect(playerType.id == PlayerType.me, state, yourState);
+          newState.processEnterEffect(playerType == PlayerType.me, state, yourState);
           if (autoConsume) myState.holdingItem = null;   // アイテム消費
         }
         break;
@@ -881,9 +881,9 @@ class Item {
   // TurnEffectのarg1が決定できる場合はその値を返す
   static int getAutoArg1(
     int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
-    bool isMe = player.id == PlayerType.me;
+    bool isMe = player == PlayerType.me;
     bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
 
     switch (itemID) {
@@ -895,7 +895,7 @@ class Item {
       case 189:       // レンブのみ
         return !isMe ? (yourState.pokemon.h.real / (doubleBerry ? 4 : 8)).floor() : (doubleBerry ? 25 : 12);
       case 584:       // ふうせん
-        if (timing.id != AbilityTiming.pokemonAppear) {
+        if (timing != Timing.pokemonAppear) {
           return 1;
         }
         break;
@@ -937,7 +937,7 @@ class Item {
   // TurnEffectのarg2が決定できる場合はその値を返す
   static int getAutoArg2(
     int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, AbilityTiming timing,
+    TurnEffect? prevAction, Timing timing,
   ) {
     return 0;
   }
@@ -958,7 +958,7 @@ class Item {
       case 185:     // ナゾのみ
       case 230:     // かいがらのすず
       case 43:      // きのみジュース
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           return myState.remainHP.toString();
         }
         else {
@@ -967,7 +967,7 @@ class Item {
       case 583:     // ゴツゴツメット
       case 188:     // ジャポのみ
       case 189:     // レンブのみ
-        if (playerType.id == PlayerType.me) {
+        if (playerType == PlayerType.me) {
           return yourState.remainHPPercent.toString();
         }
         else {
@@ -1010,7 +1010,7 @@ class Item {
                   border: UnderlineInputBorder(),
                 ),
                 items: <DropdownMenuItem>[
-                  for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                  for (final statIndex in StatIndexList.listAtoS)
                   DropdownMenuItem(
                     value: statIndex.index-1,
                     child: Text(statIndex.name),
@@ -1018,7 +1018,7 @@ class Item {
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: getStatIndexFromIndex(extraArg1+1).name,
+                textValue: StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
                 isInput: isInput,
                 onFocus: onFocus,
               ),
@@ -1037,11 +1037,11 @@ class Item {
       case 43:      // きのみジュース
         return DamageIndicateRow(
           myState.pokemon, controller,
-          playerType.id == PlayerType.me,
+          playerType == PlayerType.me,
           onFocus,
           (value) {
             int val = myState.remainHP - (int.tryParse(value)??0);
-            if (playerType.id == PlayerType.opponent) {
+            if (playerType == PlayerType.opponent) {
               val = myState.remainHPPercent - (int.tryParse(value)??0);
             }
             extraArg1ChangeFunc(val);
@@ -1084,11 +1084,11 @@ class Item {
             extraArg2 == 0 ?
             DamageIndicateRow(
               myPokemon, controller,
-              playerType.id == PlayerType.me,
+              playerType == PlayerType.me,
               onFocus,
               (value) {
                 int val = myState.remainHP - (int.tryParse(value)??0);
-                if (playerType.id == PlayerType.opponent) {
+                if (playerType == PlayerType.opponent) {
                   val = myState.remainHPPercent - (int.tryParse(value)??0);
                 }
                 extraArg1ChangeFunc(val);
@@ -1102,11 +1102,11 @@ class Item {
       case 189:     // レンブのみ
         return DamageIndicateRow(
           yourPokemon, controller,
-          playerType.id != PlayerType.me,
+          playerType != PlayerType.me,
           onFocus,
           (value) {
             int val = yourState.remainHPPercent - (int.tryParse(value)??0);
-            if (playerType.id == PlayerType.opponent) {
+            if (playerType == PlayerType.opponent) {
               val = yourState.remainHP - (int.tryParse(value)??0);
             }
             extraArg1ChangeFunc(val);
@@ -1496,7 +1496,7 @@ class Item {
     var map = <String, Object?>{
       itemColumnId: id,
       itemColumnName: displayName,
-      itemColumnTiming: timing.id,
+      itemColumnTiming: timing,
     };
     return map;
   }

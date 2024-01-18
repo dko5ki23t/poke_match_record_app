@@ -22,6 +22,7 @@ import 'package:quiver/iterables.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -142,8 +143,11 @@ const String pokeBaseColumnWeight = 'weight';
 const String pokeBaseColumnEggGroup = 'eggGroup';
 const String pokeBaseColumnImageUrl = 'imageUrl';
 
+const String preparedDBFile = 'Prepared.db';
+
 const String myPokemonDBFile = 'MyPokemons.db';
 const String myPokemonDBTable = 'myPokemonDB';
+const String preparedMyPokemonDBTable = 'PreparedMyPokemonDB';
 const String myPokemonColumnId = 'id';
 const String myPokemonColumnViewOrder = 'viewOrder';
 const String myPokemonColumnNo = 'no';
@@ -183,6 +187,7 @@ const String myPokemonColumnOwnerID = 'owner';
 
 const String partyDBFile = 'parties.db';
 const String partyDBTable = 'partyDB';
+const String preparedPartyDBTable = 'PreparedPartyDB';
 const String partyColumnId = 'id';
 const String partyColumnViewOrder = 'viewOrder';
 const String partyColumnName = 'name';
@@ -232,6 +237,7 @@ const String sqlSplit4 = '*';
 const String sqlSplit5 = '!';
 const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
+const String sqlSplit8 = '|';
 
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
@@ -269,19 +275,62 @@ enum Sex {
   final Icon displayIcon;
 }
 
-class PlayerType {
+class OldPlayerType {
   static const int none = 0;
   static const int me = 1;          // 自身
   static const int opponent = 2;    // 相手
   static const int entireField = 3; // 全体の場(両者に影響あり)
 
-  const PlayerType(this.id);
+  const OldPlayerType(this.id);
 
-  PlayerType get opposite {
-    return id == me ? PlayerType(opponent) : PlayerType(me);
+  OldPlayerType get opposite {
+    return id == me ? OldPlayerType(opponent) : OldPlayerType(me);
   }
 
   final int id;
+}
+
+enum PlayerType {
+  none,
+  me,          // 自身
+  opponent,    // 相手
+  entireField, // 全体の場(両者に影響あり)
+}
+
+extension PlayerTypeOpp on PlayerType {
+  PlayerType get opposite {
+    return this == PlayerType.me ? PlayerType.opponent : PlayerType.me;
+  }
+}
+
+// リストのインデックス等に使う
+extension PlayerTypeNum on PlayerType {
+  int get number {
+    switch (this) {
+      case PlayerType.me:
+        return 0;
+      case PlayerType.opponent:
+        return 1;
+      case PlayerType.entireField:
+        return 2;
+      case PlayerType.none:
+      default:
+        return -1;
+    }
+  }
+
+  static PlayerType createFromNumber(int number) {
+    switch (number) {
+      case 0:
+        return PlayerType.me;
+      case 1:
+        return PlayerType.opponent;
+      case 2:
+        return PlayerType.entireField;
+      default:
+        return PlayerType.none;
+    }
+  }
 }
 
 class Temper {
@@ -431,6 +480,43 @@ class SixParams {
   }
 }
 
+class SixStats {
+  List<SixParams> sixParams = List.generate(6, (index) => SixParams(0, 0, 0, 0));
+
+  SixParams get h => sixParams[StatIndex.H.index];
+  SixParams get a => sixParams[StatIndex.A.index];
+  SixParams get b => sixParams[StatIndex.B.index];
+  SixParams get c => sixParams[StatIndex.C.index];
+  SixParams get d => sixParams[StatIndex.D.index];
+  SixParams get s => sixParams[StatIndex.S.index];
+
+  SixParams operator [] (StatIndex index) => sixParams[index.index];
+
+  void operator []= (StatIndex index, SixParams value) {
+    sixParams[index.index] = value;
+  }
+
+  SixStats copyWith() =>
+    SixStats()
+    ..sixParams = [for (final e in sixParams) e.copyWith()];
+
+  static SixStats generate(SixParams Function(int) func) {
+    SixStats ret = SixStats();
+    ret.sixParams = List.generate(6, func);
+    return ret;
+  }
+
+  static SixStats generateMinStat() {
+    return SixStats();
+  }
+
+  static SixStats generateMaxStat() {
+    SixStats ret = SixStats();
+    ret.sixParams = List.generate(6, (index) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));
+    return ret;
+  }
+}
+
 class EggGroup {
   final int id;
   final String displayName;
@@ -518,6 +604,8 @@ class Move {
         return _displayName;
     }
   }
+
+  bool get isValid => id != 0;
 
   bool get isTargetYou {  // 相手を対象に含むかどうか
     return target.id == 6 || (8 <= target.id && target.id <= 11) || target.id == 14; 
@@ -758,22 +846,34 @@ enum StatIndex {
   none,
 }
 
-StatIndex getStatIndexFromIndex(int index) {
-  switch (index) {
-    case 0:
-      return StatIndex.H;
-    case 1:
-      return StatIndex.A;
-    case 2:
-      return StatIndex.B;
-    case 3:
-      return StatIndex.C;
-    case 4:
-      return StatIndex.D;
-    case 5:
-      return StatIndex.S;
-    default:
-      return StatIndex.none;
+extension StatIndexList on StatIndex {
+  static List<StatIndex> get listHtoS {
+    return [StatIndex.H, StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S];
+  }
+
+  static List<StatIndex> get listAtoS {
+    return [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S];
+  }
+}
+
+extension StatIndexNumber on StatIndex {
+  static StatIndex getStatIndexFromIndex(int index) {
+    switch (index) {
+      case 0:
+        return StatIndex.H;
+      case 1:
+        return StatIndex.A;
+      case 2:
+        return StatIndex.B;
+      case 3:
+        return StatIndex.C;
+      case 4:
+        return StatIndex.D;
+      case 5:
+        return StatIndex.S;
+      default:
+        return StatIndex.none;
+    }
   }
 }
 
@@ -890,7 +990,7 @@ class PokeDB {
   List<int> battlesPartyIDFilter = [];
   BattleSort? battlesSort;
 
-  Map<int, Ability> abilities = {0: Ability(0, '', '', AbilityTiming(0), Target(0), AbilityEffect(0))}; // 無効なとくせい
+  Map<int, Ability> abilities = {0: Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''};  // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''};  // 無効なとくせい
@@ -900,7 +1000,7 @@ class PokeDB {
   Map<int, Item> items = {
     0: Item(
       id: 0, displayName: '', displayNameEn: '', flingPower: 0, flingEffectId: 0,
-      timing: AbilityTiming(0), isBerry: false, imageUrl: ''
+      timing: Timing.none, isBerry: false, imageUrl: ''
     )
   };  // 無効なもちもの
   late Database itemDb;
@@ -1109,7 +1209,7 @@ class PokeDB {
         map[abilityColumnId],
         map[abilityColumnName],
         map[abilityColumnEnglishName],
-        AbilityTiming(map[abilityColumnTiming]),
+        Timing.values[map[abilityColumnTiming]],
         Target(map[abilityColumnTarget]),
         AbilityEffect(map[abilityColumnEffect]),
       );
@@ -1139,8 +1239,8 @@ class PokeDB {
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnEnglishName],
-        getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
-        getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
+        StatIndexNumber.getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
+        StatIndexNumber.getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
       );
     }
 
@@ -1172,7 +1272,7 @@ class PokeDB {
         displayNameEn: map[itemColumnEnglishName],
         flingPower: map[itemColumnFlingPower],
         flingEffectId: map[itemColumnFlingEffect],
-        timing: AbilityTiming(map[itemColumnTiming]),
+        timing: Timing.values[map[itemColumnTiming]],
         isBerry: map[itemColumnIsBerry] == 1,
         imageUrl: map[itemColumnImageUrl]
       );
@@ -1403,6 +1503,76 @@ class PokeDB {
       }
     }
 
+    // デバッグ時のみ
+    if (kDebugMode) {
+      bool replacePrepared = false;
+      // 用意しているポケモンデータベースに置き換える
+      if (replacePrepared) {
+        final preparedDb = await openAssetDatabase(preparedDBFile);
+        ///////// 登録したポケモン
+        {
+          // 内部データに変換
+          maps = await preparedDb.query(preparedMyPokemonDBTable,
+            columns: [
+              myPokemonColumnId, myPokemonColumnViewOrder,
+              myPokemonColumnNo, myPokemonColumnNickName,
+              myPokemonColumnTeraType, myPokemonColumnLevel,
+              myPokemonColumnSex, myPokemonColumnTemper,
+              myPokemonColumnAbility, myPokemonColumnItem,
+              for (var e in myPokemonColumnIndividual) e,
+              for (var e in myPokemonColumnEffort) e,
+              myPokemonColumnMove1, myPokemonColumnPP1,
+              myPokemonColumnMove2, myPokemonColumnPP2,
+              myPokemonColumnMove3, myPokemonColumnPP3,
+              myPokemonColumnMove4, myPokemonColumnPP4,
+              myPokemonColumnOwnerID,
+            ],
+          );
+
+          pokemons = {0: Pokemon()};
+          for (var map in maps) {
+            var pokemon = Pokemon.createFromDBMap(map);
+            pokemons[pokemon.id] = pokemon;
+          }
+
+          await deleteDatabase(myPokemonDBPath);
+          await _createMyPokemonDB();
+          for (final pokemon in pokemons.values) {
+            addMyPokemon(pokemon, false);
+          }
+        }
+
+        ///////// 登録したパーティ
+        {
+          // 内部データに変換
+          maps = await preparedDb.query(preparedPartyDBTable,
+            columns: [
+              partyColumnId, partyColumnViewOrder, partyColumnName,
+              partyColumnPokemonId1, partyColumnPokemonItem1,
+              partyColumnPokemonId2, partyColumnPokemonItem2,
+              partyColumnPokemonId3, partyColumnPokemonItem3,
+              partyColumnPokemonId4, partyColumnPokemonItem4,
+              partyColumnPokemonId5, partyColumnPokemonItem5,
+              partyColumnPokemonId6, partyColumnPokemonItem6,
+              partyColumnOwnerID,
+            ],
+          );
+
+          parties = {0: Party()};
+          for (var map in maps) {
+            var party = Party.createFromDBMap(map);
+            parties[party.id] = party;
+          }
+
+          await deleteDatabase(partyDBPath);
+          await _createPartyDB();
+          for (final party in parties.values) {
+            addParty(party, false);
+          }
+        }
+      }
+    }
+
     // 各パーティの勝率算出
     updatePartyWinRate();
 
@@ -1415,7 +1585,7 @@ class PokeDB {
       party.winCount = 0;
     }
     for (final battle in battles.values) {
-      int partyID = battle.getParty(PlayerType(PlayerType.me)).id;
+      int partyID = battle.getParty(PlayerType.me).id;
       parties[partyID]!.usedCount++;
       if (battle.isMyWin) parties[partyID]!.winCount++;
     }
@@ -1521,8 +1691,8 @@ class PokeDB {
       partyRefs[e] = false;
     }
     for (final e in battles.values) {
-      partyRefs[e.getParty(PlayerType(PlayerType.me)).id] = true;
-      partyRefs[e.getParty(PlayerType(PlayerType.opponent)).id] = true;
+      partyRefs[e.getParty(PlayerType.me).id] = true;
+      partyRefs[e.getParty(PlayerType.opponent).id] = true;
     }
     // 参照されておらず、削除可なら削除する
     List<int> deleteIDs = [];

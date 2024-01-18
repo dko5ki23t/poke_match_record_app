@@ -45,6 +45,14 @@
 
    https://www.fluttercampus.com/guide/189/how-to-add-autocomplete-suggestions-on-textfield-in-flutter/
 
+ * Flutter アプリのテスト方法
+
+   https://codelabs.developers.google.com/codelabs/flutter-app-testing?hl=ja#0
+
+ * FlutterにGithub Actionsを導入してみた
+
+   https://zenn.dev/flutteruniv_dev/articles/a4576f96002dae
+
 ### ポケモンのアプリ作成
  * ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1さらうどん
 

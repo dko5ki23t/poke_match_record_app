@@ -464,7 +464,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     Column(
                       children: [
                         StatInputRow(
-                          getStatIndexFromIndex(i).name,
+                          StatIndexNumber.getStatIndexFromIndex(i).name,
                           myPokemon,
                           pokeStatRaceController[i],
                           pokeStatIndiController[i],
@@ -490,7 +490,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             updateStatsRefReal(i);
                           },
                           effectTemper: i != 0,
-                          statIndex: getStatIndexFromIndex(i),
+                          statIndex: StatIndexNumber.getStatIndexFromIndex(i),
                           loc: loc,
                         ),
                         pokemonState != null ?
@@ -501,7 +501,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                               child: Align(
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  '${loc.pokemonsTabConfValueRange} : ${pokemonState.minStats[i].real} ~ ${pokemonState.maxStats[i].real}',
+                                  '${loc.pokemonsTabConfValueRange} : ${pokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(i)].real} ~ ${pokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(i)].real}',
                                   style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                                 ),
                               ),

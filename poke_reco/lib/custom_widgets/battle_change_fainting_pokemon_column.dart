@@ -19,7 +19,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
     int focusPhaseIdx,
     void Function(int) onFocus,
     int phaseIdx,
-    AbilityTiming timing,
+    Timing timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
@@ -90,7 +90,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                             child: Text(battle.opponentName, overflow: TextOverflow.ellipsis,),
                           ),
                         ],
-                        value: turn.phases[phaseIdx].playerType.id == PlayerType.none ? null : turn.phases[phaseIdx].playerType.id,
+                        value: turn.phases[phaseIdx].playerType == PlayerType.none ? null : turn.phases[phaseIdx].playerType,
                         onChanged: null,
                       ) :
                       TextField(
@@ -99,7 +99,7 @@ class BattleChangeFaintingPokemonColumn extends Column {
                           labelText: loc.battlePlayer,
                         ),
                         controller: TextEditingController(
-                          text: turn.phases[phaseIdx].playerType.id == PlayerType.me ?
+                          text: turn.phases[phaseIdx].playerType == PlayerType.me ?
                                   loc.battleYou : battle.opponentName,
                         ),
                         readOnly: true,

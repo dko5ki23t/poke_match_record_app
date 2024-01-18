@@ -78,7 +78,7 @@ class Battle {
     final strTurns = map[battleColumnTurns].split(sqlSplit1);
     for (final strTurn in strTurns) {
       if (strTurn == '') break;
-      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, version: version));
+      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8, version: version));
     }
   }
 
@@ -162,13 +162,13 @@ class Battle {
   }
 
   Party getParty(PlayerType player) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
-    return player.id == PlayerType.me ? _parties[0] : _parties[1];
+    assert(player == PlayerType.me || player == PlayerType.opponent);
+    return player == PlayerType.me ? _parties[0] : _parties[1];
   }
 
   void setParty(PlayerType player, Party party) {
-    assert(player.id == PlayerType.me || player.id == PlayerType.opponent);
-    if (player.id == PlayerType.me) {
+    assert(player == PlayerType.me || player == PlayerType.opponent);
+    if (player == PlayerType.me) {
       _parties[0] = party;
     }
     else {
@@ -180,7 +180,7 @@ class Battle {
   Map<String, dynamic> toMap() {
     String turnsStr = '';
     for (final turn in turns) {
-      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7);
+      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8);
       turnsStr += sqlSplit1;
     }
     return {

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:poke_reco/custom_dialogs/battle_delete_check_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_filter_dialog.dart';
@@ -67,7 +66,7 @@ class BattlesPageState extends State<BattlesPage> {
       (element) => winFilter.contains(element.value.isMyWin ? 2 : element.value.isYourWin ? 3: 1)
     );
     if (partyIDFilter.isNotEmpty) {
-      filteredBattles = filteredBattles.where((element) => partyIDFilter.contains(element.value.getParty(PlayerType(PlayerType.me)).id));
+      filteredBattles = filteredBattles.where((element) => partyIDFilter.contains(element.value.getParty(PlayerType.me).id));
     }
     var sort = pokeData.battlesSort;
     sortedBattles = filteredBattles.toList();

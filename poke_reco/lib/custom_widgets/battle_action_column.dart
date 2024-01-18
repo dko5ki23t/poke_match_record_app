@@ -23,7 +23,7 @@ class BattleActionColumn extends Column {
     int focusPhaseIdx,
     void Function(int) onFocus,
     int phaseIdx,
-    AbilityTiming timing,
+    Timing timing,
     List<TextEditingController> moveControllerList,
     List<TextEditingController> hpControllerList,
     List<TextEditingController> textEditingControllerList3,
@@ -115,12 +115,12 @@ class BattleActionColumn extends Column {
                             child: Text('${opponentPokemon.name}/${battle.opponentName}', overflow: TextOverflow.ellipsis,),
                           ),
                         ],
-                        value: turn.phases[phaseIdx].move!.playerType.id == PlayerType.none ? null : turn.phases[phaseIdx].move!.playerType.id,
+                        value: turn.phases[phaseIdx].move!.playerType == PlayerType.none ? null : turn.phases[phaseIdx].move!.playerType,
                         onChanged: (value) {
-                          turn.phases[phaseIdx].playerType = PlayerType(value);
+                          turn.phases[phaseIdx].playerType = value;
                           turn.phases[phaseIdx].move!.clear();
-                          turn.phases[phaseIdx].move!.playerType = PlayerType(value);
-                          var myState = prevState.getPokemonState(PlayerType(value), null);
+                          turn.phases[phaseIdx].move!.playerType = value;
+                          var myState = prevState.getPokemonState(value, null);
                           if (myState.isTerastaling) {
                             turn.phases[phaseIdx].move!.teraType = myState.teraType1;
                           }
@@ -142,8 +142,8 @@ class BattleActionColumn extends Column {
                           labelText: loc.battlePlayer,
                         ),
                         controller: TextEditingController(
-                          text: turn.phases[phaseIdx].move!.playerType.id == PlayerType.me ? '${ownPokemon.name}/${loc.battleYou}' :
-                                turn.phases[phaseIdx].move!.playerType.id == PlayerType.opponent ?'${opponentPokemon.name}/${battle.opponentName}' : '',
+                          text: turn.phases[phaseIdx].move!.playerType == PlayerType.me ? '${ownPokemon.name}/${loc.battleYou}' :
+                                turn.phases[phaseIdx].move!.playerType == PlayerType.opponent ?'${opponentPokemon.name}/${battle.opponentName}' : '',
                         ),
                         readOnly: true,
                         onTap:() => onFocus(phaseIdx+1),
@@ -170,7 +170,7 @@ class BattleActionColumn extends Column {
                           ),
                         ],
                         value: turn.phases[phaseIdx].move!.isSuccess,
-                        onChanged: turn.phases[phaseIdx].move!.playerType.id != PlayerType.none ?
+                        onChanged: turn.phases[phaseIdx].move!.playerType != PlayerType.none ?
                           (value) {
                             turn.phases[phaseIdx].move!.isSuccess = value!;
                             if (!value) turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
@@ -206,10 +206,10 @@ class BattleActionColumn extends Column {
                   appState.needAdjustPhases = phaseIdx;
                   onFocus(phaseIdx+1);
                 },
-                battle.getParty(PlayerType(PlayerType.me)), 
-                battle.getParty(PlayerType(PlayerType.opponent)), prevState, ownPokemon, opponentPokemon,
-                prevState.getPokemonState(PlayerType(PlayerType.me), null),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
+                battle.getParty(PlayerType.me), 
+                battle.getParty(PlayerType.opponent), prevState, ownPokemon, opponentPokemon,
+                prevState.getPokemonState(PlayerType.me, null),
+                prevState.getPokemonState(PlayerType.opponent, null),
                 moveControllerList[phaseIdx], hpControllerList[phaseIdx],
                 appState, phaseIdx, 0, turnEffectAndStateAndGuide, theme,
                 turn.phases[phaseIdx].invalidGuideIDs,
@@ -220,11 +220,11 @@ class BattleActionColumn extends Column {
               turn.phases[phaseIdx].move!.isSuccess || turn.phases[phaseIdx].move!.actionFailure.id == ActionFailure.confusion ?
               turn.phases[phaseIdx].move!.extraWidget2(
                 () => onFocus(phaseIdx+1), theme, ownPokemon, opponentPokemon,
-                battle.getParty(PlayerType(PlayerType.me)), battle.getParty(PlayerType(PlayerType.opponent)),
-                prevState.getPokemonState(PlayerType(PlayerType.me), null),
-                prevState.getPokemonState(PlayerType(PlayerType.opponent), null),
-                prevState.getPokemonStates(PlayerType(PlayerType.me)),
-                prevState.getPokemonStates(PlayerType(PlayerType.opponent)),
+                battle.getParty(PlayerType.me), battle.getParty(PlayerType.opponent),
+                prevState.getPokemonState(PlayerType.me, null),
+                prevState.getPokemonState(PlayerType.opponent, null),
+                prevState.getPokemonStates(PlayerType.me),
+                prevState.getPokemonStates(PlayerType.opponent),
                 prevState,
                 hpControllerList[phaseIdx],
                 textEditingControllerList3[phaseIdx],
@@ -266,7 +266,7 @@ class BattleActionColumn extends Column {
         case TurnMoveType.move:
           if (turnMove.move.id != 0) {
             String continous = turnMove.move.maxMoveCount() > 1 ? loc.battleMoveTimes1 : '';
-            if (turnMove.playerType.id == PlayerType.opponent) {
+            if (turnMove.playerType == PlayerType.opponent) {
               return '$continous${turnMove.move.displayName}-${opponent.name}';
             }
             else {

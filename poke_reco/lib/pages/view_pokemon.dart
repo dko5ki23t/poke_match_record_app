@@ -278,14 +278,14 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                   Column(
                     children: [
                       StatViewRow(
-                        getStatIndexFromIndex(i).name,
+                        StatIndexNumber.getStatIndexFromIndex(i).name,
                         myPokemon,
                         pokeStatRaceController[i],
                         pokeStatIndiController[i],
                         pokeStatEffortController[i],
                         pokeStatRealController[i],
                         effectTemper: i != 0,
-                        statIndex: getStatIndexFromIndex(i),
+                        statIndex: StatIndexNumber.getStatIndexFromIndex(i),
                         loc: loc,
                       ),
                     ]
