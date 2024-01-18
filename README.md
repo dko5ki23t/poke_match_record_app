@@ -12,8 +12,8 @@ Google Play Store：play.google.com/store/apps/details?id=com.dkomki.pokereco
 ### Windows(for Android)
 
 ### Mac OS(for iOS)
-公式：https://docs.flutter.dev/get-started/install/macos/mobile-ios
-日本語記事：https://zenn.dev/kboy/books/ca6a9c93fd23f3/viewer/5232dc
+* 公式：https://docs.flutter.dev/get-started/install/macos/mobile-ios
+* 日本語記事：https://zenn.dev/kboy/books/ca6a9c93fd23f3/viewer/5232dc
 
 ## 注意事項
 
