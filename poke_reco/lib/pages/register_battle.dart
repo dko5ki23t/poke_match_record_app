@@ -208,7 +208,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Widget title;
     void Function()? nextPressed;
     void Function()? backPressed;
-    void Function()? deletePressed;
+    //void Function()? deletePressed;
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
@@ -693,7 +693,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
-        deletePressed = () => onTurnDelete();
+//        deletePressed = () => onTurnDelete();
         break;
       case RegisterBattlePageType.firstPokemonPage:
         title = Text(loc.battlesTabTitleSelectingPokemon);
@@ -707,7 +707,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
-        deletePressed = null;
+//        deletePressed = null;
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
@@ -796,14 +796,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ],
         );
         backPressed = () => onturnBack();
-        deletePressed = () => onTurnDelete();
+//        deletePressed = () => onTurnDelete();
         break;
       default:
         title = Text(loc.battlesTabTitleRegisterBattle);
         lists = Center();
         nextPressed = null;
         backPressed = null;
-        deletePressed = null;
+//        deletePressed = null;
         break;
     }
 
