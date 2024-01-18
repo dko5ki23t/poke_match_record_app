@@ -232,7 +232,7 @@ class BattleCommandState extends State<BattleCommand> {
                     icon: Icon(Icons.arrow_back),
                   ),
                   Expanded(
-                    child: Text('ああ'),
+                    child: Text(turnMove.move.displayName),
                   )
                 ],
               ),
