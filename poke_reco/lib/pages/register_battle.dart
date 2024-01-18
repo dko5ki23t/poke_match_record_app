@@ -219,6 +219,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         for (var phase in turns[turnNum-1].phases) {
           phase.isAutoSet = false;
         }
+        あ
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
 
