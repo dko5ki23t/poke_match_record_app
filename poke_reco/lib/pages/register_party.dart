@@ -125,10 +125,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     }
 
     return PopScope(
+      canPop: false,
       onPopInvoked: (didPop) {
-        if (didPop) {
-          onBack();
-        }
+        onBack();
       },
       child: Scaffold(
         appBar: AppBar(

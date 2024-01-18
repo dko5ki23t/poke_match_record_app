@@ -37,15 +37,41 @@ class DamageClass {
   final int id;
 }
 
-class TurnMoveType {
-  static const int none = 0;
-  static const int move = 1;
-  static const int change = 2;
-  static const int surrender = 3;
+enum TurnMoveType {
+  none,
+  move,
+  change,
+  surrender,
+}
 
-  const TurnMoveType(this.id);
+// リストのインデックス等に使う
+extension TurnMoveTypeNum on TurnMoveType {
+  int get number {
+    switch (this) {
+      case TurnMoveType.move:
+        return 1;
+      case TurnMoveType.change:
+        return 2;
+      case TurnMoveType.surrender:
+        return 3;
+      case TurnMoveType.none:
+      default:
+        return 0;
+    }
+  }
 
-  final int id;
+  static TurnMoveType createFromNumber(int number) {
+    switch (number) {
+      case 1:
+        return TurnMoveType.move;
+      case 2:
+        return TurnMoveType.change;
+      case 3:
+        return TurnMoveType.surrender;
+      default:
+        return TurnMoveType.none;
+    }
+  }
 }
 
 class MoveHit {
@@ -187,7 +213,7 @@ class DamageGetter {
 
 class TurnMove {
   PlayerType playerType = PlayerType.none;
-  TurnMoveType type = TurnMoveType(TurnMoveType.none);
+  TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
   Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // 行動の成功/失敗
@@ -380,7 +406,7 @@ class TurnMove {
     myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.certainlyHittedDamage2);
 
     // こうさん
-    if (type.id == TurnMoveType.surrender) {
+    if (type == TurnMoveType.surrender) {
       // パーティ全員ひんし状態にする
       for (var pokeState in state.getPokemonStates(playerType)) {
         pokeState.remainHP = 0;
@@ -403,7 +429,7 @@ class TurnMove {
     }
 
     // ポケモン交代
-    if (type.id == TurnMoveType.change) {
+    if (type == TurnMoveType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       myState.processExitEffect(playerType == PlayerType.me, yourState, state);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
@@ -469,7 +495,7 @@ class TurnMove {
     );
     if (move.id != 165 &&     // わるあがきは除外
         playerType == PlayerType.opponent &&
-        type.id == TurnMoveType.move &&
+        type == TurnMoveType.move &&
         opponentPokemonState.moves.length < 4 &&
         tmp.isEmpty
     ) {
@@ -3408,7 +3434,7 @@ class TurnMove {
     }
 
     // あいてポケモンのすばやさ確定
-    if (!isFirst && state.firstAction != null && state.firstAction!.type.id == TurnMoveType.move) {
+    if (!isFirst && state.firstAction != null && state.firstAction!.type == TurnMoveType.move) {
       if (move.priority == state.firstAction!.move.priority) {    // わざの優先度が同じ
         // もともとある範囲より狭まるようにのみ上書き
         int minS = opponentPokemonState.minStats.s.real;
@@ -4414,12 +4440,12 @@ class TurnMove {
                 onPressed: isInput ?
                   playerType != PlayerType.none ?
                   () {
-                    type = TurnMoveType(TurnMoveType.move);
+                    type = TurnMoveType.move;
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   } : null :
                   () {},
-                style: type.id == TurnMoveType.move ? pressedStyle : null,
+                style: type == TurnMoveType.move ? pressedStyle : null,
                 child: Text(loc.commonMove),
               ),
               SizedBox(width: 10),
@@ -4427,12 +4453,12 @@ class TurnMove {
                 onPressed: isInput ?
                   playerType != PlayerType.none ?
                   () {
-                    type = TurnMoveType(TurnMoveType.change);
+                    type = TurnMoveType.change;
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   } : null :
                   () {},
-                style: type.id == TurnMoveType.change ? pressedStyle : null,
+                style: type == TurnMoveType.change ? pressedStyle : null,
                 child: Text(loc.battlePokemonChange),
               ),
               SizedBox(width: 10,),
@@ -4440,18 +4466,18 @@ class TurnMove {
                 onPressed: isInput ?
                   playerType != PlayerType.none ?
                   () {
-                    type = TurnMoveType(TurnMoveType.surrender);
+                    type = TurnMoveType.surrender;
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   } : null :
                   () {},
-                style: type.id == TurnMoveType.surrender ? pressedStyle : null,
+                style: type == TurnMoveType.surrender ? pressedStyle : null,
                 child: Text(loc.battleSurrender),
               ),
             ],
           ),
           SizedBox(height: 10,),
-          type.id == TurnMoveType.move ?     // 行動がわざの場合
+          type == TurnMoveType.move ?     // 行動がわざの場合
           Row(
             children: [
               Expanded(
@@ -4531,7 +4557,7 @@ class TurnMove {
               ),
             ],
           ) :
-          type.id == TurnMoveType.change ?     // 行動が交代の場合
+          type == TurnMoveType.change ?     // 行動が交代の場合
           Row(
             children: [
               Expanded(
@@ -4642,7 +4668,7 @@ class TurnMove {
     var myState = playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
 
-    if (playerType != PlayerType.none && type.id == TurnMoveType.move && move.id != 0) {
+    if (playerType != PlayerType.none && type == TurnMoveType.move && move.id != 0) {
       // 追加効果
       Row effectInputPrevRow = Row();
       bool insertPrevRow = false;
@@ -7301,7 +7327,7 @@ class TurnMove {
 
   void clear() {
     playerType = PlayerType.none;
-    type = TurnMoveType(TurnMoveType.none);
+    type = TurnMoveType.none;
     teraType = PokeType.createFromId(0);
     move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
@@ -7326,7 +7352,7 @@ class TurnMove {
     // playerType
     turnMove.playerType = PlayerTypeNum.createFromNumber(int.parse(turnMoveElements[0]));
     // type
-    turnMove.type = TurnMoveType(int.parse(turnMoveElements[1]));
+    turnMove.type = TurnMoveTypeNum.createFromNumber(int.parse(turnMoveElements[1]));
     // teraType
     turnMove.teraType = PokeType.createFromId(int.parse(turnMoveElements[2]));
     // move
@@ -7435,7 +7461,7 @@ class TurnMove {
     ret += playerType.number.toString();
     ret += split1;
     // type
-    ret += type.id.toString();
+    ret += type.number.toString();
     ret += split1;
     // teraType
     ret += teraType.id.toString();
@@ -7550,7 +7576,7 @@ class TurnMove {
     if (!isSuccess) {
       return playerType != PlayerType.none && actionFailure.id != 0;
     }
-    switch (type.id) {
+    switch (type) {
       case TurnMoveType.move:
         return
         playerType != PlayerType.none &&

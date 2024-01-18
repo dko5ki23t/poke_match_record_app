@@ -186,7 +186,7 @@ class BattleContinuousMoveColumn extends Column {
   );
 
   static String _getTitle(TurnMove turnMove, Pokemon own, Pokemon opponent, int continuousCount, AppLocalizations loc) {
-    switch (turnMove.type.id) {
+    switch (turnMove.type) {
       case TurnMoveType.move:
         if (turnMove.move.id != 0) {
           var str = continuousCount == 0 ? loc.battleMoveTimes1 :

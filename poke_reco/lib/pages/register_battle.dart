@@ -408,10 +408,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             );
             TurnMove ownAction = TurnMove()
               ..playerType = PlayerType.me
-              ..type = TurnMoveType(TurnMoveType.move);
+              ..type = TurnMoveType.move;
             TurnMove opponentAction = TurnMove()
               ..playerType = PlayerType.opponent
-              ..type = TurnMoveType(TurnMoveType.move);
+              ..type = TurnMoveType.move;
             turn.phases.add(
               TurnEffect()
               ..playerType = PlayerType.me
@@ -805,10 +805,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
 
     return PopScope(
+      canPop: false,
       onPopInvoked: (didPop) {
-        if (didPop) {
-          onBack();
-        }
+        onBack();
       },
       child: Scaffold(
         appBar: AppBar(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
+import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -51,7 +52,7 @@ class BattleCommandState extends State<BattleCommand> {
     final yourParty = widget.yourParty;
     List<Move> moves = [];
     List<ListTile> moveTiles = [];
-    {
+    if (turnMove.type == TurnMoveType.move){
       var myState = prevState.getPokemonState(playerType, null);
       var myPokemon = myState.pokemon;
       var yourState = prevState.getPokemonState(playerType.opposite, null);
@@ -61,7 +62,8 @@ class BattleCommandState extends State<BattleCommand> {
       if (myPokemon.move2 != null) moves.add(myPokemon.move2!);
       if (myPokemon.move3 != null) moves.add(myPokemon.move3!);
       if (myPokemon.move4 != null) moves.add(myPokemon.move4!);
-      moves.addAll(PokeDB().pokeBase[myPokemon.no]!.move.where((element) => element.isValid && !moves.contains(element),));
+      moves.addAll(PokeDB().pokeBase[myPokemon.no]!.move.where((element) => element.isValid && moves.where((e) => e.id == element.id).isEmpty,));
+      moves.add(PokeDB().moves[165]!);  // わるあがき
       for (final myMove in moves) {
         DamageGetter getter = DamageGetter();
         TurnMove tmp = turnMove.copyWith();
@@ -104,118 +106,105 @@ class BattleCommandState extends State<BattleCommand> {
     Widget commandColumn;
     switch (state) {
       case CommandState.home:
-        commandColumn = Column(
-          key: ValueKey<int>(state.index),
-          children: [
-            // 行動
-            Expanded(
-              flex: 1,
-              child: FittedBox(
-                fit: BoxFit.contain,
-                child: Row(
+        {
+          // 行動の種類選択ボタン
+          final commonCommand = Expanded(
+            flex: 1,
+            child: FittedBox(
+              fit: BoxFit.contain,
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
                     onPressed: () => setState(() {
-                      turnMove.type = TurnMoveType(TurnMoveType.move);
+                      turnMove.type = TurnMoveType.move;
                     }),
-                    style: turnMove.type.id == TurnMoveType.move ? pressedStyle : null,
+                    style: turnMove.type == TurnMoveType.move ? pressedStyle : null,
                     child: Text(loc.commonMove),
                   ),
                   SizedBox(width: 10),
                   TextButton(
                     onPressed: () => setState(() {
-                      turnMove.type = TurnMoveType(TurnMoveType.change);
+                      turnMove.type = TurnMoveType.change;
                     }),
-                    style: turnMove.type.id == TurnMoveType.change ? pressedStyle : null,
+                    style: turnMove.type == TurnMoveType.change ? pressedStyle : null,
                     child: Text(loc.battlePokemonChange),
                   ),
                   SizedBox(width: 10,),
                   TextButton(
                     onPressed: () => setState(() {
-                      turnMove.type = TurnMoveType(TurnMoveType.surrender);
+                      turnMove.type = TurnMoveType.surrender;
                     }),
-                    style: turnMove.type.id == TurnMoveType.surrender ? pressedStyle : null,
+                    style: turnMove.type == TurnMoveType.surrender ? pressedStyle : null,
                     child: Text(loc.battleSurrender),
                   ),
                 ],
-              ),),
-            ),
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.all(4.0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(),
-                  ),
-                ),
               ),
             ),
-            Expanded(
-              flex: 6,
-              child: ListViewWithViewItemCount(
-                viewItemCount: 4,
-                children: turnMove.type.id == TurnMoveType.move ? moveTiles : [],
-              ),
-            ),
-    /*
-            type.id == TurnMoveType.change ?     // 行動が交代の場合
-            Row(
-              children: [
+          );
+
+          late List<Widget> typeCommand;
+          // 行動の種類ごとに変わる
+          switch (turnMove.type) {
+            case TurnMoveType.move:   // わざ
+              typeCommand = [
                 Expanded(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.battlePokemonToChange,
+                  flex: 1,
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                    items: playerType.id == PlayerType.me ?
-                      <DropdownMenuItem>[
-                        for (int i = 0; i < ownParty.pokemonNum; i++)
-                          PokemonDropdownMenuItem(
-                            value: i+1,
-                            enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != ownParty.pokemons.indexWhere((element) => element == ownPokemon),
-                            theme: theme,
-                            pokemon: ownParty.pokemons[i]!,
-                            showNetworkImage: pokeData.getPokeAPI,
-                          ),
-                      ] :
-                      <DropdownMenuItem>[
-                        for (int i = 0; i < opponentParty.pokemonNum; i++)
-                          PokemonDropdownMenuItem(
-                            value: i+1,
-                            enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
-                            theme: theme,
-                            pokemon: opponentParty.pokemons[i]!,
-                            showNetworkImage: pokeData.getPokeAPI,
-                          ),
-                      ],
-                    value: getChangePokemonIndex(playerType),
-                    onChanged: (value) {
-                      setChangePokemonIndex(playerType, value);
-                      appState.editingPhase[phaseIdx] = true;
-                      appState.needAdjustPhases = phaseIdx+1;
-                      onFocus();
-                    },
-                    onFocus: onFocus,
-                    isInput: isInput,
-                    textValue: isInput ? null : playerType.id == PlayerType.me ?
-                      ownParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name :
-                      opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1]?.name,
-                    prefixIconPokemon: isInput ? null : playerType.id == PlayerType.me ?
-                      ownParty.pokemons[getChangePokemonIndex(playerType)??1-1] :
-                      opponentParty.pokemons[getChangePokemonIndex(playerType)??1-1],
-                    showNetworkImage: pokeData.getPokeAPI,
-                    theme: theme,
                   ),
                 ),
-              ],
-            ),
-    */
+                Expanded(
+                  flex: 6,
+                  child: ListViewWithViewItemCount(
+                    viewItemCount: 4,
+                    children: moveTiles,
+                  ),
+                ),
+              ];
+              break;
+            case TurnMoveType.change: // ポケモン交代
+              List<ListTile> pokemonTiles = [];
+              List<int> addedIndex = [];
+              for (int i = 0; i < myParty.pokemonNum; i++) {
+                if (
+                  prevState.isPossibleBattling(playerType, i) &&
+                  !prevState.getPokemonStates(playerType)[i].isFainting &&
+                  i != myParty.pokemons.indexWhere((element) => element == prevState.getPokemonState(playerType, null).pokemon)
+                ) {
+                  pokemonTiles.add(PokemonTile(myParty.pokemons[i]!, theme));
+                  addedIndex.add(i);
+                }
+              }
+              typeCommand = [
+                Expanded(
+                  flex: 7,
+                  child: ListViewWithViewItemCount(
+                    viewItemCount: 3,
+                    children: pokemonTiles,
+                  ),
+                ),
+              ];
+              break;
+            case TurnMoveType.surrender:    // こうさん
+            default:
+              typeCommand = [Expanded(flex: 7, child: Container(),)];
+              break;
+          }
+
+          commandColumn = Column(
+          key: ValueKey<int>(state.index),
+          children: [
+            commonCommand, ...typeCommand,
           ],
         );
+        }
         break;
       case CommandState.inputNum:
         commandColumn = Column(

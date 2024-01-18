@@ -143,8 +143,6 @@ class MyAppState extends ChangeNotifier {
   bool requestActionSwap = false;
   // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
   bool adjustPhaseByDelete = false;
-  // 広告表示フラグ
-  bool showAd = false;
 
   MyAppState(BuildContext context, Locale? locale) {
     changeTab = (func) {onTabChange(func);};
@@ -216,15 +214,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return PopScope(
-          onPopInvoked: (canPop) {
-            if (canPop) {
-              var appState = context.read<MyAppState>();
-              appState.onBackKeyPushed();
-  /*            Navigator.pop(
-                currentContext,
-              );*/
-            }
+        return NavigatorPopHandler(
+          onPop: () {
+            var appState = context.read<MyAppState>();
+            appState.onBackKeyPushed();
+            // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
+/*            Navigator.pop(
+              currentContext,
+            );*/
           },
           child: Scaffold(
             body: Center(

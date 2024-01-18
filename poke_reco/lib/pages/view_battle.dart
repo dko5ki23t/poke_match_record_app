@@ -621,7 +621,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     for (int i = 0; i < phases.length; i++) {
       if (phases[i].timing == Timing.action){
         lastAction = phases[i];
-        if (phases[i].move!.type.id == TurnMoveType.move) {
+        if (phases[i].move!.type == TurnMoveType.move) {
           continuousCount = 0;
         }       
       }

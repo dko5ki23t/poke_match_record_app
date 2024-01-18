@@ -124,7 +124,7 @@ class BattleActionColumn extends Column {
                           if (myState.isTerastaling) {
                             turn.phases[phaseIdx].move!.teraType = myState.teraType1;
                           }
-                          turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
+                          turn.phases[phaseIdx].move!.type = TurnMoveType.move;
                           moveControllerList[phaseIdx].text = '';
                           hpControllerList[phaseIdx].text =
                             turn.phases[phaseIdx].getEditingControllerText2(currentState, null);
@@ -173,7 +173,7 @@ class BattleActionColumn extends Column {
                         onChanged: turn.phases[phaseIdx].move!.playerType != PlayerType.none ?
                           (value) {
                             turn.phases[phaseIdx].move!.isSuccess = value!;
-                            if (!value) turn.phases[phaseIdx].move!.type = TurnMoveType(TurnMoveType.move);
+                            if (!value) turn.phases[phaseIdx].move!.type = TurnMoveType.move;
                             appState.editingPhase[phaseIdx] = true;
                             onFocus(phaseIdx+1);
                           } : null,
@@ -262,7 +262,7 @@ class BattleActionColumn extends Column {
 
   static String _getTitle(TurnMove? turnMove, Pokemon own, Pokemon opponent, AppLocalizations loc,) {
     if (turnMove != null) {
-      switch (turnMove.type.id) {
+      switch (turnMove.type) {
         case TurnMoveType.move:
           if (turnMove.move.id != 0) {
             String continous = turnMove.move.maxMoveCount() > 1 ? loc.battleMoveTimes1 : '';

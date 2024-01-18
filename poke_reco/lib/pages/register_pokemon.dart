@@ -171,10 +171,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     }
 
     return PopScope(
+      canPop: false,
       onPopInvoked: (didPop) {
-        if (didPop) {
-          onBack();
-        }
+        onBack();
       },
       child: Scaffold(
         appBar: AppBar(

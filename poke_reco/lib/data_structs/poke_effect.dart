@@ -418,7 +418,7 @@ class TurnEffect {
               state, continuousCount, invalidGuideIDs, loc: loc,)
           );
           // ポケモン交代の場合、もちもの失くした判定用に変数セット
-          if (move!.type.id == TurnMoveType.change) {
+          if (move!.type == TurnMoveType.change) {
             if (playerType == PlayerType.me) isOwnChanged = true;
             if (playerType == PlayerType.opponent) isOpponentChanged = false;
           }

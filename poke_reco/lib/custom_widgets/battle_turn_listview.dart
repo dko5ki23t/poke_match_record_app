@@ -102,7 +102,7 @@ class BattleTurnListView extends ListView {
     for (int j = 0; j < i; j++) {
       var turnMove = sameTimingList[j].first.turnEffect.move;
       if (sameTimingList[j].first.turnEffect.timing == Timing.action &&
-          turnMove?.type.id == TurnMoveType.move
+          turnMove?.type == TurnMoveType.move
       ) {
         ret = turnMove;
       }
@@ -116,7 +116,7 @@ class BattleTurnListView extends ListView {
     for (int j = 0; j <= i; j++) {
       var turnMove = sameTimingList[j].first.turnEffect.move;
       if (sameTimingList[j].first.turnEffect.timing == Timing.action &&
-          turnMove?.type.id == TurnMoveType.move
+          turnMove?.type == TurnMoveType.move
       ) {
         ret = 0;
       }
