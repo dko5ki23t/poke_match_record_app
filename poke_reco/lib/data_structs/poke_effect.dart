@@ -299,8 +299,8 @@ class TurnEffect {
       state.getPokemonState(playerType, prevAction) : isMe ? ownPokemonState : opponentPokemonState;
     var yourState = timing == Timing.afterMove && prevAction != null ?
       state.getPokemonState(playerType.opposite, prevAction) : isMe ? opponentPokemonState : ownPokemonState;
-    var myFields = isMe ? state.indiFields[0] : state.indiFields[1];
-    var yourFields = isMe ? state.indiFields[1] : state.indiFields[0];
+    var myFields = state.getIndiFields(playerType);
+    var yourFields = state.getIndiFields(playerType.opposite);
     var myParty = isMe ? ownParty : opponentParty;
     var myPokemonIndex = state.getPokemonIndex(playerType, timing == Timing.afterMove ? prevAction : null);
 
@@ -450,14 +450,14 @@ class TurnEffect {
             myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stellarForm);
           }
           // TODO この2行csvに移したい
-          myState.maxStats[StatIndex.H.index].race = 160; myState.maxStats[StatIndex.A.index].race = 105; myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.C.index].race = 130; myState.maxStats[StatIndex.D.index].race = 110; myState.maxStats[StatIndex.S.index].race = 85;
-          myState.minStats[StatIndex.H.index].race = 160; myState.minStats[StatIndex.A.index].race = 105; myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.C.index].race = 130; myState.minStats[StatIndex.D.index].race = 110; myState.minStats[StatIndex.S.index].race = 85;
-          for (int i = StatIndex.H.index; i <= StatIndex.S.index; i++) {
+          myState.maxStats.h.race = 160; myState.maxStats.a.race = 105; myState.maxStats.b.race = 110; myState.maxStats.c.race = 130; myState.maxStats.d.race = 110; myState.maxStats.s.race = 85;
+          myState.minStats.h.race = 160; myState.minStats.a.race = 105; myState.minStats.b.race = 110; myState.minStats.c.race = 130; myState.minStats.d.race = 110; myState.minStats.s.race = 85;
+          for (final stat in StatIndexList.listHtoS) {
             var biases = Temper.getTemperBias(myState.pokemon.temper);
-            myState.maxStats[i].real = SixParams.getRealABCDS(
-              myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-            myState.minStats[i].real = SixParams.getRealABCDS(
-              myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+            myState.maxStats[stat].real = SixParams.getRealABCDS(
+              myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+            myState.minStats[stat].real = SixParams.getRealABCDS(
+              myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
           }
           if (playerType == PlayerType.me) {
             myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();
@@ -509,7 +509,7 @@ class TurnEffect {
                 }
                 int hpMin = drain * 8;
                 int hpMax = hpMin + 3;
-                if (hpMin != myState.minStats[0].real || hpMax != myState.maxStats[0].real) {
+                if (hpMin != myState.minStats.h.real || hpMax != myState.maxStats.h.real) {
                   ret.add(Guide()
                     ..guideId = Guide.leechSeedConfHP
                     ..args = [hpMin, hpMax]
@@ -764,7 +764,7 @@ class TurnEffect {
           if (phaseState.field.id != Field.psychicTerrain) timings.add(Timing.pokemonAppearNotPsycoField);  // ポケモン登場時(サイコフィールドでない)
           if (phaseState.field.id != Field.mistyTerrain) timings.add(Timing.pokemonAppearNotMistField);    // ポケモン登場時(ミストフィールドでない)
           if (phaseState.field.id != Field.grassyTerrain) timings.add(Timing.pokemonAppearNotGrassField);   // ポケモン登場時(グラスフィールドでない)
-          var myFields = playerType == PlayerType.me ? phaseState.indiFields[0] : phaseState.indiFields[1];
+          var myFields = phaseState.getIndiFields(playerType);
           for (final f in myFields) {
             if (f.possiblyActive(timing)) {
               indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(f));
@@ -847,7 +847,7 @@ class TurnEffect {
             }
           }
           // 各々の場
-          var myFields = playerType == PlayerType.me ? phaseState.indiFields[0] : phaseState.indiFields[1];
+          var myFields = phaseState.getIndiFields(playerType);
           for (final field in myFields) {
             if (field.possiblyActive(timing)) {
               indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
@@ -1979,7 +1979,7 @@ class TurnEffect {
                         border: UnderlineInputBorder(),
                       ),
                       items: <DropdownMenuItem>[
-                        for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                        for (final statIndex in StatIndexList.listAtoS)
                         DropdownMenuItem(
                           value: statIndex.index-1,
                           child: Text(statIndex.name),
@@ -1993,7 +1993,7 @@ class TurnEffect {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: getStatIndexFromIndex(extraArg1+1).name,
+                      textValue: StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
                     ),
                   ),
                   Text(loc.battleRankUp2),
@@ -2009,7 +2009,7 @@ class TurnEffect {
                         border: UnderlineInputBorder(),
                       ),
                       items: <DropdownMenuItem>[
-                        for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                        for (final statIndex in StatIndexList.listAtoS)
                         DropdownMenuItem(
                           value: statIndex.index-1,
                           child: Text(statIndex.name),
@@ -2023,7 +2023,7 @@ class TurnEffect {
                       },
                       onFocus: onFocus,
                       isInput: isInput,
-                      textValue: getStatIndexFromIndex(extraArg2+1).name,
+                      textValue: StatIndexNumber.getStatIndexFromIndex(extraArg2+1).name,
                     ),
                   ),
                   Text(loc.battleRankDown1),
@@ -2086,7 +2086,7 @@ class TurnEffect {
                       value: -1,
                       child: Text(loc.battleEffectExpired),
                     ),
-                    for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                    for (final statIndex in StatIndexList.listAtoS)
                     DropdownMenuItem(
                       value: statIndex.index-1,
                       child: Text(statIndex.name),
@@ -2100,7 +2100,7 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: extraArg1 == -1 ? loc.battleEffectExpired : getStatIndexFromIndex(extraArg1+1).name,
+                  textValue: extraArg1 == -1 ? loc.battleEffectExpired : StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
                 ),
               ),
               extraArg1 >= 0 ? Text(loc.battleStatIncrease) : Text(''),
@@ -2116,7 +2116,7 @@ class TurnEffect {
                     border: UnderlineInputBorder(),
                   ),
                   items: <DropdownMenuItem>[
-                    for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                    for (final statIndex in StatIndexList.listAtoS)
                     DropdownMenuItem(
                       value: statIndex.index-1,
                       child: Text(statIndex.name),
@@ -2130,7 +2130,7 @@ class TurnEffect {
                   },
                   onFocus: onFocus,
                   isInput: isInput,
-                  textValue: getStatIndexFromIndex(extraArg1+1).name,
+                  textValue: StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
                 ),
               ),
               Text(loc.battleOpportunist1),

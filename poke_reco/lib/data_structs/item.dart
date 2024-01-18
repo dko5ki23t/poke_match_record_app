@@ -1010,7 +1010,7 @@ class Item {
                   border: UnderlineInputBorder(),
                 ),
                 items: <DropdownMenuItem>[
-                  for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S])
+                  for (final statIndex in StatIndexList.listAtoS)
                   DropdownMenuItem(
                     value: statIndex.index-1,
                     child: Text(statIndex.name),
@@ -1018,7 +1018,7 @@ class Item {
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: getStatIndexFromIndex(extraArg1+1).name,
+                textValue: StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
                 isInput: isInput,
                 onFocus: onFocus,
               ),

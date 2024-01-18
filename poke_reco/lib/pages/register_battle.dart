@@ -8,9 +8,7 @@ import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
@@ -123,8 +121,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-    const statAlphabets = ['A ', 'B ', 'C ', 'D ', 'S ', 'Ac', 'Ev'];
-    const statusAlphabets = ['H ', 'A ', 'B ', 'C ', 'D ', 'S '];
     PhaseState? focusState;
 
     // エイリアス
@@ -251,9 +247,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   poke.temper = pokeData.tempers[1]!;
                 }*/
                 // TODO
-                for (int j = 0; j < StatIndex.size.index; j++) {
-                  poke.stats[j].real = pokemonState.minStats[j].real;
-                  poke.updateStatsRefReal(j);
+                for (final stat in StatIndexList.listHtoS) {
+                  poke.stats[stat.index].real = pokemonState.minStats[stat].real;
+                  poke.updateStatsRefReal(stat.index);
                 }
                 // TODO
                 for (int j = 0; j < pokemonState.moves.length; j++) {
@@ -369,8 +365,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..setHoldingItemNoEffect(ownParty.items[i])
                 ..usedPPs = List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
                 ..setCurrentAbilityNoEffect(ownParty.pokemons[i]!.ability)
-                ..minStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
-                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++) ownParty.pokemons[i]!.stats[j]]
+                ..minStats = SixStats.generate((j) => ownParty.pokemons[i]!.stats[j])
+                ..maxStats = SixStats.generate((j) => ownParty.pokemons[i]!.stats[j])
                 ..moves = [for (int j = 0; j < ownParty.pokemons[i]!.moveNum; j++) ownParty.pokemons[i]!.moves[j]!]
                 ..type1 = ownParty.pokemons[i]!.type1
                 ..type2 = ownParty.pokemons[i]!.type2;
@@ -391,11 +387,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..pokemon = poke
                 ..battlingNum = i+1 == turn.getInitialPokemonIndex(PlayerType.opponent) ? 1 : 0
                 ..setHoldingItemNoEffect(pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
-                ..minStats = [
-                  for (int j = 0; j < StatIndex.size.index; j++)
-                  SixParams(poke.stats[j].race, 0, 0, minReals[j])]
-                ..maxStats = [for (int j = 0; j < StatIndex.size.index; j++)
-                  SixParams(poke.stats[j].race, pokemonMaxIndividual, pokemonMaxEffort, maxReals[j])]
+                ..minStats = SixStats.generate((j) => SixParams(poke.stats[j].race, 0, 0, minReals[j]))
+                ..maxStats = SixStats.generate((j) => SixParams(poke.stats[j].race, pokemonMaxIndividual, pokemonMaxEffort, maxReals[j]))
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
                 ..type1 = poke.type1
                 ..type2 = poke.type2;
@@ -677,101 +670,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
-    // TODO
     var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[0].move! : TurnMove();
     var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[1].move! : TurnMove();
     var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState(ownParty, opponentParty) : null;
-    List<Move> ownMoves = [];
-    List<ListTile> ownMoveListTiles = [];
-    if (prevState != null) {
-      var ownPokemonState = prevState.getPokemonState(PlayerType.me, null);
-      var ownPokemon = ownPokemonState.pokemon;
-      var opponentPokemonState = prevState.getPokemonState(PlayerType.opponent, null);
-      var myState = ownPokemonState;
-      var yourState = opponentPokemonState;
-      var yourFields = prevState.indiFields[1];
-      ownMoves.add(ownPokemon.move1);
-      if (ownPokemon.move2 != null) ownMoves.add(ownPokemon.move2!);
-      if (ownPokemon.move3 != null) ownMoves.add(ownPokemon.move3!);
-      if (ownPokemon.move4 != null) ownMoves.add(ownPokemon.move4!);
-      for (final ownMove in ownMoves) {
-        DamageGetter getter = DamageGetter();
-        TurnMove tmp = ownTurnMove.copyWith();
-        tmp.move = ownTurnMove.getReplacedMove(ownMove, 0, myState);
-        tmp.moveHits[0] = ownTurnMove.getMoveHit(ownMove, 0, myState, yourState, yourFields);
-        tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
-        tmp.moveEffectivenesses[0] = PokeType.effectiveness(
-            myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
-            yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-            ownTurnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
-        tmp.processMove(
-          ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-          opponentPokemonState.copyWith(), prevState.copyWith(), 0, [],
-          damageGetter: getter, loc: loc,);
-        ownMoveListTiles.add(
-          ListTile(
-            dense: true,
-            leading: ownTurnMove.getReplacedMoveType(ownMove, 0, myState, prevState).displayIcon,
-            title: Text(ownMove.displayName),
-            subtitle: Text(getter.rangeString),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              ownTurnMove.move = ownMove;
-              ownTurnMove.moveHits[0] = ownTurnMove.getMoveHit(ownMove, 0, myState, yourState, yourFields);
-              ownTurnMove.moveAdditionalEffects[0] = ownMove.isSurelyEffect() ? MoveEffect(ownMove.effect.id) : MoveEffect(0);
-              ownTurnMove.moveEffectivenesses[0] = PokeType.effectiveness(
-                  myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
-                  yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                  ownTurnMove.getReplacedMoveType(ownMove, 0, myState, prevState), yourState);
-            },
-          ),
-        );
-      }
-    }
-    List<Move> opponentMoves = [];
-    List<ListTile> opponentMoveListTiles = [];
-    if (prevState != null) {
-      var opponentPokemonState = prevState.getPokemonState(PlayerType.opponent, null);
-      var opponentPokemon = opponentPokemonState.pokemon;
-      var ownPokemonState = prevState.getPokemonState(PlayerType.me, null);
-      var myState = opponentPokemonState;
-      var yourState = ownPokemonState;
-      var yourFields = prevState.indiFields[0];
-      opponentMoves.addAll(pokeData.pokeBase[opponentPokemon.no]!.move);
-      for (final opponentMove in opponentMoves) {
-        DamageGetter getter = DamageGetter();
-        TurnMove tmp = opponentTurnMove.copyWith();
-        tmp.move = opponentTurnMove.getReplacedMove(opponentMove, 0, myState);
-        tmp.moveHits[0] = opponentTurnMove.getMoveHit(opponentMove, 0, myState, yourState, yourFields);
-        tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
-        tmp.moveEffectivenesses[0] = PokeType.effectiveness(
-            myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
-            yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-            opponentTurnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
-        tmp.processMove(
-          ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-          opponentPokemonState.copyWith(), prevState.copyWith(), 0, [],
-          damageGetter: getter, loc: loc,);
-        opponentMoveListTiles.add(
-          ListTile(
-            dense: true,
-            leading: opponentTurnMove.getReplacedMoveType(opponentMove, 0, myState, prevState).displayIcon,
-            title: Text(opponentMove.displayName),
-            subtitle: Text(getter.rangeString),
-            trailing: Icon(Icons.arrow_forward_ios),
-            onTap: () {
-              opponentTurnMove.move = opponentMove;
-              opponentTurnMove.moveHits[0] = opponentTurnMove.getMoveHit(opponentMove, 0, myState, yourState, yourFields);
-              opponentTurnMove.moveAdditionalEffects[0] = opponentMove.isSurelyEffect() ? MoveEffect(opponentMove.effect.id) : MoveEffect(0);
-              opponentTurnMove.moveEffectivenesses[0] = PokeType.effectiveness(
-                  myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
-                  yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                  opponentTurnMove.getReplacedMoveType(opponentMove, 0, myState, prevState), yourState);
-            },
-          ),
-        );
-      }
-    }
 
     switch (pageType) {
       case RegisterBattlePageType.basePage:
@@ -833,8 +734,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       Expanded(
                         flex: 6,
                         child: BattleCommand(
+                          playerType: PlayerType.me,
                           turnMove: ownTurnMove,
-                          moveListTiles: ownMoveListTiles,
+                          phaseState: prevState!,
+                          myParty: ownParty,
+                          yourParty: opponentParty,
                         ),
                       ),
                     ],
@@ -857,8 +761,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       Expanded(
                         flex: 6,
                         child: BattleCommand(
+                          playerType: PlayerType.opponent,
                           turnMove: opponentTurnMove,
-                          moveListTiles: opponentMoveListTiles,
+                          phaseState: prevState,
+                          myParty: opponentParty,
+                          yourParty: ownParty,
                         ),
                       ),
                     ],
@@ -2632,10 +2539,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.indiFields[0].length > index ?
+                state.getIndiFields(PlayerType.me).length > index ?
                 Container(
-                  color: state.indiFields[0][index].bgColor,
-                  child: Text(state.indiFields[0][index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.getIndiFields(PlayerType.me)[index].bgColor,
+                  child: Text(state.getIndiFields(PlayerType.me)[index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
             Expanded(child: Container(),),
@@ -2649,10 +2556,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.indiFields[1].length > index ?
+                state.getIndiFields(PlayerType.opponent).length > index ?
                 Container(
-                  color: state.indiFields[1][index].bgColor,
-                  child: Text(state.indiFields[1][index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.getIndiFields(PlayerType.opponent)[index].bgColor,
+                  child: Text(state.getIndiFields(PlayerType.opponent)[index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
           ],

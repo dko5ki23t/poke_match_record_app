@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
+import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/phase_state.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 
 enum CommandState {
   home,
@@ -12,12 +17,18 @@ enum CommandState {
 class BattleCommand extends StatefulWidget {
   const BattleCommand({
     Key? key,
+    required this.playerType,
     required this.turnMove,
-    required this.moveListTiles,
+    required this.phaseState,
+    required this.myParty,
+    required this.yourParty,
   }) : super(key: key);
 
+  final PlayerType playerType;
   final TurnMove turnMove;
-  final List<ListTile> moveListTiles;
+  final PhaseState phaseState;
+  final Party myParty;
+  final Party yourParty;
 
   @override
   BattleCommandState createState() => BattleCommandState();
@@ -32,28 +43,62 @@ class BattleCommandState extends State<BattleCommand> {
     final ButtonStyle pressedStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
-    var turnMove = widget.turnMove;
-    var moveListTiles = widget.moveListTiles;
-    var loc = AppLocalizations.of(context)!;
-
-    List<ListTile> copiedTiles = [];
-    for (var tile in moveListTiles) {
-      copiedTiles.add(
-        // TODO
-        ListTile(
-          dense: tile.dense,
-          title: tile.title,
-          subtitle: tile.subtitle,
-          leading: tile.leading,
-          trailing: tile.trailing,
-          onTap: () {
-            tile.onTap ?? 0;
-            setState(() {
-              state = CommandState.inputNum;
-            });
-          }
-        ),
-      );
+    final loc = AppLocalizations.of(context)!;
+    final turnMove = widget.turnMove;
+    final prevState = widget.phaseState;
+    final playerType = widget.playerType;
+    final myParty = widget.myParty;
+    final yourParty = widget.yourParty;
+    List<Move> moves = [];
+    List<ListTile> moveTiles = [];
+    {
+      var myState = prevState.getPokemonState(playerType, null);
+      var myPokemon = myState.pokemon;
+      var yourState = prevState.getPokemonState(playerType.opposite, null);
+      var yourFields = prevState.getIndiFields(playerType.opposite);
+      // 覚えているわざをリストの先頭に
+      if (myPokemon.move1.isValid) moves.add(myPokemon.move1);
+      if (myPokemon.move2 != null) moves.add(myPokemon.move2!);
+      if (myPokemon.move3 != null) moves.add(myPokemon.move3!);
+      if (myPokemon.move4 != null) moves.add(myPokemon.move4!);
+      moves.addAll(PokeDB().pokeBase[myPokemon.no]!.move.where((element) => element.isValid && !moves.contains(element),));
+      for (final myMove in moves) {
+        DamageGetter getter = DamageGetter();
+        TurnMove tmp = turnMove.copyWith();
+        tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
+        tmp.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
+        tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
+        tmp.moveEffectivenesses[0] = PokeType.effectiveness(
+            myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+            yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+            turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
+        tmp.processMove(
+          myParty.copyWith(), yourParty.copyWith(), myState.copyWith(),
+          yourState.copyWith(), prevState.copyWith(), 0, [],
+          damageGetter: getter, loc: loc,);
+        moveTiles.add(
+          ListTile(
+            dense: true,
+            leading: turnMove.getReplacedMoveType(myMove, 0, myState, prevState).displayIcon,
+            title: Text(myMove.displayName),
+            subtitle: Text('${getter.rangeString} (${getter.rangePercentString})'),
+            trailing: Icon(Icons.arrow_forward_ios),
+            onTap: () {
+              turnMove.move = myMove;
+              turnMove.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
+              turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect() ? MoveEffect(myMove.effect.id) : MoveEffect(0);
+              turnMove.moveEffectivenesses[0] = PokeType.effectiveness(
+                myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+                yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                turnMove.getReplacedMoveType(myMove, 0, myState, prevState), yourState
+              );
+              setState(() {
+                state = CommandState.inputNum;
+              });
+            },
+          ),
+        );
+      }
     }
 
     Widget commandColumn;
@@ -112,7 +157,7 @@ class BattleCommandState extends State<BattleCommand> {
               flex: 6,
               child: ListViewWithViewItemCount(
                 viewItemCount: 4,
-                children: turnMove.type.id == TurnMoveType.move ? copiedTiles : [],
+                children: turnMove.type.id == TurnMoveType.move ? moveTiles : [],
               ),
             ),
     /*

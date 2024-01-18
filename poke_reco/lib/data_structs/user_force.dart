@@ -114,10 +114,10 @@ class UserForces {
         case UserForce.statMinD:
         case UserForce.statMinS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.minStats[force.typeId-UserForce.statMinH].real = force.arg1;
+            ownPokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMinH)].real = force.arg1;
           }
           else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.minStats[force.typeId-UserForce.statMinH].real = force.arg1;
+            opponentPokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMinH)].real = force.arg1;
           }
           break;
         case UserForce.statMaxH:
@@ -127,10 +127,10 @@ class UserForces {
         case UserForce.statMaxD:
         case UserForce.statMaxS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.maxStats[force.typeId-UserForce.statMaxH].real = force.arg1;
+            ownPokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMaxH)].real = force.arg1;
           }
           else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.maxStats[force.typeId-UserForce.statMaxH].real = force.arg1;
+            opponentPokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMaxH)].real = force.arg1;
           }
           break;
         case UserForce.pokemon:

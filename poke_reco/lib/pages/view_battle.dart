@@ -492,19 +492,19 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType.me, null).minStats[i].race,
-                            focusState.getPokemonState(PlayerType.me, null).maxStats[i].race,
-                            focusState.getPokemonState(PlayerType.opponent, null).minStats[i].race,
-                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].race,
+                            focusState.getPokemonState(PlayerType.me, null).minStats[StatIndexNumber.getStatIndexFromIndex(i)].race,
+                            focusState.getPokemonState(PlayerType.me, null).maxStats[StatIndexNumber.getStatIndexFromIndex(i)].race,
+                            focusState.getPokemonState(PlayerType.opponent, null).minStats[StatIndexNumber.getStatIndexFromIndex(i)].race,
+                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[StatIndexNumber.getStatIndexFromIndex(i)].race,
                           ) : Container() :
                           // ステータス(補正前/補正後)
                           i < 6 ?
                           _StatStatusViewRow(
                             statusAlphabets[i],
-                            focusState.getPokemonState(PlayerType.me, null).minStats[i].real,
-                            focusState.getPokemonState(PlayerType.me, null).maxStats[i].real,
-                            focusState.getPokemonState(PlayerType.opponent, null).minStats[i].real,
-                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[i].real,
+                            focusState.getPokemonState(PlayerType.me, null).minStats[StatIndexNumber.getStatIndexFromIndex(i)].real,
+                            focusState.getPokemonState(PlayerType.me, null).maxStats[StatIndexNumber.getStatIndexFromIndex(i)].real,
+                            focusState.getPokemonState(PlayerType.opponent, null).minStats[StatIndexNumber.getStatIndexFromIndex(i)].real,
+                            focusState.getPokemonState(PlayerType.opponent, null).maxStats[StatIndexNumber.getStatIndexFromIndex(i)].real,
                           ) : Container(),
                       SizedBox(height: 5),
                       // わざ
@@ -520,7 +520,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
                       _AilmentsRow(focusState.getPokemonState(PlayerType.me, null), focusState.getPokemonState(PlayerType.opponent, null), i),
                       for (int i = 0; i < max(focusState.getPokemonState(PlayerType.me, null).buffDebuffs.length, focusState.getPokemonState(PlayerType.opponent, null).buffDebuffs.length); i++)
                       _BuffDebuffsRow(focusState.getPokemonState(PlayerType.me, null), focusState.getPokemonState(PlayerType.opponent, null), i),
-                      for (int i = 0; i < max(focusState.indiFields[0].length, focusState.indiFields[1].length); i++)
+                      for (int i = 0; i < max(focusState.getIndiFields(PlayerType.me).length, focusState.getIndiFields(PlayerType.opponent).length); i++)
                       _IndiFieldRow(focusState, i),
                       _WeatherFieldRow(focusState)
                     ],
@@ -959,10 +959,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.indiFields[0].length > index ?
+                state.getIndiFields(PlayerType.me).length > index ?
                 Container(
-                  color: state.indiFields[0][index].bgColor,
-                  child: Text(state.indiFields[0][index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.getIndiFields(PlayerType.me)[index].bgColor,
+                  child: Text(state.getIndiFields(PlayerType.me)[index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
             Expanded(child: Container(),),
@@ -976,10 +976,10 @@ class _IndiFieldRow extends Row {
             ClipRRect(
               borderRadius: BorderRadius.all(Radius.circular(5.0)),
               child:
-                state.indiFields[1].length > index ?
+                state.getIndiFields(PlayerType.opponent).length > index ?
                 Container(
-                  color: state.indiFields[1][index].bgColor,
-                  child: Text(state.indiFields[1][index].displayName, style: TextStyle(color: Colors.white)),
+                  color: state.getIndiFields(PlayerType.opponent)[index].bgColor,
+                  child: Text(state.getIndiFields(PlayerType.opponent)[index].displayName, style: TextStyle(color: Colors.white)),
                 ) : Container(),
             ),
           ],

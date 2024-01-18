@@ -116,8 +116,8 @@ class Ability {
     List<Guide> ret = [];
     var myPlayer = playerType;
     var yourPlayer = playerType.opposite;
-    var myFields = playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
-    var yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    var myFields = state.getIndiFields(playerType);
+    var yourFields = state.getIndiFields(playerType.opposite);
     var isOwn = playerType == PlayerType.me;
 
     switch (abilityID) {
@@ -407,9 +407,9 @@ class Ability {
             }
             myState.usedPPs[i] = 0;
           }
-          for (int i = 0; i < StatIndex.size.index; i++) {    // HP以外のステータス実数値
-            myState.minStats[i].real = yourState.minStats[i].real;
-            myState.maxStats[i].real = yourState.maxStats[i].real;
+          for (final stat in StatIndexList.listHtoS) {    // HP以外のステータス実数値
+            myState.minStats[stat].real = yourState.minStats[stat].real;
+            myState.maxStats[stat].real = yourState.maxStats[stat].real;
           }
           for (int i = 0; i < 7; i++) {
             myState.forceSetStatChanges(i, yourState.statChanges(i));
@@ -641,14 +641,14 @@ class Ability {
           if (findIdx >= 0) {
             myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.niceFace);
             // TODO この2行csvに移したい
-            myState.maxStats[StatIndex.B.index].race = 70; myState.maxStats[StatIndex.D.index].race = 50; myState.maxStats[StatIndex.S.index].race = 130;
-            myState.minStats[StatIndex.B.index].race = 70; myState.minStats[StatIndex.D.index].race = 50; myState.minStats[StatIndex.S.index].race = 130;
-            for (final i in [StatIndex.B.index, StatIndex.D.index, StatIndex.S.index]) {
+            myState.maxStats[StatIndex.B].race = 70; myState.maxStats[StatIndex.D].race = 50; myState.maxStats[StatIndex.S].race = 130;
+            myState.minStats[StatIndex.B].race = 70; myState.minStats[StatIndex.D].race = 50; myState.minStats[StatIndex.S].race = 130;
+            for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
               var biases = Temper.getTemperBias(myState.pokemon.temper);
-              myState.maxStats[i].real = SixParams.getRealABCDS(
-                myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-              myState.minStats[i].real = SixParams.getRealABCDS(
-                myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+              myState.maxStats[stat].real = SixParams.getRealABCDS(
+                myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+              myState.minStats[stat].real = SixParams.getRealABCDS(
+                myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
             }
           }
           else {
@@ -656,14 +656,14 @@ class Ability {
             if (findIdx >= 0) {
               myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.iceFace);
               // TODO この2行csvに移したい
-              myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.D.index].race = 90; myState.maxStats[StatIndex.S.index].race = 50;
-              myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.D.index].race = 90; myState.minStats[StatIndex.S.index].race = 50;
-              for (final i in [StatIndex.B.index, StatIndex.D.index, StatIndex.S.index]) {
+              myState.maxStats[StatIndex.B].race = 110; myState.maxStats[StatIndex.D].race = 90; myState.maxStats[StatIndex.S].race = 50;
+              myState.minStats[StatIndex.B].race = 110; myState.minStats[StatIndex.D].race = 90; myState.minStats[StatIndex.S].race = 50;
+              for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
                 var biases = Temper.getTemperBias(myState.pokemon.temper);
-                myState.maxStats[i].real = SixParams.getRealABCDS(
-                  myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-                myState.minStats[i].real = SixParams.getRealABCDS(
-                  myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+                myState.maxStats[stat].real = SixParams.getRealABCDS(
+                  myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+                myState.minStats[stat].real = SixParams.getRealABCDS(
+                  myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
               }
             }
           }
@@ -806,14 +806,14 @@ class Ability {
         int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.terastalForm);
         if (findIdx < 0) myState.buffDebuffs.add(BuffDebuff(BuffDebuff.terastalForm));
         // TODO この2行csvに移したい
-        myState.maxStats[StatIndex.H.index].race = 95; myState.maxStats[StatIndex.A.index].race = 95; myState.maxStats[StatIndex.B.index].race = 110; myState.maxStats[StatIndex.C.index].race = 105; myState.maxStats[StatIndex.D.index].race = 110; myState.maxStats[StatIndex.S.index].race = 85;
-        myState.minStats[StatIndex.H.index].race = 95; myState.minStats[StatIndex.A.index].race = 95; myState.minStats[StatIndex.B.index].race = 110; myState.minStats[StatIndex.C.index].race = 105; myState.minStats[StatIndex.D.index].race = 110; myState.minStats[StatIndex.S.index].race = 85;
-        for (int i = StatIndex.H.index; i <= StatIndex.S.index; i++) {
+        myState.maxStats.h.race = 95; myState.maxStats.a.race = 95; myState.maxStats.b.race = 110; myState.maxStats.c.race = 105; myState.maxStats.d.race = 110; myState.maxStats.s.race = 85;
+        myState.minStats.h.race = 95; myState.minStats.a.race = 95; myState.minStats.b.race = 110; myState.minStats.c.race = 105; myState.minStats.d.race = 110; myState.minStats.s.race = 85;
+        for (final stat in StatIndexList.listHtoS) {
           var biases = Temper.getTemperBias(myState.pokemon.temper);
-          myState.maxStats[i].real = SixParams.getRealABCDS(
-            myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-          myState.minStats[i].real = SixParams.getRealABCDS(
-            myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+          myState.maxStats[stat].real = SixParams.getRealABCDS(
+            myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+          myState.minStats[stat].real = SixParams.getRealABCDS(
+            myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
         }
         if (playerType == PlayerType.me) {
           myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();
@@ -860,7 +860,7 @@ class Ability {
   }
 
   void processPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var yourFields = isOwn ? state.indiFields[1] : state.indiFields[0];
+    var yourFields = isOwn ? state.getIndiFields(PlayerType.opponent) : state.getIndiFields(PlayerType.me);
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_3));
@@ -1211,7 +1211,7 @@ class Ability {
   }
 
   void clearPassiveEffect(PokemonState myState, PokemonState yourState, bool isOwn, PhaseState state,) {
-    var yourFields = isOwn ? state.indiFields[1] : state.indiFields[0];
+    var yourFields = isOwn ? state.getIndiFields(PlayerType.opponent) : state.getIndiFields(PlayerType.me);
     switch (id) {
       case 14:  // ふくがん
         myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_3);
@@ -1558,15 +1558,14 @@ class Ability {
           bool isClear = true;
           int ret = 0;
           int maxReal = 0;
-          for (final statIndex in [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S,]) {
-            int i = statIndex.index;
-            if (myState.minStats[i].real != myState.maxStats[i].real) {
+          for (final stat in StatIndexList.listAtoS) {
+            if (myState.minStats[stat].real != myState.maxStats[stat].real) {
               isClear = false;
               break;
             }
-            if (myState.getRankedStat(myState.minStats[i].real, statIndex) > maxReal) {
-              maxReal = myState.getRankedStat(myState.minStats[i].real, statIndex);
-              ret = statIndex.index - 1;
+            if (myState.getRankedStat(myState.minStats[stat].real, stat) > maxReal) {
+              maxReal = myState.getRankedStat(myState.minStats[stat].real, stat);
+              ret = stat.index - 1;
             }
           }
           if (isClear) {

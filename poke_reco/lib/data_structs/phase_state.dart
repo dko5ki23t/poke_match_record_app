@@ -20,7 +20,7 @@ class PhaseState {
   List<int> _pokemonIndexes = [-1, -1];     // 0始まりのインデックス。-1は無効値
   List<List<PokemonState>> _pokemonStates = [[], []];
   List<List<PokemonState>> lastExitedStates =[[], []];  // 最後に退場したときの状態
-  List<List<IndividualField>> indiFields = [[], []];    // 場(天気やフィールドを含まない、かべ等)
+  List<List<IndividualField>> _indiFields = [[], []];    // 場(天気やフィールドを含まない、かべ等)
   Weather _weather = Weather(0);
   Field _field = Field(0);
   List<TurnEffect> phases = [];
@@ -96,6 +96,15 @@ class PhaseState {
     }
   }
 
+  List<IndividualField> getIndiFields(PlayerType player) {
+    if (player == PlayerType.me) {
+      return _indiFields[0];
+    }
+    else {
+      return _indiFields[1];
+    }
+  }
+
   int getFaintingCount(PlayerType player) {
     if (player == PlayerType.me) {
       return _faintingCount[0];
@@ -140,12 +149,12 @@ class PhaseState {
       for (final state in lastExitedStates[1])
       state.copyWith()
     ]
-    ..indiFields[0] = [
-      for (final e in indiFields[0])
+    .._indiFields[0] = [
+      for (final e in _indiFields[0])
       e.copyWith()
     ]
-    ..indiFields[1] = [
-      for (final e in indiFields[1])
+    .._indiFields[1] = [
+      for (final e in _indiFields[1])
       e.copyWith()
     ]
     ..weather = weather.copyWith()
@@ -185,11 +194,11 @@ class PhaseState {
     // 行動1削除
     firstAction = null;
     // 各々の場のターン経過
-    for (int i = 0; i < indiFields.length; i++) {
-      for (var e in indiFields[i]) {
+    for (int i = 0; i < _indiFields.length; i++) {
+      for (var e in _indiFields[i]) {
         e.turns++;
       }
-      indiFields[i].removeWhere((element) => element.id == IndividualField.ionDeluge);  // プラズマシャワー消失
+      _indiFields[i].removeWhere((element) => element.id == IndividualField.ionDeluge);  // プラズマシャワー消失
     }
     // 各々のポケモンの状態のターン経過
     int initialIndex = currentTurn.getInitialPokemonIndex(PlayerType.me);
@@ -241,7 +250,7 @@ class PhaseState {
               }
               // 各ポケモンの場
               addingBase.effectType = EffectType.individualField;
-              var indiField = player == PlayerType.me ? indiFields[0] : indiFields[1];
+              var indiField = getIndiFields(player);
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
                   var adding = addingBase.copyWith()
@@ -672,7 +681,7 @@ class PhaseState {
             }
 
             // 各ポケモンの場の効果
-            var fields = player == PlayerType.me ? indiFields[0] : indiFields[1];
+            var fields = getIndiFields(player);
             for (final field in fields) {
               if (field.isActive(timing, myState, state)) {   // ターン経過で終了する場の判定
                 var adding = TurnEffect()
@@ -703,8 +712,8 @@ class PhaseState {
           }
           var fieldEffectIDs = [];
           if (field.id == Field.grassyTerrain) {    // グラスフィールドによる回復
-            if (getPokemonState(PlayerType.me, null).isGround(state.indiFields[0]) ||
-                getPokemonState(PlayerType.opponent, null).isGround(state.indiFields[1]))
+            if (getPokemonState(PlayerType.me, null).isGround(state.getIndiFields(PlayerType.me)) ||
+                getPokemonState(PlayerType.opponent, null).isGround(state.getIndiFields(PlayerType.opponent)))
             {
               fieldEffectIDs.add(FieldEffect.grassHeal);
             }
@@ -740,10 +749,10 @@ class PhaseState {
             int extraArg1 = 0;
             int extraArg2 = 0;
             if (e == FieldEffect.grassHeal) {
-              if (getPokemonState(PlayerType.me, null).isGround(state.indiFields[0])) {   // グラスフィールドによる回復
+              if (getPokemonState(PlayerType.me, null).isGround(state.getIndiFields(PlayerType.me))) {   // グラスフィールドによる回復
                 extraArg1 = -(getPokemonState(PlayerType.me, null).pokemon.h.real / 16).floor();
               }
-              if (getPokemonState(PlayerType.opponent, null).isGround(state.indiFields[1])) {
+              if (getPokemonState(PlayerType.opponent, null).isGround(state.getIndiFields(PlayerType.opponent))) {
                 extraArg2 = -6;
               }
             }
@@ -954,7 +963,7 @@ class PhaseState {
     }
     // indiFields
     var fields = stateElements.removeAt(0).split(split2);
-    ret.indiFields = [[], []];
+    ret._indiFields = [[], []];
     for (int i = 0; i < fields.length; i++) {
       if (fields[i] == '') break;
       var fs = fields[i].split(split3);
@@ -963,7 +972,7 @@ class PhaseState {
         if (f == '') break;
         adding.add(IndividualField.deserialize(f, split4));
       }
-      ret.indiFields[i] = adding;
+      ret._indiFields[i] = adding;
     }
     // _weather
     ret._weather = Weather.deserialize(stateElements.removeAt(0), split2);
@@ -1035,7 +1044,7 @@ class PhaseState {
     }
     ret += split1;
     // indiFields
-    for (final fields in indiFields) {
+    for (final fields in _indiFields) {
       for (final field in fields) {
         ret += field.serialize(split4);
         ret += split3;

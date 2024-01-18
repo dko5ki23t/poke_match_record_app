@@ -163,6 +163,8 @@ class ActionFailure {
 class DamageGetter {
   int minDamage = 0;
   int maxDamage = 0;
+  int minDamagePercent = 0;
+  int maxDamagePercent = 0;
 
   String get rangeString {
     if (minDamage == maxDamage) {
@@ -170,6 +172,15 @@ class DamageGetter {
     }
     else {
       return '$minDamage ~ $maxDamage';
+    }
+  }
+
+  String get rangePercentString {
+    if (minDamagePercent == maxDamagePercent) {
+      return '$minDamagePercent%';
+    }
+    else {
+      return '$minDamagePercent% ~ $maxDamagePercent%';
     }
   }
 }
@@ -493,8 +504,8 @@ class TurnMove {
 
     if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
 
-    List<IndividualField> myFields = playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
-    List<IndividualField> yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    List<IndividualField> myFields = state.getIndiFields(playerType);
+    List<IndividualField> yourFields = state.getIndiFields(playerType.opposite);
     PlayerType myPlayerType = playerType;
     PlayerType yourPlayerType = playerType == PlayerType.me ? PlayerType.opponent : PlayerType.me;
 
@@ -927,9 +938,9 @@ class TurnMove {
                 }
                 myState.usedPPs[i] = 0;
               }
-              for (int i = 0; i < StatIndex.size.index; i++) {    // HP以外のステータス実数値
-                myState.minStats[i].real = targetState.minStats[i].real;
-                myState.maxStats[i].real = targetState.maxStats[i].real;
+              for (final stat in StatIndexList.listHtoS) {    // HP以外のステータス実数値
+                myState.minStats[stat].real = targetState.minStats[stat].real;
+                myState.maxStats[stat].real = targetState.maxStats[stat].real;
               }
               for (int i = 0; i < 7; i++) {
                 myState.forceSetStatChanges(i, targetState.statChanges(i));
@@ -2085,34 +2096,34 @@ class TurnMove {
             break;
           case 280:   // 相手と使用者のぼうぎょ・とくぼうをそれぞれ平均値にする
             {
-              int maxAvg = ((myState.maxStats[StatIndex.B.index].real + targetState.maxStats[StatIndex.B.index].real) / 2).floor();
-              int minAvg = ((myState.minStats[StatIndex.B.index].real + targetState.minStats[StatIndex.B.index].real) / 2).floor();
-              myState.maxStats[StatIndex.B.index].real = maxAvg;
-              myState.minStats[StatIndex.B.index].real = minAvg;
-              targetState.maxStats[StatIndex.B.index].real = maxAvg;
-              targetState.minStats[StatIndex.B.index].real = minAvg;
-              maxAvg = ((myState.maxStats[StatIndex.D.index].real + targetState.maxStats[StatIndex.D.index].real) / 2).floor();
-              minAvg = ((myState.minStats[StatIndex.D.index].real + targetState.minStats[StatIndex.D.index].real) / 2).floor();
-              myState.maxStats[StatIndex.D.index].real = maxAvg;
-              myState.minStats[StatIndex.D.index].real = minAvg;
-              targetState.maxStats[StatIndex.D.index].real = maxAvg;
-              targetState.minStats[StatIndex.D.index].real = minAvg;
+              int maxAvg = ((myState.maxStats.b.real + targetState.maxStats.b.real) / 2).floor();
+              int minAvg = ((myState.minStats.b.real + targetState.minStats.b.real) / 2).floor();
+              myState.maxStats.b.real = maxAvg;
+              myState.minStats.b.real = minAvg;
+              targetState.maxStats.b.real = maxAvg;
+              targetState.minStats.b.real = minAvg;
+              maxAvg = ((myState.maxStats.d.real + targetState.maxStats.d.real) / 2).floor();
+              minAvg = ((myState.minStats.d.real + targetState.minStats.d.real) / 2).floor();
+              myState.maxStats.d.real = maxAvg;
+              myState.minStats.d.real = minAvg;
+              targetState.maxStats.d.real = maxAvg;
+              targetState.minStats.d.real = minAvg;
             }
             break;
           case 281:   // 相手と使用者のこうげき・とくこうをそれぞれ平均値にする
             {
-              int maxAvg = ((myState.maxStats[StatIndex.A.index].real + targetState.maxStats[StatIndex.A.index].real) / 2).floor();
-              int minAvg = ((myState.minStats[StatIndex.A.index].real + targetState.minStats[StatIndex.A.index].real) / 2).floor();
-              myState.maxStats[StatIndex.A.index].real = maxAvg;
-              myState.minStats[StatIndex.A.index].real = minAvg;
-              targetState.maxStats[StatIndex.A.index].real = maxAvg;
-              targetState.minStats[StatIndex.A.index].real = minAvg;
-              maxAvg = ((myState.maxStats[StatIndex.C.index].real + targetState.maxStats[StatIndex.C.index].real) / 2).floor();
-              minAvg = ((myState.minStats[StatIndex.C.index].real + targetState.minStats[StatIndex.C.index].real) / 2).floor();
-              myState.maxStats[StatIndex.C.index].real = maxAvg;
-              myState.minStats[StatIndex.C.index].real = minAvg;
-              targetState.maxStats[StatIndex.C.index].real = maxAvg;
-              targetState.minStats[StatIndex.C.index].real = minAvg;
+              int maxAvg = ((myState.maxStats.a.real + targetState.maxStats.a.real) / 2).floor();
+              int minAvg = ((myState.minStats.a.real + targetState.minStats.a.real) / 2).floor();
+              myState.maxStats.a.real = maxAvg;
+              myState.minStats.a.real = minAvg;
+              targetState.maxStats.a.real = maxAvg;
+              targetState.minStats.a.real = minAvg;
+              maxAvg = ((myState.maxStats.c.real + targetState.maxStats.c.real) / 2).floor();
+              minAvg = ((myState.minStats.c.real + targetState.minStats.c.real) / 2).floor();
+              myState.maxStats.c.real = maxAvg;
+              myState.minStats.c.real = minAvg;
+              targetState.maxStats.c.real = maxAvg;
+              targetState.minStats.c.real = minAvg;
             }
             break;
           case 282:   //場をワンダールームにする/解除する
@@ -2342,14 +2353,14 @@ class TurnMove {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.createFromId(PokeTypeId.fight);
-                myState.maxStats[StatIndex.A.index].race = 128; myState.maxStats[StatIndex.B.index].race = 90; myState.maxStats[StatIndex.C.index].race = 77; myState.maxStats[StatIndex.D.index].race = 77; myState.maxStats[StatIndex.S.index].race = 128;
-                myState.minStats[StatIndex.A.index].race = 128; myState.minStats[StatIndex.B.index].race = 90; myState.minStats[StatIndex.C.index].race = 77; myState.minStats[StatIndex.D.index].race = 77; myState.minStats[StatIndex.S.index].race = 128;
-                for (int i = StatIndex.A.index; i < StatIndex.S.index; i++) {
+                myState.maxStats.a.race = 128; myState.maxStats.b.race = 90; myState.maxStats.c.race = 77; myState.maxStats.d.race = 77; myState.maxStats.s.race = 128;
+                myState.minStats.a.race = 128; myState.minStats.b.race = 90; myState.minStats.c.race = 77; myState.minStats.d.race = 77; myState.minStats.s.race = 128;
+                for (final stat in StatIndexList.listAtoS) {
                   var biases = Temper.getTemperBias(myState.pokemon.temper);
-                  myState.maxStats[i].real = SixParams.getRealABCDS(
-                    myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-                  myState.minStats[i].real = SixParams.getRealABCDS(
-                    myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+                  myState.maxStats[stat].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+                  myState.minStats[stat].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
                 }
               }
               else {
@@ -2357,14 +2368,14 @@ class TurnMove {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.createFromId(PokeTypeId.psychic);
-                myState.maxStats[StatIndex.A.index].race = 77; myState.maxStats[StatIndex.B.index].race = 77; myState.maxStats[StatIndex.C.index].race = 128; myState.maxStats[StatIndex.D.index].race = 128; myState.maxStats[StatIndex.S.index].race = 90;
-                myState.minStats[StatIndex.A.index].race = 77; myState.minStats[StatIndex.B.index].race = 77; myState.minStats[StatIndex.C.index].race = 128; myState.minStats[StatIndex.D.index].race = 128; myState.minStats[StatIndex.S.index].race = 90;
-                for (int i = StatIndex.A.index; i < StatIndex.S.index; i++) {
+                myState.maxStats.a.race = 77; myState.maxStats.b.race = 77; myState.maxStats.c.race = 128; myState.maxStats.d.race = 128; myState.maxStats.s.race = 90;
+                myState.minStats.a.race = 77; myState.minStats.b.race = 77; myState.minStats.c.race = 128; myState.minStats.d.race = 128; myState.minStats.s.race = 90;
+                for (final stat in StatIndexList.listAtoS) {
                   var biases = Temper.getTemperBias(myState.pokemon.temper);
-                  myState.maxStats[i].real = SixParams.getRealABCDS(
-                    myState.pokemon.level, myState.maxStats[i].race, myState.maxStats[i].indi, myState.maxStats[i].effort, biases[i-1]);
-                  myState.minStats[i].real = SixParams.getRealABCDS(
-                    myState.pokemon.level, myState.minStats[i].race, myState.minStats[i].indi, myState.minStats[i].effort, biases[i-1]);
+                  myState.maxStats[stat].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.maxStats[stat].race, myState.maxStats[stat].indi, myState.maxStats[stat].effort, biases[stat.index-1]);
+                  myState.minStats[stat].real = SixParams.getRealABCDS(
+                    myState.pokemon.level, myState.minStats[stat].race, myState.minStats[stat].indi, myState.minStats[stat].effort, biases[stat.index-1]);
                 }
               }
             }
@@ -2564,7 +2575,7 @@ class TurnMove {
                 }
                 int attack = targetState.getNotRankedStat(StatIndex.A, drain);
                 // TODO: この時点で努力値等を反映するのかどうかとか
-                if (attack != targetState.minStats[1].real || attack != targetState.maxStats[1].real) {
+                if (attack != targetState.minStats.a.real || attack != targetState.maxStats.a.real) {
                   ret.add(Guide()
                     ..guideId = Guide.sapConfAttack
                     ..args = [attack, attack]
@@ -2614,12 +2625,12 @@ class TurnMove {
             }
             break;
           case 399:   // 使用者と相手のすばやさ実数値を入れ替える
-            int tmpMax = myState.maxStats[StatIndex.S.index].real;
-            int tmpMin = myState.minStats[StatIndex.S.index].real;
-            myState.maxStats[StatIndex.S.index].real = targetState.maxStats[StatIndex.S.index].real;
-            myState.minStats[StatIndex.S.index].real = targetState.minStats[StatIndex.S.index].real;
-            targetState.maxStats[StatIndex.S.index].real = tmpMax;
-            targetState.minStats[StatIndex.S.index].real = tmpMin;
+            int tmpMax = myState.maxStats.s.real;
+            int tmpMin = myState.minStats.s.real;
+            myState.maxStats.s.real = targetState.maxStats.s.real;
+            myState.minStats.s.real = targetState.minStats.s.real;
+            targetState.maxStats.s.real = tmpMax;
+            targetState.minStats.s.real = tmpMin;
             break;
           case 400:   // 相手の状態異常を治し、使用者のHPを最大HP半分だけ回復する(SV使用不可のため処理なし)
             break;
@@ -2810,11 +2821,11 @@ class TurnMove {
               myState.addStatChanges(true, 2, -1, targetState, moveId: replacedMove.id);
             }
             // ステータスが確定している場合
-            if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
-                myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
+            if (myState.maxStats.a.real == myState.minStats.a.real &&
+                myState.maxStats.c.real == myState.minStats.c.real
             ) {
-              if (myState.getRankedStat(myState.maxStats[1].real, StatIndex.A,) >
-                  myState.getRankedStat(myState.maxStats[3].real, StatIndex.C,)
+              if (myState.getRankedStat(myState.maxStats.a.real, StatIndex.A,) >
+                  myState.getRankedStat(myState.maxStats.c.real, StatIndex.C,)
             ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2839,7 +2850,7 @@ class TurnMove {
             }
             break;
           case 446:   // サイコフィールドの効果を受けているとき威力1.5倍・相手全体へのこうげきになる
-            if (state.field.id == Field.psychicTerrain && myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
+            if (state.field.id == Field.psychicTerrain && myState.isGround(state.getIndiFields(myPlayerType))) {
               movePower = (movePower * 1.5).floor();
             }
             break;
@@ -2861,11 +2872,11 @@ class TurnMove {
             break;
           case 449:   // ぶつりわざであるときの方がダメージが大きい場合は物理技になる。どく状態にする(確率)
             // ステータスが確定している場合
-            if (myState.maxStats[StatIndex.A.index].real == myState.minStats[StatIndex.A.index].real &&
-                myState.maxStats[StatIndex.C.index].real == myState.minStats[StatIndex.C.index].real
+            if (myState.maxStats.a.real == myState.minStats.a.real &&
+                myState.maxStats.c.real == myState.minStats.c.real
             ) {
-              if (myState.getRankedStat(myState.maxStats[1].real, StatIndex.A,) >
-                  myState.getRankedStat(myState.maxStats[3].real, StatIndex.C,)
+              if (myState.getRankedStat(myState.maxStats.a.real, StatIndex.A,) >
+                  myState.getRankedStat(myState.maxStats.c.real, StatIndex.C,)
               ) {
                 moveDamageClassID = 2;  // ぶつりわざに変更
               }
@@ -2878,7 +2889,7 @@ class TurnMove {
             }
             break;
           case 450:   // 使用者はひんしになる。ミストフィールドの効果を受けているとき威力1.5倍
-            if (state.field.id == Field.mistyTerrain && myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
+            if (state.field.id == Field.mistyTerrain && myState.isGround(state.getIndiFields(myPlayerType))) {
               movePower = (movePower * 1.5).floor();
             }
             myState.remainHP = 0;
@@ -2888,12 +2899,12 @@ class TurnMove {
           case 451:   // グラスフィールドの効果を受けているとき優先度が高くなる
             break;
           case 452:   // 対象がエレキフィールドの効果を受けているとき威力2倍
-            if (state.field.id == Field.electricTerrain && targetState.isGround(targetPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
+            if (state.field.id == Field.electricTerrain && targetState.isGround(state.getIndiFields(targetPlayerType))) {
               movePower *= 2;
             }
             break;
           case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
-            if (myState.isGround(myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
+            if (myState.isGround(state.getIndiFields(myPlayerType))) {
               switch (state.field.id) {
                 case Field.electricTerrain:
                   moveType = PokeType.createFromId(13);
@@ -3297,6 +3308,8 @@ class TurnMove {
         damageCalc ??= damage.item1;
         damageGetter?.maxDamage = damage.item2;
         damageGetter?.minDamage = damage.item3;
+        damageGetter?.maxDamagePercent = (damage.item2 * 100 / targetStates[0].minStats.h.real).floor();
+        damageGetter?.minDamagePercent = (damage.item3 * 100 / targetStates[0].maxStats.h.real).floor();
         isTeraStellarHosei = damage.item4;
 
         ret.add(Guide()
@@ -3359,8 +3372,8 @@ class TurnMove {
                   );
                   if (reals.item1.index > StatIndex.H.index) {
                     // もともとある範囲より狭まるようにのみ上書き
-                    int minS = opponentPokemonState.minStats[reals.item1.index].real;
-                    int maxS = opponentPokemonState.maxStats[reals.item1.index].real;
+                    int minS = opponentPokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(reals.item1.index)].real;
+                    int maxS = opponentPokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(reals.item1.index)].real;
                     bool addGuide = false;
                     if (minS < reals.item3) {
                       minS = reals.item3;
@@ -3398,18 +3411,18 @@ class TurnMove {
     if (!isFirst && state.firstAction != null && state.firstAction!.type.id == TurnMoveType.move) {
       if (move.priority == state.firstAction!.move.priority) {    // わざの優先度が同じ
         // もともとある範囲より狭まるようにのみ上書き
-        int minS = opponentPokemonState.minStats[StatIndex.S.index].real;
-        int maxS = opponentPokemonState.maxStats[StatIndex.S.index].real;
+        int minS = opponentPokemonState.minStats.s.real;
+        int maxS = opponentPokemonState.maxStats.s.real;
         bool addGuide = false;
         if (playerType == PlayerType.me) {
-          if (minS < ownPokemonState.minStats[StatIndex.S.index].real) {   // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
-            minS = ownPokemonState.minStats[StatIndex.S.index].real;
+          if (minS < ownPokemonState.minStats.s.real) {   // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            minS = ownPokemonState.minStats.s.real;
             addGuide = true;
           }
         }
         else {
-          if (maxS > ownPokemonState.maxStats[StatIndex.S.index].real) {    // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
-            maxS = ownPokemonState.maxStats[StatIndex.S.index].real;
+          if (maxS > ownPokemonState.maxStats.s.real) {    // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
+            maxS = ownPokemonState.maxStats.s.real;
             addGuide = true;
           }
         }
@@ -3458,8 +3471,8 @@ class TurnMove {
   ) {
     int movePower = power;
     Move replacedMove = move;
-    var myFields = myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
-    var yourFields = myPlayerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    var myFields = state.getIndiFields(myPlayerType);
+    var yourFields = state.getIndiFields(myPlayerType.opposite);
     String ret = '';
     bool isTeraStellarHosei = false;
 
@@ -3605,13 +3618,13 @@ class TurnMove {
     plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     int calcMaxDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-          ignoreTargetRank ? yourState.maxStats[2].real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
-          ignoreTargetRank ? yourState.maxStats[1].real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats[4].real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+          ignoreTargetRank ? yourState.maxStats.b.real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.maxStats.a.real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats.d.real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
     int calcMinDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-          ignoreTargetRank ? yourState.minStats[2].real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
-          ignoreTargetRank ? yourState.minStats[1].real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMinSDefense = ignoreTargetRank ? yourState.minStats[4].real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+          ignoreTargetRank ? yourState.minStats.b.real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.minStats.a.real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinSDefense = ignoreTargetRank ? yourState.minStats.d.real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
     int defenseVmax = damageClassID == 2 ? 
           myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
             calcMaxDefense : calcMaxSDefense :
@@ -3879,8 +3892,8 @@ class TurnMove {
     if (isFoulPlay) return Tuple3(StatIndex.H, 0, 0);
     int movePower = power;
     Move replacedMove = move;
-    var myFields = myPlayerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1];
-    var yourFields = myPlayerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    var myFields = state.getIndiFields(myPlayerType);
+    var yourFields = state.getIndiFields(myPlayerType.opposite);
 
     // タイプ相性を計算
     double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
@@ -4158,13 +4171,13 @@ class TurnMove {
     bool plusIgnore = isCritical || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     bool minusIgnore = myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreRank).isNotEmpty;
     int calcMaxDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ? 
-          ignoreTargetRank ? yourState.maxStats[2].real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
-          ignoreTargetRank ? yourState.maxStats[1].real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats[4].real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+          ignoreTargetRank ? yourState.maxStats.b.real : yourState.finalizedMaxStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.maxStats.a.real : yourState.finalizedMaxStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMaxSDefense = ignoreTargetRank ? yourState.maxStats.d.real : yourState.finalizedMaxStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
     int calcMinDefense = yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty ?
-          ignoreTargetRank ? yourState.minStats[2].real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
-          ignoreTargetRank ? yourState.minStats[1].real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMinSDefense = ignoreTargetRank ? yourState.minStats[4].real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+          ignoreTargetRank ? yourState.minStats.b.real : yourState.finalizedMinStat(StatIndex.B, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore) :
+          ignoreTargetRank ? yourState.minStats.a.real : yourState.finalizedMinStat(StatIndex.A, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
+    int calcMinSDefense = ignoreTargetRank ? yourState.minStats.d.real : yourState.finalizedMinStat(StatIndex.D, replacedMoveType, yourState, state, plusCut: plusIgnore, minusCut: minusIgnore);
     int defenseVmax = damageClassID == 2 ? 
           myFields.where((element) => element.id == IndividualField.wonderRoom).isEmpty ? // ワンダールーム
             calcMaxDefense : calcMaxSDefense :
@@ -4222,7 +4235,7 @@ class TurnMove {
     bool loop = true;
     while (count < 20 && loop) {
       loop = false;
-      var copiedMyState = myState.copyWith()..minStats[retStat.index].real = ret3..maxStats[retStat.index].real = ret3;
+      var copiedMyState = myState.copyWith()..minStats[retStat].real = ret3..maxStats[retStat].real = ret3;
       var ret = calcDamage(
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
@@ -4233,8 +4246,8 @@ class TurnMove {
         ret3++;
         loop = true;
       }
-      copiedMyState.minStats[retStat.index].real = ret2;
-      copiedMyState.maxStats[retStat.index].real = ret2;
+      copiedMyState.minStats[retStat].real = ret2;
+      copiedMyState.maxStats[retStat].real = ret2;
       ret = calcDamage(
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
@@ -4252,7 +4265,7 @@ class TurnMove {
     loop = true;
     while (count < 20 && loop) {
       loop = false;
-      var copiedMyState = myState.copyWith()..minStats[retStat.index].real = ret3..maxStats[retStat.index].real = ret3;
+      var copiedMyState = myState.copyWith()..minStats[retStat].real = ret3..maxStats[retStat].real = ret3;
       var ret = calcDamage(
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
@@ -4263,8 +4276,8 @@ class TurnMove {
         ret3--;
         loop = true;
       }
-      copiedMyState.minStats[retStat.index].real = ret2;
-      copiedMyState.maxStats[retStat.index].real = ret2;
+      copiedMyState.minStats[retStat].real = ret2;
+      copiedMyState.maxStats[retStat].real = ret2;
       ret = calcDamage(
         copiedMyState, yourState, state, continuousCount, myPlayerType, move,
         replacedMoveType, power, damageClassID, beforeChangeMyState, isNormalized1_2,
@@ -4308,7 +4321,7 @@ class TurnMove {
     final pokeData = PokeDB();
     var myState = playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
     var yourState = playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
-    var yourFields = playerType == PlayerType.me ? state.indiFields[1] : state.indiFields[0];
+    var yourFields = state.getIndiFields(playerType.opposite);
     ButtonStyle pressedStyle = ButtonStyle(
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
@@ -7224,7 +7237,7 @@ class TurnMove {
         }
         break;
       case 453:   // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
-        if (myState.isGround(playerType == PlayerType.me ? state.indiFields[0] : state.indiFields[1])) {
+        if (myState.isGround(state.getIndiFields(playerType))) {
           switch (state.field.id) {
             case Field.electricTerrain:
               ret = PokeType.createFromId(13);

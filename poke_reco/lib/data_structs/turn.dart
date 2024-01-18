@@ -15,8 +15,8 @@ class Turn {
 
   PokemonState get initialOwnPokemonState => _initialState.getPokemonState(PlayerType.me, null);
   PokemonState get initialOpponentPokemonState => _initialState.getPokemonState(PlayerType.opponent, null);
-  List<IndividualField> get initialOwnIndiField => _initialState.indiFields[0];
-  List<IndividualField> get initialOpponentIndiField => _initialState.indiFields[1];
+  List<IndividualField> get initialOwnIndiField => _initialState.getIndiFields(PlayerType.me);
+  List<IndividualField> get initialOpponentIndiField => _initialState.getIndiFields(PlayerType.opponent);
   bool get initialOwnHasTerastal => _initialState.hasOwnTerastal;
   bool get initialOpponentHasTerastal => _initialState.hasOpponentTerastal;
 

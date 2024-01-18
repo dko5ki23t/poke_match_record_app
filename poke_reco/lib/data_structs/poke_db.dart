@@ -480,6 +480,43 @@ class SixParams {
   }
 }
 
+class SixStats {
+  List<SixParams> sixParams = List.generate(6, (index) => SixParams(0, 0, 0, 0));
+
+  SixParams get h => sixParams[StatIndex.H.index];
+  SixParams get a => sixParams[StatIndex.A.index];
+  SixParams get b => sixParams[StatIndex.B.index];
+  SixParams get c => sixParams[StatIndex.C.index];
+  SixParams get d => sixParams[StatIndex.D.index];
+  SixParams get s => sixParams[StatIndex.S.index];
+
+  SixParams operator [] (StatIndex index) => sixParams[index.index];
+
+  void operator []= (StatIndex index, SixParams value) {
+    sixParams[index.index] = value;
+  }
+
+  SixStats copyWith() =>
+    SixStats()
+    ..sixParams = [for (final e in sixParams) e.copyWith()];
+
+  static SixStats generate(SixParams Function(int) func) {
+    SixStats ret = SixStats();
+    ret.sixParams = List.generate(6, func);
+    return ret;
+  }
+
+  static SixStats generateMinStat() {
+    return SixStats();
+  }
+
+  static SixStats generateMaxStat() {
+    SixStats ret = SixStats();
+    ret.sixParams = List.generate(6, (index) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));
+    return ret;
+  }
+}
+
 class EggGroup {
   final int id;
   final String displayName;
@@ -567,6 +604,8 @@ class Move {
         return _displayName;
     }
   }
+
+  bool get isValid => id != 0;
 
   bool get isTargetYou {  // 相手を対象に含むかどうか
     return target.id == 6 || (8 <= target.id && target.id <= 11) || target.id == 14; 
@@ -807,22 +846,34 @@ enum StatIndex {
   none,
 }
 
-StatIndex getStatIndexFromIndex(int index) {
-  switch (index) {
-    case 0:
-      return StatIndex.H;
-    case 1:
-      return StatIndex.A;
-    case 2:
-      return StatIndex.B;
-    case 3:
-      return StatIndex.C;
-    case 4:
-      return StatIndex.D;
-    case 5:
-      return StatIndex.S;
-    default:
-      return StatIndex.none;
+extension StatIndexList on StatIndex {
+  static List<StatIndex> get listHtoS {
+    return [StatIndex.H, StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S];
+  }
+
+  static List<StatIndex> get listAtoS {
+    return [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S];
+  }
+}
+
+extension StatIndexNumber on StatIndex {
+  static StatIndex getStatIndexFromIndex(int index) {
+    switch (index) {
+      case 0:
+        return StatIndex.H;
+      case 1:
+        return StatIndex.A;
+      case 2:
+        return StatIndex.B;
+      case 3:
+        return StatIndex.C;
+      case 4:
+        return StatIndex.D;
+      case 5:
+        return StatIndex.S;
+      default:
+        return StatIndex.none;
+    }
   }
 }
 
@@ -1188,8 +1239,8 @@ class PokeDB {
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnEnglishName],
-        getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
-        getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
+        StatIndexNumber.getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
+        StatIndexNumber.getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
       );
     }
 

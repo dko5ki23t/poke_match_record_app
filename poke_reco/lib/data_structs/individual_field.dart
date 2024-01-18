@@ -239,7 +239,7 @@ class IndividualField {
   bool isActive(Timing timing, PokemonState pokemonState, PhaseState state) {
     switch (timing) {
       case Timing.pokemonAppear: // ポケモン登場時発動する場
-        var indiField = pokemonState.isMe ? state.indiFields[0] : state.indiFields[1];
+        var indiField = state.getIndiFields(pokemonState.playerType);
         switch (id) {
           case healingWish:   // いやしのねがい
             return pokemonState.isMe && (pokemonState.remainHP < pokemonState.pokemon.h.real || pokemonState.ailmentsWhere((e) => e.id <= Ailment.sleep).isNotEmpty) ||
