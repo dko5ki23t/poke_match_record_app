@@ -246,7 +246,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             pokeStatRaceController[4].text = 'D ${myPokemon.d.race}';
                             pokeStatRaceController[5].text = 'S ${myPokemon.s.race}';
                             updateRealStat();
-                            myPokemon.move1 = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
+                            myPokemon.move1 = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
                             myPokemon.move2 = null;
                             myPokemon.move3 = null;
                             myPokemon.move4 = null;
@@ -539,7 +539,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             else {
                               pokeMoveController[j].text = '';
                               myPokemon.moves[j] = j == 0 ?
-                                Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0) :
+                                Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0) :
                                 null;
                               pokePPController[j].text = '0';
                               myPokemon.pps[j] = 0;

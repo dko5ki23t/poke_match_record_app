@@ -20,10 +20,10 @@ class Pokemon {
   Temper temper = Temper(0, '', '', StatIndex.none, StatIndex.none); // せいかく
   // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
   List<SixParams> _stats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, 0, 0));
-  Ability ability = Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0));     // とくせい
+  Ability ability = Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0));     // とくせい
   Item? item;                      // もちもの(null OK)
   List<Move?> _moves = [
-    Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0),
+    Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0),
     null, null, null
   ];  // わざ
   List<int?> _pps = [0, null, null, null];  // PP

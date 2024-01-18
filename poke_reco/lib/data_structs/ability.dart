@@ -47,7 +47,7 @@ class Ability {
       abilityColumnName: _displayName,
       abilityColumnEnglishName: _displayNameEn,
       abilityColumnTiming: timing.index,
-      abilityColumnTarget: target.id,
+      abilityColumnTarget: target.index,
       abilityColumnEffect: effect.id,
     };
     return map;
@@ -1604,13 +1604,25 @@ class Ability {
       elements.removeAt(0),
       elements.removeAt(0),
       Timing.values[int.parse(elements.removeAt(0))],
-      Target(int.parse(elements.removeAt(0))),
+      Target.values[int.parse(elements.removeAt(0))],
       AbilityEffect(int.parse(elements.removeAt(0)))
     );
   }
 
   // SQL保存用の文字列に変換
   String serialize(String split1) {
-    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.id}$split1${effect.id}';
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}$split1${effect.id}';
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is Ability &&
+      other.runtimeType == runtimeType &&
+      other.id == id && other._displayName == _displayName &&
+      other._displayNameEn == _displayNameEn && other.timing == timing &&
+      other.target == target /*TODO 必要ない && other.effect == effect*/;
+  }
+
+  @override
+  int get hashCode => id.hashCode;
 }

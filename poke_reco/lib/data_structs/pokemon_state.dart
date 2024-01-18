@@ -27,7 +27,7 @@ class PokemonState {
   List<int> _statChanges = List.generate(7, (i) => 0);   // のうりょく変化
   List<BuffDebuff> buffDebuffs = [];    // その他の補正(フォルムとか)
   List<BuffDebuff> hiddenBuffs = [];    // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability _currentAbility = Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
+  Ability _currentAbility = Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0));  // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments();   // 状態変化
   SixStats minStats = SixStats.generateMinStat();     // 個体値や努力値のあり得る範囲の最小値
   SixStats maxStats = SixStats.generateMaxStat();     // 個体値や努力値のあり得る範囲の最大値

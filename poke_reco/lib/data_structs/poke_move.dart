@@ -215,7 +215,7 @@ class TurnMove {
   PlayerType playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
-  Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+  Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
   List<MoveHit> moveHits = [MoveHit(MoveHit.hit)];   // 命中した/急所/外した
@@ -577,43 +577,43 @@ class TurnMove {
       List<List<IndividualField>> targetIndiFields = [yourFields];
       List<PlayerType> targetPlayerTypes = [yourPlayerType];
       PhaseState? targetField;
-      switch (replacedMove.target.id) {
-        case 1:     // TODO:不定、わざによって異なる のろいとかカウンターとか
+      switch (replacedMove.target) {
+        case Target.specificMove:     // TODO:不定、わざによって異なる のろいとかカウンターとか
           break;
-        case 2:     // 選択した自分以外の場にいるポケモン
+        case Target.selectedPokemonMeFirst:     // 選択した自分以外の場にいるポケモン
                     // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
-        case 3:     // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+        case Target.ally:     // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
           targetStates = [];
           targetIndiFields = [];
           targetPlayerTypes = [];
           break;
-        case 4:     // 使用者の場
-        case 7:     // 使用者自身
-        case 5:     // 使用者もしくは味方
-        case 13:    // 使用者と味方
-        case 15:    // すべての味方
+        case Target.usersField:       // 使用者の場
+        case Target.user:             // 使用者自身
+        case Target.userOrAlly:       // 使用者もしくは味方
+        case Target.userAndAllies:    // 使用者と味方
+        case Target.allAllies:        // すべての味方
           targetStates = [myState];
           targetIndiFields = [myFields];
           targetPlayerTypes = [myPlayerType];
           break;
-        case 6:     // 相手の場
-        case 8:     // ランダムな相手
-        case 9:     // 場にいる使用者以外の全ポケモン
-        case 10:    // 選択した自分以外の場にいるポケモン
-        case 11:    // 場にいる相手側の全ポケモン
+        case Target.opponentsField:   // 相手の場
+        case Target.randomOpponent:   // ランダムな相手
+        case Target.allOtherPokemon:  // 場にいる使用者以外の全ポケモン
+        case Target.selectedPokemon:  // 選択した自分以外の場にいるポケモン
+        case Target.allOpponents:     // 場にいる相手側の全ポケモン
           break;
-        case 12:    // 全体の場
+        case Target.entireField:      // 全体の場
           targetStates = [myState, yourState];
           targetIndiFields = [myFields, yourFields];
           targetPlayerTypes = [myPlayerType, yourPlayerType];
           targetField = state;
           break;
-        case 14:    // 場にいるすべてのポケモン
+        case Target.allPokemon:       // 場にいるすべてのポケモン
           targetStates.add(myState);
           targetIndiFields.add(myFields);
           targetPlayerTypes.add(myPlayerType);
           break;
-        case 16:    // ひんしの(味方)ポケモン
+        case Target.faintingPokemon:  // ひんしの(味方)ポケモン
           targetStates.clear();
           targetIndiFields.clear();
           targetPlayerTypes.clear();  // 使わない
@@ -6436,8 +6436,8 @@ class TurnMove {
       
       switch (replacedMove.damageClass.id) {
         case 1:   // へんか
-          switch(replacedMove.target.id) {
-            case 16:    // ひんしになった(味方の)ポケモン
+          switch(replacedMove.target) {
+            case Target.faintingPokemon:    // ひんしになった(味方の)ポケモン
               return Row(
                 children: [
                   Expanded(
@@ -6536,8 +6536,8 @@ class TurnMove {
               );
           }
         default:
-          switch(replacedMove.target.id) {
-            case 3:   // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+          switch(replacedMove.target) {
+            case Target.ally:   // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
               return Column(
                 children: [
                   Row(
@@ -7329,7 +7329,7 @@ class TurnMove {
     playerType = PlayerType.none;
     type = TurnMoveType.none;
     teraType = PokeType.createFromId(0);
-    move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0);
+    move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
     moveHits = [MoveHit(MoveHit.hit)];
@@ -7366,7 +7366,7 @@ class TurnMove {
         int.parse(moveElements[3]),
         int.parse(moveElements[4]),
         int.parse(moveElements[5]),
-        Target(int.parse(moveElements[6])),
+        Target.values[int.parse(moveElements[6])],
         DamageClass(int.parse(moveElements[7])),
         MoveEffect(int.parse(moveElements[8])),
         int.parse(moveElements[9]),

@@ -529,32 +529,25 @@ class EggGroup {
 
 
 // 対象
-class Target {
-/*
-  // わざの対象から引用
-  none(0),
-  specificMove(1),
-  selectedPokemonMeFirst(2),
-  ally(3),                      // 味方
-  usersField(4),                // 自分の場
-  userOrAlly(5),                // 自分自身or味方
-  opponentsField(6),            // 相手の場
-  user(7),                      // 自分自身
-  randomOpponent(8),            // ランダムな相手
-  allOtherPokemon(9),           // 他のすべてのポケモン
-  selectedPokemon(10),          // 選択した相手
-  allOpponents(11),             // すべての相手ポケモン
-  entireField(12),              // 両者の場
-  userAndAllies(13),            // 自分自身とすべての味方
-  allPokemon(14),               // すべてのポケモン 
-  allAllies(15),                // すべての味方
-  faintingPokemon(16),          // ひんしになったポケモン
-  ;
-*/
-
-  const Target(this.id);
-
-  final int id;
+enum Target {
+  // pokeAPIから引用
+  none /*=0*/,
+  specificMove/*=1*/,
+  selectedPokemonMeFirst/*=2*/,
+  ally,                     // (3)味方
+  usersField,               // (4)自分の場
+  userOrAlly,               // (5)自分自身or味方
+  opponentsField,           // (6)相手の場
+  user,                     // (7)自分自身
+  randomOpponent,           // (8)ランダムな相手
+  allOtherPokemon,          // (9)他のすべてのポケモン
+  selectedPokemon,          // (10)選択した相手
+  allOpponents,             // (11)すべての相手ポケモン
+  entireField,              // (12)両者の場
+  userAndAllies,            // (13)自分自身とすべての味方
+  allPokemon,               // (14)すべてのポケモン 
+  allAllies,                // (15)すべての味方
+  faintingPokemon,          // (16)ひんしになったポケモン
 }
 
 // 効果
@@ -611,7 +604,11 @@ class Move {
   bool get isValid => id != 0;
 
   bool get isTargetYou {  // 相手を対象に含むかどうか
-    return target.id == 6 || (8 <= target.id && target.id <= 11) || target.id == 14; 
+    const list = [
+      Target.opponentsField, Target.randomOpponent, Target.allOtherPokemon,
+      Target.selectedPokemon, Target.allOpponents, Target.allPokemon
+    ];
+    return list.contains(target);
   }
 
   bool get isDirect {   // 直接攻撃かどうか
@@ -993,7 +990,7 @@ class PokeDB {
   List<int> battlesPartyIDFilter = [];
   BattleSort? battlesSort;
 
-  Map<int, Ability> abilities = {0: Ability(0, '', '', Timing.none, Target(0), AbilityEffect(0))}; // 無効なとくせい
+  Map<int, Ability> abilities = {0: Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0))}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''};  // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''};  // 無効なとくせい
@@ -1010,7 +1007,7 @@ class PokeDB {
   Map<int, String> _itemFlavors = {0: ''};   // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''};   // 無効なもちもの
   late Database itemFlavorDb;
-  Map<int, Move> moves = {0: Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target(0), DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
+  Map<int, Move> moves = {0: Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
   Map<int, String> _moveFlavors = {0: ''};   // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''};   // 無効なわざ
@@ -1213,7 +1210,7 @@ class PokeDB {
         map[abilityColumnName],
         map[abilityColumnEnglishName],
         Timing.values[map[abilityColumnTiming]],
-        Target(map[abilityColumnTarget]),
+        Target.values[map[abilityColumnTarget]],
         AbilityEffect(map[abilityColumnEffect]),
       );
     }
@@ -1310,7 +1307,7 @@ class PokeDB {
         map[moveColumnPower],
         map[moveColumnAccuracy],
         map[moveColumnPriority],
-        Target(map[moveColumnTarget]),
+        Target.values[map[moveColumnTarget]],
         DamageClass(map[moveColumnDamageClass]),
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
