@@ -873,7 +873,7 @@ class PokeDB {
   List<Owner> pokemonsOwnerFilter = [Owner.mine];
   List<int> pokemonsNoFilter = [];
   List<int> pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
-  List<int> pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
+  List<int> pokemonsTeraTypeFilter = [for (int i = 1; i < 20; i++) i];
   List<int> pokemonsMoveFilter = [];
   List<int> pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
   List<int> pokemonsAbilityFilter = [];
@@ -1066,7 +1066,7 @@ class PokeDB {
         pokemonsOwnerFilter = [Owner.mine];
         pokemonsNoFilter = [];
         pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
-        pokemonsTeraTypeFilter = [for (int i = 1; i < 19; i++) i];
+        pokemonsTeraTypeFilter = [for (int i = 1; i < 20; i++) i];
         pokemonsMoveFilter = [];
         pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
         pokemonsAbilityFilter = [];

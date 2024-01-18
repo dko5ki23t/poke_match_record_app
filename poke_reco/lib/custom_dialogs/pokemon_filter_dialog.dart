@@ -571,7 +571,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                 ownerFilter = [Owner.mine];
                 noFilter = [];
                 typeFilter = [for (int i = 1; i < 19; i++) i];
-                teraTypeFilter = [for (int i = 1; i < 19; i++) i];
+                teraTypeFilter = [for (int i = 1; i < 20; i++) i];
                 moveFilter = [];
                 sexFilter = [for (var sex in Sex.values) sex.id];
                 abilityFilter = [];

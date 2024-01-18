@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:poke_reco/appopen_admanager.dart';
+import 'package:poke_reco/ad_banner.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/pages/battles.dart';
@@ -27,7 +27,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-const String pokeRecoVersion = '1.0.2';
+const String pokeRecoVersion = '1.0.3';
 const int pokeRecoInternalVersion = 2;      // SQLのテーブルバージョンに使用
 
 enum TabItem {
@@ -166,9 +166,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  AppOpenAdManager appOpenAdManager = AppOpenAdManager();
-  late final AppLifecycleListener _listener;
-
   var _currentTab = TabItem.battles;
   Widget page = Container();
   final _navigatorKeys = {
@@ -187,37 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   @override
-  void initState() {
-    appOpenAdManager.loadAd();
-    /*Timer.periodic(
-      Duration(minutes: 1),
-      (timer) {
-        var appState = context.read<MyAppState>();
-        appState.showAd = true;
-      }
-    );*/
-    _listener = AppLifecycleListener(
-      //onShow: () => _handleTransition('show'),
-      //onResume: () => appOpenAdManager.loadAd(),
-      //onHide: () => _handleTransition('hide'),
-      //onInactive: () => _handleTransition('inactive'),
-      //onPause: () => _handleTransition('pause'),
-      //onDetach: () => _handleTransition('detach'),
-      onRestart: () => appOpenAdManager.loadAd(),
-      // This fires for each state change. Callbacks above fire only for
-      // specific state transitions.
-      //onStateChange: _handleStateChange,
-    );
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    //var appState = context.read<MyAppState>();
-    //if (appState.showAd) {
-      //appOpenAdManager.loadAd();
-      //appState.showAd = false;
-    //}
     switch (_currentTab) {
       case TabItem.battles:
         page = BattleTabNavigator(
@@ -265,9 +232,44 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: page,
               ),
             ),
-            bottomNavigationBar: BottomNavigation(
-              currentTab: _currentTab,
-              onSelectTab: _selectTab,
+            bottomNavigationBar: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                FutureBuilder(
+                  future: AdSize.getAnchoredAdaptiveBannerAdSize(Orientation.portrait,
+                      MediaQuery.of(context).size.width.truncate()),
+                  builder: (
+                    BuildContext context,
+                    AsyncSnapshot<AnchoredAdaptiveBannerAdSize?> snapshot,
+                  ) {
+                    if (snapshot.hasData) {
+                      final data = snapshot.data;
+                      if (data != null) {
+                        return Container(
+                          height: 70,
+                          color: Colors.white70,
+                          child: AdBanner(size: data),
+                        );
+                      } else {
+                        return Container(
+                          height: 70,
+                          color: Colors.white70,
+                        );
+                      }
+                    } else {
+                      return Container(
+                        height: 70,
+                        color: Colors.white70,
+                      );
+                    }
+                  },
+                ),
+                BottomNavigation(
+                  currentTab: _currentTab,
+                  onSelectTab: _selectTab,
+                ),
+              ],
             ),
           ),
         );
