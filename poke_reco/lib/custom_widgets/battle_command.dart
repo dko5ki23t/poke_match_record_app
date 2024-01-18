@@ -23,6 +23,7 @@ class BattleCommand extends StatefulWidget {
     required this.phaseState,
     required this.myParty,
     required this.yourParty,
+    required this.parentSetState,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -30,6 +31,7 @@ class BattleCommand extends StatefulWidget {
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
+  final Function(void Function()) parentSetState;
 
   @override
   BattleCommandState createState() => BattleCommandState();
@@ -86,17 +88,20 @@ class BattleCommandState extends State<BattleCommand> {
             subtitle: Text('${getter.rangeString} (${getter.rangePercentString})'),
             trailing: Icon(Icons.arrow_forward_ios),
             onTap: () {
-              turnMove.move = myMove;
-              turnMove.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
-              turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect() ? MoveEffect(myMove.effect.id) : MoveEffect(0);
-              turnMove.moveEffectivenesses[0] = PokeType.effectiveness(
-                myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
-                yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-                turnMove.getReplacedMoveType(myMove, 0, myState, prevState), yourState
-              );
-              setState(() {
+              widget.parentSetState(() {
+                turnMove.move = myMove;
+                turnMove.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
+                turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect() ? MoveEffect(myMove.effect.id) : MoveEffect(0);
+                turnMove.moveEffectivenesses[0] = PokeType.effectiveness(
+                  myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+                  yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+                  turnMove.getReplacedMoveType(myMove, 0, myState, prevState), yourState
+                );
                 state = CommandState.inputNum;
               });
+              /*setState(() {
+                state = CommandState.inputNum;
+              });*/
             },
           ),
         );
@@ -116,7 +121,7 @@ class BattleCommandState extends State<BattleCommand> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
-                    onPressed: () => setState(() {
+                    onPressed: () => widget.parentSetState(() {
                       turnMove.type = TurnMoveType.move;
                     }),
                     style: turnMove.type == TurnMoveType.move ? pressedStyle : null,
@@ -124,7 +129,7 @@ class BattleCommandState extends State<BattleCommand> {
                   ),
                   SizedBox(width: 10),
                   TextButton(
-                    onPressed: () => setState(() {
+                    onPressed: () => widget.parentSetState(() {
                       turnMove.type = TurnMoveType.change;
                     }),
                     style: turnMove.type == TurnMoveType.change ? pressedStyle : null,
@@ -132,7 +137,7 @@ class BattleCommandState extends State<BattleCommand> {
                   ),
                   SizedBox(width: 10,),
                   TextButton(
-                    onPressed: () => setState(() {
+                    onPressed: () => widget.parentSetState(() {
                       turnMove.type = TurnMoveType.surrender;
                     }),
                     style: turnMove.type == TurnMoveType.surrender ? pressedStyle : null,
@@ -215,7 +220,11 @@ class BattleCommandState extends State<BattleCommand> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => setState(() {
+                    onPressed: () => /*setState(() {
+                      state = CommandState.home;
+                    }),*/
+                    widget.parentSetState(() {
+                      turnMove.move = PokeDB().moves[0]!;
                       state = CommandState.home;
                     }),
                     icon: Icon(Icons.arrow_back),

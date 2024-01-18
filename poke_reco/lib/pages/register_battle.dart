@@ -416,12 +416,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               TurnEffect()
               ..playerType = PlayerType.me
               ..timing = Timing.action
+              ..effectType = EffectType.move
               ..move = ownAction
             );
             turn.phases.add(
               TurnEffect()
               ..playerType = PlayerType.opponent
               ..timing = Timing.action
+              ..effectType = EffectType.move
               ..move = opponentAction
             );
             // 初期状態設定ここまで
@@ -736,6 +738,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           phaseState: prevState!,
                           myParty: ownParty,
                           yourParty: opponentParty,
+                          parentSetState: setState,
                         ),
                       ),
                     ],
@@ -763,6 +766,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           phaseState: prevState,
                           myParty: opponentParty,
                           yourParty: ownParty,
+                          parentSetState: setState,
                         ),
                       ),
                     ],
