@@ -216,14 +216,15 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return WillPopScope(
-          onWillPop: () async {
-            var appState = context.read<MyAppState>();
-            appState.onBackKeyPushed();
-/*            Navigator.pop(
-              currentContext,
-            );*/
-            return false;
+        return PopScope(
+          onPopInvoked: (canPop) {
+            if (canPop) {
+              var appState = context.read<MyAppState>();
+              appState.onBackKeyPushed();
+  /*            Navigator.pop(
+                currentContext,
+              );*/
+            }
           },
           child: Scaffold(
             body: Center(

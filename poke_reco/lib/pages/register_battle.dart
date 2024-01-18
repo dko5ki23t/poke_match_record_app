@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
-import 'package:poke_reco/custom_widgets/tooltip.dart';
-import 'package:poke_reco/data_structs/ability.dart';
-import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/user_force.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
@@ -208,7 +203,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     Widget title;
     void Function()? nextPressed;
     void Function()? backPressed;
-    void Function()? deletePressed;
+    //void Function()? deletePressed;
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
@@ -618,6 +613,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
+/*
     void onTurnDelete() {
       switch (pageType) {
         case RegisterBattlePageType.basePage:
@@ -669,6 +665,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         turns[turnNum-1].setInitialState(state, ownParty, opponentParty);
       }
     }
+*/
 
     var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[0].move! : TurnMove();
     var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[1].move! : TurnMove();
@@ -693,7 +690,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
-        deletePressed = () => onTurnDelete();
+//        deletePressed = () => onTurnDelete();
         break;
       case RegisterBattlePageType.firstPokemonPage:
         title = Text(loc.battlesTabTitleSelectingPokemon);
@@ -707,7 +704,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         nextPressed = (checkedPokemons.own.isNotEmpty && checkedPokemons.own[0] != 0 && checkedPokemons.opponent != 0) ? () => onNext() : null;
         backPressed = () => onturnBack();
-        deletePressed = null;
+//        deletePressed = null;
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
@@ -796,21 +793,22 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ],
         );
         backPressed = () => onturnBack();
-        deletePressed = () => onTurnDelete();
+//        deletePressed = () => onTurnDelete();
         break;
       default:
         title = Text(loc.battlesTabTitleRegisterBattle);
         lists = Center();
         nextPressed = null;
         backPressed = null;
-        deletePressed = null;
+//        deletePressed = null;
         break;
     }
 
-    return WillPopScope(
-      onWillPop: () async {
-        onBack();
-        return false;
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          onBack();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -855,6 +853,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     );
   }
 
+/*
   void _insertPhase(int index, TurnEffect phase, MyAppState appState) {
     widget.battle.turns[turnNum-1].phases.insert(
       index, phase
@@ -865,7 +864,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList3.insert(index, TextEditingController());
     textEditingControllerList4.insert(index, TextEditingController());
   }
+*/
 
+/*
   void _removeAtPhase(int index, MyAppState appState) {
     widget.battle.turns[turnNum-1].phases.removeAt(index);
     appState.editingPhase.removeAt(index);
@@ -883,7 +884,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     textEditingControllerList3.removeRange(begin, end);
     textEditingControllerList4.removeRange(begin, end);
   }
+*/
 
+/*
   // 追加用のフェーズを削除
   void _clearAddingPhase(MyAppState appState) {
     List<int> removeIdxs = [];
@@ -900,7 +903,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       _removeAtPhase(removeIdxs[i], appState);
     }
   }
+*/
 
+/*
   // 不要なフェーズを削除
   void _clearInvalidPhase(MyAppState appState, int index, bool pokemonAppear, bool afterMove) {
     var phases = widget.battle.turns[turnNum-1].phases;
@@ -916,7 +921,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     _removeRangePhase(index, endIdx, appState);
   }
+*/
 
+/*
   List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
     _clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
 
@@ -1947,7 +1954,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     return ret;
   }
+*/
 
+/*
   void _onlySwapActionPhases(AppLocalizations loc,) {
     int action1BeginIdx = -1;
     int action1EndIdx = -1;
@@ -2054,31 +2063,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       sameTimingList.add(turnEffectAndStateAndGuides.sublist(beginIdx, turnEffectAndStateAndGuides.length));
     }
   }
-
-  Pokemon _focusingPokemon(PlayerType player, PhaseState focusState) {
-    return widget.battle.getParty(player).pokemons[focusState.getPokemonIndex(player, null)-1]!;
-  }
-
-  String _itemNameWithNull(AppLocalizations loc, Item? item) {
-    if (item == null) {
-      return loc.commonNone;
-    }
-    else if (item.id == 0) {
-      return '';
-    }
-    else {
-      return item.displayName;
-    }
-  }
-
-  String _abilityNameWithNull(Ability ability) {
-    if (ability.id == 0) {
-      return '?';
-    }
-    else {
-      return ability.displayName;
-    }
-  }
+*/
 
 /*
   int _correctedSpeed(PlayerType player, PhaseState focusState) {
@@ -2136,6 +2121,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 */
 }
 
+/*
 class _StatChangeViewRow extends Row {
   _StatChangeViewRow(
     String label,
@@ -2173,7 +2159,9 @@ class _StatChangeViewRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _StatStatusViewRow extends Row {
   _StatStatusViewRow(
     String label,
@@ -2205,7 +2193,9 @@ class _StatStatusViewRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _StatStatusInputRow extends Row {
   _StatStatusInputRow(
     String label,
@@ -2280,7 +2270,9 @@ class _StatStatusInputRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _MoveViewRow extends Row {
   _MoveViewRow(PokemonState ownState, PokemonState opponentState, int idx, {required AppLocalizations loc,}) :
   super(
@@ -2308,7 +2300,9 @@ class _MoveViewRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _HPBarRow extends Row {
   _HPBarRow(
     int ownRemainHP,
@@ -2386,7 +2380,9 @@ class _HPBarRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _HPInputRow extends Row {
   _HPInputRow(
     TextEditingController ownHPController,
@@ -2430,7 +2426,9 @@ class _HPInputRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _AilmentsRow extends Row {
   _AilmentsRow(
     PokemonState ownPokemonState,
@@ -2476,7 +2474,9 @@ class _AilmentsRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _BuffDebuffsRow extends Row {
   _BuffDebuffsRow(
     PokemonState ownPokemonState,
@@ -2524,7 +2524,9 @@ class _BuffDebuffsRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _IndiFieldRow extends Row {
   _IndiFieldRow(
     PhaseState state,
@@ -2568,7 +2570,9 @@ class _IndiFieldRow extends Row {
     ],
   );
 }
+*/
 
+/*
 class _WeatherFieldRow extends Row {
   _WeatherFieldRow(
     PhaseState state,
@@ -2602,3 +2606,4 @@ class _WeatherFieldRow extends Row {
     ],
   );
 }
+*/

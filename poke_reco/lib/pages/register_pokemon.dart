@@ -170,10 +170,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       widget.onFinish();
     }
 
-    return WillPopScope(
-      onWillPop: () async {
-        onBack();
-        return false;
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          onBack();
+        }
       },
       child: Scaffold(
         appBar: AppBar(

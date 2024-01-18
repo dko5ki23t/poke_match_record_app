@@ -239,6 +239,9 @@ const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
 const String sqlSplit8 = '|';
 
+// 事前準備したデータを使うかどうか
+bool replacePrepared = false;
+
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
   male(1, 'オス', 'Male', Icon(Icons.male, color: Colors.blue)),
@@ -1505,7 +1508,6 @@ class PokeDB {
 
     // デバッグ時のみ
     if (kDebugMode) {
-      bool replacePrepared = false;
       // 用意しているポケモンデータベースに置き換える
       if (replacePrepared) {
         final preparedDb = await openAssetDatabase(preparedDBFile);

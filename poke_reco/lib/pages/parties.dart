@@ -158,10 +158,13 @@ class PartiesPageState extends State<PartiesPage> {
       }
     }
 
-    return WillPopScope(
-      onWillPop: () {
-        Navigator.of(context).pop(selectedParty);
-        return Future.value(false);
+    return PopScope(
+      onPopInvoked: (didPop) {
+        if (didPop) {
+          Navigator.of(context).pop(selectedParty);
+        }
+        // TDOO
+        //return Future.value(false);
       },
       child: Scaffold(
         appBar: AppBar(
