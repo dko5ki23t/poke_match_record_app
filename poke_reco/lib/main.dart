@@ -27,7 +27,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-const String pokeRecoVersion = '1.0.2';
+const String pokeRecoVersion = '1.0.3';
 const int pokeRecoInternalVersion = 2;      // SQLのテーブルバージョンに使用
 
 enum TabItem {
