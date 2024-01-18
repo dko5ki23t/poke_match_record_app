@@ -3,13 +3,11 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Lint and test for dev-new-battle-input branch
+name: Lint and test
 
 on:
-  push:
-    branches: [ "dev-new-battle-input" ]
-  pull_request:
-    branches: [ "dev-new-battle-input" ]
+  - push
+  - pull_request
 
 jobs:
   build:
