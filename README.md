@@ -4,7 +4,7 @@
 
 ダウンロード↓
 
-<a href='play.google.com/store/apps/details?id=com.dkomki.pokereco&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Google Play で手に入れよう' width="160" src='https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png'/></a>
+<a href='https://play.google.com/store/apps/details?id=com.dkomki.pokereco'><img alt='Google Play で手に入れよう' width="160" src='https://play.google.com/intl/en_us/badges/static/images/badges/ja_badge_web_generic.png'/></a>
 
 <img width="200" src="Screenshot_20231017-183758.png"> <img width="200" src="Screenshot_20231124-171155.png"> <img width="200" src="Screenshot_20231124-172052.png">
 
