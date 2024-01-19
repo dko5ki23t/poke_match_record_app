@@ -144,8 +144,8 @@ class BattleTerastalColumn extends Column {
                               onChanged: (value) {
                                 turn.phases[firstIdx+i].playerType = PlayerTypeNum.createFromNumber(value);
                                 var teraType = _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType;
-                                if (teraType.id != 0) {
-                                  turn.phases[firstIdx+i].effectId = teraType.id;
+                                if (teraType != PokeType.unknown) {
+                                  turn.phases[firstIdx+i].effectId = teraType.index;
                                 }
                                 else {
                                   turn.phases[firstIdx+i].effectId = 1;
@@ -174,19 +174,19 @@ class BattleTerastalColumn extends Column {
                             TypeDropdownButton(
                               loc.commonType,
                               turn.phases[firstIdx+i].effectId == 0 ||
-                              _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType.id != 0 ?
+                              _getPrevState(prevState, i, sameTimingList).getPokemonState(turn.phases[firstIdx+i].playerType, null).pokemon.teraType != PokeType.unknown ?
                                 null : (val) {turn.phases[firstIdx+i].effectId = val;},
-                              turn.phases[firstIdx+i].effectId == 0 ? null : turn.phases[firstIdx+i].effectId,
+                              turn.phases[firstIdx+i].effectId == 0 ? null : PokeType.values[turn.phases[firstIdx+i].effectId],
                               isTeraType: true,
                             ) :
                             TextField(
                               decoration: InputDecoration(
                                 border: UnderlineInputBorder(),
                                 labelText: loc.commonType,
-                                prefixIcon: PokeType.createFromId(turn.phases[firstIdx+i].effectId).displayIcon,
+                                prefixIcon: PokeType.values[turn.phases[firstIdx+i].effectId].displayIcon,
                               ),
                               controller: TextEditingController(
-                                text: PokeType.createFromId(turn.phases[firstIdx+i].effectId).displayName,
+                                text: PokeType.values[turn.phases[firstIdx+i].effectId].displayName,
                               ),
                               readOnly: true,
                               onTap: () => onFocus(firstIdx+i+1),

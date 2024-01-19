@@ -180,7 +180,7 @@ class Ability {
         break;
       case 16:    // へんしょく
         {
-          myState.pokemon.type1 = PokeType.createFromId(extraArg1);
+          myState.pokemon.type1 = PokeType.values[extraArg1];
           myState.pokemon.type2 = null;
           myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
         }
@@ -458,7 +458,7 @@ class Ability {
         break;
       case 168:   // へんげんじざい
       case 236:   // リベロ
-        myState.type1 = PokeType.createFromId(extraArg1);
+        myState.type1 = PokeType.values[extraArg1];
         myState.type2 = null;
         myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
         myState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween|| e.id == Ailment.forestCurse);
@@ -1520,7 +1520,7 @@ class Ability {
       case 11:        // ちょすい
         return isMe? -((myState.pokemon.h.real / 4).floor()) : -25;
       case 87:        // かんそうはだ
-        if (prevAction?.move!.getReplacedMove(prevAction.move!.move, 0, myState).type.id == 11) {   // みずタイプのわざを受けた時
+        if (prevAction?.move!.getReplacedMove(prevAction.move!.move, 0, myState).type == PokeType.water) {   // みずタイプのわざを受けた時
           return isMe? -((myState.pokemon.h.real / 4).floor()) : -25;
         }
         else if (state.weather.id == Weather.sunny) { // 晴れの時
@@ -1531,7 +1531,7 @@ class Ability {
         }
         break;
       case 16:        // へんしょく
-        return prevAction!.move!.move.type.id;
+        return prevAction!.move!.move.type.index;
       case 24:        // さめはだ
       case 160:       // てつのトゲ
         return !isMe ? (yourState.pokemon.h.real / 8).floor() : 12;

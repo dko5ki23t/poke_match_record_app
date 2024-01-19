@@ -3,6 +3,7 @@ import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -917,7 +918,7 @@ class Item {
       case 140:     // イアのみ
         return isMe ? -(myState.pokemon.h.real * (doubleBerry ? 2 : 1) / 3).floor() : (doubleBerry ? -66 : -33);
       case 258:     // くろいヘドロ
-        if (myState.isTypeContain(4)) {   // どくタイプか
+        if (myState.isTypeContain(PokeType.poison)) {   // どくタイプか
           return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
         }
         else {

@@ -972,8 +972,8 @@ class PokeDB {
   late final File _saveDataFile;
   List<Owner> pokemonsOwnerFilter = [Owner.mine];
   List<int> pokemonsNoFilter = [];
-  List<int> pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
-  List<int> pokemonsTeraTypeFilter = [for (int i = 1; i < 20; i++) i];
+  List<PokeType> pokemonsTypeFilter = PokeType.values.sublist(1, PokeType.stellar.index);
+  List<PokeType> pokemonsTeraTypeFilter = PokeType.values.sublist(1);
   List<int> pokemonsMoveFilter = [];
   List<int> pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
   List<int> pokemonsAbilityFilter = [];
@@ -1007,16 +1007,16 @@ class PokeDB {
   Map<int, String> _itemFlavors = {0: ''};   // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''};   // 無効なもちもの
   late Database itemFlavorDb;
-  Map<int, Move> moves = {0: Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
+  Map<int, Move> moves = {0: Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0)}; // 無効なわざ
   late Database moveDb;
   Map<int, String> _moveFlavors = {0: ''};   // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''};   // 無効なわざ
   late Database moveFlavorDb;
   List<PokeType> types = [
-    for (final i in range(1, 19)) PokeType.createFromId(i.toInt())
+    for (final i in range(1, 19)) PokeType.values[i.toInt()]
   ];
   List<PokeType> teraTypes = [
-    for (final i in range(1, 20)) PokeType.createFromId(i.toInt())
+    for (final i in range(1, 20)) PokeType.values[i.toInt()]
   ];
   Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')};  // 無効なタマゴグループ
   late Database eggGroupDb;
@@ -1024,7 +1024,7 @@ class PokeDB {
     0: PokeBase(
       name: '', nameEn: '',
       sex: [Sex.createFromId(0)],
-      no: 0, type1: PokeType.createFromId(0),
+      no: 0, type1: PokeType.unknown,
       type2: null, h: 0, a: 0, b: 0, c: 0, d: 0, s: 0,
       ability: [], move: [], height: 0, weight: 0, eggGroups: [], imageUrl: 'https://dammy',),
   };
@@ -1101,11 +1101,11 @@ class PokeDB {
         }
         pokemonsTypeFilter = [];
         for (final e in configJson[configKeyPokemonsTypeFilter]) {
-          pokemonsTypeFilter.add(e as int);
+          pokemonsTypeFilter.add(PokeType.values[e as int]);
         }
         pokemonsTeraTypeFilter = [];
         for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
-          pokemonsTeraTypeFilter.add(e as int);
+          pokemonsTeraTypeFilter.add(PokeType.values[e as int]);
         }
         pokemonsMoveFilter = [];
         for (final e in configJson[configKeyPokemonsMoveFilter]) {
@@ -1165,8 +1165,8 @@ class PokeDB {
       catch (e) {
         pokemonsOwnerFilter = [Owner.mine];
         pokemonsNoFilter = [];
-        pokemonsTypeFilter = [for (int i = 1; i < 19; i++) i];
-        pokemonsTeraTypeFilter = [for (int i = 1; i < 20; i++) i];
+        pokemonsTypeFilter = PokeType.values.sublist(1, PokeType.stellar.index);
+        pokemonsTeraTypeFilter = PokeType.values.sublist(1);
         pokemonsMoveFilter = [];
         pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
         pokemonsAbilityFilter = [];
@@ -1303,7 +1303,7 @@ class PokeDB {
         map[moveColumnId],
         map[moveColumnName],
         map[moveColumnEnglishName],
-        PokeType.createFromId(map[moveColumnType]),
+        PokeType.values[map[moveColumnType]],
         map[moveColumnPower],
         map[moveColumnAccuracy],
         map[moveColumnPriority],
@@ -1363,8 +1363,8 @@ class PokeDB {
         nameEn: map[pokeBaseColumnEnglishName],
         sex: sexList,
         no: map[pokeBaseColumnId],
-        type1: PokeType.createFromId(pokeTypes[0]),
-        type2: (pokeTypes.length > 1) ? PokeType.createFromId(pokeTypes[1]) : null,
+        type1: PokeType.values[pokeTypes[0]],
+        type2: (pokeTypes.length > 1) ? PokeType.values[pokeTypes[1]] : null,
         h: map[pokeBaseColumnStats[0]],
         a: map[pokeBaseColumnStats[1]],
         b: map[pokeBaseColumnStats[2]],

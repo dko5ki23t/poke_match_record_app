@@ -7,6 +7,7 @@ import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 

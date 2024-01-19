@@ -710,8 +710,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
-        nextPressed = (widget.battle.turns.isNotEmpty && widget.battle.turns[turnNum-1].isValid() &&
-                       widget.battle.turns[turnNum-1].phases.last.timing != Timing.gameSet) ? () => onNext() : null;
+        if (
+          widget.battle.turns.isNotEmpty &&
+          widget.battle.turns[turnNum-1].isValid() &&
+          widget.battle.turns[turnNum-1].phases.last.timing != Timing.gameSet
+        ) {
+          nextPressed = () => onNext();
+        }
+        else {
+          nextPressed = null;
+        }
         lists = Stack(
           children: [
             Column(

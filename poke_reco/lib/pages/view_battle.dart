@@ -12,6 +12,7 @@ import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/pages/register_battle.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';

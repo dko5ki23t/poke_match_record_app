@@ -39,6 +39,7 @@ class BattleCommand extends StatefulWidget {
 
 class BattleCommandState extends State<BattleCommand> {
   CommandState state = CommandState.home;
+  bool fixed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,17 +48,18 @@ class BattleCommandState extends State<BattleCommand> {
       backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
     );
     final loc = AppLocalizations.of(context)!;
+    final parentSetState = widget.parentSetState;
     final turnMove = widget.turnMove;
     final prevState = widget.phaseState;
     final playerType = widget.playerType;
     final myParty = widget.myParty;
     final yourParty = widget.yourParty;
+    final myState = prevState.getPokemonState(playerType, null);
+    final yourState = prevState.getPokemonState(playerType.opposite, null);
     List<Move> moves = [];
     List<ListTile> moveTiles = [];
     if (turnMove.type == TurnMoveType.move){
-      var myState = prevState.getPokemonState(playerType, null);
       var myPokemon = myState.pokemon;
-      var yourState = prevState.getPokemonState(playerType.opposite, null);
       var yourFields = prevState.getIndiFields(playerType.opposite);
       // 覚えているわざをリストの先頭に
       if (myPokemon.move1.isValid) moves.add(myPokemon.move1);
@@ -72,7 +74,7 @@ class BattleCommandState extends State<BattleCommand> {
         tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
         tmp.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
         tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
-        tmp.moveEffectivenesses[0] = PokeType.effectiveness(
+        tmp.moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
             myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
             yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
             turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState), yourState);
@@ -88,20 +90,17 @@ class BattleCommandState extends State<BattleCommand> {
             subtitle: Text('${getter.rangeString} (${getter.rangePercentString})'),
             trailing: Icon(Icons.arrow_forward_ios),
             onTap: () {
-              widget.parentSetState(() {
+              parentSetState(() {
                 turnMove.move = myMove;
                 turnMove.moveHits[0] = turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
                 turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect() ? MoveEffect(myMove.effect.id) : MoveEffect(0);
-                turnMove.moveEffectivenesses[0] = PokeType.effectiveness(
+                turnMove.moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
                   myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                   yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                   turnMove.getReplacedMoveType(myMove, 0, myState, prevState), yourState
                 );
                 state = CommandState.inputNum;
               });
-              /*setState(() {
-                state = CommandState.inputNum;
-              });*/
             },
           ),
         );
@@ -121,7 +120,7 @@ class BattleCommandState extends State<BattleCommand> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
-                    onPressed: () => widget.parentSetState(() {
+                    onPressed: () => parentSetState(() {
                       turnMove.type = TurnMoveType.move;
                     }),
                     style: turnMove.type == TurnMoveType.move ? pressedStyle : null,
@@ -129,7 +128,7 @@ class BattleCommandState extends State<BattleCommand> {
                   ),
                   SizedBox(width: 10),
                   TextButton(
-                    onPressed: () => widget.parentSetState(() {
+                    onPressed: () => parentSetState(() {
                       turnMove.type = TurnMoveType.change;
                     }),
                     style: turnMove.type == TurnMoveType.change ? pressedStyle : null,
@@ -137,7 +136,7 @@ class BattleCommandState extends State<BattleCommand> {
                   ),
                   SizedBox(width: 10,),
                   TextButton(
-                    onPressed: () => widget.parentSetState(() {
+                    onPressed: () => parentSetState(() {
                       turnMove.type = TurnMoveType.surrender;
                     }),
                     style: turnMove.type == TurnMoveType.surrender ? pressedStyle : null,
@@ -220,11 +219,12 @@ class BattleCommandState extends State<BattleCommand> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => /*setState(() {
-                      state = CommandState.home;
-                    }),*/
-                    widget.parentSetState(() {
-                      turnMove.move = PokeDB().moves[0]!;
+                    onPressed: () => parentSetState(() {
+                      // いろいろ初期化
+                      turnMove.move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
+                      turnMove.moveHits = [MoveHit.hit];
+                      turnMove.moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
+                      turnMove.moveEffectivenesses = [MoveEffectiveness.normal];
                       state = CommandState.home;
                     }),
                     icon: Icon(Icons.arrow_back),
@@ -237,8 +237,19 @@ class BattleCommandState extends State<BattleCommand> {
             ),
             // ダメージ入力
             Expanded(
-              flex: 5,
-              child: NumberInputButtons(initialNum: 100,),
+              flex: 7,
+              child: NumberInputButtons(
+                initialNum: 0,
+                onFixed: (remain) => parentSetState(() {
+                  int continuousCount = 0; 
+                  if (playerType == PlayerType.me) {
+                    turnMove.percentDamage[continuousCount] = yourState.remainHPPercent - remain;
+                  }
+                  else {
+                    turnMove.realDamage[continuousCount] = myState.remainHP - remain;
+                  }
+                }),
+              ),
             ),
           ],
         );

@@ -504,7 +504,7 @@ class Ailment {
         return isMe ? (myState.pokemon.h.real / 4). floor() : 25;
       case saltCure:
         {
-          int bunbo = myState.isTypeContain(PokeTypeId.steel) || myState.isTypeContain(PokeTypeId.water) ? 4 : 8;
+          int bunbo = myState.isTypeContain(PokeType.steel) || myState.isTypeContain(PokeType.water) ? 4 : 8;
           return isMe ? (myState.pokemon.h.real / bunbo).floor() : (100 / bunbo).floor();
         }
       case ingrain:

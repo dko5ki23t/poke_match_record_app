@@ -9,6 +9,7 @@ import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -64,8 +65,8 @@ class PokemonsPageState extends State<PokemonsPage> {
     if (noFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) => noFilter.contains(element.value.no));
     }
-    filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1.id) || typeFilter.contains(element.value.type2?.id));
-    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType.id) || element.value.teraType.id == 0);
+    filteredPokemons = filteredPokemons.where((element) => typeFilter.contains(element.value.type1) || typeFilter.contains(element.value.type2));
+    filteredPokemons = filteredPokemons.where((element) => teraTypeFilter.contains(element.value.teraType) || element.value.teraType == PokeType.unknown);
     if (moveFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons.where((element) =>
         moveFilter.contains(element.value.move1.id) || moveFilter.contains(element.value.move2?.id) ||

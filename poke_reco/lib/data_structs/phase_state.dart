@@ -288,7 +288,7 @@ class PhaseState {
         }
         
         if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(0) &&
-            prevAction.move!.moveEffectivenesses[0].id != MoveEffectiveness.noEffect
+            prevAction.move!.moveEffectivenesses[0] != MoveEffectiveness.noEffect
         ) {  // わざ成功時
           var replacedMoveType = prevAction.move!.getReplacedMoveType(prevAction.move!.move, 0, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
@@ -300,43 +300,46 @@ class PhaseState {
               ..timing = Timing.beforeMove
               ..effectType = EffectType.ability
               ..effectId = attackerState.currentAbility.id
-              ..extraArg1 = replacedMoveType.id
+              ..extraArg1 = replacedMoveType.index
             );
           }
           // ノーマルタイプのこうげきをうけたとき
-          if (replacedMoveType.id == 1) {
+          if (replacedMoveType == PokeType.normal) {
             defenderTimingIDList.add(148);
           }
-          var effectiveness = PokeType.effectiveness(
+          var effectiveness = PokeTypeEffectiveness.effectiveness(
             attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
             defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
             replacedMoveType, defenderState
           );
-          if (isDefenderFull && (effectiveness.id == MoveEffectiveness.normal || effectiveness.id == MoveEffectiveness.great)) {
+          if (isDefenderFull && (effectiveness == MoveEffectiveness.normal || effectiveness == MoveEffectiveness.great)) {
             // HPが満タンで等倍以上のタイプ相性わざを受ける前
             defenderTimingIDList.add(168);
           }
-          if (effectiveness.id == MoveEffectiveness.great) {
+          if (effectiveness == MoveEffectiveness.great) {
             // 効果ばつぐんのわざを受けたとき
             defenderTimingIDList.addAll([Timing.greatAttacked]);
-            var moveTypeId = replacedMoveType.id;
-            if (moveTypeId == 10) defenderTimingIDList.add(131);
-            if (moveTypeId == 11) defenderTimingIDList.add(132);
-            if (moveTypeId == 13) defenderTimingIDList.add(133);
-            if (moveTypeId == 12) defenderTimingIDList.add(134);
-            if (moveTypeId == 15) defenderTimingIDList.add(135);
-            if (moveTypeId == 2) defenderTimingIDList.add(136);
-            if (moveTypeId == 4) defenderTimingIDList.add(137);
-            if (moveTypeId == 5) defenderTimingIDList.add(138);
-            if (moveTypeId == 3) defenderTimingIDList.add(139);
-            if (moveTypeId == 14) defenderTimingIDList.add(140);
-            if (moveTypeId == 7) defenderTimingIDList.add(141);
-            if (moveTypeId == 6) defenderTimingIDList.add(142);
-            if (moveTypeId == 8) defenderTimingIDList.add(143);
-            if (moveTypeId == 16) defenderTimingIDList.add(144);
-            if (moveTypeId == 17) defenderTimingIDList.add(145);
-            if (moveTypeId == 9) defenderTimingIDList.add(146);
-            if (moveTypeId == 18) defenderTimingIDList.add(147);
+            final moveType = replacedMoveType;
+            switch (moveType) {
+              case PokeType.fire: defenderTimingIDList.add(131);break;
+              case PokeType.water: defenderTimingIDList.add(132);break;
+              case PokeType.electric: defenderTimingIDList.add(133);break;
+              case PokeType.grass: defenderTimingIDList.add(134);break;
+              case PokeType.ice: defenderTimingIDList.add(135);break;
+              case PokeType.fight: defenderTimingIDList.add(136);break;
+              case PokeType.poison: defenderTimingIDList.add(137);break;
+              case PokeType.ground: defenderTimingIDList.add(138);break;
+              case PokeType.fly: defenderTimingIDList.add(139);break;
+              case PokeType.psychic: defenderTimingIDList.add(140);break;
+              case PokeType.bug: defenderTimingIDList.add(141);break;
+              case PokeType.rock: defenderTimingIDList.add(142);break;
+              case PokeType.ghost: defenderTimingIDList.add(143);break;
+              case PokeType.dragon: defenderTimingIDList.add(144);break;
+              case PokeType.evil: defenderTimingIDList.add(145);break;
+              case PokeType.steel: defenderTimingIDList.add(146);break;
+              case PokeType.fairy: defenderTimingIDList.add(147);break;
+              default: break;
+            }
           }
           if (defenderState.holdingItem != null && defenderTimingIDList.contains(defenderState.holdingItem!.timing)) {
             var addingItem = TurnEffect()
@@ -397,7 +400,7 @@ class PhaseState {
             );
           }
           if (prevAction != null && prevAction.move != null && prevAction.move!.isNormallyHit(0) &&
-              prevAction.move!.moveEffectivenesses[0].id != MoveEffectiveness.noEffect
+              prevAction.move!.moveEffectivenesses[0] != MoveEffectiveness.noEffect
           ) {  // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
@@ -439,35 +442,35 @@ class PhaseState {
                 defenderTimingIDList.add(Timing.attackedFainting);
               }
               // ノーマルタイプのこうげきをうけたとき
-              if (replacedMoveType!.id == 1) {
+              if (replacedMoveType! == PokeType.normal) {
                 defenderTimingIDList.add(148);
               }
               // あくタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 17) {
+              if (replacedMoveType == PokeType.evil) {
                 defenderTimingIDList.addAll([86, 87]);
               }
               // みずタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 11) {
+              if (replacedMoveType == PokeType.water) {
                 defenderTimingIDList.addAll([92, 104]);
               }
               // ほのおタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 10) {
+              if (replacedMoveType == PokeType.fire) {
                 defenderTimingIDList.addAll([104, 107]);
               }
               // でんきタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 13) {
+              if (replacedMoveType == PokeType.electric) {
                 defenderTimingIDList.addAll([118]);
               }
               // こおりタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 15) {
+              if (replacedMoveType == PokeType.ice) {
                 defenderTimingIDList.addAll([119]);
               }
               // ゴーストタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 8) {
+              if (replacedMoveType == PokeType.ghost) {
                 defenderTimingIDList.addAll([87]);
               }
               // むしタイプのこうげきをうけたとき
-              if (replacedMoveType.id == 7) {
+              if (replacedMoveType == PokeType.bug) {
                 defenderTimingIDList.addAll([92]);
               }
               // 直接こうげきを受けた後
@@ -504,50 +507,53 @@ class PhaseState {
             if (replacedMove.isDrain) {
               defenderTimingIDList.add(Timing.drained);
             }
-            if (replacedMoveType!.id == 13) {    // でんきタイプのわざをうけた時
+            if (replacedMoveType! == PokeType.electric) {    // でんきタイプのわざをうけた時
               defenderTimingIDList.addAll([Timing.electriced, Timing.electricUse]);
             }
-            if (replacedMoveType.id == 11) {    // みずタイプのわざをうけた時
+            if (replacedMoveType == PokeType.water) {    // みずタイプのわざをうけた時
               defenderTimingIDList.addAll([Timing.watered, Timing.fireWaterAttackedSunnyRained, Timing.waterUse]);
             }
-            if (replacedMoveType.id == 10) {    // ほのおタイプのわざをうけた時
+            if (replacedMoveType == PokeType.fire) {    // ほのおタイプのわざをうけた時
               defenderTimingIDList.addAll([Timing.fired, Timing.fireWaterAttackedSunnyRained]);
             }
-            if (replacedMoveType.id == 12) {    // くさタイプのわざをうけた時
+            if (replacedMoveType == PokeType.grass) {    // くさタイプのわざをうけた時
               defenderTimingIDList.addAll([Timing.grassed]);
             }
-            if (replacedMoveType.id == 5) {    // じめんタイプのわざをうけた時
+            if (replacedMoveType == PokeType.ground) {    // じめんタイプのわざをうけた時
               defenderTimingIDList.addAll([Timing.grounded]);
               if (replacedMove.id != 28 && replacedMove.id != 614) {  // すなかけ/サウザンアローではない
                 defenderTimingIDList.addAll([Timing.groundFieldEffected]);
               }
             }
-            if (PokeType.effectiveness(
+            if (PokeTypeEffectiveness.effectiveness(
                   attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
                   defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                   replacedMoveType, defenderState
-                ).id == MoveEffectiveness.great
+                ) == MoveEffectiveness.great
             ) {
               // 効果ばつぐんのわざを受けたとき
               defenderTimingIDList.addAll([Timing.greatAttacked]);
-              var moveTypeId = replacedMoveType.id;
-              if (moveTypeId == 10) defenderTimingIDList.add(131);
-              if (moveTypeId == 11) defenderTimingIDList.add(132);
-              if (moveTypeId == 13) defenderTimingIDList.add(133);
-              if (moveTypeId == 12) defenderTimingIDList.add(134);
-              if (moveTypeId == 15) defenderTimingIDList.add(135);
-              if (moveTypeId == 2) defenderTimingIDList.add(136);
-              if (moveTypeId == 4) defenderTimingIDList.add(137);
-              if (moveTypeId == 5) defenderTimingIDList.add(138);
-              if (moveTypeId == 3) defenderTimingIDList.add(139);
-              if (moveTypeId == 14) defenderTimingIDList.add(140);
-              if (moveTypeId == 7) defenderTimingIDList.add(141);
-              if (moveTypeId == 6) defenderTimingIDList.add(142);
-              if (moveTypeId == 8) defenderTimingIDList.add(143);
-              if (moveTypeId == 16) defenderTimingIDList.add(144);
-              if (moveTypeId == 17) defenderTimingIDList.add(145);
-              if (moveTypeId == 9) defenderTimingIDList.add(146);
-              if (moveTypeId == 18) defenderTimingIDList.add(147);
+              final moveType = replacedMoveType;
+              switch (moveType) {
+                case PokeType.fire: defenderTimingIDList.add(131);break;
+                case PokeType.water: defenderTimingIDList.add(132);break;
+                case PokeType.electric: defenderTimingIDList.add(133);break;
+                case PokeType.grass: defenderTimingIDList.add(134);break;
+                case PokeType.ice: defenderTimingIDList.add(135);break;
+                case PokeType.fight: defenderTimingIDList.add(136);break;
+                case PokeType.poison: defenderTimingIDList.add(137);break;
+                case PokeType.ground: defenderTimingIDList.add(138);break;
+                case PokeType.fly: defenderTimingIDList.add(139);break;
+                case PokeType.psychic: defenderTimingIDList.add(140);break;
+                case PokeType.bug: defenderTimingIDList.add(141);break;
+                case PokeType.rock: defenderTimingIDList.add(142);break;
+                case PokeType.ghost: defenderTimingIDList.add(143);break;
+                case PokeType.dragon: defenderTimingIDList.add(144);break;
+                case PokeType.evil: defenderTimingIDList.add(145);break;
+                case PokeType.steel: defenderTimingIDList.add(146);break;
+                case PokeType.fairy: defenderTimingIDList.add(147);break;
+                default: break;
+              }
             }
             else {
               // 効果ばつぐん以外のわざを受けたとき
@@ -634,10 +640,10 @@ class PhaseState {
               // HPが満タンでない毎ターン終了時
               playerTimingIDs.add(Timing.everyTurnEndHPNotFull);
               // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
-              if (myState.isTypeContain(4)) playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
+              if (myState.isTypeContain(PokeType.poison)) playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
             }
             // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
-            if (!myState.isTypeContain(4)) playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
+            if (!myState.isTypeContain(PokeType.poison)) playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
             // こだいかっせい発動中に天気が晴れでなくなった/なくなる場合
             if (myState.buffDebuffs.where((e) => e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5 && e.extraArg1 == 0).isNotEmpty) {
               if (weather.id != Weather.sunny || weather.turns >= weather.maxTurns-1) playerTimingIDs.add(Timing.sunnyBoostEnergy);
@@ -898,7 +904,7 @@ class PhaseState {
         ..c.race = base.c
         ..d.race = base.d
         ..s.race = base.s
-        ..teraType = base.fixedTeraType.id == 0 ? pokemonState.teraType1 : base.fixedTeraType;
+        ..teraType = base.fixedTeraType == PokeType.unknown ? pokemonState.teraType1 : base.fixedTeraType;
       // TODO:ゾロアーク系
       Pokemon poke = party.pokemons[getPokemonIndex(player, null)-1]!;
       if (base.fixedItemID != 0) poke.item = PokeDB().items[base.fixedItemID];

@@ -116,11 +116,11 @@ class Field {
         break;
     }
     if (ownPokemonState != null && ownPokemonState.currentAbility.id == 250) {
-      ownPokemonState.type1 = newTypeID == 0 ? ownPokemonState.pokemon.type1 : PokeType.createFromId(newTypeID);
+      ownPokemonState.type1 = newTypeID == 0 ? ownPokemonState.pokemon.type1 : PokeType.values[newTypeID];
       ownPokemonState.type2 = newTypeID == 0 ? ownPokemonState.pokemon.type2 : null;
     }
     if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 250) {
-      opponentPokemonState.type1 = newTypeID == 0 ? opponentPokemonState.pokemon.type1 : PokeType.createFromId(newTypeID);
+      opponentPokemonState.type1 = newTypeID == 0 ? opponentPokemonState.pokemon.type1 : PokeType.values[newTypeID];
       opponentPokemonState.type2 = newTypeID == 0 ? opponentPokemonState.pokemon.type2 : null;
     }
 

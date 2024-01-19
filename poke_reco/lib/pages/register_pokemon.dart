@@ -238,7 +238,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             ..d.race = suggestion.d
                             ..s.race = suggestion.s
                             ..teraType = suggestion.fixedTeraType;
-                            canChangeTeraType = suggestion.fixedTeraType.id == 0;
+                            canChangeTeraType = suggestion.fixedTeraType == PokeType.unknown;
                             pokeStatRaceController[0].text = 'H ${myPokemon.h.race}';
                             pokeStatRaceController[1].text = 'A ${myPokemon.a.race}';
                             pokeStatRaceController[2].text = 'B ${myPokemon.b.race}';
@@ -246,7 +246,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             pokeStatRaceController[4].text = 'D ${myPokemon.d.race}';
                             pokeStatRaceController[5].text = 'S ${myPokemon.s.race}';
                             updateRealStat();
-                            myPokemon.move1 = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
+                            myPokemon.move1 = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);   // 無効なわざ
                             myPokemon.move2 = null;
                             myPokemon.move3 = null;
                             myPokemon.move4 = null;
@@ -298,7 +298,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           loc.commonType1,
                           null,
-                          myPokemon.type1.id == 0 ? null : myPokemon.type1.id,
+                          myPokemon.type1 == PokeType.unknown ? null : myPokemon.type1,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -306,7 +306,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           loc.commonType2,
                           null,
-                          myPokemon.type2?.id == 0 ? null : myPokemon.type2?.id,
+                          myPokemon.type2 == PokeType.unknown ? null : myPokemon.type2,
                         ),
                       ),
                       SizedBox(width: 10),
@@ -316,8 +316,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           canChangeTeraType ? (value) {setState(() {
                             myPokemon.teraType = pokeData.teraTypes[value - 1];
                           });} : null,
-                          myPokemon.teraType.id == 0 ? null : myPokemon.teraType.id,
-                          isError: myPokemon.no != 0 && myPokemon.teraType.id == 0,
+                          myPokemon.teraType == PokeType.unknown ? null : myPokemon.teraType,
+                          isError: myPokemon.no != 0 && myPokemon.teraType == PokeType.unknown,
                           isTeraType: true,
                         ),
                       ),
@@ -331,7 +331,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: Align(
                           alignment: Alignment.centerRight,
                           child: Text(
-                            '${loc.pokemonsTabConfTeraType} : ${pokemonState.teraType1.id != 0 ? pokemonState.teraType1.displayName : loc.commonNone}',
+                            '${loc.pokemonsTabConfTeraType} : ${pokemonState.teraType1 != PokeType.unknown ? pokemonState.teraType1.displayName : loc.commonNone}',
                             style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.bodyMedium?.fontSize),
                           ),
                         ),
@@ -539,7 +539,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             else {
                               pokeMoveController[j].text = '';
                               myPokemon.moves[j] = j == 0 ?
-                                Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0) :
+                                Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0) :
                                 null;
                               pokePPController[j].text = '0';
                               myPokemon.pps[j] = 0;

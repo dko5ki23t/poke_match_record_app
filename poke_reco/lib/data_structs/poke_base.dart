@@ -69,15 +69,15 @@ class PokeBase {    // 各ポケモンの種族ごとの値
   PokeType get fixedTeraType {
     switch (no) {
       case 1017:    // オーガポン(みどりのめん)->くさ
-        return PokeType.createFromId(12);
+        return PokeType.grass;
       case 10273:   // オーガポン(いどのめん)->みず
-        return PokeType.createFromId(11);
+        return PokeType.water;
       case 10274:   // オーガポン(かまどのめん)->ほのお
-        return PokeType.createFromId(10);
+        return PokeType.fire;
       case 10275:   // オーガポン(いしずえのめん)->いわ
-        return PokeType.createFromId(6);
+        return PokeType.rock;
     }
-    return PokeType.createFromId(0);    // 固定テラスタイプなし
+    return PokeType.unknown;    // 固定テラスタイプなし
   }
 
   // 固定のもちものがあればそのもちもののIDを返す

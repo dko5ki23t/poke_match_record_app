@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 
 class TypeDropdownButton extends DropdownButtonFormField {
   static const notAllowedStyle = TextStyle(
@@ -9,7 +10,7 @@ class TypeDropdownButton extends DropdownButtonFormField {
   TypeDropdownButton(
     String? labelText,
     void Function(dynamic)? onChanged,
-    int? value,
+    PokeType? value,
     {
       bool isError = false,
       bool isTeraType = false,
@@ -25,7 +26,7 @@ class TypeDropdownButton extends DropdownButtonFormField {
     items: <DropdownMenuItem>[
       for (var type in isTeraType ? PokeDB().teraTypes : PokeDB().types)
       DropdownMenuItem(
-        value: type.id,
+        value: type,
         child: FittedBox(
           fit: BoxFit.fitWidth,
           child: Row(

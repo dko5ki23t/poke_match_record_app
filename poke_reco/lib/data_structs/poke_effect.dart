@@ -434,7 +434,7 @@ class TurnEffect {
         break;
       case EffectType.terastal:
         myState.isTerastaling = true;
-        myState.teraType1 = PokeType.createFromId(effectId);
+        myState.teraType1 = PokeType.values[effectId];
         if (pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID != 0) {   // テラスタルによってとくせいが変わる場合
           myState.setCurrentAbility(
             pokeData.abilities[pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!,
@@ -873,33 +873,36 @@ class TurnEffect {
             var attackerState = phaseState.getPokemonState(attacker, prevAction);
             var defenderState = phaseState.getPokemonState(attacker.opposite, prevAction);
             var replacedMoveType = turnMove.getReplacedMoveType(turnMove.move, 0, attackerState, phaseState);
-            if (replacedMoveType.id == 1) {  // ノーマルタイプのわざを受けた時
+            if (replacedMoveType == PokeType.normal) {  // ノーマルタイプのわざを受けた時
               defenderTimings.addAll([Timing.normalAttacked]);
             }
-            if (PokeType.effectiveness(
+            if (PokeTypeEffectiveness.effectiveness(
                 attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
                 defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                 replacedMoveType, pokemonState!
-              ).id == MoveEffectiveness.great
+              ) == MoveEffectiveness.great
             ) {
               defenderTimings.add(Timing.greatAttacked);  // 効果ばつぐんのタイプのこうげきざわを受けた時
-              if (replacedMoveType.id == PokeTypeId.fire) defenderTimings.add(Timing.greatFireAttacked);
-              if (replacedMoveType.id == PokeTypeId.water) defenderTimings.add(Timing.greatWaterAttacked);
-              if (replacedMoveType.id == PokeTypeId.electric) defenderTimings.add(Timing.greatElectricAttacked);
-              if (replacedMoveType.id == PokeTypeId.grass) defenderTimings.add(Timing.greatgrassAttacked);
-              if (replacedMoveType.id == PokeTypeId.ice) defenderTimings.add(Timing.greatIceAttacked);
-              if (replacedMoveType.id == PokeTypeId.fight) defenderTimings.add(Timing.greatFightAttacked);
-              if (replacedMoveType.id == PokeTypeId.poison) defenderTimings.add(Timing.greatPoisonAttacked);
-              if (replacedMoveType.id == PokeTypeId.ground) defenderTimings.add(Timing.greatGroundAttacked);
-              if (replacedMoveType.id == PokeTypeId.fly) defenderTimings.add(Timing.greatFlyAttacked);
-              if (replacedMoveType.id == PokeTypeId.psychic) defenderTimings.add(Timing.greatPsycoAttacked);
-              if (replacedMoveType.id == PokeTypeId.bug) defenderTimings.add(Timing.greatBugAttacked);
-              if (replacedMoveType.id == PokeTypeId.rock) defenderTimings.add(Timing.greatRockAttacked);
-              if (replacedMoveType.id == PokeTypeId.ghost) defenderTimings.add(Timing.greatGhostAttacked);
-              if (replacedMoveType.id == PokeTypeId.dragon) defenderTimings.add(Timing.greatDragonAttacked);
-              if (replacedMoveType.id == PokeTypeId.evil) defenderTimings.add(Timing.greatEvilAttacked);
-              if (replacedMoveType.id == PokeTypeId.steel) defenderTimings.add(Timing.greatSteelAttacked);
-              if (replacedMoveType.id == PokeTypeId.fairy) defenderTimings.add(Timing.greatFairyAttacked);
+              switch (replacedMoveType) {
+                case PokeType.fire: defenderTimings.add(Timing.greatFireAttacked);break;
+                case PokeType.water: defenderTimings.add(Timing.greatWaterAttacked);break;
+                case PokeType.electric: defenderTimings.add(Timing.greatElectricAttacked);break;
+                case PokeType.grass: defenderTimings.add(Timing.greatgrassAttacked);break;
+                case PokeType.ice: defenderTimings.add(Timing.greatIceAttacked);break;
+                case PokeType.fight: defenderTimings.add(Timing.greatFightAttacked);break;
+                case PokeType.poison: defenderTimings.add(Timing.greatPoisonAttacked);break;
+                case PokeType.ground: defenderTimings.add(Timing.greatGroundAttacked);break;
+                case PokeType.fly: defenderTimings.add(Timing.greatFlyAttacked);break;
+                case PokeType.psychic: defenderTimings.add(Timing.greatPsycoAttacked);break;
+                case PokeType.bug: defenderTimings.add(Timing.greatBugAttacked);break;
+                case PokeType.rock: defenderTimings.add(Timing.greatRockAttacked);break;
+                case PokeType.ghost: defenderTimings.add(Timing.greatGhostAttacked);break;
+                case PokeType.dragon: defenderTimings.add(Timing.greatDragonAttacked);break;
+                case PokeType.evil: defenderTimings.add(Timing.greatEvilAttacked);break;
+                case PokeType.steel: defenderTimings.add(Timing.greatSteelAttacked);break;
+                case PokeType.fairy: defenderTimings.add(Timing.greatFairyAttacked);break;
+                default: break;
+              }
             }
             // 状態変化
             for (final ailment in attackerState.ailmentsIterable) {
@@ -937,17 +940,17 @@ class TurnEffect {
               );
             }
             // ノーマルタイプのこうげきをした時
-            if (replacedMoveType.id == 1) attackerTimings.addAll([Timing.normalAttackHit]);
+            if (replacedMoveType == PokeType.normal) attackerTimings.addAll([Timing.normalAttackHit]);
             // あくタイプのこうげきを受けた時
-            if (replacedMoveType.id == 17) defenderTimings.addAll([Timing.evilAttacked]);
+            if (replacedMoveType == PokeType.evil) defenderTimings.addAll([Timing.evilAttacked]);
             // みずタイプのこうげきを受けた時
-            if (replacedMoveType.id == 11) defenderTimings.addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
+            if (replacedMoveType == PokeType.water) defenderTimings.addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
             // ほのおタイプのこうげきを受けた時
-            if (replacedMoveType.id == 10) defenderTimings.addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
+            if (replacedMoveType == PokeType.fire) defenderTimings.addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
             // でんきタイプのこうげきを受けた時
-            if (replacedMoveType.id == 13) defenderTimings.addAll([Timing.electricAttacked]);
+            if (replacedMoveType == PokeType.electric) defenderTimings.addAll([Timing.electricAttacked]);
             // こおりタイプのこうげきを受けた時
-            if (replacedMoveType.id == 15) defenderTimings.addAll([Timing.iceAttacked]);
+            if (replacedMoveType == PokeType.ice) defenderTimings.addAll([Timing.iceAttacked]);
             // こうげきによりひんしになっているとき
             if (defenderState.isFainting) defenderTimings.add(Timing.attackedFainting);
           }
@@ -989,53 +992,56 @@ class TurnEffect {
           }
           if (replacedMove.isDrain) defenderTimings.add(Timing.drained);  // HP吸収わざを受けた時
           if (replacedMove.isDance) defenderTimings.add(Timing.otherDance);  // おどり技を受けた時
-          if (replacedMoveType.id == PokeTypeId.normal) {  // ノーマルタイプのわざを受けた時
+          if (replacedMoveType == PokeType.normal) {  // ノーマルタイプのわざを受けた時
             defenderTimings.addAll([Timing.normalAttacked]);
           }
-          if (replacedMoveType.id == PokeTypeId.electric) {  // でんきタイプのわざを受けた時
+          if (replacedMoveType == PokeType.electric) {  // でんきタイプのわざを受けた時
             defenderTimings.addAll([Timing.electriced, Timing.electricUse]);
           }
-          if (replacedMoveType.id == PokeTypeId.water) {  // みずタイプのわざを受けた時
+          if (replacedMoveType == PokeType.water) {  // みずタイプのわざを受けた時
             defenderTimings.addAll([Timing.watered, Timing.fireWaterAttackedSunnyRained, Timing.waterUse]);
           }
-          if (replacedMoveType.id == PokeTypeId.fire) {  // ほのおタイプのわざを受けた時
+          if (replacedMoveType == PokeType.fire) {  // ほのおタイプのわざを受けた時
             defenderTimings.addAll([Timing.fired, Timing.fireWaterAttackedSunnyRained]);
           }
-          if (replacedMoveType.id == PokeTypeId.grass) {  // くさタイプのわざを受けた時
+          if (replacedMoveType == PokeType.grass) {  // くさタイプのわざを受けた時
             defenderTimings.addAll([Timing.grassed]);
           }
-          if (replacedMoveType.id == PokeTypeId.ground) {   // じめんタイプのわざを受けた時
+          if (replacedMoveType == PokeType.ground) {   // じめんタイプのわざを受けた時
             defenderTimings.addAll([Timing.grounded]);
           }
-          if (PokeType.effectiveness(
+          if (PokeTypeEffectiveness.effectiveness(
               attackerState.currentAbility.id == 113 || attackerState.currentAbility.id == 299, defenderState.holdingItem?.id == 586,
               defenderState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
               replacedMoveType, pokemonState!
-            ).id == MoveEffectiveness.great
+            ) == MoveEffectiveness.great
           ) {
             defenderTimings.add(Timing.greatAttacked);  // 効果ばつぐんのタイプのこうげきざわを受けた時
-            if (replacedMoveType.id == PokeTypeId.fire) defenderTimings.add(Timing.greatFireAttacked);
-            if (replacedMoveType.id == PokeTypeId.water) defenderTimings.add(Timing.greatWaterAttacked);
-            if (replacedMoveType.id == PokeTypeId.electric) defenderTimings.add(Timing.greatElectricAttacked);
-            if (replacedMoveType.id == PokeTypeId.grass) defenderTimings.add(Timing.greatgrassAttacked);
-            if (replacedMoveType.id == PokeTypeId.ice) defenderTimings.add(Timing.greatIceAttacked);
-            if (replacedMoveType.id == PokeTypeId.fight) defenderTimings.add(Timing.greatFightAttacked);
-            if (replacedMoveType.id == PokeTypeId.poison) defenderTimings.add(Timing.greatPoisonAttacked);
-            if (replacedMoveType.id == PokeTypeId.ground) defenderTimings.add(Timing.greatGroundAttacked);
-            if (replacedMoveType.id == PokeTypeId.fly) defenderTimings.add(Timing.greatFlyAttacked);
-            if (replacedMoveType.id == PokeTypeId.psychic) defenderTimings.add(Timing.greatPsycoAttacked);
-            if (replacedMoveType.id == PokeTypeId.bug) defenderTimings.add(Timing.greatBugAttacked);
-            if (replacedMoveType.id == PokeTypeId.rock) defenderTimings.add(Timing.greatRockAttacked);
-            if (replacedMoveType.id == PokeTypeId.ghost) defenderTimings.add(Timing.greatGhostAttacked);
-            if (replacedMoveType.id == PokeTypeId.dragon) defenderTimings.add(Timing.greatDragonAttacked);
-            if (replacedMoveType.id == PokeTypeId.evil) defenderTimings.add(Timing.greatEvilAttacked);
-            if (replacedMoveType.id == PokeTypeId.steel) defenderTimings.add(Timing.greatSteelAttacked);
-            if (replacedMoveType.id == PokeTypeId.fairy) defenderTimings.add(Timing.greatFairyAttacked);
+            switch (replacedMoveType) {
+              case PokeType.fire: defenderTimings.add(Timing.greatFireAttacked);break;
+              case PokeType.water: defenderTimings.add(Timing.greatWaterAttacked);break;
+              case PokeType.electric: defenderTimings.add(Timing.greatElectricAttacked);break;
+              case PokeType.grass: defenderTimings.add(Timing.greatgrassAttacked);break;
+              case PokeType.ice: defenderTimings.add(Timing.greatIceAttacked);break;
+              case PokeType.fight: defenderTimings.add(Timing.greatFightAttacked);break;
+              case PokeType.poison: defenderTimings.add(Timing.greatPoisonAttacked);break;
+              case PokeType.ground: defenderTimings.add(Timing.greatGroundAttacked);break;
+              case PokeType.fly: defenderTimings.add(Timing.greatFlyAttacked);break;
+              case PokeType.psychic: defenderTimings.add(Timing.greatPsycoAttacked);break;
+              case PokeType.bug: defenderTimings.add(Timing.greatBugAttacked);break;
+              case PokeType.rock: defenderTimings.add(Timing.greatRockAttacked);break;
+              case PokeType.ghost: defenderTimings.add(Timing.greatGhostAttacked);break;
+              case PokeType.dragon: defenderTimings.add(Timing.greatDragonAttacked);break;
+              case PokeType.evil: defenderTimings.add(Timing.greatEvilAttacked);break;
+              case PokeType.steel: defenderTimings.add(Timing.greatSteelAttacked);break;
+              case PokeType.fairy: defenderTimings.add(Timing.greatFairyAttacked);break;
+              default: break;
+            }
           }
           else {
             defenderTimings.add(Timing.notGreatAttacked);  // 効果ばつぐん以外のタイプのこうげきざわを受けた時
           }
-          if (replacedMoveType.id == 5) {
+          if (replacedMoveType == PokeType.ground) {
             if (replacedMove.id != 28 && replacedMove.id != 614) {  // すなかけ/サウザンアローではない
               defenderTimings.add(Timing.groundFieldEffected);  // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
             }
@@ -1455,7 +1461,7 @@ class TurnEffect {
                 }
                 break;
               case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-                if (myState.isTypeContain(8)) {
+                if (myState.isTypeContain(PokeType.ghost)) {
                   if (move!.playerType == PlayerType.me) {
                     return (myState.remainHP - move!.extraArg1[0]).toString();
                   }
@@ -2741,17 +2747,17 @@ class TurnEffect {
   {
     if (isInput) {
       return TypeDropdownButton(
-        labelText, onChanged, value,
+        labelText, onChanged, value != null ? PokeType.values[value] : null,
         isError: isError, isTeraType: isTeraType,
       );
     }
     else {
       return TextField(
-        controller: TextEditingController(text: PokeType.createFromId(value ?? 0).displayName),
+        controller: TextEditingController(text: PokeType.values[value ?? 0].displayName),
         decoration: InputDecoration(
           border: UnderlineInputBorder(),
           labelText: labelText,
-          prefixIcon: PokeType.createFromId(value ?? 0).displayIcon,
+          prefixIcon: PokeType.values[value ?? 0].displayIcon,
         ),
         onTap: onFocus,
         readOnly: true,

@@ -14,16 +14,16 @@ class Pokemon {
   int level = 50;                  // レベル
   Sex sex = Sex.none;              // せいべつ
   int _no = 0;                     // 図鑑No.
-  PokeType type1 = PokeType.createFromId(0);        // タイプ1
+  PokeType type1 = PokeType.unknown;        // タイプ1
   PokeType? type2;                     // タイプ2(null OK)
-  PokeType teraType = PokeType.createFromId(0);     // テラスタルタイプ
+  PokeType teraType = PokeType.unknown;     // テラスタルタイプ
   Temper temper = Temper(0, '', '', StatIndex.none, StatIndex.none); // せいかく
   // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
   List<SixParams> _stats = List.generate(StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, 0, 0));
   Ability ability = Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0));     // とくせい
   Item? item;                      // もちもの(null OK)
   List<Move?> _moves = [
-    Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0),
+    Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0),
     null, null, null
   ];  // わざ
   List<int?> _pps = [0, null, null, null];  // PP
@@ -54,7 +54,7 @@ class Pokemon {
     _no = pokeNo;
     type1 = pokeData.pokeBase[pokeNo]!.type1;
     type2 = pokeData.pokeBase[pokeNo]!.type2;
-    teraType = PokeType.createFromId(map[myPokemonColumnTeraType]);
+    teraType = PokeType.values[map[myPokemonColumnTeraType]];
     temper = pokeData.tempers[map[myPokemonColumnTemper]]!;
     h = SixParams(
       pokeData.pokeBase[pokeNo]!.h,
@@ -144,7 +144,7 @@ class Pokemon {
       name != '' &&
       (level >= pokemonMinLevel && level <= pokemonMaxLevel) &&
       no >= pokemonMinNo && temper.id != 0 &&
-      teraType.id != 0 &&
+      teraType != PokeType.unknown &&
       ability.id != 0 && _moves[0]!.id != 0 &&
       totalEffort() <= pokemonMaxEffortTotal
     );
@@ -224,9 +224,9 @@ class Pokemon {
       level != pokemon.level ||
       sex != pokemon.sex ||
       no != pokemon.no ||
-      type1.id != pokemon.type1.id ||
-      type2?.id != pokemon.type2?.id ||
-      teraType.id != pokemon.teraType.id ||
+      type1 != pokemon.type1 ||
+      type2 != pokemon.type2 ||
+      teraType != pokemon.teraType ||
       temper.id != pokemon.temper.id ||
       ability.id != pokemon.ability.id ||
       item?.id != pokemon.item?.id ||
@@ -318,7 +318,7 @@ class Pokemon {
       myPokemonColumnViewOrder: viewOrder,
       myPokemonColumnNo: no,
       myPokemonColumnNickName: nickname,
-      myPokemonColumnTeraType: teraType.id,
+      myPokemonColumnTeraType: teraType.index,
       myPokemonColumnLevel: level,
       myPokemonColumnSex: sex.id,
       myPokemonColumnTemper: temper.id,

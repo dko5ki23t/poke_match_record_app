@@ -309,8 +309,8 @@ class IndividualField {
         return isMe ? (myState.pokemon.h.real / 4).floor() : 25;
       case IndiFieldEffect.stealthRock: // ステルスロック
         {
-          var rate = PokeType.effectivenessRate(
-            false, false, false, PokeType.createFromId(PokeTypeId.rock), myState) / 8;
+          var rate = PokeTypeEffectiveness.effectivenessRate(
+            false, false, false, PokeType.rock, myState) / 8;
           return isMe ? (myState.pokemon.h.real * rate).floor() : (100 * rate).floor();
         }
       default:

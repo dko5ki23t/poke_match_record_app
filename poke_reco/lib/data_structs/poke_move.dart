@@ -74,58 +74,52 @@ extension TurnMoveTypeNum on TurnMoveType {
   }
 }
 
-class MoveHit {
-  static const int hit = 0;
-  static const int critical = 1;
-  static const int notHit = 2;
-  static const int fail = 3;
+enum MoveHit {
+  hit,
+  critical,
+  notHit,
+  fail,
+}
 
-  const MoveHit(this.id);
-
+extension MoveHitName on MoveHit {
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
-        switch (id) {
-          case hit:
+        switch (this) {
+          case MoveHit.hit:
             return '命中';
-          case critical:
+          case MoveHit.critical:
             return '急所に命中';
-          case notHit:
+          case MoveHit.notHit:
             return '当たらなかった';
-          case fail:
+          case MoveHit.fail:
             return 'うまく決まらなかった';
           default:
             return '';
         }
       case Language.english:
       default:
-        switch (id) {
-          case hit:
+        switch (this) {
+          case MoveHit.hit:
             return 'Hit';
-          case critical:
+          case MoveHit.critical:
             return 'Critical Hit';
-          case notHit:
+          case MoveHit.notHit:
             return 'Missed';
-          case fail:
+          case MoveHit.fail:
             return 'Failed';
           default:
             return '';
         }
     }
   }
-
-  final int id;
 }
 
-class MoveEffectiveness {
-  static const int normal = 0;
-  static const int great = 1;
-  static const int notGood = 2;
-  static const int noEffect = 3;
-
-  const MoveEffectiveness(this.id);
-
-  final int id;
+enum MoveEffectiveness {
+  normal,
+  great,
+  notGood,
+  noEffect,
 }
 
 class MoveAdditionalEffect {
@@ -214,12 +208,12 @@ class DamageGetter {
 class TurnMove {
   PlayerType playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
-  PokeType teraType = PokeType.createFromId(0);   // テラスタルなし
-  Move move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
+  PokeType teraType = PokeType.unknown;   // テラスタルなし
+  Move move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true;      // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0);    // 行動失敗の理由
-  List<MoveHit> moveHits = [MoveHit(MoveHit.hit)];   // 命中した/急所/外した
-  List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
+  List<MoveHit> moveHits = [MoveHit.hit];   // 命中した/急所/外した
+  List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness.normal];   // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
   List<int> realDamage = [0];     // わざによって受けたダメージ（確定値）
   List<int> percentDamage = [0];  // わざによって与えたダメージ（概算値、割合）
   List<MoveEffect> moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
@@ -227,7 +221,7 @@ class TurnMove {
   List<int> extraArg2 = [0];
   List<int> extraArg3 = [0];
   List<int?> _changePokemonIndexes = [null, null];
-  PokeType moveType = PokeType.createFromId(0);
+  PokeType moveType = PokeType.unknown;
   bool isFirst = false;   // ターン内最初の行動か
 
   TurnMove copyWith() =>
@@ -269,8 +263,8 @@ class TurnMove {
   bool isNormallyHit(int continousCount) {
     return isSuccess &&
       (move.damageClass.id >= 2 && 
-       moveHits[continousCount].id != MoveHit.notHit &&
-       moveHits[continousCount].id != MoveHit.fail) ||
+       moveHits[continousCount] != MoveHit.notHit &&
+       moveHits[continousCount] != MoveHit.fail) ||
       (move.damageClass.id == 1);
   }
 
@@ -417,7 +411,7 @@ class TurnMove {
     }
 
     // テラスタル
-    if (teraType.id != 0) {
+    if (teraType != PokeType.unknown) {
       myState.isTerastaling = true;
       myState.teraType1 = teraType;
       if (playerType == PlayerType.me) {
@@ -528,7 +522,7 @@ class TurnMove {
       }
     }
 
-    if (!isSuccess || moveHits[continuousCount].id == MoveHit.fail || moveHits[continuousCount].id == MoveHit.notHit) return ret;
+    if (!isSuccess || moveHits[continuousCount] == MoveHit.fail || moveHits[continuousCount] == MoveHit.notHit) return ret;
 
     List<IndividualField> myFields = state.getIndiFields(playerType);
     List<IndividualField> yourFields = state.getIndiFields(playerType.opposite);
@@ -550,7 +544,7 @@ class TurnMove {
     // 相手の不利ランク補正を無視してダメージ計算するか
     bool ignoreTargetRank = false;
     // 自身にとって不利ランク補正＆壁を無視してダメージ計算するか
-    bool isCritical = moveHits[continuousCount].id == MoveHit.critical;
+    bool isCritical = moveHits[continuousCount] == MoveHit.critical;
     // 相手のとくせいを無視してダメージ計算するか
     bool ignoreAbility = false;
     // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージ計算するか
@@ -837,7 +831,7 @@ class TurnMove {
           case 31:    // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
           case 94:    // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
             if (extraArg1[continuousCount] != 0) {
-              myState.type1 = PokeType.createFromId(extraArg1[continuousCount]);
+              myState.type1 = PokeType.values[extraArg1[continuousCount]];
               myState.type2 = null;
             }
             break;
@@ -1144,7 +1138,7 @@ class TurnMove {
           case 107:   // にげられない状態にする
           case 374:   // にげられない状態にする
           case 385:   // にげられない状態にする
-            if (!targetState.isTypeContain(8)) {
+            if (!targetState.isTypeContain(PokeType.ghost)) {
               targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
             }
             break;
@@ -1158,7 +1152,7 @@ class TurnMove {
             myState.ailmentsAdd(Ailment(Ailment.minimize), state);
             break;
           case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-            if (myState.isTypeContain(8)) {
+            if (myState.isTypeContain(PokeType.ghost)) {
               myState.remainHP -= extraArg1[continuousCount];
               myState.remainHPPercent -= extraArg2[continuousCount];
               yourState.ailmentsAdd(Ailment(Ailment.curse), state);
@@ -1286,7 +1280,7 @@ class TurnMove {
             break;
           case 136:   // 個体値によってわざのタイプが変わる
             if (extraArg1[continuousCount] != 0) {
-              moveType = PokeType.createFromId(extraArg1[continuousCount]);
+              moveType = PokeType.values[extraArg1[continuousCount]];
             }
             break;
           case 137:   // 天気を雨にする
@@ -1638,19 +1632,19 @@ class TurnMove {
             switch (state.weather.id) {
               case Weather.sunny:
                 movePower *= 2;
-                moveType = PokeType.createFromId(10);
+                moveType = PokeType.fire;
                 break;
               case Weather.rainy:
                 movePower *= 2;
-                moveType = PokeType.createFromId(11);
+                moveType = PokeType.water;
                 break;
               case Weather.snowy:
                 movePower *= 2;
-                moveType = PokeType.createFromId(15);
+                moveType = PokeType.ice;
                 break;
               case Weather.sandStorm:
                 movePower *= 2;
-                moveType = PokeType.createFromId(6);
+                moveType = PokeType.rock;
                 break;
               default:
                 break;
@@ -1692,18 +1686,18 @@ class TurnMove {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             int lostFly = 0;
-            if (!myState.isTerastaling && myState.type1.id == PokeTypeId.fly) {
+            if (!myState.isTerastaling && myState.type1 == PokeType.fly) {
               if (myState.type2 == null) {
-                myState.type1 = PokeType.createFromId(PokeTypeId.normal);
+                myState.type1 = PokeType.normal;
                 lostFly = 1;
               }
               else {
-                myState.type1 = PokeType.createFromId(myState.type2!.id);
+                myState.type1 = myState.type2!;
                 myState.type2 = null;
                 lostFly = 3;
               }
             }
-            else if (!myState.isTerastaling && myState.type2?.id == PokeTypeId.fly) {
+            else if (!myState.isTerastaling && myState.type2 != null && myState.type2! == PokeType.fly) {
               myState.type2 = null;
               lostFly = 2;
             }
@@ -2015,55 +2009,55 @@ class TurnMove {
             if (myState.holdingItem != null) {
               switch (myState.holdingItem!.id) {
                 case 275:   // ひのたまプレート
-                  moveType = PokeType.createFromId(10);
+                  moveType = PokeType.fire;
                   break;
                 case 276:   // しずくプレート
-                  moveType = PokeType.createFromId(11);
+                  moveType = PokeType.water;
                   break;
                 case 277:   // いかずちプレート
-                  moveType = PokeType.createFromId(13);
+                  moveType = PokeType.electric;
                   break;
                 case 278:   // みどりのプレート
-                  moveType = PokeType.createFromId(12);
+                  moveType = PokeType.grass;
                   break;
                 case 279:   // つららのプレート
-                  moveType = PokeType.createFromId(15);
+                  moveType = PokeType.ice;
                   break;
                 case 280:   // こぶしのプレート
-                  moveType = PokeType.createFromId(2);
+                  moveType = PokeType.fight;
                   break;
                 case 281:   // もうどくプレート
-                  moveType = PokeType.createFromId(4);
+                  moveType = PokeType.poison;
                   break;
                 case 282:   // だいちのプレート
-                  moveType = PokeType.createFromId(5);
+                  moveType = PokeType.ground;
                   break;
                 case 283:   // あおぞらプレート
-                  moveType = PokeType.createFromId(3);
+                  moveType = PokeType.fly;
                   break;
                 case 284:   // ふしぎのプレート
-                  moveType = PokeType.createFromId(14);
+                  moveType = PokeType.psychic;
                   break;
                 case 285:   // たまむしプレート
-                  moveType = PokeType.createFromId(7);
+                  moveType = PokeType.bug;
                   break;
                 case 286:   // がんせきプレート
-                  moveType = PokeType.createFromId(6);
+                  moveType = PokeType.rock;
                   break;
                 case 287:   // もののけプレート
-                  moveType = PokeType.createFromId(8);
+                  moveType = PokeType.ghost;
                   break;
                 case 288:   // りゅうのプレート
-                  moveType = PokeType.createFromId(16);
+                  moveType = PokeType.dragon;
                   break;
                 case 289:   // こわもてプレート
-                  moveType = PokeType.createFromId(17);
+                  moveType = PokeType.evil;
                   break;
                 case 290:   // こつてつプレート
-                  moveType = PokeType.createFromId(9);
+                  moveType = PokeType.steel;
                   break;
                 case 684:   // せいれいプレート
-                  moveType = PokeType.createFromId(18);
+                  moveType = PokeType.fairy;
                   break;
                 default:
                   break;
@@ -2233,7 +2227,7 @@ class TurnMove {
             break;
           case 295:   // 相手のタイプをみず単体に変更する
             if (!targetState.isTerastaling) {
-              targetState.type1 = PokeType.createFromId(11);
+              targetState.type1 = PokeType.water;
               targetState.type2 = null;
             }
             break;
@@ -2378,7 +2372,7 @@ class TurnMove {
               if (myState.buffDebuffs[findIdx].id == BuffDebuff.voiceForm) {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
                 // TODO この2行csvに移したい
-                myState.type2 = PokeType.createFromId(PokeTypeId.fight);
+                myState.type2 = PokeType.fight;
                 myState.maxStats.a.race = 128; myState.maxStats.b.race = 90; myState.maxStats.c.race = 77; myState.maxStats.d.race = 77; myState.maxStats.s.race = 128;
                 myState.minStats.a.race = 128; myState.minStats.b.race = 90; myState.minStats.c.race = 77; myState.minStats.d.race = 77; myState.minStats.s.race = 128;
                 for (final stat in StatIndexList.listAtoS) {
@@ -2393,7 +2387,7 @@ class TurnMove {
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.voiceForm);
                 myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
                 // TODO この2行csvに移したい
-                myState.type2 = PokeType.createFromId(PokeTypeId.psychic);
+                myState.type2 = PokeType.psychic;
                 myState.maxStats.a.race = 77; myState.maxStats.b.race = 77; myState.maxStats.c.race = 128; myState.maxStats.d.race = 128; myState.maxStats.s.race = 90;
                 myState.minStats.a.race = 77; myState.minStats.b.race = 77; myState.minStats.c.race = 128; myState.minStats.d.race = 128; myState.minStats.s.race = 90;
                 for (final stat in StatIndexList.listAtoS) {
@@ -2447,7 +2441,7 @@ class TurnMove {
           case 337:   // 直前に成功したわざがクロスフレイムだった場合威力2倍(SV使用不可のため処理なし)
             break;
           case 338:   // わざのタイプにひこうタイプの2つの相性を組み合わせてダメージ計算する。ちいさくなる状態の相手に必中し、その場合はダメージ2倍
-            additionalMoveType = PokeType.createFromId(PokeTypeId.fly);
+            additionalMoveType = PokeType.fly;
             if (targetState.ailmentsWhere((e) => e.id == Ailment.minimize).isNotEmpty) mTwice = true;
             break;
           case 339:   // 戦闘中にきのみを食べた場合のみ使用可能
@@ -2466,7 +2460,7 @@ class TurnMove {
             }
             break;
           case 343:   // 相手のタイプにゴーストを追加する
-            if (!targetState.isTypeContain(PokeTypeId.ghost)) {
+            if (!targetState.isTypeContain(PokeType.ghost)) {
               targetState.ailmentsRemoveWhere((e) => e.id == Ailment.forestCurse);
               targetState.ailmentsAdd(Ailment(Ailment.halloween), state);
             }
@@ -2570,7 +2564,7 @@ class TurnMove {
             effectOnce = true;
             break;
           case 376:   // 相手のタイプにくさを追加する
-            if (!targetState.isTypeContain(PokeTypeId.grass)) {
+            if (!targetState.isTypeContain(PokeType.grass)) {
               targetState.ailmentsRemoveWhere((e) => e.id == Ailment.halloween);
               targetState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
             }
@@ -2636,16 +2630,16 @@ class TurnMove {
           case 398:   // 使用者がほのおタイプでないと失敗する。成功するとほのおタイプを失う。こおり状態を治す
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             if (!myState.isTerastaling) {
-              if (myState.type1.id == 10) {
+              if (myState.type1 == PokeType.fire) {
                 if (myState.type2 == null) {
-                  myState.type1 = PokeType.createFromId(0); // タイプなし
+                  myState.type1 = PokeType.unknown; // タイプなし
                 }
                 else {
                   myState.type1 = myState.type2!;
                   myState.type2 = null;
                 }
               }
-              else if (myState.type2?.id == 10) {
+              else if (myState.type2 != null && myState.type2! == PokeType.fire) {
                 myState.type2 = null;
               }
             }
@@ -2730,7 +2724,7 @@ class TurnMove {
           case 422:   // 相手のとくせいに引き寄せられない。ちゅうもくのまとやサイドチェンジの影響を受けない。急所に当たりやすい
             break;
           case 423:   // 使用者と相手をにげられない状態にする
-            if (!myState.isTypeContain(8) && !targetState.isTypeContain(8)) {
+            if (!myState.isTypeContain(PokeType.ghost) && !targetState.isTypeContain(PokeType.ghost)) {
               myState.ailmentsAdd(Ailment(Ailment.cannotRunAway), state);
               targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
             }
@@ -2760,7 +2754,7 @@ class TurnMove {
             break;
           case 427:   // 相手のタイプをエスパー単タイプにする
             if (!targetState.isTerastaling) {
-              targetState.type1 = PokeType.createFromId(14);
+              targetState.type1 = PokeType.psychic;
               targetState.type2 = null;
             }
             break;
@@ -2771,7 +2765,7 @@ class TurnMove {
             targetState.holdingItem = null;
             break;
           case 430:   // にげられない状態とたこがため状態にする
-            if (!targetState.isTypeContain(8)) {
+            if (!targetState.isTypeContain(PokeType.ghost)) {
               targetState.ailmentsAdd(Ailment(Ailment.cannotRunAway)..extraArg1 = 1, state);
               targetState.ailmentsAdd(Ailment(Ailment.octoLock), state);
             }
@@ -2822,7 +2816,7 @@ class TurnMove {
             break;
           case 437:   // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
             if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.harapekoForm).isNotEmpty) {
-              moveType = PokeType.createFromId(17);
+              moveType = PokeType.evil;
             }
             myState.addStatChanges(true, 4, 1, targetState, moveId: replacedMove.id);
             break;
@@ -2841,7 +2835,7 @@ class TurnMove {
             if (myState.isTerastaling) {
               moveType = myState.teraType1;
             }
-            if (myState.teraType1.id == PokeTypeId.stellar) {   // ステラタイプの場合
+            if (myState.teraType1 == PokeType.stellar) {   // ステラタイプの場合
               movePower = 100;
               myState.addStatChanges(true, 0, -1, targetState, moveId: replacedMove.id);
               myState.addStatChanges(true, 2, -1, targetState, moveId: replacedMove.id);
@@ -2933,19 +2927,19 @@ class TurnMove {
             if (myState.isGround(state.getIndiFields(myPlayerType))) {
               switch (state.field.id) {
                 case Field.electricTerrain:
-                  moveType = PokeType.createFromId(13);
+                  moveType = PokeType.electric;
                   movePower *= 2;
                   break;
                 case Field.grassyTerrain:
-                  moveType = PokeType.createFromId(12);
+                  moveType = PokeType.grass;
                   movePower *= 2;
                   break;
                 case Field.mistyTerrain:
-                  moveType = PokeType.createFromId(18);
+                  moveType = PokeType.fairy;
                   movePower *= 2;
                   break;
                 case Field.psychicTerrain:
-                  moveType = PokeType.createFromId(14);
+                  moveType = PokeType.psychic;
                   movePower *= 2;
                   break;
               }
@@ -3115,13 +3109,13 @@ class TurnMove {
             targetIndiField.removeWhere((e) => e.id == IndividualField.reflector || e.id == IndividualField.lightScreen || e.id == IndividualField.auroraVeil);
             switch (myState.pokemon.no) {
               case 10250:
-                moveType = PokeType.createFromId(2);
+                moveType = PokeType.fight;
                 break;
               case 10251:
-                moveType = PokeType.createFromId(10);
+                moveType = PokeType.fire;
                 break;
               case 10252:
-                moveType = PokeType.createFromId(11);
+                moveType = PokeType.water;
                 break;
             }
             break;
@@ -3139,10 +3133,10 @@ class TurnMove {
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             break;
           case 491:   // 効果がばつぐんの場合、威力4/3倍
-            if (PokeType.effectiveness(
+            if (PokeTypeEffectiveness.effectiveness(
               myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
               yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-              moveType, targetState).id == MoveEffectiveness.great
+              moveType, targetState) == MoveEffectiveness.great
             ) {
               movePower = (movePower / 3 * 4).floor();
             }
@@ -3197,15 +3191,15 @@ class TurnMove {
             }
             break;
           case 497:   // 使用者がでんきタイプの場合のみ成功。でんきタイプを失くす
-            if (myState.type1.id == 13) {
+            if (myState.type1 == PokeType.electric) {
               if (myState.type2 != null) {
                 myState.type1 = myState.type2!;
               }
               else {
-                myState.type1 = PokeType.createFromId(0);
+                myState.type1 = PokeType.unknown;
               }
             }
-            else if (myState.type2?.id == 13) {
+            else if (myState.type2 != null && myState.type2! == PokeType.electric) {
               myState.type2 = null;
             }
             break;
@@ -3233,16 +3227,16 @@ class TurnMove {
                 myState.buffDebuffs.where((e) => e.id == BuffDebuff.transform).first.extraArg1 : myState.pokemon.no;
               switch (no) {
                 case 1017:    // オーガポン(みどりのめん)->くさ
-                  moveType = PokeType.createFromId(12);
+                  moveType = PokeType.grass;
                   break;
                 case 10273:   // オーガポン(いどのめん)->みず
-                  moveType = PokeType.createFromId(11);
+                  moveType = PokeType.water;
                   break;
                 case 10274:   // オーガポン(かまどのめん)->ほのお
-                  moveType = PokeType.createFromId(10);
+                  moveType = PokeType.fire;
                   break;
                 case 10275:   // オーガポン(いしずえのめん)->いわ
-                  moveType = PokeType.createFromId(6);
+                  moveType = PokeType.rock;
                   break;
               }
             }
@@ -3264,7 +3258,7 @@ class TurnMove {
             break;
           case 504:   // ステラフォルムのテラパゴスが使用した場合、ステラタイプの攻撃になり、相手全員が対象になる
             if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.stellarForm).isNotEmpty) {
-              moveType = PokeType.createFromId(PokeTypeId.stellar);
+              moveType = PokeType.stellar;
             }
             break;
           case 505:   // 威力が2倍になる(確率)
@@ -3300,18 +3294,18 @@ class TurnMove {
 
         // ノーマルスキンによるわざタイプ変更
         if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.normalize).isNotEmpty) {
-          if (moveType.id != PokeTypeId.normal) {
-            moveType = PokeType.createFromId(PokeTypeId.normal);
+          if (moveType != PokeType.normal) {
+            moveType = PokeType.normal;
             isNormalized1_2 = true;
           }
         }
         // そうでんによるわざタイプ変更
         if (myState.ailmentsWhere((e) => e.id == Ailment.electrify).isNotEmpty) {
-          moveType = PokeType.createFromId(PokeTypeId.electric);
+          moveType = PokeType.electric;
         }
 
         // わざの相性をここで変えちゃう
-        moveEffectivenesses[continuousCount] = PokeType.effectiveness(
+        moveEffectivenesses[continuousCount] = PokeTypeEffectiveness.effectiveness(
           myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
           yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
           moveType, targetState,
@@ -3352,7 +3346,7 @@ class TurnMove {
       int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
       if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
       // ノーマルジュエル消費
-      if (myState.holdingItem?.id == 669 && moveDamageClassID >= 2 && moveType.id == 1) {
+      if (myState.holdingItem?.id == 669 && moveDamageClassID >= 2 && moveType == PokeType.normal) {
         myState.holdingItem = null;
       }
       // くっつきバリ移動
@@ -3504,7 +3498,7 @@ class TurnMove {
 
     // じゅうでん補正&消費
     int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
-    if (findIdx >= 0 && replacedMoveType.id == 13) {
+    if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
       movePower *= 2;
       myState.ailmentsRemoveAt(findIdx);
     }
@@ -3514,12 +3508,12 @@ class TurnMove {
     }
 
     // とくせい等によるわざタイプの変更
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.createFromId(15);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.createFromId(18);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.createFromId(3);
-    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.createFromId(11);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.createFromId(13);
-    if (replacedMove.id != 165 && replacedMoveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.createFromId(PokeTypeId.electric);
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.ice;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.fairy;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.fly;
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.water;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.electric;
+    if (replacedMove.id != 165 && replacedMoveType == PokeType.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.electric;
     
     // とくせい等による威力変動
     double tmpPow = movePower.toDouble();
@@ -3527,10 +3521,10 @@ class TurnMove {
     if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
 
     if (isNormalized1_2) tmpPow *= 1.2;
-    if (replacedMoveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
     if (myState.sex.id != 0 && yourState.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
       if (myState.sex.id != yourState.sex.id) {
         tmpPow *= 1.25;
@@ -3548,60 +3542,60 @@ class TurnMove {
     if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
     if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
     if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
-    if ((replacedMoveType.id == 5 || replacedMoveType.id == 6 || replacedMoveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
+    if ((replacedMoveType == PokeType.ground || replacedMoveType == PokeType.rock || replacedMoveType == PokeType.steel) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
     if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
-    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ice && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType == PokeType.electric && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
     if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
-    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.steel && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
     if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
     int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
     if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
     if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
     if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fight && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.poison && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ground && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.rock && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ghost && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.steel && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.electric && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.psychic && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ice && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.dragon && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
     if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >= 0) tmpPow *= 1.2;
 
-    if (replacedMoveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 16 && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+    if (replacedMoveType == PokeType.electric && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.grass && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.psychic && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.dragon && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
     
-    if (replacedMoveType.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
+    if (replacedMoveType == PokeType.fire && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
 
-    if (replacedMoveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
-    if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType == PokeType.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType == PokeType.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
 
     movePower = tmpPow.floor();
     // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
-    if (movePower < 60 && (myState.canGetStellarHosei(replacedMoveType.id) || myState.canGetTerastalHosei(replacedMoveType.id))) {
+    if (movePower < 60 && (myState.canGetStellarHosei(replacedMoveType) || myState.canGetTerastalHosei(replacedMoveType))) {
       movePower = 60;
     }
 
@@ -3682,12 +3676,12 @@ class TurnMove {
     // 天気補正(五捨五超入)
     if (yourState.holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
       if (state.weather.id == Weather.sunny) {
-        if (replacedMoveType.id == 10) {   // はれ下ほのおわざ
+        if (replacedMoveType == PokeType.fire) {   // はれ下ほのおわざ
           damageVmax = roundOff5(damageVmax * 1.5);
           damageVmin = roundOff5(damageVmin * 1.5);
           ret += loc.battleDamageWeather1_5;
         }
-        else if (replacedMoveType.id == 11) {   // はれ下みずわざ
+        else if (replacedMoveType == PokeType.water) {   // はれ下みずわざ
           if (isSunny1_5) {
             damageVmax = roundOff5(damageVmax * 1.5);
             damageVmin = roundOff5(damageVmin * 1.5);
@@ -3701,12 +3695,12 @@ class TurnMove {
         }
       }
       else if (state.weather.id == Weather.rainy) {
-        if (replacedMoveType.id == 11) {   // 雨下みずわざ
+        if (replacedMoveType == PokeType.water) {   // 雨下みずわざ
           damageVmax = roundOff5(damageVmax * 1.5);
           damageVmin = roundOff5(damageVmin * 1.5);
           ret += loc.battleDamageWeather1_5;
         }
-        else if (replacedMoveType.id == 10) {   // 雨下ほのおわざ
+        else if (replacedMoveType == PokeType.fire) {   // 雨下ほのおわざ
           damageVmax = roundOff5(damageVmax * 0.5);
           damageVmin = roundOff5(damageVmin * 0.5);
           ret += loc.battleDamageWeather0_5;
@@ -3714,7 +3708,7 @@ class TurnMove {
       }
     }
     // 急所補正(五捨五超入)
-    if (moveHits[continuousCount].id == MoveHit.critical) {
+    if (moveHits[continuousCount] == MoveHit.critical) {
       damageVmax = roundOff5(damageVmax * 1.5);
       damageVmin = roundOff5(damageVmin * 1.5);
       ret += loc.battleDamageCritical1_5;
@@ -3724,25 +3718,25 @@ class TurnMove {
     damageVmin = (damageVmin * 85 / 100).floor();
     ret += loc.battleDamageRandom85_100;
     // タイプ一致補正(五捨五超入)
-    if (myState.canGetStellarHosei(replacedMoveType.id)) {
-      myState.addStellarUsed(replacedMoveType.id);
+    if (myState.canGetStellarHosei(replacedMoveType)) {
+      myState.addStellarUsed(replacedMoveType);
       isTeraStellarHosei = true;
     }
-    if (myState.canGetTerastalHosei(replacedMoveType.id)) isTeraStellarHosei = true;
-    var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
+    if (myState.canGetTerastalHosei(replacedMoveType)) isTeraStellarHosei = true;
+    var rate = myState.typeBonusRate(replacedMoveType, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
     if (rate > 1.0) {
       damageVmax = roundOff5(damageVmax * rate);
       damageVmin = roundOff5(damageVmin * rate);
       ret += loc.battleDamageTypeBonus(rate);
     }
     // 相性補正(切り捨て)
-    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+    double typeRate = PokeTypeEffectiveness.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
       yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
     if (yourState.currentAbility.id == 305 && (yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) && typeRate > 0.5) { // テラスシェル
       typeRate = 0.5;
     }
     if (additionalMoveType != null) {
-      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+      typeRate *= PokeTypeEffectiveness.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
     }
     damageVmax = (damageVmax * typeRate).floor();
@@ -3779,7 +3773,7 @@ class TurnMove {
         ret += loc.battleDamageBrainForce;
       }
       // スナイパー補正
-      if (moveHits[continuousCount].id == MoveHit.critical &&
+      if (moveHits[continuousCount] == MoveHit.critical &&
           myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
       ) {
         tmpMax *= 1.5;
@@ -3796,7 +3790,7 @@ class TurnMove {
       }
       // もふもふほのお補正
       if (!ignoreAbility && (damageClassID == 2 || damageClassID == 3) &&
-          replacedMoveType.id == 10 &&
+          replacedMoveType == PokeType.fire &&
           yourState.buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
       ) {
         tmpMax *= 2;
@@ -3818,7 +3812,7 @@ class TurnMove {
         (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
           yourState.buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
         // たいねつ
-        (replacedMoveType.id == PokeTypeId.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
+        (replacedMoveType == PokeType.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
       ) {
         tmpMax *= 0.5;
         tmpMin *= 0.5;
@@ -3922,13 +3916,13 @@ class TurnMove {
     var yourFields = state.getIndiFields(myPlayerType.opposite);
 
     // タイプ相性を計算
-    double typeRate = PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+    double typeRate = PokeTypeEffectiveness.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
       yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, replacedMoveType, yourState);
     if (yourState.currentAbility.id == 305 && (yourState.remainHP >= yourState.pokemon.h.real || yourState.remainHPPercent >= 100) && typeRate > 0.5) { // テラスシェル
       typeRate = 0.5;
     }
     if (additionalMoveType != null) {
-      typeRate *= PokeType.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
+      typeRate *= PokeTypeEffectiveness.effectivenessRate(myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty, additionalMoveType, yourState);
     }
 
@@ -3993,13 +3987,13 @@ class TurnMove {
         (replacedMove.isDirect && !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
           yourState.buffDebuffs.where((e) => e.id == BuffDebuff.directAttackedDamage0_5).isNotEmpty) ||
         // たいねつ
-        (replacedMoveType.id == PokeTypeId.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
+        (replacedMoveType == PokeType.fire && yourState.buffDebuffs.where((e) => e.id == BuffDebuff.heatproof).isNotEmpty)
       ) {
         tmp /= 0.5;
       }
       // もふもふほのお補正
       if (!ignoreAbility && (damageClassID == 2 || damageClassID == 3) &&
-          replacedMoveType.id == 10 &&
+          replacedMoveType == PokeType.fire &&
           yourState.buffDebuffs.where((e) => e.id == BuffDebuff.fireAttackedDamage2).isNotEmpty
       ) {
         tmp /= 2;
@@ -4011,7 +4005,7 @@ class TurnMove {
         tmp /= 2;
       }
       // スナイパー補正
-      if (moveHits[continuousCount].id == MoveHit.critical &&
+      if (moveHits[continuousCount] == MoveHit.critical &&
           myState.buffDebuffs.where((e) => e.id == BuffDebuff.sniper).isNotEmpty
       ) {
         tmp /= 1.5;
@@ -4042,9 +4036,9 @@ class TurnMove {
     // 相性補正(切り捨て)
     tmpInt = (tmpInt / typeRate).floor();
     // タイプ一致補正(五捨五超入)
-    var rate = myState.typeBonusRate(replacedMoveType.id, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
+    var rate = myState.typeBonusRate(replacedMoveType, myState.buffDebuffs.where((e) => e.id == BuffDebuff.typeBonus2).isNotEmpty);
     // ステラタイプ補正を使ってしまったために、再度計算したら値に補正が反映されてない場合
-    if (isTeraStellarHosei && myState.teraType1.id == PokeTypeId.stellar) {
+    if (isTeraStellarHosei && myState.teraType1 == PokeType.stellar) {
       if (rate - 1.5 < 0.1) rate = 2.0;
       if (rate - 1.0 < 0.1) rate = 1.2;
     }
@@ -4055,18 +4049,18 @@ class TurnMove {
     tmpMin = (tmpInt * 100 / 100).floor();
     tmpMax = (tmpInt * 100 / 85).floor();
     // 急所補正(五捨五超入)
-    if (moveHits[continuousCount].id == MoveHit.critical) {
+    if (moveHits[continuousCount] == MoveHit.critical) {
       tmpMax = roundOff5(tmpMax / 1.5);
       tmpMin = roundOff5(tmpMin / 1.5);
     }
     // 天気補正(五捨五超入)
     if (yourState.holdingItem?.id != 1181) {    // 相手がばんのうがさを持っていない
       if (state.weather.id == Weather.sunny) {
-        if (replacedMoveType.id == 10) {   // はれ下ほのおわざ
+        if (replacedMoveType == PokeType.fire) {   // はれ下ほのおわざ
           tmpMax = roundOff5(tmpMax / 1.5);
           tmpMin = roundOff5(tmpMin / 1.5);
         }
-        else if (replacedMoveType.id == 11) {   // はれ下みずわざ
+        else if (replacedMoveType == PokeType.water) {   // はれ下みずわざ
           if (isSunny1_5) {
             tmpMax = roundOff5(tmpMax / 1.5);
             tmpMin = roundOff5(tmpMin / 1.5);
@@ -4078,11 +4072,11 @@ class TurnMove {
         }
       }
       else if (state.weather.id == Weather.rainy) {
-        if (replacedMoveType.id == 11) {   // 雨下みずわざ
+        if (replacedMoveType == PokeType.water) {   // 雨下みずわざ
           tmpMax = roundOff5(tmpMax / 1.5);
           tmpMin = roundOff5(tmpMin / 1.5);
         }
-        else if (replacedMoveType.id == 10) {   // 雨下ほのおわざ
+        else if (replacedMoveType == PokeType.fire) {   // 雨下ほのおわざ
           tmpMax = roundOff5(tmpMax / 0.5);
           tmpMin = roundOff5(tmpMin / 0.5);
         }
@@ -4093,7 +4087,7 @@ class TurnMove {
 
     // じゅうでん補正&消費
     int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
-    if (findIdx >= 0 && replacedMoveType.id == 13) {
+    if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
       movePower *= 2;
       myState.ailmentsRemoveAt(findIdx);
     }
@@ -4103,12 +4097,12 @@ class TurnMove {
     }
 
     // とくせい等によるわざタイプの変更
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.createFromId(15);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.createFromId(18);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.createFromId(3);
-    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.createFromId(11);
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.createFromId(13);
-    if (replacedMove.id != 165 && replacedMoveType.id == PokeTypeId.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.createFromId(PokeTypeId.electric);
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) replacedMoveType = PokeType.ice;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) replacedMoveType = PokeType.fairy;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) replacedMoveType = PokeType.fly;
+    if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >= 0) replacedMoveType = PokeType.water;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) replacedMoveType = PokeType.electric;
+    if (replacedMove.id != 165 && replacedMoveType == PokeType.normal && myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) replacedMoveType = PokeType.electric;
     
     // とくせい等による威力変動
     double tmpPow = movePower.toDouble();
@@ -4116,10 +4110,10 @@ class TurnMove {
     if (replacedMove.power <= 60 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >= 0) tmpPow *= 1.5;
 
     if (isNormalized1_2) tmpPow *= 1.2;
-    if (replacedMoveType.id == PokeTypeId.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == PokeTypeId.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0) tmpPow *= 1.5;
     if (myState.sex.id != 0 && yourState.sex.id != 0 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >= 0) {
       if (myState.sex.id != yourState.sex.id) {
         tmpPow *= 1.25;
@@ -4137,56 +4131,56 @@ class TurnMove {
     if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >= 0) tmpPow *= 1.5;
     if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >= 0) tmpPow *= 1.5;
     if (!isFirst && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0) tmpPow *= 1.3;
-    if ((replacedMoveType.id == 5 || replacedMoveType.id == 6 || replacedMoveType.id == 9) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
+    if ((replacedMoveType == PokeType.ground || replacedMoveType == PokeType.rock || replacedMoveType == PokeType.steel) && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >= 0) tmpPow *= 1.3;
     if (replacedMove.isBite && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0) tmpPow *= 1.5;
-    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
-    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ice && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >= 0) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >= 0) tmpPow *= 0.75;
+    if (replacedMoveType == PokeType.electric && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricSkin) >= 0) tmpPow *= 1.2;
     if (replacedMove.isSound && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0) tmpPow *= 1.3;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >= 0) tmpPow *= 1.3;
-    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
+    if (replacedMoveType == PokeType.steel && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0) tmpPow *= 1.5;
     if (replacedMove.isCut && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0) tmpPow *= 1.5;
     int pow = myState.buffDebuffs.indexWhere((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
     if (pow >= 0) tmpPow = tmpPow * (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
     if (damageClassID == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >= 0) tmpPow *= 1.1;
     if (damageClassID == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >= 0) tmpPow *= 1.1;
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
-    if (replacedMoveType.id == 1 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 2 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 3 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 4 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 5 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 6 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 7 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 8 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 9 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 10 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 11 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 12 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 13 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 14 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 15 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 16 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 17 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
-    if (replacedMoveType.id == 18 && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >= 0) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.normal && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fight && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.poison && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ground && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.rock && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.bug && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ghost && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.steel && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fire && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.water && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.grass && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.electric && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.psychic && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.ice && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.dragon && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >= 0) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fairy && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >= 0) tmpPow *= 1.2;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >= 0) tmpPow *= 1.2;
     if (replacedMove.isPunch && myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >= 0) tmpPow *= 1.1;
     if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >= 0) tmpPow *= 1.2;
 
-    if (replacedMoveType.id == 13 && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 12 && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 14 && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-    if (replacedMoveType.id == 16 && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+    if (replacedMoveType == PokeType.electric && myState.isGround(myFields) && state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.grass && myState.isGround(myFields) && state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.psychic && myState.isGround(myFields) && state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+    if (replacedMoveType == PokeType.dragon && yourState.isGround(yourFields) && state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
     
-    if (replacedMoveType.id == 10 && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
+    if (replacedMoveType == PokeType.fire && yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >= 0) tmpPow *= 1.25;
 
-    if (replacedMoveType.id == PokeTypeId.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
-    if (replacedMoveType.id == PokeTypeId.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType == PokeType.fire && myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
+    if (replacedMoveType == PokeType.electric && myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) tmpPow = tmpPow * 1352 / 4096;
 
     movePower = tmpPow.floor();
     // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
@@ -4521,7 +4515,7 @@ class TurnMove {
                     tmp.move = getReplacedMove(suggestion, continuousCount, myState);
                     tmp.moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     tmp.moveAdditionalEffects[continuousCount] = tmp.move.isSurelyEffect() ? MoveEffect(tmp.move.effect.id) : MoveEffect(0);
-                    tmp.moveEffectivenesses[continuousCount] = PokeType.effectiveness(
+                    tmp.moveEffectivenesses[continuousCount] = PokeTypeEffectiveness.effectiveness(
                         myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(tmp.move, continuousCount, myState, state), yourState);
@@ -4540,7 +4534,7 @@ class TurnMove {
                     moveController.text = move.displayName;
                     moveHits[continuousCount] = getMoveHit(suggestion, continuousCount, myState, yourState, yourFields);
                     moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
-                    moveEffectivenesses[0] = PokeType.effectiveness(
+                    moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
                         myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
                         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
                         getReplacedMoveType(move, continuousCount, myState, state), yourState);
@@ -5149,7 +5143,7 @@ class TurnMove {
           );
           break;
         case 46:    // わざを外すと使用者に、使用者の最大HP1/2のダメージ
-          if (moveHits[continuousCount].id == MoveHit.notHit || moveHits[continuousCount].id == MoveHit.fail) {
+          if (moveHits[continuousCount] == MoveHit.notHit || moveHits[continuousCount] == MoveHit.fail) {
             effectInputRow2 = DamageIndicateRow(
               playerType == PlayerType.me ? ownPokemon : opponentPokemon,
               hpController2,
@@ -5256,8 +5250,8 @@ class TurnMove {
           );
           break;
         case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-          if ((playerType == PlayerType.me && ownPokemonState.isTypeContain(8)) ||
-              (playerType == PlayerType.opponent && opponentPokemonState.isTypeContain(8))
+          if ((playerType == PlayerType.me && ownPokemonState.isTypeContain(PokeType.ghost)) ||
+              (playerType == PlayerType.opponent && opponentPokemonState.isTypeContain(PokeType.ghost))
           ) {
             effectInputRow2 = DamageIndicateRow(
               playerType == PlayerType.me ? ownPokemon : opponentPokemon,
@@ -6503,22 +6497,22 @@ class TurnMove {
                             ),
                             DropdownMenuItem(
                               value: MoveHit.notHit,
-                              child: Text(MoveHit(MoveHit.notHit).displayName),
+                              child: Text(MoveHit.notHit.displayName),
                             ),
                             DropdownMenuItem(
                               value: MoveHit.fail,
-                              child: Text(MoveHit(MoveHit.fail).displayName),
+                              child: Text(MoveHit.fail.displayName),
                             ),
                           ],
-                          value: moveHits[continuousCount].id,
+                          value: moveHits[continuousCount],
                           onChanged: (value) {
-                            moveHits[continuousCount] = MoveHit(value);
+                            moveHits[continuousCount] = value;
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveHits[continuousCount].id == MoveHit.hit ? loc.battleSucceeded :
+                          textValue: moveHits[continuousCount] == MoveHit.hit ? loc.battleSucceeded :
                             moveHits[continuousCount].displayName,
                           theme: theme,
                         ),
@@ -6584,15 +6578,15 @@ class TurnMove {
                             labelText: loc.battleHitFail,
                           ),
                           items: <DropdownMenuItem>[
-                            for (int index = MoveHit.hit; index <= MoveHit.fail; index++)
+                            for (final hit in MoveHit.values)
                             DropdownMenuItem(
-                              value: index,
-                              child: Text(MoveHit(index).displayName),
+                              value: hit,
+                              child: Text(hit.displayName),
                             ),
                           ],
-                          value: moveHits[continuousCount].id,
+                          value: moveHits[continuousCount],
                           onChanged: (value) {
-                            moveHits[continuousCount] = MoveHit(value);
+                            moveHits[continuousCount] = value;
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           },
@@ -6613,34 +6607,34 @@ class TurnMove {
                           ),
                           items: <DropdownMenuItem<int>>[
                             DropdownMenuItem(
-                              value: MoveEffectiveness.normal,
+                              value: MoveEffectiveness.normal.index,
                               child: Text(loc.battleEffectivenessNormal, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
-                              value: MoveEffectiveness.great,
+                              value: MoveEffectiveness.great.index,
                               child: Text(loc.battleEffectivenessGreat, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
-                              value: MoveEffectiveness.notGood,
+                              value: MoveEffectiveness.notGood.index,
                               child: Text(loc.battleEffectivenessNotGood, overflow: TextOverflow.ellipsis,),
                             ),
                             DropdownMenuItem(
-                              value: MoveEffectiveness.noEffect,
+                              value: MoveEffectiveness.noEffect.index,
                               child: Text(loc.battleEffectivenessNoEffect, overflow: TextOverflow.ellipsis,),
                             ),
                           ],
-                          value: moveEffectivenesses[continuousCount].id,
-                          onChanged: moveHits[continuousCount].id != MoveHit.notHit && moveHits[continuousCount].id != MoveHit.fail ? (value) {
-                            moveEffectivenesses[continuousCount] = MoveEffectiveness(value!);
+                          value: moveEffectivenesses[continuousCount].index,
+                          onChanged: moveHits[continuousCount] != MoveHit.notHit && moveHits[continuousCount] != MoveHit.fail ? (value) {
+                            moveEffectivenesses[continuousCount] = MoveEffectiveness.values[value!];
                             appState.editingPhase[phaseIdx] = true;
                             onFocus();
                           } : null,
                           onFocus: onFocus,
                           isInput: isInput,
-                          textValue: moveEffectivenesses[continuousCount].id == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
-                            moveEffectivenesses[continuousCount].id == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
+                          textValue: moveEffectivenesses[continuousCount] == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
                           theme: theme,
                         ),
                       ),
@@ -6863,17 +6857,17 @@ class TurnMove {
   {
     if (isInput) {
       return TypeDropdownButton(
-        labelText, onChanged, value,
+        labelText, onChanged, value != null ? PokeType.values[value] : null,
         isError: isError, isTeraType: isTeraType,
       );
     }
     else {
       return TextField(
-        controller: TextEditingController(text: PokeType.createFromId(value ?? 0).displayName),
+        controller: TextEditingController(text: PokeType.values[value ?? 0].displayName),
         decoration: InputDecoration(
           border: UnderlineInputBorder(),
           labelText: labelText,
-          prefixIcon: PokeType.createFromId(value ?? 0).displayIcon,
+          prefixIcon: PokeType.values[value ?? 0].displayIcon,
         ),
         onTap: onFocus,
         readOnly: true,
@@ -6939,7 +6933,7 @@ class TurnMove {
 
     if (isMoveChanged) {
       moveAdditionalEffects[0] = move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
-      moveEffectivenesses[0] = PokeType.effectiveness(
+      moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
         myState.currentAbility.id == 113 || myState.currentAbility.id == 299, yourState.holdingItem?.id == 586,
         yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
         move.type, yourState);
@@ -6978,7 +6972,7 @@ class TurnMove {
         extraArg2[continuousCount] = 25;
         break;
       case 110:   // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-        if (myState.isTypeContain(8)) {
+        if (myState.isTypeContain(PokeType.ghost)) {
           extraArg1[continuousCount] = (myState.pokemon.h.real / 2).floor();
           extraArg2[continuousCount] = 50;
         }
@@ -7174,16 +7168,16 @@ class TurnMove {
       case 204:   // 天気が変わっていると威力2倍、タイプも変わる
         switch (state.weather.id) {
           case Weather.sunny:
-            ret = PokeType.createFromId(10);
+            ret = PokeType.fire;
             break;
           case Weather.rainy:
-            ret = PokeType.createFromId(11);
+            ret = PokeType.water;
             break;
           case Weather.snowy:
-            ret = PokeType.createFromId(15);
+            ret = PokeType.ice;
             break;
           case Weather.sandStorm:
-            ret = PokeType.createFromId(6);
+            ret = PokeType.rock;
             break;
           default:
             break;
@@ -7193,55 +7187,55 @@ class TurnMove {
         if (myState.holdingItem != null) {
           switch (myState.holdingItem!.id) {
             case 275:   // ひのたまプレート
-              ret = PokeType.createFromId(10);
+              moveType = PokeType.fire;
               break;
             case 276:   // しずくプレート
-              ret = PokeType.createFromId(11);
+              moveType = PokeType.water;
               break;
             case 277:   // いかずちプレート
-              ret = PokeType.createFromId(13);
+              moveType = PokeType.electric;
               break;
             case 278:   // みどりのプレート
-              ret = PokeType.createFromId(12);
+              moveType = PokeType.grass;
               break;
             case 279:   // つららのプレート
-              ret = PokeType.createFromId(15);
+              moveType = PokeType.ice;
               break;
             case 280:   // こぶしのプレート
-              ret = PokeType.createFromId(2);
+              moveType = PokeType.fight;
               break;
             case 281:   // もうどくプレート
-              ret = PokeType.createFromId(4);
+              moveType = PokeType.poison;
               break;
             case 282:   // だいちのプレート
-              ret = PokeType.createFromId(5);
+              moveType = PokeType.ground;
               break;
             case 283:   // あおぞらプレート
-              ret = PokeType.createFromId(3);
+              moveType = PokeType.fly;
               break;
             case 284:   // ふしぎのプレート
-              ret = PokeType.createFromId(14);
+              moveType = PokeType.psychic;
               break;
             case 285:   // たまむしプレート
-              ret = PokeType.createFromId(7);
+              moveType = PokeType.bug;
               break;
             case 286:   // がんせきプレート
-              ret = PokeType.createFromId(6);
+              moveType = PokeType.rock;
               break;
             case 287:   // もののけプレート
-              ret = PokeType.createFromId(8);
+              moveType = PokeType.ghost;
               break;
             case 288:   // りゅうのプレート
-              ret = PokeType.createFromId(16);
+              moveType = PokeType.dragon;
               break;
             case 289:   // こわもてプレート
-              ret = PokeType.createFromId(17);
+              moveType = PokeType.evil;
               break;
             case 290:   // こつてつプレート
-              ret = PokeType.createFromId(9);
+              moveType = PokeType.steel;
               break;
             case 684:   // せいれいプレート
-              ret = PokeType.createFromId(18);
+              moveType = PokeType.fairy;
               break;
             default:
               break;
@@ -7253,7 +7247,7 @@ class TurnMove {
         break;
       case 437:   // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
         if (myState.buffDebuffs.where((e) => e.id == BuffDebuff.harapekoForm).isNotEmpty) {
-          ret = PokeType.createFromId(17);
+          ret = PokeType.evil;
         }
         break;
       case 444:   // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
@@ -7266,16 +7260,16 @@ class TurnMove {
         if (myState.isGround(state.getIndiFields(playerType))) {
           switch (state.field.id) {
             case Field.electricTerrain:
-              ret = PokeType.createFromId(13);
+              ret = PokeType.electric;
               break;
             case Field.grassyTerrain:
-              ret = PokeType.createFromId(12);
+              ret = PokeType.grass;
               break;
             case Field.mistyTerrain:
-              ret = PokeType.createFromId(18);
+              ret = PokeType.fairy;
               break;
             case Field.psychicTerrain:
-              ret = PokeType.createFromId(14);
+              ret = PokeType.psychic;
               break;
           }
         }
@@ -7283,13 +7277,13 @@ class TurnMove {
       case 487:   // 対象の場のリフレクター・ひかりのかべ・オーロラベールを解除してからこうげき。ケンタロスのフォルムによってわざのタイプが変化する
         switch (myState.pokemon.no) {
           case 10250:
-            ret = PokeType.createFromId(2);
+            ret = PokeType.fight;
             break;
           case 10251:
-            ret = PokeType.createFromId(10);
+            ret = PokeType.fire;
             break;
           case 10252:
-            ret = PokeType.createFromId(11);
+            ret = PokeType.water;
             break;
         }
         break;
@@ -7302,7 +7296,7 @@ class TurnMove {
 
   // 主に確定急所の判定を行う
   MoveHit getMoveHit(Move move, int continuousCount, PokemonState myState, PokemonState yourState, List<IndividualField> yourFields) {
-    MoveHit ret = MoveHit(MoveHit.hit);
+    MoveHit ret = MoveHit.hit;
     var mA = myState.currentAbility.id;
     var yA = yourState.currentAbility.id;
     // (こうげき側がとくせいを無視できず、)ぼうぎょ側がカブトアーマー/シェルアーマー/おまじない(場)ならば急所に当たらない
@@ -7311,7 +7305,7 @@ class TurnMove {
       case 289:   // かならず急所に当たる
       case 462:   // 3回連続でこうげきする。かならず急所に当たる
       case 486:   // 必中かつ必ず急所に当たる
-        ret = MoveHit(MoveHit.critical);
+        ret = MoveHit.critical;
         break;
       default:
         break;
@@ -7319,7 +7313,7 @@ class TurnMove {
     if (yourState.ailmentsWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison).isNotEmpty &&
         myState.buffDebuffs.where((e) => e.id == BuffDebuff.merciless).isNotEmpty
     ) {
-      ret = MoveHit(MoveHit.critical);
+      ret = MoveHit.critical;
     }
 
     return ret;
@@ -7328,12 +7322,12 @@ class TurnMove {
   void clear() {
     playerType = PlayerType.none;
     type = TurnMoveType.none;
-    teraType = PokeType.createFromId(0);
-    move = Move(0, '', '', PokeType.createFromId(0), 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
+    teraType = PokeType.unknown;
+    move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
-    moveHits = [MoveHit(MoveHit.hit)];
-    moveEffectivenesses = [MoveEffectiveness(MoveEffectiveness.normal)];
+    moveHits = [MoveHit.hit];
+    moveEffectivenesses = [MoveEffectiveness.normal];
     realDamage = [0];
     percentDamage = [0];
     moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
@@ -7341,7 +7335,7 @@ class TurnMove {
     extraArg2 = [0];
     extraArg3 = [0];
     _changePokemonIndexes = [null, null];
-    moveType = PokeType.createFromId(0);
+    moveType = PokeType.unknown;
     isFirst = false;
   }
 
@@ -7354,7 +7348,7 @@ class TurnMove {
     // type
     turnMove.type = TurnMoveTypeNum.createFromNumber(int.parse(turnMoveElements[1]));
     // teraType
-    turnMove.teraType = PokeType.createFromId(int.parse(turnMoveElements[2]));
+    turnMove.teraType = PokeType.values[int.parse(turnMoveElements[2])];
     // move
     if (version == 1) {
       var moveElements = turnMoveElements[3].split(split2);
@@ -7362,7 +7356,7 @@ class TurnMove {
         int.parse(moveElements[0]),
         moveElements[1],
         '',
-        PokeType.createFromId(int.parse(moveElements[2])),
+        PokeType.values[int.parse(moveElements[2])],
         int.parse(moveElements[3]),
         int.parse(moveElements[4]),
         int.parse(moveElements[5]),
@@ -7385,14 +7379,14 @@ class TurnMove {
     var moveHits = turnMoveElements[6].split(split2);
     for (var moveHitsElement in moveHits) {
       if (moveHitsElement == '') break;
-      turnMove.moveHits.add(MoveHit(int.parse(moveHitsElement)));
+      turnMove.moveHits.add(MoveHit.values[int.parse(moveHitsElement)]);
     }
     // moveEffectiveness
     var moveEffectivenesses = turnMoveElements[7].split(split2);
     turnMove.moveEffectivenesses.clear();
     for (var moveEffectivenessElement in moveEffectivenesses) {
       if (moveEffectivenessElement == '') break;
-      turnMove.moveEffectivenesses.add(MoveEffectiveness(int.parse(moveEffectivenessElement)));
+      turnMove.moveEffectivenesses.add(MoveEffectiveness.values[int.parse(moveEffectivenessElement)]);
     }
     // realDamage
     var realDamages = turnMoveElements[8].split(split2);
@@ -7447,7 +7441,7 @@ class TurnMove {
       }
     }
     // moveType
-    turnMove.moveType = PokeType.createFromId(int.parse(turnMoveElements[15]));
+    turnMove.moveType = PokeType.values[int.parse(turnMoveElements[15])];
     // isFirst
     turnMove.isFirst = int.parse(turnMoveElements[16]) != 0;
 
@@ -7464,7 +7458,7 @@ class TurnMove {
     ret += type.number.toString();
     ret += split1;
     // teraType
-    ret += teraType.id.toString();
+    ret += teraType.index.toString();
     ret += split1;
     // move
 /*    // version==1
@@ -7511,13 +7505,13 @@ class TurnMove {
     ret += split1;
     // moveHits
     for (final moveHit in moveHits) {
-      ret += moveHit.id.toString();
+      ret += moveHit.index.toString();
       ret += split2;
     }
     ret += split1;
     // moveEffectivenesses
     for (final moveEffectiveness in moveEffectivenesses) {
-      ret += moveEffectiveness.id.toString();
+      ret += moveEffectiveness.index.toString();
       ret += split2;
     }
     ret += split1;
@@ -7564,7 +7558,7 @@ class TurnMove {
     }
     ret += split1;
     // moveType
-    ret += moveType.id.toString();
+    ret += moveType.index.toString();
     ret += split1;
     // isFirst
     ret += isFirst ? '1' : '0';

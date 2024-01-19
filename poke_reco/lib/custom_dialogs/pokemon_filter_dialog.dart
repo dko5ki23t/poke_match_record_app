@@ -3,6 +3,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -10,8 +11,8 @@ class PokemonFilterDialog extends StatefulWidget {
   final Future<void> Function (
     List<Owner> ownerFilter,
     List<int> noFilter,
-    List<int> typeFilter,
-    List<int> teraTypeFilter,
+    List<PokeType> typeFilter,
+    List<PokeType> teraTypeFilter,
     List<int> moveFilter,
     List<int> sexFilter,
     List<int> abilityFilter,
@@ -19,8 +20,8 @@ class PokemonFilterDialog extends StatefulWidget {
   final PokeDB pokeData;
   final List<Owner> ownerFilter;
   final List<int> noFilter;
-  final List<int> typeFilter;
-  final List<int> teraTypeFilter;
+  final List<PokeType> typeFilter;
+  final List<PokeType> teraTypeFilter;
   final List<int> moveFilter;
   final List<int> sexFilter;
   final List<int> abilityFilter;
@@ -55,8 +56,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   bool temperExpanded = true;
   List<Owner> ownerFilter = [];
   List<int> noFilter = [];
-  List<int> typeFilter = [];
-  List<int> teraTypeFilter = [];
+  List<PokeType> typeFilter = [];
+  List<PokeType> teraTypeFilter = [];
   List<int> moveFilter = [];
   List<int> sexFilter = [];
   List<int> abilityFilter = [];
@@ -243,15 +244,15 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                 ],
               ),
               leading: Checkbox(
-                value: typeFilter.contains(type.id),
+                value: typeFilter.contains(type),
                 onChanged: (value) {
                   if (value == null) return;
                   setState(() {
                     if (value == true) {
-                      typeFilter.add(type.id);
+                      typeFilter.add(type);
                     }
                     else {
-                      typeFilter.remove(type.id);
+                      typeFilter.remove(type);
                     }
                   });
                 },
@@ -287,15 +288,15 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                 ],
               ),
               leading: Checkbox(
-                value: teraTypeFilter.contains(type.id),
+                value: teraTypeFilter.contains(type),
                 onChanged: (value) {
                   if (value == null) return;
                   setState(() {
                     if (value == true) {
-                      teraTypeFilter.add(type.id);
+                      teraTypeFilter.add(type);
                     }
                     else {
-                      teraTypeFilter.remove(type.id);
+                      teraTypeFilter.remove(type);
                     }
                   });
                 },
@@ -570,8 +571,9 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               setState(() {
                 ownerFilter = [Owner.mine];
                 noFilter = [];
-                typeFilter = [for (int i = 1; i < 19; i++) i];
-                teraTypeFilter = [for (int i = 1; i < 20; i++) i];
+                typeFilter = PokeType.values;
+                typeFilter.remove(PokeType.stellar);
+                teraTypeFilter = PokeType.values;
                 moveFilter = [];
                 sexFilter = [for (var sex in Sex.values) sex.id];
                 abilityFilter = [];

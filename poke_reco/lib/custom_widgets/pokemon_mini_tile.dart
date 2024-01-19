@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 
 class PokemonMiniTile extends ListTile {
