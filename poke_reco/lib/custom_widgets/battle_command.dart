@@ -246,7 +246,7 @@ class BattleCommandState extends State<BattleCommand> {
                     turnMove.percentDamage[continuousCount] = yourState.remainHPPercent - remain;
                   }
                   else {
-                    turnMove.realDamage[continuousCount] = myState.remainHP - remain;
+                    turnMove.realDamage[continuousCount] = yourState.remainHP - remain;
                   }
                 }),
               ),

@@ -91,7 +91,7 @@ class BattleTurnListView extends ListView {
     Party ownParty, Party opponentParty,
   ) {
     if (i <= 0 || i > sameTimingList.length) {
-      return turn.copyInitialState(ownParty, opponentParty);
+      return turn.copyInitialState();
     }
     return sameTimingList[i-1].last.phaseState;
   }

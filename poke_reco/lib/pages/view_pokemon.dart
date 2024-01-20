@@ -44,24 +44,21 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   final pokeStatIndiController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatEffortController = List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatRealController = List.generate(StatIndex.size.index, (i) => TextEditingController());
-  bool isFirstBuild = true;
   int listIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    listIndex = widget.listIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokeData = appState.pokeData;
-    var myPokemon = widget.pokemonList[widget.listIndex];
+    var myPokemon = widget.pokemonList[listIndex];
     var theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-
-    if (isFirstBuild) {
-      listIndex = widget.listIndex;
-      isFirstBuild = false;
-    }
-    else {
-      myPokemon = widget.pokemonList[listIndex];
-    }
     
     appState.onBackKeyPushed = (){};
     appState.onTabChange = (func) => func();

@@ -1,15 +1,75 @@
+import 'dart:collection';
+
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+// 自身・相手の行動(timing==Timing.action)をそれぞれ1つずつ含んだリスト
+class PhaseList extends ListBase<TurnEffect> {
+  // https://stackoverflow.com/questions/16247045/how-do-i-extend-a-list-in-dart
+  final List<TurnEffect> l = [];
+  
+  PhaseList() {
+    TurnMove ownAction = TurnMove()
+      ..playerType = PlayerType.me
+      ..type = TurnMoveType.move;
+    TurnMove opponentAction = TurnMove()
+      ..playerType = PlayerType.opponent
+      ..type = TurnMoveType.move;
+    l.addAll([
+      TurnEffect()
+        ..playerType = PlayerType.me
+        ..timing = Timing.action
+        ..effectType = EffectType.move
+        ..move = ownAction,
+      TurnEffect()
+        ..playerType = PlayerType.opponent
+        ..timing = Timing.action
+        ..effectType = EffectType.move
+        ..move = opponentAction
+    ]);
+  }
+
+  @override
+  set length(int newLength) { l.length = newLength; }
+  @override
+  int get length => l.length;
+  @override
+  TurnEffect operator [](int index) => l[index];
+  @override
+  void operator []=(int index, TurnEffect value) { l[index] = value; }
+  
+  PhaseList copyWith() => PhaseList()..l.addAll(l);
+
+  @override
+  void add(TurnEffect element) {
+    if (element.timing == Timing.action) {
+      assert(
+        element.playerType == PlayerType.me || element.playerType == PlayerType.opponent,
+        'action effect\'s player must be me or opponent',
+      );
+      // 自身・相手の行動は1つずつまで
+      assert(
+        l.where((e) => e.timing == Timing.action && e.playerType == element.playerType).isEmpty,
+        'only 1 action effect for each player is allowed in 1 turn',
+      );
+    }
+    super.add(element);
+  }
+
+  TurnEffect get ownAction => l.where((element) => element.timing == Timing.action && element.playerType == PlayerType.me).first;
+  TurnEffect get opponentAction => l.where((element) => element.timing == Timing.action && element.playerType == PlayerType.opponent).first;
+}
+
 class Turn {
   PhaseState _initialState = PhaseState();
-  List<TurnEffect> phases = [];
+  PhaseList phases = PhaseList();
   PhaseState _endingState = PhaseState();
   List<TurnEffect> noAutoAddEffect = [];
 
@@ -40,14 +100,14 @@ class Turn {
   Turn copyWith() =>
     Turn()
     .._initialState = _initialState.copyWith()
-    ..phases = [...phases]
+    ..phases = phases.copyWith()
     .._endingState = _endingState.copyWith()
     ..noAutoAddEffect = [
       for (final effect in noAutoAddEffect)
       effect.copyWith()
     ];
 
-  PhaseState copyInitialState(Party ownParty, Party opponentParty,) {
+  PhaseState copyInitialState() {
     return _initialState.copyWith();
   }
 
@@ -65,7 +125,7 @@ class Turn {
     return actionCount == validCount && actionCount >= 2;
   }
 
-  void setInitialState(PhaseState state, Party ownParty, Party opponentParty,) {
+  void setInitialState(PhaseState state) {
     _initialState = state.copyWith();
   }
 
@@ -73,7 +133,7 @@ class Turn {
   PhaseState getProcessedStates(
     int phaseIdx, Party ownParty, Party opponentParty, AppLocalizations loc,)
   {
-    PhaseState ret = copyInitialState(ownParty, opponentParty,);
+    PhaseState ret = copyInitialState();
     int continousCount = 0;
     TurnEffect? lastAction;
 
@@ -99,9 +159,39 @@ class Turn {
     return ret;
   }
 
+  // ターンの最終状態(_endingState)を更新する
+  // phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する
+  // _endingStateのコピーを返す
+  PhaseState updateEndingState(Party ownParty, Party opponentParty, AppLocalizations loc,) {
+    _endingState = _initialState.copyWith();
+    int continousCount = 0;
+    TurnEffect? lastAction;
+
+    for (final phase in phases) {
+      if (phase.isAdding) continue;   // TODO
+      if (!phase.isValid()) continue;
+      if (phase.timing == Timing.continuousMove) {
+        lastAction = phase;
+        continousCount++;
+      }
+      else if (phase.timing == Timing.action) {
+        lastAction = phase;
+        continousCount = 0;
+      }
+      phase.processEffect(
+        ownParty,
+        _endingState.getPokemonState(PlayerType.me, phase.timing == Timing.afterMove ? lastAction : null),
+        opponentParty,
+        _endingState.getPokemonState(PlayerType.opponent, phase.timing == Timing.afterMove ? lastAction : null),
+        _endingState, lastAction, continousCount, loc: loc,
+      );
+    }
+    return _endingState.copyWith();
+  }
+
   // 初期状態のみ残してクリア
   void clearWithInitialState() {
-    phases = [];
+    phases = PhaseList();
     _endingState = PhaseState();
     noAutoAddEffect = [];
   }

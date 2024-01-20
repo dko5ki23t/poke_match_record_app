@@ -612,7 +612,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
     Party ownParty = battle.getParty(PlayerType.me);
     Party opponentParty = battle.getParty(PlayerType.opponent);
     Turn currentTurn = battle.turns[turnNum-1];
-    PhaseState currentState = currentTurn.copyInitialState(ownParty, opponentParty);
+    PhaseState currentState = currentTurn.copyInitialState();
     int continuousCount = 0;
     TurnEffect? lastAction;
     int beginIdx = 0;

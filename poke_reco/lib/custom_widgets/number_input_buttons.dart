@@ -15,10 +15,16 @@ class NumberInputButtons extends StatefulWidget {
 }
 
 class _NumberInputButtonsState extends State<NumberInputButtons> {
-  bool _isFirstBuild = true;
   int _number = 0;
   bool fixed = false;
   TextEditingController controller = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _number = widget.initialNum;
+    controller.text = _number.toString();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +33,6 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
 //      backgroundColor: MaterialStateProperty.all<Color>(theme.secondaryHeaderColor),
 //    );
     const Size buttonSize = Size(100, 100);
-
-    if (_isFirstBuild) {
-      _number = widget.initialNum;
-      _isFirstBuild = false;
-      controller.text = _number.toString();
-    }
 
     void changeNum(void Function() func) {
       setState(() {

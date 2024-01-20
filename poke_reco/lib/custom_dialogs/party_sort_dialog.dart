@@ -60,16 +60,17 @@ class PartySortDialog extends StatefulWidget {
 }
 
 class PartySortDialogState extends State<PartySortDialog> {
-  bool isFirstBuild = true;
   PartySort? _partySort;
 
   @override
+  void initState() {
+    super.initState();
+    _partySort = widget.currentSort;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      _partySort = widget.currentSort;
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonSort),

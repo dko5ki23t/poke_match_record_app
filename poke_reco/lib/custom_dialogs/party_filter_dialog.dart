@@ -32,7 +32,6 @@ class PartyFilterDialog extends StatefulWidget {
 }
 
 class PartyFilterDialogState extends State<PartyFilterDialog> {
-  bool isFirstBuild = true;
   bool ownerExpanded = true;
   bool winRateExpanded = true;
   bool pokemonNoExpanded = true;
@@ -45,16 +44,18 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
   TextEditingController pokemonNoController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    ownerFilter = [...widget.ownerFilter];
+    winRateMinFilter = widget.winRateMinFilter;
+    winRateMaxFilter = widget.winRateMaxFilter;
+    pokemonNoFilter = [...widget.pokemonNoFilter];
+  }
+
+  @override
   Widget build(BuildContext context) {
     var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      ownerFilter = [...widget.ownerFilter];
-      winRateMinFilter = widget.winRateMinFilter;
-      winRateMaxFilter = widget.winRateMaxFilter;
-      pokemonNoFilter = [...widget.pokemonNoFilter];
-      isFirstBuild = false;
-    }
-
+    
     return AlertDialog(
       title: Text(loc.commonFilter),
       content: SingleChildScrollView(

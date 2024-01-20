@@ -54,16 +54,17 @@ class BattleSortDialog extends StatefulWidget {
 }
 
 class BattleSortDialogState extends State<BattleSortDialog> {
-  bool isFirstBuild = true;
   BattleSort? _battleSort;
 
   @override
+  void initState() {
+    super.initState();
+    _battleSort = widget.currentSort;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      _battleSort = widget.currentSort;
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonSort),

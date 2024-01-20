@@ -60,16 +60,17 @@ class PokemonSortDialog extends StatefulWidget {
 }
 
 class PokemonSortDialogState extends State<PokemonSortDialog> {
-  bool isFirstBuild = true;
   PokemonSort? _pokemonSort;
 
   @override
+  void initState() {
+    super.initState();
+    _pokemonSort = widget.currentSort;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      _pokemonSort = widget.currentSort;
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonSort),

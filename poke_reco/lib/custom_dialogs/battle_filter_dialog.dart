@@ -22,20 +22,21 @@ class BattleFilterDialog extends StatefulWidget {
 }
 
 class BattleFilterDialogState extends State<BattleFilterDialog> {
-  bool isFirstBuild = true;
   bool winExpanded = true;
   bool partyIDExpanded = true;
   List<int> winFilter = [];
   List<int> partyIDFilter = [];
 
   @override
+  void initState() {
+    super.initState();
+    winFilter = [...widget.winFilter];
+    partyIDFilter = [...widget.partyIDFilter];
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      winFilter = [...widget.winFilter];
-      partyIDFilter = [...widget.partyIDFilter];
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonFilter),

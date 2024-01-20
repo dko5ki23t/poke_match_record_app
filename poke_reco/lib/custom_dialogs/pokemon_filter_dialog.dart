@@ -45,7 +45,6 @@ class PokemonFilterDialog extends StatefulWidget {
 }
 
 class PokemonFilterDialogState extends State<PokemonFilterDialog> {
-  bool isFirstBuild = true;
   bool ownerExpanded = true;
   bool pokemonExpanded = true;
   bool typeExpanded = true;
@@ -68,20 +67,22 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   TextEditingController temperController = TextEditingController();
 
   @override
-  Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      ownerFilter = [...widget.ownerFilter];
-      noFilter = [...widget.noFilter];
-      typeFilter = [...widget.typeFilter];
-      teraTypeFilter = [...widget.teraTypeFilter];
-      moveFilter = [...widget.moveFilter];
-      sexFilter = [...widget.sexFilter];
-      abilityFilter = [...widget.abilityFilter];
-      temperFilter = [...widget.temperFilter];
-      isFirstBuild = false;
-    }
+  void initState() {
+    super.initState();
+    ownerFilter = [...widget.ownerFilter];
+    noFilter = [...widget.noFilter];
+    typeFilter = [...widget.typeFilter];
+    teraTypeFilter = [...widget.teraTypeFilter];
+    moveFilter = [...widget.moveFilter];
+    sexFilter = [...widget.sexFilter];
+    abilityFilter = [...widget.abilityFilter];
+    temperFilter = [...widget.temperFilter];
+  }
 
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    
     return AlertDialog(
       title: Text(loc.commonFilter),
       content: SingleChildScrollView(

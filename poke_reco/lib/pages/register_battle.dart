@@ -80,7 +80,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   List<TextEditingController> opponentStatusMinControllers = List.generate(6, (index) => TextEditingController());
   List<TextEditingController> opponentStatusMaxControllers = List.generate(6, (index) => TextEditingController());
 
-  final turnScrollController = ScrollController();
+//  final turnScrollController = ScrollController();
 
   CheckedPokemons checkedPokemons = CheckedPokemons();
   int turnNum = 1;
@@ -184,8 +184,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         pageType == RegisterBattlePageType.turnPage
     ) {
       // フォーカスしているフェーズの状態を取得
-      focusState = turns[turnNum-1].
-                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
+//      focusState = turns[turnNum-1].
+//                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
+      focusState = turns[turnNum-1].updateEndingState(ownParty, opponentParty, loc);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       /*if (appState.requestActionSwap) {
         _onlySwapActionPhases(loc);
@@ -199,11 +200,30 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }*/
     }
 
+    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.ownAction.move! : TurnMove();
+    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.opponentAction.move! : TurnMove();
+    var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState() : null;
+    var ownCommandWidget = prevState != null ? BattleCommand(
+      playerType: PlayerType.me,
+      turnMove: ownTurnMove,
+      phaseState: prevState,
+      myParty: ownParty,
+      yourParty: opponentParty,
+      parentSetState: setState,
+    ) : null;
+    var opponentCommandWidget = prevState != null ? BattleCommand(
+      playerType: PlayerType.opponent,
+      turnMove: opponentTurnMove,
+      phaseState: prevState,
+      myParty: opponentParty,
+      yourParty: ownParty,
+      parentSetState: setState,
+    ) : null;
+
     Widget lists;
     Widget title;
     void Function()? nextPressed;
     void Function()? backPressed;
-    //void Function()? deletePressed;
 
     void onComplete() async {
       // TODO?: 入力された値が正しいかチェック
@@ -225,7 +245,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             onYesPressed: () async {
               var lastState = turns.last.phases.isNotEmpty ?
                 turns.last.getProcessedStates(turns.last.phases.length-1, ownParty, opponentParty, loc) :
-                turns.last.copyInitialState(ownParty, opponentParty);
+                turns.last.copyInitialState();
               var oppPokemonStates = lastState.getPokemonStates(PlayerType.opponent);
               // 現在無効のポケモンを有効化し、DBに保存
               for (int i = 0; i < opponentParty.pokemonNum; i++) {
@@ -399,32 +419,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               turn.getInitialLastExitedStates(PlayerType.opponent).add(state.copyWith());
             }
             turn.initialOwnPokemonState.processEnterEffect(
-              true, turn.copyInitialState(ownParty, opponentParty),
+              true, turn.copyInitialState(),
               turn.initialOpponentPokemonState
             );
             turn.initialOpponentPokemonState.processEnterEffect(
-              false, turn.copyInitialState(ownParty, opponentParty),
+              false, turn.copyInitialState(),
               turn.initialOwnPokemonState
-            );
-            TurnMove ownAction = TurnMove()
-              ..playerType = PlayerType.me
-              ..type = TurnMoveType.move;
-            TurnMove opponentAction = TurnMove()
-              ..playerType = PlayerType.opponent
-              ..type = TurnMoveType.move;
-            turn.phases.add(
-              TurnEffect()
-              ..playerType = PlayerType.me
-              ..timing = Timing.action
-              ..effectType = EffectType.move
-              ..move = ownAction
-            );
-            turn.phases.add(
-              TurnEffect()
-              ..playerType = PlayerType.opponent
-              ..timing = Timing.action
-              ..effectType = EffectType.move
-              ..move = opponentAction
             );
             // 初期状態設定ここまで
             turns.add(turn);
@@ -476,8 +476,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
-          // 表示のスクロール位置をトップに
-          turnScrollController.jumpTo(0);
           Turn prevTurn = turns[turnNum-1];
           for (var phase in prevTurn.phases) {
             phase.isAutoSet = false;
@@ -494,7 +492,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               ownParty, opponentParty, loc);
           initialState.processTurnEnd(prevTurn);
           // 前ターンの最終状態を初期状態とする
-          currentTurn.setInitialState(initialState, ownParty, opponentParty);
+          currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
           appState.editingPhase = List.generate(
             currentTurn.phases.length, (index) => false
@@ -553,7 +551,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           break;
         case RegisterBattlePageType.turnPage:
           // 表示のスクロール位置をトップに
-          turnScrollController.jumpTo(0);
+          //turnScrollController.jumpTo(0);
           for (var phase in turns[turnNum-1].phases) {
             phase.isAutoSet = false;
           }
@@ -668,11 +666,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 */
-
-    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[0].move! : TurnMove();
-    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases[1].move! : TurnMove();
-    var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState(ownParty, opponentParty) : null;
-
     switch (pageType) {
       case RegisterBattlePageType.basePage:
         title = Text(loc.battlesTabTitleBattleBase);
@@ -740,14 +733,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       SizedBox(width: 10,),
                       Expanded(
                         flex: 6,
-                        child: BattleCommand(
-                          playerType: PlayerType.me,
-                          turnMove: ownTurnMove,
-                          phaseState: prevState!,
-                          myParty: ownParty,
-                          yourParty: opponentParty,
-                          parentSetState: setState,
-                        ),
+                        child: ownCommandWidget!,
                       ),
                     ],
                   ),
@@ -768,14 +754,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       SizedBox(width: 10,),
                       Expanded(
                         flex: 6,
-                        child: BattleCommand(
-                          playerType: PlayerType.opponent,
-                          turnMove: opponentTurnMove,
-                          phaseState: prevState,
-                          myParty: opponentParty,
-                          yourParty: ownParty,
-                          parentSetState: setState,
-                        ),
+                        child: opponentCommandWidget!,
                       ),
                     ],
                   ),
