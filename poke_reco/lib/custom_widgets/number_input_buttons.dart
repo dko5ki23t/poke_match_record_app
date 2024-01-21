@@ -1,14 +1,18 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class NumberInputButtons extends StatefulWidget {
   const NumberInputButtons({
     Key? key,
     required this.initialNum,
-    required this.onFixed,
+    required this.onConfirm,
+    this.maxDigits = 4,
   }) : super(key: key);
   
   final int initialNum;
-  final void Function(int) onFixed;
+  final void Function(int) onConfirm;
+  final int maxDigits;
 
   @override
   State<NumberInputButtons> createState() => _NumberInputButtonsState();
@@ -16,7 +20,7 @@ class NumberInputButtons extends StatefulWidget {
 
 class _NumberInputButtonsState extends State<NumberInputButtons> {
   int _number = 0;
-  bool fixed = false;
+  bool confirmed = false;
   TextEditingController controller = TextEditingController();
 
   @override
@@ -39,6 +43,20 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
         func();
         controller.text = _number.toString();
       });
+    }
+
+    void inputNum(int n) {
+      if (confirmed) {
+        confirmed = false;
+        changeNum(() {
+          _number = n;
+        });
+      }
+      else if ((_number / pow(10, widget.maxDigits-1)).floor() == 0) {
+        changeNum(() {
+          _number = _number * 10 + n;
+        });
+      }
     }
 
     return FittedBox(
@@ -67,30 +85,22 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('1', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 1;
-                  }),
+                  onPressed: () => inputNum(1),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('2', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 2;
-                  }),
+                  onPressed: () => inputNum(2),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('3', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 3;
-                  }),
+                  onPressed: () => inputNum(3),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('4', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 4;
-                  }),
+                  onPressed: () => inputNum(4),
                 ),
               ],
             ),
@@ -100,30 +110,22 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('5', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 5;
-                  }),
+                  onPressed: () => inputNum(5),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('6', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 6;
-                  }),
+                  onPressed: () => inputNum(6),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('7', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 7;
-                  }),
+                  onPressed: () => inputNum(7),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('8', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 8;
-                  }),
+                  onPressed: () => inputNum(8),
                 ),
               ],
             ),
@@ -133,16 +135,12 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('9', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10 + 9;
-                  }),
+                  onPressed: () => inputNum(9),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
                   child: Text('0', style: TextStyle(fontSize: 50),),
-                  onPressed: () => changeNum(() {
-                    _number = _number * 10;
-                  }),
+                  onPressed: () => inputNum(0),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
@@ -153,11 +151,11 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
                 ),
                 _NumberInputButton(
                   size: buttonSize,
-                  pressed: fixed,
+                  pressed: confirmed,
                   child: Icon(Icons.subdirectory_arrow_left, size: 50),
                   onPressed: () => setState(() {
-                    fixed = true;
-                    widget.onFixed(_number);
+                    confirmed = true;
+                    widget.onConfirm(_number);
                   }),
                 ),
               ],

@@ -21,6 +21,9 @@ class PokemonTile extends ListTile {
       onTap,
       onLongPress,
       showWarning = false,
+      dense = false,
+      selected = false,
+      selectedTileColor,
     }
   ) : 
   super(
@@ -134,5 +137,8 @@ class PokemonTile extends ListTile {
     onTap: onTap,
     onLongPress: onLongPress,
     trailing: trailing,
+    dense: dense,
+    selected : selected,
+    selectedTileColor: selectedTileColor,
   );
 }

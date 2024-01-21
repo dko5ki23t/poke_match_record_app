@@ -49,22 +49,59 @@ class PhaseList extends ListBase<TurnEffect> {
 
   @override
   void add(TurnEffect element) {
-    if (element.timing == Timing.action) {
+    if (element.timing == Timing.action || element.timing == Timing.changeFaintingPokemon) {
       assert(
         element.playerType == PlayerType.me || element.playerType == PlayerType.opponent,
         'action effect\'s player must be me or opponent',
       );
       // 自身・相手の行動は1つずつまで
       assert(
-        l.where((e) => e.timing == Timing.action && e.playerType == element.playerType).isEmpty,
+        l.where(
+          (e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) &&
+          e.playerType == element.playerType
+        ).isEmpty,
         'only 1 action effect for each player is allowed in 1 turn',
       );
     }
     super.add(element);
   }
 
-  TurnEffect get ownAction => l.where((element) => element.timing == Timing.action && element.playerType == PlayerType.me).first;
-  TurnEffect get opponentAction => l.where((element) => element.timing == Timing.action && element.playerType == PlayerType.opponent).first;
+  bool isExistAction(PlayerType playerType) => l.where((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType).isNotEmpty;
+  TurnEffect getAction(PlayerType playerType) => l.where((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType).first;
+  PlayerType? get firstActionPlayer {
+    // 有効なactionで先に行動しているプレイヤーを返す
+    int ownPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == PlayerType.me);
+    int opponentPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == PlayerType.opponent);
+    //どちらも(存在しない/無効)
+    if ((ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()) && (opponentPlayerActionIndex < 0 || !l[opponentPlayerActionIndex].isValid())) return null;
+    // 片方の行動のみ(存在かつ有効)
+    if (ownPlayerActionIndex >= 0 && l[ownPlayerActionIndex].isValid() && (opponentPlayerActionIndex < 0 || !l[opponentPlayerActionIndex].isValid())) return PlayerType.me;
+    if (opponentPlayerActionIndex >= 0 && l[opponentPlayerActionIndex].isValid() && (ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid())) return PlayerType.opponent;
+    // 両行動ともに(存在かつ有効)
+    if (ownPlayerActionIndex > opponentPlayerActionIndex) {
+      return PlayerType.me;
+    }
+    else {
+      return PlayerType.opponent;
+    }
+  }
+
+  // 指定したプレイヤーの行動順を先にする
+  void setActionOrderFirst(PlayerType playerType) {
+    // 行動がない
+    assert(
+      isExistAction(PlayerType.me) && isExistAction(PlayerType.opponent),
+      'there are no own action or opponent action',
+    );
+    int myPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType);
+    int yourPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType.opposite);
+    // 対象の行動が後にあるなら
+    if (myPlayerActionIndex > yourPlayerActionIndex) {
+      // TODO:今後もっと複雑になる
+      final removed = l.removeAt(yourPlayerActionIndex);
+      l.add(removed);
+    }
+  }
 }
 
 class Turn {

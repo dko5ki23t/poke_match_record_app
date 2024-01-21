@@ -9,6 +9,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/tool.dart';
 
 enum CommandState {
   home,
@@ -24,6 +25,9 @@ class BattleCommand extends StatefulWidget {
     required this.myParty,
     required this.yourParty,
     required this.parentSetState,
+    required this.onConfirm,
+    required this.onUnFixed,
+    required this.isFirstAction,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -32,6 +36,9 @@ class BattleCommand extends StatefulWidget {
   final Party myParty;
   final Party yourParty;
   final Function(void Function()) parentSetState;
+  final Function() onConfirm;
+  final Function() onUnFixed;
+  final bool? isFirstAction;
 
   @override
   BattleCommandState createState() => BattleCommandState();
@@ -39,7 +46,7 @@ class BattleCommand extends StatefulWidget {
 
 class BattleCommandState extends State<BattleCommand> {
   CommandState state = CommandState.home;
-  bool fixed = false;
+  TextEditingController moveSearchTextController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -68,6 +75,13 @@ class BattleCommandState extends State<BattleCommand> {
       if (myPokemon.move4 != null) moves.add(myPokemon.move4!);
       moves.addAll(PokeDB().pokeBase[myPokemon.no]!.move.where((element) => element.isValid && moves.where((e) => e.id == element.id).isEmpty,));
       moves.add(PokeDB().moves[165]!);  // わるあがき
+      // 検索窓の入力でフィルタリング
+      final pattern = moveSearchTextController.text;
+      if (pattern != '') {
+        moves.retainWhere((s){
+          return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
+        });
+      }
       for (final myMove in moves) {
         DamageGetter getter = DamageGetter();
         TurnMove tmp = turnMove.copyWith();
@@ -122,6 +136,8 @@ class BattleCommandState extends State<BattleCommand> {
                   TextButton(
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnMoveType.move;
+                      // TODO: typeを変えたら他も変える？class継承とかでどうにか
+                      turnMove.setChangePokemonIndex(playerType, null);
                     }),
                     style: turnMove.type == TurnMoveType.move ? pressedStyle : null,
                     child: Text(loc.commonMove),
@@ -138,6 +154,7 @@ class BattleCommandState extends State<BattleCommand> {
                   TextButton(
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnMoveType.surrender;
+                      turnMove.setChangePokemonIndex(playerType, null);
                     }),
                     style: turnMove.type == TurnMoveType.surrender ? pressedStyle : null,
                     child: Text(loc.battleSurrender),
@@ -157,10 +174,12 @@ class BattleCommandState extends State<BattleCommand> {
                   child: Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: TextField(
+                      controller: moveSearchTextController,
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(),
                       ),
+                      onChanged: (value) => setState(() {}),
                     ),
                   ),
                 ),
@@ -182,15 +201,50 @@ class BattleCommandState extends State<BattleCommand> {
                   !prevState.getPokemonStates(playerType)[i].isFainting &&
                   i != myParty.pokemons.indexWhere((element) => element == prevState.getPokemonState(playerType, null).pokemon)
                 ) {
-                  pokemonTiles.add(PokemonTile(myParty.pokemons[i]!, theme));
+                  pokemonTiles.add(
+                    PokemonTile(
+                      myParty.pokemons[i]!, theme,
+                      onTap: () => parentSetState(() {
+                        if (turnMove.getChangePokemonIndex(playerType) == i+1) {
+                          turnMove.setChangePokemonIndex(playerType, null);
+                          widget.onUnFixed();
+                        }
+                        else {
+                          turnMove.setChangePokemonIndex(playerType, i+1);
+                          widget.onConfirm();
+                        }
+                      }),
+                      dense: true,
+                      selected: turnMove.getChangePokemonIndex(playerType) == i+1,
+                      selectedTileColor: Colors.black26,
+                    ),
+                  );
                   addedIndex.add(i);
                 }
               }
+              for (int i = 0; i < myParty.pokemonNum; i++) {
+                if (addedIndex.contains(i)) continue;
+                pokemonTiles.add(
+                  PokemonTile(
+                    myParty.pokemons[i]!, theme,
+                    enabled: false,
+                    dense: true,
+                  ),
+                );
+              }
               typeCommand = [
                 Expanded(
-                  flex: 7,
+                  flex: 1,
+                  child: Row(
+                    children: [
+                      TextButton(onPressed: (){}, child: Text(widget.isFirstAction != null ? widget.isFirstAction! ? '先に行動' : '後に行動' : ' '))
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 6,
                   child: ListViewWithViewItemCount(
-                    viewItemCount: 3,
+                    viewItemCount: 4,
                     children: pokemonTiles,
                   ),
                 ),
@@ -225,13 +279,17 @@ class BattleCommandState extends State<BattleCommand> {
                       turnMove.moveHits = [MoveHit.hit];
                       turnMove.moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
                       turnMove.moveEffectivenesses = [MoveEffectiveness.normal];
+                      turnMove.percentDamage[0] = 0;
+                      turnMove.realDamage[0] = 0;
                       state = CommandState.home;
+                      widget.onUnFixed();
                     }),
                     icon: Icon(Icons.arrow_back),
                   ),
                   Expanded(
                     child: Text(turnMove.move.displayName),
-                  )
+                  ),
+                  TextButton(onPressed: (){}, child: Text(widget.isFirstAction != null ? widget.isFirstAction! ? '先に行動' : '後に行動' : ' '))
                 ],
               ),
             ),
@@ -240,7 +298,7 @@ class BattleCommandState extends State<BattleCommand> {
               flex: 7,
               child: NumberInputButtons(
                 initialNum: 0,
-                onFixed: (remain) => parentSetState(() {
+                onConfirm: (remain) => parentSetState(() {
                   int continuousCount = 0; 
                   if (playerType == PlayerType.me) {
                     turnMove.percentDamage[continuousCount] = yourState.remainHPPercent - remain;
@@ -248,6 +306,7 @@ class BattleCommandState extends State<BattleCommand> {
                   else {
                     turnMove.realDamage[continuousCount] = yourState.remainHP - remain;
                   }
+                  widget.onConfirm();
                 }),
               ),
             ),
@@ -274,5 +333,9 @@ class BattleCommandState extends State<BattleCommand> {
       },
       child: commandColumn,
     );
+  }
+
+  void reset() {
+    state = CommandState.home;
   }
 }

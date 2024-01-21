@@ -96,6 +96,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   List<int> ownStatChanges = [0, 0, 0, 0, 0, 0, 0];
   List<int> opponentStatChanges = [0, 0, 0, 0, 0, 0, 0];
 
+  final ownBattleCommandKey = GlobalKey<BattleCommandState>();
+  final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
+  PlayerType? firstActionPlayer;
+
   TurnEffect? _getPrevTimingEffect(int index) {
     TurnEffect? ret;
     var currentTurn = widget.battle.turns[turnNum-1];
@@ -200,25 +204,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }*/
     }
 
-    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.ownAction.move! : TurnMove();
-    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.opponentAction.move! : TurnMove();
+    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getAction(PlayerType.me).move! : TurnMove();
+    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getAction(PlayerType.opponent).move! : TurnMove();
     var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState() : null;
-    var ownCommandWidget = prevState != null ? BattleCommand(
-      playerType: PlayerType.me,
-      turnMove: ownTurnMove,
-      phaseState: prevState,
-      myParty: ownParty,
-      yourParty: opponentParty,
-      parentSetState: setState,
-    ) : null;
-    var opponentCommandWidget = prevState != null ? BattleCommand(
-      playerType: PlayerType.opponent,
-      turnMove: opponentTurnMove,
-      phaseState: prevState,
-      myParty: opponentParty,
-      yourParty: ownParty,
-      parentSetState: setState,
-    ) : null;
 
     Widget lists;
     Widget title;
@@ -486,6 +474,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum-1];
+          firstActionPlayer = currentTurn.phases.firstActionPlayer;
           PhaseState initialState =
             prevTurn.getProcessedStates(
               prevTurn.phases.length-1,
@@ -535,6 +524,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             )
           );
           pageType = RegisterBattlePageType.turnPage;
+          // 行動入力画面を初期化
+          ownBattleCommandKey.currentState?.reset();
+          opponentBattleCommandKey.currentState?.reset();
           setState(() {});
           break;
         default:
@@ -733,7 +725,26 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       SizedBox(width: 10,),
                       Expanded(
                         flex: 6,
-                        child: ownCommandWidget!,
+                        child: BattleCommand(
+                          key: ownBattleCommandKey,
+                          playerType: PlayerType.me,
+                          turnMove: ownTurnMove,
+                          phaseState: prevState!,
+                          myParty: ownParty,
+                          yourParty: opponentParty,
+                          parentSetState: setState,
+                          onConfirm: () {
+                            if (firstActionPlayer == null) {
+                              firstActionPlayer = PlayerType.me;
+                              turns[turnNum-1].phases.setActionOrderFirst(PlayerType.me);
+                            }
+                          },
+                          onUnFixed: () {
+                            firstActionPlayer = turns[turnNum-1].phases.firstActionPlayer;
+                            if (firstActionPlayer == PlayerType.opponent) turns[turnNum-1].phases.setActionOrderFirst(PlayerType.opponent);
+                          },
+                          isFirstAction: firstActionPlayer != null ? firstActionPlayer == PlayerType.me : null,
+                        ),
                       ),
                     ],
                   ),
@@ -754,7 +765,26 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       SizedBox(width: 10,),
                       Expanded(
                         flex: 6,
-                        child: opponentCommandWidget!,
+                        child: BattleCommand(
+                          key: opponentBattleCommandKey,
+                          playerType: PlayerType.opponent,
+                          turnMove: opponentTurnMove,
+                          phaseState: prevState,
+                          myParty: opponentParty,
+                          yourParty: ownParty,
+                          parentSetState: setState,
+                          onConfirm: () {
+                            if (firstActionPlayer == null) {
+                              firstActionPlayer = PlayerType.opponent;
+                              turns[turnNum-1].phases.setActionOrderFirst(PlayerType.opponent);
+                            }
+                          },
+                          onUnFixed: () {
+                            firstActionPlayer = turns[turnNum-1].phases.firstActionPlayer;
+                            if (firstActionPlayer == PlayerType.me) turns[turnNum-1].phases.setActionOrderFirst(PlayerType.me);
+                          },
+                          isFirstAction: firstActionPlayer != null ? firstActionPlayer == PlayerType.opponent : null,
+                        ),
                       ),
                     ],
                   ),
