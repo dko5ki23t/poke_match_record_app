@@ -26,7 +26,7 @@ class BattleCommand extends StatefulWidget {
     required this.yourParty,
     required this.parentSetState,
     required this.onConfirm,
-    required this.onUnFixed,
+    required this.onUnConfirm,
     required this.isFirstAction,
   }) : super(key: key);
 
@@ -37,7 +37,7 @@ class BattleCommand extends StatefulWidget {
   final Party yourParty;
   final Function(void Function()) parentSetState;
   final Function() onConfirm;
-  final Function() onUnFixed;
+  final Function() onUnConfirm;
   final bool? isFirstAction;
 
   @override
@@ -207,7 +207,7 @@ class BattleCommandState extends State<BattleCommand> {
                       onTap: () => parentSetState(() {
                         if (turnMove.getChangePokemonIndex(playerType) == i+1) {
                           turnMove.setChangePokemonIndex(playerType, null);
-                          widget.onUnFixed();
+                          widget.onUnConfirm();
                         }
                         else {
                           turnMove.setChangePokemonIndex(playerType, i+1);
@@ -282,7 +282,7 @@ class BattleCommandState extends State<BattleCommand> {
                       turnMove.percentDamage[0] = 0;
                       turnMove.realDamage[0] = 0;
                       state = CommandState.home;
-                      widget.onUnFixed();
+                      widget.onUnConfirm();
                     }),
                     icon: Icon(Icons.arrow_back),
                   ),

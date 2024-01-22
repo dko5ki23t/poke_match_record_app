@@ -204,8 +204,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }*/
     }
 
-    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getAction(PlayerType.me).move! : TurnMove();
-    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getAction(PlayerType.opponent).move! : TurnMove();
+    var ownTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getLatestAction(PlayerType.me).move! : TurnMove();
+    var opponentTurnMove = turns.isNotEmpty ? turns[turnNum-1].phases.getLatestAction(PlayerType.opponent).move! : TurnMove();
     var prevState = turns.isNotEmpty ? turns[turnNum-1].copyInitialState() : null;
 
     Widget lists;
@@ -606,47 +606,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
 
 /*
-    void onTurnDelete() {
-      switch (pageType) {
-        case RegisterBattlePageType.basePage:
-          showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                loc.battlesTabQuestionDeleteAllEditing,
-                () {
-                  widget.battle.clear();
-                  setState(() {});
-                },
-              );
-            }
-          );
-          break;
-        case RegisterBattlePageType.turnPage:
-          showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                loc.battlesTabQuestionDeleteTurn,
-                () {
-                  if (turnNum < turns.length) {
-                    widget.battle.turns.removeRange(turnNum, widget.battle.turns.length);
-                  }
-                  widget.battle.turns[turnNum-1].clearWithInitialState();
-                  focusPhaseIdx = 0;
-                  setState(() {});
-                },
-              );
-            }
-          );
-          break;
-        case RegisterBattlePageType.firstPokemonPage:
-        default:
-          assert(false, 'invalid page move');
-          break;
-      }
-    }
-
     void userForceAdd(int focusPhaseIdx, UserForce force) {
       if (focusPhaseIdx > 0) {
         turns[turnNum-1].phases[focusPhaseIdx-1].userForces.add(force);
@@ -658,6 +617,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 */
+
     switch (pageType) {
       case RegisterBattlePageType.basePage:
         title = Text(loc.battlesTabTitleBattleBase);
@@ -739,7 +699,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               turns[turnNum-1].phases.setActionOrderFirst(PlayerType.me);
                             }
                           },
-                          onUnFixed: () {
+                          onUnConfirm: () {
                             firstActionPlayer = turns[turnNum-1].phases.firstActionPlayer;
                             if (firstActionPlayer == PlayerType.opponent) turns[turnNum-1].phases.setActionOrderFirst(PlayerType.opponent);
                           },
@@ -779,7 +739,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               turns[turnNum-1].phases.setActionOrderFirst(PlayerType.opponent);
                             }
                           },
-                          onUnFixed: () {
+                          onUnConfirm: () {
                             firstActionPlayer = turns[turnNum-1].phases.firstActionPlayer;
                             if (firstActionPlayer == PlayerType.me) turns[turnNum-1].phases.setActionOrderFirst(PlayerType.me);
                           },
@@ -2174,40 +2134,6 @@ class _StatChangeViewRow extends Row {
             GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
           for (int i = opponentStatChange.abs(); i < 6; i++)
             GestureDetector(onTap: () => onOpponentPressed(i), child: Icon(Icons.remove, color: Colors.grey)),
-        ],),
-      ),
-    ],
-  );
-}
-*/
-
-/*
-class _StatStatusViewRow extends Row {
-  _StatStatusViewRow(
-    String label,
-    int ownStatusMin,
-    int ownStatusMax,
-    int opponentStatusMin,
-    int opponentStatusMax,
-  ) :
-  super(
-    children: [
-      SizedBox(width: 10,),
-      Expanded(
-        child: Row(children: [
-          Text(label),
-          ownStatusMin == ownStatusMax ?
-          Text(ownStatusMin.toString()) :
-          Text('$ownStatusMin ~ $ownStatusMax'),
-        ],),
-      ),
-      SizedBox(width: 10,),
-      Expanded(
-        child: Row(children: [
-          Text(label),
-          opponentStatusMin == opponentStatusMax ?
-          Text(opponentStatusMin.toString()) :
-          Text('$opponentStatusMin ~ $opponentStatusMax'),
         ],),
       ),
     ],

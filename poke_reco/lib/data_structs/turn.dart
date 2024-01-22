@@ -14,7 +14,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class PhaseList extends ListBase<TurnEffect> {
   // https://stackoverflow.com/questions/16247045/how-do-i-extend-a-list-in-dart
   final List<TurnEffect> l = [];
-  
+
   PhaseList() {
     TurnMove ownAction = TurnMove()
       ..playerType = PlayerType.me
@@ -37,51 +37,82 @@ class PhaseList extends ListBase<TurnEffect> {
   }
 
   @override
-  set length(int newLength) { l.length = newLength; }
+  set length(int newLength) {
+    l.length = newLength;
+  }
+
   @override
   int get length => l.length;
   @override
   TurnEffect operator [](int index) => l[index];
   @override
-  void operator []=(int index, TurnEffect value) { l[index] = value; }
-  
+  void operator []=(int index, TurnEffect value) {
+    l[index] = value;
+  }
+
   PhaseList copyWith() => PhaseList()..l.addAll(l);
 
   @override
   void add(TurnEffect element) {
-    if (element.timing == Timing.action || element.timing == Timing.changeFaintingPokemon) {
+    if (element.timing == Timing.action ||
+        element.timing == Timing.changeFaintingPokemon) {
       assert(
-        element.playerType == PlayerType.me || element.playerType == PlayerType.opponent,
+        element.playerType == PlayerType.me ||
+            element.playerType == PlayerType.opponent,
         'action effect\'s player must be me or opponent',
       );
       // 自身・相手の行動は1つずつまで
       assert(
-        l.where(
-          (e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) &&
-          e.playerType == element.playerType
-        ).isEmpty,
+        l
+            .where((e) =>
+                (e.timing == Timing.action) &&
+                e.playerType == element.playerType)
+            .isEmpty,
         'only 1 action effect for each player is allowed in 1 turn',
       );
     }
     super.add(element);
   }
 
-  bool isExistAction(PlayerType playerType) => l.where((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType).isNotEmpty;
-  TurnEffect getAction(PlayerType playerType) => l.where((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType).first;
+  bool isExistAction(PlayerType playerType) => l
+      .where((e) =>
+          (e.timing == Timing.action ||
+              e.timing == Timing.changeFaintingPokemon) &&
+          e.playerType == playerType)
+      .isNotEmpty;
+  TurnEffect getLatestAction(PlayerType playerType) => l
+      .where((e) =>
+          (e.timing == Timing.action ||
+              e.timing == Timing.changeFaintingPokemon) &&
+          e.playerType == playerType)
+      .last;
   PlayerType? get firstActionPlayer {
     // 有効なactionで先に行動しているプレイヤーを返す
-    int ownPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == PlayerType.me);
-    int opponentPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == PlayerType.opponent);
+    int ownPlayerActionIndex = l.indexWhere((e) =>
+        (e.timing == Timing.action ||
+            e.timing == Timing.changeFaintingPokemon) &&
+        e.playerType == PlayerType.me);
+    int opponentPlayerActionIndex = l.indexWhere((e) =>
+        (e.timing == Timing.action ||
+            e.timing == Timing.changeFaintingPokemon) &&
+        e.playerType == PlayerType.opponent);
     //どちらも(存在しない/無効)
-    if ((ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()) && (opponentPlayerActionIndex < 0 || !l[opponentPlayerActionIndex].isValid())) return null;
+    if ((ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()) &&
+        (opponentPlayerActionIndex < 0 ||
+            !l[opponentPlayerActionIndex].isValid())) return null;
     // 片方の行動のみ(存在かつ有効)
-    if (ownPlayerActionIndex >= 0 && l[ownPlayerActionIndex].isValid() && (opponentPlayerActionIndex < 0 || !l[opponentPlayerActionIndex].isValid())) return PlayerType.me;
-    if (opponentPlayerActionIndex >= 0 && l[opponentPlayerActionIndex].isValid() && (ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid())) return PlayerType.opponent;
+    if (ownPlayerActionIndex >= 0 &&
+        l[ownPlayerActionIndex].isValid() &&
+        (opponentPlayerActionIndex < 0 ||
+            !l[opponentPlayerActionIndex].isValid())) return PlayerType.me;
+    if (opponentPlayerActionIndex >= 0 &&
+        l[opponentPlayerActionIndex].isValid() &&
+        (ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()))
+      return PlayerType.opponent;
     // 両行動ともに(存在かつ有効)
     if (ownPlayerActionIndex > opponentPlayerActionIndex) {
       return PlayerType.me;
-    }
-    else {
+    } else {
       return PlayerType.opponent;
     }
   }
@@ -93,8 +124,14 @@ class PhaseList extends ListBase<TurnEffect> {
       isExistAction(PlayerType.me) && isExistAction(PlayerType.opponent),
       'there are no own action or opponent action',
     );
-    int myPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType);
-    int yourPlayerActionIndex = l.indexWhere((e) => (e.timing == Timing.action || e.timing == Timing.changeFaintingPokemon) && e.playerType == playerType.opposite);
+    int myPlayerActionIndex = l.indexWhere((e) =>
+        (e.timing == Timing.action ||
+            e.timing == Timing.changeFaintingPokemon) &&
+        e.playerType == playerType);
+    int yourPlayerActionIndex = l.indexWhere((e) =>
+        (e.timing == Timing.action ||
+            e.timing == Timing.changeFaintingPokemon) &&
+        e.playerType == playerType.opposite);
     // 対象の行動が後にあるなら
     if (myPlayerActionIndex > yourPlayerActionIndex) {
       // TODO:今後もっと複雑になる
@@ -110,10 +147,14 @@ class Turn {
   PhaseState _endingState = PhaseState();
   List<TurnEffect> noAutoAddEffect = [];
 
-  PokemonState get initialOwnPokemonState => _initialState.getPokemonState(PlayerType.me, null);
-  PokemonState get initialOpponentPokemonState => _initialState.getPokemonState(PlayerType.opponent, null);
-  List<IndividualField> get initialOwnIndiField => _initialState.getIndiFields(PlayerType.me);
-  List<IndividualField> get initialOpponentIndiField => _initialState.getIndiFields(PlayerType.opponent);
+  PokemonState get initialOwnPokemonState =>
+      _initialState.getPokemonState(PlayerType.me, null);
+  PokemonState get initialOpponentPokemonState =>
+      _initialState.getPokemonState(PlayerType.opponent, null);
+  List<IndividualField> get initialOwnIndiField =>
+      _initialState.getIndiFields(PlayerType.me);
+  List<IndividualField> get initialOpponentIndiField =>
+      _initialState.getIndiFields(PlayerType.opponent);
   bool get initialOwnHasTerastal => _initialState.hasOwnTerastal;
   bool get initialOpponentHasTerastal => _initialState.hasOpponentTerastal;
 
@@ -130,18 +171,17 @@ class Turn {
   }
 
   List<PokemonState> getInitialLastExitedStates(PlayerType player) {
-    return player == PlayerType.me ? _initialState.lastExitedStates[0] : _initialState.lastExitedStates[1];
+    return player == PlayerType.me
+        ? _initialState.lastExitedStates[0]
+        : _initialState.lastExitedStates[1];
   }
 
-
-  Turn copyWith() =>
-    Turn()
+  Turn copyWith() => Turn()
     .._initialState = _initialState.copyWith()
     ..phases = phases.copyWith()
     .._endingState = _endingState.copyWith()
     ..noAutoAddEffect = [
-      for (final effect in noAutoAddEffect)
-      effect.copyWith()
+      for (final effect in noAutoAddEffect) effect.copyWith()
     ];
 
   PhaseState copyInitialState() {
@@ -153,8 +193,7 @@ class Turn {
     int validCount = 0;
     for (final phase in phases) {
       if (phase.timing == Timing.action ||
-          phase.timing == Timing.changeFaintingPokemon
-      ) {
+          phase.timing == Timing.changeFaintingPokemon) {
         actionCount++;
         if (phase.isValid()) validCount++;
       }
@@ -168,29 +207,36 @@ class Turn {
 
   // とある時点(フェーズ)での状態を取得
   PhaseState getProcessedStates(
-    int phaseIdx, Party ownParty, Party opponentParty, AppLocalizations loc,)
-  {
+    int phaseIdx,
+    Party ownParty,
+    Party opponentParty,
+    AppLocalizations loc,
+  ) {
     PhaseState ret = copyInitialState();
     int continousCount = 0;
     TurnEffect? lastAction;
 
-    for (int i = 0; i < phaseIdx+1; i++) {
+    for (int i = 0; i < phaseIdx + 1; i++) {
       final effect = phases[i];
       if (effect.isAdding) continue;
       if (effect.timing == Timing.continuousMove) {
         lastAction = effect;
         continousCount++;
-      }
-      else if (effect.timing == Timing.action) {
+      } else if (effect.timing == Timing.action) {
         lastAction = effect;
         continousCount = 0;
       }
       effect.processEffect(
         ownParty,
-        ret.getPokemonState(PlayerType.me, effect.timing == Timing.afterMove ? lastAction : null),
+        ret.getPokemonState(PlayerType.me,
+            effect.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
-        ret.getPokemonState(PlayerType.opponent, effect.timing == Timing.afterMove ? lastAction : null),
-        ret, lastAction, continousCount, loc: loc,
+        ret.getPokemonState(PlayerType.opponent,
+            effect.timing == Timing.afterMove ? lastAction : null),
+        ret,
+        lastAction,
+        continousCount,
+        loc: loc,
       );
     }
     return ret;
@@ -199,29 +245,82 @@ class Turn {
   // ターンの最終状態(_endingState)を更新する
   // phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する
   // _endingStateのコピーを返す
-  PhaseState updateEndingState(Party ownParty, Party opponentParty, AppLocalizations loc,) {
+  PhaseState updateEndingState(
+    Party ownParty,
+    Party opponentParty,
+    AppLocalizations loc,
+  ) {
     _endingState = _initialState.copyWith();
     int continousCount = 0;
     TurnEffect? lastAction;
+    PlayerType? needChangeFaintingPlayer;
+    Map<PlayerType, bool> alreadyActioned = {
+      PlayerType.me: false,
+      PlayerType.opponent: false,
+    };
 
-    for (final phase in phases) {
-      if (phase.isAdding) continue;   // TODO
-      if (!phase.isValid()) continue;
+    int i = 0;
+    while (i < phases.length) {
+      final phase = phases[i];
+      // 必要があればひんし交代phaseを追加or行動phaseをひんし交代phaseに変更
+      if (needChangeFaintingPlayer != null) {
+        if (phase.timing != Timing.changeFaintingPokemon) {
+          // ひんし対象がまだ行動していないとき
+          if (!alreadyActioned[needChangeFaintingPlayer]!) {
+            final target = phases.getLatestAction(needChangeFaintingPlayer);
+            target.timing = Timing.changeFaintingPokemon;
+            target.effectType = EffectType.changeFaintingPokemon;
+            target.move = null;
+          }
+          // ひんし対象が行動済みのとき
+          else {
+            phases.insert(
+                i,
+                TurnEffect()
+                  ..playerType = needChangeFaintingPlayer
+                  ..effectType = EffectType.changeFaintingPokemon
+                  ..timing = Timing.changeFaintingPokemon);
+          }
+          needChangeFaintingPlayer = null;
+        }
+      }
+      if (phase.isAdding) {
+        i++;
+        continue; // TODO
+      }
+      if (!phase.isValid()) {
+        i++;
+        continue;
+      }
       if (phase.timing == Timing.continuousMove) {
         lastAction = phase;
         continousCount++;
-      }
-      else if (phase.timing == Timing.action) {
+      } else if (phase.timing == Timing.action) {
         lastAction = phase;
         continousCount = 0;
       }
       phase.processEffect(
         ownParty,
-        _endingState.getPokemonState(PlayerType.me, phase.timing == Timing.afterMove ? lastAction : null),
+        _endingState.getPokemonState(PlayerType.me,
+            phase.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
-        _endingState.getPokemonState(PlayerType.opponent, phase.timing == Timing.afterMove ? lastAction : null),
-        _endingState, lastAction, continousCount, loc: loc,
+        _endingState.getPokemonState(PlayerType.opponent,
+            phase.timing == Timing.afterMove ? lastAction : null),
+        _endingState,
+        lastAction,
+        continousCount,
+        loc: loc,
       );
+      if (phase.timing == Timing.action) {
+        alreadyActioned[phase.playerType] = true;
+      }
+      // ポケモンがひんしになっている場合、無ければひんし交代phaseを追加
+      if (phase.isOwnFainting) {
+        needChangeFaintingPlayer = PlayerType.me;
+      } else if (phase.isOpponentFainting) {
+        needChangeFaintingPlayer = PlayerType.opponent;
+      }
+      i++;
     }
     return _endingState.copyWith();
   }
@@ -234,42 +333,45 @@ class Turn {
   }
 
   // SQLに保存された文字列からTurnをパース
-  static Turn deserialize(
-    dynamic str, String split1, String split2,
-    String split3, String split4, String split5,
-    String split6, String split7, {int version = -1})  // -1は最新バージョン
+  static Turn deserialize(dynamic str, String split1, String split2,
+      String split3, String split4, String split5, String split6, String split7,
+      {int version = -1}) // -1は最新バージョン
   {
     Turn ret = Turn();
     final List turnElements = str.split(split1);
     // _initialState
-    ret._initialState = PhaseState.deserialize(turnElements.removeAt(0), split2, split3, split4, split5, split6, split7);
+    ret._initialState = PhaseState.deserialize(turnElements.removeAt(0), split2,
+        split3, split4, split5, split6, split7);
     // phases
     var turnEffects = turnElements.removeAt(0).split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;
-      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5, version: version));
+      ret.phases.add(TurnEffect.deserialize(turnEffect, split3, split4, split5,
+          version: version));
     }
     // _endingState
-    ret._endingState = PhaseState.deserialize(turnElements.removeAt(0), split2, split3, split4, split5, split6, split7);
+    ret._endingState = PhaseState.deserialize(turnElements.removeAt(0), split2,
+        split3, split4, split5, split6, split7);
     // noAutoAddEffect
     var effects = turnElements.removeAt(0).split(split2);
     ret.noAutoAddEffect.clear();
     for (final effect in effects) {
       if (effect == '') break;
-      ret.noAutoAddEffect.add(TurnEffect.deserialize(effect, split3, split4, split5, version: version));
+      ret.noAutoAddEffect.add(TurnEffect.deserialize(
+          effect, split3, split4, split5,
+          version: version));
     }
 
     return ret;
   }
 
   // SQL保存用の文字列に変換
-  String serialize(
-    String split1, String split2, String split3, String split4,
-    String split5, String split6, String split7
-  ) {
+  String serialize(String split1, String split2, String split3, String split4,
+      String split5, String split6, String split7) {
     String ret = '';
     // _initialState
-    ret += _initialState.serialize(split2, split3, split4, split5, split6, split7);
+    ret +=
+        _initialState.serialize(split2, split3, split4, split5, split6, split7);
     ret += split1;
     // phases
     for (final turnEffect in phases) {
@@ -278,7 +380,8 @@ class Turn {
     }
     ret += split1;
     // _endingState
-    ret += _endingState.serialize(split2, split3, split4, split5, split6, split7);
+    ret +=
+        _endingState.serialize(split2, split3, split4, split5, split6, split7);
     ret += split1;
     // noAutoAddEffect
     for (final effect in noAutoAddEffect) {

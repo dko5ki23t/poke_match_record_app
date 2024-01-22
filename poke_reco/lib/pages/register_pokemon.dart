@@ -51,7 +51,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final pokeMoveController = List.generate(4, (i) => TextEditingController());
   final pokePPController = List.generate(4, (i) => TextEditingController());
 
-  bool firstBuild = true;
+  bool isFirstBuild = true;
   bool canChangeTeraType = true;
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
@@ -85,6 +85,23 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     var myPokemon = widget.myPokemon;
     var theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
+
+    pokeNameController.text = myPokemon.name;
+    pokeNickNameController.text = myPokemon.nickname;
+    pokeNoController.text = myPokemon.no.toString();
+    pokeLevelController.text = myPokemon.level.toString();
+    pokeTemperController.text = myPokemon.temper.displayName;
+    pokeStatRaceController[0].text = myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
+    pokeStatRaceController[1].text = myPokemon.name == '' ? 'A -' : 'A ${myPokemon.a.race}';
+    pokeStatRaceController[2].text = myPokemon.name == '' ? 'B -' : 'B ${myPokemon.b.race}';
+    pokeStatRaceController[3].text = myPokemon.name == '' ? 'C -' : 'C ${myPokemon.c.race}';
+    pokeStatRaceController[4].text = myPokemon.name == '' ? 'D -' : 'D ${myPokemon.d.race}';
+    pokeStatRaceController[5].text = myPokemon.name == '' ? 'S -' : 'S ${myPokemon.s.race}';
+    pokeMoveController[0].text = myPokemon.move1.displayName;
+    pokeMoveController[1].text = myPokemon.move2 == null ? '' : myPokemon.move2!.displayName;
+    pokeMoveController[2].text = myPokemon.move3 == null ? '' : myPokemon.move3!.displayName;
+    pokeMoveController[3].text = myPokemon.move4 == null ? '' : myPokemon.move4!.displayName;
+
     void onBack () {
       bool showAlert = false;
       if (myPokemon.no != 0) {
@@ -110,7 +127,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
         );
       }
       else {
-        Navigator.pop(context);
+        //Navigator.pop(context);
         appState.onTabChange = (func) => func();
       }
     }
@@ -132,28 +149,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
     }
 
-    if (firstBuild) {
-      appState.onBackKeyPushed = onBack;
-      appState.onTabChange = onTabChange;
-      firstBuild = false;
-    }
-
-    pokeNameController.text = myPokemon.name;
-    pokeNickNameController.text = myPokemon.nickname;
-    pokeNoController.text = myPokemon.no.toString();
-    pokeLevelController.text = myPokemon.level.toString();
-    pokeTemperController.text = myPokemon.temper.displayName;
-    pokeStatRaceController[0].text = myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
-    pokeStatRaceController[1].text = myPokemon.name == '' ? 'A -' : 'A ${myPokemon.a.race}';
-    pokeStatRaceController[2].text = myPokemon.name == '' ? 'B -' : 'B ${myPokemon.b.race}';
-    pokeStatRaceController[3].text = myPokemon.name == '' ? 'C -' : 'C ${myPokemon.c.race}';
-    pokeStatRaceController[4].text = myPokemon.name == '' ? 'D -' : 'D ${myPokemon.d.race}';
-    pokeStatRaceController[5].text = myPokemon.name == '' ? 'S -' : 'S ${myPokemon.s.race}';
-    pokeMoveController[0].text = myPokemon.move1.displayName;
-    pokeMoveController[1].text = myPokemon.move2 == null ? '' : myPokemon.move2!.displayName;
-    pokeMoveController[2].text = myPokemon.move3 == null ? '' : myPokemon.move3!.displayName;
-    pokeMoveController[3].text = myPokemon.move4 == null ? '' : myPokemon.move4!.displayName;
-
     void onComplete() async {
       if (myPokemon.id != 0) {
         pokemons[myPokemon.id] = myPokemon;
@@ -168,6 +163,12 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
       await pokeData.addMyPokemon(myPokemon, myPokemon.id == 0);
       widget.onFinish();
+    }
+
+    if (isFirstBuild) {
+      appState.onBackKeyPushed = onBack;
+      appState.onTabChange = onTabChange;
+      isFirstBuild = false;
     }
 
     return PopScope(
@@ -314,7 +315,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                         child: TypeDropdownButton(
                           loc.commonTeraType,
                           canChangeTeraType ? (value) {setState(() {
-                            myPokemon.teraType = pokeData.teraTypes[value - 1];
+                            myPokemon.teraType = value;
                           });} : null,
                           myPokemon.teraType == PokeType.unknown ? null : myPokemon.teraType,
                           isError: myPokemon.no != 0 && myPokemon.teraType == PokeType.unknown,
