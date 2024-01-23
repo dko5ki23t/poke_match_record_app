@@ -52,8 +52,7 @@ class PhaseList extends ListBase<TurnEffect> {
 
   PhaseList copyWith() => PhaseList()..l.addAll(l);
 
-  @override
-  void add(TurnEffect element) {
+  void checkAdd(TurnEffect element) {
     if (element.timing == Timing.action ||
         element.timing == Timing.changeFaintingPokemon) {
       assert(
@@ -65,13 +64,24 @@ class PhaseList extends ListBase<TurnEffect> {
       assert(
         l
             .where((e) =>
-                (e.timing == Timing.action) &&
+                (e.timing == element.timing) &&
                 e.playerType == element.playerType)
             .isEmpty,
         'only 1 action effect for each player is allowed in 1 turn',
       );
     }
-    super.add(element);
+  }
+
+  @override
+  void add(TurnEffect element) {
+    checkAdd(element);
+    l.add(element);
+  }
+
+  @override
+  void insert(int index, TurnEffect element) {
+    checkAdd(element);
+    l.insert(index, element);
   }
 
   bool isExistAction(PlayerType playerType) => l
@@ -262,28 +272,6 @@ class Turn {
     int i = 0;
     while (i < phases.length) {
       final phase = phases[i];
-      // 必要があればひんし交代phaseを追加or行動phaseをひんし交代phaseに変更
-      if (needChangeFaintingPlayer != null) {
-        if (phase.timing != Timing.changeFaintingPokemon) {
-          // ひんし対象がまだ行動していないとき
-          if (!alreadyActioned[needChangeFaintingPlayer]!) {
-            final target = phases.getLatestAction(needChangeFaintingPlayer);
-            target.timing = Timing.changeFaintingPokemon;
-            target.effectType = EffectType.changeFaintingPokemon;
-            target.move = null;
-          }
-          // ひんし対象が行動済みのとき
-          else {
-            phases.insert(
-                i,
-                TurnEffect()
-                  ..playerType = needChangeFaintingPlayer
-                  ..effectType = EffectType.changeFaintingPokemon
-                  ..timing = Timing.changeFaintingPokemon);
-          }
-          needChangeFaintingPlayer = null;
-        }
-      }
       if (phase.isAdding) {
         i++;
         continue; // TODO
@@ -319,6 +307,30 @@ class Turn {
         needChangeFaintingPlayer = PlayerType.me;
       } else if (phase.isOpponentFainting) {
         needChangeFaintingPlayer = PlayerType.opponent;
+      }
+      if (needChangeFaintingPlayer != null) {
+        if (phase.timing != Timing.changeFaintingPokemon) {
+          // ひんし対象がまだ行動していないとき
+          if (!alreadyActioned[needChangeFaintingPlayer]!) {
+            final target = phases.getLatestAction(needChangeFaintingPlayer);
+            target.timing = Timing.changeFaintingPokemon;
+            target.effectType = EffectType.changeFaintingPokemon;
+            target.move = null;
+          }
+          // ひんし対象が行動済みのとき
+          else {
+            if (i == phases.length - 1 ||
+                phases[i + 1].timing != Timing.changeFaintingPokemon) {
+              phases.insert(
+                  i + 1,
+                  TurnEffect()
+                    ..playerType = needChangeFaintingPlayer
+                    ..effectType = EffectType.changeFaintingPokemon
+                    ..timing = Timing.changeFaintingPokemon);
+            }
+          }
+          needChangeFaintingPlayer = null;
+        }
       }
       i++;
     }

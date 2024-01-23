@@ -43,44 +43,91 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
             child: Column(
               children: [
                 // ポケモン画像/アイコン
-                pokeData.getPokeAPI ?
-                Image.network(
-                  pokeData.pokeBase[focusingPokemon.no]!.imageUrl,
-                  height: theme.buttonTheme.height * 1.5,
-                  errorBuilder: (c, o, s) {
-                    return const Icon(Icons.catching_pokemon);
-                  },
-                ) : const Icon(Icons.catching_pokemon),
+                pokeData.getPokeAPI
+                    ? Image.network(
+                        pokeData.pokeBase[focusingPokemon.no]!.imageUrl,
+                        height: theme.buttonTheme.height * 1.5,
+                        errorBuilder: (c, o, s) {
+                          return const Icon(Icons.catching_pokemon);
+                        },
+                      )
+                    : const Icon(Icons.catching_pokemon),
                 // ポケモン名
-                Text('${focusingPokemon.name}/${widget.playerName}', overflow: TextOverflow.ellipsis,),
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Flexible(fit:FlexFit.loose, child: Text('Lv.${focusingPokemon.level}', overflow: TextOverflow.ellipsis,)),
-                  Flexible(fit:FlexFit.loose, child: focusingPokemonState.sex.displayIcon),
-                ],),
+                Text(
+                  '${focusingPokemon.name}/${widget.playerName}',
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                        fit: FlexFit.loose,
+                        child: Text(
+                          'Lv.${focusingPokemon.level}',
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                    Flexible(
+                        fit: FlexFit.loose,
+                        child: focusingPokemonState.sex.displayIcon),
+                  ],
+                ),
                 // タイプ
-                focusingPokemonState.isTerastaling ?
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Flexible(fit:FlexFit.loose, child: Text(loc.commonTerastal)),
-                  Flexible(fit:FlexFit.loose, child: focusingPokemonState.teraType1.displayIcon),
-                ],) :
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Flexible(fit:FlexFit.loose, child: focusingPokemonState.type1.displayIcon),
-                  focusingPokemonState.type2 != null ?
-                  Flexible(fit:FlexFit.loose, child: focusingPokemonState.type2!.displayIcon) : Container(),
-                ],),
+                focusingPokemonState.isTerastaling
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                              fit: FlexFit.loose,
+                              child: Text(loc.commonTerastal)),
+                          Flexible(
+                              fit: FlexFit.loose,
+                              child:
+                                  focusingPokemonState.teraType1.displayIcon),
+                        ],
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                              fit: FlexFit.loose,
+                              child: focusingPokemonState.type1.displayIcon),
+                          focusingPokemonState.type2 != null
+                              ? Flexible(
+                                  fit: FlexFit.loose,
+                                  child:
+                                      focusingPokemonState.type2!.displayIcon)
+                              : Container(),
+                        ],
+                      ),
                 // とくせい/もちもの
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  Flexible(fit:FlexFit.loose, child: AbilityText(focusingPokemonState.currentAbility, showHatena: true,),),
-                  ItemText(focusingPokemonState.holdingItem, showHatena: true, showNone: true, loc: loc,),
-                ],),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      fit: FlexFit.loose,
+                      child: AbilityText(
+                        focusingPokemonState.currentAbility,
+                        showHatena: true,
+                      ),
+                    ),
+                    ItemText(
+                      focusingPokemonState.holdingItem,
+                      showHatena: true,
+                      showNone: true,
+                      loc: loc,
+                    ),
+                  ],
+                ),
                 // HP
-        //        isEditMode ?
-        //        _HPInputRow(
-        //          ownHPController, opponentHPController,
-        //          (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
+                //        isEditMode ?
+                //        _HPInputRow(
+                //          ownHPController, opponentHPController,
+                //          (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
                 hpBarRow(
                   playerType,
-                  playerType == PlayerType.me ? focusingPokemonState.remainHP : focusingPokemonState.remainHPPercent,
+                  playerType == PlayerType.me
+                      ? focusingPokemonState.remainHP
+                      : focusingPokemonState.remainHPPercent,
                   playerType == PlayerType.me ? focusingPokemon.h.real : 100,
                 ),
               ],
@@ -100,11 +147,11 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   children: [
                     Text('種族値'),
                     for (final stat in StatIndexList.listHtoS)
-                    statStatusViewRow(
-                      stat.alphabet,
-                      focusingPokemonState.minStats[stat].race,
-                      focusingPokemonState.maxStats[stat].race,
-                    ),
+                      statStatusViewRow(
+                        stat.alphabet,
+                        focusingPokemonState.minStats[stat].race,
+                        focusingPokemonState.maxStats[stat].race,
+                      ),
                   ],
                 ),
               ),
@@ -114,11 +161,11 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   children: [
                     Text('実数値'),
                     for (final stat in StatIndexList.listHtoS)
-                    statStatusViewRow(
-                      stat.alphabet,
-                      focusingPokemonState.minStats[stat].real,
-                      focusingPokemonState.maxStats[stat].real,
-                    ),
+                      statStatusViewRow(
+                        stat.alphabet,
+                        focusingPokemonState.minStats[stat].real,
+                        focusingPokemonState.maxStats[stat].real,
+                      ),
                   ],
                 ),
               ),
@@ -128,10 +175,11 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   children: [
                     Text('ランク'),
                     for (int i = 0; i < 7; i++)
-                    statChangeViewRow(
-                      statAlphabets[i], focusingPokemonState.statChanges(i), 
-                      (idx) {},
-                    ),
+                      statChangeViewRow(
+                        statAlphabets[i],
+                        focusingPokemonState.statChanges(i),
+                        (idx) {},
+                      ),
                   ],
                 ),
               ),
@@ -142,10 +190,14 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     );
   }
 
-  Widget hpBarRow (PlayerType playerType, int remainHP, int? maxHP,) {
+  Widget hpBarRow(
+    PlayerType playerType,
+    int remainHP,
+    int? maxHP,
+  ) {
     int maxHPRe = playerType != PlayerType.me || maxHP == null ? 100 : maxHP;
     String suffix = playerType != PlayerType.me ? '%' : '';
-    
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -155,17 +207,19 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(5.0)),
-                child: Container(
-                  width: 150,
-                  height: 20,
-                  color: Colors.grey),
+                child: Container(width: 150, height: 20, color: Colors.grey),
               ),
               ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(5.0)),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: Duration(seconds: 1),
                   width: (remainHP / maxHPRe) * 150,
                   height: 20,
-                  color: (remainHP / maxHPRe) <= 0.25 ? Colors.red : (remainHP / maxHPRe) <= 0.5 ? Colors.yellow : Colors.lightGreen,
+                  color: (remainHP / maxHPRe) <= 0.25
+                      ? Colors.red
+                      : (remainHP / maxHPRe) <= 0.5
+                          ? Colors.yellow
+                          : Colors.lightGreen,
                 ),
               ),
               ClipRRect(
@@ -186,7 +240,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     );
   }
 
-  Widget statChangeViewRow (
+  Widget statChangeViewRow(
     String label,
     int statChange,
     void Function(int idx) onOwnPressed,
@@ -196,15 +250,23 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
       children: [
         Flexible(
           fit: FlexFit.loose,
-          child: Row(children: [
-            Text(label),
-            for (int i = 0; i < statChange.abs(); i++)
-            statChange > 0 ?
-              GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.arrow_drop_up, color: Colors.red)) :
-              GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
-            for (int i = statChange.abs(); i < 6; i++)
-              GestureDetector(onTap: () => onOwnPressed(i), child: Icon(Icons.remove, color: Colors.grey)),
-          ],),
+          child: Row(
+            children: [
+              Text(label),
+              for (int i = 0; i < statChange.abs(); i++)
+                statChange > 0
+                    ? GestureDetector(
+                        onTap: () => onOwnPressed(i),
+                        child: Icon(Icons.arrow_drop_up, color: Colors.red))
+                    : GestureDetector(
+                        onTap: () => onOwnPressed(i),
+                        child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
+              for (int i = statChange.abs(); i < 6; i++)
+                GestureDetector(
+                    onTap: () => onOwnPressed(i),
+                    child: Icon(Icons.remove, color: Colors.grey)),
+            ],
+          ),
         ),
       ],
     );
@@ -220,12 +282,14 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
       children: [
         Flexible(
           fit: FlexFit.loose,
-          child: Row(children: [
-            Text(label),
-            statusMin == statusMax ?
-            Text(statusMin.toString()) :
-            Text('$statusMin ~ $statusMax'),
-          ],),
+          child: Row(
+            children: [
+              Text(label),
+              statusMin == statusMax
+                  ? Text(statusMin.toString())
+                  : Text('$statusMin ~ $statusMax'),
+            ],
+          ),
         ),
       ],
     );

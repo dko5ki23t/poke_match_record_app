@@ -23,7 +23,8 @@ class RegisterPartyPage extends StatefulWidget {
   }) : super(key: key);
 
   final void Function() onFinish;
-  final Future<Pokemon?> Function(Party party, int selectingPokemonIdx) onSelectPokemon;
+  final Future<Pokemon?> Function(Party party, int selectingPokemonIdx)
+      onSelectPokemon;
   final Party party;
   final bool isNew;
   final bool isEditPokemon;
@@ -47,49 +48,44 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-    void onBack () {
+    void onBack() {
       bool showAlert = false;
       if (widget.party.pokemons[0]!.no != 0) {
         if (widget.party.id == 0) {
           showAlert = true;
-        }
-        else if (widget.party.isDiff(pokeData.parties[widget.party.id]!)) {
+        } else if (widget.party.isDiff(pokeData.parties[widget.party.id]!)) {
           showAlert = true;
         }
       }
       if (showAlert) {
         showDialog(
-          context: context,
-          builder: (_) {
-            return DeleteEditingCheckDialog(
-              null,
-              () {
-                Navigator.pop(context);
-                appState.onTabChange = (func) => func();
-              },
-            );
-          }
-        );
-      }
-      else {
-        Navigator.pop(context);
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                null,
+                () {
+                  Navigator.pop(context);
+                  appState.onTabChange = (func) => func();
+                },
+              );
+            });
+      } else {
+        //Navigator.pop(context);
         appState.onTabChange = (func) => func();
       }
     }
 
-    void onTabChange (void Function() func) {
+    void onTabChange(void Function() func) {
       if (widget.party.pokemons[0]!.no != 0) {
         showDialog(
-          context: context,
-          builder: (_) {
-            return DeleteEditingCheckDialog(
-              null,
-              () => func(),
-            );
-          }
-        );
-      }
-      else {
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                null,
+                () => func(),
+              );
+            });
+      } else {
         func();
       }
     }
@@ -107,10 +103,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     for (int i = 0; i < 6; i++) {
       final pokemon = widget.party.pokemons[i];
       if (pokemon != null && pokemon.id != 0) {
-        pokemonController[i].text =
-          pokemon.nickname == '' ?
-            '${pokemon.name}/${pokemon.name}' :
-            '${pokemon.nickname}/${pokemon.name}';
+        pokemonController[i].text = pokemon.nickname == ''
+            ? '${pokemon.name}/${pokemon.name}'
+            : '${pokemon.nickname}/${pokemon.name}';
       }
 
       final item = widget.party.items[i];
@@ -131,10 +126,15 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: widget.isNew ? Text(loc.partiesTabRegisterParty) : Text(loc.partiesTabEditParty),
+          title: widget.isNew
+              ? Text(loc.partiesTabRegisterParty)
+              : Text(loc.partiesTabEditParty),
           actions: [
             TextButton(
-              onPressed: ((widget.isEditPokemon && widget.party.name != '') || widget.party.isValid) ? () => onComplete() : null,
+              onPressed: ((widget.isEditPokemon && widget.party.name != '') ||
+                      widget.party.isValid)
+                  ? () => onComplete()
+                  : null,
               child: Text(loc.registerSave),
             ),
           ],
@@ -146,7 +146,8 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
               child: Column(
                 children: [
                   SizedBox(height: 10),
-                  Row(  // パーティ名
+                  Row(
+                    // パーティ名
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Flexible(
@@ -169,73 +170,99 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                   SizedBox(height: 10),
                   for (int i = 0; i < 6; i++)
                     PokemonItemInputRow(
-                      '${loc.commonPokemon}${i+1}',
-                      pokemonController[i],
-                      () async {
-                        // キーボードが出ないようにする
-                        FocusScope.of(context).requestFocus(FocusNode());
-                        var pokemon = await widget.onSelectPokemon(widget.party, i+1);
-                        if (pokemon != null) {
-                          widget.party.pokemons[i] = pokemon;
-                          pokemonController[i].text =
-                            pokemon.nickname == '' ?
-                              pokemon.name :
-                              '${pokemon.nickname}/${pokemon.name}';
-                          if (pokeData.pokeBase[pokemon.no]!.fixedItemID != 0) {
-                            widget.party.items[i] = pokeData.items[pokeData.pokeBase[pokemon.no]!.fixedItemID]!;
-                            itemController[i].text = widget.party.items[i]!.displayName;
+                        '${loc.commonPokemon}${i + 1}',
+                        pokemonController[i],
+                        () async {
+                          // キーボードが出ないようにする
+                          FocusScope.of(context).requestFocus(FocusNode());
+                          var pokemon =
+                              await widget.onSelectPokemon(widget.party, i + 1);
+                          if (pokemon != null) {
+                            widget.party.pokemons[i] = pokemon;
+                            pokemonController[i].text = pokemon.nickname == ''
+                                ? pokemon.name
+                                : '${pokemon.nickname}/${pokemon.name}';
+                            if (pokeData.pokeBase[pokemon.no]!.fixedItemID !=
+                                0) {
+                              widget.party.items[i] = pokeData.items[
+                                  pokeData.pokeBase[pokemon.no]!.fixedItemID]!;
+                              itemController[i].text =
+                                  widget.party.items[i]!.displayName;
+                            }
                           }
-                        }
-                      },
-                      widget.party.pokemons[i] != null && widget.party.pokemons[i]!.no != 0,
-                      () {
-                        for (int j = i; j < 6; j++) {
-                          if (j+1 < 6 && widget.party.pokemons[j+1] != null) {
-                            pokemonController[j].text = widget.party.pokemons[j+1]!.nickname == '' ?
-                              widget.party.pokemons[j+1]!.name :
-                              '${widget.party.pokemons[j+1]!.nickname}/${widget.party.pokemons[j+1]!.name}';
-                            widget.party.pokemons[j] = widget.party.pokemons[j+1];
-                            itemController[j].text = widget.party.items[j+1] != null ?
-                              widget.party.items[j+1]!.displayName : '';
-                            widget.party.items[j] = widget.party.items[j+1];
+                        },
+                        widget.party.pokemons[i] != null &&
+                            widget.party.pokemons[i]!.no != 0,
+                        () {
+                          for (int j = i; j < 6; j++) {
+                            if (j + 1 < 6 &&
+                                widget.party.pokemons[j + 1] != null) {
+                              pokemonController[j].text = widget
+                                          .party.pokemons[j + 1]!.nickname ==
+                                      ''
+                                  ? widget.party.pokemons[j + 1]!.name
+                                  : '${widget.party.pokemons[j + 1]!.nickname}/${widget.party.pokemons[j + 1]!.name}';
+                              widget.party.pokemons[j] =
+                                  widget.party.pokemons[j + 1];
+                              itemController[j].text =
+                                  widget.party.items[j + 1] != null
+                                      ? widget.party.items[j + 1]!.displayName
+                                      : '';
+                              widget.party.items[j] = widget.party.items[j + 1];
+                            } else {
+                              pokemonController[j].text =
+                                  loc.partiesTabSelectPokemon;
+                              widget.party.pokemons[j] =
+                                  j == 0 ? Pokemon() : null;
+                              itemController[j].text = '';
+                              widget.party.items[j] = null;
+                              break;
+                            }
                           }
-                          else {
-                            pokemonController[j].text = loc.partiesTabSelectPokemon;
-                            widget.party.pokemons[j] = j == 0 ?
-                              Pokemon() : null;
-                            itemController[j].text = '';
-                            widget.party.items[j] = null;
-                            break;
+                          setState(() {});
+                        },
+                        '${loc.commonItem}${i + 1}',
+                        itemController[i],
+                        [
+                          for (int j = 0; j < 6; j++)
+                            i != j ? widget.party.items[j] : null,
+                          pokeData.items[0]
+                        ],
+                        (suggestion) {
+                          itemController[i].text = suggestion.displayName;
+                          widget.party.items[i] = suggestion;
+                        },
+                        () {
+                          itemController[i].text = '';
+                          widget.party.items[i] = null;
+                          setState(() {});
+                        },
+                        widget.party.pokemons[i] != null
+                            ? widget.party.pokemons[i]!.no
+                            : 0,
+                        widget.party.items[i]?.id,
+                        theme,
+                        widget.isEditPokemon,
+                        () {
+                          if (widget.isEditPokemon &&
+                              widget.party.pokemons[i] != null &&
+                              widget.phaseState != null) {
+                            widget.onEditPokemon(
+                                widget.party.pokemons[i]!,
+                                widget.phaseState!
+                                    .getPokemonStates(PlayerType.opponent)[i]);
                           }
-                        }
-                        setState(() {});
-                      },
-                      '${loc.commonItem}${i+1}',
-                      itemController[i],
-                      [for (int j = 0; j < 6; j++) i != j ? widget.party.items[j] : null, pokeData.items[0]],
-                      (suggestion) {
-                        itemController[i].text = suggestion.displayName;
-                        widget.party.items[i] = suggestion;
-                      },
-                      () {
-                        itemController[i].text = '';
-                        widget.party.items[i] = null;
-                        setState(() {});
-                      },
-                      widget.party.pokemons[i] != null ? widget.party.pokemons[i]!.no : 0,
-                      widget.party.items[i]?.id,
-                      theme,
-                      widget.isEditPokemon,
-                      () {
-                        if (widget.isEditPokemon && widget.party.pokemons[i] != null && widget.phaseState != null) {
-                          widget.onEditPokemon(widget.party.pokemons[i]!, widget.phaseState!.getPokemonStates(PlayerType.opponent)[i]);
-                        }
-                      },
-                      enabledPokemon: i == 0 || (widget.party.pokemons[i-1] != null && (widget.isEditPokemon || widget.party.pokemons[i-1]!.isValid)),
-                      enabledItem: widget.party.pokemons[i] != null && pokeData.pokeBase[widget.party.pokemons[i]!.no]!.fixedItemID == 0,
-                      showNetworkImage: pokeData.getPokeAPI
-                    ),
-                    SizedBox(height: 10),
+                        },
+                        enabledPokemon: i == 0 ||
+                            (widget.party.pokemons[i - 1] != null &&
+                                (widget.isEditPokemon ||
+                                    widget.party.pokemons[i - 1]!.isValid)),
+                        enabledItem: widget.party.pokemons[i] != null &&
+                            pokeData.pokeBase[widget.party.pokemons[i]!.no]!
+                                    .fixedItemID ==
+                                0,
+                        showNetworkImage: pokeData.getPokeAPI),
+                  SizedBox(height: 10),
                   SizedBox(height: 10),
                 ],
               ),

@@ -1910,6 +1910,8 @@ class PokeDB {
       for (var map in maps) {
         var pokemon = Pokemon.createFromDBMap(map);
         pokemons[pokemon.id] = pokemon;
+        print(
+            'Pokemon(${pokemon.id}, ${pokemon.viewOrder}, ${pokemon.no}, "${pokemon.nickname}", PokeType.${pokemon.teraType.displayName}, ${pokemon.level}, Sex.${pokemon.sex.displayName}, Temper.${pokemon.temper.displayName}, ${pokemon.ability.id}, 0, [${pokemon.h.indi}, ${pokemon.h.effort}], [${pokemon.a.indi}, ${pokemon.a.effort}], [${pokemon.b.indi}, ${pokemon.b.effort}], [${pokemon.c.indi}, ${pokemon.c.effort}], [${pokemon.d.indi}, ${pokemon.d.effort}], [${pokemon.s.indi}, ${pokemon.s.effort}], [${pokemon.move1.id}, ${pokemon.move2?.id}, ${pokemon.move3?.id}, ${pokemon.move4?.id}], [${pokemon.pp1}, ${pokemon.pp2}, ${pokemon.pp3}, ${pokemon.pp4}], Owner.mine).toSet(),');
       }
     }
 
@@ -1962,6 +1964,8 @@ class PokeDB {
       for (var map in maps) {
         var party = Party.createFromDBMap(map);
         parties[party.id] = party;
+        print(
+            'Party(${party.id}, ${party.viewOrder}, "${party.name}", ${party.pokemons[0]?.id}, ${party.items[0]?.id}, ${party.pokemons[1]?.id}, ${party.items[1]?.id}, ${party.pokemons[2]?.id}, ${party.items[2]?.id}, ${party.pokemons[3]?.id}, ${party.items[3]?.id}, ${party.pokemons[4]?.id}, ${party.items[4]?.id}, ${party.pokemons[5]?.id}, ${party.items[5]?.id}, Owner.mine).toSet(),');
       }
     }
 

@@ -28,7 +28,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 const String pokeRecoVersion = '1.0.3';
-const int pokeRecoInternalVersion = 2;      // SQLのテーブルバージョンに使用
+const int pokeRecoInternalVersion = 2; // SQLのテーブルバージョンに使用
 
 enum TabItem {
   battles,
@@ -65,8 +65,7 @@ void main() async {
         locale = Locale('ja');
         break;
     }
-  }
-  catch (e) {
+  } catch (e) {
     locale = null;
   }
   runApp(MyApp(initialLocale: locale));
@@ -84,15 +83,16 @@ class MyApp extends StatefulWidget {
 
 class MyAppStateForLocale extends State<MyApp> {
   Locale? _locale;
-  bool firstBuild = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _locale = widget.initialLocale;
+  }
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    if (firstBuild) {
-      _locale = widget.initialLocale;
-      firstBuild = false;
-    }
     return ChangeNotifierProvider(
       create: (context) => MyAppState(context, _locale),
       child: MaterialApp(
@@ -131,8 +131,9 @@ class MyAppState extends ChangeNotifier {
   Map<int, Pokemon> pokemons = {};
   Map<int, Party> parties = {};
   Map<int, Battle> battles = {};
-  void Function() onBackKeyPushed = (){};
-  void Function(void Function() func) onTabChange = (func) {};  // 各ページで書き換えてもらう関数
+  void Function() onBackKeyPushed = () {};
+  void Function(void Function() func) onTabChange =
+      (func) {}; // 各ページで書き換えてもらう関数
   void Function(void Function() func) changeTab = (func) {};
   bool allowPop = false;
   // 対戦登録画面のわざ選択前後入力で必要なステート
@@ -145,8 +146,10 @@ class MyAppState extends ChangeNotifier {
   bool adjustPhaseByDelete = false;
 
   MyAppState(BuildContext context, Locale? locale) {
-    changeTab = (func) {onTabChange(func);};
-    fetchPokeData(locale ?? Locale(Platform.localeName.substring(0,2), ''));
+    changeTab = (func) {
+      onTabChange(func);
+    };
+    fetchPokeData(locale ?? Locale(Platform.localeName.substring(0, 2), ''));
   }
 
   Future<void> fetchPokeData(Locale locale) async {
@@ -175,9 +178,11 @@ class _MyHomePageState extends State<MyHomePage> {
   void _selectTab(TabItem tabItem) async {
     if (_currentTab != tabItem) {
       var appState = context.read<MyAppState>();
-      appState.changeTab(() {
-        setState(() => _currentTab = tabItem);
-      },);
+      appState.changeTab(
+        () {
+          setState(() => _currentTab = tabItem);
+        },
+      );
     }
   }
 
@@ -212,67 +217,66 @@ class _MyHomePageState extends State<MyHomePage> {
         throw UnimplementedError('no widget');
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return NavigatorPopHandler(
-          onPop: () {
-            var appState = context.read<MyAppState>();
-            appState.onBackKeyPushed();
-            // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
+    return LayoutBuilder(builder: (context, constraints) {
+      return NavigatorPopHandler(
+        onPop: () {
+          var appState = context.read<MyAppState>();
+          appState.onBackKeyPushed();
+          // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
 /*            Navigator.pop(
               currentContext,
             );*/
-          },
-          child: Scaffold(
-            body: Center(
-              child: Container(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                child: page,
-              ),
+        },
+        child: Scaffold(
+          body: Center(
+            child: Container(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: page,
             ),
-            bottomNavigationBar: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FutureBuilder(
-                  future: AdSize.getAnchoredAdaptiveBannerAdSize(Orientation.portrait,
-                      MediaQuery.of(context).size.width.truncate()),
-                  builder: (
-                    BuildContext context,
-                    AsyncSnapshot<AnchoredAdaptiveBannerAdSize?> snapshot,
-                  ) {
-                    if (snapshot.hasData) {
-                      final data = snapshot.data;
-                      if (data != null) {
-                        return Container(
-                          height: 70,
-                          color: Colors.white70,
-                          child: AdBanner(size: data),
-                        );
-                      } else {
-                        return Container(
-                          height: 70,
-                          color: Colors.white70,
-                        );
-                      }
+          ),
+          bottomNavigationBar: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FutureBuilder(
+                future: AdSize.getAnchoredAdaptiveBannerAdSize(
+                    Orientation.portrait,
+                    MediaQuery.of(context).size.width.truncate()),
+                builder: (
+                  BuildContext context,
+                  AsyncSnapshot<AnchoredAdaptiveBannerAdSize?> snapshot,
+                ) {
+                  if (snapshot.hasData) {
+                    final data = snapshot.data;
+                    if (data != null) {
+                      return Container(
+                        height: 70,
+                        color: Colors.white70,
+                        child: AdBanner(size: data),
+                      );
                     } else {
                       return Container(
                         height: 70,
                         color: Colors.white70,
                       );
                     }
-                  },
-                ),
-                BottomNavigation(
-                  currentTab: _currentTab,
-                  onSelectTab: _selectTab,
-                ),
-              ],
-            ),
+                  } else {
+                    return Container(
+                      height: 70,
+                      color: Colors.white70,
+                    );
+                  }
+                },
+              ),
+              BottomNavigation(
+                currentTab: _currentTab,
+                onSelectTab: _selectTab,
+              ),
+            ],
           ),
-        );
-      }
-    );
+        ),
+      );
+    });
   }
 }
 
@@ -293,13 +297,16 @@ class PokemonTabNavigator extends StatefulWidget {
   @override
   State<PokemonTabNavigator> createState() => _PokemonTabNavigatorState();
 
-  void pop() {
-    
-  }
+  void pop() {}
 }
 
 class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
-  void _pushRegister(BuildContext context, Pokemon myPokemon, bool isNew, {bool isChange = false,}) {
+  void _pushRegister(
+    BuildContext context,
+    Pokemon myPokemon,
+    bool isNew, {
+    bool isChange = false,
+  }) {
     if (isChange) {
       Navigator.push(
         context,
@@ -312,9 +319,10 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
             );
           },
         ),
-      ).then((value) {setState(() {});});
-    }
-    else {
+      ).then((value) {
+        setState(() {});
+      });
+    } else {
       Navigator.push(
         context,
         PageRouteBuilder(
@@ -337,7 +345,9 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
             );
           },
         ),
-      ).then((value) {setState(() {});});
+      ).then((value) {
+        setState(() {});
+      });
     }
   }
 
@@ -365,7 +375,9 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
   void _pop(BuildContext context) {
@@ -392,8 +404,10 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
                 );
               default:
                 return PokemonsPage(
-                  onAdd: (myPokemon, isNew) => _pushRegister(context, myPokemon, isNew),
-                  onView: (pokemonList, index) => _pushView(context, pokemonList, index),
+                  onAdd: (myPokemon, isNew) =>
+                      _pushRegister(context, myPokemon, isNew),
+                  onView: (pokemonList, index) =>
+                      _pushView(context, pokemonList, index),
                   onSelect: null,
                   selectMode: false,
                 );
@@ -433,7 +447,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           // 新規作成
           return RegisterPartyPage(
             onFinish: () => _pop(context),
-            onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
+            onSelectPokemon: (party, idx) =>
+                _pushSelectPokemonPage(context, party, idx),
             party: party,
             isNew: isNew,
             isEditPokemon: false,
@@ -441,7 +456,9 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
   void _pushView(BuildContext context, List<Party> partyList, int index) {
@@ -454,7 +471,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
             partyList: partyList,
             listIndex: index,
             onEdit: (party) => _pushRegister(context, party, false),
-            onViewPokemon: (pokemonList, listIndex) => _pushPokemonView(context, pokemonList, listIndex),
+            onViewPokemon: (pokemonList, listIndex) =>
+                _pushPokemonView(context, pokemonList, listIndex),
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -469,10 +487,13 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
-  void _pushPokemonView(BuildContext context, List<Pokemon> pokemonList, int index) {
+  void _pushPokemonView(
+      BuildContext context, List<Pokemon> pokemonList, int index) {
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -496,7 +517,9 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
   void _pushPokemonRegister(BuildContext context, Pokemon pokemon, bool isNew) {
@@ -511,27 +534,29 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
-  Future<Pokemon?> _pushSelectPokemonPage(BuildContext context, Party party, int selectingPokemonIdx) async {
-    var result =
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            // ポケモン選択
-            return PokemonsPage(
-              onAdd: (pokemon, isNew) {},
-              onView: (pokemonList, index) {},
-              onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
-              selectMode: true,
-              party: party,
-              selectingPokemonIdx: selectingPokemonIdx,
-            );
-          },
-        ),
-      );
+  Future<Pokemon?> _pushSelectPokemonPage(
+      BuildContext context, Party party, int selectingPokemonIdx) async {
+    var result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // ポケモン選択
+          return PokemonsPage(
+            onAdd: (pokemon, isNew) {},
+            onView: (pokemonList, index) {},
+            onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
+            selectMode: true,
+            party: party,
+            selectingPokemonIdx: selectingPokemonIdx,
+          );
+        },
+      ),
+    );
     return Future<Pokemon?>.value(result);
   }
 
@@ -560,7 +585,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 // 新規作成
                 return RegisterPartyPage(
                   onFinish: () => _pop(context),
-                  onSelectPokemon: (party, idx) => _pushSelectPokemonPage(context, party, idx),
+                  onSelectPokemon: (party, idx) =>
+                      _pushSelectPokemonPage(context, party, idx),
                   party: Party(),
                   isNew: true,
                   isEditPokemon: false,
@@ -569,16 +595,18 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
               case PartyTabNavigatorRoutes.registerPokemon:
                 // ポケモン選択
                 return PokemonsPage(
-                  onAdd: (pokemon, isNew){},
-                  onView:(pokemonList, index) {},
-                  onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
+                  onAdd: (pokemon, isNew) {},
+                  onView: (pokemonList, index) {},
+                  onSelect: (pokemon) =>
+                      _popSelectPokemonPage(context, pokemon),
                   selectMode: true,
                 );
               default:
                 return PartiesPage(
                   onAdd: (party, isNew) => _pushRegister(context, party, isNew),
                   onSelect: null,
-                  onView: (partyList, index) => _pushView(context, partyList, index),
+                  onView: (partyList, index) =>
+                      _pushView(context, partyList, index),
                   selectMode: false,
                 );
             }
@@ -611,12 +639,10 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
   void _push(
     BuildContext context,
     Battle battle,
-    bool isNew,
-    {
-      RegisterBattlePageType pageType = RegisterBattlePageType.basePage,
-      int turnNum = 1,
-    }
-  ) {
+    bool isNew, {
+    RegisterBattlePageType pageType = RegisterBattlePageType.basePage,
+    int turnNum = 1,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -627,16 +653,22 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
             onSelectParty: () => _pushSelectPartyPage(context),
             battle: battle,
             isNew: isNew,
-            onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
+            onSaveOpponentParty: (party, state) =>
+                _pushRegisterPartyPage(context, party, state),
             firstPageType: pageType,
             firstTurnNum: turnNum,
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
-  void _pushBattleView(BuildContext context, Battle battle,) {
+  void _pushBattleView(
+    BuildContext context,
+    Battle battle,
+  ) {
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -645,7 +677,7 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           return ViewBattlePage(
             battle: battle,
             onEdit: (b, pageType, turnNum) =>
-              _push(context, b, false, pageType: pageType, turnNum: turnNum),
+                _push(context, b, false, pageType: pageType, turnNum: turnNum),
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -660,10 +692,13 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
-  void _pushEditPokemonPage(BuildContext context, Pokemon pokemon, PokemonState pokemonState) async {
+  void _pushEditPokemonPage(
+      BuildContext context, Pokemon pokemon, PokemonState pokemonState) async {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -681,25 +716,25 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
   }
 
   Future<Party?> _pushSelectPartyPage(BuildContext context) async {
-    var result =
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            // パーティ選択
-            return PartiesPage(
-              onAdd: (party, isNew) {},
-              onSelect: (party) => _popSelectPartyPage(context, party),
-              onView: (partyList, index) {},
-              selectMode: true,
-            );
-          },
-        ),
-      );
+    var result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) {
+          // パーティ選択
+          return PartiesPage(
+            onAdd: (party, isNew) {},
+            onSelect: (party) => _popSelectPartyPage(context, party),
+            onView: (partyList, index) {},
+            selectMode: true,
+          );
+        },
+      ),
+    );
     return Future<Party?>.value(result);
   }
 
-  Future<void> _pushRegisterPartyPage(BuildContext context, Party party, PhaseState state) async {
+  Future<void> _pushRegisterPartyPage(
+      BuildContext context, Party party, PhaseState state) async {
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -707,11 +742,14 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
           // パーティ登録
           return RegisterPartyPage(
             onFinish: () => _pop(context),
-            onSelectPokemon: (party, idx) {return Future<Pokemon?>.value(Pokemon());},    // 使わない
+            onSelectPokemon: (party, idx) {
+              return Future<Pokemon?>.value(Pokemon());
+            }, // 使わない
             party: party,
             isNew: party.id == 0,
             isEditPokemon: true,
-            onEditPokemon: (pokemon, pokemonState) => _pushEditPokemonPage(context, pokemon, pokemonState),
+            onEditPokemon: (pokemon, pokemonState) =>
+                _pushEditPokemonPage(context, pokemon, pokemonState),
             phaseState: state,
           );
         },
@@ -748,7 +786,8 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
                   onSelectParty: () => _pushSelectPartyPage(context),
                   battle: Battle(),
                   isNew: true,
-                  onSaveOpponentParty: (party, state) => _pushRegisterPartyPage(context, party, state),
+                  onSaveOpponentParty: (party, state) =>
+                      _pushRegisterPartyPage(context, party, state),
                   firstPageType: RegisterBattlePageType.basePage,
                   firstTurnNum: 1,
                 );
@@ -822,7 +861,9 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
           );
         },
       ),
-    ).then((value) {setState(() {});});
+    ).then((value) {
+      setState(() {});
+    });
   }
 
 /*
@@ -846,10 +887,14 @@ class _SettingTabNavigatorState extends State<SettingTabNavigator> {
                 return SettingResetPage();
               default:
                 return SettingsPage(
-                  onReset: () => _push(context, SettingTabNavigatorRoutes.reset),
-                  viewLanguage: () => _push(context, SettingTabNavigatorRoutes.language),
-                  viewLicense: () => _push(context, SettingTabNavigatorRoutes.license),
-                  viewPolicy: () => _push(context, SettingTabNavigatorRoutes.policy),
+                  onReset: () =>
+                      _push(context, SettingTabNavigatorRoutes.reset),
+                  viewLanguage: () =>
+                      _push(context, SettingTabNavigatorRoutes.language),
+                  viewLicense: () =>
+                      _push(context, SettingTabNavigatorRoutes.license),
+                  viewPolicy: () =>
+                      _push(context, SettingTabNavigatorRoutes.policy),
                 );
             }
           },
@@ -884,16 +929,15 @@ class BottomNavigation extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
-      type: BottomNavigationBarType.fixed,
-      items: <BottomNavigationBarItem>[
-        for (var tab in TabItem.values)
-          BottomNavigationBarItem(
-            icon: Icon(tabIcon[tab]),
-            label: _tabName(tab, context),
-          ),
-      ],
-      currentIndex: currentTab.index,
-      onTap: (index) => onSelectTab(TabItem.values[index])
-    );
+        type: BottomNavigationBarType.fixed,
+        items: <BottomNavigationBarItem>[
+          for (var tab in TabItem.values)
+            BottomNavigationBarItem(
+              icon: Icon(tabIcon[tab]),
+              label: _tabName(tab, context),
+            ),
+        ],
+        currentIndex: currentTab.index,
+        onTap: (index) => onSelectTab(TabItem.values[index]));
   }
 }

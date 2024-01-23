@@ -38,15 +38,16 @@ void main() async {
   group('統合テスト1(仮)', () {
     testWidgets('統合テスト1(仮)', (tester) async {
       await tester.pumpWidget(MyApp(initialLocale: locale));
+      await tester.pump(Duration(seconds: 5));
       // TODO
-      // 対戦タブボタンタップ
-      await tester
-          .tap(find.widgetWithIcon(BottomNavigationBarItem, Icons.list));
+      // ポケモンタブボタンタップ
+      await tester.tap(find.text('ポケモン'));
       await tester.pumpAndSettle();
+      expect(find.text('もこパモ'), findsWidgets);
       // 追加ボタン(+)タップ
-      await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.add));
-      await tester.pumpAndSettle(Duration(seconds: 2));
-      expect(find.byType(TextField), findsWidgets);
+      //await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.add));
+      //await tester.pumpAndSettle(Duration(seconds: 2));
+      //expect(find.byType(TextField), findsWidgets);
       // 基本情報を適当に入力
       //await tester.enterText(find.widgetWithText(widgetType, text), text)
       // 適当に選出ポケモン選ぶ
