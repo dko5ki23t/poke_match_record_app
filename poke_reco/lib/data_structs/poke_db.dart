@@ -60,7 +60,6 @@ const String abilityColumnName = 'name';
 const String abilityColumnEnglishName = 'englishName';
 const String abilityColumnTiming = 'timing';
 const String abilityColumnTarget = 'target';
-const String abilityColumnEffect = 'effect';
 
 const String abilityFlavorDBFile = 'AbilityFlavors.db';
 const String abilityFlavorDBTable = 'abilityFlavorDB';
@@ -581,16 +580,19 @@ class AbilityEffect {
 }
 
 // 効果
-class MoveEffect {
+class MoveEffect extends Equatable {
   static const int none = 0;
   // IDはpokeAPIのmove_effect_idに対応
 
   const MoveEffect(this.id);
 
+  @override
+  List<Object> get props => [id];
+
   final int id;
 }
 
-class Move {
+class Move extends Equatable implements Copyable {
   final int id;
   late final String _displayName;
   late final String _displayNameEn;
@@ -603,6 +605,22 @@ class Move {
   MoveEffect effect;
   int effectChance;
   final int pp;
+
+  @override
+  List<Object> get props => [
+        id,
+        _displayName,
+        _displayNameEn,
+        type,
+        power,
+        accuracy,
+        priority,
+        target,
+        damageClass,
+        effect,
+        effectChance,
+        pp,
+      ];
 
   Move(
     this.id,
@@ -1131,7 +1149,8 @@ class Move {
     return bulletMoveIDs.contains(id);
   }
 
-  Move copyWith() => Move(
+  @override
+  Move copy() => Move(
         id,
         _displayName,
         _displayNameEn,
@@ -1387,7 +1406,7 @@ class PokeDB {
   BattleSort? battlesSort;
 
   Map<int, Ability> abilities = {
-    0: Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0))
+    0: Ability(0, '', '', Timing.none, Target.none)
   }; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
@@ -1628,8 +1647,7 @@ class PokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget,
-        abilityColumnEffect
+        abilityColumnTarget
       ],
     );
     for (var map in maps) {
@@ -1639,7 +1657,6 @@ class PokeDB {
         map[abilityColumnEnglishName],
         Timing.values[map[abilityColumnTiming]],
         Target.values[map[abilityColumnTarget]],
-        AbilityEffect(map[abilityColumnEffect]),
       );
     }
 

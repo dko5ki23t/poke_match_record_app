@@ -9,76 +9,16 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 class TestPokeDB {
   static const String assetRoot = '../../../assets/';
-  Map<int, Ability> abilities = {
-    0: Ability(0, '', '', Timing.none, Target.none, AbilityEffect(0))
-  }; // 無効なとくせい
+  PokeDB data = PokeDB();
+
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''}; // 無効なとくせい
-  Map<int, Temper> tempers = {
-    0: Temper(0, '', '', StatIndex.none, StatIndex.none)
-  }; // 無効なせいかく
-  Map<int, Item> items = {
-    0: Item(
-        id: 0,
-        displayName: '',
-        displayNameEn: '',
-        flingPower: 0,
-        flingEffectId: 0,
-        timing: Timing.none,
-        isBerry: false,
-        imageUrl: '')
-  }; // 無効なもちもの
   Map<int, String> _itemFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
-  Map<int, Move> moves = {
-    0: Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0),
-        MoveEffect(0), 0, 0)
-  }; // 無効なわざ
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
-  List<PokeType> types = PokeType.values.sublist(1, 19);
-  List<PokeType> teraTypes = PokeType.values.sublist(1, PokeType.values.length);
-  Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')}; // 無効なタマゴグループ
-  Map<int, PokeBase> pokeBase = {
-    // 無効なポケモン
-    0: PokeBase(
-      name: '',
-      nameEn: '',
-      sex: [Sex.createFromId(0)],
-      no: 0,
-      type1: PokeType.unknown,
-      type2: null,
-      h: 0,
-      a: 0,
-      b: 0,
-      c: 0,
-      d: 0,
-      s: 0,
-      ability: [],
-      move: [],
-      height: 0,
-      weight: 0,
-      eggGroups: [],
-      imageUrl: 'https://dammy',
-    ),
-  };
 
-  List<int> parseIntList(dynamic str) {
-    List<int> ret = [];
-    // なぜかintの場合もif文の中に入らないのでtoStringを使う
-    if (str is int) {
-      return [str];
-    }
-    final contents = str.split(sqlSplit1);
-    for (var c in contents) {
-      if (c == '') {
-        continue;
-      }
-      ret.add(int.parse(c));
-    }
-    return ret;
-  }
-
+  // PokeDBのinitializeの代わりに呼ぶことで、単体テストでも使えるDBとなる
   Future<void> initialize() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
@@ -92,18 +32,16 @@ class TestPokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget,
-        abilityColumnEffect
+        abilityColumnTarget
       ],
     );
     for (var map in maps) {
-      abilities[map[abilityColumnId]] = Ability(
+      data.abilities[map[abilityColumnId]] = Ability(
         map[abilityColumnId],
         map[abilityColumnName],
         map[abilityColumnEnglishName],
         Timing.values[map[abilityColumnTiming]],
         Target.values[map[abilityColumnTarget]],
-        AbilityEffect(map[abilityColumnEffect]),
       );
     }
 
@@ -139,7 +77,7 @@ class TestPokeDB {
       ],
     );
     for (var map in maps) {
-      tempers[map[temperColumnId]] = Temper(
+      data.tempers[map[temperColumnId]] = Temper(
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnEnglishName],
@@ -156,7 +94,7 @@ class TestPokeDB {
       columns: [eggGroupColumnId, eggGroupColumnName],
     );
     for (var map in maps) {
-      eggGroups[map[eggGroupColumnId]] = EggGroup(
+      data.eggGroups[map[eggGroupColumnId]] = EggGroup(
         map[eggGroupColumnId],
         map[eggGroupColumnName],
       );
@@ -179,7 +117,7 @@ class TestPokeDB {
       ],
     );
     for (var map in maps) {
-      items[map[itemColumnId]] = Item(
+      data.items[map[itemColumnId]] = Item(
           id: map[itemColumnId],
           displayName: map[itemColumnName],
           displayNameEn: map[itemColumnEnglishName],
@@ -228,7 +166,7 @@ class TestPokeDB {
       ],
     );
     for (var map in maps) {
-      moves[map[moveColumnId]] = Move(
+      data.moves[map[moveColumnId]] = Move(
         map[moveColumnId],
         map[moveColumnName],
         map[moveColumnEnglishName],
@@ -284,10 +222,10 @@ class TestPokeDB {
     );
 
     for (var map in maps) {
-      final pokeTypes = parseIntList(map[pokeBaseColumnType]);
-      final pokeAbilities = parseIntList(map[pokeBaseColumnAbility]);
-      final pokeMoves = parseIntList(map[pokeBaseColumnMove]);
-      final pokeEggGroups = parseIntList(map[pokeBaseColumnEggGroup]);
+      final pokeTypes = data.parseIntList(map[pokeBaseColumnType]);
+      final pokeAbilities = data.parseIntList(map[pokeBaseColumnAbility]);
+      final pokeMoves = data.parseIntList(map[pokeBaseColumnMove]);
+      final pokeEggGroups = data.parseIntList(map[pokeBaseColumnEggGroup]);
       List<Sex> sexList = [];
       if (map[pokeBaseColumnFemaleRate] == -1) {
         sexList = [Sex.none];
@@ -298,7 +236,7 @@ class TestPokeDB {
       } else {
         sexList = [Sex.male, Sex.female];
       }
-      pokeBase[map[pokeBaseColumnId]] = PokeBase(
+      data.pokeBase[map[pokeBaseColumnId]] = PokeBase(
         name: map[pokeBaseColumnName],
         nameEn: map[pokeBaseColumnEnglishName],
         sex: sexList,
@@ -311,13 +249,46 @@ class TestPokeDB {
         c: map[pokeBaseColumnStats[3]],
         d: map[pokeBaseColumnStats[4]],
         s: map[pokeBaseColumnStats[5]],
-        ability: [for (var e in pokeAbilities) abilities[e]!],
-        move: [for (var e in pokeMoves) moves[e]!],
+        ability: [for (var e in pokeAbilities) data.abilities[e]!],
+        move: [for (var e in pokeMoves) data.moves[e]!],
         height: map[pokeBaseColumnHeight],
         weight: map[pokeBaseColumnWeight],
-        eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!],
+        eggGroups: [for (var e in pokeEggGroups) data.eggGroups[e]!],
         imageUrl: map[pokeBaseColumnImageUrl],
       );
     }
+  }
+
+  String? getAbilityFlavor(int abilityId) {
+//    switch (language) {
+//      case Language.english:
+//        return _abilityEnglishFlavors[abilityId];
+//      case Language.japanese:
+//      default:
+//        return _abilityFlavors[abilityId];
+//    }
+    return _abilityFlavors[abilityId];
+  }
+
+  String? getItemFlavor(int itemId) {
+//    switch (language) {
+//      case Language.english:
+//        return _itemEnglishFlavors[itemId];
+//      case Language.japanese:
+//      default:
+//        return _itemFlavors[itemId];
+//    }
+    return _itemFlavors[itemId];
+  }
+
+  String? getMoveFlavor(int moveId) {
+//    switch (language) {
+//      case Language.english:
+//        return _moveEnglishFlavors[moveId];
+//      case Language.japanese:
+//      default:
+//        return _moveFlavors[moveId];
+//    }
+    return _moveFlavors[moveId];
   }
 }

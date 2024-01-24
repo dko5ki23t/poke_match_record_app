@@ -29,13 +29,16 @@ import 'package:tuple/tuple.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 // ダメージ
-class DamageClass {
+class DamageClass extends Equatable {
   static const int none = 0;
   static const int status = 1; // へんか(ダメージなし)
   static const int physical = 2; // ぶつり
   static const int special = 3; // とくしゅ
 
   const DamageClass(this.id);
+
+  @override
+  List<Object?> get props => [id];
 
   final int id;
 }
@@ -133,7 +136,7 @@ class MoveAdditionalEffect {
   final int id;
 }
 
-class ActionFailure {
+class ActionFailure extends Equatable {
   static const int none = 0;
   static const int recoil = 1; // わざの反動
   static const int sleep = 2; // ねむり(カウント消費)
@@ -179,6 +182,9 @@ class ActionFailure {
 
   const ActionFailure(this.id);
 
+  @override
+  List<Object?> get props => [id];
+
   final int id;
 }
 
@@ -205,7 +211,7 @@ class DamageGetter {
   }
 }
 
-class TurnMove {
+class TurnMove extends Equatable implements Copyable {
   PlayerType playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.unknown; // テラスタルなし
@@ -228,11 +234,34 @@ class TurnMove {
   bool isFirst = false; // ターン内最初の行動か
   bool _isValid = false;
 
-  TurnMove copyWith() => TurnMove()
+  @override
+  List<Object> get props => [
+        playerType,
+        type,
+        teraType,
+        move,
+        isSuccess,
+        actionFailure,
+        moveHits,
+        moveEffectivenesses,
+        realDamage,
+        percentDamage,
+        moveAdditionalEffects,
+        extraArg1,
+        extraArg2,
+        extraArg3,
+        _changePokemonIndexes,
+        moveType,
+        isFirst,
+        _isValid
+      ];
+
+  @override
+  TurnMove copy() => TurnMove()
     ..playerType = playerType
     ..type = type
     ..teraType = teraType
-    ..move = move.copyWith()
+    ..move = move.copy()
     ..isSuccess = isSuccess
     ..actionFailure = actionFailure
     ..moveHits = [...moveHits]
@@ -5993,42 +6022,49 @@ class TurnMove {
                           List<Move> matches = [];
                           if (playerType == PlayerType.me) {
                             matches.add(ownPokemon.move1);
-                            if (ownPokemon.move2 != null)
+                            if (ownPokemon.move2 != null) {
                               matches.add(ownPokemon.move2!);
-                            if (ownPokemon.move3 != null)
+                            }
+                            if (ownPokemon.move3 != null) {
                               matches.add(ownPokemon.move3!);
-                            if (ownPokemon.move4 != null)
+                            }
+                            if (ownPokemon.move4 != null) {
                               matches.add(ownPokemon.move4!);
+                            }
                           } else if (opponentPokemonState.moves.length == 4) {
                             //　わざがすべて判明している場合
                             matches.addAll(opponentPokemonState.moves);
                           } else {
                             matches.addAll(
                                 pokeData.pokeBase[opponentPokemon.no]!.move);
-                            if (state.canZorua)
+                            if (state.canZorua) {
                               matches.addAll(pokeData
                                   .pokeBase[PokeBase.zoruaNo]!.move
                                   .where((e) => matches
                                       .where((element) => element.id == e.id)
                                       .isEmpty));
-                            if (state.canZoroark)
+                            }
+                            if (state.canZoroark) {
                               matches.addAll(pokeData
                                   .pokeBase[PokeBase.zoroarkNo]!.move
                                   .where((e) => matches
                                       .where((element) => element.id == e.id)
                                       .isEmpty));
-                            if (state.canZoruaHisui)
+                            }
+                            if (state.canZoruaHisui) {
                               matches.addAll(pokeData
                                   .pokeBase[PokeBase.zoruaHisuiNo]!.move
                                   .where((e) => matches
                                       .where((element) => element.id == e.id)
                                       .isEmpty));
-                            if (state.canZoroarkHisui)
+                            }
+                            if (state.canZoroarkHisui) {
                               matches.addAll(pokeData
                                   .pokeBase[PokeBase.zoroarkHisuiNo]!.move
                                   .where((e) => matches
                                       .where((element) => element.id == e.id)
                                       .isEmpty));
+                            }
                           }
                           matches.add(pokeData.moves[165]!); // わるあがき
                           matches.retainWhere((s) {
@@ -6041,7 +6077,7 @@ class TurnMove {
                         },
                         itemBuilder: (context, suggestion) {
                           DamageGetter getter = DamageGetter();
-                          TurnMove tmp = copyWith();
+                          TurnMove tmp = copy();
                           tmp.move = getReplacedMove(
                               suggestion, continuousCount, myState);
                           tmp.moveHits[continuousCount] = getMoveHit(suggestion,

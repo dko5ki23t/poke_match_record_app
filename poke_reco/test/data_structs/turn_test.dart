@@ -5,10 +5,10 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:test/test.dart';
 
-import 'test_poke_db.dart';
+//import 'test_poke_db.dart';
 
 void main() async {
-  TestPokeDB pokeData = TestPokeDB();
+  //TestPokeDB pokeData = TestPokeDB();
   group('Turn class の単体テスト', () {
     //final ownParty = pokeData.parties[1]!;
     Turn turn = Turn()

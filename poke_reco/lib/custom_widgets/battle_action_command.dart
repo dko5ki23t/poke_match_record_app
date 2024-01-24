@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
-import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -92,7 +91,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];
         DamageGetter getter = DamageGetter();
-        TurnMove tmp = turnMove.copyWith();
+        TurnMove tmp = turnMove.copy();
         tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
         tmp.moveHits[0] =
             turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
