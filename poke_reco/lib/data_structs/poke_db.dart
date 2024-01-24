@@ -244,7 +244,7 @@ const String sqlSplit7 = '{';
 const String sqlSplit8 = '|';
 
 // 事前準備したデータを使うかどうか
-bool replacePrepared = false;
+bool replacePrepared = true;
 
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),

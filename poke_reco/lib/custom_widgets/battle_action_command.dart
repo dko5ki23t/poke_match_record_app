@@ -13,8 +13,7 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/tool.dart';
 
 enum CommandState {
-  home,
-  inputNum,
+  selectCommand,
   extraInput,
 }
 
@@ -47,8 +46,9 @@ class BattleActionCommand extends StatefulWidget {
 }
 
 class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
-  CommandState state = CommandState.home;
+  CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
+  int listIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +89,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               .contains(toKatakana50(pattern.toLowerCase()));
         });
       }
-      for (final myMove in moves) {
+      for (int i = 0; i < moves.length; i++) {
+        final myMove = moves[i];
         DamageGetter getter = DamageGetter();
         TurnMove tmp = turnMove.copyWith();
         tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
@@ -125,7 +126,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 .getReplacedMoveType(myMove, 0, myState, prevState)
                 .displayIcon,
             title: Text(myMove.displayName),
-            tileColor: Colors.yellow[200],
+            tileColor: i < myState.moves.length ? Colors.yellow[200] : null,
             subtitle:
                 Text('${getter.rangeString} (${getter.rangePercentString})'),
             trailing: Icon(Icons.arrow_forward_ios),
@@ -148,7 +149,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         turnMove.getReplacedMoveType(
                             myMove, 0, myState, prevState),
                         yourState);
-                state = CommandState.inputNum;
+                state = CommandState.extraInput;
               });
             },
           ),
@@ -158,7 +159,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
 
     Widget commandColumn;
     switch (state) {
-      case CommandState.home:
+      case CommandState.selectCommand:
         {
           // 行動の種類選択ボタン
           final commonCommand = Expanded(
@@ -325,8 +326,38 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           );
         }
         break;
-      case CommandState.inputNum:
-        commandColumn = Column(
+      case CommandState.extraInput:
+        commandColumn = turnMove.extraCommandInputList(
+            initialKeyNumber: CommandState.extraInput.index,
+            theme: theme,
+            onBackPressed: () => parentSetState(() {
+                  // いろいろ初期化
+                  turnMove.move = Move(0, '', '', PokeType.unknown, 0, 0, 0,
+                      Target.none, DamageClass(0), MoveEffect(0), 0, 0);
+                  turnMove.moveHits = [MoveHit.hit];
+                  turnMove.moveAdditionalEffects = [
+                    MoveEffect(MoveEffect.none)
+                  ];
+                  turnMove.moveEffectivenesses = [MoveEffectiveness.normal];
+                  turnMove.percentDamage[0] = 0;
+                  turnMove.realDamage[0] = 0;
+                  state = CommandState.selectCommand;
+                  widget.onUnConfirm();
+                }),
+            onListIndexChange: (index) {
+              listIndex = index;
+            },
+            onConfirm: () => widget.onConfirm,
+            parentSetState: parentSetState,
+            isFirstAction: widget.isFirstAction,
+            myParty: myParty,
+            yourParty: yourParty,
+            myState: myState,
+            yourState: yourState,
+            state: prevState,
+            continuousCount: 0,
+            loc: loc)[listIndex];
+/*        commandColumn = Column(
           key: ValueKey<int>(state.index),
           children: [
             Expanded(
@@ -334,20 +365,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               child: Row(
                 children: [
                   IconButton(
-                    onPressed: () => parentSetState(() {
-                      // いろいろ初期化
-                      turnMove.move = Move(0, '', '', PokeType.unknown, 0, 0, 0,
-                          Target.none, DamageClass(0), MoveEffect(0), 0, 0);
-                      turnMove.moveHits = [MoveHit.hit];
-                      turnMove.moveAdditionalEffects = [
-                        MoveEffect(MoveEffect.none)
-                      ];
-                      turnMove.moveEffectivenesses = [MoveEffectiveness.normal];
-                      turnMove.percentDamage[0] = 0;
-                      turnMove.realDamage[0] = 0;
-                      state = CommandState.home;
-                      widget.onUnConfirm();
-                    }),
+                    onPressed: 
                     icon: Icon(Icons.arrow_back),
                   ),
                   Expanded(
@@ -378,7 +396,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         yourState.remainHP - remain;
                   }
                   if (turnMove.extraCommand(
-                        key: ValueKey<int>(CommandState.extraInput.index),
+                        key: ValueKey<int>(CommandState.extraInput2.index),
                         theme: theme,
                         onBackPressed: () {},
                         parentSetState: (p0) {},
@@ -392,7 +410,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         loc: loc,
                       ) !=
                       null) {
-                    state = CommandState.extraInput;
+                    state = CommandState.extraInput2;
                   }
                   widget.onConfirm();
                 }),
@@ -400,13 +418,14 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             ),
           ],
         );
+*/
         break;
-      case CommandState.extraInput:
+/*      case CommandState.extraInput2:
         commandColumn = turnMove.extraCommand(
-          key: ValueKey<int>(CommandState.extraInput.index),
+          key: ValueKey<int>(CommandState.extraInput2.index),
           theme: theme,
           onBackPressed: () => setState(() {
-            state = CommandState.inputNum;
+            state = CommandState.extraInput1;
           }),
           parentSetState: setState,
           isFirstAction: widget.isFirstAction,
@@ -418,7 +437,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           continuousCount: 0,
           loc: loc,
         )!;
-        break;
+        break;*/
       default:
         commandColumn = Container(
           key: ValueKey<int>(state.index),
@@ -445,6 +464,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
 
   @override
   void reset() {
-    state = CommandState.home;
+    state = CommandState.selectCommand;
+    moveSearchTextController.text = '';
   }
 }

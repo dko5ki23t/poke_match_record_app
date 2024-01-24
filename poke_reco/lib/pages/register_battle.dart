@@ -9,7 +9,6 @@ import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -179,6 +178,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     if (firstBuild) {
       appState.onBackKeyPushed = onBack;
       appState.onTabChange = onTabChange;
+      if (widget.battle.name == '') {
+        widget.battle.name =
+            loc.tabBattles + pokeData.battles.length.toString();
+      }
       battleNameController.text = widget.battle.name;
       opponentNameController.text = widget.battle.opponentName;
       if (!widget.isNew) {
@@ -640,7 +643,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       case RegisterBattlePageType.basePage:
         title = Text(loc.battlesTabTitleBattleBase);
         lists = BattleBasicListView(
-          context,
           () {
             setState(() {});
           },

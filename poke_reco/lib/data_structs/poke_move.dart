@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
+import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
@@ -126,7 +127,6 @@ enum MoveEffectiveness {
 
 class MoveAdditionalEffect {
   static const int none = 0;
-  static const int speedDown = 1;
 
   const MoveAdditionalEffect(this.id);
 
@@ -226,6 +226,7 @@ class TurnMove {
   List<int?> _changePokemonIndexes = [null, null];
   PokeType moveType = PokeType.unknown;
   bool isFirst = false; // ターン内最初の行動か
+  bool _isValid = false;
 
   TurnMove copyWith() => TurnMove()
     ..playerType = playerType
@@ -244,7 +245,8 @@ class TurnMove {
     ..extraArg3 = [...extraArg3]
     .._changePokemonIndexes = [..._changePokemonIndexes]
     ..moveType = moveType
-    ..isFirst = isFirst;
+    ..isFirst = isFirst
+    .._isValid = _isValid;
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player == PlayerType.me) return _changePokemonIndexes[0];
@@ -3979,7 +3981,7 @@ class TurnMove {
           case 507: // 2回連続こうげき。必中
             break;
           case 508: // 相手の残りHPが多いほど威力が高くなる(100×相手の残りHP/相手の最大HP)
-            if (targetPlayerType == PlayerType.me) {
+            if (targetPlayerType == PlayerType.opponent) {
               movePower =
                   (100 * targetState.remainHP / targetState.pokemon.h.real)
                       .floor();
@@ -8704,7 +8706,7 @@ class TurnMove {
     return Container();
   }
 
-  Widget? extraCommand(
+  List<Widget> extraCommandInputList(
 //    void Function() onFocus,
 //    Pokemon ownPokemon,
 //    Pokemon opponentPokemon,
@@ -8719,9 +8721,14 @@ class TurnMove {
 //    List<int> invalidGuideIDs,
       {
 //      required bool isInput,
-    required ValueKey<int> key,
+    required int initialKeyNumber,
     required ThemeData theme,
-    required void Function() onBackPressed,
+    required void Function()
+        onBackPressed, // 入力画面シーケンス最初の画面の「戻る」を押されたときに呼ぶコールバック
+    required void Function(int)
+        onListIndexChange, // 入力画面シーケンス内の表示インデックスが変更されたときに呼ぶコールバック
+    required void Function()
+        onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
     required void Function(void Function()) parentSetState,
     required bool? isFirstAction,
     required Party myParty,
@@ -8733,7 +8740,8 @@ class TurnMove {
     required AppLocalizations loc,
   }) {
     if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
-      return Container();
+      // TODO
+      return [Container()];
     }
 
 //    if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
@@ -8757,8 +8765,8 @@ class TurnMove {
 //      );
 //    }
 
-    Widget? effectInput;
-    String commandTitle = '';
+    List<Widget> ret = [];
+    int listIndex = 0;
 
     if (playerType != PlayerType.none &&
         type == TurnMoveType.move &&
@@ -8947,7 +8955,455 @@ class TurnMove {
         }
       }
 
-      // 追加効果
+      // 1.分類による返却Widgetリストの対応
+      switch (replacedMove.damageClass.id) {
+        case 1: // へんか
+          // 1-a.対象による返却Widgetリストの対応
+          switch (replacedMove.target) {
+            case Target.faintingPokemon: // ひんしになった(味方の)ポケモン
+              {
+                // 交代先選択ListTile作成
+                List<ListTile> pokemonTiles = [];
+                List<int> addedIndex = [];
+                for (int i = 0; i < myParty.pokemonNum; i++) {
+                  if (state.isPossibleBattling(playerType, i) &&
+                      state.getPokemonStates(playerType)[i].isFainting) {
+                    pokemonTiles.add(
+                      PokemonTile(
+                        myParty.pokemons[i]!,
+                        theme,
+                        onTap: () {
+                          extraArg1[continuousCount] = i + 1;
+                          _isValid = true;
+                        },
+                        dense: true,
+                        selected: extraArg1[continuousCount] == i + 1,
+                        selectedTileColor: Colors.black26,
+                      ),
+                    );
+                    addedIndex.add(i);
+                  }
+                }
+                for (int i = 0; i < myParty.pokemonNum; i++) {
+                  if (addedIndex.contains(i)) continue;
+                  pokemonTiles.add(
+                    PokemonTile(
+                      myParty.pokemons[i]!,
+                      theme,
+                      enabled: false,
+                      dense: true,
+                    ),
+                  );
+                }
+                _isValid = true; // TODO
+                onConfirm(); // TODO
+                // 返却Widget作成
+                return [
+                  Column(
+                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                onBackPressed();
+                              },
+                              icon: Icon(Icons.arrow_back),
+                            ),
+                            Expanded(
+                              child: Text(loc.battleRevivePokemon),
+                            ),
+                            TextButton(
+                                onPressed: () {},
+                                child: Text(isFirstAction != null
+                                    ? isFirstAction
+                                        ? loc.battleActFirst
+                                        : loc.battleActSecond
+                                    : ' '))
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 7,
+                        child: ListViewWithViewItemCount(
+                          viewItemCount: 4,
+                          children: myPokemonTiles,
+                        ),
+                      ),
+                    ],
+                  )
+                ];
+              }
+            default: // その他が対象のへんかわざ
+              {
+                _isValid = true; // TODO
+                onConfirm(); // TODO
+                // 返却Widget作成
+                return [
+                  Column(
+                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                onBackPressed();
+                              },
+                              icon: Icon(Icons.arrow_back),
+                            ),
+                            Expanded(
+                              child: Text(replacedMove.displayName),
+                            ),
+                            TextButton(
+                                onPressed: () {},
+                                child: Text(isFirstAction != null
+                                    ? isFirstAction
+                                        ? loc.battleActFirst
+                                        : loc.battleActSecond
+                                    : ' '))
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: SwitchListTile(
+                          title: Text(loc.battleSucceeded),
+                          onChanged: (change) {
+                            isSuccess = change;
+                          },
+                          value: isSuccess,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 6,
+                        child: Container(),
+                      ),
+                    ],
+                  )
+                ];
+                // TODO 下記コメントのように、他にも入力が必要？
+              }
+            /*return Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _myDropdownButtonFormField(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            border: UnderlineInputBorder(),
+                            labelText: loc.battleSuccessFailure,
+                          ),
+                          items: <DropdownMenuItem>[
+                            DropdownMenuItem(
+                              value: MoveHit.hit,
+                              child: Text(loc.battleSucceeded),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveHit.notHit,
+                              child: Text(MoveHit.notHit.displayName),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveHit.fail,
+                              child: Text(MoveHit.fail.displayName),
+                            ),
+                          ],
+                          value: moveHits[continuousCount],
+                          onChanged: (value) {
+                            moveHits[continuousCount] = value;
+                            appState.editingPhase[phaseIdx] = true;
+                            onFocus();
+                          },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveHits[continuousCount] == MoveHit.hit ? loc.battleSucceeded :
+                            moveHits[continuousCount].displayName,
+                          theme: theme,
+                        ),
+                      ),
+                    ],
+                  ),
+                  effectInputPrevRow,
+                  insertPrevRow ?
+                  SizedBox(height: 10,) : Container(),
+                  SizedBox(height: 10,),
+                  effectInputRow,
+                  SizedBox(height: 10,),
+                  effectInputRow2,
+                ],
+              );*/
+          }
+        default: // ぶつり・とくしゅ
+          switch (replacedMove.target) {
+            case Target.ally: // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+              {
+                _isValid = true; // TODO
+                onConfirm(); // TODO
+                // 返却Widget作成
+                return [
+                  Column(
+                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+                    children: [
+                      Expanded(
+                        flex: 1,
+                        child: Row(
+                          children: [
+                            IconButton(
+                              onPressed: () {
+                                onBackPressed();
+                              },
+                              icon: Icon(Icons.arrow_back),
+                            ),
+                            Expanded(
+                              child: Text(replacedMove.displayName),
+                            ),
+                            TextButton(
+                                onPressed: () {},
+                                child: Text(isFirstAction != null
+                                    ? isFirstAction
+                                        ? loc.battleActFirst
+                                        : loc.battleActSecond
+                                    : ' '))
+                          ],
+                        ),
+                      ),
+                      Expanded(
+                        flex: 1,
+                        child: SwitchListTile(
+                          title: Text(loc.battleSucceeded),
+                          onChanged: null,
+                          value: false,
+                        ),
+                      ),
+                      Expanded(
+                        flex: 6,
+                        child: Container(),
+                      ),
+                    ],
+                  )
+                ];
+              }
+            default:
+              {
+                // ダメージ入力のWidgetを追加
+                ret.add(Column(
+                  key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: () => onBackPressed,
+                            icon: Icon(Icons.arrow_back),
+                          ),
+                          Expanded(
+                            child: Text(replacedMove.displayName),
+                          ),
+                          TextButton(
+                              onPressed: () {},
+                              child: Text(isFirstAction != null
+                                  ? isFirstAction
+                                      ? loc.battleActFirst
+                                      : loc.battleActSecond
+                                  : ' '))
+                        ],
+                      ),
+                    ),
+                    // ダメージ入力
+                    Expanded(
+                      flex: 7,
+                      child: NumberInputButtons(
+                        initialNum: 0, // TODO?
+                        onConfirm: (remain) {
+                          int continuousCount = 0;
+                          if (playerType == PlayerType.me) {
+                            percentDamage[continuousCount] =
+                                yourState.remainHPPercent - remain;
+                          } else {
+                            realDamage[continuousCount] =
+                                yourState.remainHP - remain;
+                          }
+                          _isValid = true; // TODO
+                          onConfirm(); // TODO
+                          // TODO
+                          // onListIndexChange(listIndex + 1);
+                          /*
+                          if (extraCommand(
+                                key: ValueKey<int>(CommandState.extraInput2.index),
+                                theme: theme,
+                                onBackPressed: () {},
+                                parentSetState: (p0) {},
+                                isFirstAction: widget.isFirstAction,
+                                myParty: myParty,
+                                yourParty: yourParty,
+                                myState: myState,
+                                yourState: yourState,
+                                state: prevState,
+                                continuousCount: 0,
+                                loc: loc,
+                              ) !=
+                              null) {
+                            state = CommandState.extraInput2;
+                          }
+                          widget.onConfirm();*/
+                        },
+                      ),
+                    ),
+                  ],
+                ));
+              }
+              break;
+/*
+              return Column(
+                children: [
+                  effectInputPrevRow,
+                  insertPrevRow ?
+                  SizedBox(height: 10,) : Container(),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 5,
+                        child: _myDropdownButtonFormField(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            border: UnderlineInputBorder(),
+                            labelText: loc.battleHitFail,
+                          ),
+                          items: <DropdownMenuItem>[
+                            for (final hit in MoveHit.values)
+                            DropdownMenuItem(
+                              value: hit,
+                              child: Text(hit.displayName),
+                            ),
+                          ],
+                          value: moveHits[continuousCount],
+                          onChanged: (value) {
+                            moveHits[continuousCount] = value;
+                            appState.editingPhase[phaseIdx] = true;
+                            onFocus();
+                          },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveHits[continuousCount].displayName,
+                          theme: theme,
+                        ),
+                      ),
+                      SizedBox(width: 10,),
+                      Expanded(
+                        flex: 5,
+                        child: _myDropdownButtonFormField<int>(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            border: UnderlineInputBorder(),
+                            labelText: loc.battleEffectiveness,
+                          ),
+                          items: <DropdownMenuItem<int>>[
+                            DropdownMenuItem(
+                              value: MoveEffectiveness.normal.index,
+                              child: Text(loc.battleEffectivenessNormal, overflow: TextOverflow.ellipsis,),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveEffectiveness.great.index,
+                              child: Text(loc.battleEffectivenessGreat, overflow: TextOverflow.ellipsis,),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveEffectiveness.notGood.index,
+                              child: Text(loc.battleEffectivenessNotGood, overflow: TextOverflow.ellipsis,),
+                            ),
+                            DropdownMenuItem(
+                              value: MoveEffectiveness.noEffect.index,
+                              child: Text(loc.battleEffectivenessNoEffect, overflow: TextOverflow.ellipsis,),
+                            ),
+                          ],
+                          value: moveEffectivenesses[continuousCount].index,
+                          onChanged: moveHits[continuousCount] != MoveHit.notHit && moveHits[continuousCount] != MoveHit.fail ? (value) {
+                            moveEffectivenesses[continuousCount] = MoveEffectiveness.values[value!];
+                            appState.editingPhase[phaseIdx] = true;
+                            onFocus();
+                          } : null,
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: moveEffectivenesses[continuousCount] == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
+                            moveEffectivenesses[continuousCount] == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
+                          theme: theme,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10,),
+                  effectInputRow,
+                  SizedBox(height: 10,),
+                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ||
+                  replacedMove.isSound || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isNotEmpty ?
+                  DamageIndicateRow(
+                    playerType == PlayerType.me ? opponentPokemon : ownPokemon,
+                    hpController,
+                    playerType != PlayerType.me,
+                    onFocus,
+                    (value) {
+                      if (playerType == PlayerType.me) {
+                        percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
+                      }
+                      else {
+                        realDamage[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
+                      }
+                      appState.editingPhase[phaseIdx] = true;
+                      onFocus();
+                    },
+                    playerType == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
+                    isInput, loc: loc,
+                  ) :
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: _myDropdownButtonFormField(
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            border: UnderlineInputBorder(),
+                            labelText: loc.battleSubstitute,
+                          ),
+                          items: <DropdownMenuItem>[
+                            DropdownMenuItem(
+                              value: 0,
+                              child: Text(loc.battleSubstituteRemain, overflow: TextOverflow.ellipsis,),
+                            ),
+                            DropdownMenuItem(
+                              value: 1,
+                              child: Text(loc.battleSubstituteBroke, overflow: TextOverflow.ellipsis,),
+                            ),
+                          ],
+                          value: realDamage[continuousCount],
+                          onChanged: (value) {
+                            realDamage[continuousCount] = value;
+                            appState.editingPhase[phaseIdx] = true;
+                            onFocus();
+                          },
+                          onFocus: onFocus,
+                          isInput: isInput,
+                          textValue: realDamage[continuousCount] == 0 ? loc.battleSubstituteRemain : loc.battleSubstituteBroke,
+                          theme: theme,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10,),
+                  effectInputRow2,
+                ],
+              );
+          }
+*/
+          }
+      }
+
+      // 2.追加効果
 //      Widget effectInputRow2 = Row();
       switch (replacedMove.effect.id) {
 /*        //case 2:     // 眠らせる
@@ -9196,11 +9652,42 @@ class TurnMove {
           break;*/
         case 29: // 相手ポケモンをランダムに交代させる
         case 314: // 相手ポケモンをランダムに交代させる
-          commandTitle = loc.battlePokemonToChange;
-          effectInput = ListViewWithViewItemCount(
-            viewItemCount: 4,
-            children: yourPokemonTiles,
-          );
+          ret.add(Column(
+            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        onListIndexChange(listIndex - 1);
+                      },
+                      icon: Icon(Icons.arrow_back),
+                    ),
+                    Expanded(
+                      child: Text(loc.battlePokemonToChange),
+                    ),
+                    TextButton(
+                        onPressed: () {},
+                        child: Text(isFirstAction != null
+                            ? isFirstAction
+                                ? loc.battleActFirst
+                                : loc.battleActSecond
+                            : ' '))
+                  ],
+                ),
+              ),
+              // 効果に応じたWidget
+              Expanded(
+                flex: 7,
+                child: ListViewWithViewItemCount(
+                  viewItemCount: 4,
+                  children: yourPokemonTiles,
+                ),
+              ),
+            ],
+          ));
           break;
 /*        case 31:    // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
         case 94:    // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
@@ -9447,11 +9934,42 @@ class TurnMove {
         case 229: // 控えのポケモンと交代する
         case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
         case 493: // 天気をゆきにして控えと交代
-          commandTitle = loc.battlePokemonToChange;
-          effectInput = ListViewWithViewItemCount(
-            viewItemCount: 4,
-            children: myPokemonTiles,
-          );
+          ret.add(Column(
+            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        onListIndexChange(listIndex - 1);
+                      },
+                      icon: Icon(Icons.arrow_back),
+                    ),
+                    Expanded(
+                      child: Text(loc.battlePokemonToChange),
+                    ),
+                    TextButton(
+                        onPressed: () {},
+                        child: Text(isFirstAction != null
+                            ? isFirstAction
+                                ? loc.battleActFirst
+                                : loc.battleActSecond
+                            : ' '))
+                  ],
+                ),
+              ),
+              // 効果に応じたWidget
+              Expanded(
+                flex: 7,
+                child: ListViewWithViewItemCount(
+                  viewItemCount: 4,
+                  children: myPokemonTiles,
+                ),
+              ),
+            ],
+          ));
           break;
 /*        case 136:   // 個体値によってわざのタイプが変わる
           effectInputRow = Row(
@@ -10393,12 +10911,44 @@ class TurnMove {
           );
           break;*/
         case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
-          commandTitle = loc.battlePokemonToChange;
-          effectInput = ListViewWithViewItemCount(
-            viewItemCount: 4,
-            children: myPokemonTiles,
-          );
-          /*
+          ret.add(Column(
+            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        onListIndexChange(listIndex - 1);
+                      },
+                      icon: Icon(Icons.arrow_back),
+                    ),
+                    Expanded(
+                      child: Text(loc.battlePokemonToChange),
+                    ),
+                    TextButton(
+                        onPressed: () {},
+                        child: Text(isFirstAction != null
+                            ? isFirstAction
+                                ? loc.battleActFirst
+                                : loc.battleActSecond
+                            : ' '))
+                  ],
+                ),
+              ),
+              // 効果に応じたWidget
+              Expanded(
+                flex: 7,
+                child: ListViewWithViewItemCount(
+                  viewItemCount: 4,
+                  children: myPokemonTiles,
+                ),
+              ),
+            ],
+          ));
+          break;
+        /*
           effectInputRow2 = DamageIndicateRow(
             playerType == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
@@ -10422,7 +10972,6 @@ class TurnMove {
             isInput,
             loc: loc,
           );*/
-          break;
 /*        case 505:   // 威力が2倍になる(確率)
           effectInputRow = Row(
             children: [
@@ -10462,313 +11011,9 @@ class TurnMove {
         default:
           break;
       }
-
-      switch (replacedMove.damageClass.id) {
-        case 1: // へんか
-          switch (replacedMove.target) {
-            case Target.faintingPokemon: // ひんしになった(味方の)ポケモン
-              // 交代先選択ListTile作成
-              List<ListTile> pokemonTiles = [];
-              List<int> addedIndex = [];
-              for (int i = 0; i < myParty.pokemonNum; i++) {
-                if (state.isPossibleBattling(playerType, i) &&
-                    state.getPokemonStates(playerType)[i].isFainting) {
-                  pokemonTiles.add(
-                    PokemonTile(
-                      myParty.pokemons[i]!,
-                      theme,
-                      onTap: () {
-                        extraArg1[continuousCount] = i + 1;
-                      },
-                      dense: true,
-                      selected: extraArg1[continuousCount] == i + 1,
-                      selectedTileColor: Colors.black26,
-                    ),
-                  );
-                  addedIndex.add(i);
-                }
-              }
-              for (int i = 0; i < myParty.pokemonNum; i++) {
-                if (addedIndex.contains(i)) continue;
-                pokemonTiles.add(
-                  PokemonTile(
-                    myParty.pokemons[i]!,
-                    theme,
-                    enabled: false,
-                    dense: true,
-                  ),
-                );
-              }
-              commandTitle = loc.battleRevivePokemon;
-              effectInput = ListViewWithViewItemCount(
-                viewItemCount: 4,
-                children: myPokemonTiles,
-              );
-              break;
-            default:
-              break;
-/*
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleSuccessFailure,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: MoveHit.hit,
-                              child: Text(loc.battleSucceeded),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.notHit,
-                              child: Text(MoveHit.notHit.displayName),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.fail,
-                              child: Text(MoveHit.fail.displayName),
-                            ),
-                          ],
-                          value: moveHits[continuousCount],
-                          onChanged: (value) {
-                            moveHits[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveHits[continuousCount] == MoveHit.hit ? loc.battleSucceeded :
-                            moveHits[continuousCount].displayName,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  effectInputPrevRow,
-                  insertPrevRow ?
-                  SizedBox(height: 10,) : Container(),
-                  SizedBox(height: 10,),
-                  effectInputRow,
-                  SizedBox(height: 10,),
-                  effectInputRow2,
-                ],
-              );
-          }
-        default:
-          switch(replacedMove.target) {
-            case Target.ally:   // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleHitFail,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: false,
-                              child: Text(loc.battleFailed),
-                            ),
-                          ],
-                          value: false,
-                          onChanged: null,
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: loc.battleFailed,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            default:
-              return Column(
-                children: [
-                  effectInputPrevRow,
-                  insertPrevRow ?
-                  SizedBox(height: 10,) : Container(),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleHitFail,
-                          ),
-                          items: <DropdownMenuItem>[
-                            for (final hit in MoveHit.values)
-                            DropdownMenuItem(
-                              value: hit,
-                              child: Text(hit.displayName),
-                            ),
-                          ],
-                          value: moveHits[continuousCount],
-                          onChanged: (value) {
-                            moveHits[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveHits[continuousCount].displayName,
-                          theme: theme,
-                        ),
-                      ),
-                      SizedBox(width: 10,),
-                      Expanded(
-                        flex: 5,
-                        child: _myDropdownButtonFormField<int>(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleEffectiveness,
-                          ),
-                          items: <DropdownMenuItem<int>>[
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.normal.index,
-                              child: Text(loc.battleEffectivenessNormal, overflow: TextOverflow.ellipsis,),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.great.index,
-                              child: Text(loc.battleEffectivenessGreat, overflow: TextOverflow.ellipsis,),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.notGood.index,
-                              child: Text(loc.battleEffectivenessNotGood, overflow: TextOverflow.ellipsis,),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.noEffect.index,
-                              child: Text(loc.battleEffectivenessNoEffect, overflow: TextOverflow.ellipsis,),
-                            ),
-                          ],
-                          value: moveEffectivenesses[continuousCount].index,
-                          onChanged: moveHits[continuousCount] != MoveHit.notHit && moveHits[continuousCount] != MoveHit.fail ? (value) {
-                            moveEffectivenesses[continuousCount] = MoveEffectiveness.values[value!];
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          } : null,
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveEffectivenesses[continuousCount] == MoveEffectiveness.normal ? loc.battleEffectivenessNormal :
-                            moveEffectivenesses[continuousCount] == MoveEffectiveness.great ? loc.battleEffectivenessGreat :
-                            moveEffectivenesses[continuousCount] == MoveEffectiveness.notGood ? loc.battleEffectivenessNotGood :
-                            moveEffectivenesses[continuousCount] == MoveEffectiveness.noEffect ? loc.battleEffectivenessNoEffect : '',
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10,),
-                  effectInputRow,
-                  SizedBox(height: 10,),
-                  yourState.buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isEmpty ||
-                  replacedMove.isSound || myState.buffDebuffs.where((e) => e.id == BuffDebuff.ignoreWall).isNotEmpty ?
-                  DamageIndicateRow(
-                    playerType == PlayerType.me ? opponentPokemon : ownPokemon,
-                    hpController,
-                    playerType != PlayerType.me,
-                    onFocus,
-                    (value) {
-                      if (playerType == PlayerType.me) {
-                        percentDamage[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-                      }
-                      else {
-                        realDamage[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-                      }
-                      appState.editingPhase[phaseIdx] = true;
-                      onFocus();
-                    },
-                    playerType == PlayerType.me ? percentDamage[continuousCount] : realDamage[continuousCount],
-                    isInput, loc: loc,
-                  ) :
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleSubstitute,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: 0,
-                              child: Text(loc.battleSubstituteRemain, overflow: TextOverflow.ellipsis,),
-                            ),
-                            DropdownMenuItem(
-                              value: 1,
-                              child: Text(loc.battleSubstituteBroke, overflow: TextOverflow.ellipsis,),
-                            ),
-                          ],
-                          value: realDamage[continuousCount],
-                          onChanged: (value) {
-                            realDamage[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: realDamage[continuousCount] == 0 ? loc.battleSubstituteRemain : loc.battleSubstituteBroke,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10,),
-                  effectInputRow2,
-                ],
-              );
-          }
-*/
-          }
-      }
     }
 
-    return Column(
-      key: key,
-      children: [
-        Expanded(
-          flex: 1,
-          child: Row(
-            children: [
-              IconButton(
-                onPressed: () {
-                  onBackPressed();
-                },
-                icon: Icon(Icons.arrow_back),
-              ),
-              Expanded(
-                child: Text(commandTitle),
-              ),
-              TextButton(
-                  onPressed: () {},
-                  child: Text(isFirstAction != null
-                      ? isFirstAction
-                          ? loc.battleActFirst
-                          : loc.battleActSecond
-                      : ' '))
-            ],
-          ),
-        ),
-        // 効果に応じたWidget
-        Expanded(
-          flex: 7,
-          child: effectInput ?? Container(),
-        ),
-      ],
-    );
+    return ret;
   }
 
   Widget _myTypeAheadField<T>({
@@ -11481,6 +11726,27 @@ class TurnMove {
     _changePokemonIndexes = [null, null];
     moveType = PokeType.unknown;
     isFirst = false;
+    _isValid = false;
+  }
+
+  void clearMove() {
+    teraType = PokeType.unknown;
+    move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
+        DamageClass(0), MoveEffect(0), 0, 0);
+    isSuccess = true;
+    actionFailure = ActionFailure(0);
+    moveHits = [MoveHit.hit];
+    moveEffectivenesses = [MoveEffectiveness.normal];
+    realDamage = [0];
+    percentDamage = [0];
+    moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
+    extraArg1 = [0];
+    extraArg2 = [0];
+    extraArg3 = [0];
+    _changePokemonIndexes = [null, null];
+    moveType = PokeType.unknown;
+    isFirst = false;
+    _isValid = false;
   }
 
   // SQLに保存された文字列からTurnMoveをパース
@@ -11701,8 +11967,9 @@ class TurnMove {
     ret += split1;
     // _changePokemonIndex
     for (int i = 0; i < 2; i++) {
-      if (_changePokemonIndexes[i] != null)
+      if (_changePokemonIndexes[i] != null) {
         ret += _changePokemonIndexes[i].toString();
+      }
       ret += split2;
     }
     ret += split1;
@@ -11716,6 +11983,9 @@ class TurnMove {
   }
 
   bool isValid() {
+    if (!_isValid) {
+      return false;
+    }
     if (!isSuccess) {
       return playerType != PlayerType.none && actionFailure.id != 0;
     }
