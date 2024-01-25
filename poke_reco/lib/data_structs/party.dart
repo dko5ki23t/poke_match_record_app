@@ -1,10 +1,11 @@
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/tool.dart';
 
-class Party {
-  int id = 0;    // データベースのプライマリーキー
-  int viewOrder = 0;  // 無効値
+class Party extends Equatable implements Copyable {
+  int id = 0; // データベースのプライマリーキー
+  int viewOrder = 0; // 無効値
   String name = '';
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
   List<Item?> items = List.generate(6, (i) => null);
@@ -13,6 +14,19 @@ class Party {
   int usedCount = 0;
   int winRate = 0;
 
+  @override
+  List<Object> get props => [
+        id,
+        viewOrder,
+        name,
+        _pokemons,
+        items,
+        owner,
+        winCount,
+        usedCount,
+        winRate,
+      ];
+
   Party();
 
   Party.createFromDBMap(Map<String, dynamic> map) {
@@ -20,23 +34,52 @@ class Party {
     id = map[partyColumnId];
     viewOrder = map[partyColumnViewOrder];
     name = map[partyColumnName];
-    pokemons[0] = pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId1]).first;
-    items[0] = map[partyColumnPokemonItem1] != null ? pokeData.items[map[partyColumnPokemonItem1]] : null;
-    pokemons[1] = map[partyColumnPokemonId2] != null ?
-      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId2]).first : null;
-    items[1] = map[partyColumnPokemonItem2] != null ? pokeData.items[map[partyColumnPokemonItem2]] : null;
-    pokemons[2] = map[partyColumnPokemonId3] != null ?
-      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId3]).first : null;
-    items[2] = map[partyColumnPokemonItem3] != null ? pokeData.items[map[partyColumnPokemonItem3]] : null;
-    pokemons[3] = map[partyColumnPokemonId4] != null ?
-      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId4]).first : null;
-    items[3] = map[partyColumnPokemonItem4] != null ? pokeData.items[map[partyColumnPokemonItem4]] : null;
-    pokemons[4] = map[partyColumnPokemonId5] != null ?
-      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId5]).first : null;
-    items[4] = map[partyColumnPokemonItem5] != null ? pokeData.items[map[partyColumnPokemonItem5]] : null;
-    pokemons[5] = map[partyColumnPokemonId6] != null ?
-      pokeData.pokemons.values.where((element) => element.id == map[partyColumnPokemonId6]).first : null;
-    items[5] = map[partyColumnPokemonItem6] != null ? pokeData.items[map[partyColumnPokemonItem6]] : null;
+    pokemons[0] = pokeData.pokemons.values
+        .where((element) => element.id == map[partyColumnPokemonId1])
+        .first;
+    items[0] = map[partyColumnPokemonItem1] != null
+        ? pokeData.items[map[partyColumnPokemonItem1]]
+        : null;
+    pokemons[1] = map[partyColumnPokemonId2] != null
+        ? pokeData.pokemons.values
+            .where((element) => element.id == map[partyColumnPokemonId2])
+            .first
+        : null;
+    items[1] = map[partyColumnPokemonItem2] != null
+        ? pokeData.items[map[partyColumnPokemonItem2]]
+        : null;
+    pokemons[2] = map[partyColumnPokemonId3] != null
+        ? pokeData.pokemons.values
+            .where((element) => element.id == map[partyColumnPokemonId3])
+            .first
+        : null;
+    items[2] = map[partyColumnPokemonItem3] != null
+        ? pokeData.items[map[partyColumnPokemonItem3]]
+        : null;
+    pokemons[3] = map[partyColumnPokemonId4] != null
+        ? pokeData.pokemons.values
+            .where((element) => element.id == map[partyColumnPokemonId4])
+            .first
+        : null;
+    items[3] = map[partyColumnPokemonItem4] != null
+        ? pokeData.items[map[partyColumnPokemonItem4]]
+        : null;
+    pokemons[4] = map[partyColumnPokemonId5] != null
+        ? pokeData.pokemons.values
+            .where((element) => element.id == map[partyColumnPokemonId5])
+            .first
+        : null;
+    items[4] = map[partyColumnPokemonItem5] != null
+        ? pokeData.items[map[partyColumnPokemonItem5]]
+        : null;
+    pokemons[5] = map[partyColumnPokemonId6] != null
+        ? pokeData.pokemons.values
+            .where((element) => element.id == map[partyColumnPokemonId6])
+            .first
+        : null;
+    items[5] = map[partyColumnPokemonItem6] != null
+        ? pokeData.items[map[partyColumnPokemonItem6]]
+        : null;
     owner = toOwner(map[partyColumnOwnerID]);
   }
 
@@ -48,11 +91,11 @@ class Party {
     }
     return 6;
   }
+
   bool get isValid {
-    return
-      name != '' &&
-      _pokemons[0]!.isValid;
+    return name != '' && _pokemons[0]!.isValid;
   }
+
   bool get refs {
     for (final e in PokeDB().battles.values) {
       if (e.getParty(PlayerType.me).id == id) return true;
@@ -62,23 +105,21 @@ class Party {
   }
 
   // setter
-  
-  Party copyWith() {
+
+  @override
+  Party copy() {
     return Party()
-    ..id = id
-    ..viewOrder = viewOrder
-    ..name = name
-    .._pokemons = [..._pokemons]
-    ..items = [...items]
-    ..owner = owner;
+      ..id = id
+      ..viewOrder = viewOrder
+      ..name = name
+      .._pokemons = [..._pokemons]
+      ..items = [...items]
+      ..owner = owner;
   }
 
   // 編集したかどうかのチェックに使う
   bool isDiff(Party party) {
-    bool ret =
-      id != party.id ||
-      name != party.name ||
-      owner != party.owner;
+    bool ret = id != party.id || name != party.name || owner != party.owner;
     if (ret) return true;
     if (_pokemons.length != party._pokemons.length) return true;
     if (items.length != party.items.length) return true;

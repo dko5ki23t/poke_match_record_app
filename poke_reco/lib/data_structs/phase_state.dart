@@ -13,10 +13,11 @@ import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/tool.dart';
 
 // ある時点(ターン内のフェーズ)での状態
 // これ単体ではSQLに保存しない
-class PhaseState {
+class PhaseState extends Equatable implements Copyable {
   List<int> _pokemonIndexes = [-1, -1]; // 0始まりのインデックス。-1は無効値
   List<List<PokemonState>> _pokemonStates = [[], []];
   List<List<PokemonState>> lastExitedStates = [[], []]; // 最後に退場したときの状態
@@ -34,6 +35,27 @@ class PhaseState {
   bool canZoroarkHisui = false;
   List<int> _faintingCount = [0, 0]; // ひんしになった回数
   TurnMove? firstAction; // 行動2が行動1を参照するために使う(TODO:不要？)
+
+  @override
+  List<Object?> get props => [
+        _pokemonIndexes,
+        _pokemonStates,
+        lastExitedStates,
+        _indiFields,
+        _weather,
+        _field,
+        phases,
+        phaseIndex,
+        userForces,
+        hasOwnTerastal,
+        hasOpponentTerastal,
+        canZorua,
+        canZoroark,
+        canZoruaHisui,
+        canZoroarkHisui,
+        _faintingCount,
+        firstAction,
+      ];
 
   Weather get weather => _weather;
   Field get field => _field;
@@ -58,8 +80,9 @@ class PhaseState {
   }
 
   int getPokemonIndex(PlayerType player, TurnEffect? prevAction) {
-    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0)
+    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
       return prevAction.getPrevPokemonIndex(player);
+    }
     if (player == PlayerType.me) {
       return _pokemonIndexes[0];
     } else {
@@ -131,27 +154,24 @@ class PhaseState {
     _field = f;
   }
 
-  PhaseState copyWith() => PhaseState()
+  @override
+  PhaseState copy() => PhaseState()
     .._pokemonIndexes = [..._pokemonIndexes]
-    .._pokemonStates[0] = [
-      for (final state in _pokemonStates[0]) state.copyWith()
-    ]
-    .._pokemonStates[1] = [
-      for (final state in _pokemonStates[1]) state.copyWith()
-    ]
+    .._pokemonStates[0] = [for (final state in _pokemonStates[0]) state.copy()]
+    .._pokemonStates[1] = [for (final state in _pokemonStates[1]) state.copy()]
     ..lastExitedStates[0] = [
-      for (final state in lastExitedStates[0]) state.copyWith()
+      for (final state in lastExitedStates[0]) state.copy()
     ]
     ..lastExitedStates[1] = [
-      for (final state in lastExitedStates[1]) state.copyWith()
+      for (final state in lastExitedStates[1]) state.copy()
     ]
-    .._indiFields[0] = [for (final e in _indiFields[0]) e.copyWith()]
-    .._indiFields[1] = [for (final e in _indiFields[1]) e.copyWith()]
-    ..weather = weather.copyWith()
-    ..field = field.copyWith()
-    ..phases = [for (final phase in phases) phase.copyWith()]
+    .._indiFields[0] = [for (final e in _indiFields[0]) e.copy()]
+    .._indiFields[1] = [for (final e in _indiFields[1]) e.copy()]
+    ..weather = weather.copy()
+    ..field = field.copy()
+    ..phases = [for (final phase in phases) phase.copy()]
     ..phaseIndex = phaseIndex
-    ..userForces = userForces.copyWith()
+    ..userForces = userForces.copy()
     ..hasOwnTerastal = hasOwnTerastal
     ..hasOpponentTerastal = hasOpponentTerastal
     ..canZorua = canZorua
@@ -233,14 +253,18 @@ class PhaseState {
           // ポケモン登場時には無条件で発動する効果
           var timingIDs = [Timing.pokemonAppear];
           // ポケモン登場時&天気がxxでない
-          if (weather.id != Weather.rainy)
+          if (weather.id != Weather.rainy) {
             timingIDs.add(Timing.pokemonAppearNotRained);
-          if (weather.id != Weather.sandStorm)
+          }
+          if (weather.id != Weather.sandStorm) {
             timingIDs.add(Timing.pokemonAppearNotSandStormed);
-          if (weather.id != Weather.sunny)
+          }
+          if (weather.id != Weather.sunny) {
             timingIDs.add(Timing.pokemonAppearNotSunny);
-          if (weather.id != Weather.snowy)
+          }
+          if (weather.id != Weather.snowy) {
             timingIDs.add(Timing.pokemonAppearNotSnowed);
+          }
           for (final player in players) {
             bool changed =
                 player == PlayerType.me ? changedOwn : changedOpponent;
@@ -253,7 +277,7 @@ class PhaseState {
                 ..timing = timing;
               // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing)) {
-                var addingAbility = addingBase.copyWith()
+                var addingAbility = addingBase.copy()
                   ..effectType = EffectType.ability
                   ..effectId = myState.currentAbility.id;
                 addingAbility.setAutoArgs(
@@ -265,7 +289,7 @@ class PhaseState {
               var indiField = getIndiFields(player);
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
-                  var adding = addingBase.copyWith()
+                  var adding = addingBase.copy()
                     ..effectId = IndiFieldEffect.getIdFromIndiField(f);
                   adding.setAutoArgs(myState, yourState, state, prevAction);
                   ret.add(adding);
@@ -316,9 +340,7 @@ class PhaseState {
               prevAction.move!.move, 0, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
           if (!attackerState.isTerastaling &&
-              attackerState.hiddenBuffs
-                  .where((e) => e.id == BuffDebuff.protean)
-                  .isEmpty &&
+              !attackerState.hiddenBuffs.containsByID(BuffDebuff.protean) &&
               (attackerState.currentAbility.id == 168 ||
                   attackerState.currentAbility.id == 236)) {
             ret.add(TurnEffect()
@@ -495,15 +517,14 @@ class PhaseState {
               // こうげきわざヒット後
               attackerTimingIDList.add(Timing.attackHitted);
               // うのみ状態/まるのみ状態で相手にこうげきされた後
-              int findIdx = defenderState.buffDebuffs.indexWhere((e) =>
-                  e.id == BuffDebuff.unomiForm ||
-                  e.id == BuffDebuff.marunomiForm);
-              if (findIdx >= 0) {
+              final unomis = defenderState.buffDebuffs.whereByAnyID(
+                  [BuffDebuff.unomiForm, BuffDebuff.marunomiForm]);
+              if (unomis.isNotEmpty) {
                 ret.add(TurnEffect()
                   ..playerType = defenderPlayerType
                   ..timing = Timing.afterMove
                   ..effectType = EffectType.ability
-                  ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id);
+                  ..effectId = 10000 + unomis.first.id);
               }
               // こうげきわざでひんしにした後
               if (defenderState.isFainting) {
@@ -517,15 +538,13 @@ class PhaseState {
               defenderTimingIDList.addAll(
                   [Timing.attackedHitted, Timing.pokemonAppearAttacked]);
               // ゾロアーク系がばれていないときにこうげきわざを受けた後
-              if (defenderState.hiddenBuffs
-                  .where((e) => e.id == BuffDebuff.zoroappear)
-                  .isEmpty) {
+              if (!defenderState.hiddenBuffs
+                  .containsByID(BuffDebuff.zoroappear)) {
                 defenderTimingIDList.add(Timing.attackedNotZoroappeared);
               }
               // ばけたすがたでこうげきを受けた後
               if (defenderState.buffDebuffs
-                  .where((element) => element.id == BuffDebuff.transedForm)
-                  .isNotEmpty) {
+                  .containsByID(BuffDebuff.transedForm)) {
                 defenderTimingIDList.add(Timing.attackedHittedWithBake);
               }
               // こうげきわざを受けてひんしになったとき
@@ -595,10 +614,14 @@ class PhaseState {
             if (replacedMove.isWind) {
               defenderTimingIDList.add(Timing.winded);
             }
-            if (replacedMove.isPowder)
-              defenderTimingIDList.add(Timing.powdered); // こな系のこうげきを受けた時
-            if (replacedMove.isBullet)
-              defenderTimingIDList.add(Timing.bulleted); // 弾のこうげきを受けた時
+            if (replacedMove.isPowder) {
+              // こな系のこうげきを受けた時
+              defenderTimingIDList.add(Timing.powdered);
+            }
+            if (replacedMove.isBullet) {
+              // 弾のこうげきを受けた時
+              defenderTimingIDList.add(Timing.bulleted);
+            }
             // HP吸収わざを受けた後
             if (replacedMove.isDrain) {
               defenderTimingIDList.add(Timing.drained);
@@ -720,11 +743,10 @@ class PhaseState {
           if (defenderTimingIDList
                   .contains(defenderState.currentAbility.timing) &&
               (!defenderState.currentAbility.canIgnored ||
-                  attackerState.buffDebuffs
-                      .where((e) =>
-                          e.id == BuffDebuff.noAbilityEffect ||
-                          e.id == BuffDebuff.myceliumMight)
-                      .isEmpty)) {
+                  !attackerState.buffDebuffs.containsByAnyID([
+                    BuffDebuff.noAbilityEffect,
+                    BuffDebuff.myceliumMight
+                  ]))) {
             var addingAbility = TurnEffect()
               ..playerType = defenderPlayerType
               ..timing = Timing.afterMove
@@ -780,8 +802,9 @@ class PhaseState {
             playerTimingIDs = [Timing.everyTurnEnd];
             // 1度でも行動した後毎ターン終了時
             if (currentTurn.getInitialPokemonIndex(player) ==
-                getPokemonIndex(player, null))
+                getPokemonIndex(player, null)) {
               playerTimingIDs.add(Timing.afterActedEveryTurnEnd);
+            }
             if (weather.id == Weather.rainy) {
               playerTimingIDs.addAll([
                 Timing.everyTurnEndRained,
@@ -789,18 +812,22 @@ class PhaseState {
               ]); // 天気があめのとき、毎ターン終了時
               if (myState
                   .ailmentsWhere((element) => element.id <= Ailment.sleep)
-                  .isNotEmpty)
-                playerTimingIDs
-                    .add(Timing.everyTurnEndRainedWithAbnormal); // かつ状態異常のとき
+                  .isNotEmpty) {
+                // かつ状態異常のとき
+                playerTimingIDs.add(Timing.everyTurnEndRainedWithAbnormal);
+              }
             }
-            if (weather.id == Weather.sunny)
+            if (weather.id == Weather.sunny) {
+              // 天気が晴れのとき、毎ターン終了時
               playerTimingIDs.addAll([
                 Timing.fireWaterAttackedSunnyRained,
                 Timing.everyTurnEndSunny
-              ]); // 天気が晴れのとき、毎ターン終了時
-            if (weather.id == Weather.sunny)
-              playerTimingIDs
-                  .addAll([Timing.everyTurnEndSnowy]); // 天気がゆきのとき、毎ターン終了時
+              ]);
+            }
+            if (weather.id == Weather.sunny) {
+              // 天気がゆきのとき、毎ターン終了時
+              playerTimingIDs.addAll([Timing.everyTurnEndSnowy]);
+            }
             if (myState
                 .ailmentsWhere(
                     (e) => e.id == Ailment.poison || e.id == Ailment.badPoison)
@@ -812,9 +839,10 @@ class PhaseState {
               // テラスタルしていない
               playerTimingIDs.add(Timing.everyTurnEndNotTerastaled);
             }
-            if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty)
-              playerTimingIDs
-                  .add(Timing.everyTurnEndNotAbnormal); // 状態異常でない毎ターン終了時
+            if (myState.ailmentsWhere((e) => e.id <= Ailment.sleep).isEmpty) {
+              // 状態異常でない毎ターン終了時
+              playerTimingIDs.add(Timing.everyTurnEndNotAbnormal);
+            }
             if ((isMe &&
                     myState.remainHP < myState.pokemon.h.real &&
                     myState.remainHP > 0) ||
@@ -824,25 +852,29 @@ class PhaseState {
               // HPが満タンでない毎ターン終了時
               playerTimingIDs.add(Timing.everyTurnEndHPNotFull);
               // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
-              if (myState.isTypeContain(PokeType.poison))
+              if (myState.isTypeContain(PokeType.poison)) {
                 playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
+              }
             }
             // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
-            if (!myState.isTypeContain(PokeType.poison))
+            if (!myState.isTypeContain(PokeType.poison)) {
               playerTimingIDs.add(Timing.everyTurnEndHPNotFull2);
+            }
             // こだいかっせい発動中に天気が晴れでなくなった/なくなる場合
-            if (myState.buffDebuffs
+            if (myState.buffDebuffs.list
                 .where((e) =>
                     e.id >= BuffDebuff.attack1_3 &&
                     e.id <= BuffDebuff.speed1_5 &&
                     e.extraArg1 == 0)
                 .isNotEmpty) {
               if (weather.id != Weather.sunny ||
-                  weather.turns >= weather.maxTurns - 1)
+                  weather.turns >= weather.maxTurns - 1) {
                 playerTimingIDs.add(Timing.sunnyBoostEnergy);
+              }
               if (field.id != Field.electricTerrain ||
-                  field.turns >= field.maxTurns - 1)
+                  field.turns >= field.maxTurns - 1) {
                 playerTimingIDs.add(Timing.elecFieldBoostEnergy);
+              }
             }
 
             // とくせい
@@ -1046,7 +1078,7 @@ class PhaseState {
       }
 
       // こだいかっせい/ブーストエナジー発動の余地がある場合
-      if (myState.buffDebuffs
+      if (myState.buffDebuffs.list
                   .where((e) =>
                       e.id >= BuffDebuff.attack1_3 &&
                       e.id <= BuffDebuff.speed1_5)
@@ -1056,19 +1088,20 @@ class PhaseState {
                       (timing == Timing.pokemonAppear ||
                           !changedOpponent))) // 交代で手持ちに戻るときでないなら
           ) {
-        if (weather.id == Weather.sunny)
+        if (weather.id == Weather.sunny) {
           playerTimings.add(Timing.sunnyBoostEnergy);
-        if (field.id == Field.electricTerrain)
+        }
+        if (field.id == Field.electricTerrain) {
           playerTimings.add(Timing.elecFieldBoostEnergy);
-        if (myState.holdingItem?.id == 1696)
+        }
+        if (myState.holdingItem?.id == 1696) {
           playerTimings
               .addAll([Timing.sunnyBoostEnergy, Timing.elecFieldBoostEnergy]);
+        }
       }
 
       // 能力ランクが下がった
-      if (myState.hiddenBuffs
-          .where((e) => e.id == BuffDebuff.thisTurnDownStatChange)
-          .isNotEmpty) {
+      if (myState.hiddenBuffs.containsByID(BuffDebuff.thisTurnDownStatChange)) {
         playerTimings.add(Timing.statDowned);
       }
 
@@ -1128,13 +1161,13 @@ class PhaseState {
     if (index >= 0) {
       // 現在のステータスをBにコピー
       var pokemon = getPokemonStates(player)[index].pokemon;
-      getPokemonStates(player)[index] = getPokemonState(player, null).copyWith()
+      getPokemonStates(player)[index] = getPokemonState(player, null).copy()
         ..pokemon = pokemon;
       // Aのステータスを、最後に場にいた状態に戻す
       int currentIndex = getPokemonIndex(player, null);
       getPokemonStates(player)[currentIndex - 1] =
           lastExitedStates[player == PlayerType.me ? 0 : 1][currentIndex - 1]
-              .copyWith();
+              .copy();
       // 現在のインデックス変更(Bを指すように)
       setPokemonIndex(player, index + 1);
     } else {

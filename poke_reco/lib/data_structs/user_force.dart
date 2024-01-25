@@ -2,9 +2,10 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/tool.dart';
 
 // ユーザが手動で変更した内容
-class UserForce {
+class UserForce extends Equatable {
   static const int none = 0;
   static const int ability = 1;
   static const int item = 2;
@@ -34,20 +35,29 @@ class UserForce {
   final int typeId;
   final int arg1;
 
-  const UserForce(this.playerType, this.typeId, this.arg1);
+  @override
+  List<Object?> get props => [
+        playerType,
+        typeId,
+        arg1,
+      ];
 
+  const UserForce(this.playerType, this.typeId, this.arg1);
 }
 
-class UserForces {
+class UserForces extends Equatable implements Copyable {
   final List<UserForce> forces = [];
 
-  UserForces copyWith() =>
-    UserForces()
-    ..forces.addAll([...forces]);
+  @override
+  List<Object?> get props => [forces];
+
+  @override
+  UserForces copy() => UserForces()..forces.addAll([...forces]);
 
   void add(UserForce force) {
     // 既に同じプレイヤー・種類の修正がある場合はそれを削除して上書き
-    forces.removeWhere((e) => e.playerType == force.playerType && e.typeId == force.typeId);
+    forces.removeWhere(
+        (e) => e.playerType == force.playerType && e.typeId == force.typeId);
     forces.add(force);
   }
 
@@ -57,28 +67,28 @@ class UserForces {
     PhaseState state,
     Party ownParty,
     Party opponentParty,
-  )
-  {
+  ) {
     var pokeData = PokeDB();
     for (var force in forces) {
       switch (force.typeId) {
         case UserForce.ability:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, opponentPokemonState, true, state);
-          }
-          else if (force.playerType == PlayerType.opponent) {
+            ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!,
+                opponentPokemonState, true, state);
+          } else if (force.playerType == PlayerType.opponent) {
             if (opponentPokemonState.getCurrentAbility().id == 0) {
-              opponentPokemonState.pokemon.ability = pokeData.abilities[force.arg1]!;
+              opponentPokemonState.pokemon.ability =
+                  pokeData.abilities[force.arg1]!;
             }
-            opponentPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
+            opponentPokemonState.setCurrentAbility(
+                pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
           }
           break;
         case UserForce.item:
-        var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
+          var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
           if (force.playerType == PlayerType.me) {
             ownPokemonState.holdingItem = item;
-          }
-          else if (force.playerType == PlayerType.opponent) {
+          } else if (force.playerType == PlayerType.opponent) {
             if (opponentPokemonState.pokemon.item?.id == 0) {
               opponentPokemonState.pokemon.item = item;
             }
@@ -88,8 +98,7 @@ class UserForces {
         case UserForce.hp:
           if (force.playerType == PlayerType.me) {
             ownPokemonState.remainHP = force.arg1;
-          }
-          else if (force.playerType == PlayerType.opponent) {
+          } else if (force.playerType == PlayerType.opponent) {
             opponentPokemonState.remainHPPercent = force.arg1;
           }
           break;
@@ -101,10 +110,11 @@ class UserForces {
         case UserForce.rankAc:
         case UserForce.rankEv:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.forceSetStatChanges(force.typeId - UserForce.rankA, force.arg1);
-          }
-          else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.forceSetStatChanges(force.typeId - UserForce.rankA, force.arg1);
+            ownPokemonState.forceSetStatChanges(
+                force.typeId - UserForce.rankA, force.arg1);
+          } else if (force.playerType == PlayerType.opponent) {
+            opponentPokemonState.forceSetStatChanges(
+                force.typeId - UserForce.rankA, force.arg1);
           }
           break;
         case UserForce.statMinH:
@@ -114,10 +124,15 @@ class UserForces {
         case UserForce.statMinD:
         case UserForce.statMinS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMinH)].real = force.arg1;
-          }
-          else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMinH)].real = force.arg1;
+            ownPokemonState
+                .minStats[StatIndexNumber.getStatIndexFromIndex(
+                    force.typeId - UserForce.statMinH)]
+                .real = force.arg1;
+          } else if (force.playerType == PlayerType.opponent) {
+            opponentPokemonState
+                .minStats[StatIndexNumber.getStatIndexFromIndex(
+                    force.typeId - UserForce.statMinH)]
+                .real = force.arg1;
           }
           break;
         case UserForce.statMaxH:
@@ -127,14 +142,20 @@ class UserForces {
         case UserForce.statMaxD:
         case UserForce.statMaxS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMaxH)].real = force.arg1;
-          }
-          else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(force.typeId-UserForce.statMaxH)].real = force.arg1;
+            ownPokemonState
+                .maxStats[StatIndexNumber.getStatIndexFromIndex(
+                    force.typeId - UserForce.statMaxH)]
+                .real = force.arg1;
+          } else if (force.playerType == PlayerType.opponent) {
+            opponentPokemonState
+                .maxStats[StatIndexNumber.getStatIndexFromIndex(
+                    force.typeId - UserForce.statMaxH)]
+                .real = force.arg1;
           }
           break;
         case UserForce.pokemon:
-          state.makePokemonOther(force.playerType, force.arg1, ownParty: ownParty, opponentParty: opponentParty);
+          state.makePokemonOther(force.playerType, force.arg1,
+              ownParty: ownParty, opponentParty: opponentParty);
           break;
       }
     }
@@ -149,12 +170,10 @@ class UserForces {
     for (var force in forceElements) {
       if (force == '') break;
       final f = force.split(split2);
-      userForces.forces.add(
-        UserForce(
+      userForces.forces.add(UserForce(
           PlayerTypeNum.createFromNumber(int.parse(f[0])),
-          int.parse(f[1]), int.parse(f[2])
-        )
-      );
+          int.parse(f[1]),
+          int.parse(f[2])));
     }
     return userForces;
   }

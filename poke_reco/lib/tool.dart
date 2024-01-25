@@ -144,8 +144,6 @@ abstract class Equatable {
 
   List<Object?> get props;
 
-  bool? get stringify => null;
-
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||

@@ -55,7 +55,6 @@ dependencies:
   badges: ^2.0.3
   url_launcher:
   google_mobile_ads:
-  #equatable: ^2.0.5
   collection:
 
   # The following adds the Cupertino Icons font to your application.

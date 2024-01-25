@@ -195,7 +195,7 @@ class BattleBasicListView extends StatelessWidget {
                                                     .where((element) =>
                                                         element.id == party.id)
                                                     .first
-                                                    .copyWith());
+                                                    .copy());
                                             for (int i = 0;
                                                 i <
                                                     battle
@@ -208,7 +208,7 @@ class BattleBasicListView extends StatelessWidget {
                                                   battle
                                                       .getParty(PlayerType.me)
                                                       .pokemons[i]!
-                                                      .copyWith();
+                                                      .copy();
                                               battle
                                                   .getParty(PlayerType.me)
                                                   .pokemons[i]!
@@ -231,7 +231,7 @@ class BattleBasicListView extends StatelessWidget {
                                           .where((element) =>
                                               element.id == party.id)
                                           .first
-                                          .copyWith());
+                                          .copy());
                                   for (int i = 0;
                                       i <
                                           battle
@@ -242,7 +242,7 @@ class BattleBasicListView extends StatelessWidget {
                                         battle
                                             .getParty(PlayerType.me)
                                             .pokemons[i]!
-                                            .copyWith();
+                                            .copy();
                                     battle
                                         .getParty(PlayerType.me)
                                         .pokemons[i]!

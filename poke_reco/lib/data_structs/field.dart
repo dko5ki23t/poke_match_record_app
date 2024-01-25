@@ -1,6 +1,7 @@
 // フィールド
 
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -10,11 +11,11 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 // フィールドによる効果(TurnEffectのeffectIdに使用する定数を提供)
 class FieldEffect {
   static const int none = 0;
-  static const int electricTerrainEnd = 1;  // エレキフィールド終了
-  static const int grassyTerrainEnd = 2;    // グラスフィールド終了
-  static const int mistyTerrainEnd = 3;     // ミストフィールド終了
-  static const int psychicTerrainEnd = 4;   // サイコフィールド終了
-  static const int grassHeal = 5;           // グラスフィールドによる回復
+  static const int electricTerrainEnd = 1; // エレキフィールド終了
+  static const int grassyTerrainEnd = 2; // グラスフィールド終了
+  static const int mistyTerrainEnd = 3; // ミストフィールド終了
+  static const int psychicTerrainEnd = 4; // サイコフィールド終了
+  static const int grassHeal = 5; // グラスフィールドによる回復
 
   static const Map<int, Tuple2<String, String>> _displayNameMap = {
     0: Tuple2('', ''),
@@ -53,19 +54,20 @@ class FieldEffect {
 }
 
 // フィールド
-class Field {
+class Field extends Equatable implements Copyable {
   static const int none = 0;
-  static const int electricTerrain = 1;    // エレキフィールド
-  static const int grassyTerrain = 2;      // グラスフィールド
-  static const int mistyTerrain = 3;       // ミストフィールド
-  static const int psychicTerrain = 4;     // サイコフィールド
+  static const int electricTerrain = 1; // エレキフィールド
+  static const int grassyTerrain = 2; // グラスフィールド
+  static const int mistyTerrain = 3; // ミストフィールド
+  static const int psychicTerrain = 4; // サイコフィールド
 
-  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap = {
-    0:  Tuple4('', '', Colors.black, 0),
-    1:  Tuple4('エレキフィールド', 'Electric Terrain', PokeTypeColor.electric, 5),
-    2:  Tuple4('グラスフィールド', 'Grassy Terrain', PokeTypeColor.grass, 5),
-    3:  Tuple4('ミストフィールド', 'Misty Terrain', PokeTypeColor.fairy, 5),
-    4:  Tuple4('サイコフィールド', 'Psychic Terrain', PokeTypeColor.psychic, 5),
+  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
+      {
+    0: Tuple4('', '', Colors.black, 0),
+    1: Tuple4('エレキフィールド', 'Electric Terrain', PokeTypeColor.electric, 5),
+    2: Tuple4('グラスフィールド', 'Grassy Terrain', PokeTypeColor.grass, 5),
+    3: Tuple4('ミストフィールド', 'Misty Terrain', PokeTypeColor.fairy, 5),
+    4: Tuple4('サイコフィールド', 'Psychic Terrain', PokeTypeColor.psychic, 5),
   };
 
   String get displayName {
@@ -77,6 +79,7 @@ class Field {
         return '${_nameColorTurnMap[id]!.item2} ($turns/$maxTurns)';
     }
   }
+
   Color get bgColor => _nameColorTurnMap[id]!.item3;
   int get maxTurns {
     if (extraArg1 == 8) {
@@ -86,19 +89,27 @@ class Field {
   }
 
   final int id;
-  int turns = 0;        // 経過ターン
-  int extraArg1 = 0;    // 
+  int turns = 0; // 経過ターン
+  int extraArg1 = 0; //
+
+  @override
+  List<Object?> get props => [
+        id,
+        turns,
+        extraArg1,
+      ];
 
   Field(this.id);
 
-  Field copyWith() =>
-    Field(id)
+  @override
+  Field copy() => Field(id)
     ..turns = turns
     ..extraArg1 = extraArg1;
 
   // フィールド変化もしくは場に登場したポケモンに対してフィールドの効果をかける
   // (場に出たポケモンに対しては、変化前を「フィールドなし」として引数を渡すとよい)
-  static void processFieldEffect(Field before, Field after, PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
+  static void processFieldEffect(Field before, Field after,
+      PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
     // ぎたい
     int newTypeID = 0;
     switch (after.id) {
@@ -116,56 +127,91 @@ class Field {
         break;
     }
     if (ownPokemonState != null && ownPokemonState.currentAbility.id == 250) {
-      ownPokemonState.type1 = newTypeID == 0 ? ownPokemonState.pokemon.type1 : PokeType.values[newTypeID];
-      ownPokemonState.type2 = newTypeID == 0 ? ownPokemonState.pokemon.type2 : null;
+      ownPokemonState.type1 = newTypeID == 0
+          ? ownPokemonState.pokemon.type1
+          : PokeType.values[newTypeID];
+      ownPokemonState.type2 =
+          newTypeID == 0 ? ownPokemonState.pokemon.type2 : null;
     }
-    if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 250) {
-      opponentPokemonState.type1 = newTypeID == 0 ? opponentPokemonState.pokemon.type1 : PokeType.values[newTypeID];
-      opponentPokemonState.type2 = newTypeID == 0 ? opponentPokemonState.pokemon.type2 : null;
+    if (opponentPokemonState != null &&
+        opponentPokemonState.currentAbility.id == 250) {
+      opponentPokemonState.type1 = newTypeID == 0
+          ? opponentPokemonState.pokemon.type1
+          : PokeType.values[newTypeID];
+      opponentPokemonState.type2 =
+          newTypeID == 0 ? opponentPokemonState.pokemon.type2 : null;
     }
 
-    if (before.id != Field.grassyTerrain && after.id == Field.grassyTerrain) {  // グラスフィールドになる時
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {   // くさのけがわ
+    if (before.id != Field.grassyTerrain && after.id == Field.grassyTerrain) {
+      // グラスフィールドになる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {
+        // くさのけがわ
         ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 179) {   // くさのけがわ
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 179) {
+        // くさのけがわ
         opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
       }
     }
-    if (before.id == Field.grassyTerrain && after.id != Field.grassyTerrain) {  // グラスフィールドではなくなる時
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {   // くさのけがわ
-        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.guard1_5));
+    if (before.id == Field.grassyTerrain && after.id != Field.grassyTerrain) {
+      // グラスフィールドではなくなる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {
+        // くさのけがわ
+        ownPokemonState.buffDebuffs.removeFirstByID(BuffDebuff.guard1_5);
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 179) {   // くさのけがわ
-        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.guard1_5));
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 179) {
+        // くさのけがわ
+        opponentPokemonState.buffDebuffs.removeFirstByID(BuffDebuff.guard1_5);
       }
     }
-    if (before.id != Field.electricTerrain && after.id == Field.electricTerrain) {  // エレキフィールドになる時
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {   // サーフテール
+    if (before.id != Field.electricTerrain &&
+        after.id == Field.electricTerrain) {
+      // エレキフィールドになる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {
+        // サーフテール
         ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
       }
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
-        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack1_33));
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {
+        // ハドロンエンジン
+        ownPokemonState.buffDebuffs
+            .add(BuffDebuff(BuffDebuff.specialAttack1_33));
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 207) {   // サーフテール
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 207) {
+        // サーフテール
         opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
-        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack1_33));
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 289) {
+        // ハドロンエンジン
+        opponentPokemonState.buffDebuffs
+            .add(BuffDebuff(BuffDebuff.specialAttack1_33));
       }
     }
-    if (before.id == Field.electricTerrain && after.id != Field.electricTerrain) {  // エレキフィールドではなくなる時
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {   // サーフテール
-        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+    if (before.id == Field.electricTerrain &&
+        after.id != Field.electricTerrain) {
+      // エレキフィールドではなくなる時
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {
+        // サーフテール
+        ownPokemonState.buffDebuffs.removeFirstByID(BuffDebuff.speed2);
       }
-      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
-        ownPokemonState.buffDebuffs.removeAt(ownPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack1_33));
+      if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {
+        // ハドロンエンジン
+        ownPokemonState.buffDebuffs
+            .removeFirstByID(BuffDebuff.specialAttack1_33);
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 207) {   // サーフテール
-        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.speed2));
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 207) {
+        // サーフテール
+        opponentPokemonState.buffDebuffs.removeFirstByID(BuffDebuff.speed2);
       }
-      if (opponentPokemonState != null && opponentPokemonState.currentAbility.id == 289) {   // ハドロンエンジン
-        opponentPokemonState.buffDebuffs.removeAt(opponentPokemonState.buffDebuffs.indexWhere((element) => element.id == BuffDebuff.specialAttack1_33));
+      if (opponentPokemonState != null &&
+          opponentPokemonState.currentAbility.id == 289) {
+        // ハドロンエンジン
+        opponentPokemonState.buffDebuffs
+            .removeFirstByID(BuffDebuff.specialAttack1_33);
       }
     }
   }

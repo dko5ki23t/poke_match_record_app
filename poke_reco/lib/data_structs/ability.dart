@@ -24,7 +24,7 @@ class Ability extends Equatable implements Copyable {
   final Target target;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         _displayName,
         _displayNameEn,
@@ -342,9 +342,7 @@ class Ability extends Equatable implements Copyable {
       case 18: // もらいび
         {
           // ほのおわざ威力1.5倍
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.flashFired);
-          if (findIdx < 0) {
+          if (myState.buffDebuffs.containsByID(BuffDebuff.flashFired)) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.flashFired));
           }
         }
@@ -512,8 +510,7 @@ class Ability extends Equatable implements Copyable {
         if (extraArg1 == 0) {
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackSpeed0_5));
         } else {
-          myState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.attackSpeed0_5);
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attackSpeed0_5);
         }
         break;
       case 117: // ゆきふらし
@@ -577,14 +574,9 @@ class Ability extends Equatable implements Copyable {
         }
         break;
       case 150: // かわりもの
-        if (yourState.buffDebuffs
-                .where((e) =>
-                    e.id == BuffDebuff.substitute ||
-                    e.id == BuffDebuff.transform)
-                .isEmpty &&
-            myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.transform)
-                .isEmpty) {
+        if (!yourState.buffDebuffs.containsByAnyID(
+                [BuffDebuff.substitute, BuffDebuff.transform]) &&
+            !myState.buffDebuffs.containsByID(BuffDebuff.transform)) {
           // 対象がみがわり状態でない・お互いにへんしん状態でないなら
           myState.type1 = yourState.type1;
           myState.type2 = yourState.type2;
@@ -627,15 +619,7 @@ class Ability extends Equatable implements Copyable {
         myState.addStatChanges(true, 0, 1, yourState, abilityId: abilityID);
         break;
       case 161: // ダルマモード(現状SVではヒヒダルマ登場してないので実装していない)
-        {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.zenMode);
-          if (findIdx >= 0) {
-            myState.buffDebuffs.removeAt(findIdx);
-          } else {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.zenMode));
-          }
-        }
+        myState.buffDebuffs.removeOrAddByID(BuffDebuff.zenMode);
         break;
       case 165: // アロマベール
         {
@@ -674,19 +658,8 @@ class Ability extends Equatable implements Copyable {
             myFields: yourFields, yourFields: myFields, abilityId: abilityID);
         break;
       case 176: // バトルスイッチ(現状SVでギルガルドが登場していないため未実装)
-        {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((e) => e.id == BuffDebuff.bladeForm);
-          if (findIdx >= 0) {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.shieldForm);
-          } else {
-            findIdx = myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.shieldForm);
-            if (findIdx >= 0) {
-              myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.bladeForm);
-            }
-          }
-        }
+        myState.buffDebuffs
+            .switchID(BuffDebuff.bladeForm, BuffDebuff.shieldForm);
         break;
       case 192: // じきゅうりょく
       case 235: // ふくつのたて
@@ -697,27 +670,12 @@ class Ability extends Equatable implements Copyable {
         myState.addStatChanges(true, 1, 2, yourState, abilityId: abilityID);
         break;
       case 208: // ぎょぐん(現状SVでは登場していないため未実装)
-        {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.singleForm);
-          if (findIdx >= 0) {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.multipleForm);
-          } else {
-            findIdx = myState.buffDebuffs
-                .indexWhere((element) => element.id == BuffDebuff.multipleForm);
-            if (findIdx >= 0) {
-              myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.singleForm);
-            }
-          }
-        }
+        myState.buffDebuffs
+            .switchID(BuffDebuff.singleForm, BuffDebuff.multipleForm);
         break;
       case 209: // ばけのかわ
         {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((e) => e.id == BuffDebuff.transedForm);
-          if (findIdx >= 0) {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.revealedForm);
-          }
+          myState.buffDebuffs.removeAllByID(BuffDebuff.transedForm);
           if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           } else {
@@ -732,11 +690,7 @@ class Ability extends Equatable implements Copyable {
         break;
       case 211: // スワームチェンジ
         {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.perfectForm);
-          if (findIdx < 0) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.perfectForm));
-          }
+          myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.perfectForm);
           if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           } else {
@@ -847,10 +801,9 @@ class Ability extends Equatable implements Copyable {
         break;
       case 248: // アイスフェイス
         {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.iceFace);
-          if (findIdx >= 0) {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.niceFace);
+          if (myState.buffDebuffs.containsByID(BuffDebuff.iceFace)) {
+            myState.buffDebuffs
+                .changeID(BuffDebuff.iceFace, BuffDebuff.niceFace);
             // TODO この2行csvに移したい
             myState.maxStats[StatIndex.B].race = 70;
             myState.maxStats[StatIndex.D].race = 50;
@@ -874,10 +827,9 @@ class Ability extends Equatable implements Copyable {
                   biases[stat.index - 1]);
             }
           } else {
-            findIdx = myState.buffDebuffs
-                .indexWhere((element) => element.id == BuffDebuff.niceFace);
-            if (findIdx >= 0) {
-              myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.iceFace);
+            if (myState.buffDebuffs.containsByID(BuffDebuff.niceFace)) {
+              myState.buffDebuffs
+                  .changeID(BuffDebuff.niceFace, BuffDebuff.iceFace);
               // TODO この2行csvに移したい
               myState.maxStats[StatIndex.B].race = 110;
               myState.maxStats[StatIndex.D].race = 90;
@@ -927,19 +879,8 @@ class Ability extends Equatable implements Copyable {
         }
         break;
       case 258: // はらぺこスイッチ
-        {
-          int findIdx = myState.buffDebuffs
-              .indexWhere((element) => element.id == BuffDebuff.manpukuForm);
-          if (findIdx >= 0) {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.harapekoForm);
-          } else {
-            findIdx = myState.buffDebuffs
-                .indexWhere((element) => element.id == BuffDebuff.harapekoForm);
-            if (findIdx >= 0) {
-              myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.manpukuForm);
-            }
-          }
-        }
+        myState.buffDebuffs
+            .switchID(BuffDebuff.manpukuForm, BuffDebuff.harapekoForm);
         break;
       case 269: // こぼれダネ
         state.field = Field(Field.grassyTerrain)
@@ -976,7 +917,7 @@ class Ability extends Equatable implements Copyable {
           myState.buffDebuffs.add(
               BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
         } else {
-          myState.buffDebuffs.removeWhere((e) =>
+          myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
         }
         break;
@@ -1000,7 +941,7 @@ class Ability extends Equatable implements Copyable {
           myState.buffDebuffs.add(
               BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
         } else {
-          myState.buffDebuffs.removeWhere((e) =>
+          myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
         }
         break;
@@ -1066,11 +1007,7 @@ class Ability extends Equatable implements Copyable {
             abilityId: abilityID);
         break;
       case 304: // テラスチェンジ
-        int findIdx = myState.buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.terastalForm);
-        if (findIdx < 0) {
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.terastalForm));
-        }
+        myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.terastalForm);
         // TODO この2行csvに移したい
         myState.maxStats.h.race = 95;
         myState.maxStats.a.race = 95;
@@ -1116,7 +1053,7 @@ class Ability extends Equatable implements Copyable {
           yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
         }
         yourState.addStatChanges(false, 1, -1, myState);
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.unomiForm);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.unomiForm);
         break;
       case 10000 + BuffDebuff.marunomiForm: // うのミサイル(うのみのすがた)
         if (isOwn) {
@@ -1125,7 +1062,7 @@ class Ability extends Equatable implements Copyable {
           yourState.remainHP -= (yourState.pokemon.h.real / 4).floor();
         }
         yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.marunomiForm);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.marunomiForm);
         break;
       default:
         break;
@@ -1388,13 +1325,9 @@ class Ability extends Equatable implements Copyable {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.singleForm));
         break;
       case 209: // ばけのかわ
-        {
-          int findIdx = myState.buffDebuffs.indexWhere((e) =>
-              e.id == BuffDebuff.transedForm ||
-              e.id == BuffDebuff.revealedForm);
-          if (findIdx < 0) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
-          }
+        if (!myState.buffDebuffs.containsByAnyID(
+            [BuffDebuff.transedForm, BuffDebuff.revealedForm])) {
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transedForm));
         }
         break;
       case 217: // バッテリー
@@ -1422,12 +1355,9 @@ class Ability extends Equatable implements Copyable {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.nuts2));
         break;
       case 248: // アイスフェイス
-        {
-          int findIdx = myState.buffDebuffs.indexWhere(
-              (e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace);
-          if (findIdx < 0) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.iceFace));
-          }
+        if (!myState.buffDebuffs
+            .containsByAnyID([BuffDebuff.iceFace, BuffDebuff.niceFace])) {
+          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.iceFace));
         }
         break;
       case 249: // パワースポット
@@ -1441,13 +1371,12 @@ class Ability extends Equatable implements Copyable {
         break;
       case 258: // はらぺこスイッチ
         if (!myState.isTerastaling) {
-          int findIdx = myState.buffDebuffs.indexWhere((e) =>
-              e.id == BuffDebuff.harapekoForm ||
-              e.id == BuffDebuff.manpukuForm);
-          if (findIdx < 0) {
+          if (!myState.buffDebuffs.containsByAnyID(
+              [BuffDebuff.harapekoForm, BuffDebuff.manpukuForm])) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.manpukuForm));
           } else {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.manpukuForm);
+            myState.buffDebuffs
+                .changeID(BuffDebuff.harapekoForm, BuffDebuff.manpukuForm);
           }
         }
         break;
@@ -1468,9 +1397,8 @@ class Ability extends Equatable implements Copyable {
         break;
       case 278: // マイティチェンジ
         {
-          int findIdx = myState.buffDebuffs.indexWhere((e) =>
-              e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm);
-          if (findIdx < 0) {
+          if (!myState.buffDebuffs
+              .containsByAnyID([BuffDebuff.naiveForm, BuffDebuff.mightyForm])) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.naiveForm));
           }
         }
@@ -1499,50 +1427,22 @@ class Ability extends Equatable implements Copyable {
       // ダークオーラ
       if (id == 188 || yourState.currentAbility.id == 188) {
         // オーラブレイク
-        int findIdx = myState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
-        if (findIdx < 0) {
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
-        }
-        findIdx = yourState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.antiDarkAura);
-        if (findIdx < 0) {
-          yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiDarkAura));
-        }
+        myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.antiDarkAura);
+        yourState.buffDebuffs.addIfNotFoundByID(BuffDebuff.antiDarkAura);
       } else {
-        int findIdx = myState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.darkAura);
-        if (findIdx < 0) {
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
-        }
-        findIdx = yourState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.darkAura);
-        if (findIdx < 0) {
-          yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
-        }
+        myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.darkAura);
+        yourState.buffDebuffs.addIfNotFoundByID(BuffDebuff.darkAura);
       }
     }
     if (id == 187 || yourState.currentAbility.id == 187) {
       // フェアリーオーラ
       if (id == 188 || yourState.currentAbility.id == 188) {
         // オーラブレイク
-        int findIdx = myState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
-        if (findIdx < 0)
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
-        findIdx = yourState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.antiFairyAura);
-        if (findIdx < 0)
-          yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.antiFairyAura));
+        myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.antiFairyAura);
+        yourState.buffDebuffs.addIfNotFoundByID(BuffDebuff.antiFairyAura);
       } else {
-        int findIdx = myState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.fairyAura);
-        if (findIdx < 0)
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
-        findIdx = yourState.buffDebuffs
-            .indexWhere((element) => element.id == BuffDebuff.fairyAura);
-        if (findIdx < 0)
-          yourState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAura));
+        myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.fairyAura);
+        yourState.buffDebuffs.addIfNotFoundByID(BuffDebuff.fairyAura);
       }
     }
   }
@@ -1558,326 +1458,301 @@ class Ability extends Equatable implements Copyable {
         : state.getIndiFields(PlayerType.me);
     switch (id) {
       case 14: // ふくがん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.accuracy1_3);
         break;
       case 32: // てんのめぐみ
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.additionalEffect2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.additionalEffect2);
         break;
       case 37: // ちからもち
       case 74: // ヨガパワー
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.attack2);
         break;
       case 55: // はりきり
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5);
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.physicalAccuracy0_8);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.attack1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.physicalAccuracy0_8);
         break;
       case 59: // てんきや
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.powalenNormal);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.powalenNormal);
         break;
       case 62: // こんじょう
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.attack1_5WithIgnBurn);
         break;
       case 63: // ふしぎなうろこ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.defense1_5);
         break;
       case 77: // ちどりあし
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.yourAccuracy0_5);
         break;
       case 79: // とうそうしん
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.opponentSex1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.opponentSex1_5);
         break;
       case 85: // たいねつ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.heatproof);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.heatproof);
         break;
       case 87: // かんそうはだ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.drySkin);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.drySkin);
         break;
       case 89: // てつのこぶし
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.punch1_2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.punch1_2);
         break;
       case 91: // てきおうりょく
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.typeBonus2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.typeBonus2);
         break;
       case 95: // はやあし
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.speed1_5IgnPara);
         break;
       case 96: // ノーマルスキン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.normalize);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.normalize);
         break;
       case 97: // スナイパー
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.sniper);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.sniper);
         break;
       case 98: // マジックガード
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.magicGuard);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.magicGuard);
         break;
       case 99: // ノーガード
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.noGuard);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.noGuard);
         break;
       case 100: // あとだし
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.stall);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.stall);
         break;
       case 101: // テクニシャン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.technician);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.technician);
         break;
       case 103: // ぶきよう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.noItemEffect);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.noItemEffect);
         myState.holdingItem?.processPassiveEffect(myState, processForm: false);
         break;
       case 104: // かたやぶり
       case 163: // ターボブレイズ
       case 164: // テラボルテージ
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.noAbilityEffect);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.noAbilityEffect);
         break;
       case 105: // きょううん
         myState.addVitalRank(-1);
         break;
       case 109: // てんねん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreRank);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ignoreRank);
         break;
       case 110: // いろめがね
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.notGoodType2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.notGoodType2);
         break;
       case 111: // フィルター
       case 116: // ハードロック
       case 232: // プリズムアーマー
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.greatDamaged0_75);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.greatDamaged0_75);
         break;
       case 120: // すてみ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.recoil1_2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.recoil1_2);
         break;
       case 122: // フラワーギフト
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.negaForm);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.negaForm);
         break;
       case 125: // ちからずく
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.sheerForce);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.sheerForce);
         break;
       case 127: // きんちょうかん
         yourFields.removeWhere((e) => e.id == IndividualField.noBerry);
         break;
       case 134: // ヘヴィメタル
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.heavy2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.heavy2);
         break;
       case 135: // ライトメタル
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.heavy0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.heavy0_5);
         break;
       case 136: // マルチスケイル
       case 231: // ファントムガード
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.damaged0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.damaged0_5);
         break;
       case 137: // どくぼうそう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.physical1_5);
         break;
       case 138: // ねつぼうそう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.special1_5);
         break;
       case 142: // ぼうじん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.overcoat);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.overcoat);
         break;
       case 147: // ミラクルスキン
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.yourStatusAccuracy50);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.yourStatusAccuracy50);
         break;
       case 148: // アナライズ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.analytic);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.analytic);
         break;
       case 151: // すりぬけ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreWall);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ignoreWall);
         break;
       case 156: // マジックミラー
         myState.ailmentsRemoveWhere((e) => e.id == Ailment.magicCoat);
         break;
       case 158: // いたずらごころ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.prankster);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.prankster);
         break;
       case 159: // すなのちから
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.rockGroundSteel1_3);
         break;
       case 162: // しょうりのほし
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_1);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.accuracy1_1);
         break;
       case 169: // ファーコート
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.guard2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.guard2);
         break;
       case 171: // ぼうだん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bulletProof);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.bulletProof);
         break;
       case 173: // がんじょうあご
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bite1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.bite1_5);
         break;
       case 174: // フリーズスキン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.freezeSkin);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.freezeSkin);
         break;
       case 176: // バトルスイッチ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.shieldForm);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.shieldForm);
         break;
       case 177: // はやてのつばさ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.galeWings);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.galeWings);
         break;
       case 178: // メガランチャー
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.wave1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.wave1_5);
         break;
       case 181: // かたいツメ
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.directAttack1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.directAttack1_3);
         break;
       case 182: // フェアリースキン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fairySkin);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.fairySkin);
         break;
       case 184: // スカイスキン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.airSkin);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.airSkin);
         break;
       case 196: // ひとでなし
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.merciless);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.merciless);
         break;
       case 198: // はりこみ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.change2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.change2);
         break;
       case 199: // すいほう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterBubble1);
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterBubble2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.waterBubble1);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.waterBubble2);
         break;
       case 200: // はがねつかい
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steelWorker);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.steelWorker);
         break;
       case 204: // うるおいボイス
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.liquidVoice);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.liquidVoice);
         break;
       case 205: // ヒーリングシフト
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.healingShift);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.healingShift);
         break;
       case 206: // エレキスキン
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.electricSkin);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.electricSkin);
         break;
       case 208: // ぎょぐん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.singleForm);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.singleForm);
         break;
       case 209: // ばけのかわ
-        myState.buffDebuffs.removeWhere((e) =>
-            e.id == BuffDebuff.transedForm || e.id == BuffDebuff.revealedForm);
+        myState.buffDebuffs.removeAllByAllID(
+            [BuffDebuff.transedForm, BuffDebuff.revealedForm]);
         break;
       case 217: // バッテリー
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.special1_5);
         break;
       case 218: // もふもふ
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.directAttackedDamage0_5);
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.fireAttackedDamage2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.directAttackedDamage0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.fireAttackedDamage2);
         break;
       case 233: // ブレインフォース
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.greatDamage1_25);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.greatDamage1_25);
         break;
       case 239: // スクリューおびれ
       case 242: // すじがねいり
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.targetRock);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.targetRock);
         break;
       case 244: // パンクロック
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.sound1_3);
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.soundedDamage0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.sound1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.soundedDamage0_5);
         break;
       case 246: // こおりのりんぷん
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.specialDamaged0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.specialDamaged0_5);
         break;
       case 247: // じゅくせい
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.nuts2);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.nuts2);
         break;
       case 248: // アイスフェイス
-        myState.buffDebuffs.removeWhere(
-            (e) => e.id == BuffDebuff.iceFace || e.id == BuffDebuff.niceFace);
+        myState.buffDebuffs
+            .removeAllByAllID([BuffDebuff.iceFace, BuffDebuff.niceFace]);
         break;
       case 249: // パワースポット
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.attackMove1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.attackMove1_3);
         break;
       case 252: // はがねのせいしん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steel1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.steel1_5);
         break;
       case 255: // ごりむちゅう
-        int findIdx =
-            myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
-        if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+        myState.buffDebuffs.removeFirstByID(BuffDebuff.gorimuchu);
         break;
       case 258: // はらぺこスイッチ
-        myState.buffDebuffs.removeWhere((e) =>
-            e.id == BuffDebuff.harapekoForm || e.id == BuffDebuff.manpukuForm);
+        myState.buffDebuffs.removeAllByAllID(
+            [BuffDebuff.harapekoForm, BuffDebuff.manpukuForm]);
         break;
       case 260: // ふかしのこぶし
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.directAttackIgnoreGurad);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.directAttackIgnoreGurad);
         break;
       case 262: // トランジスタ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.electric1_3);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.electric1_3);
         break;
       case 263: // りゅうのあぎと
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragon1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.dragon1_5);
         break;
       case 272: // きよめのしお
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ghosted0_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ghosted0_5);
         break;
       case 276: // いわはこび
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.rock1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.rock1_5);
         break;
       case 278: // マイティチェンジ
-        myState.buffDebuffs.removeWhere((e) =>
-            e.id == BuffDebuff.naiveForm || e.id == BuffDebuff.mightyForm);
+        myState.buffDebuffs
+            .removeAllByAllID([BuffDebuff.naiveForm, BuffDebuff.mightyForm]);
         break;
       case 284: // わざわいのうつわ
-        yourState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.specialAttack0_75);
+        yourState.buffDebuffs.removeAllByID(BuffDebuff.specialAttack0_75);
         break;
       case 285: // わざわいのつるぎ
-        yourState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.defense0_75);
+        yourState.buffDebuffs.removeAllByID(BuffDebuff.defense0_75);
         break;
       case 286: // わざわいのおふだ
-        yourState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack0_75);
+        yourState.buffDebuffs.removeAllByID(BuffDebuff.attack0_75);
         break;
       case 287: // わざわいのたま
-        yourState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.specialDefense0_75);
+        yourState.buffDebuffs.removeAllByID(BuffDebuff.specialDefense0_75);
         break;
       case 292: // きれあじ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.cut1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.cut1_5);
         break;
       case 298: // きんしのちから
-        myState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.myceliumMight);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.myceliumMight);
         break;
     }
 
     if (id == 186 && yourState.currentAbility.id != 186) {
       // ダークオーラ
-      myState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiDarkAura || e.id == BuffDebuff.darkAura);
-      yourState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiDarkAura || e.id == BuffDebuff.darkAura);
+      myState.buffDebuffs
+          .removeAllByAllID([BuffDebuff.antiDarkAura, BuffDebuff.darkAura]);
+      yourState.buffDebuffs
+          .removeAllByAllID([BuffDebuff.antiDarkAura, BuffDebuff.darkAura]);
     }
     if (id == 187 && yourState.currentAbility.id != 187) {
       // フェアリーオーラ
-      myState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiFairyAura || e.id == BuffDebuff.fairyAura);
-      yourState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiFairyAura || e.id == BuffDebuff.fairyAura);
+      myState.buffDebuffs
+          .removeAllByAllID([BuffDebuff.antiFairyAura, BuffDebuff.fairyAura]);
+      yourState.buffDebuffs
+          .removeAllByAllID([BuffDebuff.antiFairyAura, BuffDebuff.fairyAura]);
     }
     if (id == 188) {
       // オーラブレイク
-      myState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiFairyAura || e.id == BuffDebuff.antiDarkAura);
-      yourState.buffDebuffs.removeWhere((e) =>
-          e.id == BuffDebuff.antiFairyAura || e.id == BuffDebuff.antiDarkAura);
+      myState.buffDebuffs.removeAllByAllID(
+          [BuffDebuff.antiFairyAura, BuffDebuff.antiDarkAura]);
+      yourState.buffDebuffs.removeAllByAllID(
+          [BuffDebuff.antiFairyAura, BuffDebuff.antiDarkAura]);
       if (yourState.currentAbility.id == 186) {
         // ダークオーラ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.darkAura));
@@ -1969,8 +1844,8 @@ class Ability extends Equatable implements Copyable {
       case 36: // トレース
         return yourState.getCurrentAbility().id;
       case 139: // しゅうかく
-        var lastLostBerry =
-            myState.hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
+        final lastLostBerry =
+            myState.hiddenBuffs.whereByID(BuffDebuff.lastLostBerry);
         if (lastLostBerry.isNotEmpty) {
           return lastLostBerry.first.extraArg1;
         }

@@ -10,8 +10,9 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/tool.dart';
 
-class PokemonState {
+class PokemonState extends Equatable implements Copyable {
   PlayerType playerType = PlayerType.none; // ポケモンの所有者
   Pokemon pokemon = Pokemon(); // ポケモン(DBへの保存時はIDだけ)
   int remainHP = 0; // 残りHP
@@ -31,8 +32,9 @@ class PokemonState {
       imageUrl: ''); // 持っているもちもの(失えばnullにする)
   List<int> usedPPs = List.generate(4, (index) => 0); // 各わざの消費PP
   List<int> _statChanges = List.generate(7, (i) => 0); // のうりょく変化
-  List<BuffDebuff> buffDebuffs = []; // その他の補正(フォルムとか)
-  List<BuffDebuff> hiddenBuffs = []; // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
+  BuffDebuffList buffDebuffs = BuffDebuffList(); // その他の補正(フォルムとか)
+  BuffDebuffList hiddenBuffs =
+      BuffDebuffList(); // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
   Ability _currentAbility = Ability(
       0, '', '', Timing.none, Target.none); // 現在のとくせい(バトル中にとくせいが変わることあるので)
   Ailments _ailments = Ailments(); // 状態変化
@@ -45,7 +47,35 @@ class PokemonState {
   PokeType? type2; // ポケモンのタイプ2
   Move? lastMove; // 最後に使用した(PP消費した)わざ
 
-  PokemonState copyWith() => PokemonState()
+  @override
+  List<Object?> get props => [
+        playerType,
+        pokemon,
+        remainHP,
+        remainHPPercent,
+        isTerastaling,
+        teraType1,
+        _isFainting,
+        battlingNum,
+        _holdingItem,
+        usedPPs,
+        _statChanges,
+        buffDebuffs,
+        hiddenBuffs,
+        _currentAbility,
+        _ailments,
+        minStats,
+        maxStats,
+        possibleAbilities,
+        impossibleItems,
+        moves,
+        type1,
+        type2,
+        lastMove,
+      ];
+
+  @override
+  PokemonState copy() => PokemonState()
     ..playerType = playerType
     ..pokemon = pokemon
     ..remainHP = remainHP
@@ -54,17 +84,17 @@ class PokemonState {
     ..teraType1 = teraType1
     .._isFainting = _isFainting
     ..battlingNum = battlingNum
-    .._holdingItem = _holdingItem?.copyWith()
+    .._holdingItem = _holdingItem?.copy()
     ..usedPPs = [...usedPPs]
     .._statChanges = [..._statChanges]
-    ..buffDebuffs = [for (final e in buffDebuffs) e.copyWith()]
-    ..hiddenBuffs = [for (final e in hiddenBuffs) e.copyWith()]
+    ..buffDebuffs = buffDebuffs.copy()
+    ..hiddenBuffs = hiddenBuffs.copy()
     .._currentAbility = _currentAbility.copy()
-    .._ailments = _ailments.copyWith()
-    ..minStats = minStats.copyWith()
-    ..maxStats = maxStats.copyWith()
+    .._ailments = _ailments.copy()
+    ..minStats = minStats.copy()
+    ..maxStats = maxStats.copy()
     ..possibleAbilities = [for (final e in possibleAbilities) e.copy()]
-    ..impossibleItems = [for (final e in impossibleItems) e.copyWith()]
+    ..impossibleItems = [for (final e in impossibleItems) e.copy()]
     ..moves = [...moves]
     ..type1 = type1
     ..type2 = type2
@@ -80,19 +110,19 @@ class PokemonState {
   bool get isFainting => _isFainting;
   // たかさ・おもさ・せいべつはメタモンのへんしん状態に応じて変化
   int get weight {
-    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.weight;
   }
 
   int get height {
-    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.height;
   }
 
   Sex get sex {
-    var trans = buffDebuffs.where((e) => e.id == BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
 
@@ -100,8 +130,8 @@ class PokemonState {
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
   bool get canUseItem {
     return ailmentsWhere((e) => e.id == Ailment.embargo).isEmpty &&
-        buffDebuffs.where((e) => e.id == BuffDebuff.noItemEffect).isEmpty &&
-        hiddenBuffs.where((e) => e.id == BuffDebuff.magicRoom).isEmpty;
+        !buffDebuffs.containsByID(BuffDebuff.noItemEffect) &&
+        !hiddenBuffs.containsByID(BuffDebuff.magicRoom);
   }
 
   bool get isEffectAbility {
@@ -113,8 +143,7 @@ class PokemonState {
     if (canUseItem) item?.processPassiveEffect(this);
     if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
       // 最後に消費したもちもの/きのみ更新
-      var lastLostItem =
-          hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostItem);
+      final lastLostItem = hiddenBuffs.whereByID(BuffDebuff.lastLostItem);
       if (lastLostItem.isEmpty) {
         hiddenBuffs.add(
             BuffDebuff(BuffDebuff.lastLostItem)..extraArg1 = _holdingItem!.id);
@@ -122,8 +151,7 @@ class PokemonState {
         lastLostItem.first.extraArg1 = _holdingItem!.id;
       }
       if (_holdingItem!.isBerry) {
-        var lastLostBerry =
-            hiddenBuffs.where((e) => e.id == BuffDebuff.lastLostBerry);
+        final lastLostBerry = hiddenBuffs.whereByID(BuffDebuff.lastLostBerry);
         if (lastLostBerry.isEmpty) {
           hiddenBuffs.add(BuffDebuff(BuffDebuff.lastLostBerry)
             ..extraArg1 = _holdingItem!.id);
@@ -193,9 +221,8 @@ class PokemonState {
   }
 
   // 相手のこうげきわざ以外でのダメージを受けるかどうか
-  bool get isNotAttackedDamaged {
-    return buffDebuffs.where((e) => e.id == BuffDebuff.magicGuard).isEmpty;
-  }
+  bool get isNotAttackedDamaged =>
+      !buffDebuffs.containsByID(BuffDebuff.magicGuard);
 
   // 交代可能な状態かどうか
   bool canChange(PokemonState yourState, PhaseState state) {
@@ -222,7 +249,7 @@ class PokemonState {
 
   // きゅうしょランク加算
   void addVitalRank(int i) {
-    int findIdx = buffDebuffs.indexWhere((element) =>
+    int findIdx = buffDebuffs.list.indexWhere((element) =>
         BuffDebuff.vital1 <= element.id && element.id <= BuffDebuff.vital3);
     if (findIdx < 0) {
       if (i <= 0) return;
@@ -230,12 +257,12 @@ class PokemonState {
           .clamp(BuffDebuff.vital1, BuffDebuff.vital3);
       buffDebuffs.add(BuffDebuff(vitalRank));
     } else {
-      int newRank = buffDebuffs[findIdx].id + i;
+      int newRank = buffDebuffs.list[findIdx].id + i;
       if (newRank < BuffDebuff.vital1) {
-        buffDebuffs.removeAt(findIdx);
+        buffDebuffs.list.removeAt(findIdx);
       } else {
         int vitalRank = (newRank).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-        buffDebuffs[findIdx] = BuffDebuff(vitalRank);
+        buffDebuffs.list[findIdx] = BuffDebuff(vitalRank);
       }
     }
   }
@@ -311,22 +338,26 @@ class PokemonState {
 
   bool canGetStellarHosei(PokeType type) {
     if (!isTerastaling || teraType1 != PokeType.stellar) return false; // 前提
-    int findIdx = hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.stellarUsed);
-    if (pokemon.no == 1024 || findIdx < 0) return true;
-    if (hiddenBuffs[findIdx].extraArg1 & (1 << (type.index - 1)) != 0)
+    final founds = hiddenBuffs.whereByID(BuffDebuff.stellarUsed);
+    if (pokemon.no == 1024 || founds.isEmpty) return true;
+    if (founds.first.extraArg1 & (1 << (type.index - 1)) != 0) {
       return false; // すでに使ったことがあるタイプ
+    }
     return true;
   }
 
   void addStellarUsed(PokeType type) {
-    if (!isTerastaling || teraType1 != PokeType.stellar || pokemon.no == 1024)
+    if (!isTerastaling || teraType1 != PokeType.stellar || pokemon.no == 1024) {
       return; // 前提
-    int findIdx = hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.stellarUsed);
+    }
+    final findIdx = hiddenBuffs.list
+        .indexWhere((element) => element.id == BuffDebuff.stellarUsed);
     if (findIdx < 0) {
       hiddenBuffs.add(BuffDebuff(BuffDebuff.stellarUsed)
         ..extraArg1 = 1 << (type.index - 1));
+    } else {
+      hiddenBuffs.list[findIdx].extraArg1 |= 1 << (type.index - 1);
     }
-    hiddenBuffs[findIdx].extraArg1 |= 1 << (type.index - 1);
   }
 
   // すなあらしダメージを受けるか判定
@@ -341,8 +372,9 @@ class PokemonState {
         currentAbility.id == 98 || // すなのちから/マジックガード
         currentAbility.id == 142) return false; // ぼうじん
     if (ailmentsWhere(// あなをほる/ダイビング状態
-        (e) => e.id == Ailment.digging || e.id == Ailment.diving).isNotEmpty)
+        (e) => e.id == Ailment.digging || e.id == Ailment.diving).isNotEmpty) {
       return false;
+    }
     return true;
   }
 
@@ -359,36 +391,36 @@ class PokemonState {
     if (badPoison.isNotEmpty) badPoison.first.turns = 0;
     if (_isFainting) ailmentsClear(yourState, state);
     // 退場後も継続するフォルム以外をクリア
-    var unchangingForms = buffDebuffs
-        .where((e) =>
-            e.id == BuffDebuff.iceFace ||
-            e.id == BuffDebuff.niceFace ||
-            e.id == BuffDebuff.manpukuForm ||
-            e.id == BuffDebuff.harapekoForm ||
-            e.id == BuffDebuff.transedForm ||
-            e.id == BuffDebuff.revealedForm ||
-            e.id == BuffDebuff.naiveForm ||
-            e.id == BuffDebuff.mightyForm ||
-            e.id == BuffDebuff.terastalForm ||
-            e.id == BuffDebuff.stellarForm)
-        .toList();
+    final unchangingForms = buffDebuffs.whereByAnyID([
+      BuffDebuff.iceFace,
+      BuffDebuff.niceFace,
+      BuffDebuff.manpukuForm,
+      BuffDebuff.harapekoForm,
+      BuffDebuff.transedForm,
+      BuffDebuff.revealedForm,
+      BuffDebuff.naiveForm,
+      BuffDebuff.mightyForm,
+      BuffDebuff.terastalForm,
+      BuffDebuff.stellarForm,
+    ]).toList();
     buffDebuffs.clear();
     buffDebuffs.addAll(unchangingForms);
-    var unchangingHidden = hiddenBuffs
-        .where((e) =>
-            e.id == BuffDebuff.lastLostItem ||
-            e.id == BuffDebuff.lastLostBerry ||
-            e.id == BuffDebuff.attackedCount ||
-            e.id == BuffDebuff.zoroappear ||
-            e.id == BuffDebuff.stellarUsed)
-        .toList();
+    final unchangingHidden = hiddenBuffs.whereByAnyID([
+      BuffDebuff.lastLostItem,
+      BuffDebuff.lastLostBerry,
+      BuffDebuff.attackedCount,
+      BuffDebuff.zoroappear,
+      BuffDebuff.stellarUsed,
+    ]).toList();
     hiddenBuffs.clear();
     hiddenBuffs.addAll(unchangingHidden);
     // ひんしでない退場で発動するフォルムチェンジ
     if (!isFainting) {
-      int findIdx = buffDebuffs.indexWhere((e) => e.id == BuffDebuff.naiveForm);
+      final findIdx = buffDebuffs.list
+          .indexWhere((element) => element.id == BuffDebuff.naiveForm);
       if (findIdx >= 0) {
-        buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.mightyForm); // マイティフォルム
+        buffDebuffs.list[findIdx] =
+            BuffDebuff(BuffDebuff.mightyForm); // マイティフォルム
         // TODO この2行csvに移したい
         maxStats.a.race = 160;
         maxStats.b.race = 97;
@@ -425,36 +457,34 @@ class PokemonState {
     // 場にいると両者にバフ/デバフがかかる場合
     if (currentAbility.id == 186 && yourState.currentAbility.id != 186) {
       // ダークオーラ
-      yourState.buffDebuffs.indexWhere((element) =>
-          element.id == BuffDebuff.darkAura ||
-          element.id == BuffDebuff.antiDarkAura);
+      yourState.buffDebuffs.removeAllByAllID([
+        BuffDebuff.darkAura,
+        BuffDebuff.antiDarkAura,
+      ]);
     }
     if (currentAbility.id == 187 && yourState.currentAbility.id == 187) {
       // フェアリーオーラ
-      yourState.buffDebuffs.indexWhere((element) =>
-          element.id == BuffDebuff.fairyAura ||
-          element.id == BuffDebuff.antiFairyAura);
+      yourState.buffDebuffs.removeAllByAllID([
+        BuffDebuff.fairyAura,
+        BuffDebuff.antiFairyAura,
+      ]);
     }
     // 場にいると相手にバフ/デバフがかかる場合
     if (currentAbility.id == 284) {
       // わざわいのうつわ
-      yourState.buffDebuffs
-          .removeWhere((element) => element.id == BuffDebuff.specialAttack0_75);
+      yourState.buffDebuffs.removeAllByID(BuffDebuff.specialAttack0_75);
     }
     if (currentAbility.id == 285) {
       // わざわいのつるぎ
-      yourState.buffDebuffs
-          .removeWhere((element) => element.id == BuffDebuff.defense0_75);
+      yourState.buffDebuffs.removeAllByID(BuffDebuff.defense0_75);
     }
     if (currentAbility.id == 286) {
       // わざわいのおふだ
-      yourState.buffDebuffs
-          .removeWhere((element) => element.id == BuffDebuff.attack0_75);
+      yourState.buffDebuffs.removeAllByID(BuffDebuff.attack0_75);
     }
     if (currentAbility.id == 287) {
       // わざわいのたま
-      yourState.buffDebuffs.removeWhere(
-          (element) => element.id == BuffDebuff.specialDefense0_75);
+      yourState.buffDebuffs.removeAllByID(BuffDebuff.specialDefense0_75);
     }
     // あいてのにげられない状態の解除
     yourState.ailmentsRemoveWhere(
@@ -474,7 +504,7 @@ class PokemonState {
     }
     // 最後に退場した状態の保存
     state.lastExitedStates[isMe ? 0 : 1]
-        [state.getPokemonIndex(playerType, null) - 1] = copyWith();
+        [state.getPokemonIndex(playerType, null) - 1] = copy();
   }
 
   // ポケモン交代や死に出しにより登場する場合の処理
@@ -544,26 +574,27 @@ class PokemonState {
       ailmentsRemoveAt(findIdx);
     }
     // その他の補正の経過ターンインクリメント
-    for (var e in buffDebuffs) {
+    for (var e in buffDebuffs.list) {
       e.turns++;
     }
     // 隠れ補正の経過ターンインクリメント
-    for (var e in hiddenBuffs) {
+    for (var e in hiddenBuffs.list) {
       e.turns++;
     }
     // スロースタート終了
-    buffDebuffs
+    buffDebuffs.list
         .removeWhere((e) => e.id == BuffDebuff.attackSpeed0_5 && e.turns >= 5);
     // 交代したターンであることのフラグ削除
     // 当ターンでランクが変わったかを示すフラグ削除
-    hiddenBuffs.removeWhere((e) =>
-        e.id == BuffDebuff.changedThisTurn ||
-        e.id == BuffDebuff.thisTurnUpStatChange ||
-        e.id == BuffDebuff.thisTurnDownStatChange);
+    hiddenBuffs.removeAllByAllID([
+      BuffDebuff.changedThisTurn,
+      BuffDebuff.thisTurnUpStatChange,
+      BuffDebuff.thisTurnDownStatChange,
+    ]);
     // フォーカスレンズの効果削除
-    buffDebuffs.removeWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
+    buffDebuffs.removeAllByID(BuffDebuff.movedAccuracy1_2);
     // わざの反動で動けない状態は2ターンエンド経過で削除
-    hiddenBuffs
+    hiddenBuffs.list
         .removeWhere((e) => e.id == BuffDebuff.recoiling && e.turns >= 2);
   }
 
@@ -582,25 +613,32 @@ class PokemonState {
                     ailment.id ==
                         Ailment.badPoison)) // もうどくに関しては、わざ使用者のとくせいがふしょくなら可能
         ) return false;
-    if (isTypeContain(PokeType.fire) && ailment.id == Ailment.burn)
+    if (isTypeContain(PokeType.fire) && ailment.id == Ailment.burn) {
       return false;
-    if (isTypeContain(PokeType.ice) && ailment.id == Ailment.freeze)
+    }
+    if (isTypeContain(PokeType.ice) && ailment.id == Ailment.freeze) {
       return false;
-    if (isTypeContain(PokeType.electric) && ailment.id == Ailment.paralysis)
+    }
+    if (isTypeContain(PokeType.electric) && ailment.id == Ailment.paralysis) {
       return false;
+    }
     // とくせいによる耐性
     if ((currentAbility.id == 17 || currentAbility.id == 257) &&
-        (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison))
+        (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
       return false;
-    if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis))
+    }
+    if ((currentAbility.id == 7) && (ailment.id == Ailment.paralysis)) {
       return false;
+    }
     if ((currentAbility.id == 41 ||
             currentAbility.id == 199 ||
             currentAbility.id == 270) &&
         (ailment.id == Ailment.burn)) return false; // みずのベール/ねつこうかん<-やけど
     if (currentAbility.id == 15 &&
-        (ailment.id == Ailment.sleep || ailment.id == Ailment.sleepy))
-      return false; // ふみん
+        (ailment.id == Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // ふみん
+      return false;
+    }
     if (currentAbility.id == 165 &&
         (ailment.id == Ailment.infatuation ||
             ailment.id == Ailment.encore ||
@@ -610,22 +648,34 @@ class PokemonState {
             ailment.id == Ailment.healBlock)) return false; // アロマベール
     if (currentAbility.id == 166 &&
         isTypeContain(PokeType.grass) &&
-        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy))
-      return false; // フラワーベール
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // フラワーベール
+      return false;
+    }
     if (currentAbility.id == 272 &&
-        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy))
-      return false; // きよめのしお
-    if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch))
-      return false; // せいしんりょく<-ひるみ
-    if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze))
-      return false; // マグマのよろい<-こおり
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // きよめのしお
+      return false;
+    }
+    if ((currentAbility.id == 39) && (ailment.id == Ailment.flinch)) {
+      // せいしんりょく<-ひるみ
+      return false;
+    }
+    if ((currentAbility.id == 40) && (ailment.id == Ailment.freeze)) {
+      // マグマのよろい<-こおり
+      return false;
+    }
     if ((currentAbility.id == 102) &&
         (state.weather.id == Weather.sunny) &&
-        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy))
-      return false; // 晴れ下リーフガード<-状態異常＋ねむけ
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // 晴れ下リーフガード<-状態異常＋ねむけ
+      return false;
+    }
     if (currentAbility.id == 213 &&
-        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy))
-      return false; // ぜったいねむり<-状態異常＋ねむけ
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // ぜったいねむり<-状態異常＋ねむけ
+      return false;
+    }
     // TODO:リミットシールド
     //if (currentAbility.id == 213) return false;
     if ((ailmentsWhere((e) => e.id == Ailment.uproar).isNotEmpty ||
@@ -642,18 +692,22 @@ class PokemonState {
         ailment.id == Ailment.sleep) return false;
     // 各々の場
     if (indiFields.where((e) => e.id == IndividualField.safeGuard).isNotEmpty &&
-        yourState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreWall)
-            .isEmpty &&
-        (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy))
-      return false; // しんぴのまもり
+        !yourState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
+        (ailment.id <= Ailment.confusion || ailment.id == Ailment.sleepy)) {
+      // しんぴのまもり
+      return false;
+    }
     if (state.field.id == Field.mistyTerrain) return false;
     // 持続ターン数の変更
-    if (holdingItem?.id == 263 && ailment.id == Ailment.partiallyTrapped)
-      ailment.extraArg1 = 7; // ねばりのかぎづめ＋バインド
+    if (holdingItem?.id == 263 && ailment.id == Ailment.partiallyTrapped) {
+      // ねばりのかぎづめ＋バインド
+      ailment.extraArg1 = 7;
+    }
     // ダメージの変更
-    if (holdingItem?.id == 587 && ailment.id == Ailment.partiallyTrapped)
-      ailment.extraArg1 = 10; // じめつけバンド＋バインド
+    if (holdingItem?.id == 587 && ailment.id == Ailment.partiallyTrapped) {
+      // じめつけバンド＋バインド
+      ailment.extraArg1 = 10;
+    }
 
     bool isAdded = _ailments.add(ailment);
 
@@ -668,25 +722,37 @@ class PokemonState {
 
     if (isAdded && ailment.id <= Ailment.sleep && ailment.id != 0) {
       // 状態異常時
-      if (currentAbility.id == 62)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn)); // こんじょう
-      if (currentAbility.id == 63)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5)); // ふしぎなうろこ
-      if (currentAbility.id == 95)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.speed1_5IgnPara)); // はやあし
+      if (currentAbility.id == 62) {
+        // こんじょう
+        buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn));
+      }
+      if (currentAbility.id == 63) {
+        // ふしぎなうろこ
+        buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
+      }
+      if (currentAbility.id == 95) {
+        // はやあし
+        buffDebuffs.add(BuffDebuff(BuffDebuff.speed1_5IgnPara));
+      }
     } else if (isAdded && ailment.id == Ailment.confusion) {
       // こんらん時
-      if (currentAbility.id == 77)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_5)); // ちどりあし
+      if (currentAbility.id == 77) {
+        // ちどりあし
+        buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_5));
+      }
     } else if (isAdded &&
         (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
       // どく/もうどく時
-      if (currentAbility.id == 137)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_5)); // どくぼうそう
+      if (currentAbility.id == 137) {
+        // どくぼうそう
+        buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_5));
+      }
     } else if (isAdded && ailment.id == Ailment.burn) {
       // やけど時
-      if (currentAbility.id == 138)
-        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5)); // ねつぼうそう
+      if (currentAbility.id == 138) {
+        // ねつぼうそう
+        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
+      }
     }
     if (yourState.currentAbility.id == 307 &&
         yourState.pokemon.id == 1025 &&
@@ -718,33 +784,33 @@ class PokemonState {
     if (ret.id <= Ailment.sleep && ret.id != 0) {
       if (currentAbility.id == 62) {
         // こんじょう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
+        buffDebuffs.removeAllByID(BuffDebuff.attack1_5WithIgnBurn);
       }
       if (currentAbility.id == 63) {
         // ふしぎなうろこ
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.defense1_5);
       }
       if (currentAbility.id == 95) {
         // はやあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
+        buffDebuffs.removeAllByID(BuffDebuff.speed1_5IgnPara);
       }
     } else if (ret.id == Ailment.confusion) {
       // こんらん消失時
       if (currentAbility.id == 77) {
         // ちどりあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
+        buffDebuffs.removeAllByID(BuffDebuff.yourAccuracy0_5);
       }
     } else if (ret.id == Ailment.poison || ret.id == Ailment.badPoison) {
       // どく/もうどく消失時
       if (currentAbility.id == 137) {
         // どくぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.physical1_5);
       }
     } else if (ret.id == Ailment.burn) {
       // やけど消失時
       if (currentAbility.id == 138) {
         // ねつぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.special1_5);
       }
     } else if (ret.id == Ailment.embargo) {
       // さしおさえ消失時
@@ -766,22 +832,22 @@ class PokemonState {
     if (_ailments.indexWhere((e) => e.id <= Ailment.sleep && e.id != 0) < 0) {
       if (currentAbility.id == 62) {
         // こんじょう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
+        buffDebuffs.removeAllByID(BuffDebuff.attack1_5WithIgnBurn);
       }
       if (currentAbility.id == 63) {
         // ふしぎなうろこ
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.defense1_5);
       }
       if (currentAbility.id == 95) {
         // はやあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
+        buffDebuffs.removeAllByID(BuffDebuff.speed1_5IgnPara);
       }
     }
     if (_ailments.indexWhere((e) => e.id == Ailment.confusion) < 0) {
       // こんらん消失時
       if (currentAbility.id == 77) {
         // ちどりあし
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
+        buffDebuffs.removeAllByID(BuffDebuff.yourAccuracy0_5);
       }
     }
     if (_ailments.indexWhere(
@@ -790,14 +856,14 @@ class PokemonState {
       // どく/もうどく消失時
       if (currentAbility.id == 137) {
         // どくぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.physical1_5);
       }
     }
     if (_ailments.indexWhere((e) => e.id == Ailment.burn) < 0) {
       // やけど消失時
       if (currentAbility.id == 138) {
         // ねつぼうそう
-        buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+        buffDebuffs.removeAllByID(BuffDebuff.special1_5);
       }
     }
     if (embargo && _ailments.indexWhere((e) => e.id == Ailment.embargo) < 0) {
@@ -818,27 +884,27 @@ class PokemonState {
     _ailments.clear();
     if (currentAbility.id == 62) {
       // こんじょう
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn);
+      buffDebuffs.removeAllByID(BuffDebuff.attack1_5WithIgnBurn);
     }
     if (currentAbility.id == 63) {
       // ふしぎなうろこ
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
+      buffDebuffs.removeAllByID(BuffDebuff.defense1_5);
     }
     if (currentAbility.id == 95) {
       // はやあし
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed1_5IgnPara);
+      buffDebuffs.removeAllByID(BuffDebuff.speed1_5IgnPara);
     }
     if (currentAbility.id == 77) {
       // ちどりあし
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_5);
+      buffDebuffs.removeAllByID(BuffDebuff.yourAccuracy0_5);
     }
     if (currentAbility.id == 137) {
       // どくぼうそう
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_5);
+      buffDebuffs.removeAllByID(BuffDebuff.physical1_5);
     }
     if (currentAbility.id == 138) {
       // ねつぼうそう
-      buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_5);
+      buffDebuffs.removeAllByID(BuffDebuff.special1_5);
     }
     if (embargo) {
       // さしおさえ消失時
@@ -881,26 +947,30 @@ class PokemonState {
   }) {
     int change = num;
     if (!isMyEffect &&
-        buffDebuffs.where((e) => e.id == BuffDebuff.substitute).isNotEmpty &&
+        buffDebuffs.containsByID(BuffDebuff.substitute) &&
         num < 0) return false; // みがわり
     if (!isMyEffect &&
         myFields!.where((e) => e.id == IndividualField.mist).isNotEmpty &&
-        yourState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreWall)
-            .isEmpty &&
+        !yourState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
         num < 0) return false; // しろいきり
-    if (!isMyEffect && holdingItem?.id == 1698 && num < 0)
-      return false; // クリアチャーム
-    if (!isMyEffect && currentAbility.id == 12 && moveId == 445)
-      return false; // どんかん
+    if (!isMyEffect && holdingItem?.id == 1698 && num < 0) {
+      // クリアチャーム
+      return false;
+    }
+    if (!isMyEffect && currentAbility.id == 12 && moveId == 445) {
+      // どんかん
+      return false;
+    }
     if (!isMyEffect &&
         abilityId == 22 && // いかくに対する
         (currentAbility.id == 12 ||
             currentAbility.id == 20 ||
             currentAbility.id == 39 || // どんかん/マイペース/せいしんりょく
             currentAbility.id == 113)) return false; // きもったま
-    if (!isMyEffect && currentAbility.id == 20 && abilityId == 22)
-      return false; // マイペース
+    if (!isMyEffect && currentAbility.id == 20 && abilityId == 22) {
+      // マイペース
+      return false;
+    }
     if (!isMyEffect &&
         (currentAbility.id == 29 ||
             currentAbility.id == 73 ||
@@ -910,10 +980,14 @@ class PokemonState {
         (currentAbility.id == 35 || currentAbility.id == 51) &&
         index == 5 &&
         num < 0) return false; // はっこう/するどいめ
-    if (!isMyEffect && currentAbility.id == 52 && index == 0 && num < 0)
-      return false; // かいりきバサミ
-    if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0)
-      return false; // はとむね
+    if (!isMyEffect && currentAbility.id == 52 && index == 0 && num < 0) {
+      // かいりきバサミ
+      return false;
+    }
+    if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0) {
+      // はとむね
+      return false;
+    }
     if (!isMyEffect &&
         currentAbility.id == 166 &&
         isTypeContain(PokeType.grass) &&
@@ -925,8 +999,10 @@ class PokemonState {
           myFields: yourFields, yourFields: myFields, lastMirror: true);
       return false;
     }
-    if (!isMyEffect && abilityId == 22 && currentAbility.id == 275)
-      change = 1; // いかくに対するばんけん
+    if (!isMyEffect && abilityId == 22 && currentAbility.id == 275) {
+      // いかくに対するばんけん
+      change = 1;
+    }
 
     if (currentAbility.id == 86) change *= 2; // たんじゅん
     if (currentAbility.id == 126) change *= -1; // あまのじゃく
@@ -938,12 +1014,13 @@ class PokemonState {
     int before = _statChanges[index];
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
     if (_statChanges[index] > before &&
-        hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.thisTurnUpStatChange) <
-            0) hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnUpStatChange));
+        !hiddenBuffs.containsByID(BuffDebuff.thisTurnUpStatChange)) {
+      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnUpStatChange));
+    }
     if (_statChanges[index] < before &&
-        hiddenBuffs
-                .indexWhere((e) => e.id == BuffDebuff.thisTurnDownStatChange) <
-            0) hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnDownStatChange));
+        !hiddenBuffs.containsByID(BuffDebuff.thisTurnDownStatChange)) {
+      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnDownStatChange));
+    }
     return true;
   }
 
@@ -1162,159 +1239,117 @@ class PokemonState {
     switch (statIdx) {
       case StatIndex.A:
         {
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_3) >= 0)
-            ret *= 1.3;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack2) >= 0)
-            ret *= 2;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_5) >= 0)
+          if (buffDebuffs.containsByID(BuffDebuff.attack1_3)) ret *= 1.3;
+          if (buffDebuffs.containsByID(BuffDebuff.attack2)) ret *= 2;
+          if (buffDebuffs.containsByID(BuffDebuff.attack1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
             ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) >=
-              0) ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.attackSpeed0_5) >=
-              0) ret *= 0.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist) >= 0)
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
+          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
+          if (type == PokeType.fire &&
+              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
             ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs
-                      .indexWhere((e) => e.id == BuffDebuff.waterBubble1) >=
-                  0) ret *= 0.5;
+          }
           if (type == PokeType.water &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >=
-                  0) ret *= 2;
+              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
           if (type == PokeType.steel &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelWorker) >=
-                  0) ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu) >= 0)
-            ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.gorimuchu)) ret *= 1.5;
           if (type == PokeType.electric &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electric1_3) >=
-                  0) ret *= 1.3;
+              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
           if (type == PokeType.dragon &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragon1_5) >= 0)
-            ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
           if (type == PokeType.ghost &&
-              yourState.buffDebuffs
-                      .indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >=
-                  0) ret *= 0.5;
+              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
+            ret *= 0.5;
+          }
           if (type == PokeType.rock &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rock1_5) >= 0)
-            ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack0_75) >= 0)
-            ret *= 0.75;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_33) >= 0)
-            ret *= 1.33;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >=
-              0) ret *= 2;
+              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.attack0_75)) ret *= 0.75;
+          if (buffDebuffs.containsByID(BuffDebuff.attack1_33)) ret *= 1.33;
+          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2;
           if (type == PokeType.fire &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.flashFired) >= 0)
-            ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
         }
         break;
       case StatIndex.B:
         {
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_3) >= 0)
-            ret *= 1.3;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense1_5) >= 0)
-            ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.guard2) >= 0)
-            ret *= 2.0;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.guard1_5) >= 0)
-            ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defense0_75) >=
-              0) ret *= 0.75;
-          if (state.weather.id == Weather.snowy && isTypeContain(PokeType.ice))
+          if (buffDebuffs.containsByID(BuffDebuff.defense1_3)) ret *= 1.3;
+          if (buffDebuffs.containsByID(BuffDebuff.defense1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.guard2)) ret *= 2.0;
+          if (buffDebuffs.containsByID(BuffDebuff.guard1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.defense0_75)) ret *= 0.75;
+          if (state.weather.id == Weather.snowy &&
+              isTypeContain(PokeType.ice)) {
             ret * 1.5;
+          }
         }
         break;
       case StatIndex.C:
         {
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialAttack1_3) >=
-              0) ret *= 1.3;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.defeatist) >= 0)
+          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_3)) ret *= 1.3;
+          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
+          if (type == PokeType.fire &&
+              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
             ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs
-                      .indexWhere((e) => e.id == BuffDebuff.waterBubble1) >=
-                  0) ret *= 0.5;
+          }
           if (type == PokeType.water &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.waterBubble2) >=
-                  0) ret *= 2;
+              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
           if (type == PokeType.steel &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steelWorker) >=
-                  0) ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
           if (type == PokeType.electric &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.electric1_3) >=
-                  0) ret *= 1.3;
+              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
           if (type == PokeType.dragon &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.dragon1_5) >= 0)
-            ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
           if (type == PokeType.ghost &&
-              yourState.buffDebuffs
-                      .indexWhere((e) => e.id == BuffDebuff.ghosted0_5) >=
-                  0) ret *= 0.5;
+              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
+            ret *= 0.5;
+          }
           if (type == PokeType.rock &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rock1_5) >= 0)
-            ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialAttack0_75) >=
-              0) ret *= 0.75;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialAttack1_33) >=
-              0) ret *= 1.33;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceSpecs) >=
-              0) ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialAttack2) >=
-              0) ret *= 2.0;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attackMove2) >=
-              0) ret *= 2.0;
+              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.specialAttack0_75)) {
+            ret *= 0.75;
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_33)) {
+            ret *= 1.33;
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.choiceSpecs)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.specialAttack2)) ret *= 2.0;
+          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2.0;
           if (type == PokeType.fire &&
-              buffDebuffs.indexWhere((e) => e.id == BuffDebuff.flashFired) >= 0)
-            ret *= 1.5;
+              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
         }
         break;
       case StatIndex.D:
         {
+          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_3)) {
+            ret *= 1.3;
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.specialDefense0_75)) {
+            ret *= 0.75;
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_5)) {
+            ret *= 1.5;
+          }
           if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialDefense1_3) >=
-              0) ret *= 1.3;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialDefense0_75) >=
-              0) ret *= 0.75;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialDefense1_5) >=
-              0) ret *= 1.5;
-          if (buffDebuffs.indexWhere(
-                  (e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5) >=
-              0) ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.specialDefense2) >=
-              0) ret *= 2.0;
+              .containsByID(BuffDebuff.onlyAttackSpecialDefense1_5)) {
+            ret *= 1.5;
+          }
+          if (buffDebuffs.containsByID(BuffDebuff.specialDefense2)) ret *= 2.0;
           if (state.weather.id == Weather.sandStorm &&
               isTypeContain(PokeType.rock)) ret * 1.5;
         }
         break;
       case StatIndex.S:
         {
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed1_5) >= 0)
-            ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed2) >= 0)
-            ret *= 2.0;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.unburden) >= 0)
-            ret *= 2.0;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.speed1_5IgnPara) >=
-              0) ret *= 1.5;
-          if (buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.attackSpeed0_5) >=
-              0) ret *= 0.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.choiceScarf) >=
-              0) ret *= 1.5;
-          if (buffDebuffs.indexWhere((e) => e.id == BuffDebuff.speed0_5) >= 0)
-            ret *= 0.5;
+          if (buffDebuffs.containsByID(BuffDebuff.speed1_5)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.speed2)) ret *= 2.0;
+          if (buffDebuffs.containsByID(BuffDebuff.unburden)) ret *= 2.0;
+          if (buffDebuffs.containsByID(BuffDebuff.speed1_5IgnPara)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
+          if (buffDebuffs.containsByID(BuffDebuff.choiceScarf)) ret *= 1.5;
+          if (buffDebuffs.containsByID(BuffDebuff.speed0_5)) ret *= 0.5;
         }
         break;
       default:
@@ -1349,7 +1384,7 @@ class PokemonState {
     final stateElements = str.split(split1);
     // pokemon
     pokemonState.pokemon =
-        pokeData.pokemons[int.parse(stateElements[0])]!.copyWith();
+        pokeData.pokemons[int.parse(stateElements[0])]!.copy();
     // ポケモンのレベルを50に
     pokemonState.pokemon.level = 50;
     pokemonState.pokemon.updateRealStats();
@@ -1494,13 +1529,13 @@ class PokemonState {
     }
     ret += split1;
     // buffDebuffs
-    for (final buffDebuff in buffDebuffs) {
+    for (final buffDebuff in buffDebuffs.list) {
       ret += buffDebuff.serialize(split3);
       ret += split2;
     }
     ret += split1;
     // hiddenBuffs
-    for (final buffDebuff in hiddenBuffs) {
+    for (final buffDebuff in hiddenBuffs.list) {
       ret += buffDebuff.serialize(split3);
       ret += split2;
     }

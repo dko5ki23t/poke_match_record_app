@@ -382,25 +382,21 @@ class Temper {
   }
 }
 
-class SixParams {
+class SixParams extends Equatable implements Copyable {
   int race = 0;
   int indi = 0;
   int effort = 0;
   int real = 0;
 
+  @override
+  List<Object?> get props => [
+        race,
+        indi,
+        effort,
+        real,
+      ];
+
   SixParams(this.race, this.indi, this.effort, this.real);
-
-  @override
-  bool operator ==(Object other) =>
-      other.runtimeType == runtimeType &&
-      other is SixParams &&
-      race == other.race &&
-      indi == other.indi &&
-      effort == other.effort &&
-      real == other.real;
-
-  @override
-  int get hashCode => race.hashCode;
 
   static int getRealH(int level, int race, int indi, int effort) {
     return (race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + level + 10;
@@ -486,7 +482,8 @@ class SixParams {
     this.real = real;
   }
 
-  SixParams copyWith() => SixParams(race, indi, effort, real);
+  @override
+  SixParams copy() => SixParams(race, indi, effort, real);
 
   // SQLに保存された文字列からSixParamsをパース
   static SixParams deserialize(dynamic str, String split1) {
@@ -505,9 +502,12 @@ class SixParams {
   }
 }
 
-class SixStats {
+class SixStats extends Equatable implements Copyable {
   List<SixParams> sixParams =
       List.generate(6, (index) => SixParams(0, 0, 0, 0));
+
+  @override
+  List<Object?> get props => [sixParams];
 
   SixParams get h => sixParams[StatIndex.H.index];
   SixParams get a => sixParams[StatIndex.A.index];
@@ -522,8 +522,9 @@ class SixStats {
     sixParams[index.index] = value;
   }
 
-  SixStats copyWith() =>
-      SixStats()..sixParams = [for (final e in sixParams) e.copyWith()];
+  @override
+  SixStats copy() =>
+      SixStats()..sixParams = [for (final e in sixParams) e.copy()];
 
   static SixStats generate(SixParams Function(int) func) {
     SixStats ret = SixStats();
@@ -607,7 +608,7 @@ class Move extends Equatable implements Copyable {
   final int pp;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         id,
         _displayName,
         _displayNameEn,

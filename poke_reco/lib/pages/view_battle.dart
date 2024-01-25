@@ -874,7 +874,7 @@ class ViewBattlePageState extends State<ViewBattlePage> {
       turnEffectAndStateAndGuides.add(TurnEffectAndStateAndGuide()
         ..phaseIdx = i
         ..turnEffect = phases[i]
-        ..phaseState = currentState.copyWith()
+        ..phaseState = currentState.copy()
         ..guides = guides);
       if (!phases[i].isAdding) {
         textEditingControllerList1[i].text =
@@ -1229,10 +1229,11 @@ class _BuffDebuffsRow extends Row {
                       borderRadius: BorderRadius.all(Radius.circular(5.0)),
                       child: ownPokemonState.buffDebuffs.length > index
                           ? Container(
-                              color: ownPokemonState.buffDebuffs[index].bgColor,
+                              color: ownPokemonState
+                                  .buffDebuffs.list[index].bgColor,
                               child: Text(
                                   ownPokemonState
-                                      .buffDebuffs[index].displayName,
+                                      .buffDebuffs.list[index].displayName,
                                   style: TextStyle(color: Colors.white)),
                             )
                           : Container(),
@@ -1253,10 +1254,10 @@ class _BuffDebuffsRow extends Row {
                       child: opponentPokemonState.buffDebuffs.length > index
                           ? Container(
                               color: opponentPokemonState
-                                  .buffDebuffs[index].bgColor,
+                                  .buffDebuffs.list[index].bgColor,
                               child: Text(
                                   opponentPokemonState
-                                      .buffDebuffs[index].displayName,
+                                      .buffDebuffs.list[index].displayName,
                                   style: TextStyle(color: Colors.white)),
                             )
                           : Container(),

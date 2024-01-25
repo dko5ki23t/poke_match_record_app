@@ -235,7 +235,7 @@ class TurnMove extends Equatable implements Copyable {
   bool _isValid = false;
 
   @override
-  List<Object> get props => [
+  List<Object?> get props => [
         playerType,
         type,
         teraType,
@@ -415,7 +415,7 @@ class TurnMove extends Equatable implements Copyable {
     var opponentPokemonState = opponentState;
     var myState = playerType == PlayerType.me ? ownState : opponentState;
     var yourState = playerType == PlayerType.me ? opponentState : ownState;
-    var beforeChangeMyState = myState.copyWith();
+    var beforeChangeMyState = myState.copy();
 
     // 行動1の場合は登録
     if (isFirst) {
@@ -426,8 +426,7 @@ class TurnMove extends Equatable implements Copyable {
     // おんねん状態解除
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.grudge);
     // きょけんとつげき後状態解除
-    myState.buffDebuffs
-        .removeWhere((e) => e.id == BuffDebuff.certainlyHittedDamage2);
+    myState.buffDebuffs.removeAllByID(BuffDebuff.certainlyHittedDamage2);
 
     // こうさん
     if (type == TurnMoveType.surrender) {
@@ -504,9 +503,7 @@ class TurnMove extends Equatable implements Copyable {
         if (pokeData.pokeBase[myState.pokemon.no]!.move
                 .where((e) => e.id == move.id && e.id != 0)
                 .isEmpty &&
-            myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.transform)
-                .isEmpty) {
+            !myState.buffDebuffs.containsByID(BuffDebuff.transform)) {
           ret.add(Guide()
             ..guideId = Guide.confZoroark
             ..canDelete = true
@@ -551,14 +548,12 @@ class TurnMove extends Equatable implements Copyable {
 
     // メトロノーム用
     if (continuousCount == 0) {
-      int findIdx = myState.hiddenBuffs
-          .indexWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
+      final findIdx = myState.hiddenBuffs.list.indexWhere(
+          (element) => element.id == BuffDebuff.continuousMoveDamageInc0_2);
       if (findIdx >= 0) {
         if (!isSuccess) {
-          if (myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.recoiling)
-              .isEmpty) {
-            myState.hiddenBuffs[findIdx].extraArg1 = 0;
+          if (!myState.buffDebuffs.containsByID(BuffDebuff.recoiling)) {
+            myState.hiddenBuffs.list[findIdx].extraArg1 = 0;
           }
         }
       }
@@ -682,19 +677,17 @@ class TurnMove extends Equatable implements Copyable {
       }
       // メトロノーム用
       if (continuousCount == 0) {
-        int findIdx = myState.hiddenBuffs
-            .indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
+        final findIdx = myState.hiddenBuffs.list
+            .indexWhere((element) => element.id == BuffDebuff.sameMoveCount);
         if (findIdx >= 0) {
-          if ((myState.hiddenBuffs[findIdx].extraArg1 / 100).floor() ==
-              replacedMove.id) {
-            if (myState.buffDebuffs
-                    .where((e) => e.id == BuffDebuff.chargingMove)
-                    .isEmpty ||
-                myState.hiddenBuffs[findIdx].extraArg1 == 0) {
-              myState.hiddenBuffs[findIdx].extraArg1++;
+          final found = myState.hiddenBuffs.list[findIdx];
+          if ((found.extraArg1 / 100).floor() == replacedMove.id) {
+            if (!myState.buffDebuffs.containsByID(BuffDebuff.chargingMove) ||
+                found.extraArg1 == 0) {
+              myState.hiddenBuffs.list[findIdx].extraArg1++;
             }
           } else {
-            myState.hiddenBuffs[findIdx].extraArg1 = replacedMove.id * 100;
+            myState.hiddenBuffs.list[findIdx].extraArg1 = replacedMove.id * 100;
           }
         } else {
           myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.sameMoveCount)
@@ -721,12 +714,10 @@ class TurnMove extends Equatable implements Copyable {
       damageCalc = null;
       // 半減きのみを使用したか
       if (targetStates.isNotEmpty) {
-        int findIdx = targetStates[0]
-            .buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.halvedBerry);
-        if (findIdx >= 0) {
-          halvedBerry =
-              targetStates[0].buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
+        final founds =
+            targetStates[0].buffDebuffs.whereByID(BuffDebuff.halvedBerry);
+        if (founds.isNotEmpty) {
+          halvedBerry = founds.first.extraArg1 == 1 ? 0.25 : 0.5;
         }
       }
 
@@ -746,9 +737,7 @@ class TurnMove extends Equatable implements Copyable {
           false; // ターゲットが(便宜上)複数(==targetStates.length > 1)でも、処理は一回にしたい場合にtrueにする(さむいギャグなど)
       for (int i = 0; i < targetStates.length; i++) {
         // ちからずくの場合、追加効果なし
-        if (myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.sheerForce)
-                .isNotEmpty &&
+        if (myState.buffDebuffs.containsByID(BuffDebuff.sheerForce) &&
             replacedMove.isAdditionalEffect) break;
 
         if (effectOnce) break;
@@ -935,9 +924,10 @@ class TurnMove extends Equatable implements Copyable {
           case 36: // 場に「ひかりのかべ」を発生させる
             int findIdx = targetIndiField
                 .indexWhere((e) => e.id == IndividualField.lightScreen);
-            if (findIdx < 0)
+            if (findIdx < 0) {
               targetIndiField.add(IndividualField(IndividualField.lightScreen)
                 ..extraArg1 = targetState.holdingItem?.id == 246 ? 8 : 5);
+            }
             break;
           case 37: // やけど・こおり・まひのいずれかにする(確率)
             if (extraArg1[continuousCount] != 0) {
@@ -961,16 +951,14 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 40: // 1ターン目にため、2ターン目でこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -1004,8 +992,9 @@ class TurnMove extends Equatable implements Copyable {
           case 47: // 場に「しろいきり」を発生させる
             int findIdx =
                 targetIndiField.indexWhere((e) => e.id == IndividualField.mist);
-            if (findIdx < 0)
+            if (findIdx < 0) {
               targetIndiField.add(IndividualField(IndividualField.mist));
+            }
             break;
           case 48: // 使用者の急所ランク+1
             myState.addVitalRank(1);
@@ -1039,25 +1028,22 @@ class TurnMove extends Equatable implements Copyable {
                 moveId: replacedMove.id);
             break;
           case 58: // へんしん状態となる
-            if (targetState.buffDebuffs
-                    .where((e) =>
-                        e.id == BuffDebuff.substitute ||
-                        e.id == BuffDebuff.transform)
-                    .isEmpty &&
-                myState.buffDebuffs
-                    .where((e) => e.id == BuffDebuff.transform)
-                    .isEmpty) {
+            if (!targetState.buffDebuffs.containsByAnyID(
+                    [BuffDebuff.substitute, BuffDebuff.transform]) &&
+                !myState.buffDebuffs.containsByID(BuffDebuff.transform)) {
               // 対象がみがわり状態でない・お互いにへんしん状態でないなら
               myState.type1 = targetState.type1;
               myState.type2 = targetState.type2;
               if (targetState
                   .ailmentsWhere((e) => e.id == Ailment.halloween)
-                  .isNotEmpty)
+                  .isNotEmpty) {
                 myState.ailmentsAdd(Ailment(Ailment.halloween), state);
+              }
               if (targetState
                   .ailmentsWhere((e) => e.id == Ailment.forestCurse)
-                  .isNotEmpty)
+                  .isNotEmpty) {
                 myState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
+              }
               myState.setCurrentAbility(targetState.currentAbility, targetState,
                   playerType == PlayerType.me, state);
               for (int i = 0; i < targetState.moves.length; i++) {
@@ -1116,9 +1102,10 @@ class TurnMove extends Equatable implements Copyable {
           case 66: // 場に「リフレクター」を発生させる
             int findIdx = targetIndiField
                 .indexWhere((e) => e.id == IndividualField.reflector);
-            if (findIdx < 0)
+            if (findIdx < 0) {
               targetIndiField.add(IndividualField(IndividualField.reflector)
                 ..extraArg1 = targetState.holdingItem?.id == 246 ? 8 : 5);
+            }
             break;
           case 72: // とくこうを1段階下げる(確率)
           case 358: // とくこうを1段階下げる
@@ -1136,16 +1123,14 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 76: // 1ターン目は攻撃せず、2ターン目に攻撃。ひるませる(確率)
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (extraArg1[continuousCount] != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
                 }
@@ -1155,9 +1140,7 @@ class TurnMove extends Equatable implements Copyable {
           case 80: // 場に「みがわり」を発生させる
             targetState.remainHP -= extraArg1[continuousCount];
             targetState.remainHPPercent -= extraArg2[continuousCount];
-            int findIdx = targetState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.substitute);
-            if (findIdx < 0) {
+            if (!targetState.buffDebuffs.containsByID(BuffDebuff.substitute)) {
               targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute)
                 ..extraArg1 = extraArg1[continuousCount] != 0
                     ? -extraArg1[continuousCount]
@@ -1166,9 +1149,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 81: // 使用者は次のターン動けない
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.recoiling);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.recoiling)) {
                 // 反動で動けない状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.recoiling)
                   ..extraArg1 = replacedMove.id);
@@ -1176,16 +1157,13 @@ class TurnMove extends Equatable implements Copyable {
             }
             break;
           case 82: // 使用者はいかり状態になる
-            int findIdx =
-                myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.rage);
-            if (findIdx < 0)
+            if (!myState.buffDebuffs.containsByID(BuffDebuff.rage)) {
               targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.rage));
+            }
             break;
           case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
             // 本来はコピーできるわざに制限があるが、そこはユーザ入力にゆだねる
-            if (myState.hiddenBuffs
-                .where((e) => e.id == BuffDebuff.copiedMove)
-                .isEmpty) {
+            if (!myState.hiddenBuffs.containsByID(BuffDebuff.copiedMove)) {
               if (extraArg3[continuousCount] != 0) {
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.copiedMove)
                   ..extraArg1 = extraArg3[continuousCount]);
@@ -1332,8 +1310,9 @@ class TurnMove extends Equatable implements Copyable {
                   .add(IndividualField(IndividualField.spikes)..extraArg1 = 1);
             } else {
               targetIndiField[findIdx].extraArg1++;
-              if (targetIndiField[findIdx].extraArg1 > 3)
+              if (targetIndiField[findIdx].extraArg1 > 3) {
                 targetIndiField[findIdx].extraArg1 = 3;
+              }
             }
             break;
           case 114: // みやぶられている状態にする
@@ -1424,11 +1403,12 @@ class TurnMove extends Equatable implements Copyable {
                     e.id == Ailment.powerTrick)
               ];
               var takeOverBuffDebuffs = [
-                ...myState.buffDebuffs.where((e) =>
-                    e.id == BuffDebuff.vital1 ||
-                    e.id == BuffDebuff.vital2 ||
-                    e.id == BuffDebuff.vital3 ||
-                    e.id == BuffDebuff.substitute)
+                ...myState.buffDebuffs.whereByAnyID([
+                  BuffDebuff.vital1,
+                  BuffDebuff.vital2,
+                  BuffDebuff.vital3,
+                  BuffDebuff.substitute
+                ])
               ];
               myState.processExitEffect(
                   myPlayerType == PlayerType.me, yourState, state);
@@ -1511,9 +1491,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 146: // 1ターン目にため、2ターン目でこうげきする。1ターン目で使用者のぼうぎょが1段階上がる
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
@@ -1522,7 +1500,7 @@ class TurnMove extends Equatable implements Copyable {
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -1566,9 +1544,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 152: // 1ターン目にため、2ターン目でこうげきする。1ターン目の天気がはれ→ためずにこうげき。攻撃時天気が雨、すなあらし、ゆきなら威力半減
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 if (state.weather.id != Weather.sunny) {
                   myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
@@ -1577,7 +1553,7 @@ class TurnMove extends Equatable implements Copyable {
                 }
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (state.weather.id == Weather.rainy ||
                     state.weather.id == Weather.sandStorm ||
                     state.weather.id == Weather.snowy) {
@@ -1605,9 +1581,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 156: // 使用者はそらをとぶ状態になり、次のターンにこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
@@ -1615,7 +1589,7 @@ class TurnMove extends Equatable implements Copyable {
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -1816,9 +1790,10 @@ class TurnMove extends Equatable implements Copyable {
                 ..guideStr = loc.battleGuideConfItem1(
                     pokeData.items[extraArg1[continuousCount]]!.displayName,
                     opponentPokemonState.pokemon.omittedName));
-              if (extraArg1[continuousCount] != 0)
+              if (extraArg1[continuousCount] != 0) {
                 targetState.holdingItem =
                     pokeData.items[extraArg1[continuousCount]]!;
+              }
             }
             targetState.holdingItem = null;
             movePower *= 2;
@@ -1866,14 +1841,15 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 197: // 相手のおもさによって威力が変わる
             int weight = targetState.weight;
-            if (targetState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.heavy2)
-                .isNotEmpty) weight *= 2;
-            if (targetState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.heavy0_5)
-                .isNotEmpty) weight = (weight / 2).floor();
-            if (targetState.holdingItem?.id == 582)
+            if (!targetState.buffDebuffs.containsByID(BuffDebuff.heavy2)) {
+              weight *= 2;
+            }
+            if (targetState.buffDebuffs.containsByID(BuffDebuff.heavy0_5)) {
               weight = (weight / 2).floor();
+            }
+            if (targetState.holdingItem?.id == 582) {
+              weight = (weight / 2).floor();
+            }
             if (weight <= 99) {
               movePower = 20;
             } else if (weight <= 249) {
@@ -2217,9 +2193,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 256: // 使用者はダイビング状態になり、次のターンにこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.diving), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
@@ -2228,14 +2202,11 @@ class TurnMove extends Equatable implements Copyable {
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.diving);
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (myState.currentAbility.id == 241) {
                   // うのミサイル
-                  if (myState.buffDebuffs
-                      .where((e) =>
-                          e.id == BuffDebuff.unomiForm ||
-                          e.id == BuffDebuff.marunomiForm)
-                      .isEmpty) {
+                  if (!myState.buffDebuffs.containsByAnyID(
+                      [BuffDebuff.unomiForm, BuffDebuff.marunomiForm])) {
                     if (myPlayerType == PlayerType.me
                         ? myState.remainHP > myState.pokemon.h.real / 2
                         : myState.remainHPPercent > 50) {
@@ -2251,9 +2222,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 257: // 使用者はあなをほる状態になり、次のターンにこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.digging), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
@@ -2262,7 +2231,7 @@ class TurnMove extends Equatable implements Copyable {
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.digging);
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -2272,11 +2241,8 @@ class TurnMove extends Equatable implements Copyable {
                 .isNotEmpty) mTwice = true;
             if (myState.currentAbility.id == 241) {
               // うのミサイル
-              if (myState.buffDebuffs
-                  .where((e) =>
-                      e.id == BuffDebuff.unomiForm ||
-                      e.id == BuffDebuff.marunomiForm)
-                  .isEmpty) {
+              if (!myState.buffDebuffs.containsByAnyID(
+                  [BuffDebuff.unomiForm, BuffDebuff.marunomiForm])) {
                 if (myPlayerType == PlayerType.me
                     ? myState.remainHP > myState.pokemon.h.real / 2
                     : myState.remainHPPercent > 50) {
@@ -2337,9 +2303,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 264: // 使用者はそらをとぶ状態になり、次のターンにこうげきする。相手をまひ状態にする(確率)
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
@@ -2348,7 +2312,7 @@ class TurnMove extends Equatable implements Copyable {
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (extraArg1[continuousCount] != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
@@ -2439,9 +2403,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 273: // 使用者はシャドーダイブ状態になり、次のターンにこうげきする。まもる等の状態を取り除いてこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.shadowForcing), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
@@ -2451,7 +2413,7 @@ class TurnMove extends Equatable implements Copyable {
                 // こうげきする
                 myState
                     .ailmentsRemoveWhere((e) => e.id == Ailment.shadowForcing);
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -2572,8 +2534,7 @@ class TurnMove extends Equatable implements Copyable {
               targetIndiField.removeAt(findIdx);
               targetState.holdingItem
                   ?.processPassiveEffect(targetState, processForm: false);
-              targetState.hiddenBuffs
-                  .removeWhere((e) => e.id == BuffDebuff.magicRoom);
+              targetState.hiddenBuffs.removeAllByID(BuffDebuff.magicRoom);
             }
             break;
           case 288: // 相手をうちおとす状態にして地面に落とす。そらをとぶ状態の相手にも当たる
@@ -2599,14 +2560,15 @@ class TurnMove extends Equatable implements Copyable {
           case 292: // 使用者のおもさと相手のおもさの比率によって威力がかわる。ちいさくなる状態の相手に必中、その場合ダメージが2倍
             {
               int myWeight = myState.weight;
-              if (targetState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.heavy2)
-                  .isNotEmpty) myWeight *= 2;
-              if (targetState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.heavy0_5)
-                  .isNotEmpty) myWeight = (myWeight / 2).floor();
-              if (targetState.holdingItem?.id == 582)
+              if (targetState.buffDebuffs.containsByID(BuffDebuff.heavy2)) {
+                myWeight *= 2;
+              }
+              if (targetState.buffDebuffs.containsByID(BuffDebuff.heavy0_5)) {
                 myWeight = (myWeight / 2).floor();
+              }
+              if (targetState.holdingItem?.id == 582) {
+                myWeight = (myWeight / 2).floor();
+              }
               int targetWeight = targetState.weight;
               if (targetWeight <= myWeight / 5) {
                 movePower = 120;
@@ -2691,9 +2653,8 @@ class TurnMove extends Equatable implements Copyable {
                 moveId: replacedMove.id);
             break;
           case 310: // 相手のHPを最大HP1/2だけ回復する
-            bool isMegaLauncher = myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.wave1_5)
-                .isNotEmpty;
+            bool isMegaLauncher =
+                myState.buffDebuffs.containsByID(BuffDebuff.wave1_5);
             if (myPlayerType == PlayerType.me) {
               targetState.remainHPPercent += isMegaLauncher ? 75 : 50;
             } else {
@@ -2747,12 +2708,14 @@ class TurnMove extends Equatable implements Copyable {
               myState.type2 = targetState.type2;
               if (targetState
                   .ailmentsWhere((e) => e.id == Ailment.halloween)
-                  .isNotEmpty)
+                  .isNotEmpty) {
                 myState.ailmentsAdd(Ailment(Ailment.halloween), state);
+              }
               if (targetState
                   .ailmentsWhere((e) => e.id == Ailment.forestCurse)
-                  .isNotEmpty)
+                  .isNotEmpty) {
                 myState.ailmentsAdd(Ailment(Ailment.forestCurse), state);
+              }
             }
             break;
           case 320: // 味方がひんしになった次のターンに使った場合威力2倍
@@ -2805,11 +2768,15 @@ class TurnMove extends Equatable implements Copyable {
             if (extraArg1[continuousCount] != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
             }
-            int findIdx = myState.buffDebuffs.indexWhere((e) =>
-                e.id == BuffDebuff.voiceForm || e.id == BuffDebuff.stepForm);
+            final findIdx = myState.buffDebuffs.list.indexWhere((element) => [
+                  BuffDebuff.voiceForm,
+                  BuffDebuff.stepForm
+                ].contains(element.id));
             if (findIdx >= 0) {
-              if (myState.buffDebuffs[findIdx].id == BuffDebuff.voiceForm) {
-                myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
+              if (myState.buffDebuffs.list[findIdx].id ==
+                  BuffDebuff.voiceForm) {
+                myState.buffDebuffs.list[findIdx] =
+                    BuffDebuff(BuffDebuff.stepForm);
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.fight;
                 myState.maxStats.a.race = 128;
@@ -2838,8 +2805,8 @@ class TurnMove extends Equatable implements Copyable {
                       biases[stat.index - 1]);
                 }
               } else {
-                myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.voiceForm);
-                myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stepForm);
+                myState.buffDebuffs.list[findIdx] =
+                    BuffDebuff(BuffDebuff.voiceForm);
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.psychic;
                 myState.maxStats.a.race = 77;
@@ -2872,16 +2839,14 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 332: // 1ターン目にため、2ターン目でこうげきする。まひ状態にする(確率)
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (extraArg1[continuousCount] != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
@@ -2890,16 +2855,14 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 333: // 1ターン目にため、2ターン目でこうげきする。やけど状態にする(確率)
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 if (extraArg1[continuousCount] != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.burn), state);
                 }
@@ -3024,11 +2987,8 @@ class TurnMove extends Equatable implements Copyable {
           case 356: // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手のこうげきを1段階下げる。シールドフォルムにフォルムチェンジする
             myState.ailmentsAdd(
                 Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
-            int findIdx = myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.bladeForm);
-            if (findIdx >= 0) {
-              myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.shieldForm);
-            }
+            myState.buffDebuffs
+                .changeID(BuffDebuff.bladeForm, BuffDebuff.shieldForm);
             break;
           case 357: // こうげきを1段階下げる。まもる・みがわり状態を無視する
             targetState.addStatChanges(targetState == myState, 0, -1, myState,
@@ -3069,16 +3029,14 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 366: // 1ターンためて、2ターン目に使用者のとくこう・とくぼう・すばやさをそれぞれ2段階ずつ上げる
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
                 myState.addStatChanges(true, 2, 2, targetState,
                     moveId: replacedMove.id);
                 myState.addStatChanges(true, 3, 2, targetState,
@@ -3408,22 +3366,29 @@ class TurnMove extends Equatable implements Copyable {
             var tmp = myFields;
             myFields = targetIndiField;
             targetIndiField = tmp;
-            if (isMyH)
+            if (isMyH) {
               myFields.add(IndividualField(IndividualField.healingWish));
-            if (isMyL)
+            }
+            if (isMyL) {
               myFields.add(IndividualField(IndividualField.lunarDance));
-            if (isMyF)
+            }
+            if (isMyF) {
               myFields.add(IndividualField(IndividualField.futureAttack));
+            }
             if (isMyW) myFields.add(IndividualField(IndividualField.wish));
-            if (isTaH)
+            if (isTaH) {
               targetIndiField.add(IndividualField(IndividualField.healingWish));
-            if (isTaL)
+            }
+            if (isTaL) {
               targetIndiField.add(IndividualField(IndividualField.lunarDance));
-            if (isTaF)
+            }
+            if (isTaF) {
               targetIndiField
                   .add(IndividualField(IndividualField.futureAttack));
-            if (isTaW)
+            }
+            if (isTaW) {
               targetIndiField.add(IndividualField(IndividualField.wish));
+            }
             effectOnce = true;
             break;
           case 433: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
@@ -3454,9 +3419,7 @@ class TurnMove extends Equatable implements Copyable {
                 moveId: replacedMove.id);
             break;
           case 437: // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
-            if (myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.harapekoForm)
-                .isNotEmpty) {
+            if (myState.buffDebuffs.containsByID(BuffDebuff.harapekoForm)) {
               moveType = PokeType.evil;
             }
             myState.addStatChanges(true, 4, 1, targetState,
@@ -3531,9 +3494,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 448: // 1ターン目に使用者のとくこうを1段階上げて(ためて)、2ターン目にこうげきする
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
@@ -3542,7 +3503,7 @@ class TurnMove extends Equatable implements Copyable {
                 showDamageCalc = false;
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
@@ -3611,8 +3572,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 455: // このターンに使用者の能力が下がっていた場合、威力2倍
             if (myState.hiddenBuffs
-                .where((e) => e.id == BuffDebuff.thisTurnDownStatChange)
-                .isNotEmpty) {
+                .containsByID(BuffDebuff.thisTurnDownStatChange)) {
               movePower *= 2;
             }
             break;
@@ -3768,8 +3728,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 481: // 次に使用者が行動するまでの間相手から受けるわざ必中・ダメージ2倍
             if (myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.certainlyHittedDamage2)
-                .isNotEmpty) {
+                .containsByID(BuffDebuff.certainlyHittedDamage2)) {
               myState.buffDebuffs
                   .add(BuffDebuff(BuffDebuff.certainlyHittedDamage2));
             }
@@ -3833,9 +3792,9 @@ class TurnMove extends Equatable implements Copyable {
             }
             break;
           case 490: // はれによるダメージ補正率が0.5倍→1.5倍。使用者・対象のこおり状態を治す
-            if (myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.sheerForce)
-                .isEmpty) isSunny1_5 = true;
+            if (!myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) {
+              isSunny1_5 = true;
+            }
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             break;
@@ -3886,10 +3845,8 @@ class TurnMove extends Equatable implements Copyable {
             effectOnce = true;
             break;
           case 494: // 両者のみがわり、設置技を解除。使用者のこうげき・すばやさを1段階ずつ上げる
-            myState.buffDebuffs
-                .removeWhere((e) => e.id == BuffDebuff.substitute);
-            targetState.buffDebuffs
-                .removeWhere((e) => e.id == BuffDebuff.substitute);
+            myState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
+            targetState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
             myFields.removeWhere((e) =>
                 e.id == IndividualField.spikes ||
                 e.id == IndividualField.toxicSpikes ||
@@ -3912,10 +3869,10 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 496: // その戦闘でこうげき技のダメージを受けるたびに威力+50。(最大350)
             {
-              int findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.attackedCount);
-              if (findIdx >= 0) {
-                movePower += myState.hiddenBuffs[findIdx].extraArg1 * 50;
+              final founds =
+                  myState.hiddenBuffs.whereByID(BuffDebuff.attackedCount);
+              if (founds.isNotEmpty) {
+                movePower += founds.first.extraArg1 * 50;
               }
             }
             break;
@@ -3950,11 +3907,9 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 502: // オーガポンのフォルムによってわざのタイプが変わる
             {
-              int no = myState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.transform)
-                      .isNotEmpty
+              int no = myState.buffDebuffs.containsByID(BuffDebuff.transform)
                   ? myState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.transform)
+                      .whereByID(BuffDebuff.transform)
                       .first
                       .extraArg1
                   : myState.pokemon.no;
@@ -3976,9 +3931,7 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 503: // 1ターン目に使用者のとくこうを1段階上げて(ためて)、2ターン目にこうげきする。1ターン目の天気があめ→ためずにこうげき。
             {
-              var findIdx = myState.hiddenBuffs
-                  .indexWhere((e) => e.id == BuffDebuff.chargingMove);
-              if (findIdx < 0) {
+              if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.addStatChanges(true, 2, 1, targetState,
                     moveId: replacedMove.id);
@@ -3989,14 +3942,12 @@ class TurnMove extends Equatable implements Copyable {
                 }
               } else {
                 // こうげきする
-                myState.hiddenBuffs.removeAt(findIdx);
+                myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
               }
             }
             break;
           case 504: // ステラフォルムのテラパゴスが使用した場合、ステラタイプの攻撃になり、相手全員が対象になる
-            if (myState.buffDebuffs
-                .where((e) => e.id == BuffDebuff.stellarForm)
-                .isNotEmpty) {
+            if (myState.buffDebuffs.containsByID(BuffDebuff.stellarForm)) {
               moveType = PokeType.stellar;
             }
             break;
@@ -4035,9 +3986,7 @@ class TurnMove extends Equatable implements Copyable {
         }
 
         // ノーマルスキンによるわざタイプ変更
-        if (myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.normalize)
-            .isNotEmpty) {
+        if (myState.buffDebuffs.containsByID(BuffDebuff.normalize)) {
           if (moveType != PokeType.normal) {
             moveType = PokeType.normal;
             isNormalized1_2 = true;
@@ -4109,9 +4058,7 @@ class TurnMove extends Equatable implements Copyable {
       myState = tmpState;
 
       // ミクルのみのこうかが残っていれば消費
-      int findIdx = myState.buffDebuffs
-          .indexWhere((e) => e.id == BuffDebuff.onceAccuracy1_2);
-      if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+      myState.buffDebuffs.removeFirstByID(BuffDebuff.onceAccuracy1_2);
       // ノーマルジュエル消費
       if (myState.holdingItem?.id == 669 &&
           moveDamageClassID >= 2 &&
@@ -4136,20 +4083,17 @@ class TurnMove extends Equatable implements Copyable {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              if (targetState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.substitute)
-                      .isEmpty ||
+              if (!targetState.buffDebuffs
+                      .containsByID(BuffDebuff.substitute) ||
                   replacedMove.isSound ||
-                  myState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.ignoreWall)
-                      .isNotEmpty) {
+                  myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall)) {
                 targetState.remainHP -= realDamage[continuousCount];
                 targetState.remainHPPercent -= percentDamage[continuousCount];
                 // こうげきを受けた数をカウント
-                int findIdx = targetState.hiddenBuffs
-                    .indexWhere((e) => e.id == BuffDebuff.attackedCount);
+                final findIdx = targetState.hiddenBuffs.list.indexWhere(
+                    (element) => element.id == BuffDebuff.attackedCount);
                 if (findIdx >= 0) {
-                  targetState.hiddenBuffs[findIdx].extraArg1++;
+                  targetState.hiddenBuffs.list[findIdx].extraArg1++;
                 } else {
                   targetState.hiddenBuffs
                       .add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
@@ -4222,8 +4166,7 @@ class TurnMove extends Equatable implements Copyable {
                 }
               } else {
                 if (realDamage[continuousCount] > 0) {
-                  targetState.buffDebuffs
-                      .removeWhere((e) => e.id == BuffDebuff.substitute);
+                  targetState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
                 }
               }
             }
@@ -4321,51 +4264,50 @@ class TurnMove extends Equatable implements Copyable {
 
     // とくせい等によるわざタイプの変更
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >=
-            0) replacedMoveType = PokeType.ice;
+        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
+      replacedMoveType = PokeType.ice;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >=
-            0) replacedMoveType = PokeType.fairy;
+        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
+      replacedMoveType = PokeType.fairy;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
       replacedMoveType = PokeType.fly;
+    }
     if (replacedMove.isSound &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >=
-            0) replacedMoveType = PokeType.water;
+        myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
+      replacedMoveType = PokeType.water;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricSkin) >=
-            0) replacedMoveType = PokeType.electric;
+        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+      replacedMoveType = PokeType.electric;
+    }
     if (replacedMove.id != 165 &&
         replacedMoveType == PokeType.normal &&
-        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
       replacedMoveType = PokeType.electric;
+    }
 
     // とくせい等による威力変動
     double tmpPow = movePower.toDouble();
     // テクニシャン補正は一番最初
     if (replacedMove.power <= 60 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >=
-            0) tmpPow *= 1.5;
-
+        myState.buffDebuffs.containsByID(BuffDebuff.technician)) {
+      tmpPow *= 1.5;
+    }
     if (isNormalized1_2) tmpPow *= 1.2;
     if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
     if (myState.sex.id != 0 &&
         yourState.sex.id != 0 &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >=
-            0) {
+        myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
       if (myState.sex.id != yourState.sex.id) {
         tmpPow *= 1.25;
       } else {
@@ -4373,180 +4315,163 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
     if (replacedMove.isPunch &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0)
-      tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
     if (replacedMove.isRecoil &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >=
-            0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
     if (replacedMove.isAdditionalEffect2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >=
-            0) tmpPow *= 1.3;
+        myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) tmpPow *= 1.3;
     if (replacedMove.isWave &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) {
       tmpPow *= 1.5;
+    }
     if (replacedMove.isDirect &&
         !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >=
-            0) tmpPow *= 1.3;
-    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >=
-            0 &&
-        yourState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >=
-            0) tmpPow *= 2;
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >=
-            0) tmpPow *= 1.5;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >=
-            0) tmpPow *= 1.5;
-    if (!isFirst &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
       tmpPow *= 1.3;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
+        yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
+      tmpPow *= 2;
+    }
+    if (damageClassID == 2 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
+    if (damageClassID == 3 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
+    if (!isFirst && myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
+      tmpPow *= 1.3;
+    }
     if ((replacedMoveType == PokeType.ground ||
             replacedMoveType == PokeType.rock ||
             replacedMoveType == PokeType.steel) &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >=
-            0) tmpPow *= 1.3;
-    if (replacedMove.isBite &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0)
-      tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0)
-      tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0)
-      tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >=
-            0) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >=
-            0) tmpPow *= 0.75;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >=
-            0) tmpPow *= 0.75;
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricSkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
       tmpPow *= 1.3;
-    if (myState.buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >=
-        0) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0)
-      tmpPow *= 1.5;
-    if (replacedMove.isCut &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0)
-      tmpPow *= 1.5;
-    int pow = myState.buffDebuffs.indexWhere(
-        (e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-    if (pow >= 0)
-      tmpPow = tmpPow *
-          (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >=
-            0) tmpPow *= 1.1;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >=
-            0) tmpPow *= 1.1;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >=
-            0) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fight &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.poison &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.ground &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.rock &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.ghost &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.psychic &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >=
-            0) tmpPow *= 1.2;
+    }
+    if (replacedMove.isBite &&
+        myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.dragon &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >=
-            0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) tmpPow *= 1.2;
     if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (myState.buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >=
-        0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly &&
+        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
+      tmpPow *= 0.75;
+    }
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
+      tmpPow *= 0.75;
+    }
+    if (replacedMoveType == PokeType.electric &&
+        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMove.isSound &&
+        myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
+    if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
+      tmpPow *= 1.3;
+    }
+    if (replacedMoveType == PokeType.steel &&
+        myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
+    if (replacedMove.isCut &&
+        myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
+    final pow = myState.buffDebuffs.list
+        .where((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+    if (pow.isNotEmpty) {
+      tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
+    }
+    if (damageClassID == 2 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) tmpPow *= 1.1;
+    if (damageClassID == 3 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) tmpPow *= 1.1;
+    if (replacedMoveType == PokeType.normal &&
+        myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
+      tmpPow *= 1.3;
+    }
+    if (replacedMoveType == PokeType.normal &&
+        myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fight &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fly &&
+        myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.poison &&
+        myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ground &&
+        myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.rock &&
+        myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.bug &&
+        myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ghost &&
+        myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.steel &&
+        myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fire &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.water &&
+        myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.grass &&
+        myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.electric &&
+        myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.psychic &&
+        myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ice &&
+        myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.dragon &&
+        myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
+      tmpPow *= 1.2;
+    }
     if (replacedMove.isPunch &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >=
-            0) tmpPow *= 1.1;
-    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >=
-        0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
+      tmpPow *= 1.1;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
 
     if (replacedMoveType == PokeType.electric &&
         myState.isGround(myFields) &&
@@ -4562,15 +4487,16 @@ class TurnMove extends Equatable implements Copyable {
         state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
 
     if (replacedMoveType == PokeType.fire &&
-        yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >=
-            0) tmpPow *= 1.25;
+        yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) tmpPow *= 1.25;
 
     if (replacedMoveType == PokeType.fire &&
-        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
       tmpPow = tmpPow * 1352 / 4096;
+    }
     if (replacedMoveType == PokeType.electric &&
-        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
       tmpPow = tmpPow * 1352 / 4096;
+    }
 
     movePower = tmpPow.floor();
     // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
@@ -4581,13 +4507,9 @@ class TurnMove extends Equatable implements Copyable {
     }
 
     // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
-    bool plusIgnore = yourState.buffDebuffs
-        .where((e) => e.id == BuffDebuff.ignoreRank)
-        .isNotEmpty;
-    bool minusIgnore = isCritical ||
-        yourState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreRank)
-            .isNotEmpty;
+    bool plusIgnore = yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    bool minusIgnore =
+        isCritical || yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
     int calcMaxAttack =
         myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
             ? myState.finalizedMaxStat(
@@ -4662,13 +4584,9 @@ class TurnMove extends Equatable implements Copyable {
           ? loc.battleDamageAttackerAttack
           : loc.battleDamageAttackerSAttack;
     }
-    plusIgnore = isCritical ||
-        myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreRank)
-            .isNotEmpty;
-    minusIgnore = myState.buffDebuffs
-        .where((e) => e.id == BuffDebuff.ignoreRank)
-        .isNotEmpty;
+    plusIgnore =
+        isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
     int calcMaxDefense =
         yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
             ? ignoreTargetRank
@@ -4818,13 +4736,11 @@ class TurnMove extends Equatable implements Copyable {
       myState.addStellarUsed(replacedMoveType);
       isTeraStellarHosei = true;
     }
-    if (myState.canGetTerastalHosei(replacedMoveType))
+    if (myState.canGetTerastalHosei(replacedMoveType)) {
       isTeraStellarHosei = true;
-    var rate = myState.typeBonusRate(
-        replacedMoveType,
-        myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.typeBonus2)
-            .isNotEmpty);
+    }
+    var rate = myState.typeBonusRate(replacedMoveType,
+        myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
     if (rate > 1.0) {
       damageVmax = roundOff5(damageVmax * rate);
       damageVmin = roundOff5(damageVmin * rate);
@@ -4860,9 +4776,7 @@ class TurnMove extends Equatable implements Copyable {
         damageClassID == 2 &&
         move.id != 263) {
       // からげんき以外のぶつりわざ
-      if (myState.buffDebuffs
-              .indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) <
-          0) {
+      if (!myState.buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
         damageVmax = roundOff5(damageVmax * 0.5);
         damageVmin = roundOff5(damageVmin * 0.5);
         ret += loc.battleDamageBurned;
@@ -4874,9 +4788,7 @@ class TurnMove extends Equatable implements Copyable {
       double tmpMin = damageVmin.toDouble();
       // 壁補正
       if (!isCritical &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.ignoreWall)
-              .isEmpty &&
+          !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
           ((damageClassID == 2 &&
                   yourFields
                       .where((e) =>
@@ -4895,18 +4807,14 @@ class TurnMove extends Equatable implements Copyable {
       }
       // ブレインフォース補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamage1_25)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
         tmpMax *= 1.25;
         tmpMin *= 1.25;
         ret += loc.battleDamageBrainForce;
       }
       // スナイパー補正
       if (moveHits[continuousCount] == MoveHit.critical &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.sniper)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
         tmpMax *= 1.5;
         tmpMin *= 1.5;
         ret += loc.battleDamageSniper;
@@ -4914,9 +4822,7 @@ class TurnMove extends Equatable implements Copyable {
       // いろめがね補正
       if (typeRate > 0.0 &&
           typeRate < 1.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.notGoodType2)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
         tmpMax *= 2;
         tmpMin *= 2;
         ret += loc.battleDamageTintedLens;
@@ -4925,9 +4831,7 @@ class TurnMove extends Equatable implements Copyable {
       if (!ignoreAbility &&
           (damageClassID == 2 || damageClassID == 3) &&
           replacedMoveType == PokeType.fire &&
-          yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.fireAttackedDamage2)
-              .isNotEmpty) {
+          yourState.buffDebuffs.containsByID(BuffDebuff.fireAttackedDamage2)) {
         tmpMax *= 2;
         tmpMin *= 2;
         ret += loc.battleDamageFluffy;
@@ -4937,31 +4841,24 @@ class TurnMove extends Equatable implements Copyable {
               // こおりのりんぷん
               (damageClassID == 3 &&
                   yourState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.specialDamaged0_5)
-                      .isNotEmpty) ||
+                      .containsByID(BuffDebuff.specialDamaged0_5)) ||
           // パンクロック
           (replacedMove.isSound &&
               yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.soundedDamage0_5)
-                  .isNotEmpty) ||
+                  .containsByID(BuffDebuff.soundedDamage0_5)) ||
           // ファントムガード
           // マルチスケイル
           ((yourState.remainHP >= yourState.pokemon.h.real ||
                   yourState.remainHPPercent >= 100) &&
-              yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.damaged0_5)
-                  .isNotEmpty) ||
+              yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
           // もふもふ直接こうげき
           (replacedMove.isDirect &&
               !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
               yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.directAttackedDamage0_5)
-                  .isNotEmpty) ||
+                  .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
           // たいねつ
           (replacedMoveType == PokeType.fire &&
-              yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.heatproof)
-                  .isNotEmpty)) {
+              yourState.buffDebuffs.containsByID(BuffDebuff.heatproof))) {
         tmpMax *= 0.5;
         tmpMin *= 0.5;
         ret += loc.battleDamageAbility0_5;
@@ -4972,30 +4869,24 @@ class TurnMove extends Equatable implements Copyable {
           // フィルター
           // プリズムアーマー
           typeRate >= 2.0 &&
-          yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamaged0_75)
-              .isNotEmpty) {
+          yourState.buffDebuffs.containsByID(BuffDebuff.greatDamaged0_75)) {
         tmpMax *= 0.75;
         tmpMin *= 0.75;
         ret += loc.battleDamageAbility0_75;
       }
       // たつじんのおび補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamage1_2)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
         tmpMax *= 1.2;
         tmpMin *= 1.2;
         ret += loc.battleDamageExpertBelt;
       }
       // メトロノーム補正
       if (myState.buffDebuffs
-          .where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2)
-          .isNotEmpty) {
-        int findIdx = myState.hiddenBuffs
-            .indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
-        if (findIdx >= 0) {
-          int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
+          .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
+        final founds = myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
+        if (founds.isNotEmpty) {
+          int count = founds.first.extraArg1 % 100;
           if (count > 0) {
             tmpMax *= (1.0 + 0.2 * count);
             tmpMin *= (1.0 + 0.2 * count);
@@ -5004,9 +4895,7 @@ class TurnMove extends Equatable implements Copyable {
         }
       }
       // いのちのたま補正
-      if (myState.buffDebuffs
-          .where((e) => e.id == BuffDebuff.lifeOrb)
-          .isNotEmpty) {
+      if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
         tmpMax *= 1.3;
         tmpMin *= 1.3;
         ret += loc.battleDamageLifeOrb;
@@ -5017,14 +4906,12 @@ class TurnMove extends Equatable implements Copyable {
         tmpMax *= halvedBerry;
         tmpMin *= halvedBerry;
         ret += loc.battleDamageBerry(halvedBerry);
-        yourState.buffDebuffs
-            .removeWhere((e) => e.id == BuffDebuff.halvedBerry);
+        yourState.buffDebuffs.removeAllByID(BuffDebuff.halvedBerry);
       }
       // Mtwice
       if (mTwice ||
           yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.certainlyHittedDamage2)
-              .isNotEmpty) {
+              .containsByID(BuffDebuff.certainlyHittedDamage2)) {
         tmpMax *= 2;
         tmpMin *= 2;
         ret += loc.battleDamageOthers;
@@ -5108,8 +4995,7 @@ class TurnMove extends Equatable implements Copyable {
       // Mtwice
       if (mTwice ||
           yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.certainlyHittedDamage2)
-              .isNotEmpty) {
+              .containsByID(BuffDebuff.certainlyHittedDamage2)) {
         tmp /= 2;
       }
       // 半減きのみ補正
@@ -5117,19 +5003,15 @@ class TurnMove extends Equatable implements Copyable {
         tmp /= halvedBerry;
       }
       // いのちのたま補正
-      if (myState.buffDebuffs
-          .where((e) => e.id == BuffDebuff.lifeOrb)
-          .isNotEmpty) {
+      if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
         tmp /= 1.3;
       }
       // メトロノーム補正
       if (myState.buffDebuffs
-          .where((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2)
-          .isNotEmpty) {
-        int findIdx = myState.hiddenBuffs
-            .indexWhere((e) => e.id == BuffDebuff.sameMoveCount);
-        if (findIdx >= 0) {
-          int count = myState.hiddenBuffs[findIdx].extraArg1 % 100;
+          .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
+        final founds = myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
+        if (founds.isNotEmpty) {
+          int count = founds.first.extraArg1 % 100;
           if (count > 0) {
             tmp /= (1.0 + 0.2 * count);
           }
@@ -5137,9 +5019,7 @@ class TurnMove extends Equatable implements Copyable {
       }
       // たつじんのおび補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamage1_2)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
         tmp /= 1.2;
       }
       // Mfilter
@@ -5148,9 +5028,7 @@ class TurnMove extends Equatable implements Copyable {
           // フィルター
           // プリズムアーマー
           typeRate >= 2.0 &&
-          yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamaged0_75)
-              .isNotEmpty) {
+          yourState.buffDebuffs.containsByID(BuffDebuff.greatDamaged0_75)) {
         tmp /= 0.75;
       }
       // Mhalf
@@ -5158,69 +5036,52 @@ class TurnMove extends Equatable implements Copyable {
               // こおりのりんぷん
               (damageClassID == 3 &&
                   yourState.buffDebuffs
-                      .where((e) => e.id == BuffDebuff.specialDamaged0_5)
-                      .isNotEmpty) ||
+                      .containsByID(BuffDebuff.specialDamaged0_5)) ||
           // パンクロック
           (replacedMove.isSound &&
               yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.soundedDamage0_5)
-                  .isNotEmpty) ||
+                  .containsByID(BuffDebuff.soundedDamage0_5)) ||
           // ファントムガード
           // マルチスケイル
           ((yourState.remainHP >= yourState.pokemon.h.real ||
                   yourState.remainHPPercent >= 100) &&
-              yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.damaged0_5)
-                  .isNotEmpty) ||
+              yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
           // もふもふ直接こうげき
           (replacedMove.isDirect &&
               !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
               yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.directAttackedDamage0_5)
-                  .isNotEmpty) ||
+                  .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
           // たいねつ
           (replacedMoveType == PokeType.fire &&
-              yourState.buffDebuffs
-                  .where((e) => e.id == BuffDebuff.heatproof)
-                  .isNotEmpty)) {
+              yourState.buffDebuffs.containsByID(BuffDebuff.heatproof))) {
         tmp /= 0.5;
       }
       // もふもふほのお補正
       if (!ignoreAbility &&
           (damageClassID == 2 || damageClassID == 3) &&
           replacedMoveType == PokeType.fire &&
-          yourState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.fireAttackedDamage2)
-              .isNotEmpty) {
+          yourState.buffDebuffs.containsByID(BuffDebuff.fireAttackedDamage2)) {
         tmp /= 2;
       }
       // いろめがね補正
       if (typeRate > 0.0 &&
           typeRate < 1.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.notGoodType2)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
         tmp /= 2;
       }
       // スナイパー補正
       if (moveHits[continuousCount] == MoveHit.critical &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.sniper)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
         tmp /= 1.5;
       }
       // ブレインフォース補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.greatDamage1_25)
-              .isNotEmpty) {
+          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
         tmp /= 1.25;
       }
       // 壁補正
       if (!isCritical &&
-          myState.buffDebuffs
-              .where((e) => e.id == BuffDebuff.ignoreWall)
-              .isEmpty &&
+          !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
           ((damageClassID == 2 &&
                   yourFields
                       .where((e) =>
@@ -5243,20 +5104,15 @@ class TurnMove extends Equatable implements Copyable {
         damageClassID == 2 &&
         move.id != 263) {
       // からげんき以外のぶつりわざ
-      if (myState.buffDebuffs
-              .indexWhere((e) => e.id == BuffDebuff.attack1_5WithIgnBurn) <
-          0) {
+      if (!myState.buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
         tmpInt = roundOff5(tmpInt / 0.5);
       }
     }
     // 相性補正(切り捨て)
     tmpInt = (tmpInt / typeRate).floor();
     // タイプ一致補正(五捨五超入)
-    var rate = myState.typeBonusRate(
-        replacedMoveType,
-        myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.typeBonus2)
-            .isNotEmpty);
+    var rate = myState.typeBonusRate(replacedMoveType,
+        myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
     // ステラタイプ補正を使ってしまったために、再度計算したら値に補正が反映されてない場合
     if (isTeraStellarHosei && myState.teraType1 == PokeType.stellar) {
       if (rate - 1.5 < 0.1) rate = 2.0;
@@ -5319,51 +5175,49 @@ class TurnMove extends Equatable implements Copyable {
 
     // とくせい等によるわざタイプの変更
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >=
-            0) replacedMoveType = PokeType.ice;
+        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
+      replacedMoveType = PokeType.ice;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >=
-            0) replacedMoveType = PokeType.fairy;
+        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
+      replacedMoveType = PokeType.fairy;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
       replacedMoveType = PokeType.fly;
+    }
     if (replacedMove.isSound &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.liquidVoice) >=
-            0) replacedMoveType = PokeType.water;
+        myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
+      replacedMoveType = PokeType.water;
+    }
     if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricSkin) >=
-            0) replacedMoveType = PokeType.electric;
+        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+      replacedMoveType = PokeType.electric;
+    }
     if (replacedMove.id != 165 &&
         replacedMoveType == PokeType.normal &&
-        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
       replacedMoveType = PokeType.electric;
+    }
 
     // とくせい等による威力変動
     double tmpPow = movePower.toDouble();
     // テクニシャン補正は一番最初
     if (replacedMove.power <= 60 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.technician) >=
-            0) tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.technician)) tmpPow *= 1.5;
 
     if (isNormalized1_2) tmpPow *= 1.2;
     if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.overgrow) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.blaze) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.torrent) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.swarm) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
     if (myState.sex.id != 0 &&
         yourState.sex.id != 0 &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.opponentSex1_5) >=
-            0) {
+        myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
       if (myState.sex.id != yourState.sex.id) {
         tmpPow *= 1.25;
       } else {
@@ -5371,180 +5225,161 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
     if (replacedMove.isPunch &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.punch1_2) >= 0)
-      tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
     if (replacedMove.isRecoil &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.recoil1_2) >=
-            0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
     if (replacedMove.isAdditionalEffect2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sheerForce) >=
-            0) tmpPow *= 1.3;
+        myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) tmpPow *= 1.3;
     if (replacedMove.isWave &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.wave1_5) >= 0)
-      tmpPow *= 1.5;
+        myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) tmpPow *= 1.5;
     if (replacedMove.isDirect &&
         !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.directAttack1_3) >=
-            0) tmpPow *= 1.3;
-    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.change2) >=
-            0 &&
-        yourState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.changedThisTurn) >=
-            0) tmpPow *= 2;
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_5) >=
-            0) tmpPow *= 1.5;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_5) >=
-            0) tmpPow *= 1.5;
-    if (!isFirst &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.analytic) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
       tmpPow *= 1.3;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
+        yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
+      tmpPow *= 2;
+    }
+    if (damageClassID == 2 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
+    if (damageClassID == 3 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
+    if (!isFirst && myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
+      tmpPow *= 1.3;
+    }
     if ((replacedMoveType == PokeType.ground ||
             replacedMoveType == PokeType.rock ||
             replacedMoveType == PokeType.steel) &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.rockGroundSteel1_3) >=
-            0) tmpPow *= 1.3;
-    if (replacedMove.isBite &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.bite1_5) >= 0)
-      tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.freezeSkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairySkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.airSkin) >= 0)
-      tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.darkAura) >= 0)
-      tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.fairyAura) >=
-            0) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.antiDarkAura) >=
-            0) tmpPow *= 0.75;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.antiFairyAura) >=
-            0) tmpPow *= 0.75;
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricSkin) >=
-            0) tmpPow *= 1.2;
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.sound1_3) >= 0)
+        myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
       tmpPow *= 1.3;
-    if (myState.buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.attackMove1_3) >=
-        0) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.steel1_5) >= 0)
-      tmpPow *= 1.5;
-    if (replacedMove.isCut &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.cut1_5) >= 0)
-      tmpPow *= 1.5;
-    int pow = myState.buffDebuffs.indexWhere(
-        (e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-    if (pow >= 0)
-      tmpPow = tmpPow *
-          (1.0 + (myState.buffDebuffs[pow].id - BuffDebuff.power10 + 1) * 0.1);
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.physical1_1) >=
-            0) tmpPow *= 1.1;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.special1_1) >=
-            0) tmpPow *= 1.1;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3) >=
-            0) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.normalAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fight &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fightAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.airAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.poison &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.poisonAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.ground &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.groundAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.rock &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.rockAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.bugAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.ghost &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.ghostAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.steelAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fireAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.waterAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.grassAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.electricAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.psychic &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.psycoAttack1_2) >=
-            0) tmpPow *= 1.2;
+    }
+    if (replacedMove.isBite &&
+        myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
     if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.iceAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.dragon &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.dragonAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.evilAttack1_2) >=
-            0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) tmpPow *= 1.2;
     if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.fairyAttack1_2) >=
-            0) tmpPow *= 1.2;
-    if (myState.buffDebuffs
-            .indexWhere((e) => e.id == BuffDebuff.moveAttack1_2) >=
-        0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.fly &&
+        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) tmpPow *= 1.33;
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
+      tmpPow *= 0.75;
+    }
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
+      tmpPow *= 0.75;
+    }
+    if (replacedMoveType == PokeType.electric &&
+        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMove.isSound &&
+        myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
+    if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
+      tmpPow *= 1.3;
+    }
+    if (replacedMoveType == PokeType.steel &&
+        myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
+    if (replacedMove.isCut &&
+        myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
+    final pow = myState.buffDebuffs.list
+        .where((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+    if (pow.isNotEmpty) {
+      tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
+    }
+    if (damageClassID == 2 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) tmpPow *= 1.1;
+    if (damageClassID == 3 &&
+        myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) tmpPow *= 1.1;
+    if (replacedMoveType == PokeType.normal &&
+        myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
+      tmpPow *= 1.3;
+    }
+    if (replacedMoveType == PokeType.normal &&
+        myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fight &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fly &&
+        myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.poison &&
+        myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ground &&
+        myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.rock &&
+        myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.bug &&
+        myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ghost &&
+        myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.steel &&
+        myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fire &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.water &&
+        myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.grass &&
+        myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.electric &&
+        myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.psychic &&
+        myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.ice &&
+        myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.dragon &&
+        myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.evil &&
+        myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (replacedMoveType == PokeType.fairy &&
+        myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
+      tmpPow *= 1.2;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
+      tmpPow *= 1.2;
+    }
     if (replacedMove.isPunch &&
-        myState.buffDebuffs
-                .indexWhere((e) => e.id == BuffDebuff.punchNotDirect1_1) >=
-            0) tmpPow *= 1.1;
-    if (myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.attack1_2) >=
-        0) tmpPow *= 1.2;
+        myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
+      tmpPow *= 1.1;
+    }
+    if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
 
     if (replacedMoveType == PokeType.electric &&
         myState.isGround(myFields) &&
@@ -5560,15 +5395,16 @@ class TurnMove extends Equatable implements Copyable {
         state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
 
     if (replacedMoveType == PokeType.fire &&
-        yourState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.drySkin) >=
-            0) tmpPow *= 1.25;
+        yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) tmpPow *= 1.25;
 
     if (replacedMoveType == PokeType.fire &&
-        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
       tmpPow = tmpPow * 1352 / 4096;
+    }
     if (replacedMoveType == PokeType.electric &&
-        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0)
+        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
       tmpPow = tmpPow * 1352 / 4096;
+    }
 
     movePower = tmpPow.floor();
     // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
@@ -5576,13 +5412,9 @@ class TurnMove extends Equatable implements Copyable {
       movePower = 60;
     }
 
-    bool plusIgnore = isCritical ||
-        myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreRank)
-            .isNotEmpty;
-    bool minusIgnore = myState.buffDebuffs
-        .where((e) => e.id == BuffDebuff.ignoreRank)
-        .isNotEmpty;
+    bool plusIgnore =
+        isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    bool minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
     int calcMaxDefense =
         yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
             ? ignoreTargetRank
@@ -5659,13 +5491,9 @@ class TurnMove extends Equatable implements Copyable {
             ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
         .floor();
 
-    plusIgnore = yourState.buffDebuffs
-        .where((e) => e.id == BuffDebuff.ignoreRank)
-        .isNotEmpty;
-    minusIgnore = isCritical ||
-        yourState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.ignoreRank)
-            .isNotEmpty;
+    plusIgnore = yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    minusIgnore =
+        isCritical || yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
 
     StatIndex retStat = StatIndex.H;
     int ret2 = 0;
@@ -5699,7 +5527,7 @@ class TurnMove extends Equatable implements Copyable {
     bool loop = true;
     while (count < 20 && loop) {
       loop = false;
-      var copiedMyState = myState.copyWith()
+      var copiedMyState = myState.copy()
         ..minStats[retStat].real = ret3
         ..maxStats[retStat].real = ret3;
       var ret = calcDamage(
@@ -5767,7 +5595,7 @@ class TurnMove extends Equatable implements Copyable {
     loop = true;
     while (count < 20 && loop) {
       loop = false;
-      var copiedMyState = myState.copyWith()
+      var copiedMyState = myState.copy()
         ..minStats[retStat].real = ret3
         ..maxStats[retStat].real = ret3;
       var ret = calcDamage(
@@ -6099,11 +5927,11 @@ class TurnMove extends Equatable implements Copyable {
                                       myState, state),
                                   yourState);
                           tmp.processMove(
-                            ownParty.copyWith(),
-                            opponentParty.copyWith(),
-                            ownPokemonState.copyWith(),
-                            opponentPokemonState.copyWith(),
-                            state.copyWith(),
+                            ownParty.copy(),
+                            opponentParty.copy(),
+                            ownPokemonState.copy(),
+                            opponentPokemonState.copy(),
+                            state.copy(),
                             0,
                             invalidGuideIDs,
                             damageGetter: getter,
@@ -6140,11 +5968,11 @@ class TurnMove extends Equatable implements Copyable {
                                       move, continuousCount, myState, state),
                                   yourState);
                           turnEffectAndStateAndGuide.guides = processMove(
-                            ownParty.copyWith(),
-                            opponentParty.copyWith(),
-                            ownPokemonState.copyWith(),
-                            opponentPokemonState.copyWith(),
-                            state.copyWith(),
+                            ownParty.copy(),
+                            opponentParty.copy(),
+                            ownPokemonState.copy(),
+                            opponentPokemonState.copy(),
+                            state.copy(),
                             0,
                             invalidGuideIDs,
                             loc: loc,
@@ -6280,8 +6108,9 @@ class TurnMove extends Equatable implements Copyable {
     required bool isInput,
     required AppLocalizations loc,
   }) {
-    if (!isSuccess && actionFailure.id != ActionFailure.confusion)
+    if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
       return Container();
+    }
 
     if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
       return DamageIndicateRow(
@@ -6360,11 +6189,11 @@ class TurnMove extends Equatable implements Copyable {
                             ? MoveEffect(suggestion.effect.id)
                             : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copyWith(),
-                      opponentParty.copyWith(),
-                      ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(),
-                      state.copyWith(),
+                      ownParty.copy(),
+                      opponentParty.copy(),
+                      ownPokemonState.copy(),
+                      opponentPokemonState.copy(),
+                      state.copy(),
                       0,
                       invalidGuideIDs,
                       loc: loc,
@@ -6398,12 +6227,15 @@ class TurnMove extends Equatable implements Copyable {
                     List<Move> matches = [];
                     if (playerType == PlayerType.me) {
                       matches.add(ownPokemon.move1);
-                      if (ownPokemon.move2 != null)
+                      if (ownPokemon.move2 != null) {
                         matches.add(ownPokemon.move2!);
-                      if (ownPokemon.move3 != null)
+                      }
+                      if (ownPokemon.move3 != null) {
                         matches.add(ownPokemon.move3!);
-                      if (ownPokemon.move4 != null)
+                      }
+                      if (ownPokemon.move4 != null) {
                         matches.add(ownPokemon.move4!);
+                      }
                     } else if (opponentPokemonState.moves.length == 4) {
                       //　わざがすべて判明している場合
                       matches.addAll(opponentPokemonState.moves);
@@ -6432,11 +6264,11 @@ class TurnMove extends Equatable implements Copyable {
                             ? MoveEffect(suggestion.effect.id)
                             : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copyWith(),
-                      opponentParty.copyWith(),
-                      ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(),
-                      state.copyWith(),
+                      ownParty.copy(),
+                      opponentParty.copy(),
+                      ownPokemonState.copy(),
+                      opponentPokemonState.copy(),
+                      state.copy(),
                       0,
                       invalidGuideIDs,
                       loc: loc,
@@ -6597,12 +6429,15 @@ class TurnMove extends Equatable implements Copyable {
                     List<Move> matches = [];
                     if (playerType == PlayerType.opponent) {
                       matches.add(ownPokemon.move1);
-                      if (ownPokemon.move2 != null)
+                      if (ownPokemon.move2 != null) {
                         matches.add(ownPokemon.move2!);
-                      if (ownPokemon.move3 != null)
+                      }
+                      if (ownPokemon.move3 != null) {
                         matches.add(ownPokemon.move3!);
-                      if (ownPokemon.move4 != null)
+                      }
+                      if (ownPokemon.move4 != null) {
                         matches.add(ownPokemon.move4!);
+                      }
                     } else if (opponentPokemonState.moves.length == 4) {
                       //　わざがすべて判明している場合
                       matches.addAll(opponentPokemonState.moves);
@@ -7260,8 +7095,9 @@ class TurnMove extends Equatable implements Copyable {
                       } else {
                         matches.addAll(opponentPokemonState.possibleAbilities);
                       }
-                      if (state.canAnyZoroark)
+                      if (state.canAnyZoroark) {
                         matches.add(PokeDB().abilities[149]!);
+                      }
                     } else {
                       matches.add(ownPokemonState.currentAbility);
                     }
@@ -7449,8 +7285,9 @@ class TurnMove extends Equatable implements Copyable {
                     } else {
                       matches.addAll(opponentPokemonState.possibleAbilities);
                     }
-                    if (state.canAnyZoroark)
+                    if (state.canAnyZoroark) {
                       matches.add(PokeDB().abilities[149]!);
+                    }
                     matches.retainWhere((s) {
                       return toKatakana50(s.displayName.toLowerCase())
                           .contains(toKatakana50(pattern.toLowerCase()));
@@ -7965,8 +7802,9 @@ class TurnMove extends Equatable implements Copyable {
                       } else {
                         matches.addAll(opponentPokemonState.possibleAbilities);
                       }
-                      if (state.canAnyZoroark)
+                      if (state.canAnyZoroark) {
                         matches.add(PokeDB().abilities[149]!);
+                      }
                     } else {
                       matches.add(ownPokemonState.currentAbility);
                     }
@@ -8654,13 +8492,10 @@ class TurnMove extends Equatable implements Copyable {
                   SizedBox(
                     height: 10,
                   ),
-                  yourState.buffDebuffs
-                              .where((e) => e.id == BuffDebuff.substitute)
-                              .isEmpty ||
+                  !yourState.buffDebuffs.containsByID(BuffDebuff.substitute) ||
                           replacedMove.isSound ||
                           myState.buffDebuffs
-                              .where((e) => e.id == BuffDebuff.ignoreWall)
-                              .isNotEmpty
+                              .containsByID(BuffDebuff.ignoreWall)
                       ? DamageIndicateRow(
                           playerType == PlayerType.me
                               ? opponentPokemon
@@ -8775,10 +8610,11 @@ class TurnMove extends Equatable implements Copyable {
     required int continuousCount,
     required AppLocalizations loc,
   }) {
-    if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
-      // TODO
-      return [Container()];
-    }
+    // TODO
+//    if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
+//
+//      return [Container()];
+//    }
 
 //    if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
 //      return DamageIndicateRow(
@@ -8847,8 +8683,8 @@ class TurnMove extends Equatable implements Copyable {
                     extraArg3[continuousCount] = suggestion.id;
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
+                      ownParty.copy(), opponentParty.copy(), ownPokemonState.copy(),
+                      opponentPokemonState.copy(), state.copy(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -8905,8 +8741,8 @@ class TurnMove extends Equatable implements Copyable {
                     extraArg3[continuousCount] = suggestion.id;
                     moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
                     turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-                      opponentPokemonState.copyWith(), state.copyWith(), 0, invalidGuideIDs, loc: loc,);
+                      ownParty.copy(), opponentParty.copy(), ownPokemonState.copy(),
+                      opponentPokemonState.copy(), state.copy(), 0, invalidGuideIDs, loc: loc,);
                     appState.editingPhase[phaseIdx] = true;
                     onFocus();
                   },
@@ -9043,9 +8879,7 @@ class TurnMove extends Equatable implements Copyable {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                onBackPressed();
-                              },
+                              onPressed: () => onBackPressed(),
                               icon: Icon(Icons.arrow_back),
                             ),
                             Expanded(
@@ -9086,9 +8920,7 @@ class TurnMove extends Equatable implements Copyable {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                onBackPressed();
-                              },
+                              onPressed: () => onBackPressed(),
                               icon: Icon(Icons.arrow_back),
                             ),
                             Expanded(
@@ -9108,9 +8940,9 @@ class TurnMove extends Equatable implements Copyable {
                         flex: 1,
                         child: SwitchListTile(
                           title: Text(loc.battleSucceeded),
-                          onChanged: (change) {
+                          onChanged: (change) => parentSetState(() {
                             isSuccess = change;
-                          },
+                          }),
                           value: isSuccess,
                         ),
                       ),
@@ -9189,9 +9021,7 @@ class TurnMove extends Equatable implements Copyable {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                onBackPressed();
-                              },
+                              onPressed: () => onBackPressed(),
                               icon: Icon(Icons.arrow_back),
                             ),
                             Expanded(
@@ -9234,7 +9064,7 @@ class TurnMove extends Equatable implements Copyable {
                       child: Row(
                         children: [
                           IconButton(
-                            onPressed: () => onBackPressed,
+                            onPressed: () => onBackPressed(),
                             icon: Icon(Icons.arrow_back),
                           ),
                           Expanded(
@@ -9266,6 +9096,9 @@ class TurnMove extends Equatable implements Copyable {
                           }
                           _isValid = true; // TODO
                           onConfirm(); // TODO
+                          parentSetState(
+                            () {},
+                          );
                           // TODO
                           // onListIndexChange(listIndex + 1);
                           /*
@@ -11299,9 +11132,7 @@ class TurnMove extends Equatable implements Copyable {
       ret = true;
     }
     // わざの反動で動けない
-    if (myState.hiddenBuffs
-        .where((e) => e.id == BuffDebuff.recoiling)
-        .isNotEmpty) {
+    if (myState.hiddenBuffs.containsByID(BuffDebuff.recoiling)) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.recoil);
       ret = true;
@@ -11314,16 +11145,15 @@ class TurnMove extends Equatable implements Copyable {
           .extraArg1]!;
       //move = getReplacedMove(suggestion, continuousCount, myState);
       //turnEffectAndStateAndGuide.guides = processMove(
-      //  ownParty.copyWith(), opponentParty.copyWith(), ownPokemonState.copyWith(),
-      //  opponentPokemonState.copyWith(), state.copyWith(), 0);
+      //  ownParty.copy(), opponentParty.copy(), ownPokemonState.copy(),
+      //  opponentPokemonState.copy(), state.copy(), 0);
       ret = true;
       isMoveChanged = true;
     }
     // 溜めがあるこうげき
-    var findIdx =
-        myState.hiddenBuffs.indexWhere((e) => e.id == BuffDebuff.chargingMove);
-    if (findIdx >= 0) {
-      move = pokeData.moves[myState.hiddenBuffs[findIdx].extraArg1]!;
+    final founds = myState.hiddenBuffs.whereByID(BuffDebuff.chargingMove);
+    if (founds.isNotEmpty) {
+      move = pokeData.moves[founds.first.extraArg1]!;
       ret = true;
       isMoveChanged = true;
     }
@@ -11521,10 +11351,9 @@ class TurnMove extends Equatable implements Copyable {
     switch (move.effect.id) {
       case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
         {
-          int findIdx = myState.hiddenBuffs
-              .indexWhere((e) => e.id == BuffDebuff.copiedMove);
-          if (findIdx >= 0) {
-            ret = pokeData.moves[myState.hiddenBuffs[findIdx].extraArg1]!;
+          final founds = myState.hiddenBuffs.whereByID(BuffDebuff.copiedMove);
+          if (founds.isNotEmpty) {
+            ret = pokeData.moves[founds.first.extraArg1]!;
           }
         }
         break;
@@ -11550,11 +11379,10 @@ class TurnMove extends Equatable implements Copyable {
     switch (move.effect.id) {
       case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
         {
-          int findIdx = myState.hiddenBuffs
-              .indexWhere((e) => e.id == BuffDebuff.copiedMove);
-          if (findIdx >= 0) {
+          final founds = myState.hiddenBuffs.whereByID(BuffDebuff.copiedMove);
+          if (founds.isNotEmpty) {
             ret =
-                '${pokeData.moves[myState.hiddenBuffs[findIdx].extraArg1]!.displayName}(${move.displayName})';
+                '${pokeData.moves[founds.first.extraArg1]!.displayName}(${move.displayName})';
           }
         }
         break;
@@ -11661,9 +11489,7 @@ class TurnMove extends Equatable implements Copyable {
         ret = myState.isTerastaling ? myState.teraType1 : myState.type1;
         break;
       case 437: // 使用者のフォルムがはらぺこもようのときはタイプがあくになる。使用者のすばやさを1段階上げる
-        if (myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.harapekoForm)
-            .isNotEmpty) {
+        if (myState.buffDebuffs.containsByID(BuffDebuff.harapekoForm)) {
           ret = PokeType.evil;
         }
         break;
@@ -11734,9 +11560,7 @@ class TurnMove extends Equatable implements Copyable {
             .ailmentsWhere(
                 (e) => e.id == Ailment.poison || e.id == Ailment.badPoison)
             .isNotEmpty &&
-        myState.buffDebuffs
-            .where((e) => e.id == BuffDebuff.merciless)
-            .isNotEmpty) {
+        myState.buffDebuffs.containsByID(BuffDebuff.merciless)) {
       ret = MoveHit.critical;
     }
 
@@ -12023,7 +11847,7 @@ class TurnMove extends Equatable implements Copyable {
       return false;
     }
     if (!isSuccess) {
-      return playerType != PlayerType.none && actionFailure.id != 0;
+      return playerType != PlayerType.none /* && actionFailure.id != 0*/;
     }
     switch (type) {
       case TurnMoveType.move:

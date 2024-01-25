@@ -42,7 +42,7 @@ void main() async {
         ..type1 = PokeType.normal
         ..type2 = null;
       turn.getInitialPokemonStates(PlayerType.me).add(pokeState);
-      turn.getInitialLastExitedStates(PlayerType.me).add(pokeState.copyWith());
+      turn.getInitialLastExitedStates(PlayerType.me).add(pokeState.copy());
     }
     {
       /*Pokemon poke = opponentParty.pokemons[i]!;
@@ -95,7 +95,7 @@ void main() async {
       turn.getInitialPokemonStates(PlayerType.opponent).add(pokeState);
       turn
           .getInitialLastExitedStates(PlayerType.opponent)
-          .add(pokeState.copyWith());
+          .add(pokeState.copy());
     }
 
     test('わざによりポケモンひんしになる状況のテスト', () {

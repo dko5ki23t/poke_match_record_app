@@ -9,11 +9,15 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/tool.dart';
 
 // 自身・相手の行動(timing==Timing.action)をそれぞれ1つずつ含んだリスト
-class PhaseList extends ListBase<TurnEffect> {
+class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
   // https://stackoverflow.com/questions/16247045/how-do-i-extend-a-list-in-dart
   final List<TurnEffect> l = [];
+
+  @override
+  List<Object?> get props => [l];
 
   PhaseList() {
     TurnMove ownAction = TurnMove()
@@ -50,7 +54,8 @@ class PhaseList extends ListBase<TurnEffect> {
     l[index] = value;
   }
 
-  PhaseList copyWith() => PhaseList()..l.addAll(l);
+  @override
+  PhaseList copy() => PhaseList()..l.addAll(l);
 
   void checkAdd(TurnEffect element) {
     if (element.timing == Timing.action ||
@@ -117,8 +122,9 @@ class PhaseList extends ListBase<TurnEffect> {
             !l[opponentPlayerActionIndex].isValid())) return PlayerType.me;
     if (opponentPlayerActionIndex >= 0 &&
         l[opponentPlayerActionIndex].isValid() &&
-        (ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()))
+        (ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid())) {
       return PlayerType.opponent;
+    }
     // 両行動ともに(存在かつ有効)
     if (ownPlayerActionIndex > opponentPlayerActionIndex) {
       return PlayerType.me;
@@ -151,11 +157,19 @@ class PhaseList extends ListBase<TurnEffect> {
   }
 }
 
-class Turn {
+class Turn extends Equatable implements Copyable {
   PhaseState _initialState = PhaseState();
   PhaseList phases = PhaseList();
   PhaseState _endingState = PhaseState();
   List<TurnEffect> noAutoAddEffect = [];
+
+  @override
+  List<Object?> get props => [
+        _initialState,
+        phases,
+        _endingState,
+        noAutoAddEffect,
+      ];
 
   PokemonState get initialOwnPokemonState =>
       _initialState.getPokemonState(PlayerType.me, null);
@@ -186,16 +200,15 @@ class Turn {
         : _initialState.lastExitedStates[1];
   }
 
-  Turn copyWith() => Turn()
-    .._initialState = _initialState.copyWith()
-    ..phases = phases.copyWith()
-    .._endingState = _endingState.copyWith()
-    ..noAutoAddEffect = [
-      for (final effect in noAutoAddEffect) effect.copyWith()
-    ];
+  @override
+  Turn copy() => Turn()
+    .._initialState = _initialState.copy()
+    ..phases = phases.copy()
+    .._endingState = _endingState.copy()
+    ..noAutoAddEffect = [for (final effect in noAutoAddEffect) effect.copy()];
 
   PhaseState copyInitialState() {
-    return _initialState.copyWith();
+    return _initialState.copy();
   }
 
   bool isValid() {
@@ -212,7 +225,7 @@ class Turn {
   }
 
   void setInitialState(PhaseState state) {
-    _initialState = state.copyWith();
+    _initialState = state.copy();
   }
 
   // とある時点(フェーズ)での状態を取得
@@ -260,7 +273,7 @@ class Turn {
     Party opponentParty,
     AppLocalizations loc,
   ) {
-    _endingState = _initialState.copyWith();
+    _endingState = _initialState.copy();
     int continousCount = 0;
     TurnEffect? lastAction;
     PlayerType? needChangeFaintingPlayer;
@@ -334,7 +347,7 @@ class Turn {
       }
       i++;
     }
-    return _endingState.copyWith();
+    return _endingState.copy();
   }
 
   // 初期状態のみ残してクリア

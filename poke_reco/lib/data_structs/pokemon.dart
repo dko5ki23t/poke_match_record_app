@@ -4,8 +4,9 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/tool.dart';
 
-class Pokemon {
+class Pokemon extends Equatable implements Copyable {
   int id = 0; // データベースのプライマリーキー
   int viewOrder = 0; // 表示順
   String _name = ''; // ポケモン名(日本語)
@@ -32,6 +33,28 @@ class Pokemon {
   ]; // わざ
   List<int?> _pps = [0, null, null, null]; // PP
   Owner owner = Owner.mine; // 自分でつくったか、対戦相手が作ったものか
+
+  @override
+  List<Object?> get props => [
+        id,
+        viewOrder,
+        _name,
+        _nameEn,
+        nickname,
+        level,
+        sex,
+        _no,
+        type1,
+        type2,
+        teraType,
+        temper,
+        _stats,
+        ability,
+        item,
+        _moves,
+        _pps,
+        owner
+      ];
 
   Pokemon();
 
@@ -232,7 +255,8 @@ class Pokemon {
   set move4(Move? x) => _moves[3] = x;
   set pp4(int? x) => _pps[3] = x;
 
-  Pokemon copyWith() => Pokemon()
+  @override
+  Pokemon copy() => Pokemon()
     ..id = id
     ..viewOrder = viewOrder
     .._name = _name
@@ -250,7 +274,7 @@ class Pokemon {
         (i) => SixParams(
             _stats[i].race, _stats[i].indi, _stats[i].effort, _stats[i].real))
     ..ability = ability.copy()
-    ..item = item?.copyWith()
+    ..item = item?.copy()
     .._moves = [move1.copy(), move2?.copy(), move3?.copy(), move4?.copy()]
     .._pps = [..._pps]
     ..owner = owner;

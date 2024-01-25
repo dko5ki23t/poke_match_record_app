@@ -409,7 +409,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               turn.getInitialPokemonStates(PlayerType.me).add(pokeState);
               turn
                   .getInitialLastExitedStates(PlayerType.me)
-                  .add(pokeState.copyWith());
+                  .add(pokeState.copy());
             }
             for (int i = 0; i < opponentParty.pokemonNum; i++) {
               Pokemon poke = opponentParty.pokemons[i]!;
@@ -460,7 +460,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               turn.getInitialPokemonStates(PlayerType.opponent).add(state);
               turn
                   .getInitialLastExitedStates(PlayerType.opponent)
-                  .add(state.copyWith());
+                  .add(state.copy());
             }
             turn.initialOwnPokemonState.processEnterEffect(true,
                 turn.copyInitialState(), turn.initialOpponentPokemonState);
@@ -1894,7 +1894,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         TurnEffectAndStateAndGuide()
         ..phaseIdx = i
         ..turnEffect = phases[i]
-        ..phaseState = currentState.copyWith()
+        ..phaseState = currentState.copy()
         ..guides = guides
       );
       // 更新要求インデックス以降はフォームの内容を変える
@@ -2108,7 +2108,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           TurnEffectAndStateAndGuide()
           ..phaseIdx = i
           ..turnEffect = phases[i]
-          ..phaseState = currentState.copyWith()
+          ..phaseState = currentState.copy()
           ..guides = guides
         );
         // フォームの内容を変える

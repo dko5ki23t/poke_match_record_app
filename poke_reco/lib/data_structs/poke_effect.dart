@@ -183,7 +183,7 @@ const List<Timing> everyTurnEndTimings = [
       .everyTurnEndHPNotFull2, // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
 ];
 
-class TurnEffect {
+class TurnEffect extends Equatable implements Copyable {
   PlayerType playerType = PlayerType.none;
   Timing timing = Timing.none;
   EffectType effectType = EffectType.none;
@@ -208,7 +208,29 @@ class TurnEffect {
   bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
   List<int> invalidGuideIDs = [];
 
-  TurnEffect copyWith() => TurnEffect()
+  @override
+  List<Object?> get props => [
+        playerType,
+        timing,
+        effectType,
+        effectId,
+        extraArg1,
+        extraArg2,
+        move,
+        isAdding,
+        isOwnFainting,
+        isOpponentFainting,
+        isMyWin,
+        isYourWin,
+        _changePokemonIndexes,
+        _prevPokemonIndexes,
+        userForces,
+        isAutoSet,
+        invalidGuideIDs,
+      ];
+
+  @override
+  TurnEffect copy() => TurnEffect()
     ..playerType = playerType
     ..timing = timing
     ..effectType = effectType
@@ -223,7 +245,7 @@ class TurnEffect {
     ..isYourWin = isYourWin
     .._changePokemonIndexes = [..._changePokemonIndexes]
     .._prevPokemonIndexes = [..._prevPokemonIndexes]
-    ..userForces = userForces.copyWith()
+    ..userForces = userForces.copy()
     ..isAutoSet = isAutoSet
     ..invalidGuideIDs = [...invalidGuideIDs];
 
@@ -478,12 +500,11 @@ class TurnEffect {
         }
         if (myState.pokemon.id == 1024) {
           //テラパゴスがテラスタルした場合
-          int findIdx = myState.buffDebuffs
-              .indexWhere((e) => e.id == BuffDebuff.terastalForm);
-          if (findIdx < 0) {
+          if (!myState.buffDebuffs.containsByID(BuffDebuff.terastalForm)) {
             myState.buffDebuffs.add(BuffDebuff(BuffDebuff.stellarForm));
           } else {
-            myState.buffDebuffs[findIdx] = BuffDebuff(BuffDebuff.stellarForm);
+            myState.buffDebuffs
+                .changeID(BuffDebuff.terastalForm, BuffDebuff.stellarForm);
           }
           // TODO この2行csvに移したい
           myState.maxStats.h.race = 160;
@@ -672,23 +693,19 @@ class TurnEffect {
       if (isFull) {
         if (pokeState.currentAbility.id == 136) {
           // マルチスケイル
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.damaged0_5) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.damaged0_5));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.damaged0_5);
         }
         if (pokeState.currentAbility.id == 177) {
           // はやてのつばさ
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.galeWings) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.galeWings));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.galeWings);
         }
       } else {
-        if (pokeState.currentAbility.id == 136)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.damaged0_5); // マルチスケイル
-        if (pokeState.currentAbility.id == 177)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.galeWings); // はやてのつばさ
+        if (pokeState.currentAbility.id == 136) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.damaged0_5); // マルチスケイル
+        }
+        if (pokeState.currentAbility.id == 177) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.galeWings); // はやてのつばさ
+        }
       }
     }
 
@@ -702,15 +719,12 @@ class TurnEffect {
           player == PlayerType.me ? ownPokemonState : opponentPokemonState;
       if (is1_2) {
         if (pokeState.currentAbility.id == 129) {
-          // よわき
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.defeatist) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.defeatist));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.defeatist); // よわき
         }
       } else {
-        if (pokeState.currentAbility.id == 129)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.defeatist); // よわき
+        if (pokeState.currentAbility.id == 129) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.defeatist); // よわき
+        }
       }
     }
 
@@ -725,41 +739,33 @@ class TurnEffect {
       if (is1_3) {
         if (pokeState.currentAbility.id == 65) {
           // しんりょく
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.overgrow) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.overgrow));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.overgrow);
         }
         if (pokeState.currentAbility.id == 66) {
           // もうか
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.blaze) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.blaze));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.blaze);
         }
         if (pokeState.currentAbility.id == 67) {
           // げきりゅう
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.torrent) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.torrent));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.torrent);
         }
         if (pokeState.currentAbility.id == 68) {
           // むしのしらせ
-          if (pokeState.buffDebuffs
-                  .indexWhere((e) => e.id == BuffDebuff.swarm) <
-              0) pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.swarm));
+          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.swarm);
         }
       } else {
-        if (pokeState.currentAbility.id == 65)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.overgrow); // しんりょく
-        if (pokeState.currentAbility.id == 66)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.blaze); // もうか
-        if (pokeState.currentAbility.id == 67)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.torrent); // げきりゅう
-        if (pokeState.currentAbility.id == 68)
-          pokeState.buffDebuffs
-              .removeWhere((e) => e.id == BuffDebuff.swarm); // むしのしらせ
+        if (pokeState.currentAbility.id == 65) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.overgrow); // しんりょく
+        }
+        if (pokeState.currentAbility.id == 66) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.blaze); // もうか
+        }
+        if (pokeState.currentAbility.id == 67) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.torrent); // げきりゅう
+        }
+        if (pokeState.currentAbility.id == 68) {
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.swarm); // むしのしらせ
+        }
       }
     }
 
@@ -791,16 +797,18 @@ class TurnEffect {
         // もちもの得た
         if (pokeState.currentAbility.id == 84) {
           // かるわざ
-          pokeState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.unburden);
+          pokeState.buffDebuffs.removeAllByID(BuffDebuff.unburden);
         }
       }
     }
 
     // 満タン以上の回復はしない
-    if (ownPokemonState.remainHP >= ownPokemonState.pokemon.h.real)
+    if (ownPokemonState.remainHP >= ownPokemonState.pokemon.h.real) {
       ownPokemonState.remainHP = ownPokemonState.pokemon.h.real;
-    if (opponentPokemonState.remainHPPercent >= 100)
+    }
+    if (opponentPokemonState.remainHPPercent >= 100) {
       opponentPokemonState.remainHPPercent = 100;
+    }
     // ひんし判定(本フェーズでひんしになったか)
     isOwnFainting = false;
     if (ownPokemonState.remainHP <= 0) {
@@ -877,27 +885,38 @@ class TurnEffect {
           timings.addAll(pokemonAppearTimings);
           attackerTimings.clear();
           defenderTimings.clear();
-          if (phaseState.weather.id != Weather.rainy)
-            timings.add(Timing.pokemonAppearNotRained); // ポケモン登場時(天気が雨でない)
-          if (phaseState.weather.id != Weather.sandStorm)
-            timings.add(
-                Timing.pokemonAppearNotSandStormed); // ポケモン登場時(天気がすなあらしでない)
-          if (phaseState.weather.id != Weather.sunny)
-            timings.add(Timing.pokemonAppearNotSunny); // ポケモン登場時(天気が晴れでない)
-          if (phaseState.weather.id != Weather.snowy)
-            timings.add(Timing.pokemonAppearNotSnowed); // ポケモン登場時(天気がゆきでない)
-          if (phaseState.field.id != Field.electricTerrain)
-            timings
-                .add(Timing.pokemonAppearNotEreciField); // ポケモン登場時(エレキフィールドでない)
-          if (phaseState.field.id != Field.psychicTerrain)
-            timings
-                .add(Timing.pokemonAppearNotPsycoField); // ポケモン登場時(サイコフィールドでない)
-          if (phaseState.field.id != Field.mistyTerrain)
-            timings
-                .add(Timing.pokemonAppearNotMistField); // ポケモン登場時(ミストフィールドでない)
-          if (phaseState.field.id != Field.grassyTerrain)
-            timings
-                .add(Timing.pokemonAppearNotGrassField); // ポケモン登場時(グラスフィールドでない)
+          if (phaseState.weather.id != Weather.rainy) {
+            // ポケモン登場時(天気が雨でない)
+            timings.add(Timing.pokemonAppearNotRained);
+          }
+          if (phaseState.weather.id != Weather.sandStorm) {
+            // ポケモン登場時(天気がすなあらしでない)
+            timings.add(Timing.pokemonAppearNotSandStormed);
+          }
+          if (phaseState.weather.id != Weather.sunny) {
+            // ポケモン登場時(天気が晴れでない)
+            timings.add(Timing.pokemonAppearNotSunny);
+          }
+          if (phaseState.weather.id != Weather.snowy) {
+            // ポケモン登場時(天気がゆきでない)
+            timings.add(Timing.pokemonAppearNotSnowed);
+          }
+          if (phaseState.field.id != Field.electricTerrain) {
+            // ポケモン登場時(エレキフィールドでない)
+            timings.add(Timing.pokemonAppearNotEreciField);
+          }
+          if (phaseState.field.id != Field.psychicTerrain) {
+            // ポケモン登場時(サイコフィールドでない)
+            timings.add(Timing.pokemonAppearNotPsycoField);
+          }
+          if (phaseState.field.id != Field.mistyTerrain) {
+            // ポケモン登場時(ミストフィールドでない)
+            timings.add(Timing.pokemonAppearNotMistField);
+          }
+          if (phaseState.field.id != Field.grassyTerrain) {
+            // ポケモン登場時(グラスフィールドでない)
+            timings.add(Timing.pokemonAppearNotGrassField);
+          }
           var myFields = phaseState.getIndiFields(playerType);
           for (final f in myFields) {
             if (f.possiblyActive(timing)) {
@@ -1129,11 +1148,14 @@ class TurnEffect {
               turnMove.getReplacedMove(turnMove.move, 0, attackerState);
           var replacedMoveType = turnMove.getReplacedMoveType(
               turnMove.move, 0, attackerState, phaseState);
-          if (replacedMove.priority >= 1)
-            defenderTimings.addAll([Timing.priorityMoved]); // 優先度1以上のわざを受けた時
+          if (replacedMove.priority >= 1) {
+            // 優先度1以上のわざを受けた時
+            defenderTimings.addAll([Timing.priorityMoved]);
+          }
           // へんかわざを受けた時
-          if (replacedMove.damageClass.id == 1)
+          if (replacedMove.damageClass.id == 1) {
             defenderTimings.addAll([Timing.statused]);
+          }
           // こうげきしたとき/うけたとき
           if (replacedMove.damageClass.id >= 2) {
             defenderTimings.addAll([
@@ -1145,50 +1167,60 @@ class TurnEffect {
             attackerTimings
                 .addAll([Timing.attackHitted, Timing.defeatOpponentWithAttack]);
             // うのみ状態/まるのみ状態で相手にこうげきされた後
-            int findIdx = defenderState.buffDebuffs.indexWhere((e) =>
-                e.id == BuffDebuff.unomiForm ||
-                e.id == BuffDebuff.marunomiForm);
-            if (findIdx >= 0) {
+            final unomis = defenderState.buffDebuffs
+                .whereByAnyID([BuffDebuff.unomiForm, BuffDebuff.marunomiForm]);
+            if (unomis.isNotEmpty) {
               ret.add(TurnEffect()
                 ..playerType = attacker.opposite
                 ..timing = Timing.afterMove
                 ..effectType = EffectType.ability
-                ..effectId = 10000 + defenderState.buffDebuffs[findIdx].id);
+                ..effectId = 10000 + unomis.first.id);
             }
             // ノーマルタイプのこうげきをした時
-            if (replacedMoveType == PokeType.normal)
+            if (replacedMoveType == PokeType.normal) {
               attackerTimings.addAll([Timing.normalAttackHit]);
+            }
             // あくタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.evil)
+            if (replacedMoveType == PokeType.evil) {
               defenderTimings.addAll([Timing.evilAttacked]);
+            }
             // みずタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.water)
+            if (replacedMoveType == PokeType.water) {
               defenderTimings
                   .addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
+            }
             // ほのおタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.fire)
+            if (replacedMoveType == PokeType.fire) {
               defenderTimings
                   .addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
+            }
             // でんきタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.electric)
+            if (replacedMoveType == PokeType.electric) {
               defenderTimings.addAll([Timing.electricAttacked]);
+            }
             // こおりタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.ice)
+            if (replacedMoveType == PokeType.ice) {
               defenderTimings.addAll([Timing.iceAttacked]);
+            }
             // こうげきによりひんしになっているとき
-            if (defenderState.isFainting)
+            if (defenderState.isFainting) {
               defenderTimings.add(Timing.attackedFainting);
+            }
           }
-          if (replacedMove.isPowder)
+          if (replacedMove.isPowder) {
             defenderTimings.addAll([Timing.powdered]); // こな系のこうげきを受けた時
-          if (replacedMove.isBullet)
+          }
+          if (replacedMove.isBullet) {
             defenderTimings.addAll([Timing.bulleted]); // 弾のこうげきを受けた時
-          if (replacedMove.damageClass.id == DamageClass.physical)
+          }
+          if (replacedMove.damageClass.id == DamageClass.physical) {
             defenderTimings
                 .addAll([Timing.phisycalAttackedHitted]); // ぶつりこうげきを受けた時
-          if (replacedMove.damageClass.id == DamageClass.special)
+          }
+          if (replacedMove.damageClass.id == DamageClass.special) {
             defenderTimings
                 .addAll([Timing.specialAttackedHitted]); // とくしゅこうげきを受けた時
+          }
           if (replacedMove.isDirect &&
               !(replacedMove.isPunch &&
                   attackerState.holdingItem?.id ==
@@ -1201,11 +1233,13 @@ class TurnEffect {
                 .add(Timing.directAttackHitWithChance); // 直接攻撃をあてたとき(確率)
             // 違う性別の相手から直接攻撃を受けた時（確率）
             if (attackerState.sex != defenderState.sex &&
-                attackerState.sex != Sex.none)
+                attackerState.sex != Sex.none) {
               defenderTimings.add(Timing.directAttackedByOppositeSexWithChance);
+            }
             // 直接攻撃によりひんしになっているとき
-            if (defenderState.isFainting)
+            if (defenderState.isFainting) {
               defenderTimings.add(Timing.directAttackedFainting);
+            }
             // まもる系統のわざ相手に直接攻撃したとき
             var findIdx = defenderState.ailmentsIndexWhere(
                 (e) => e.id == Ailment.protect && e.extraArg1 != 0);
@@ -1230,10 +1264,12 @@ class TurnEffect {
             attackerTimings.add(Timing.soundAttack); // 音技を使ったとき
             defenderTimings.add(Timing.soundAttacked); // 音技を受けた時
           }
-          if (replacedMove.isDrain)
+          if (replacedMove.isDrain) {
             defenderTimings.add(Timing.drained); // HP吸収わざを受けた時
-          if (replacedMove.isDance)
+          }
+          if (replacedMove.isDance) {
             defenderTimings.add(Timing.otherDance); // おどり技を受けた時
+          }
           if (replacedMoveType == PokeType.normal) {
             // ノーマルタイプのわざを受けた時
             defenderTimings.addAll([Timing.normalAttacked]);
@@ -2103,8 +2139,9 @@ class TurnEffect {
                       } else {
                         matches.addAll(yourState.possibleAbilities);
                       }
-                      if (state.canAnyZoroark)
+                      if (state.canAnyZoroark) {
                         matches.add(PokeDB().abilities[149]!);
+                      }
                     } else {
                       matches.add(yourState.getCurrentAbility());
                     }
@@ -2232,12 +2269,15 @@ class TurnEffect {
                       matches.addAll(yourState.moves);
                     } else {
                       matches.add(yourPokemon.move1);
-                      if (yourPokemon.move2 != null)
+                      if (yourPokemon.move2 != null) {
                         matches.add(yourPokemon.move2!);
-                      if (yourPokemon.move3 != null)
+                      }
+                      if (yourPokemon.move3 != null) {
                         matches.add(yourPokemon.move3!);
-                      if (yourPokemon.move4 != null)
+                      }
+                      if (yourPokemon.move4 != null) {
                         matches.add(yourPokemon.move4!);
+                      }
                     }
                     matches.retainWhere((s) {
                       return toKatakana50(s.displayName.toLowerCase())
@@ -3346,8 +3386,9 @@ class TurnEffect {
     ret += split1;
     // _changePokemonIndexes
     for (int i = 0; i < 2; i++) {
-      if (_changePokemonIndexes[i] != null)
+      if (_changePokemonIndexes[i] != null) {
         ret += _changePokemonIndexes[i].toString();
+      }
       ret += split2;
     }
     ret += split1;
@@ -3373,8 +3414,8 @@ class TurnEffect {
   }
 
   static void swap(List<TurnEffect> list, int idx1, int idx2) {
-    TurnEffect tmp = list[idx1].copyWith();
-    list[idx1] = list[idx2].copyWith();
+    TurnEffect tmp = list[idx1].copy();
+    list[idx1] = list[idx2].copy();
     list[idx2] = tmp;
   }
 }

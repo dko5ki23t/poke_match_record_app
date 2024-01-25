@@ -2,6 +2,7 @@ import 'package:intl/intl.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/turn.dart';
+import 'package:poke_reco/tool.dart';
 
 enum BattleType {
   //casual(0, 'カジュアルバトル', 'Casual Battle'),
@@ -35,9 +36,9 @@ enum BattleType {
   final String en;
 }
 
-class Battle {
+class Battle extends Equatable implements Copyable {
   int id = 0; // 無効値
-  int viewOrder = 0;  // 無効値
+  int viewOrder = 0; // 無効値
   String name = '';
   BattleType type = BattleType.rankmatch;
   DateTime datetime = DateTime.now();
@@ -47,29 +48,48 @@ class Battle {
   bool isMyWin = false;
   bool isYourWin = false;
 
+  @override
+  List<Object?> get props => [
+        id,
+        viewOrder,
+        name,
+        type,
+        datetime,
+        _parties,
+        opponentName,
+        turns,
+        isMyWin,
+        isYourWin
+      ];
+
   static DateFormat outputFormat = DateFormat('yyyy-MM-dd HH:mm');
 
   Battle();
 
-  Battle.createFromDBMap(Map<String, dynamic> map, {int version = -1}) {  // -1は最新バージョン
+  Battle.createFromDBMap(Map<String, dynamic> map, {int version = -1}) {
+    // -1は最新バージョン
     var pokeData = PokeDB();
     id = map[battleColumnId];
     viewOrder = map[battleColumnViewOrder];
     name = map[battleColumnName];
     type = BattleType.createFromId(map[battleColumnTypeId]);
     datetimeFromStr = map[battleColumnDate];
-    _parties[0] = pokeData.parties.values.where(
-      (element) => element.id == map[battleColumnOwnPartyId]).first.copyWith();
+    _parties[0] = pokeData.parties.values
+        .where((element) => element.id == map[battleColumnOwnPartyId])
+        .first
+        .copy();
     opponentName = map[battleColumnOpponentName];
-    _parties[1] = pokeData.parties.values.where(
-      (element) => element.id == map[battleColumnOpponentPartyId]).first.copyWith();
+    _parties[1] = pokeData.parties.values
+        .where((element) => element.id == map[battleColumnOpponentPartyId])
+        .first
+        .copy();
     isMyWin = map[battleColumnIsMyWin] == 1;
     isYourWin = map[battleColumnIsYourWin] == 1;
     // 各ポケモンのレベルを50に
     for (int j = 0; j < 2; j++) {
       var party = _parties[j];
       for (int i = 0; i < party.pokemonNum; i++) {
-        party.pokemons[i] = party.pokemons[i]!.copyWith();
+        party.pokemons[i] = party.pokemons[i]!.copy();
         party.pokemons[i]!.level = 50;
         party.pokemons[i]!.updateRealStats();
       }
@@ -78,48 +98,45 @@ class Battle {
     final strTurns = map[battleColumnTurns].split(sqlSplit1);
     for (final strTurn in strTurns) {
       if (strTurn == '') break;
-      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8, version: version));
+      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4,
+          sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8,
+          version: version));
     }
   }
 
-  Battle copyWith() =>
-    Battle()
+  @override
+  Battle copy() => Battle()
     ..id = id
     ..viewOrder = viewOrder
     ..name = name
     ..type = type
     ..datetime = datetime
-    .._parties[0] = _parties[0].copyWith()
-    .._parties[1] = _parties[1].copyWith()
+    .._parties[0] = _parties[0].copy()
+    .._parties[1] = _parties[1].copy()
     ..opponentName = opponentName
-    ..turns = [
-      for (final turn in turns)
-      turn.copyWith()
-    ]
+    ..turns = [for (final turn in turns) turn.copy()]
     ..isMyWin = isMyWin
     ..isYourWin = isYourWin;
 
   // getter
   bool get isValid {
-    return
-      name != '' &&
-      _parties[0].isValid &&
-      opponentName != '' &&
-      _parties[1].pokemons[0]!.name != '';
+    return name != '' &&
+        _parties[0].isValid &&
+        opponentName != '' &&
+        _parties[1].pokemons[0]!.name != '';
   }
 
   // 編集したかどうかのチェックに使う
   bool isDiff(Battle battle) {
-    bool ret =
-      id != battle.id ||
-      name != battle.name ||
-      type != battle.type ||
-      datetime != battle.datetime ||
-      _parties[0].id != battle._parties[0].id ||
-      _parties[1].id != battle._parties[1].id ||
-      opponentName != battle.opponentName ||
-      isMyWin != battle.isMyWin ||
-      isYourWin != battle.isYourWin;
+    bool ret = id != battle.id ||
+        name != battle.name ||
+        type != battle.type ||
+        datetime != battle.datetime ||
+        _parties[0].id != battle._parties[0].id ||
+        _parties[1].id != battle._parties[1].id ||
+        opponentName != battle.opponentName ||
+        isMyWin != battle.isMyWin ||
+        isYourWin != battle.isYourWin;
     if (ret) return true;
     if (turns.length != battle.turns.length) return true;
     for (int i = 0; i < turns.length; i++) {
@@ -170,8 +187,7 @@ class Battle {
     assert(player == PlayerType.me || player == PlayerType.opponent);
     if (player == PlayerType.me) {
       _parties[0] = party;
-    }
-    else {
+    } else {
       _parties[1] = party;
     }
   }
@@ -180,7 +196,8 @@ class Battle {
   Map<String, dynamic> toMap() {
     String turnsStr = '';
     for (final turn in turns) {
-      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8);
+      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5,
+          sqlSplit6, sqlSplit7, sqlSplit8);
       turnsStr += sqlSplit1;
     }
     return {

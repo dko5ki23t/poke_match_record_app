@@ -108,11 +108,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState),
             yourState);
         tmp.processMove(
-          myParty.copyWith(),
-          yourParty.copyWith(),
-          myState.copyWith(),
-          yourState.copyWith(),
-          prevState.copyWith(),
+          myParty.copy(),
+          yourParty.copy(),
+          myState.copy(),
+          yourState.copy(),
+          prevState.copy(),
           0,
           [],
           damageGetter: getter,
@@ -331,15 +331,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             theme: theme,
             onBackPressed: () => parentSetState(() {
                   // いろいろ初期化
-                  turnMove.move = Move(0, '', '', PokeType.unknown, 0, 0, 0,
-                      Target.none, DamageClass(0), MoveEffect(0), 0, 0);
-                  turnMove.moveHits = [MoveHit.hit];
-                  turnMove.moveAdditionalEffects = [
-                    MoveEffect(MoveEffect.none)
-                  ];
-                  turnMove.moveEffectivenesses = [MoveEffectiveness.normal];
-                  turnMove.percentDamage[0] = 0;
-                  turnMove.realDamage[0] = 0;
+                  turnMove.clearMove();
                   state = CommandState.selectCommand;
                   widget.onUnConfirm();
                 }),
