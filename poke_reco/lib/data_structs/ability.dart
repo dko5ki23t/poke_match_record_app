@@ -1883,6 +1883,6 @@ class Ability extends Equatable implements Copyable {
 
   // SQL保存用の文字列に変換
   String serialize(String split1) {
-    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}$split1';
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}';
   }
 }

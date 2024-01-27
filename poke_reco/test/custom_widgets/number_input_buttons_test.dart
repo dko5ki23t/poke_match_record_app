@@ -6,13 +6,15 @@ import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 int confirmedNumber = 0;
 
 Widget createHomeScreen(int initialNum) => MaterialApp(
-  home: Scaffold(
-    body: NumberInputButtons(
-      initialNum: initialNum,
-      onConfirm: (number) {confirmedNumber = number;},
-    ),
-  ),
-);
+      home: Scaffold(
+        body: NumberInputButtons(
+          initialNum: initialNum,
+          onConfirm: (number) {
+            confirmedNumber = number;
+          },
+        ),
+      ),
+    );
 
 void main() {
   group('NumberInputButtons Widget の単体テスト', () {
@@ -20,7 +22,8 @@ void main() {
       await tester.pumpWidget(createHomeScreen(0));
       // 0～9のボタンが1つずつあることの確認
       for (int i = 0; i < 10; i++) {
-        expect(find.widgetWithText(OutlinedButton, i.toString()), findsOneWidget);
+        expect(
+            find.widgetWithText(OutlinedButton, i.toString()), findsOneWidget);
       }
       // 1個のテキストフィールドがあることの確認
       expect(find.byType(TextField), findsOneWidget);
@@ -81,7 +84,8 @@ void main() {
       await tester.tap(find.widgetWithText(OutlinedButton, '2'));
       await tester.tap(find.widgetWithText(OutlinedButton, '3'));
       await tester.tap(find.widgetWithText(OutlinedButton, '4'));
-      await tester.tap(find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
+      await tester.tap(
+          find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
       await tester.pumpAndSettle();
       expect(confirmedNumber == 1234, true);
       // 確定後新たな入力が始まることの確認
@@ -89,7 +93,8 @@ void main() {
       await tester.tap(find.widgetWithText(OutlinedButton, '6'));
       await tester.tap(find.widgetWithText(OutlinedButton, '7'));
       await tester.tap(find.widgetWithText(OutlinedButton, '8'));
-      await tester.tap(find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
+      await tester.tap(
+          find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
       await tester.pumpAndSettle();
       expect(confirmedNumber == 5678, true);
     });
@@ -98,7 +103,8 @@ void main() {
       await tester.pumpWidget(createHomeScreen(7890));
       confirmedNumber = 0;
       // 一度も数字入力せずに確定した場合
-      await tester.tap(find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
+      await tester.tap(
+          find.widgetWithIcon(OutlinedButton, Icons.subdirectory_arrow_left));
       await tester.pumpAndSettle();
       expect(confirmedNumber == 7890, true);
       // 0入力後に削除ボタンを押した場合

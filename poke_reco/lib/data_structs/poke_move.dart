@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
@@ -95,7 +96,7 @@ extension MoveHitName on MoveHit {
           case MoveHit.hit:
             return '命中';
           case MoveHit.critical:
-            return '急所に命中';
+            return '急所';
           case MoveHit.notHit:
             return '当たらなかった';
           case MoveHit.fail:
@@ -109,7 +110,7 @@ extension MoveHitName on MoveHit {
           case MoveHit.hit:
             return 'Hit';
           case MoveHit.critical:
-            return 'Critical Hit';
+            return 'Critical';
           case MoveHit.notHit:
             return 'Missed';
           case MoveHit.fail:
@@ -209,6 +210,17 @@ class DamageGetter {
       return '$minDamagePercent% ~ $maxDamagePercent%';
     }
   }
+}
+
+// ダメージ等入力Widgetの作成時に使う
+enum CommandWidgetTemplate {
+  successOrFail,
+  selectMyPokemons,
+  selectYourPokemons,
+  selectMyFaintingPokemons,
+  inputDamage,
+  fail,
+  selectMove,
 }
 
 class TurnMove extends Equatable implements Copyable {
@@ -3961,7 +3973,7 @@ class TurnMove extends Equatable implements Copyable {
           case 507: // 2回連続こうげき。必中
             break;
           case 508: // 相手の残りHPが多いほど威力が高くなる(100×相手の残りHP/相手の最大HP)
-            if (targetPlayerType == PlayerType.opponent) {
+            if (targetPlayerType == PlayerType.me) {
               movePower =
                   (100 * targetState.remainHP / targetState.pokemon.h.real)
                       .floor();
@@ -5109,7 +5121,11 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
     // 相性補正(切り捨て)
-    tmpInt = (tmpInt / typeRate).floor();
+    if (typeRate == 0) {
+      tmpInt = 0;
+    } else {
+      tmpInt = (tmpInt / typeRate).floor();
+    }
     // タイプ一致補正(五捨五超入)
     var rate = myState.typeBonusRate(replacedMoveType,
         myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
@@ -8600,7 +8616,7 @@ class TurnMove extends Equatable implements Copyable {
         onListIndexChange, // 入力画面シーケンス内の表示インデックスが変更されたときに呼ぶコールバック
     required void Function()
         onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
-    required void Function(void Function()) parentSetState,
+    required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
     required bool? isFirstAction,
     required Party myParty,
     required Party yourParty,
@@ -8637,8 +8653,8 @@ class TurnMove extends Equatable implements Copyable {
 //      );
 //    }
 
-    List<Widget> ret = [];
-    int listIndex = 0;
+    List<Tuple2<CommandWidgetTemplate, String>> templateTitles = [];
+    bool fixTemplates = false;
 
     if (playerType != PlayerType.none &&
         type == TurnMoveType.move &&
@@ -8761,200 +8777,26 @@ class TurnMove extends Equatable implements Copyable {
       // 必要に応じてわざの内容変更
       Move replacedMove = getReplacedMove(move, continuousCount, myState);
 
-      // 交代先選択ListTile作成
-      List<ListTile> myPokemonTiles = [];
-      List<ListTile> yourPokemonTiles = [];
-      {
-        List<int> addedIndex = [];
-        for (int i = 0; i < myParty.pokemonNum; i++) {
-          if (state.isPossibleBattling(playerType, i) &&
-              !state.getPokemonStates(playerType)[i].isFainting) {
-            myPokemonTiles.add(
-              PokemonTile(
-                myParty.pokemons[i]!,
-                theme,
-                onTap: () => parentSetState(() {
-                  setChangePokemonIndex(playerType, i + 1);
-                }),
-                dense: true,
-                selected: getChangePokemonIndex(playerType) == i + 1,
-                selectedTileColor: Colors.black26,
-              ),
-            );
-            addedIndex.add(i);
-          }
-        }
-        for (int i = 0; i < myParty.pokemonNum; i++) {
-          if (addedIndex.contains(i)) continue;
-          myPokemonTiles.add(
-            PokemonTile(
-              myParty.pokemons[i]!,
-              theme,
-              enabled: false,
-              dense: true,
-            ),
-          );
-        }
-        addedIndex.clear();
-        for (int i = 0; i < yourParty.pokemonNum; i++) {
-          if (state.isPossibleBattling(playerType.opposite, i) &&
-              !state.getPokemonStates(playerType.opposite)[i].isFainting) {
-            yourPokemonTiles.add(
-              PokemonTile(
-                yourParty.pokemons[i]!,
-                theme,
-                onTap: () => parentSetState(() {
-                  setChangePokemonIndex(playerType.opposite, i + 1);
-                }),
-                dense: true,
-                selected: getChangePokemonIndex(playerType.opposite) == i + 1,
-                selectedTileColor: Colors.black26,
-              ),
-            );
-            addedIndex.add(i);
-          }
-        }
-        for (int i = 0; i < yourParty.pokemonNum; i++) {
-          if (addedIndex.contains(i)) continue;
-          yourPokemonTiles.add(
-            PokemonTile(
-              yourParty.pokemons[i]!,
-              theme,
-              enabled: false,
-              dense: true,
-            ),
-          );
-        }
-      }
-
       // 1.分類による返却Widgetリストの対応
       switch (replacedMove.damageClass.id) {
         case 1: // へんか
           // 1-a.対象による返却Widgetリストの対応
           switch (replacedMove.target) {
             case Target.faintingPokemon: // ひんしになった(味方の)ポケモン
-              {
-                // 交代先選択ListTile作成
-                List<ListTile> pokemonTiles = [];
-                List<int> addedIndex = [];
-                for (int i = 0; i < myParty.pokemonNum; i++) {
-                  if (state.isPossibleBattling(playerType, i) &&
-                      state.getPokemonStates(playerType)[i].isFainting) {
-                    pokemonTiles.add(
-                      PokemonTile(
-                        myParty.pokemons[i]!,
-                        theme,
-                        onTap: () {
-                          extraArg1[continuousCount] = i + 1;
-                          _isValid = true;
-                        },
-                        dense: true,
-                        selected: extraArg1[continuousCount] == i + 1,
-                        selectedTileColor: Colors.black26,
-                      ),
-                    );
-                    addedIndex.add(i);
-                  }
-                }
-                for (int i = 0; i < myParty.pokemonNum; i++) {
-                  if (addedIndex.contains(i)) continue;
-                  pokemonTiles.add(
-                    PokemonTile(
-                      myParty.pokemons[i]!,
-                      theme,
-                      enabled: false,
-                      dense: true,
-                    ),
-                  );
-                }
-                _isValid = true; // TODO
-                onConfirm(); // TODO
-                // 返却Widget作成
-                return [
-                  Column(
-                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => onBackPressed(),
-                              icon: Icon(Icons.arrow_back),
-                            ),
-                            Expanded(
-                              child: Text(loc.battleRevivePokemon),
-                            ),
-                            TextButton(
-                                onPressed: () {},
-                                child: Text(isFirstAction != null
-                                    ? isFirstAction
-                                        ? loc.battleActFirst
-                                        : loc.battleActSecond
-                                    : ' '))
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 7,
-                        child: ListViewWithViewItemCount(
-                          viewItemCount: 4,
-                          children: myPokemonTiles,
-                        ),
-                      ),
-                    ],
-                  )
-                ];
-              }
+              templateTitles = [
+                Tuple2(CommandWidgetTemplate.selectMyFaintingPokemons,
+                    loc.battleRevivePokemon)
+              ];
+              fixTemplates = true;
+              break;
             default: // その他が対象のへんかわざ
-              {
-                _isValid = true; // TODO
-                onConfirm(); // TODO
-                // 返却Widget作成
-                return [
-                  Column(
-                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => onBackPressed(),
-                              icon: Icon(Icons.arrow_back),
-                            ),
-                            Expanded(
-                              child: Text(replacedMove.displayName),
-                            ),
-                            TextButton(
-                                onPressed: () {},
-                                child: Text(isFirstAction != null
-                                    ? isFirstAction
-                                        ? loc.battleActFirst
-                                        : loc.battleActSecond
-                                    : ' '))
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: SwitchListTile(
-                          title: Text(loc.battleSucceeded),
-                          onChanged: (change) => parentSetState(() {
-                            isSuccess = change;
-                          }),
-                          value: isSuccess,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 6,
-                        child: Container(),
-                      ),
-                    ],
-                  )
-                ];
-                // TODO 下記コメントのように、他にも入力が必要？
-              }
+              _isValid = true;
+              templateTitles = [
+                Tuple2(CommandWidgetTemplate.successOrFail, loc.battleSucceeded)
+              ];
+
+              break;
+            // TODO 下記コメントのように、他にも入力が必要？
             /*return Column(
                 children: [
                   Row(
@@ -9005,127 +8847,21 @@ class TurnMove extends Equatable implements Copyable {
                 ],
               );*/
           }
+          break;
         default: // ぶつり・とくしゅ
           switch (replacedMove.target) {
             case Target.ally: // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
-              {
-                _isValid = true; // TODO
-                onConfirm(); // TODO
-                // 返却Widget作成
-                return [
-                  Column(
-                    key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-                    children: [
-                      Expanded(
-                        flex: 1,
-                        child: Row(
-                          children: [
-                            IconButton(
-                              onPressed: () => onBackPressed(),
-                              icon: Icon(Icons.arrow_back),
-                            ),
-                            Expanded(
-                              child: Text(replacedMove.displayName),
-                            ),
-                            TextButton(
-                                onPressed: () {},
-                                child: Text(isFirstAction != null
-                                    ? isFirstAction
-                                        ? loc.battleActFirst
-                                        : loc.battleActSecond
-                                    : ' '))
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        flex: 1,
-                        child: SwitchListTile(
-                          title: Text(loc.battleSucceeded),
-                          onChanged: null,
-                          value: false,
-                        ),
-                      ),
-                      Expanded(
-                        flex: 6,
-                        child: Container(),
-                      ),
-                    ],
-                  )
-                ];
-              }
+              _isValid = true;
+              isSuccess = false;
+              templateTitles = [
+                Tuple2(CommandWidgetTemplate.fail, loc.battleSucceeded)
+              ];
+              fixTemplates = true;
+              break;
             default:
-              {
-                // ダメージ入力のWidgetを追加
-                ret.add(Column(
-                  key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => onBackPressed(),
-                            icon: Icon(Icons.arrow_back),
-                          ),
-                          Expanded(
-                            child: Text(replacedMove.displayName),
-                          ),
-                          TextButton(
-                              onPressed: () {},
-                              child: Text(isFirstAction != null
-                                  ? isFirstAction
-                                      ? loc.battleActFirst
-                                      : loc.battleActSecond
-                                  : ' '))
-                        ],
-                      ),
-                    ),
-                    // ダメージ入力
-                    Expanded(
-                      flex: 7,
-                      child: NumberInputButtons(
-                        initialNum: 0, // TODO?
-                        onConfirm: (remain) {
-                          int continuousCount = 0;
-                          if (playerType == PlayerType.me) {
-                            percentDamage[continuousCount] =
-                                yourState.remainHPPercent - remain;
-                          } else {
-                            realDamage[continuousCount] =
-                                yourState.remainHP - remain;
-                          }
-                          _isValid = true; // TODO
-                          onConfirm(); // TODO
-                          parentSetState(
-                            () {},
-                          );
-                          // TODO
-                          // onListIndexChange(listIndex + 1);
-                          /*
-                          if (extraCommand(
-                                key: ValueKey<int>(CommandState.extraInput2.index),
-                                theme: theme,
-                                onBackPressed: () {},
-                                parentSetState: (p0) {},
-                                isFirstAction: widget.isFirstAction,
-                                myParty: myParty,
-                                yourParty: yourParty,
-                                myState: myState,
-                                yourState: yourState,
-                                state: prevState,
-                                continuousCount: 0,
-                                loc: loc,
-                              ) !=
-                              null) {
-                            state = CommandState.extraInput2;
-                          }
-                          widget.onConfirm();*/
-                        },
-                      ),
-                    ),
-                  ],
-                ));
-              }
+              // ダメージ入力のWidgetを追加
+              templateTitles.add(Tuple2(
+                  CommandWidgetTemplate.inputDamage, replacedMove.displayName));
               break;
 /*
               return Column(
@@ -9270,6 +9006,7 @@ class TurnMove extends Equatable implements Copyable {
           }
 */
           }
+          break;
       }
 
       // 2.追加効果
@@ -9521,42 +9258,8 @@ class TurnMove extends Equatable implements Copyable {
           break;*/
         case 29: // 相手ポケモンをランダムに交代させる
         case 314: // 相手ポケモンをランダムに交代させる
-          ret.add(Column(
-            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-            children: [
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        onListIndexChange(listIndex - 1);
-                      },
-                      icon: Icon(Icons.arrow_back),
-                    ),
-                    Expanded(
-                      child: Text(loc.battlePokemonToChange),
-                    ),
-                    TextButton(
-                        onPressed: () {},
-                        child: Text(isFirstAction != null
-                            ? isFirstAction
-                                ? loc.battleActFirst
-                                : loc.battleActSecond
-                            : ' '))
-                  ],
-                ),
-              ),
-              // 効果に応じたWidget
-              Expanded(
-                flex: 7,
-                child: ListViewWithViewItemCount(
-                  viewItemCount: 4,
-                  children: yourPokemonTiles,
-                ),
-              ),
-            ],
-          ));
+          templateTitles.add(Tuple2(CommandWidgetTemplate.selectYourPokemons,
+              loc.battlePokemonToChange));
           break;
 /*        case 31:    // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
         case 94:    // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
@@ -9803,42 +9506,8 @@ class TurnMove extends Equatable implements Copyable {
         case 229: // 控えのポケモンと交代する
         case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
         case 493: // 天気をゆきにして控えと交代
-          ret.add(Column(
-            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-            children: [
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        onListIndexChange(listIndex - 1);
-                      },
-                      icon: Icon(Icons.arrow_back),
-                    ),
-                    Expanded(
-                      child: Text(loc.battlePokemonToChange),
-                    ),
-                    TextButton(
-                        onPressed: () {},
-                        child: Text(isFirstAction != null
-                            ? isFirstAction
-                                ? loc.battleActFirst
-                                : loc.battleActSecond
-                            : ' '))
-                  ],
-                ),
-              ),
-              // 効果に応じたWidget
-              Expanded(
-                flex: 7,
-                child: ListViewWithViewItemCount(
-                  viewItemCount: 4,
-                  children: myPokemonTiles,
-                ),
-              ),
-            ],
-          ));
+          templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
+              loc.battlePokemonToChange));
           break;
 /*        case 136:   // 個体値によってわざのタイプが変わる
           effectInputRow = Row(
@@ -10780,42 +10449,8 @@ class TurnMove extends Equatable implements Copyable {
           );
           break;*/
         case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
-          ret.add(Column(
-            key: ValueKey<int>(initialKeyNumber + (listIndex++)),
-            children: [
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        onListIndexChange(listIndex - 1);
-                      },
-                      icon: Icon(Icons.arrow_back),
-                    ),
-                    Expanded(
-                      child: Text(loc.battlePokemonToChange),
-                    ),
-                    TextButton(
-                        onPressed: () {},
-                        child: Text(isFirstAction != null
-                            ? isFirstAction
-                                ? loc.battleActFirst
-                                : loc.battleActSecond
-                            : ' '))
-                  ],
-                ),
-              ),
-              // 効果に応じたWidget
-              Expanded(
-                flex: 7,
-                child: ListViewWithViewItemCount(
-                  viewItemCount: 4,
-                  children: myPokemonTiles,
-                ),
-              ),
-            ],
-          ));
+          templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
+              loc.battlePokemonToChange));
           break;
         /*
           effectInputRow2 = DamageIndicateRow(
@@ -10879,6 +10514,323 @@ class TurnMove extends Equatable implements Copyable {
           break;*/
         default:
           break;
+      }
+    }
+
+    List<Widget> ret = [];
+
+    for (int index = 0; index < templateTitles.length; index++) {
+      Widget template = Container();
+
+      switch (templateTitles[index].item1) {
+        case CommandWidgetTemplate.successOrFail:
+          {
+            template = Column(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: SwitchListTile(
+                    title: Text(loc.battleSucceeded),
+                    onChanged: (change) {
+                      isSuccess = change;
+                      onUpdate();
+                    },
+                    value: isSuccess,
+                  ),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: Container(),
+                ),
+              ],
+            );
+          }
+          break;
+        case CommandWidgetTemplate.selectMyPokemons:
+          {
+            // 交代先選択ListTile作成
+            List<ListTile> myPokemonTiles = [];
+            List<int> addedIndex = [];
+            for (int i = 0; i < myParty.pokemonNum; i++) {
+              if (state.isPossibleBattling(playerType, i) &&
+                  !state.getPokemonStates(playerType)[i].isFainting) {
+                myPokemonTiles.add(
+                  ChangePokemonCommandTile(
+                    myParty.pokemons[i]!,
+                    theme,
+                    onTap: () {
+                      setChangePokemonIndex(playerType, i + 1);
+                      onUpdate();
+                    },
+                    selected: getChangePokemonIndex(playerType) == i + 1,
+                    showNetworkImage: PokeDB().getPokeAPI,
+                  ),
+                );
+                addedIndex.add(i);
+              }
+            }
+            for (int i = 0; i < myParty.pokemonNum; i++) {
+              if (addedIndex.contains(i)) continue;
+              myPokemonTiles.add(
+                ChangePokemonCommandTile(
+                  myParty.pokemons[i]!,
+                  theme,
+                  enabled: false,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+            }
+            template = ListViewWithViewItemCount(
+              viewItemCount: 4,
+              children: myPokemonTiles,
+            );
+          }
+          break;
+        case CommandWidgetTemplate.selectYourPokemons:
+          {
+            // 交代先選択ListTile作成
+            List<ListTile> yourPokemonTiles = [];
+            List<int> addedIndex = [];
+            for (int i = 0; i < yourParty.pokemonNum; i++) {
+              if (state.isPossibleBattling(playerType.opposite, i) &&
+                  !state.getPokemonStates(playerType.opposite)[i].isFainting) {
+                yourPokemonTiles.add(
+                  ChangePokemonCommandTile(
+                    yourParty.pokemons[i]!,
+                    theme,
+                    onTap: () {
+                      setChangePokemonIndex(playerType.opposite, i + 1);
+                      onUpdate();
+                    },
+                    selected:
+                        getChangePokemonIndex(playerType.opposite) == i + 1,
+                    showNetworkImage: PokeDB().getPokeAPI,
+                  ),
+                );
+                addedIndex.add(i);
+              }
+            }
+            for (int i = 0; i < yourParty.pokemonNum; i++) {
+              if (addedIndex.contains(i)) continue;
+              yourPokemonTiles.add(
+                ChangePokemonCommandTile(
+                  yourParty.pokemons[i]!,
+                  theme,
+                  enabled: false,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+            }
+            template = ListViewWithViewItemCount(
+              viewItemCount: 4,
+              children: yourPokemonTiles,
+            );
+          }
+          break;
+        case CommandWidgetTemplate.selectMyFaintingPokemons:
+          {
+            // 交代先選択ListTile作成
+            List<ListTile> pokemonTiles = [];
+            List<int> addedIndex = [];
+            for (int i = 0; i < myParty.pokemonNum; i++) {
+              if (state.isPossibleBattling(playerType, i) &&
+                  state.getPokemonStates(playerType)[i].isFainting) {
+                pokemonTiles.add(
+                  ChangePokemonCommandTile(
+                    myParty.pokemons[i]!,
+                    theme,
+                    onTap: () {
+                      extraArg1[continuousCount] = i + 1;
+                      _isValid = true;
+                      onConfirm();
+                    },
+                    selected: extraArg1[continuousCount] == i + 1,
+                    showNetworkImage: PokeDB().getPokeAPI,
+                  ),
+                );
+                addedIndex.add(i);
+              }
+            }
+            for (int i = 0; i < myParty.pokemonNum; i++) {
+              if (addedIndex.contains(i)) continue;
+              pokemonTiles.add(
+                ChangePokemonCommandTile(
+                  myParty.pokemons[i]!,
+                  theme,
+                  enabled: false,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+            }
+            template = ListViewWithViewItemCount(
+              viewItemCount: 4,
+              children: pokemonTiles,
+            );
+          }
+          break;
+        case CommandWidgetTemplate.inputDamage:
+          template = Column(
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Checkbox(
+                              value: moveHits[0] == MoveHit.hit ||
+                                  moveHits[0] == MoveHit.critical,
+                              onChanged: (change) {
+                                if (change != null) {
+                                  if (change) {
+                                    moveHits[0] = MoveHit.hit;
+                                  } else {
+                                    moveHits[0] = MoveHit.notHit;
+                                  }
+                                  onUpdate();
+                                }
+                              }),
+                          Text(MoveHit.hit.displayName),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      flex: 1,
+                      child: Row(
+                        children: [
+                          Checkbox(
+                              value: moveHits[0] == MoveHit.critical,
+                              onChanged: (change) {
+                                if (change != null) {
+                                  if (change) {
+                                    moveHits[0] = MoveHit.critical;
+                                  } else {
+                                    moveHits[0] = MoveHit.hit;
+                                  }
+                                  onUpdate();
+                                }
+                              }),
+                          Text(MoveHit.critical.displayName),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 6,
+                child: NumberInputButtons(
+                  initialNum: 0, // TODO?
+                  onConfirm: (remain) {
+                    int continuousCount = 0;
+                    if (playerType == PlayerType.me) {
+                      percentDamage[continuousCount] =
+                          yourState.remainHPPercent - remain;
+                    } else {
+                      realDamage[continuousCount] = yourState.remainHP - remain;
+                    }
+                    _isValid = true;
+                    onConfirm();
+                  },
+                  prefixText: '相手の残りHP',
+                  suffixText: playerType == PlayerType.me ? '%' : null,
+                ),
+              ),
+            ],
+          );
+          break;
+        case CommandWidgetTemplate.fail:
+          {
+            template = Column(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: SwitchListTile(
+                    title: Text(loc.battleSucceeded),
+                    onChanged: null,
+                    value: false,
+                  ),
+                ),
+                Expanded(
+                  flex: 6,
+                  child: Container(),
+                ),
+              ],
+            );
+          }
+          break;
+      }
+
+      // 返却Widget作成
+      // 最初のWidgetの場合、戻るボタンタップ時の挙動が違う
+      if (index == 0) {
+        ret.add(
+          Column(
+            key: ValueKey<int>(initialKeyNumber + index),
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => onBackPressed(),
+                      icon: Icon(Icons.arrow_back),
+                    ),
+                    Expanded(
+                      child: Text(templateTitles[index].item2),
+                    ),
+                    TextButton(
+                        onPressed: () {},
+                        child: Text(isFirstAction != null
+                            ? isFirstAction
+                                ? loc.battleActFirst
+                                : loc.battleActSecond
+                            : ' '))
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 7,
+                child: template,
+              ),
+            ],
+          ),
+        );
+      } else {
+        ret.add(
+          Column(
+            key: ValueKey<int>(initialKeyNumber + index),
+            children: [
+              Expanded(
+                flex: 1,
+                child: Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => onListIndexChange(index - 1),
+                      icon: Icon(Icons.arrow_back),
+                    ),
+                    Expanded(
+                      child: Text(templateTitles[index].item2),
+                    ),
+                    TextButton(
+                        onPressed: () {},
+                        child: Text(isFirstAction != null
+                            ? isFirstAction
+                                ? loc.battleActFirst
+                                : loc.battleActSecond
+                            : ' '))
+                  ],
+                ),
+              ),
+              Expanded(
+                flex: 7,
+                child: template,
+              ),
+            ],
+          ),
+        );
       }
     }
 

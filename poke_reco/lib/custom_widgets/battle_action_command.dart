@@ -47,6 +47,7 @@ class BattleActionCommand extends StatefulWidget {
 class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
+  List<Widget> moveCommandWidgetList = [];
   int listIndex = 0;
 
   @override
@@ -108,10 +109,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState),
             yourState);
         tmp.processMove(
-          myParty.copy(),
-          yourParty.copy(),
-          myState.copy(),
-          yourState.copy(),
+          playerType == PlayerType.me ? myParty.copy() : yourParty.copy(),
+          playerType == PlayerType.me ? yourParty.copy() : myParty.copy(),
+          playerType == PlayerType.me ? myState.copy() : yourState.copy(),
+          playerType == PlayerType.me ? yourState.copy() : myState.copy(),
           prevState.copy(),
           0,
           [],
@@ -124,8 +125,21 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             leading: turnMove
                 .getReplacedMoveType(myMove, 0, myState, prevState)
                 .displayIcon,
-            title: Text(myMove.displayName),
-            tileColor: i < myState.moves.length ? Colors.yellow[200] : null,
+            title: i < myState.moves.length
+                ? RichText(
+                    text: TextSpan(children: [
+                    TextSpan(
+                        text: myMove.displayName,
+                        style: theme.textTheme.bodyMedium),
+                    WidgetSpan(
+                      child: Icon(
+                        Icons.push_pin,
+                        size: theme.textTheme.bodyMedium!.fontSize,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ]))
+                : Text(myMove.displayName),
             subtitle:
                 Text('${getter.rangeString} (${getter.rangePercentString})'),
             trailing: Icon(Icons.arrow_forward_ios),
@@ -148,6 +162,30 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         turnMove.getReplacedMoveType(
                             myMove, 0, myState, prevState),
                         yourState);
+                // 表示Widgetのリスト作成
+                moveCommandWidgetList = turnMove.extraCommandInputList(
+                    initialKeyNumber: CommandState.extraInput.index,
+                    theme: theme,
+                    onBackPressed: () => parentSetState(() {
+                          // いろいろ初期化
+                          turnMove.clearMove();
+                          state = CommandState.selectCommand;
+                          widget.onUnConfirm();
+                        }),
+                    onListIndexChange: (index) => setState(() {
+                          listIndex = index;
+                        }),
+                    onConfirm: () => parentSetState(() => widget.onConfirm),
+                    onUpdate: () => parentSetState(() {}),
+                    isFirstAction: widget.isFirstAction,
+                    myParty: myParty,
+                    yourParty: yourParty,
+                    myState: myState,
+                    yourState: yourState,
+                    state: prevState,
+                    continuousCount: 0,
+                    loc: loc);
+                listIndex = 0;
                 state = CommandState.extraInput;
               });
             },
@@ -221,6 +259,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                       decoration: InputDecoration(
                         prefixIcon: const Icon(Icons.search),
                         border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.all(1),
                       ),
                       onChanged: (value) => setState(() {}),
                     ),
@@ -326,109 +365,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         }
         break;
       case CommandState.extraInput:
-        commandColumn = turnMove.extraCommandInputList(
-            initialKeyNumber: CommandState.extraInput.index,
-            theme: theme,
-            onBackPressed: () => parentSetState(() {
-                  // いろいろ初期化
-                  turnMove.clearMove();
-                  state = CommandState.selectCommand;
-                  widget.onUnConfirm();
-                }),
-            onListIndexChange: (index) {
-              listIndex = index;
-            },
-            onConfirm: () => widget.onConfirm,
-            parentSetState: parentSetState,
-            isFirstAction: widget.isFirstAction,
-            myParty: myParty,
-            yourParty: yourParty,
-            myState: myState,
-            yourState: yourState,
-            state: prevState,
-            continuousCount: 0,
-            loc: loc)[listIndex];
-/*        commandColumn = Column(
-          key: ValueKey<int>(state.index),
-          children: [
-            Expanded(
-              flex: 1,
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: 
-                    icon: Icon(Icons.arrow_back),
-                  ),
-                  Expanded(
-                    child: Text(turnMove.move.displayName),
-                  ),
-                  TextButton(
-                      onPressed: () {},
-                      child: Text(widget.isFirstAction != null
-                          ? widget.isFirstAction!
-                              ? loc.battleActFirst
-                              : loc.battleActSecond
-                          : ' '))
-                ],
-              ),
-            ),
-            // ダメージ入力
-            Expanded(
-              flex: 7,
-              child: NumberInputButtons(
-                initialNum: 0,
-                onConfirm: (remain) => parentSetState(() {
-                  int continuousCount = 0;
-                  if (playerType == PlayerType.me) {
-                    turnMove.percentDamage[continuousCount] =
-                        yourState.remainHPPercent - remain;
-                  } else {
-                    turnMove.realDamage[continuousCount] =
-                        yourState.remainHP - remain;
-                  }
-                  if (turnMove.extraCommand(
-                        key: ValueKey<int>(CommandState.extraInput2.index),
-                        theme: theme,
-                        onBackPressed: () {},
-                        parentSetState: (p0) {},
-                        isFirstAction: widget.isFirstAction,
-                        myParty: myParty,
-                        yourParty: yourParty,
-                        myState: myState,
-                        yourState: yourState,
-                        state: prevState,
-                        continuousCount: 0,
-                        loc: loc,
-                      ) !=
-                      null) {
-                    state = CommandState.extraInput2;
-                  }
-                  widget.onConfirm();
-                }),
-              ),
-            ),
-          ],
-        );
-*/
+        commandColumn = moveCommandWidgetList[listIndex];
         break;
-/*      case CommandState.extraInput2:
-        commandColumn = turnMove.extraCommand(
-          key: ValueKey<int>(CommandState.extraInput2.index),
-          theme: theme,
-          onBackPressed: () => setState(() {
-            state = CommandState.extraInput1;
-          }),
-          parentSetState: setState,
-          isFirstAction: widget.isFirstAction,
-          myParty: myParty,
-          yourParty: yourParty,
-          myState: myState,
-          yourState: yourState,
-          state: prevState,
-          continuousCount: 0,
-          loc: loc,
-        )!;
-        break;*/
       default:
         commandColumn = Container(
           key: ValueKey<int>(state.index),
