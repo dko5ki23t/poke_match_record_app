@@ -18,7 +18,8 @@ void main() async {
       ..move = pokeData.moves[1]!
       ..isSuccess = false
       ..actionFailure = ActionFailure(1)
-      ..moveHits = [MoveHit.critical]
+      ..hitCount = 2
+      ..criticalCount = 1
       ..moveEffectivenesses = [MoveEffectiveness.great]
       ..realDamage = [50]
       ..percentDamage = [25]
@@ -31,7 +32,7 @@ void main() async {
     turnMove.setChangePokemonIndex(PlayerType.me, 1);
     turnMove.setChangePokemonIndex(PlayerType.opponent, 2);
     final String sqlStr =
-        '0:1:${PokeType.fire.index}:1:0:1:${MoveHit.critical.index};:${MoveEffectiveness.great.index};:50;:25;:1;:1;:2;:3;:1;2;:${PokeType.water.index}:1';
+        '0:1:${PokeType.fire.index}:1:0:1:2:1:${MoveEffectiveness.great.index};:50;:25;:1;:1;:2;:3;:1;2;:${PokeType.water.index}:1';
 
     test('clear()', () {
       TurnMove testingTurnMove = turnMove.copy();

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
-import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
-import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
+import 'package:poke_reco/custom_widgets/stand_alone_checkbox.dart';
+import 'package:poke_reco/custom_widgets/stand_alone_switch_list.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
-import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/main.dart';
@@ -23,7 +22,6 @@ import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
@@ -221,6 +219,7 @@ enum CommandWidgetTemplate {
   inputDamage,
   fail,
   selectMove,
+  selectAcquiringMove,
 }
 
 class TurnMove extends Equatable implements Copyable {
@@ -231,7 +230,8 @@ class TurnMove extends Equatable implements Copyable {
       DamageClass(0), MoveEffect(0), 0, 0);
   bool isSuccess = true; // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0); // 行動失敗の理由
-  List<MoveHit> moveHits = [MoveHit.hit]; // 命中した/急所/外した
+  int hitCount = 1; // こうげきが命中した回数
+  int criticalCount = 0; // 急所に当たった回数
   List<MoveEffectiveness> moveEffectivenesses = [
     MoveEffectiveness.normal
   ]; // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
@@ -254,7 +254,8 @@ class TurnMove extends Equatable implements Copyable {
         move,
         isSuccess,
         actionFailure,
-        moveHits,
+        hitCount,
+        criticalCount,
         moveEffectivenesses,
         realDamage,
         percentDamage,
@@ -276,7 +277,8 @@ class TurnMove extends Equatable implements Copyable {
     ..move = move.copy()
     ..isSuccess = isSuccess
     ..actionFailure = actionFailure
-    ..moveHits = [...moveHits]
+    ..hitCount = hitCount
+    ..criticalCount = criticalCount
     ..moveEffectivenesses = [...moveEffectivenesses]
     ..realDamage = [...realDamage]
     ..percentDamage = [...percentDamage]
@@ -305,10 +307,8 @@ class TurnMove extends Equatable implements Copyable {
   // わざが成功＆ヒットしたかどうか
   // へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
   bool isNormallyHit(int continousCount) {
-    return isSuccess &&
-            (move.damageClass.id >= 2 &&
-                moveHits[continousCount] != MoveHit.notHit &&
-                moveHits[continousCount] != MoveHit.fail) ||
+    // TODO
+    return isSuccess && (move.damageClass.id >= 2 && hitCount > 0) ||
         (move.damageClass.id == 1);
   }
 
@@ -571,9 +571,7 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
 
-    if (!isSuccess ||
-        moveHits[continuousCount] == MoveHit.fail ||
-        moveHits[continuousCount] == MoveHit.notHit) return ret;
+    if (!isSuccess || hitCount == 0) return ret;
 
     List<IndividualField> myFields = state.getIndiFields(playerType);
     List<IndividualField> yourFields = state.getIndiFields(playerType.opposite);
@@ -596,7 +594,9 @@ class TurnMove extends Equatable implements Copyable {
     // 相手の不利ランク補正を無視してダメージ計算するか
     bool ignoreTargetRank = false;
     // 自身にとって不利ランク補正＆壁を無視してダメージ計算するか
-    bool isCritical = moveHits[continuousCount] == MoveHit.critical;
+    // TODO
+    //bool isCritical = moveHits[continuousCount] == MoveHit.critical;
+    bool isCritical = criticalCount > 0;
     // 相手のとくせいを無視してダメージ計算するか
     bool ignoreAbility = false;
     // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージ計算するか
@@ -4734,7 +4734,9 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
     // 急所補正(五捨五超入)
-    if (moveHits[continuousCount] == MoveHit.critical) {
+    // TODO
+    //if (moveHits[continuousCount] == MoveHit.critical) {
+    if (criticalCount > 0) {
       damageVmax = roundOff5(damageVmax * 1.5);
       damageVmin = roundOff5(damageVmin * 1.5);
       ret += loc.battleDamageCritical1_5;
@@ -4825,7 +4827,9 @@ class TurnMove extends Equatable implements Copyable {
         ret += loc.battleDamageBrainForce;
       }
       // スナイパー補正
-      if (moveHits[continuousCount] == MoveHit.critical &&
+      // TODO
+      //if (moveHits[continuousCount] == MoveHit.critical &&
+      if (criticalCount > 0 &&
           myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
         tmpMax *= 1.5;
         tmpMin *= 1.5;
@@ -5082,7 +5086,9 @@ class TurnMove extends Equatable implements Copyable {
         tmp /= 2;
       }
       // スナイパー補正
-      if (moveHits[continuousCount] == MoveHit.critical &&
+      // TODO
+      //if (moveHits[continuousCount] == MoveHit.critical &&
+      if (criticalCount > 0 &&
           myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
         tmp /= 1.5;
       }
@@ -5141,7 +5147,9 @@ class TurnMove extends Equatable implements Copyable {
     tmpMin = (tmpInt * 100 / 100).floor();
     tmpMax = (tmpInt * 100 / 85).floor();
     // 急所補正(五捨五超入)
-    if (moveHits[continuousCount] == MoveHit.critical) {
+    // TODO
+    //if (moveHits[continuousCount] == MoveHit.critical) {
+    if (criticalCount > 0) {
       tmpMax = roundOff5(tmpMax / 1.5);
       tmpMin = roundOff5(tmpMin / 1.5);
     }
@@ -5924,8 +5932,10 @@ class TurnMove extends Equatable implements Copyable {
                           TurnMove tmp = copy();
                           tmp.move = getReplacedMove(
                               suggestion, continuousCount, myState);
-                          tmp.moveHits[continuousCount] = getMoveHit(suggestion,
-                              continuousCount, myState, yourState, yourFields);
+                          if (isCriticalFromMove(
+                              suggestion, myState, yourState, yourFields)) {
+                            tmp.criticalCount = 1;
+                          }
                           tmp.moveAdditionalEffects[continuousCount] =
                               tmp.move.isSurelyEffect()
                                   ? MoveEffect(tmp.move.effect.id)
@@ -5966,8 +5976,10 @@ class TurnMove extends Equatable implements Copyable {
                           move = getReplacedMove(
                               suggestion, continuousCount, myState);
                           moveController.text = move.displayName;
-                          moveHits[continuousCount] = getMoveHit(suggestion,
-                              continuousCount, myState, yourState, yourFields);
+                          if (isCriticalFromMove(
+                              suggestion, myState, yourState, yourFields)) {
+                            criticalCount = 1;
+                          }
                           moveAdditionalEffects[0] = move.isSurelyEffect()
                               ? MoveEffect(move.effect.id)
                               : MoveEffect(0);
@@ -6101,2498 +6113,6 @@ class TurnMove extends Equatable implements Copyable {
     }
   }
 
-  Widget extraWidget2(
-    void Function() onFocus,
-    ThemeData theme,
-    Pokemon ownPokemon,
-    Pokemon opponentPokemon,
-    Party ownParty,
-    Party opponentParty,
-    PokemonState ownPokemonState,
-    PokemonState opponentPokemonState,
-    List<PokemonState> ownPokemonStates,
-    List<PokemonState> opponentPokemonStates,
-    PhaseState state,
-    TextEditingController hpController,
-    TextEditingController hpController2,
-    TextEditingController preMoveController,
-    MyAppState appState,
-    int phaseIdx,
-    int continuousCount,
-    TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
-    List<int> invalidGuideIDs, {
-    required bool isInput,
-    required AppLocalizations loc,
-  }) {
-    if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
-      return Container();
-    }
-
-    if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
-      return DamageIndicateRow(
-        playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-        hpController2,
-        playerType == PlayerType.me,
-        onFocus,
-        (value) {
-          if (playerType == PlayerType.me) {
-            extraArg1[continuousCount] =
-                ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-          } else {
-            extraArg2[continuousCount] = opponentPokemonState.remainHPPercent -
-                (int.tryParse(value) ?? 0);
-          }
-          appState.editingPhase[phaseIdx] = true;
-          onFocus();
-        },
-        playerType == PlayerType.me
-            ? extraArg1[continuousCount]
-            : extraArg2[continuousCount],
-        isInput,
-        loc: loc,
-      );
-    }
-
-    var myState =
-        playerType == PlayerType.me ? ownPokemonState : opponentPokemonState;
-    var yourState =
-        playerType == PlayerType.me ? opponentPokemonState : ownPokemonState;
-
-    if (playerType != PlayerType.none &&
-        type == TurnMoveType.move &&
-        move.id != 0) {
-      // 追加効果
-      Row effectInputPrevRow = Row();
-      bool insertPrevRow = false;
-      switch (move.effect.id) {
-        case 84: // ほぼすべてのわざから1つをランダムで使う
-        case 243: // 最後に出されたわざを出す(相手のわざとは限らない)
-          // 含まれないわざもあるが、すべてのわざを入力できるようにしている
-          insertPrevRow = true;
-          effectInputPrevRow = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: preMoveController,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Move> matches =
-                        appState.pokeData.moves.values.toList();
-                    matches.removeWhere((e) => e.id == 0);
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(suggestion.displayName),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    preMoveController.text = suggestion.displayName;
-                    extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] =
-                        suggestion.isSurelyEffect()
-                            ? MoveEffect(suggestion.effect.id)
-                            : MoveEffect(0);
-                    turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copy(),
-                      opponentParty.copy(),
-                      ownPokemonState.copy(),
-                      opponentPokemonState.copy(),
-                      state.copy(),
-                      0,
-                      invalidGuideIDs,
-                      loc: loc,
-                    );
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 98: // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
-          insertPrevRow = true;
-          effectInputPrevRow = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: preMoveController,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Move> matches = [];
-                    if (playerType == PlayerType.me) {
-                      matches.add(ownPokemon.move1);
-                      if (ownPokemon.move2 != null) {
-                        matches.add(ownPokemon.move2!);
-                      }
-                      if (ownPokemon.move3 != null) {
-                        matches.add(ownPokemon.move3!);
-                      }
-                      if (ownPokemon.move4 != null) {
-                        matches.add(ownPokemon.move4!);
-                      }
-                    } else if (opponentPokemonState.moves.length == 4) {
-                      //　わざがすべて判明している場合
-                      matches.addAll(opponentPokemonState.moves);
-                    } else {
-                      matches.addAll(
-                          appState.pokeData.pokeBase[opponentPokemon.no]!.move);
-                    }
-                    matches.add(appState.pokeData.moves[165]!); // わるあがき
-                    matches.removeWhere((e) => e.id == 0);
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(suggestion.displayName),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    preMoveController.text = suggestion.displayName;
-                    extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] =
-                        suggestion.isSurelyEffect()
-                            ? MoveEffect(suggestion.effect.id)
-                            : MoveEffect(0);
-                    turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copy(),
-                      opponentParty.copy(),
-                      ownPokemonState.copy(),
-                      opponentPokemonState.copy(),
-                      state.copy(),
-                      0,
-                      invalidGuideIDs,
-                      loc: loc,
-                    );
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        default:
-          break;
-      }
-
-      // 必要に応じてわざの内容変更
-      Move replacedMove = getReplacedMove(move, continuousCount,
-          playerType == PlayerType.me ? ownPokemonState : opponentPokemonState);
-
-      // 追加効果
-      Row effectInputRow = Row();
-      Widget effectInputRow2 = Row();
-      switch (replacedMove.effect.id) {
-        //case 2:     // 眠らせる
-        case 3: // どくにする(確率)
-        case 5: // やけどにする(確率)
-        case 6: // こおりにする(確率)
-        case 7: // まひにする(確率)
-        case 32: // ひるませる(確率)
-        case 69: // こうげきを1段階下げる(確率)
-        case 70: // ぼうぎょを1段階下げる(確率)
-        case 71: // すばやさを1段階下げる(確率)
-        case 72: // とくこうを1段階下げる(確率)
-        case 73: // とくぼうを1段階下げる(確率)
-        case 74: // めいちゅうを1段階下げる(確率)
-        case 77: // こんらんさせる(確率)
-        case 78: // 2回こうげき、どくにする(確率)
-        case 93: // ひるませる(確率)。ねむり状態のときのみ成功
-        case 153: // まひにする(確率)。天気があめなら必中、はれなら命中率が下がる。そらをとぶ状態でも命中する
-        case 201: // やけどにする(確率)。急所に当たりやすい
-        case 203: // もうどくにする(確率)
-        case 210: // どくにする(確率)。急所に当たりやすい
-        case 261: // こおりにする(確率)。天気がゆきのときは必中
-        case 268: // こんらんさせる(確率)
-        case 272: // とくぼうを2段階下げる(確率)
-        case 330: // ねむり状態にする(確率)。メロエッタのフォルムが変わる
-        case 334: // こんらんさせる(確率)。そらをとぶ状態の相手にも当たる。天気があめだと必中、はれだと命中率50になる
-        case 372: // まひにする(確率)
-        case 454: // 対象がそのターンに能力が上がっているとやけど状態にする(確率)
-        case 470: // すばやさを1段階下げる(確率)。天気があめの時は必中
-        case 471: // まひにする(確率)。天気があめの時は必中
-        case 472: // やけどにする(確率)。天気があめの時は必中
-        case 499: // 眠らせる(確率)
-        case 510: // 対象がそのターンに能力が上がっているとこんらん状態にする(確率)
-        case 512: // 対象が先制攻撃技を使おうとしているとき、かつ使用者の方が先に行動する場合のみ成功。ひるませる(確率)。
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(_getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? _getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 4: // 与えたダメージの半分だけHP回復
-        case 9: // ねむり状態の対象にのみダメージ、与えたダメージの半分だけHP回復
-        case 33: // 最大HPの半分だけ回復する
-        case 49: // 使用者は相手に与えたダメージの1/4ダメージを受ける
-        case 80: // 場に「みがわり」を発生させる
-        case 92: // 自分と相手のHPを足して半々に分ける
-        case 133: // 使用者のHP回復。回復量は天気による
-        case 163: // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
-        case 199: // 与えたダメージの33%を使用者も受ける
-        case 215: // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
-        case 255: // 使用者は最大HP1/4の反動ダメージを受ける
-        case 270: // 与えたダメージの1/2を使用者も受ける
-        case 346: // 与えたダメージの半分だけHP回復
-        case 349: // 与えたダメージの3/4だけHP回復
-        case 382: // 最大HPの半分だけ回復する。天気がすなあらしの場合は2/3回復する
-        case 387: // 最大HPの半分だけ回復する。場がグラスフィールドの場合は2/3回復する
-        case 388: // 相手のこうげきを1段階下げ、下げる前のこうげき実数値と同じ値だけ使用者のHPを回復する
-        case 433: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
-        case 441: // 最大HP1/4だけ回復
-        case 461: // 最大HP1/4回復、状態異常を治す
-        case 485: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
-          effectInputRow2 = DamageIndicateRow(
-            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-            hpController2,
-            playerType == PlayerType.me,
-            onFocus,
-            (value) {
-              if (playerType == PlayerType.me) {
-                extraArg1[continuousCount] =
-                    ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-              } else {
-                extraArg2[continuousCount] =
-                    opponentPokemonState.remainHPPercent -
-                        (int.tryParse(value) ?? 0);
-              }
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            playerType == PlayerType.me
-                ? extraArg1[continuousCount]
-                : extraArg2[continuousCount],
-            isInput,
-            loc: loc,
-          );
-          break;
-        case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
-          effectInputRow = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Move> matches = [];
-                    if (playerType == PlayerType.opponent) {
-                      matches.add(ownPokemon.move1);
-                      if (ownPokemon.move2 != null) {
-                        matches.add(ownPokemon.move2!);
-                      }
-                      if (ownPokemon.move3 != null) {
-                        matches.add(ownPokemon.move3!);
-                      }
-                      if (ownPokemon.move4 != null) {
-                        matches.add(ownPokemon.move4!);
-                      }
-                    } else if (opponentPokemonState.moves.length == 4) {
-                      //　わざがすべて判明している場合
-                      matches.addAll(opponentPokemonState.moves);
-                    } else {
-                      matches.addAll(
-                          appState.pokeData.pokeBase[opponentPokemon.no]!.move);
-                    }
-                    matches.add(appState.pokeData.moves[165]!); // わるあがき
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(suggestion.displayName),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg3[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        //case 11:    // 使用者のこうげきを1段階上げる
-        //case 12:    // 使用者のぼうぎょを1段階上げる
-        //case 14:    // 使用者のとくこうを1段階上げる
-        //case 17:    // 使用者のかいひを1段階上げる
-        //case 51:    // 使用者のこうげきを2段階上げる
-        //case 52:    // 使用者のぼうぎょを2段階上げる
-        //case 53:    // 使用者のすばやさを2段階上げる
-        //case 54:    // 使用者のとくこうを2段階上げる
-        //case 55:    // 使用者のとくこうを2段階上げる
-        case 139: // 使用者のぼうぎょを1段階上げる(確率)
-        case 140: // 使用者のこうげきを1段階上げる(確率)
-        case 141: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさを1段階上げる(確率)
-        case 277: // 使用者のとくこうを1段階上げる(確率)
-        case 359: // 使用者のぼうぎょを2段階上げる(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(_getMoveEffectText(replacedMove.effect.id,
-                          myState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? _getMoveEffectText(replacedMove.effect.id,
-                          myState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 28: // 2～3ターンの間あばれる状態になり、攻撃し続ける。攻撃終了後、自身がこんらん状態となる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleExhaustedConfused(
-                          myState.pokemon.omittedName)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] ==
-                          replacedMove.effect.id
-                      ? loc.battleExhaustedConfused(myState.pokemon.omittedName)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 29: // 相手ポケモンをランダムに交代させる
-        case 314: // 相手ポケモンをランダムに交代させる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battlePokemonToChange,
-                  ),
-                  items: playerType == PlayerType.opponent
-                      ? <DropdownMenuItem>[
-                          for (int i = 0; i < ownParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled: state.isPossibleBattling(
-                                      playerType.opposite, i) &&
-                                  !state
-                                      .getPokemonStates(playerType.opposite)[i]
-                                      .isFainting,
-                              theme: theme,
-                              pokemon: ownParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ]
-                      : <DropdownMenuItem>[
-                          for (int i = 0; i < opponentParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled: state.isPossibleBattling(
-                                      playerType.opposite, i) &&
-                                  !state
-                                      .getPokemonStates(playerType.opposite)[i]
-                                      .isFainting,
-                              theme: theme,
-                              pokemon: opponentParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ],
-                  value: getChangePokemonIndex(playerType.opposite),
-                  onChanged: (value) {
-                    setChangePokemonIndex(playerType.opposite, value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: isInput
-                      ? null
-                      : playerType == PlayerType.opponent
-                          ? ownParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType.opposite) ??
-                                      1 - 1]
-                              ?.name
-                          : opponentParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType.opposite) ??
-                                      1 - 1]
-                              ?.name,
-                  prefixIconPokemon: isInput
-                      ? null
-                      : playerType == PlayerType.opponent
-                          ? ownParty.pokemons[
-                              getChangePokemonIndex(playerType.opposite) ??
-                                  1 - 1]
-                          : opponentParty.pokemons[
-                              getChangePokemonIndex(playerType.opposite) ??
-                                  1 - 1],
-                  showNetworkImage: PokeDB().getPokeAPI,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 31: // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
-        case 94: // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myTypeDropdownButton(
-                  loc.battleTypeToChange,
-                  (val) {
-                    extraArg1[continuousCount] = val;
-                  },
-                  onFocus,
-                  extraArg1[continuousCount] == 0
-                      ? null
-                      : extraArg1[continuousCount],
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 37: // やけど・こおり・まひのいずれかにする(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.burn,
-                      child:
-                          Text(loc.battleBurned(yourState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.freeze,
-                      child:
-                          Text(loc.battleFrozen(yourState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.paralysis,
-                      child: Text(
-                          loc.battlePararised(yourState.pokemon.omittedName)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.burn
-                      ? loc.battleBurned(yourState.pokemon.omittedName)
-                      : extraArg1[continuousCount] == Ailment.freeze
-                          ? loc.battleFrozen(yourState.pokemon.omittedName)
-                          : extraArg1[continuousCount] == Ailment.paralysis
-                              ? loc.battlePararised(
-                                  yourState.pokemon.omittedName)
-                              : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 46: // わざを外すと使用者に、使用者の最大HP1/2のダメージ
-          if (moveHits[continuousCount] == MoveHit.notHit ||
-              moveHits[continuousCount] == MoveHit.fail) {
-            effectInputRow2 = DamageIndicateRow(
-              playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-              hpController2,
-              playerType == PlayerType.me,
-              onFocus,
-              (value) {
-                if (playerType == PlayerType.me) {
-                  extraArg1[continuousCount] =
-                      ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-                } else {
-                  extraArg2[continuousCount] =
-                      opponentPokemonState.remainHPPercent -
-                          (int.tryParse(value) ?? 0);
-                }
-                appState.editingPhase[phaseIdx] = true;
-                onFocus();
-              },
-              playerType == PlayerType.me
-                  ? extraArg1[continuousCount]
-                  : extraArg2[continuousCount],
-              isInput,
-              loc: loc,
-            );
-          }
-          break;
-        case 106: // もちものを盗む
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleStealItem),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleStealItem
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                    enabled: moveAdditionalEffects[continuousCount].id !=
-                        MoveEffect.none,
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    if (playerType == PlayerType.me) {
-                      if (opponentPokemonState.getHoldingItem() != null &&
-                          opponentPokemonState.getHoldingItem()!.id != 0) {
-                        matches.add(opponentPokemonState.getHoldingItem()!);
-                      } else {
-                        matches = appState.pokeData.items.values.toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (ownPokemonState.getHoldingItem() != null) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 110: // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
-          if ((playerType == PlayerType.me &&
-                  ownPokemonState.isTypeContain(PokeType.ghost)) ||
-              (playerType == PlayerType.opponent &&
-                  opponentPokemonState.isTypeContain(PokeType.ghost))) {
-            effectInputRow2 = DamageIndicateRow(
-              playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-              hpController2,
-              playerType == PlayerType.me,
-              onFocus,
-              (value) {
-                if (playerType == PlayerType.me) {
-                  extraArg1[continuousCount] =
-                      ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-                } else {
-                  extraArg2[continuousCount] =
-                      opponentPokemonState.remainHPPercent -
-                          (int.tryParse(value) ?? 0);
-                }
-                appState.editingPhase[phaseIdx] = true;
-                onFocus();
-              },
-              playerType == PlayerType.me
-                  ? extraArg1[continuousCount]
-                  : extraArg2[continuousCount],
-              isInput,
-              loc: loc,
-            );
-          }
-          break;
-        case 76: // 1ターン目は攻撃せず、2ターン目に攻撃。ひるませる(確率)
-        case 126: // 使用者のこおり状態を消す。相手をやけど状態にする(確率)
-        case 147: // ひるませる(確率)。そらをとぶ状態でも命中し、その場合威力が2倍
-        case 151: // ひるませる(確率)。ちいさくなる状態に対して必中、その場合威力が2倍
-        case 264: // 使用者はそらをとぶ状態になり、次のターンにこうげきする。相手をまひ状態にする(確率)
-        case 332: // 1ターン目にため、2ターン目でこうげきする。まひ状態にする(確率)
-        case 333: // 1ターン目にため、2ターン目でこうげきする。やけど状態にする(確率)
-        case 380: // こおりにする(確率)。みずタイプのポケモンに対しても効果ばつぐんとなる
-        case 449: // ぶつりわざであるときの方がダメージが大きい場合は物理技になる。どく状態にする(確率)
-        case 460: // やけど状態にする(確率)。使用者、対象ともにこおりを治す
-        case 466: // 対象がどく・もうどく状態なら威力2倍。どくにする(確率)
-        case 469: // 対象が状態異常の場合威力2倍。やけど状態にする(確率)
-        case 484: // バインド・やどりぎのタネ・まきびし・どくびし・とがった岩・ねばねばネット除去。対象をどく状態にする(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(_getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 1
-                      ? _getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
-        case 154: // 控えのポケモンと交代する
-        case 229: // 控えのポケモンと交代する
-        case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
-        case 493: // 天気をゆきにして控えと交代
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battlePokemonToChange,
-                  ),
-                  items: playerType == PlayerType.me
-                      ? <DropdownMenuItem>[
-                          for (int i = 0; i < ownParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled:
-                                  state.isPossibleBattling(playerType, i) &&
-                                      !state
-                                          .getPokemonStates(playerType)[i]
-                                          .isFainting,
-                              theme: theme,
-                              pokemon: ownParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ]
-                      : <DropdownMenuItem>[
-                          for (int i = 0; i < opponentParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled:
-                                  state.isPossibleBattling(playerType, i) &&
-                                      !state
-                                          .getPokemonStates(playerType)[i]
-                                          .isFainting,
-                              theme: theme,
-                              pokemon: opponentParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ],
-                  value: getChangePokemonIndex(playerType),
-                  onChanged: (value) {
-                    setChangePokemonIndex(playerType, value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: isInput
-                      ? null
-                      : playerType == PlayerType.me
-                          ? ownParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType) ?? 1 - 1]
-                              ?.name
-                          : opponentParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType) ?? 1 - 1]
-                              ?.name,
-                  prefixIconPokemon: isInput
-                      ? null
-                      : playerType == PlayerType.me
-                          ? ownParty.pokemons[
-                              getChangePokemonIndex(playerType) ?? 1 - 1]
-                          : opponentParty.pokemons[
-                              getChangePokemonIndex(playerType) ?? 1 - 1],
-                  showNetworkImage: PokeDB().getPokeAPI,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 136: // 個体値によってわざのタイプが変わる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myTypeDropdownButton(
-                  loc.battleMoveType,
-                  (val) {
-                    extraArg1[continuousCount] = val;
-                  },
-                  onFocus,
-                  extraArg1[continuousCount] == 0
-                      ? null
-                      : extraArg1[continuousCount],
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 178: // 使用者ともちものを入れ替える
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.battleItemYouGet,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    if (opponentPokemonState.getHoldingItem() != null &&
-                        opponentPokemonState.getHoldingItem()!.id != 0) {
-                      matches.add(opponentPokemonState.getHoldingItem()!);
-                    } else {
-                      matches = appState.pokeData.items.values.toList();
-                      matches.removeWhere((element) => element.id == 0);
-                      for (var item in opponentPokemonState.impossibleItems) {
-                        matches.removeWhere((element) => element.id == item.id);
-                      }
-                      matches.add(Item(
-                        id: 0,
-                        displayName: loc.commonNone,
-                        displayNameEn: 'None',
-                        flingPower: 0,
-                        flingEffectId: 0,
-                        timing: Timing.none,
-                        isBerry: false,
-                        imageUrl: '',
-                      ));
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 179: // 相手と同じとくせいになる
-          effectInputRow = Row(
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonAbility,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Ability> matches = [];
-                    if (playerType == PlayerType.me) {
-                      if (opponentPokemonState.currentAbility.id != 0) {
-                        matches.add(opponentPokemonState.currentAbility);
-                      } else {
-                        matches.addAll(opponentPokemonState.possibleAbilities);
-                      }
-                      if (state.canAnyZoroark) {
-                        matches.add(PokeDB().abilities[149]!);
-                      }
-                    } else {
-                      matches.add(ownPokemonState.currentAbility);
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 185: // 戦闘中自分が最後に使用したもちものを復活させる
-        case 324: // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
-        case 456: // 対象にもちものがあるときのみ成功
-        case 457: // 対象のもちものを消失させる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches =
-                        appState.pokeData.items.values.toList();
-                    matches.removeWhere((element) => element.id == 0);
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 189: // もちものを持っていれば失わせ、威力1.5倍
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleKnockOffItem),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleKnockOffItem
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                    enabled: moveAdditionalEffects[continuousCount].id !=
-                        MoveEffect.none,
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    if (playerType == PlayerType.me) {
-                      if (opponentPokemonState.getHoldingItem() != null &&
-                          opponentPokemonState.getHoldingItem()!.id != 0) {
-                        matches.add(opponentPokemonState.getHoldingItem()!);
-                      } else {
-                        matches = appState.pokeData.items.values.toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (ownPokemonState.getHoldingItem() != null) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 192: // 使用者ととくせいを入れ替える
-          effectInputRow = Row(
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.battleAbilityYouGet,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Ability> matches = [];
-                    if (opponentPokemonState.getCurrentAbility().id != 0) {
-                      matches.add(opponentPokemonState.getCurrentAbility());
-                    } else {
-                      matches.addAll(opponentPokemonState.possibleAbilities);
-                    }
-                    if (state.canAnyZoroark) {
-                      matches.add(PokeDB().abilities[149]!);
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 225: // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleConsumeOpponentBerry(
-                          yourState.pokemon.omittedName)),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleConsumeOpponentBerry(
-                          yourState.pokemon.omittedName)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                    enabled: moveAdditionalEffects[continuousCount].id !=
-                        MoveEffect.none,
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    if (playerType == PlayerType.me) {
-                      if (opponentPokemonState.getHoldingItem() != null &&
-                          opponentPokemonState.getHoldingItem()!.id != 0) {
-                        matches.add(opponentPokemonState.getHoldingItem()!);
-                      } else {
-                        matches = appState.pokeData.items.values.toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (ownPokemonState.getHoldingItem() != null) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          // TODO controllerの数足りてない
-          effectInputRow2 =
-              appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus,
-            theme,
-            playerType,
-            ownPokemon,
-            opponentPokemon,
-            ownPokemonState,
-            opponentPokemonState,
-            ownParty,
-            opponentParty,
-            state,
-            preMoveController,
-            extraArg2[continuousCount],
-            0,
-            getChangePokemonIndex(playerType),
-            (value) {
-              extraArg2[continuousCount] = value;
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            (value) {},
-            (value) {
-              setChangePokemonIndex(playerType, value);
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            isInput,
-            showNetworkImage: PokeDB().getPokeAPI,
-            loc: loc,
-          );
-          break;
-        case 227: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(
-                          loc.battleAttackUp2(myState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(
-                          loc.battleDefenseUp2(myState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: 2,
-                      child: Text(
-                          loc.battleSAttackUp2(myState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: 3,
-                      child: Text(
-                          loc.battleSDefenseUp2(myState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: 5,
-                      child: Text(
-                          loc.battleAccuracyUp2(myState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: 6,
-                      child: Text(loc
-                          .battleEvasivenessUp2(myState.pokemon.omittedName)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 0
-                      ? loc.battleAttackUp2(myState.pokemon.omittedName)
-                      : extraArg1[continuousCount] == 1
-                          ? loc.battleDefenseUp2(myState.pokemon.omittedName)
-                          : extraArg1[continuousCount] == 2
-                              ? loc
-                                  .battleSAttackUp2(myState.pokemon.omittedName)
-                              : extraArg1[continuousCount] == 3
-                                  ? loc.battleSDefenseUp2(
-                                      myState.pokemon.omittedName)
-                                  : extraArg1[continuousCount] == 5
-                                      ? loc.battleAccuracyUp2(
-                                          myState.pokemon.omittedName)
-                                      : loc.battleEvasivenessUp2(
-                                          myState.pokemon.omittedName),
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 234: // 使用者のもちものによって威力と追加効果が変わる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleFlingItem),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleFlingItem
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                    enabled: moveAdditionalEffects[continuousCount].id !=
-                        MoveEffect.none,
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    if (playerType == PlayerType.opponent) {
-                      if (opponentPokemonState.getHoldingItem() != null &&
-                          opponentPokemonState.getHoldingItem()!.id != 0) {
-                        matches.add(opponentPokemonState.getHoldingItem()!);
-                      } else {
-                        matches = appState.pokeData.items.values.toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (ownPokemonState.getHoldingItem() != null) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          // TODO controllerの数足りてない
-          effectInputRow2 =
-              appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus,
-            theme,
-            playerType,
-            ownPokemon,
-            opponentPokemon,
-            ownPokemonState,
-            opponentPokemonState,
-            ownParty,
-            opponentParty,
-            state,
-            preMoveController,
-            extraArg2[continuousCount],
-            0,
-            getChangePokemonIndex(playerType),
-            (value) {
-              extraArg2[continuousCount] = value;
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            (value) {},
-            (value) {
-              setChangePokemonIndex(playerType, value);
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            isInput,
-            showNetworkImage: PokeDB().getPokeAPI,
-            loc: loc,
-          );
-          break;
-        case 254: // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
-        case 263: // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
-        case 475: // こんらんさせる(確率)。わざを外すと使用者に、使用者の最大HP1/2のダメージ
-        case 500: // 与えたダメージの半分だけ回復する。両者のこおり状態を消す。相手をやけど状態にする(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(_getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 1
-                      ? _getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          effectInputRow2 = DamageIndicateRow(
-            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-            hpController2,
-            playerType == PlayerType.me,
-            onFocus,
-            (value) {
-              if (playerType == PlayerType.me) {
-                extraArg2[continuousCount] =
-                    ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-              } else {
-                extraArg2[continuousCount] =
-                    opponentPokemonState.remainHPPercent -
-                        (int.tryParse(value) ?? 0);
-              }
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            extraArg2[continuousCount],
-            isInput,
-            loc: loc,
-          );
-          break;
-        case 274: // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
-        case 275: // 相手をこおり状態にする(確率)。相手をひるませる(確率)。
-        case 276: // 相手をまひ状態にする(確率)。相手をひるませる(確率)。
-        case 468: // 相手のぼうぎょを1段階下げる(確率)。相手をひるませる(確率)。急所に当たりやすい
-          effectInputRow = Row(
-            children: [
-              Flexible(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${loc.battleAdditionalEffect}1',
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(_getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == 1
-                      ? _getMoveEffectText(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Flexible(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: '${loc.battleAdditionalEffect}2',
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(_getMoveEffectText2(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)),
-                    ),
-                  ],
-                  value: extraArg2[continuousCount],
-                  onChanged: (value) {
-                    extraArg2[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg2[continuousCount] == 1
-                      ? _getMoveEffectText2(replacedMove.effect.id,
-                          yourState.pokemon.omittedName, loc)
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 300: // 相手のとくせいを使用者のとくせいと同じにする
-          effectInputRow = Row(
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonAbility,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Ability> matches = [];
-                    if (playerType == PlayerType.opponent) {
-                      if (opponentPokemonState.currentAbility.id != 0) {
-                        matches.add(opponentPokemonState.currentAbility);
-                      } else {
-                        matches.addAll(opponentPokemonState.possibleAbilities);
-                      }
-                      if (state.canAnyZoroark) {
-                        matches.add(PokeDB().abilities[149]!);
-                      }
-                    } else {
-                      matches.add(ownPokemonState.currentAbility);
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 315: // 相手のきのみ・ノーマルジュエルを失わせる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleBurnDownItem),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleBurnDownItem
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-              SizedBox(
-                width: 10,
-              ),
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonItem,
-                    ),
-                    enabled: moveAdditionalEffects[continuousCount].id !=
-                        MoveEffect.none,
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    Item? holdingItem = playerType == PlayerType.me
-                        ? opponentPokemonState.getHoldingItem()
-                        : ownPokemonState.getHoldingItem();
-                    if (playerType == PlayerType.me) {
-                      if (holdingItem != null && holdingItem.id != 0) {
-                        if (holdingItem.isBerry || holdingItem.id == 669) {
-                          matches.add(holdingItem);
-                        }
-                      } else {
-                        matches = appState.pokeData.items.values
-                            .where((e) => e.isBerry || e.id == 669)
-                            .toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (holdingItem != null &&
-                        (holdingItem.isBerry || holdingItem.id == 669)) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 424: // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: hpController2,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.battleConsumedItem,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Item> matches = [];
-                    Item? holdingItem = playerType == PlayerType.me
-                        ? ownPokemonState.getHoldingItem()
-                        : opponentPokemonState.getHoldingItem();
-                    if (playerType == PlayerType.opponent) {
-                      if (holdingItem != null && holdingItem.id != 0) {
-                        if (holdingItem.isBerry) {
-                          matches.add(holdingItem);
-                        }
-                      } else {
-                        matches = appState.pokeData.items.values
-                            .where((e) => e.isBerry)
-                            .toList();
-                        matches.removeWhere((element) => element.id == 0);
-                        for (var item in opponentPokemonState.impossibleItems) {
-                          matches
-                              .removeWhere((element) => element.id == item.id);
-                        }
-                      }
-                    } else if (holdingItem != null && (holdingItem.isBerry)) {
-                      matches = [ownPokemonState.getHoldingItem()!];
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    hpController2.text = suggestion.displayName;
-                    extraArg1[continuousCount] = suggestion.id;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
-          // TODO controllerの数足りてない
-          effectInputRow2 =
-              appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-            onFocus,
-            theme,
-            playerType,
-            ownPokemon,
-            opponentPokemon,
-            ownPokemonState,
-            opponentPokemonState,
-            ownParty,
-            opponentParty,
-            state,
-            preMoveController,
-            extraArg2[continuousCount],
-            0,
-            getChangePokemonIndex(playerType),
-            (value) {
-              extraArg2[continuousCount] = value;
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            (value) {},
-            (value) {
-              setChangePokemonIndex(playerType, value);
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            isInput,
-            showNetworkImage: PokeDB().getPokeAPI,
-            loc: loc,
-          );
-          break;
-        case 464: // どく・まひ・ねむりのいずれかにする(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.poison,
-                      child: Text(
-                          loc.battlePoisoned(yourState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.paralysis,
-                      child: Text(
-                          loc.battlePararised(yourState.pokemon.omittedName)),
-                    ),
-                    DropdownMenuItem(
-                      value: Ailment.sleep,
-                      child: Text(
-                          loc.battleFellAsleep(yourState.pokemon.omittedName)),
-                    ),
-                  ],
-                  value: extraArg1[continuousCount],
-                  onChanged: (value) {
-                    extraArg1[continuousCount] = value;
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: extraArg1[continuousCount] == Ailment.poison
-                      ? loc.battlePoisoned(yourState.pokemon.omittedName)
-                      : extraArg1[continuousCount] == Ailment.paralysis
-                          ? loc.battlePararised(yourState.pokemon.omittedName)
-                          : extraArg1[continuousCount] == Ailment.sleep
-                              ? loc.battleFellAsleep(
-                                  yourState.pokemon.omittedName)
-                              : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                flex: 5,
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleRevivePokemon,
-                  ),
-                  items: playerType == PlayerType.me
-                      ? <DropdownMenuItem>[
-                          for (int i = 0; i < ownParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled:
-                                  state.isPossibleBattling(playerType, i) &&
-                                      !state
-                                          .getPokemonStates(playerType)[i]
-                                          .isFainting,
-                              theme: theme,
-                              pokemon: ownParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ]
-                      : <DropdownMenuItem>[
-                          for (int i = 0; i < opponentParty.pokemonNum; i++)
-                            PokemonDropdownMenuItem(
-                              value: i + 1,
-                              enabled:
-                                  state.isPossibleBattling(playerType, i) &&
-                                      !state
-                                          .getPokemonStates(playerType)[i]
-                                          .isFainting,
-                              theme: theme,
-                              pokemon: opponentParty.pokemons[i]!,
-                              showNetworkImage: PokeDB().getPokeAPI,
-                            ),
-                        ],
-                  value: getChangePokemonIndex(playerType),
-                  onChanged: (value) {
-                    setChangePokemonIndex(playerType, value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: isInput
-                      ? null
-                      : playerType == PlayerType.me
-                          ? ownParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType) ?? 1 - 1]
-                              ?.name
-                          : opponentParty
-                              .pokemons[
-                                  getChangePokemonIndex(playerType) ?? 1 - 1]
-                              ?.name,
-                  prefixIconPokemon: isInput
-                      ? null
-                      : playerType == PlayerType.me
-                          ? ownParty.pokemons[
-                              getChangePokemonIndex(playerType) ?? 1 - 1]
-                          : opponentParty.pokemons[
-                              getChangePokemonIndex(playerType) ?? 1 - 1],
-                  showNetworkImage: PokeDB().getPokeAPI,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          effectInputRow2 = DamageIndicateRow(
-            playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-            hpController2,
-            playerType == PlayerType.me,
-            onFocus,
-            (value) {
-              if (playerType == PlayerType.me) {
-                extraArg1[continuousCount] =
-                    ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-              } else {
-                extraArg2[continuousCount] =
-                    opponentPokemonState.remainHPPercent -
-                        (int.tryParse(value) ?? 0);
-              }
-              appState.editingPhase[phaseIdx] = true;
-              onFocus();
-            },
-            playerType == PlayerType.me
-                ? extraArg1[continuousCount]
-                : extraArg2[continuousCount],
-            isInput,
-            loc: loc,
-          );
-          break;
-        case 505: // 威力が2倍になる(確率)
-          effectInputRow = Row(
-            children: [
-              Expanded(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAdditionalEffect,
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: MoveEffect.none,
-                      child: Text(loc.commonNone),
-                    ),
-                    DropdownMenuItem(
-                      value: replacedMove.effect.id,
-                      child: Text(loc.battleGoAllOut),
-                    ),
-                  ],
-                  value: moveAdditionalEffects[continuousCount].id,
-                  onChanged: (value) {
-                    moveAdditionalEffects[continuousCount] = MoveEffect(value);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                  textValue: moveAdditionalEffects[continuousCount].id ==
-                          replacedMove.effect.id
-                      ? loc.battleGoAllOut
-                      : loc.commonNone,
-                  theme: theme,
-                ),
-              ),
-            ],
-          );
-          break;
-        default:
-          break;
-      }
-
-      switch (replacedMove.damageClass.id) {
-        case 1: // へんか
-          switch (replacedMove.target) {
-            case Target.faintingPokemon: // ひんしになった(味方の)ポケモン
-              return Row(
-                children: [
-                  Expanded(
-                    child: _myDropdownButtonFormField(
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: loc.battleRevivePokemon,
-                      ),
-                      items: playerType == PlayerType.me
-                          ? <DropdownMenuItem>[
-                              for (int i = 0; i < ownParty.pokemonNum; i++)
-                                PokemonDropdownMenuItem(
-                                  value: i + 1,
-                                  enabled:
-                                      state.isPossibleBattling(playerType, i) &&
-                                          ownPokemonStates[i].isFainting,
-                                  theme: theme,
-                                  pokemon: ownParty.pokemons[i]!,
-                                  showNetworkImage: PokeDB().getPokeAPI,
-                                ),
-                            ]
-                          : <DropdownMenuItem>[
-                              for (int i = 0; i < opponentParty.pokemonNum; i++)
-                                PokemonDropdownMenuItem(
-                                  value: i + 1,
-                                  enabled:
-                                      state.isPossibleBattling(playerType, i) &&
-                                          opponentPokemonStates[i].isFainting,
-                                  theme: theme,
-                                  pokemon: opponentParty.pokemons[i]!,
-                                  showNetworkImage: PokeDB().getPokeAPI,
-                                ),
-                            ],
-                      value: extraArg1[continuousCount] != 0
-                          ? extraArg1[continuousCount]
-                          : null,
-                      onChanged: (value) {
-                        extraArg1[continuousCount] = value;
-                        appState.editingPhase[phaseIdx] = true;
-                        onFocus();
-                      },
-                      onFocus: onFocus,
-                      isInput: isInput,
-                      textValue: isInput
-                          ? null
-                          : playerType == PlayerType.me
-                              ? ownParty
-                                  .pokemons[extraArg1[continuousCount] - 1]
-                                  ?.name
-                              : opponentParty
-                                  .pokemons[extraArg1[continuousCount] - 1]
-                                  ?.name,
-                      theme: theme,
-                    ),
-                  ),
-                ],
-              );
-            default:
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleSuccessFailure,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: MoveHit.hit,
-                              child: Text(loc.battleSucceeded),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.notHit,
-                              child: Text(MoveHit.notHit.displayName),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.fail,
-                              child: Text(MoveHit.fail.displayName),
-                            ),
-                          ],
-                          value: moveHits[continuousCount],
-                          onChanged: (value) {
-                            moveHits[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveHits[continuousCount] == MoveHit.hit
-                              ? loc.battleSucceeded
-                              : moveHits[continuousCount].displayName,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  effectInputPrevRow,
-                  insertPrevRow
-                      ? SizedBox(
-                          height: 10,
-                        )
-                      : Container(),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  effectInputRow,
-                  SizedBox(
-                    height: 10,
-                  ),
-                  effectInputRow2,
-                ],
-              );
-          }
-        default:
-          switch (replacedMove.target) {
-            case Target.ally: // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
-              return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleHitFail,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: false,
-                              child: Text(loc.battleFailed),
-                            ),
-                          ],
-                          value: false,
-                          onChanged: null,
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: loc.battleFailed,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            default:
-              return Column(
-                children: [
-                  effectInputPrevRow,
-                  insertPrevRow
-                      ? SizedBox(
-                          height: 10,
-                        )
-                      : Container(),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 5,
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleHitFail,
-                          ),
-                          items: <DropdownMenuItem>[
-                            for (final hit in MoveHit.values)
-                              DropdownMenuItem(
-                                value: hit,
-                                child: Text(hit.displayName),
-                              ),
-                          ],
-                          value: moveHits[continuousCount],
-                          onChanged: (value) {
-                            moveHits[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveHits[continuousCount].displayName,
-                          theme: theme,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        flex: 5,
-                        child: _myDropdownButtonFormField<int>(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleEffectiveness,
-                          ),
-                          items: <DropdownMenuItem<int>>[
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.normal.index,
-                              child: Text(
-                                loc.battleEffectivenessNormal,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.great.index,
-                              child: Text(
-                                loc.battleEffectivenessGreat,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.notGood.index,
-                              child: Text(
-                                loc.battleEffectivenessNotGood,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveEffectiveness.noEffect.index,
-                              child: Text(
-                                loc.battleEffectivenessNoEffect,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                          value: moveEffectivenesses[continuousCount].index,
-                          onChanged:
-                              moveHits[continuousCount] != MoveHit.notHit &&
-                                      moveHits[continuousCount] != MoveHit.fail
-                                  ? (value) {
-                                      moveEffectivenesses[continuousCount] =
-                                          MoveEffectiveness.values[value!];
-                                      appState.editingPhase[phaseIdx] = true;
-                                      onFocus();
-                                    }
-                                  : null,
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveEffectivenesses[continuousCount] ==
-                                  MoveEffectiveness.normal
-                              ? loc.battleEffectivenessNormal
-                              : moveEffectivenesses[continuousCount] ==
-                                      MoveEffectiveness.great
-                                  ? loc.battleEffectivenessGreat
-                                  : moveEffectivenesses[continuousCount] ==
-                                          MoveEffectiveness.notGood
-                                      ? loc.battleEffectivenessNotGood
-                                      : moveEffectivenesses[continuousCount] ==
-                                              MoveEffectiveness.noEffect
-                                          ? loc.battleEffectivenessNoEffect
-                                          : '',
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  effectInputRow,
-                  SizedBox(
-                    height: 10,
-                  ),
-                  !yourState.buffDebuffs.containsByID(BuffDebuff.substitute) ||
-                          replacedMove.isSound ||
-                          myState.buffDebuffs
-                              .containsByID(BuffDebuff.ignoreWall)
-                      ? DamageIndicateRow(
-                          playerType == PlayerType.me
-                              ? opponentPokemon
-                              : ownPokemon,
-                          hpController,
-                          playerType != PlayerType.me,
-                          onFocus,
-                          (value) {
-                            if (playerType == PlayerType.me) {
-                              percentDamage[continuousCount] =
-                                  opponentPokemonState.remainHPPercent -
-                                      (int.tryParse(value) ?? 0);
-                            } else {
-                              realDamage[continuousCount] =
-                                  ownPokemonState.remainHP -
-                                      (int.tryParse(value) ?? 0);
-                            }
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          playerType == PlayerType.me
-                              ? percentDamage[continuousCount]
-                              : realDamage[continuousCount],
-                          isInput,
-                          loc: loc,
-                        )
-                      : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: _myDropdownButtonFormField(
-                                isExpanded: true,
-                                decoration: InputDecoration(
-                                  border: UnderlineInputBorder(),
-                                  labelText: loc.battleSubstitute,
-                                ),
-                                items: <DropdownMenuItem>[
-                                  DropdownMenuItem(
-                                    value: 0,
-                                    child: Text(
-                                      loc.battleSubstituteRemain,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  DropdownMenuItem(
-                                    value: 1,
-                                    child: Text(
-                                      loc.battleSubstituteBroke,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                                value: realDamage[continuousCount],
-                                onChanged: (value) {
-                                  realDamage[continuousCount] = value;
-                                  appState.editingPhase[phaseIdx] = true;
-                                  onFocus();
-                                },
-                                onFocus: onFocus,
-                                isInput: isInput,
-                                textValue: realDamage[continuousCount] == 0
-                                    ? loc.battleSubstituteRemain
-                                    : loc.battleSubstituteBroke,
-                                theme: theme,
-                              ),
-                            ),
-                          ],
-                        ),
-                  SizedBox(
-                    height: 10,
-                  ),
-                  effectInputRow2,
-                ],
-              );
-          }
-      }
-    }
-
-    return Container();
-  }
-
   List<Widget> extraCommandInputList(
 //    void Function() onFocus,
 //    Pokemon ownPokemon,
@@ -8662,117 +6182,20 @@ class TurnMove extends Equatable implements Copyable {
       // 追加効果
 //      Row effectInputPrevRow = Row();
 //      bool insertPrevRow = false;
-/*
       switch (move.effect.id) {
-        case 84:    // ほぼすべてのわざから1つをランダムで使う
-        case 243:   // 最後に出されたわざを出す(相手のわざとは限らない)
-                    // 含まれないわざもあるが、すべてのわざを入力できるようにしている
-          insertPrevRow = true;
-          effectInputPrevRow = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: preMoveController,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Move> matches = appState.pokeData.moves.values.toList();
-                    matches.removeWhere((e) => e.id == 0);
-                    matches.retainWhere((s){
-                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(suggestion.displayName),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    preMoveController.text = suggestion.displayName;
-                    extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
-                    turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copy(), opponentParty.copy(), ownPokemonState.copy(),
-                      opponentPokemonState.copy(), state.copy(), 0, invalidGuideIDs, loc: loc,);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
+        case 84: // ほぼすべてのわざから1つをランダムで使う
+        case 243: // 最後に出されたわざを出す(相手のわざとは限らない)
+          // 含まれないわざもあるが、すべてのわざを入力できるようにしている
+          templateTitles
+              .add(Tuple2(CommandWidgetTemplate.selectMove, move.displayName));
           break;
-        case 98:    // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
-          insertPrevRow = true;
-          effectInputPrevRow = Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Flexible(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: preMoveController,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
-                  ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<Move> matches = [];
-                    if (playerType == PlayerType.me) {
-                      matches.add(ownPokemon.move1);
-                      if (ownPokemon.move2 != null) matches.add(ownPokemon.move2!);
-                      if (ownPokemon.move3 != null) matches.add(ownPokemon.move3!);
-                      if (ownPokemon.move4 != null) matches.add(ownPokemon.move4!);
-                    }
-                    else if (opponentPokemonState.moves.length == 4) {  //　わざがすべて判明している場合
-                      matches.addAll(opponentPokemonState.moves);
-                    }
-                    else {
-                      matches.addAll(appState.pokeData.pokeBase[opponentPokemon.no]!.move);
-                    }
-                    matches.add(appState.pokeData.moves[165]!);    // わるあがき
-                    matches.removeWhere((e) => e.id == 0);
-                    matches.retainWhere((s){
-                      return toKatakana50(s.displayName.toLowerCase()).contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(suggestion.displayName),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    preMoveController.text = suggestion.displayName;
-                    extraArg3[continuousCount] = suggestion.id;
-                    moveAdditionalEffects[continuousCount] = suggestion.isSurelyEffect() ? MoveEffect(suggestion.effect.id) : MoveEffect(0);
-                    turnEffectAndStateAndGuide.guides = processMove(
-                      ownParty.copy(), opponentParty.copy(), ownPokemonState.copy(),
-                      opponentPokemonState.copy(), state.copy(), 0, invalidGuideIDs, loc: loc,);
-                    appState.editingPhase[phaseIdx] = true;
-                    onFocus();
-                  },
-                  onFocus: onFocus,
-                  isInput: isInput,
-                ),
-              ),
-            ],
-          );
+        case 98: // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
+          templateTitles.add(Tuple2(
+              CommandWidgetTemplate.selectAcquiringMove, move.displayName));
           break;
         default:
           break;
       }
-*/
 
       // 必要に応じてわざの内容変更
       Move replacedMove = getReplacedMove(move, continuousCount, myState);
@@ -8783,69 +6206,16 @@ class TurnMove extends Equatable implements Copyable {
           // 1-a.対象による返却Widgetリストの対応
           switch (replacedMove.target) {
             case Target.faintingPokemon: // ひんしになった(味方の)ポケモン
-              templateTitles = [
-                Tuple2(CommandWidgetTemplate.selectMyFaintingPokemons,
-                    loc.battleRevivePokemon)
-              ];
+              templateTitles.add(Tuple2(
+                  CommandWidgetTemplate.selectMyFaintingPokemons,
+                  loc.battleRevivePokemon));
               fixTemplates = true;
               break;
             default: // その他が対象のへんかわざ
               _isValid = true;
-              templateTitles = [
-                Tuple2(CommandWidgetTemplate.successOrFail, loc.battleSucceeded)
-              ];
-
+              templateTitles.add(Tuple2(CommandWidgetTemplate.successOrFail,
+                  loc.battleSuccessFailure));
               break;
-            // TODO 下記コメントのように、他にも入力が必要？
-            /*return Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _myDropdownButtonFormField(
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            border: UnderlineInputBorder(),
-                            labelText: loc.battleSuccessFailure,
-                          ),
-                          items: <DropdownMenuItem>[
-                            DropdownMenuItem(
-                              value: MoveHit.hit,
-                              child: Text(loc.battleSucceeded),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.notHit,
-                              child: Text(MoveHit.notHit.displayName),
-                            ),
-                            DropdownMenuItem(
-                              value: MoveHit.fail,
-                              child: Text(MoveHit.fail.displayName),
-                            ),
-                          ],
-                          value: moveHits[continuousCount],
-                          onChanged: (value) {
-                            moveHits[continuousCount] = value;
-                            appState.editingPhase[phaseIdx] = true;
-                            onFocus();
-                          },
-                          onFocus: onFocus,
-                          isInput: isInput,
-                          textValue: moveHits[continuousCount] == MoveHit.hit ? loc.battleSucceeded :
-                            moveHits[continuousCount].displayName,
-                          theme: theme,
-                        ),
-                      ),
-                    ],
-                  ),
-                  effectInputPrevRow,
-                  insertPrevRow ?
-                  SizedBox(height: 10,) : Container(),
-                  SizedBox(height: 10,),
-                  effectInputRow,
-                  SizedBox(height: 10,),
-                  effectInputRow2,
-                ],
-              );*/
           }
           break;
         default: // ぶつり・とくしゅ
@@ -8853,9 +6223,8 @@ class TurnMove extends Equatable implements Copyable {
             case Target.ally: // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
               _isValid = true;
               isSuccess = false;
-              templateTitles = [
-                Tuple2(CommandWidgetTemplate.fail, loc.battleSucceeded)
-              ];
+              templateTitles.add(
+                  Tuple2(CommandWidgetTemplate.fail, loc.battleSuccessFailure));
               fixTemplates = true;
               break;
             default:
@@ -9011,7 +6380,8 @@ class TurnMove extends Equatable implements Copyable {
 
       // 2.追加効果
 //      Widget effectInputRow2 = Row();
-      switch (replacedMove.effect.id) {
+      if (!fixTemplates) {
+        switch (replacedMove.effect.id) {
 /*        //case 2:     // 眠らせる
         case 3:     // どくにする(確率)
         case 5:     // やけどにする(確率)
@@ -9256,11 +6626,11 @@ class TurnMove extends Equatable implements Copyable {
             ],
           );
           break;*/
-        case 29: // 相手ポケモンをランダムに交代させる
-        case 314: // 相手ポケモンをランダムに交代させる
-          templateTitles.add(Tuple2(CommandWidgetTemplate.selectYourPokemons,
-              loc.battlePokemonToChange));
-          break;
+          case 29: // 相手ポケモンをランダムに交代させる
+          case 314: // 相手ポケモンをランダムに交代させる
+            templateTitles.add(Tuple2(CommandWidgetTemplate.selectYourPokemons,
+                loc.battlePokemonToChange));
+            break;
 /*        case 31:    // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
         case 94:    // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
           effectInputRow = Row(
@@ -9501,14 +6871,14 @@ class TurnMove extends Equatable implements Copyable {
             ],
           );
           break;*/
-        case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
-        case 154: // 控えのポケモンと交代する
-        case 229: // 控えのポケモンと交代する
-        case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
-        case 493: // 天気をゆきにして控えと交代
-          templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
-              loc.battlePokemonToChange));
-          break;
+          case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
+          case 154: // 控えのポケモンと交代する
+          case 229: // 控えのポケモンと交代する
+          case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
+          case 493: // 天気をゆきにして控えと交代
+            templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
+                loc.battlePokemonToChange));
+            break;
 /*        case 136:   // 個体値によってわざのタイプが変わる
           effectInputRow = Row(
             children: [
@@ -10448,11 +7818,11 @@ class TurnMove extends Equatable implements Copyable {
             ],
           );
           break;*/
-        case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
-          templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
-              loc.battlePokemonToChange));
-          break;
-        /*
+          case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
+            templateTitles.add(Tuple2(CommandWidgetTemplate.selectMyPokemons,
+                loc.battlePokemonToChange));
+            break;
+          /*
           effectInputRow2 = DamageIndicateRow(
             playerType == PlayerType.me ? ownPokemon : opponentPokemon,
             hpController2,
@@ -10512,256 +7882,30 @@ class TurnMove extends Equatable implements Copyable {
             ],
           );
           break;*/
-        default:
-          break;
+          default:
+            break;
+        }
       }
     }
 
     List<Widget> ret = [];
 
     for (int index = 0; index < templateTitles.length; index++) {
-      Widget template = Container();
-
-      switch (templateTitles[index].item1) {
-        case CommandWidgetTemplate.successOrFail:
-          {
-            template = Column(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: SwitchListTile(
-                    title: Text(loc.battleSucceeded),
-                    onChanged: (change) {
-                      isSuccess = change;
-                      onUpdate();
-                    },
-                    value: isSuccess,
-                  ),
-                ),
-                Expanded(
-                  flex: 6,
-                  child: Container(),
-                ),
-              ],
-            );
-          }
-          break;
-        case CommandWidgetTemplate.selectMyPokemons:
-          {
-            // 交代先選択ListTile作成
-            List<ListTile> myPokemonTiles = [];
-            List<int> addedIndex = [];
-            for (int i = 0; i < myParty.pokemonNum; i++) {
-              if (state.isPossibleBattling(playerType, i) &&
-                  !state.getPokemonStates(playerType)[i].isFainting) {
-                myPokemonTiles.add(
-                  ChangePokemonCommandTile(
-                    myParty.pokemons[i]!,
-                    theme,
-                    onTap: () {
-                      setChangePokemonIndex(playerType, i + 1);
-                      onUpdate();
-                    },
-                    selected: getChangePokemonIndex(playerType) == i + 1,
-                    showNetworkImage: PokeDB().getPokeAPI,
-                  ),
-                );
-                addedIndex.add(i);
-              }
-            }
-            for (int i = 0; i < myParty.pokemonNum; i++) {
-              if (addedIndex.contains(i)) continue;
-              myPokemonTiles.add(
-                ChangePokemonCommandTile(
-                  myParty.pokemons[i]!,
-                  theme,
-                  enabled: false,
-                  showNetworkImage: PokeDB().getPokeAPI,
-                ),
-              );
-            }
-            template = ListViewWithViewItemCount(
-              viewItemCount: 4,
-              children: myPokemonTiles,
-            );
-          }
-          break;
-        case CommandWidgetTemplate.selectYourPokemons:
-          {
-            // 交代先選択ListTile作成
-            List<ListTile> yourPokemonTiles = [];
-            List<int> addedIndex = [];
-            for (int i = 0; i < yourParty.pokemonNum; i++) {
-              if (state.isPossibleBattling(playerType.opposite, i) &&
-                  !state.getPokemonStates(playerType.opposite)[i].isFainting) {
-                yourPokemonTiles.add(
-                  ChangePokemonCommandTile(
-                    yourParty.pokemons[i]!,
-                    theme,
-                    onTap: () {
-                      setChangePokemonIndex(playerType.opposite, i + 1);
-                      onUpdate();
-                    },
-                    selected:
-                        getChangePokemonIndex(playerType.opposite) == i + 1,
-                    showNetworkImage: PokeDB().getPokeAPI,
-                  ),
-                );
-                addedIndex.add(i);
-              }
-            }
-            for (int i = 0; i < yourParty.pokemonNum; i++) {
-              if (addedIndex.contains(i)) continue;
-              yourPokemonTiles.add(
-                ChangePokemonCommandTile(
-                  yourParty.pokemons[i]!,
-                  theme,
-                  enabled: false,
-                  showNetworkImage: PokeDB().getPokeAPI,
-                ),
-              );
-            }
-            template = ListViewWithViewItemCount(
-              viewItemCount: 4,
-              children: yourPokemonTiles,
-            );
-          }
-          break;
-        case CommandWidgetTemplate.selectMyFaintingPokemons:
-          {
-            // 交代先選択ListTile作成
-            List<ListTile> pokemonTiles = [];
-            List<int> addedIndex = [];
-            for (int i = 0; i < myParty.pokemonNum; i++) {
-              if (state.isPossibleBattling(playerType, i) &&
-                  state.getPokemonStates(playerType)[i].isFainting) {
-                pokemonTiles.add(
-                  ChangePokemonCommandTile(
-                    myParty.pokemons[i]!,
-                    theme,
-                    onTap: () {
-                      extraArg1[continuousCount] = i + 1;
-                      _isValid = true;
-                      onConfirm();
-                    },
-                    selected: extraArg1[continuousCount] == i + 1,
-                    showNetworkImage: PokeDB().getPokeAPI,
-                  ),
-                );
-                addedIndex.add(i);
-              }
-            }
-            for (int i = 0; i < myParty.pokemonNum; i++) {
-              if (addedIndex.contains(i)) continue;
-              pokemonTiles.add(
-                ChangePokemonCommandTile(
-                  myParty.pokemons[i]!,
-                  theme,
-                  enabled: false,
-                  showNetworkImage: PokeDB().getPokeAPI,
-                ),
-              );
-            }
-            template = ListViewWithViewItemCount(
-              viewItemCount: 4,
-              children: pokemonTiles,
-            );
-          }
-          break;
-        case CommandWidgetTemplate.inputDamage:
-          template = Column(
-            children: [
-              Expanded(
-                flex: 1,
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          Checkbox(
-                              value: moveHits[0] == MoveHit.hit ||
-                                  moveHits[0] == MoveHit.critical,
-                              onChanged: (change) {
-                                if (change != null) {
-                                  if (change) {
-                                    moveHits[0] = MoveHit.hit;
-                                  } else {
-                                    moveHits[0] = MoveHit.notHit;
-                                  }
-                                  onUpdate();
-                                }
-                              }),
-                          Text(MoveHit.hit.displayName),
-                        ],
-                      ),
-                    ),
-                    Expanded(
-                      flex: 1,
-                      child: Row(
-                        children: [
-                          Checkbox(
-                              value: moveHits[0] == MoveHit.critical,
-                              onChanged: (change) {
-                                if (change != null) {
-                                  if (change) {
-                                    moveHits[0] = MoveHit.critical;
-                                  } else {
-                                    moveHits[0] = MoveHit.hit;
-                                  }
-                                  onUpdate();
-                                }
-                              }),
-                          Text(MoveHit.critical.displayName),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                flex: 6,
-                child: NumberInputButtons(
-                  initialNum: 0, // TODO?
-                  onConfirm: (remain) {
-                    int continuousCount = 0;
-                    if (playerType == PlayerType.me) {
-                      percentDamage[continuousCount] =
-                          yourState.remainHPPercent - remain;
-                    } else {
-                      realDamage[continuousCount] = yourState.remainHP - remain;
-                    }
-                    _isValid = true;
-                    onConfirm();
-                  },
-                  prefixText: '相手の残りHP',
-                  suffixText: playerType == PlayerType.me ? '%' : null,
-                ),
-              ),
-            ],
-          );
-          break;
-        case CommandWidgetTemplate.fail:
-          {
-            template = Column(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: SwitchListTile(
-                    title: Text(loc.battleSucceeded),
-                    onChanged: null,
-                    value: false,
-                  ),
-                ),
-                Expanded(
-                  flex: 6,
-                  child: Container(),
-                ),
-              ],
-            );
-          }
-          break;
-      }
+      Widget template = _getCommandWidgetTemplate(
+        templateTitles[index].item1,
+        listIndex: index,
+        theme: theme,
+        onListIndexChange: onListIndexChange,
+        onConfirm: onConfirm,
+        onUpdate: onUpdate,
+        myParty: myParty,
+        yourParty: yourParty,
+        myState: myState,
+        yourState: yourState,
+        state: state,
+        continuousCount: continuousCount,
+        loc: loc,
+      );
 
       // 返却Widget作成
       // 最初のWidgetの場合、戻るボタンタップ時の挙動が違う
@@ -10835,6 +7979,243 @@ class TurnMove extends Equatable implements Copyable {
     }
 
     return ret;
+  }
+
+  Widget _getCommandWidgetTemplate(
+    CommandWidgetTemplate template, {
+    required int listIndex,
+    required ThemeData theme,
+    required void Function(int)
+        onListIndexChange, // 入力画面シーケンス内の表示インデックスが変更されたときに呼ぶコールバック
+    required void Function()
+        onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
+    required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
+    required Party myParty,
+    required Party yourParty,
+    required PokemonState myState,
+    required PokemonState yourState,
+    required PhaseState state,
+    required int continuousCount,
+    required AppLocalizations loc,
+  }) {
+    switch (template) {
+      case CommandWidgetTemplate.successOrFail:
+        return Column(
+          children: [
+            Expanded(
+              flex: 1,
+              child: StandAloneSwitchList(
+                title: Text(loc.battleSucceeded),
+                onChanged: (change) {
+                  isSuccess = change;
+                  onUpdate();
+                },
+                initialValue: isSuccess,
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: Container(),
+            ),
+          ],
+        );
+      case CommandWidgetTemplate.selectMyPokemons:
+        {
+          // 交代先選択ListTile作成
+          List<ListTile> myPokemonTiles = [];
+          List<int> addedIndex = [];
+          for (int i = 0; i < myParty.pokemonNum; i++) {
+            if (state.isPossibleBattling(playerType, i) &&
+                !state.getPokemonStates(playerType)[i].isFainting) {
+              myPokemonTiles.add(
+                ChangePokemonCommandTile(
+                  myParty.pokemons[i]!,
+                  theme,
+                  onTap: () {
+                    setChangePokemonIndex(playerType, i + 1);
+                    onUpdate();
+                  },
+                  selected: getChangePokemonIndex(playerType) == i + 1,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+              addedIndex.add(i);
+            }
+          }
+          for (int i = 0; i < myParty.pokemonNum; i++) {
+            if (addedIndex.contains(i)) continue;
+            myPokemonTiles.add(
+              ChangePokemonCommandTile(
+                myParty.pokemons[i]!,
+                theme,
+                enabled: false,
+                showNetworkImage: PokeDB().getPokeAPI,
+              ),
+            );
+          }
+          return ListViewWithViewItemCount(
+            viewItemCount: 4,
+            children: myPokemonTiles,
+          );
+        }
+      case CommandWidgetTemplate.selectYourPokemons:
+        {
+          // 交代先選択ListTile作成
+          List<ListTile> yourPokemonTiles = [];
+          List<int> addedIndex = [];
+          for (int i = 0; i < yourParty.pokemonNum; i++) {
+            if (state.isPossibleBattling(playerType.opposite, i) &&
+                !state.getPokemonStates(playerType.opposite)[i].isFainting) {
+              yourPokemonTiles.add(
+                ChangePokemonCommandTile(
+                  yourParty.pokemons[i]!,
+                  theme,
+                  onTap: () {
+                    setChangePokemonIndex(playerType.opposite, i + 1);
+                    onUpdate();
+                  },
+                  selected: getChangePokemonIndex(playerType.opposite) == i + 1,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+              addedIndex.add(i);
+            }
+          }
+          for (int i = 0; i < yourParty.pokemonNum; i++) {
+            if (addedIndex.contains(i)) continue;
+            yourPokemonTiles.add(
+              ChangePokemonCommandTile(
+                yourParty.pokemons[i]!,
+                theme,
+                enabled: false,
+                showNetworkImage: PokeDB().getPokeAPI,
+              ),
+            );
+          }
+          return ListViewWithViewItemCount(
+            viewItemCount: 4,
+            children: yourPokemonTiles,
+          );
+        }
+      case CommandWidgetTemplate.selectMyFaintingPokemons:
+        {
+          // 交代先選択ListTile作成
+          List<ListTile> pokemonTiles = [];
+          List<int> addedIndex = [];
+          for (int i = 0; i < myParty.pokemonNum; i++) {
+            if (state.isPossibleBattling(playerType, i) &&
+                state.getPokemonStates(playerType)[i].isFainting) {
+              pokemonTiles.add(
+                ChangePokemonCommandTile(
+                  myParty.pokemons[i]!,
+                  theme,
+                  onTap: () {
+                    extraArg1[continuousCount] = i + 1;
+                    _isValid = true;
+                    onConfirm();
+                  },
+                  selected: extraArg1[continuousCount] == i + 1,
+                  showNetworkImage: PokeDB().getPokeAPI,
+                ),
+              );
+              addedIndex.add(i);
+            }
+          }
+          for (int i = 0; i < myParty.pokemonNum; i++) {
+            if (addedIndex.contains(i)) continue;
+            pokemonTiles.add(
+              ChangePokemonCommandTile(
+                myParty.pokemons[i]!,
+                theme,
+                enabled: false,
+                showNetworkImage: PokeDB().getPokeAPI,
+              ),
+            );
+          }
+          return ListViewWithViewItemCount(
+            viewItemCount: 4,
+            children: pokemonTiles,
+          );
+        }
+      case CommandWidgetTemplate.inputDamage:
+        return Column(
+          children: [
+            Expanded(
+                flex: 1,
+                child: HitCriticalInputRow(
+                  turnMove: this,
+                  onUpdate: onUpdate,
+                )),
+            Expanded(
+              flex: 6,
+              child: NumberInputButtons(
+                initialNum: 0, // TODO?
+                onConfirm: (remain) {
+                  int continuousCount = 0;
+                  if (playerType == PlayerType.me) {
+                    percentDamage[continuousCount] =
+                        yourState.remainHPPercent - remain;
+                  } else {
+                    realDamage[continuousCount] = yourState.remainHP - remain;
+                  }
+                  _isValid = true;
+                  onConfirm();
+                },
+                prefixText: loc.battleRemainHP(yourState.pokemon.name),
+                suffixText: playerType == PlayerType.me ? '%' : null,
+              ),
+            ),
+          ],
+        );
+      case CommandWidgetTemplate.fail:
+        return Column(
+          children: [
+            Expanded(
+              flex: 1,
+              child: SwitchListTile(
+                title: Text(loc.battleSucceeded),
+                onChanged: null,
+                value: false,
+              ),
+            ),
+            Expanded(
+              flex: 6,
+              child: Container(),
+            ),
+          ],
+        );
+      case CommandWidgetTemplate.selectMove:
+        {
+          return SelectMoveInput(
+            turnMove: this,
+            pokemonState: myState,
+            state: state,
+            onSelect: (move) {
+              extraArg3[continuousCount] = move.id;
+              moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
+                  ? MoveEffect(move.effect.id)
+                  : MoveEffect(0);
+              onListIndexChange(listIndex + 1);
+            },
+          );
+        }
+      case CommandWidgetTemplate.selectAcquiringMove:
+        {
+          return SelectMoveInput(
+            turnMove: this,
+            pokemonState: myState,
+            state: state,
+            onSelect: (move) {
+              extraArg3[continuousCount] = move.id;
+              moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
+                  ? MoveEffect(move.effect.id)
+                  : MoveEffect(0);
+              onListIndexChange(listIndex + 1);
+            },
+            onlyAcquiring: true,
+          );
+        }
+    }
   }
 
   Widget _myTypeAheadField<T>({
@@ -11490,21 +8871,19 @@ class TurnMove extends Equatable implements Copyable {
   }
 
   // 主に確定急所の判定を行う
-  MoveHit getMoveHit(Move move, int continuousCount, PokemonState myState,
+  bool isCriticalFromMove(Move move, PokemonState myState,
       PokemonState yourState, List<IndividualField> yourFields) {
-    MoveHit ret = MoveHit.hit;
     var mA = myState.currentAbility.id;
     var yA = yourState.currentAbility.id;
     // (こうげき側がとくせいを無視できず、)ぼうぎょ側がカブトアーマー/シェルアーマー/おまじない(場)ならば急所に当たらない
     if ((yourState.holdingItem?.id == 1697 ||
             (mA != 104 && mA != 163 && mA != 164)) &&
-        (yA == 4 || yA == 75)) return ret;
+        (yA == 4 || yA == 75)) return false;
     switch (move.effect.id) {
       case 289: // かならず急所に当たる
       case 462: // 3回連続でこうげきする。かならず急所に当たる
       case 486: // 必中かつ必ず急所に当たる
-        ret = MoveHit.critical;
-        break;
+        return true;
       default:
         break;
     }
@@ -11513,10 +8892,9 @@ class TurnMove extends Equatable implements Copyable {
                 (e) => e.id == Ailment.poison || e.id == Ailment.badPoison)
             .isNotEmpty &&
         myState.buffDebuffs.containsByID(BuffDebuff.merciless)) {
-      ret = MoveHit.critical;
+      return true;
     }
-
-    return ret;
+    return false;
   }
 
   void clear() {
@@ -11527,7 +8905,8 @@ class TurnMove extends Equatable implements Copyable {
         DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
-    moveHits = [MoveHit.hit];
+    hitCount = 1;
+    criticalCount = 0;
     moveEffectivenesses = [MoveEffectiveness.normal];
     realDamage = [0];
     percentDamage = [0];
@@ -11547,7 +8926,8 @@ class TurnMove extends Equatable implements Copyable {
         DamageClass(0), MoveEffect(0), 0, 0);
     isSuccess = true;
     actionFailure = ActionFailure(0);
-    moveHits = [MoveHit.hit];
+    hitCount = 1;
+    criticalCount = 0;
     moveEffectivenesses = [MoveEffectiveness.normal];
     realDamage = [0];
     percentDamage = [0];
@@ -11566,48 +8946,47 @@ class TurnMove extends Equatable implements Copyable {
       {int version = -1}) {
     // -1は最新バージョン
     TurnMove turnMove = TurnMove();
-    final turnMoveElements = str.split(split1);
+    final List turnMoveElements = str.split(split1);
     // playerType
     turnMove.playerType =
-        PlayerTypeNum.createFromNumber(int.parse(turnMoveElements[0]));
+        PlayerTypeNum.createFromNumber(int.parse(turnMoveElements.removeAt(0)));
     // type
-    turnMove.type =
-        TurnMoveTypeNum.createFromNumber(int.parse(turnMoveElements[1]));
+    turnMove.type = TurnMoveTypeNum.createFromNumber(
+        int.parse(turnMoveElements.removeAt(0)));
     // teraType
-    turnMove.teraType = PokeType.values[int.parse(turnMoveElements[2])];
+    turnMove.teraType =
+        PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // move
     if (version == 1) {
-      var moveElements = turnMoveElements[3].split(split2);
+      final List moveElements = turnMoveElements.removeAt(0).split(split2);
       turnMove.move = Move(
-        int.parse(moveElements[0]),
-        moveElements[1],
+        int.parse(moveElements.removeAt(0)),
+        moveElements.removeAt(0),
         '',
-        PokeType.values[int.parse(moveElements[2])],
-        int.parse(moveElements[3]),
-        int.parse(moveElements[4]),
-        int.parse(moveElements[5]),
-        Target.values[int.parse(moveElements[6])],
-        DamageClass(int.parse(moveElements[7])),
-        MoveEffect(int.parse(moveElements[8])),
-        int.parse(moveElements[9]),
-        int.parse(moveElements[10]),
+        PokeType.values[int.parse(moveElements.removeAt(0))],
+        int.parse(moveElements.removeAt(0)),
+        int.parse(moveElements.removeAt(0)),
+        int.parse(moveElements.removeAt(0)),
+        Target.values[int.parse(moveElements.removeAt(0))],
+        DamageClass(int.parse(moveElements.removeAt(0))),
+        MoveEffect(int.parse(moveElements.removeAt(0))),
+        int.parse(moveElements.removeAt(0)),
+        int.parse(moveElements.removeAt(0)),
       );
     } else {
-      turnMove.move = PokeDB().moves[int.parse(turnMoveElements[3])]!;
+      turnMove.move = PokeDB().moves[int.parse(turnMoveElements.removeAt(0))]!;
     }
     // isSuccess
-    turnMove.isSuccess = int.parse(turnMoveElements[4]) != 0;
+    turnMove.isSuccess = int.parse(turnMoveElements.removeAt(0)) != 0;
     // actionFailure
-    turnMove.actionFailure = ActionFailure(int.parse(turnMoveElements[5]));
-    // moveHits
-    turnMove.moveHits.clear();
-    var moveHits = turnMoveElements[6].split(split2);
-    for (var moveHitsElement in moveHits) {
-      if (moveHitsElement == '') break;
-      turnMove.moveHits.add(MoveHit.values[int.parse(moveHitsElement)]);
-    }
+    turnMove.actionFailure =
+        ActionFailure(int.parse(turnMoveElements.removeAt(0)));
+    // hitCount
+    turnMove.hitCount = int.parse(turnMoveElements.removeAt(0));
+    // criticalCount
+    turnMove.criticalCount = int.parse(turnMoveElements.removeAt(0));
     // moveEffectiveness
-    var moveEffectivenesses = turnMoveElements[7].split(split2);
+    var moveEffectivenesses = turnMoveElements.removeAt(0).split(split2);
     turnMove.moveEffectivenesses.clear();
     for (var moveEffectivenessElement in moveEffectivenesses) {
       if (moveEffectivenessElement == '') break;
@@ -11615,21 +8994,21 @@ class TurnMove extends Equatable implements Copyable {
           .add(MoveEffectiveness.values[int.parse(moveEffectivenessElement)]);
     }
     // realDamage
-    var realDamages = turnMoveElements[8].split(split2);
+    var realDamages = turnMoveElements.removeAt(0).split(split2);
     turnMove.realDamage.clear();
     for (var realDamage in realDamages) {
       if (realDamage == '') break;
       turnMove.realDamage.add(int.parse(realDamage));
     }
     // percentDamage
-    var percentDamages = turnMoveElements[9].split(split2);
+    var percentDamages = turnMoveElements.removeAt(0).split(split2);
     turnMove.percentDamage.clear();
     for (var percentDamage in percentDamages) {
       if (percentDamage == '') break;
       turnMove.percentDamage.add(int.parse(percentDamage));
     }
     // moveAdditionalEffect
-    var moveAdditionalEffects = turnMoveElements[10].split(split2);
+    var moveAdditionalEffects = turnMoveElements.removeAt(0).split(split2);
     turnMove.moveAdditionalEffects.clear();
     for (var moveAdditionalEffect in moveAdditionalEffects) {
       if (moveAdditionalEffect == '') break;
@@ -11637,28 +9016,28 @@ class TurnMove extends Equatable implements Copyable {
           .add(MoveEffect(int.parse(moveAdditionalEffect)));
     }
     // extraArg1
-    var extraArg1s = turnMoveElements[11].split(split2);
+    var extraArg1s = turnMoveElements.removeAt(0).split(split2);
     turnMove.extraArg1.clear();
     for (var e in extraArg1s) {
       if (e == '') break;
       turnMove.extraArg1.add(int.parse(e));
     }
     // extraArg2
-    var extraArg2s = turnMoveElements[12].split(split2);
+    var extraArg2s = turnMoveElements.removeAt(0).split(split2);
     turnMove.extraArg2.clear();
     for (var e in extraArg2s) {
       if (e == '') break;
       turnMove.extraArg2.add(int.parse(e));
     }
     // extraArg3
-    var extraArg3s = turnMoveElements[13].split(split2);
+    var extraArg3s = turnMoveElements.removeAt(0).split(split2);
     turnMove.extraArg3.clear();
     for (var e in extraArg3s) {
       if (e == '') break;
       turnMove.extraArg3.add(int.parse(e));
     }
     // _changePokemonIndexes
-    var changePokemonIndexes = turnMoveElements[14].split(split2);
+    var changePokemonIndexes = turnMoveElements.removeAt(0).split(split2);
     for (int i = 0; i < 2; i++) {
       if (changePokemonIndexes[i] == '') {
         turnMove._changePokemonIndexes[i] = null;
@@ -11667,9 +9046,10 @@ class TurnMove extends Equatable implements Copyable {
       }
     }
     // moveType
-    turnMove.moveType = PokeType.values[int.parse(turnMoveElements[15])];
+    turnMove.moveType =
+        PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // isFirst
-    turnMove.isFirst = int.parse(turnMoveElements[16]) != 0;
+    turnMove.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
 
     return turnMove;
   }
@@ -11729,11 +9109,11 @@ class TurnMove extends Equatable implements Copyable {
     // actionFailure
     ret += actionFailure.id.toString();
     ret += split1;
-    // moveHits
-    for (final moveHit in moveHits) {
-      ret += moveHit.index.toString();
-      ret += split2;
-    }
+    // hitCount
+    ret += hitCount.toString();
+    ret += split1;
+    // criticalCount
+    ret += criticalCount.toString();
     ret += split1;
     // moveEffectivenesses
     for (final moveEffectiveness in moveEffectivenesses) {

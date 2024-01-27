@@ -15,7 +15,6 @@ import 'package:poke_reco/pages/register_pokemon.dart';
 import 'package:poke_reco/pages/pokemons.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/pages/settings.dart';
-import 'package:poke_reco/pages/view_battle.dart';
 import 'package:poke_reco/pages/view_party.dart';
 import 'package:poke_reco/pages/view_pokemon.dart';
 import 'package:provider/provider.dart';
@@ -674,11 +673,13 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           // 対戦詳細表示
-          return ViewBattlePage(
-            battle: battle,
-            onEdit: (b, pageType, turnNum) =>
-                _push(context, b, false, pageType: pageType, turnNum: turnNum),
-          );
+//          return ViewBattlePage(
+//            battle: battle,
+//            onEdit: (b, pageType, turnNum) =>
+//                _push(context, b, false, pageType: pageType, turnNum: turnNum),
+//          );
+          // TODO
+          return Container();
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final Offset begin = Offset(1.0, 0.0); // 右から左

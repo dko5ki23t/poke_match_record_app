@@ -94,8 +94,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         DamageGetter getter = DamageGetter();
         TurnMove tmp = turnMove.copy();
         tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
-        tmp.moveHits[0] =
-            turnMove.getMoveHit(myMove, 0, myState, yourState, yourFields);
+        if (turnMove.isCriticalFromMove(
+            myMove, myState, yourState, yourFields)) {
+          tmp.criticalCount = 1;
+        }
         tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect()
             ? MoveEffect(tmp.move.effect.id)
             : MoveEffect(0);
@@ -146,8 +148,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             onTap: () {
               parentSetState(() {
                 turnMove.move = myMove;
-                turnMove.moveHits[0] = turnMove.getMoveHit(
-                    myMove, 0, myState, yourState, yourFields);
+                if (turnMove.isCriticalFromMove(
+                    myMove, myState, yourState, yourFields)) {
+                  turnMove.criticalCount = 1;
+                }
                 turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect()
                     ? MoveEffect(myMove.effect.id)
                     : MoveEffect(0);
