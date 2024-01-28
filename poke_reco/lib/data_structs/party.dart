@@ -1,6 +1,9 @@
+import 'package:flutter/material.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/tool.dart';
 
 class Party extends Equatable implements Copyable {
@@ -130,6 +133,66 @@ class Party extends Equatable implements Copyable {
       if (items[i]?.id != party.items[i]?.id) return true;
     }
     return false;
+  }
+
+  // 指定したポケモンが、パーティ内の各ポケモンに対してタイプ相性有利か不利かを判定し、色で結果を返す
+  // 有利：赤(半透明) 不利：青(半透明) 有利不利なし：透明
+  List<Color> getCompatibilities(Pokemon pokemon) {
+    List<Color> ret = [];
+    for (int i = 0; i < pokemonNum; i++) {
+      final partyPokemon = _pokemons[i]!;
+      double point = 1.0;
+      // 引数のポケモンがこうげきするとき
+      point += PokeTypeEffectiveness.effectivenessRate(
+              false,
+              false,
+              false,
+              pokemon.type1,
+              PokemonState()
+                ..type1 = partyPokemon.type1
+                ..type2 = partyPokemon.type2) -
+          1.0;
+      if (pokemon.type2 != null) {
+        point += PokeTypeEffectiveness.effectivenessRate(
+                false,
+                false,
+                false,
+                pokemon.type2!,
+                PokemonState()
+                  ..type1 = partyPokemon.type1
+                  ..type2 = partyPokemon.type2) -
+            1.0;
+      }
+      // パーティ内のポケモンがこうげきするとき
+      point += PokeTypeEffectiveness.effectivenessRate(
+              false,
+              false,
+              false,
+              partyPokemon.type1,
+              PokemonState()
+                ..type1 = pokemon.type1
+                ..type2 = pokemon.type2) -
+          1.0;
+      if (partyPokemon.type2 != null) {
+        point += PokeTypeEffectiveness.effectivenessRate(
+                false,
+                false,
+                false,
+                partyPokemon.type2!,
+                PokemonState()
+                  ..type1 = pokemon.type1
+                  ..type2 = pokemon.type2) -
+            1.0;
+      }
+      if (point >= 1.5) {
+        ret.add(Color(0x80ff0000));
+      } else if (point <= 0.5) {
+        ret.add(Color(0x800000ff));
+      } else {
+        ret.add(Color(0x00ffffff));
+      }
+    }
+    return ret;
   }
 
   // SQLite保存用

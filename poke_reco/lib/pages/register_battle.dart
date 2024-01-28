@@ -90,6 +90,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 //  final turnScrollController = ScrollController();
 
   CheckedPokemons checkedPokemons = CheckedPokemons();
+  List<Color> opponentFilters = [];
   int turnNum = 1;
   int focusPhaseIdx = 0; // 0は無効
   List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
@@ -351,6 +352,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             checkedPokemons.opponent =
                 turns[0].getInitialPokemonIndex(PlayerType.opponent);
           }
+          opponentFilters = List.generate(
+              opponentParty.pokemonNum, (index) => Color(0x00ffffff));
           setState(() {});
           break;
         case RegisterBattlePageType.firstPokemonPage:
@@ -672,6 +675,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           widget.battle,
           theme,
           checkedPokemons,
+          opponentFilters,
+          onTapOwnPokemon: (index) {
+            opponentFilters =
+                opponentParty.getCompatibilities(ownParty.pokemons[index]!);
+          },
           showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
           loc: loc,
