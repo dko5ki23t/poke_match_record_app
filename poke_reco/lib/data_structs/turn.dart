@@ -89,6 +89,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     l.insert(index, element);
   }
 
+  void addNextToValid(TurnEffect element) {
+    checkAdd(element);
+    int insertIdx = l.lastIndexWhere((element) => element.isValid());
+    l.insert(insertIdx, element);
+  }
+
   bool isExistAction(PlayerType playerType) => l
       .where((e) =>
           (e.timing == Timing.action ||

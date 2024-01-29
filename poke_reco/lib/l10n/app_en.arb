@@ -32,6 +32,7 @@
   "commonCancel": "Cancel",
   "commonYes": "Yes",
   "commonNo": "No",
+  "commonApply": "Apply",
   "commonReset": "Reset",
   "commonMovePhysical": "Physical",
   "commonMoveSpecial": "Special",

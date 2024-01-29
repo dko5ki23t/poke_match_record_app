@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_dialogs/pokemon_state_edit_dialog.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -11,11 +12,13 @@ class BattlePokemonStateInfo extends StatefulWidget {
     required this.focusState,
     required this.playerType,
     required this.playerName,
+    required this.onStatusEdit,
   }) : super(key: key);
 
   final PhaseState focusState;
   final PlayerType playerType;
   final String playerName;
+  final void Function() onStatusEdit;
 
   @override
   BattlePokemonStateInfoState createState() => BattlePokemonStateInfoState();
@@ -38,104 +41,124 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     return Column(
       children: [
         Expanded(
-          flex: 4,
-          child: FittedBox(
-            child: Column(
-              children: [
-                // ポケモン画像/アイコン
-                pokeData.getPokeAPI
-                    ? Image.network(
-                        pokeData.pokeBase[focusingPokemon.no]!.imageUrl,
-                        height: theme.buttonTheme.height * 1.5,
-                        errorBuilder: (c, o, s) {
-                          return const Icon(Icons.catching_pokemon);
-                        },
-                      )
-                    : const Icon(Icons.catching_pokemon),
-                // ポケモン名
-                Text(
-                  '${focusingPokemon.name}/${widget.playerName}',
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                        fit: FlexFit.loose,
-                        child: Text(
-                          'Lv.${focusingPokemon.level}',
-                          overflow: TextOverflow.ellipsis,
-                        )),
-                    Flexible(
-                        fit: FlexFit.loose,
-                        child: focusingPokemonState.sex.displayIcon),
-                  ],
-                ),
-                // タイプ
-                focusingPokemonState.isTerastaling
-                    ? Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
+          flex: 5,
+          child: GestureDetector(
+            onTapUp: (details) {
+              showDialog(
+                  context: context,
+                  builder: (_) {
+                    return PokemonStateEditDialog(focusingPokemonState,
+                        (abilityChanged, ability, itemChanged, item, hpChanged,
+                            remainHP) {
+                      // TODO:userForceにする？
+                      if (abilityChanged) {
+                        focusingPokemonState.setCurrentAbilityNoEffect(ability);
+                      }
+                      if (itemChanged) {
+                        focusingPokemonState.holdingItem = item;
+                      }
+                      if (hpChanged) {
+                        if (playerType == PlayerType.me) {
+                          focusingPokemonState.remainHP = remainHP;
+                        } else {
+                          focusingPokemonState.remainHPPercent = remainHP;
+                        }
+                      }
+                      widget.onStatusEdit();
+                    });
+                  });
+            },
+            child: FittedBox(
+              child: Column(
+                children: [
+                  // ポケモン画像/アイコン
+                  pokeData.getPokeAPI
+                      ? Image.network(
+                          pokeData.pokeBase[focusingPokemon.no]!.imageUrl,
+                          height: theme.buttonTheme.height * 1.5,
+                          errorBuilder: (c, o, s) {
+                            return const Icon(Icons.catching_pokemon);
+                          },
+                        )
+                      : const Icon(Icons.catching_pokemon),
+                  // ポケモン名
+                  Text(
+                    '${focusingPokemon.name}/${widget.playerName}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                          fit: FlexFit.loose,
+                          child: Text(
+                            'Lv.${focusingPokemon.level}',
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                      Flexible(
+                          fit: FlexFit.loose,
+                          child: focusingPokemonState.sex.displayIcon),
+                    ],
+                  ),
+                  // タイプ
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                          fit: FlexFit.loose,
+                          child: focusingPokemonState.type1.displayIcon),
+                      focusingPokemonState.type2 != null
+                          ? Flexible(
                               fit: FlexFit.loose,
-                              child: Text(loc.commonTerastal)),
-                          Flexible(
-                              fit: FlexFit.loose,
-                              child:
-                                  focusingPokemonState.teraType1.displayIcon),
-                        ],
-                      )
-                    : Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Flexible(
-                              fit: FlexFit.loose,
-                              child: focusingPokemonState.type1.displayIcon),
-                          focusingPokemonState.type2 != null
-                              ? Flexible(
-                                  fit: FlexFit.loose,
-                                  child:
-                                      focusingPokemonState.type2!.displayIcon)
-                              : Container(),
-                        ],
+                              child: focusingPokemonState.type2!.displayIcon)
+                          : Container(),
+                      SizedBox(
+                        height: 20,
+                        child: VerticalDivider(
+                          thickness: 1,
+                        ),
                       ),
-                // とくせい/もちもの
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: AbilityText(
-                        focusingPokemonState.currentAbility,
-                        showHatena: true,
-                      ),
-                    ),
-                    ItemText(
-                      focusingPokemonState.holdingItem,
-                      showHatena: true,
-                      showNone: true,
-                      loc: loc,
-                    ),
-                  ],
-                ),
-                // HP
-                //        isEditMode ?
-                //        _HPInputRow(
-                //          ownHPController, opponentHPController,
-                //          (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
-                hpBarRow(
-                  playerType,
-                  playerType == PlayerType.me
-                      ? focusingPokemonState.remainHP
-                      : focusingPokemonState.remainHPPercent,
-                  playerType == PlayerType.me ? focusingPokemon.h.real : 100,
-                ),
-              ],
+                      focusingPokemonState.isTerastaling
+                          ? Flexible(
+                              fit: FlexFit.loose,
+                              child: focusingPokemonState.teraType1.displayIcon)
+                          : Flexible(
+                              fit: FlexFit.loose,
+                              child: focusingPokemonState
+                                  .pokemon.teraType.displayIcon),
+                    ],
+                  ),
+                  // とくせい
+                  AbilityText(
+                    focusingPokemonState.currentAbility,
+                    showHatena: true,
+                  ),
+                  // もちもの
+                  ItemText(
+                    focusingPokemonState.holdingItem,
+                    showHatena: true,
+                    showNone: true,
+                    loc: loc,
+                  ),
+                  // HP
+                  //        isEditMode ?
+                  //        _HPInputRow(
+                  //          ownHPController, opponentHPController,
+                  //          (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
+                  hpBarRow(
+                    playerType,
+                    playerType == PlayerType.me
+                        ? focusingPokemonState.remainHP
+                        : focusingPokemonState.remainHPPercent,
+                    playerType == PlayerType.me ? focusingPokemon.h.real : 100,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         Expanded(
-          flex: 5,
+          flex: 6,
           // 各ステータス(HABCDS)の実数値/各ステータス(ABCDSAcEv)の変化/状態変化
           // TODO
           child: PageView(

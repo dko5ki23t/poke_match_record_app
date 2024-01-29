@@ -664,7 +664,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         );
         nextPressed = (widget.battle.isValid) ? () => onNext() : null;
         backPressed = null;
-//        deletePressed = () => onTurnDelete();
         break;
       case RegisterBattlePageType.firstPokemonPage:
         title = Text(loc.battlesTabTitleSelectingPokemon);
@@ -690,7 +689,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ? () => onNext()
             : null;
         backPressed = () => onturnBack();
-//        deletePressed = null;
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
@@ -702,150 +700,74 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         } else {
           nextPressed = null;
         }
-        lists = Stack(
+        lists = Column(
           children: [
-            Column(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: Row(
-                    children: [
-                      SizedBox(width: 10),
-                      Expanded(
-                        flex: 4,
-                        child: BattlePokemonStateInfo(
-                          playerType: PlayerType.me,
-                          focusState: focusState!,
-                          playerName: loc.battleYou,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        flex: 6,
-                        child: ownLastAction.effectType == EffectType.move
-                            ? BattleActionCommand(
-                                key: ownBattleCommandKey,
+            Expanded(
+              flex: 5,
+              child: Row(
+                children: [
+                  SizedBox(width: 10),
+                  Expanded(
+                    flex: 4,
+                    child: BattlePokemonStateInfo(
+                      playerType: PlayerType.me,
+                      focusState: focusState!,
+                      playerName: loc.battleYou,
+                      onStatusEdit: () => setState(() {}),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: ownLastAction.effectType == EffectType.move
+                        ? BattleActionCommand(
+                            key: ownBattleCommandKey,
+                            playerType: PlayerType.me,
+                            turnMove: ownLastAction.move!,
+                            phaseState: prevState!,
+                            myParty: ownParty,
+                            yourParty: opponentParty,
+                            parentSetState: setState,
+                            onConfirm: () {
+                              if (firstActionPlayer == null) {
+                                firstActionPlayer = PlayerType.me;
+                                turns[turnNum - 1]
+                                    .phases
+                                    .setActionOrderFirst(PlayerType.me);
+                              }
+                            },
+                            onUnConfirm: () {
+                              firstActionPlayer =
+                                  turns[turnNum - 1].phases.firstActionPlayer;
+                              if (firstActionPlayer == PlayerType.opponent) {
+                                turns[turnNum - 1]
+                                    .phases
+                                    .setActionOrderFirst(PlayerType.opponent);
+                              }
+                            },
+                            isFirstAction: firstActionPlayer != null
+                                ? firstActionPlayer == PlayerType.me
+                                : null,
+                          )
+                        : ownLastAction.effectType ==
+                                EffectType.changeFaintingPokemon
+                            ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.me,
-                                turnMove: ownLastAction.move!,
+                                turnEffect: ownLastAction,
                                 phaseState: prevState!,
                                 myParty: ownParty,
                                 yourParty: opponentParty,
                                 parentSetState: setState,
                                 onConfirm: () {
-                                  if (firstActionPlayer == null) {
-                                    firstActionPlayer = PlayerType.me;
-                                    turns[turnNum - 1]
-                                        .phases
-                                        .setActionOrderFirst(PlayerType.me);
-                                  }
+                                  //TODO
                                 },
-                                onUnConfirm: () {
-                                  firstActionPlayer = turns[turnNum - 1]
-                                      .phases
-                                      .firstActionPlayer;
-                                  if (firstActionPlayer ==
-                                      PlayerType.opponent) {
-                                    turns[turnNum - 1]
-                                        .phases
-                                        .setActionOrderFirst(
-                                            PlayerType.opponent);
-                                  }
-                                },
-                                isFirstAction: firstActionPlayer != null
-                                    ? firstActionPlayer == PlayerType.me
-                                    : null,
-                              )
-                            : ownLastAction.effectType ==
-                                    EffectType.changeFaintingPokemon
-                                ? BattleChangeFaintingCommand(
-                                    playerType: PlayerType.me,
-                                    turnEffect: ownLastAction,
-                                    phaseState: prevState!,
-                                    myParty: ownParty,
-                                    yourParty: opponentParty,
-                                    parentSetState: setState,
-                                    onConfirm: () {
-                                      //TODO
-                                    },
-                                    onUnConfirm: () {})
-                                : Container(),
-                      ),
-                    ],
+                                onUnConfirm: () {})
+                            : Container(),
                   ),
-                ),
-                Expanded(
-                  flex: 5,
-                  child: Row(
-                    children: [
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        flex: 4,
-                        child: BattlePokemonStateInfo(
-                          playerType: PlayerType.opponent,
-                          focusState: focusState,
-                          playerName: widget.battle.opponentName,
-                        ),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Expanded(
-                        flex: 6,
-                        child: opponentLastAction.effectType == EffectType.move
-                            ? BattleActionCommand(
-                                key: opponentBattleCommandKey,
-                                playerType: PlayerType.opponent,
-                                turnMove: opponentLastAction.move!,
-                                phaseState: prevState!,
-                                myParty: opponentParty,
-                                yourParty: ownParty,
-                                parentSetState: setState,
-                                onConfirm: () {
-                                  if (firstActionPlayer == null) {
-                                    firstActionPlayer = PlayerType.opponent;
-                                    turns[turnNum - 1]
-                                        .phases
-                                        .setActionOrderFirst(
-                                            PlayerType.opponent);
-                                  }
-                                },
-                                onUnConfirm: () {
-                                  firstActionPlayer = turns[turnNum - 1]
-                                      .phases
-                                      .firstActionPlayer;
-                                  if (firstActionPlayer == PlayerType.me) {
-                                    turns[turnNum - 1]
-                                        .phases
-                                        .setActionOrderFirst(PlayerType.me);
-                                  }
-                                },
-                                isFirstAction: firstActionPlayer != null
-                                    ? firstActionPlayer == PlayerType.opponent
-                                    : null,
-                              )
-                            : opponentLastAction.effectType ==
-                                    EffectType.changeFaintingPokemon
-                                ? BattleChangeFaintingCommand(
-                                    playerType: PlayerType.opponent,
-                                    turnEffect: opponentLastAction,
-                                    phaseState: prevState!,
-                                    myParty: opponentParty,
-                                    yourParty: ownParty,
-                                    parentSetState: setState,
-                                    onConfirm: () {
-                                      //TODO
-                                    },
-                                    onUnConfirm: () {})
-                                : Container(),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
             Stack(
               alignment: Alignment.center,
@@ -868,17 +790,84 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ),
               ],
             ),
+            Expanded(
+              flex: 5,
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    flex: 4,
+                    child: BattlePokemonStateInfo(
+                      playerType: PlayerType.opponent,
+                      focusState: focusState,
+                      playerName: widget.battle.opponentName,
+                      onStatusEdit: () => setState(() {}),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: opponentLastAction.effectType == EffectType.move
+                        ? BattleActionCommand(
+                            key: opponentBattleCommandKey,
+                            playerType: PlayerType.opponent,
+                            turnMove: opponentLastAction.move!,
+                            phaseState: prevState!,
+                            myParty: opponentParty,
+                            yourParty: ownParty,
+                            parentSetState: setState,
+                            onConfirm: () {
+                              if (firstActionPlayer == null) {
+                                firstActionPlayer = PlayerType.opponent;
+                                turns[turnNum - 1]
+                                    .phases
+                                    .setActionOrderFirst(PlayerType.opponent);
+                              }
+                            },
+                            onUnConfirm: () {
+                              firstActionPlayer =
+                                  turns[turnNum - 1].phases.firstActionPlayer;
+                              if (firstActionPlayer == PlayerType.me) {
+                                turns[turnNum - 1]
+                                    .phases
+                                    .setActionOrderFirst(PlayerType.me);
+                              }
+                            },
+                            isFirstAction: firstActionPlayer != null
+                                ? firstActionPlayer == PlayerType.opponent
+                                : null,
+                          )
+                        : opponentLastAction.effectType ==
+                                EffectType.changeFaintingPokemon
+                            ? BattleChangeFaintingCommand(
+                                playerType: PlayerType.opponent,
+                                turnEffect: opponentLastAction,
+                                phaseState: prevState!,
+                                myParty: opponentParty,
+                                yourParty: ownParty,
+                                parentSetState: setState,
+                                onConfirm: () {
+                                  //TODO
+                                },
+                                onUnConfirm: () {})
+                            : Container(),
+                  ),
+                ],
+              ),
+            ),
           ],
         );
         backPressed = () => onturnBack();
-//        deletePressed = () => onTurnDelete();
         break;
       default:
         title = Text(loc.battlesTabTitleRegisterBattle);
         lists = Center();
         nextPressed = null;
         backPressed = null;
-//        deletePressed = null;
         break;
     }
 
@@ -903,14 +892,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               tooltip: loc.battlesTabToolTipNext,
               icon: Icon(Icons.navigate_next),
             ),
-/*
-            MyIconButton(
-              theme: theme,
-              onPressed: deletePressed,
-              tooltip: loc.battlesTabToolTipDelete,
-              icon: Icon(Icons.delete),
-            ),
-*/
             SizedBox(
               height: 20,
               child: VerticalDivider(
