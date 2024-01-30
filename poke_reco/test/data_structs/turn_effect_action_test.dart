@@ -1,5 +1,6 @@
+import 'package:collection/collection.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:test/test.dart';
 
@@ -11,8 +12,7 @@ void main() async {
   await testPokeData.initialize();
   PokeDB pokeData = testPokeData.data;
   group('TurnMove class の単体テスト', () {
-    final TurnMove turnMove = TurnMove()
-      ..playerType = PlayerType.me
+    final TurnEffectAction turnMove = TurnEffectAction(player: PlayerType.me)
       ..type = TurnMoveType.move
       ..teraType = PokeType.fire
       ..move = pokeData.moves[1]!
@@ -32,30 +32,30 @@ void main() async {
     turnMove.setChangePokemonIndex(PlayerType.me, 1);
     turnMove.setChangePokemonIndex(PlayerType.opponent, 2);
     final String sqlStr =
-        '0:1:${PokeType.fire.index}:1:0:1:2:1:${MoveEffectiveness.great.index};:50;:25;:1;:1;:2;:3;:1;2;:${PokeType.water.index}:1';
+        '7:0:1:${PokeType.fire.index}:1:0:1:2:1:${MoveEffectiveness.great.index};:50;:25;:1;:1;:2;:3;:1;2;:${PokeType.water.index}:1';
 
     test('clear()', () {
-      TurnMove testingTurnMove = turnMove.copy();
+      TurnEffectAction testingTurnMove = turnMove.copy();
       testingTurnMove.clear();
-      expect(testingTurnMove == TurnMove(), true);
+      expect(
+          testingTurnMove == TurnEffectAction(player: PlayerType.none), true);
     });
 
     test('clearMove()', () {
-      TurnMove testingTurnMove = turnMove.copy();
+      TurnEffectAction testingTurnMove = turnMove.copy();
       testingTurnMove.clearMove();
-      TurnMove expectTurnMove = TurnMove()
-        ..playerType = turnMove.playerType
-        ..type = turnMove.type;
+      TurnEffectAction expectTurnMove =
+          TurnEffectAction(player: turnMove.playerType)..type = turnMove.type;
       expect(testingTurnMove == expectTurnMove, true);
     });
 
     test('SQL文字列から変換', () {
-      final parsed = TurnMove.deserialize(sqlStr, ':', ';');
-      expect(parsed == turnMove, true);
+      final parsed = TurnEffectAction.deserialize(sqlStr, ':', ';', '_');
+      expect(parsed, turnMove);
     });
 
     test('SQL文字列に変換', () {
-      final str = turnMove.serialize(':', ';');
+      final str = turnMove.serialize(':', ';', '_');
       expect(str, sqlStr);
     });
   });

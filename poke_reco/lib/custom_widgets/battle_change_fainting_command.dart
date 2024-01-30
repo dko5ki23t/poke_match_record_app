@@ -6,7 +6,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
 
 class BattleChangeFaintingCommand extends StatefulWidget {
   const BattleChangeFaintingCommand({
@@ -22,7 +22,7 @@ class BattleChangeFaintingCommand extends StatefulWidget {
   }) : super(key: key);
 
   final PlayerType playerType;
-  final TurnEffect turnEffect;
+  final TurnEffectChangeFaintingPokemon turnEffect;
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
@@ -96,9 +96,9 @@ class BattleChangeFaintingCommandState
             myParty.pokemons[i]!,
             theme,
             onTap: () => parentSetState(() {
-              turnEffect.effectId = i + 1;
+              turnEffect.changePokemonIndex = i + 1;
             }),
-            selected: turnEffect.effectId == i + 1,
+            selected: turnEffect.changePokemonIndex == i + 1,
             showNetworkImage: PokeDB().getPokeAPI,
           ),
         );
@@ -120,7 +120,7 @@ class BattleChangeFaintingCommandState
     typeCommand = [
       Expanded(
         flex: 1,
-        child: Text('ひんし後ポケモン交代'),
+        child: Text(loc.battlePokemonChange),
       ),
       Expanded(
         flex: 6,

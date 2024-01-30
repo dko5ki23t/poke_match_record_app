@@ -1,28 +1,21 @@
-/*
-import 'package:flutter/material.dart';
-import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
-import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/guide.dart';
-import 'package:poke_reco/data_structs/user_force.dart';
-import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/turn_effect_move.dart';
-import 'package:poke_reco/data_structs/poke_type.dart';
-import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect_after_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_ailment.dart';
+import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
+import 'package:poke_reco/data_structs/turn_effect_field.dart';
+import 'package:poke_reco/data_structs/turn_effect_individual_field.dart';
+import 'package:poke_reco/data_structs/turn_effect_item.dart';
+import 'package:poke_reco/data_structs/turn_effect_terastal.dart';
+import 'package:poke_reco/data_structs/turn_effect_user_edit.dart';
+import 'package:poke_reco/data_structs/turn_effect_weather.dart';
 import 'package:poke_reco/tool.dart';
-import 'package:poke_reco/data_structs/individual_field.dart';
-import 'package:poke_reco/data_structs/ailment.dart';
-import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/field.dart';
-import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
-import 'package:poke_reco/data_structs/turn.dart';
-import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:tuple/tuple.dart';
 
@@ -34,7 +27,7 @@ enum EffectType {
   ailment,
   weather,
   field,
-  move,
+  action,
   changeFaintingPokemon,
   terastal,
   afterMove,
@@ -53,7 +46,7 @@ extension EffectTypename on EffectType {
     7: Tuple2('', ''),
     8: Tuple2('', ''),
     9: Tuple2('', ''),
-    10: Tuple2('わざ', 'Move'),
+    10: Tuple2('行動', 'Action'),
     11: Tuple2('', ''),
   };
 
@@ -186,1428 +179,803 @@ const List<Timing> everyTurnEndTimings = [
       .everyTurnEndHPNotFull2, // 持っているポケモンがどくタイプ→HPが満タンでない毎ターン終了時、どくタイプ以外→毎ターン終了時
 ];
 
-class TurnEffect extends Equatable implements Copyable {
-  PlayerType playerType = PlayerType.none;
-  Timing timing = Timing.none;
-  EffectType effectType = EffectType.none;
-  int effectId = 0;
-  int extraArg1 = 0;
-  int extraArg2 = 0;
-  TurnMove? move; // タイプがわざの場合は非null
-  bool isAdding = false; // trueの場合、追加待ち状態
-  bool isOwnFainting = false; // このフェーズで自身のポケモンがひんしになるかどうか
-  bool isOpponentFainting = false;
-  bool isMyWin = false; // 自身の勝利（両方勝利の場合は引き分け）
-  bool isYourWin = false;
-  List<int?> _changePokemonIndexes = [
-    null,
-    null
-  ]; // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
-  List<int> _prevPokemonIndexes = [
-    0,
-    0
-  ]; // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
-  bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
-  List<int> invalidGuideIDs = [];
+abstract class TurnEffect extends Equatable implements Copyable {
+  final EffectType effectType;
+//  PlayerType playerType = PlayerType.none;
+//  Timing timing = Timing.none;
+//  bool isOwnFainting = false; // このフェーズで自身のポケモンがひんしになるかどうか
+//  bool isOpponentFainting = false;
+//  bool isMyWin = false; // 自身の勝利（両方勝利の場合は引き分け）
+//  bool isYourWin = false;
+//  bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
 
-  @override
-  List<Object?> get props => [
-        playerType,
-        timing,
-        effectType,
-        effectId,
-        extraArg1,
-        extraArg2,
-        move,
-        isAdding,
-        isOwnFainting,
-        isOpponentFainting,
-        isMyWin,
-        isYourWin,
-        _changePokemonIndexes,
-        _prevPokemonIndexes,
-        isAutoSet,
-        invalidGuideIDs,
-      ];
+  TurnEffect(this.effectType);
 
-  @override
-  TurnEffect copy() => TurnEffect()
-    ..playerType = playerType
-    ..timing = timing
-    ..effectType = effectType
-    ..effectId = effectId
-    ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2
-    ..move = move?.copy()
-    ..isAdding = isAdding
-    ..isOwnFainting = isOwnFainting
-    ..isOpponentFainting = isOpponentFainting
-    ..isMyWin = isMyWin
-    ..isYourWin = isYourWin
-    .._changePokemonIndexes = [..._changePokemonIndexes]
-    .._prevPokemonIndexes = [..._prevPokemonIndexes]
-    ..isAutoSet = isAutoSet
-    ..invalidGuideIDs = [...invalidGuideIDs];
+//  int effectId = 0;
+//  int extraArg1 = 0;
+//  int extraArg2 = 0;
+//  TurnMove? move; // タイプがわざの場合は非null
+//  bool isAdding = false; // trueの場合、追加待ち状態
+//  bool isOwnFainting = false; // このフェーズで自身のポケモンがひんしになるかどうか
+//  bool isOpponentFainting = false;
+//  bool isMyWin = false; // 自身の勝利（両方勝利の場合は引き分け）
+//  bool isYourWin = false;
+//  List<int?> _changePokemonIndexes = [
+//    null,
+//    null
+//  ]; // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
+//  List<int> _prevPokemonIndexes = [
+//    0,
+//    0
+//  ]; // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
+//
+//  List<int> invalidGuideIDs = [];
 
-  int? getChangePokemonIndex(PlayerType player) {
-    if (player == PlayerType.me) return _changePokemonIndexes[0];
-    return _changePokemonIndexes[1];
-  }
+//  @override
+//  List<Object?> get props => [
+//        playerType,
+//        timing,
+//        effectType,
+//        isOwnFainting,
+//        isOpponentFainting,
+//        isMyWin,
+//        isYourWin,
+//        isAutoSet,
+//      ];
 
-  void setChangePokemonIndex(PlayerType player, int? val) {
-    if (player == PlayerType.me) {
-      _changePokemonIndexes[0] = val;
-    } else {
-      _changePokemonIndexes[1] = val;
-    }
-  }
+//  @override
+//  TurnEffect copy() => TurnEffect()
+//    ..playerType = playerType
+//    ..timing = timing
+//    ..effectType = effectType
+//    ..isOwnFainting = isOwnFainting
+//    ..isOpponentFainting = isOpponentFainting
+//    ..isMyWin = isMyWin
+//    ..isYourWin = isYourWin
+//    ..isAutoSet = isAutoSet;
 
-  int getPrevPokemonIndex(PlayerType player) {
-    if (player == PlayerType.me) return _prevPokemonIndexes[0];
-    return _prevPokemonIndexes[1];
-  }
-
-  void setPrevPokemonIndex(PlayerType player, int val) {
-    if (player == PlayerType.me) {
-      _prevPokemonIndexes[0] = val;
-    } else {
-      _prevPokemonIndexes[1] = val;
-    }
-  }
-
-  bool isValid() {
-    return playerType != PlayerType.none &&
-        effectType != EffectType.none &&
-        (effectType == EffectType.move && move != null && move!.isValid() ||
-            effectId > 0);
-  }
-
-  bool nearEqual(TurnEffect other) {
-    return playerType == other.playerType &&
-        timing == other.timing &&
-        effectType == other.effectType &&
-        effectId == other.effectId;
-  }
+  bool isValid();
 
   // 効果やわざの結果から、各ポケモン等の状態を更新する
   List<Guide> processEffect(
     Party ownParty,
-    PokemonState ownPokemonState,
+    PokemonState ownState,
     Party opponentParty,
-    PokemonState opponentPokemonState,
+    PokemonState opponentState,
     PhaseState state,
     TurnEffect? prevAction,
     int continuousCount, {
     required AppLocalizations loc,
-  }) {
-    final pokeData = PokeDB();
-    List<Guide> ret = [];
-    if (!isValid()) return ret;
-
-    // もちもの失くした判定
-    bool ownItemHolded = ownPokemonState.holdingItem != null;
-    bool opponentItemHolded = opponentPokemonState.holdingItem != null;
-
-    // ポケモン交代？
-    bool isOwnChanged = false;
-    bool isOpponentChanged = false;
-
-    // ひんし判定
-    bool alreadyOwnFainting = ownPokemonState.isFainting;
-    bool alreadyOpponentFainting = opponentPokemonState.isFainting;
-
-    // 交代が伴う効果用に、効果前のポケモンインデックスを保存
-    setPrevPokemonIndex(
-        PlayerType.me, state.getPokemonIndex(PlayerType.me, null));
-    setPrevPokemonIndex(
-        PlayerType.opponent, state.getPokemonIndex(PlayerType.opponent, null));
-
-    bool isMe = playerType == PlayerType.me;
-    var myState = timing == Timing.afterMove && prevAction != null
-        ? state.getPokemonState(playerType, prevAction)
-        : isMe
-            ? ownPokemonState
-            : opponentPokemonState;
-    var yourState = timing == Timing.afterMove && prevAction != null
-        ? state.getPokemonState(playerType.opposite, prevAction)
-        : isMe
-            ? opponentPokemonState
-            : ownPokemonState;
-    var myFields = state.getIndiFields(playerType);
-    var yourFields = state.getIndiFields(playerType.opposite);
-    var myParty = isMe ? ownParty : opponentParty;
-    var myPokemonIndex = state.getPokemonIndex(
-        playerType, timing == Timing.afterMove ? prevAction : null);
-
-    switch (effectType) {
-      case EffectType.ability:
-        ret.addAll(Ability.processEffect(
-          effectId,
-          playerType,
-          myState,
-          yourState,
-          state,
-          myParty,
-          myPokemonIndex,
-          opponentPokemonState,
-          extraArg1,
-          extraArg2,
-          getChangePokemonIndex(playerType),
-          loc: loc,
-        ));
-        break;
-      case EffectType.individualField:
-        {
-          switch (effectId) {
-            case IndiFieldEffect.toxicSpikes: // どくびし
-              myState.ailmentsAdd(Ailment(Ailment.poison), state);
-              break;
-            case IndiFieldEffect.badToxicSpikes: // どくどくびし
-              myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
-              break;
-            case IndiFieldEffect.spikes1: // まきびし
-            case IndiFieldEffect.spikes2:
-            case IndiFieldEffect.spikes3:
-            case IndiFieldEffect.futureAttack: // みらいにこうげき
-            case IndiFieldEffect.stealthRock: // ステルスロック
-            case IndiFieldEffect.wish: // ねがいごと
-              if (isMe) {
-                myState.remainHP -= extraArg1;
-              } else {
-                myState.remainHPPercent -= extraArg1;
-              }
-              break;
-            case IndiFieldEffect.healingWish: // いやしのねがい
-              if (isMe) {
-                myState.remainHP = myState.pokemon.h.real;
-              } else {
-                myState.remainHPPercent = 100;
-              }
-              myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
-              myFields.removeWhere((e) => e.id == IndividualField.healingWish);
-              break;
-            case IndiFieldEffect.lunarDance: // みかづきのまい
-              if (isMe) {
-                myState.remainHP = myState.pokemon.h.real;
-              } else {
-                myState.remainHPPercent = 100;
-              }
-              myState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
-              for (int i = 0; i < myState.usedPPs.length; i++) {
-                myState.usedPPs[i] = 0;
-              }
-              myFields.removeWhere((e) => e.id == IndividualField.lunarDance);
-              break;
-            case IndiFieldEffect.stickyWeb: // ねばねばネット
-              myState.addStatChanges(false, 4, -1, yourState,
-                  myFields: myFields, yourFields: yourFields);
-              break;
-            default:
-              IndiFieldEffect.processRemove(effectId, myFields, yourFields);
-              break;
-          }
-        }
-        break;
-      case EffectType.weather:
-        {
-          switch (effectId) {
-            case WeatherEffect.sunnyEnd:
-            case WeatherEffect.rainyEnd:
-            case WeatherEffect.sandStormEnd:
-            case WeatherEffect.snowyEnd:
-              state.weather = Weather(Weather.none);
-              break;
-            case WeatherEffect.sandStormDamage:
-              ownPokemonState.remainHP -= extraArg1;
-              opponentPokemonState.remainHPPercent -= extraArg2;
-              break;
-          }
-        }
-        break;
-      case EffectType.field:
-        {
-          switch (effectId) {
-            case FieldEffect.electricTerrainEnd:
-            case FieldEffect.grassyTerrainEnd:
-            case FieldEffect.mistyTerrainEnd:
-            case FieldEffect.psychicTerrainEnd:
-              state.field = Field(Field.none);
-              break;
-            case FieldEffect.grassHeal:
-              ownPokemonState.remainHP -= extraArg1;
-              opponentPokemonState.remainHPPercent -= extraArg2;
-              break;
-          }
-        }
-        break;
-      case EffectType.item:
-        ret.addAll(Item.processEffect(
-          effectId,
-          playerType,
-          myState,
-          yourState,
-          state,
-          extraArg1,
-          extraArg2,
-          getChangePokemonIndex(playerType),
-          loc: loc,
-        ));
-        break;
-      case EffectType.move:
-        {
-          // テラスタル済みならわざもテラスタル化
-          if (myState.isTerastaling) {
-            move!.teraType = myState.teraType1;
-          }
-          ret.addAll(move!.processMove(
-            ownParty,
-            opponentParty,
-            ownPokemonState,
-            opponentPokemonState,
-            state,
-            continuousCount,
-            invalidGuideIDs,
-            loc: loc,
-          ));
-          // ポケモン交代の場合、もちもの失くした判定用に変数セット
-          if (move!.type == TurnMoveType.change) {
-            if (playerType == PlayerType.me) isOwnChanged = true;
-            if (playerType == PlayerType.opponent) isOpponentChanged = false;
-          }
-        }
-        break;
-      case EffectType.changeFaintingPokemon: // ひんし後のポケモン交代
-        // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-        myState.processExitEffect(true, yourState, state);
-        if (effectId != 0) {
-          state.setPokemonIndex(playerType, effectId);
-          state
-              .getPokemonState(playerType, null)
-              .processEnterEffect(true, state, yourState);
-        }
-        break;
-      case EffectType.terastal:
-        myState.isTerastaling = true;
-        myState.teraType1 = PokeType.values[effectId];
-        if (pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID != 0) {
-          // テラスタルによってとくせいが変わる場合
-          myState.setCurrentAbility(
-              pokeData.abilities[
-                  pokeData.pokeBase[myState.pokemon.no]!.teraTypedAbilityID]!,
-              yourState,
-              playerType == PlayerType.me,
-              state);
-        }
-        if (myState.pokemon.id == 1024) {
-          //テラパゴスがテラスタルした場合
-          if (!myState.buffDebuffs.containsByID(BuffDebuff.terastalForm)) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.stellarForm));
-          } else {
-            myState.buffDebuffs
-                .changeID(BuffDebuff.terastalForm, BuffDebuff.stellarForm);
-          }
-          // TODO この2行csvに移したい
-          myState.maxStats.h.race = 160;
-          myState.maxStats.a.race = 105;
-          myState.maxStats.b.race = 110;
-          myState.maxStats.c.race = 130;
-          myState.maxStats.d.race = 110;
-          myState.maxStats.s.race = 85;
-          myState.minStats.h.race = 160;
-          myState.minStats.a.race = 105;
-          myState.minStats.b.race = 110;
-          myState.minStats.c.race = 130;
-          myState.minStats.d.race = 110;
-          myState.minStats.s.race = 85;
-          for (final stat in StatIndexList.listHtoS) {
-            var biases = Temper.getTemperBias(myState.pokemon.temper);
-            myState.maxStats[stat].real = SixParams.getRealABCDS(
-                myState.pokemon.level,
-                myState.maxStats[stat].race,
-                myState.maxStats[stat].indi,
-                myState.maxStats[stat].effort,
-                biases[stat.index - 1]);
-            myState.minStats[stat].real = SixParams.getRealABCDS(
-                myState.pokemon.level,
-                myState.minStats[stat].race,
-                myState.minStats[stat].indi,
-                myState.minStats[stat].effort,
-                biases[stat.index - 1]);
-          }
-          if (playerType == PlayerType.me) {
-            myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();
-          }
-        }
-        if (playerType == PlayerType.me) {
-          state.hasOwnTerastal = true;
-        } else {
-          state.hasOpponentTerastal = true;
-        }
-        break;
-      case EffectType.ailment:
-        switch (effectId) {
-          case AilmentEffect.sleepy:
-            myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleepy);
-            myState.ailmentsAdd(Ailment(Ailment.sleep), state);
-            break;
-          case AilmentEffect.burn:
-          case AilmentEffect.poison:
-          case AilmentEffect.badPoison:
-          case AilmentEffect.saltCure:
-          case AilmentEffect.curse:
-          case AilmentEffect.ingrain:
-            if (playerType == PlayerType.me) {
-              myState.remainHP -= extraArg1;
-            } else {
-              myState.remainHPPercent -= extraArg1;
-            }
-            break;
-          case AilmentEffect.leechSeed:
-            if (playerType == PlayerType.me) {
-              myState.remainHP -= extraArg1;
-              yourState.remainHPPercent -= extraArg2;
-            } else {
-              myState.remainHPPercent -= extraArg1;
-              yourState.remainHP -= extraArg2;
-            }
-            // 相手HP確定
-            if (playerType == PlayerType.opponent) {
-              int drain = extraArg2.abs();
-              if (yourState.remainHP < yourState.pokemon.h.real &&
-                  myState.remainHPPercent > 0 &&
-                  drain > 0) {
-                if (yourState.holdingItem?.id == 273) {
-                  // おおきなねっこ
-                  int tmp = ((drain.toDouble() + 0.5) / 1.3).round();
-                  while (roundOff5(tmp * 1.3) > drain) {
-                    tmp--;
-                  }
-                  drain = tmp;
-                }
-                int hpMin = drain * 8;
-                int hpMax = hpMin + 3;
-                if (hpMin != myState.minStats.h.real ||
-                    hpMax != myState.maxStats.h.real) {
-                  ret.add(Guide()
-                    ..guideId = Guide.leechSeedConfHP
-                    ..args = [hpMin, hpMax]
-                    ..guideStr = loc.battleGuideLeechSeedConfHP(
-                        hpMax, hpMin, myState.pokemon.omittedName));
-                }
-              }
-            }
-            break;
-          case AilmentEffect.partiallyTrapped:
-            if (extraArg2 > 0) {
-              myState
-                  .ailmentsRemoveWhere((e) => e.id == Ailment.partiallyTrapped);
-            } else {
-              if (playerType == PlayerType.me) {
-                myState.remainHP -= extraArg1;
-              } else {
-                myState.remainHPPercent -= extraArg1;
-              }
-            }
-            break;
-          case AilmentEffect.perishSong:
-            myState.remainHP = 0;
-            myState.remainHPPercent = 0;
-            myState.isFainting = true;
-            break;
-          case AilmentEffect.octoLock:
-            myState.addStatChanges(true, 1, -1, yourState);
-            myState.addStatChanges(true, 3, -1, yourState);
-            break;
-          case AilmentEffect.candyCandy:
-            if (extraArg2 > 0) {
-              myState.ailmentsRemoveWhere((e) => e.id == Ailment.candyCandy);
-            } else {
-              myState.addStatChanges(false, 4, -1, yourState);
-            }
-            break;
-          default:
-            AilmentEffect.processRemove(effectId, myState);
-            break;
-        }
-        break;
-      case EffectType.afterMove:
-        switch (effectId) {
-          case 194: // みちづれ
-            myState.remainHP = 0;
-            myState.remainHPPercent = 0;
-            myState.isFainting = true;
-            break;
-          case 588: // キングシールド
-            myState.addStatChanges(false, 0, -1, yourState,
-                myFields: myFields, yourFields: yourFields, moveId: effectId);
-            break;
-          case 596: // ニードルガード
-            if (playerType == PlayerType.me) {
-              myState.remainHP -= extraArg1;
-            } else {
-              myState.remainHPPercent -= extraArg1;
-            }
-            break;
-          case 661: // トーチカ
-            myState.ailmentsAdd(Ailment(Ailment.poison), state);
-            break;
-          case 792: // ブロッキング
-            myState.addStatChanges(false, 1, -2, yourState,
-                myFields: myFields, yourFields: yourFields, moveId: effectId);
-            break;
-          case 852: // スレッドトラップ
-            myState.addStatChanges(false, 4, -1, yourState,
-                myFields: myFields, yourFields: yourFields, moveId: effectId);
-            break;
-          case 508: // かえんのまもり
-            myState.ailmentsAdd(Ailment(Ailment.burn), state);
-            break;
-        }
-        break;
-      case EffectType.userEdit:
-        ret.addAll(Ability.processEffect(
-          effectId,
-          playerType,
-          myState,
-          yourState,
-          state,
-          myParty,
-          myPokemonIndex,
-          opponentPokemonState,
-          extraArg1,
-          extraArg2,
-          getChangePokemonIndex(playerType),
-          loc: loc,
-        ));
-        break;
-      default:
-        break;
-    }
-
-    // 相手のパラメータ等推定(これ以降でretへの追加禁止)
-    ret.removeWhere((element) => invalidGuideIDs.contains(element.guideId));
-    // パラメータ等推定
-    for (final guide in ret) {
-      guide.processEffect(
-          isMe ? myState : yourState, isMe ? yourState : myState, state);
-    }
-    // ユーザ手動入力による修正
-    userForces.processEffect(
-        state.getPokemonState(PlayerType.me, null),
-        state.getPokemonState(PlayerType.opponent, null),
-        state,
-        ownParty,
-        opponentParty);
-
-    // HP 満タン判定
-    for (var player in [PlayerType.me, PlayerType.opponent]) {
-      bool isFull = player == PlayerType.me
-          ? ownPokemonState.remainHP >= ownPokemonState.pokemon.h.real
-          : opponentPokemonState.remainHPPercent >= 100;
-      var pokeState =
-          player == PlayerType.me ? ownPokemonState : opponentPokemonState;
-      if (isFull) {
-        if (pokeState.currentAbility.id == 136) {
-          // マルチスケイル
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.damaged0_5);
-        }
-        if (pokeState.currentAbility.id == 177) {
-          // はやてのつばさ
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.galeWings);
-        }
-      } else {
-        if (pokeState.currentAbility.id == 136) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.damaged0_5); // マルチスケイル
-        }
-        if (pokeState.currentAbility.id == 177) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.galeWings); // はやてのつばさ
-        }
-      }
-    }
-
-    // HP 1/2以下判定
-    for (var player in [PlayerType.me, PlayerType.opponent]) {
-      bool is1_2 = player == PlayerType.me
-          ? ownPokemonState.remainHP <=
-              (ownPokemonState.pokemon.h.real / 2).floor()
-          : opponentPokemonState.remainHPPercent <= 50;
-      var pokeState =
-          player == PlayerType.me ? ownPokemonState : opponentPokemonState;
-      if (is1_2) {
-        if (pokeState.currentAbility.id == 129) {
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.defeatist); // よわき
-        }
-      } else {
-        if (pokeState.currentAbility.id == 129) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.defeatist); // よわき
-        }
-      }
-    }
-
-    // HP 1/3以下判定
-    for (var player in [PlayerType.me, PlayerType.opponent]) {
-      bool is1_3 = player == PlayerType.me
-          ? ownPokemonState.remainHP <=
-              (ownPokemonState.pokemon.h.real / 3).floor()
-          : opponentPokemonState.remainHPPercent <= 33;
-      var pokeState =
-          player == PlayerType.me ? ownPokemonState : opponentPokemonState;
-      if (is1_3) {
-        if (pokeState.currentAbility.id == 65) {
-          // しんりょく
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.overgrow);
-        }
-        if (pokeState.currentAbility.id == 66) {
-          // もうか
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.blaze);
-        }
-        if (pokeState.currentAbility.id == 67) {
-          // げきりゅう
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.torrent);
-        }
-        if (pokeState.currentAbility.id == 68) {
-          // むしのしらせ
-          pokeState.buffDebuffs.addIfNotFoundByID(BuffDebuff.swarm);
-        }
-      } else {
-        if (pokeState.currentAbility.id == 65) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.overgrow); // しんりょく
-        }
-        if (pokeState.currentAbility.id == 66) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.blaze); // もうか
-        }
-        if (pokeState.currentAbility.id == 67) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.torrent); // げきりゅう
-        }
-        if (pokeState.currentAbility.id == 68) {
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.swarm); // むしのしらせ
-        }
-      }
-    }
-
-    // もちもの失くした判定
-    for (var player in [PlayerType.me, PlayerType.opponent]) {
-      var pokeState =
-          player == PlayerType.me ? ownPokemonState : opponentPokemonState;
-      if ((!isOwnChanged &&
-              player == PlayerType.me &&
-              ownItemHolded &&
-              ownPokemonState.holdingItem == null) ||
-          (!isOpponentChanged &&
-              player == PlayerType.opponent &&
-              opponentItemHolded &&
-              opponentPokemonState.holdingItem == null)) {
-        // もちもの失くした
-        if (pokeState.currentAbility.id == 84) {
-          // かるわざ
-          pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.unburden));
-        }
-      } else if ((!isOwnChanged &&
-              player == PlayerType.me &&
-              !ownItemHolded &&
-              ownPokemonState.holdingItem != null) ||
-          (!isOpponentChanged &&
-              player == PlayerType.opponent &&
-              !opponentItemHolded &&
-              opponentPokemonState.holdingItem != null)) {
-        // もちもの得た
-        if (pokeState.currentAbility.id == 84) {
-          // かるわざ
-          pokeState.buffDebuffs.removeAllByID(BuffDebuff.unburden);
-        }
-      }
-    }
-
-    // 満タン以上の回復はしない
-    if (ownPokemonState.remainHP >= ownPokemonState.pokemon.h.real) {
-      ownPokemonState.remainHP = ownPokemonState.pokemon.h.real;
-    }
-    if (opponentPokemonState.remainHPPercent >= 100) {
-      opponentPokemonState.remainHPPercent = 100;
-    }
-    // ひんし判定(本フェーズでひんしになったか)
-    isOwnFainting = false;
-    if (ownPokemonState.remainHP <= 0) {
-      ownPokemonState.remainHP = 0;
-      ownPokemonState.isFainting = true;
-      if (!alreadyOwnFainting) {
-        isOwnFainting = true;
-        state.incFaintingCount(PlayerType.me, 1);
-      }
-    } else {
-      ownPokemonState.isFainting = false;
-    }
-    isOpponentFainting = false;
-    if (opponentPokemonState.remainHPPercent <= 0) {
-      opponentPokemonState.remainHPPercent = 0;
-      opponentPokemonState.isFainting = true;
-      if (!alreadyOpponentFainting) {
-        isOpponentFainting = true;
-        state.incFaintingCount(PlayerType.opponent, 1);
-      }
-    } else {
-      opponentPokemonState.isFainting = false;
-    }
-
-    // 勝利判定
-    isMyWin = state.isMyWin;
-    isYourWin = state.isYourWin;
-    // わざの反動等で両者同時に倒れる場合あり→このTurnEffectの発動主が勝利とする
-    if (isMyWin && isYourWin) {
-      if (playerType == PlayerType.me) {
-        isYourWin = false;
-      } else {
-        isMyWin = false;
-      }
-    }
-
-    return ret;
-  }
+  });
 
   // 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
-  static List<TurnEffect> getPossibleEffects(
-      Timing timing,
-      PlayerType playerType,
-      EffectType effectType,
-      Pokemon? pokemon,
-      PokemonState? pokemonState,
-      PhaseState phaseState,
-      PlayerType attacker,
-      TurnMove turnMove,
-      Turn currentTurn,
-      TurnEffect? prevAction) {
-    final pokeData = PokeDB();
-    List<TurnEffect> ret = [];
-    List<int> retAbilityIDs = [];
-    List<Timing> timings = [...allTimings];
-    List<Timing> attackerTimings = [...allTimings];
-    List<Timing> defenderTimings = [...allTimings];
-    List<int> indiFieldEffectIDs = [];
-    Map<int, int> ailmentEffectIDs = {}; // 効果IDと経過ターン数を入れる
-    List<int> weatherEffectIDs = [];
-    List<int> fieldEffectIDs = [];
+//  static List<TurnEffect> getPossibleEffects(
+//      Timing timing,
+//      PlayerType playerType,
+//      EffectType effectType,
+//      Pokemon? pokemon,
+//      PokemonState? pokemonState,
+//      PhaseState phaseState,
+//      PlayerType attacker,
+//      TurnMove turnMove,
+//      Turn currentTurn,
+//      TurnEffect? prevAction) {
+//    final pokeData = PokeDB();
+//    List<TurnEffect> ret = [];
+//    List<int> retAbilityIDs = [];
+//    List<Timing> timings = [...allTimings];
+//    List<Timing> attackerTimings = [...allTimings];
+//    List<Timing> defenderTimings = [...allTimings];
+//    List<int> indiFieldEffectIDs = [];
+//    Map<int, int> ailmentEffectIDs = {}; // 効果IDと経過ターン数を入れる
+//    List<int> weatherEffectIDs = [];
+//    List<int> fieldEffectIDs = [];
+//
+//    // 全タイミング共通
+//    if (phaseState.weather.id == Weather.sunny) {
+//      // 天気が晴れのとき
+//      timings.add(Timing.sunnyAbnormaled);
+//      attackerTimings.add(Timing.sunnyAbnormaled);
+//      defenderTimings.add(Timing.sunnyAbnormaled);
+//    }
+//
+//    switch (timing) {
+//      case Timing.pokemonAppear: // ポケモンを繰り出すとき
+//        {
+//          timings.addAll(pokemonAppearTimings);
+//          attackerTimings.clear();
+//          defenderTimings.clear();
+//          if (phaseState.weather.id != Weather.rainy) {
+//            // ポケモン登場時(天気が雨でない)
+//            timings.add(Timing.pokemonAppearNotRained);
+//          }
+//          if (phaseState.weather.id != Weather.sandStorm) {
+//            // ポケモン登場時(天気がすなあらしでない)
+//            timings.add(Timing.pokemonAppearNotSandStormed);
+//          }
+//          if (phaseState.weather.id != Weather.sunny) {
+//            // ポケモン登場時(天気が晴れでない)
+//            timings.add(Timing.pokemonAppearNotSunny);
+//          }
+//          if (phaseState.weather.id != Weather.snowy) {
+//            // ポケモン登場時(天気がゆきでない)
+//            timings.add(Timing.pokemonAppearNotSnowed);
+//          }
+//          if (phaseState.field.id != Field.electricTerrain) {
+//            // ポケモン登場時(エレキフィールドでない)
+//            timings.add(Timing.pokemonAppearNotEreciField);
+//          }
+//          if (phaseState.field.id != Field.psychicTerrain) {
+//            // ポケモン登場時(サイコフィールドでない)
+//            timings.add(Timing.pokemonAppearNotPsycoField);
+//          }
+//          if (phaseState.field.id != Field.mistyTerrain) {
+//            // ポケモン登場時(ミストフィールドでない)
+//            timings.add(Timing.pokemonAppearNotMistField);
+//          }
+//          if (phaseState.field.id != Field.grassyTerrain) {
+//            // ポケモン登場時(グラスフィールドでない)
+//            timings.add(Timing.pokemonAppearNotGrassField);
+//          }
+//          var myFields = phaseState.getIndiFields(playerType);
+//          for (final f in myFields) {
+//            if (f.possiblyActive(timing)) {
+//              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(f));
+//            }
+//          }
+//        }
+//        break;
+//      case Timing.everyTurnEnd: // 毎ターン終了時
+//        {
+//          timings.addAll(everyTurnEndTimings);
+//          attackerTimings.clear();
+//          defenderTimings.clear();
+//          if (currentTurn.getInitialPokemonIndex(playerType) ==
+//              phaseState.getPokemonIndex(playerType, null)) {
+//            timings.add(Timing.afterActedEveryTurnEnd); // 1度でも行動した後毎ターン終了時
+//          }
+//          if (phaseState.getPokemonState(PlayerType.me, null).holdingItem ==
+//                  null &&
+//              phaseState
+//                      .getPokemonState(PlayerType.opponent, null)
+//                      .holdingItem ==
+//                  null) {
+//            timings.add(
+//                Timing.everyTurnEndOpponentItemConsumeed); // 相手が道具を消費したターン終了時
+//          }
+//          // 天気
+//          switch (phaseState.weather.id) {
+//            case Weather.sunny: // 天気が晴れのとき、毎ターン終了時
+//              timings.addAll([
+//                Timing.fireWaterAttackedSunnyRained,
+//                Timing.everyTurnEndSunny
+//              ]);
+//              weatherEffectIDs.add(WeatherEffect.sunnyEnd);
+//              break;
+//            case Weather.rainy: // 天気があめのとき、毎ターン終了時
+//              timings.addAll([
+//                Timing.everyTurnEndRained,
+//                Timing.fireWaterAttackedSunnyRained,
+//                Timing.everyTurnEndRainedWithAbnormal
+//              ]);
+//              weatherEffectIDs.add(WeatherEffect.rainyEnd);
+//              break;
+//            case Weather.snowy: // 天気がゆきのとき、毎ターン終了時
+//              timings.addAll([Timing.everyTurnEndSnowy]);
+//              weatherEffectIDs.add(WeatherEffect.snowyEnd);
+//              break;
+//            case Weather.sandStorm: // 天気がすなあらしのとき、毎ターン終了時
+//              weatherEffectIDs.addAll(
+//                  [WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
+//              break;
+//            default:
+//              break;
+//          }
+//          // フィールド
+//          switch (phaseState.field.id) {
+//            case Field.electricTerrain:
+//              fieldEffectIDs.add(FieldEffect.electricTerrainEnd);
+//              break;
+//            case Field.grassyTerrain:
+//              fieldEffectIDs.addAll(
+//                  [FieldEffect.grassHeal, FieldEffect.grassyTerrainEnd]);
+//              break;
+//            case Field.mistyTerrain:
+//              fieldEffectIDs.add(FieldEffect.mistyTerrainEnd);
+//              break;
+//            case Field.psychicTerrain:
+//              fieldEffectIDs.add(FieldEffect.psychicTerrainEnd);
+//              break;
+//            default:
+//              break;
+//          }
+//          // 状態変化等
+//          if (pokemonState != null && !pokemonState.isTerastaling) {
+//            // テラスタルしていないとき
+//            timings.add(Timing.everyTurnEndNotTerastaled);
+//          }
+//          if (pokemonState != null) {
+//            for (final ailment in pokemonState.ailmentsIterable) {
+//              if (ailment.possiblyActive(timing, pokemonState, phaseState)) {
+//                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] =
+//                    ailment.turns;
+//              }
+//            }
+//          }
+//          if (pokemonState != null &&
+//              pokemonState
+//                  .ailmentsWhere((e) =>
+//                      e.id == Ailment.poison || e.id == Ailment.badPoison)
+//                  .isNotEmpty) {
+//            // どく/もうどく状態のとき
+//            timings.add(Timing.poisonDamage);
+//          }
+  ///*
+//          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
+//            ailmentEffectIDs.add(AilmentEffect.ingrain);
+//          }
+//*/
+//          if (playerType == PlayerType.me ||
+//              playerType == PlayerType.opponent) {
+//            if (pokemonState!
+//                .ailmentsWhere((e) => e.id <= Ailment.sleep)
+//                .isEmpty) {
+//              timings.add(Timing.everyTurnEndNotAbnormal); // 状態異常でない毎ターン終了時
+//            }
+//          }
+//          // 各々の場
+//          var myFields = phaseState.getIndiFields(playerType);
+//          for (final field in myFields) {
+//            if (field.possiblyActive(timing)) {
+//              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
+//            }
+//          }
+//        }
+//        break;
+//      case Timing.afterActionDecision: // 行動決定直後
+//        {
+//          timings.addAll(afterActionDecisionTimings);
+//          attackerTimings.clear();
+//          defenderTimings.clear();
+//        }
+//        break;
+//      case Timing.beforeMove: // わざ使用前
+//        {
+//          timings.clear();
+//          attackerTimings.clear();
+//          defenderTimings.clear();
+//          attackerTimings.addAll(beforeMoveAttackerTimings);
+//          defenderTimings.addAll(beforeMoveDefenderTimings);
+//          if (playerType == PlayerType.me ||
+//              playerType == PlayerType.opponent) {
+//            var attackerState =
+//                phaseState.getPokemonState(attacker, prevAction);
+//            var defenderState =
+//                phaseState.getPokemonState(attacker.opposite, prevAction);
+//            var replacedMoveType = turnMove.getReplacedMoveType(
+//                turnMove.move, 0, attackerState, phaseState);
+//            if (replacedMoveType == PokeType.normal) {
+//              // ノーマルタイプのわざを受けた時
+//              defenderTimings.addAll([Timing.normalAttacked]);
+//            }
+//            if (PokeTypeEffectiveness.effectiveness(
+//                    attackerState.currentAbility.id == 113 ||
+//                        attackerState.currentAbility.id == 299,
+//                    defenderState.holdingItem?.id == 586,
+//                    defenderState
+//                        .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+//                        .isNotEmpty,
+//                    replacedMoveType,
+//                    pokemonState!) ==
+//                MoveEffectiveness.great) {
+//              defenderTimings
+//                  .add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
+//              switch (replacedMoveType) {
+//                case PokeType.fire:
+//                  defenderTimings.add(Timing.greatFireAttacked);
+//                  break;
+//                case PokeType.water:
+//                  defenderTimings.add(Timing.greatWaterAttacked);
+//                  break;
+//                case PokeType.electric:
+//                  defenderTimings.add(Timing.greatElectricAttacked);
+//                  break;
+//                case PokeType.grass:
+//                  defenderTimings.add(Timing.greatgrassAttacked);
+//                  break;
+//                case PokeType.ice:
+//                  defenderTimings.add(Timing.greatIceAttacked);
+//                  break;
+//                case PokeType.fight:
+//                  defenderTimings.add(Timing.greatFightAttacked);
+//                  break;
+//                case PokeType.poison:
+//                  defenderTimings.add(Timing.greatPoisonAttacked);
+//                  break;
+//                case PokeType.ground:
+//                  defenderTimings.add(Timing.greatGroundAttacked);
+//                  break;
+//                case PokeType.fly:
+//                  defenderTimings.add(Timing.greatFlyAttacked);
+//                  break;
+//                case PokeType.psychic:
+//                  defenderTimings.add(Timing.greatPsycoAttacked);
+//                  break;
+//                case PokeType.bug:
+//                  defenderTimings.add(Timing.greatBugAttacked);
+//                  break;
+//                case PokeType.rock:
+//                  defenderTimings.add(Timing.greatRockAttacked);
+//                  break;
+//                case PokeType.ghost:
+//                  defenderTimings.add(Timing.greatGhostAttacked);
+//                  break;
+//                case PokeType.dragon:
+//                  defenderTimings.add(Timing.greatDragonAttacked);
+//                  break;
+//                case PokeType.evil:
+//                  defenderTimings.add(Timing.greatEvilAttacked);
+//                  break;
+//                case PokeType.steel:
+//                  defenderTimings.add(Timing.greatSteelAttacked);
+//                  break;
+//                case PokeType.fairy:
+//                  defenderTimings.add(Timing.greatFairyAttacked);
+//                  break;
+//                default:
+//                  break;
+//              }
+//            }
+//            // 状態変化
+//            for (final ailment in attackerState.ailmentsIterable) {
+//              if (ailment.possiblyActive(timing, attackerState, phaseState)) {
+//                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] =
+//                    ailment.turns;
+//              }
+//            }
+//          }
+//        }
+//        break;
+//      case Timing.afterMove: // わざ使用後
+//        if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
+//          timings.clear(); // atacker/defenderに統合するするため削除
+//          attackerTimings.addAll(afterMoveAttackerTimings);
+//          defenderTimings.addAll(afterMoveDefenderTimings);
+//          var attackerState = phaseState.getPokemonState(attacker, prevAction);
+//          var defenderState =
+//              phaseState.getPokemonState(attacker.opposite, prevAction);
+//          var replacedMove =
+//              turnMove.getReplacedMove(turnMove.move, 0, attackerState);
+//          var replacedMoveType = turnMove.getReplacedMoveType(
+//              turnMove.move, 0, attackerState, phaseState);
+//          if (replacedMove.priority >= 1) {
+//            // 優先度1以上のわざを受けた時
+//            defenderTimings.addAll([Timing.priorityMoved]);
+//          }
+//          // へんかわざを受けた時
+//          if (replacedMove.damageClass.id == 1) {
+//            defenderTimings.addAll([Timing.statused]);
+//          }
+//          // こうげきしたとき/うけたとき
+//          if (replacedMove.damageClass.id >= 2) {
+//            defenderTimings.addAll([
+//              Timing.attackedHitted,
+//              Timing.attackedHittedWithChance,
+//              Timing.attackedHittedWithBake,
+//              Timing.pokemonAppearAttacked
+//            ]);
+//            attackerTimings
+//                .addAll([Timing.attackHitted, Timing.defeatOpponentWithAttack]);
+//            // うのみ状態/まるのみ状態で相手にこうげきされた後
+//            final unomis = defenderState.buffDebuffs
+//                .whereByAnyID([BuffDebuff.unomiForm, BuffDebuff.marunomiForm]);
+//            if (unomis.isNotEmpty) {
+//              ret.add(TurnEffect()
+//                ..playerType = attacker.opposite
+//                ..timing = Timing.afterMove
+//                ..effectType = EffectType.ability
+//                ..effectId = 10000 + unomis.first.id);
+//            }
+//            // ノーマルタイプのこうげきをした時
+//            if (replacedMoveType == PokeType.normal) {
+//              attackerTimings.addAll([Timing.normalAttackHit]);
+//            }
+//            // あくタイプのこうげきを受けた時
+//            if (replacedMoveType == PokeType.evil) {
+//              defenderTimings.addAll([Timing.evilAttacked]);
+//            }
+//            // みずタイプのこうげきを受けた時
+//            if (replacedMoveType == PokeType.water) {
+//              defenderTimings
+//                  .addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
+//            }
+//            // ほのおタイプのこうげきを受けた時
+//            if (replacedMoveType == PokeType.fire) {
+//              defenderTimings
+//                  .addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
+//            }
+//            // でんきタイプのこうげきを受けた時
+//            if (replacedMoveType == PokeType.electric) {
+//              defenderTimings.addAll([Timing.electricAttacked]);
+//            }
+//            // こおりタイプのこうげきを受けた時
+//            if (replacedMoveType == PokeType.ice) {
+//              defenderTimings.addAll([Timing.iceAttacked]);
+//            }
+//            // こうげきによりひんしになっているとき
+//            if (defenderState.isFainting) {
+//              defenderTimings.add(Timing.attackedFainting);
+//            }
+//          }
+//          if (replacedMove.isPowder) {
+//            defenderTimings.addAll([Timing.powdered]); // こな系のこうげきを受けた時
+//          }
+//          if (replacedMove.isBullet) {
+//            defenderTimings.addAll([Timing.bulleted]); // 弾のこうげきを受けた時
+//          }
+//          if (replacedMove.damageClass.id == DamageClass.physical) {
+//            defenderTimings
+//                .addAll([Timing.phisycalAttackedHitted]); // ぶつりこうげきを受けた時
+//          }
+//          if (replacedMove.damageClass.id == DamageClass.special) {
+//            defenderTimings
+//                .addAll([Timing.specialAttackedHitted]); // とくしゅこうげきを受けた時
+//          }
+//          if (replacedMove.isDirect &&
+//              !(replacedMove.isPunch &&
+//                  attackerState.holdingItem?.id ==
+//                      1700) && // パンチグローブをつけたパンチわざでない
+//              attackerState.currentAbility.id != 203) {
+//            defenderTimings
+//                .add(Timing.directAttackedWithChance); // 直接攻撃を受けた時(確率)
+//            defenderTimings.add(Timing.directAttacked); // 直接攻撃を受けた時
+//            attackerTimings
+//                .add(Timing.directAttackHitWithChance); // 直接攻撃をあてたとき(確率)
+//            // 違う性別の相手から直接攻撃を受けた時（確率）
+//            if (attackerState.sex != defenderState.sex &&
+//                attackerState.sex != Sex.none) {
+//              defenderTimings.add(Timing.directAttackedByOppositeSexWithChance);
+//            }
+//            // 直接攻撃によりひんしになっているとき
+//            if (defenderState.isFainting) {
+//              defenderTimings.add(Timing.directAttackedFainting);
+//            }
+//            // まもる系統のわざ相手に直接攻撃したとき
+//            var findIdx = defenderState.ailmentsIndexWhere(
+//                (e) => e.id == Ailment.protect && e.extraArg1 != 0);
+//            if (findIdx >= 0 && attacker == playerType) {
+//              ret.add(TurnEffect()
+//                ..playerType = playerType
+//                ..effectType = EffectType.afterMove
+//                ..effectId = defenderState.ailments(findIdx).extraArg1);
+//            }
+//            // みちづれ状態の相手にこうげきしてひんしにしたとき
+//            if (defenderState.isFainting &&
+//                defenderState
+//                    .ailmentsWhere((e) => e.id == Ailment.destinyBond)
+//                    .isNotEmpty) {
+//              ret.add(TurnEffect()
+//                ..playerType = playerType
+//                ..effectType = EffectType.afterMove
+//                ..effectId = 194);
+//            }
+//          }
+//          if (replacedMove.isSound) {
+//            attackerTimings.add(Timing.soundAttack); // 音技を使ったとき
+//            defenderTimings.add(Timing.soundAttacked); // 音技を受けた時
+//          }
+//          if (replacedMove.isDrain) {
+//            defenderTimings.add(Timing.drained); // HP吸収わざを受けた時
+//          }
+//          if (replacedMove.isDance) {
+//            defenderTimings.add(Timing.otherDance); // おどり技を受けた時
+//          }
+//          if (replacedMoveType == PokeType.normal) {
+//            // ノーマルタイプのわざを受けた時
+//            defenderTimings.addAll([Timing.normalAttacked]);
+//          }
+//          if (replacedMoveType == PokeType.electric) {
+//            // でんきタイプのわざを受けた時
+//            defenderTimings.addAll([Timing.electriced, Timing.electricUse]);
+//          }
+//          if (replacedMoveType == PokeType.water) {
+//            // みずタイプのわざを受けた時
+//            defenderTimings.addAll([
+//              Timing.watered,
+//              Timing.fireWaterAttackedSunnyRained,
+//              Timing.waterUse
+//            ]);
+//          }
+//          if (replacedMoveType == PokeType.fire) {
+//            // ほのおタイプのわざを受けた時
+//            defenderTimings
+//                .addAll([Timing.fired, Timing.fireWaterAttackedSunnyRained]);
+//          }
+//          if (replacedMoveType == PokeType.grass) {
+//            // くさタイプのわざを受けた時
+//            defenderTimings.addAll([Timing.grassed]);
+//          }
+//          if (replacedMoveType == PokeType.ground) {
+//            // じめんタイプのわざを受けた時
+//            defenderTimings.addAll([Timing.grounded]);
+//          }
+//          if (PokeTypeEffectiveness.effectiveness(
+//                  attackerState.currentAbility.id == 113 ||
+//                      attackerState.currentAbility.id == 299,
+//                  defenderState.holdingItem?.id == 586,
+//                  defenderState
+//                      .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+//                      .isNotEmpty,
+//                  replacedMoveType,
+//                  pokemonState!) ==
+//              MoveEffectiveness.great) {
+//            defenderTimings.add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
+//            switch (replacedMoveType) {
+//              case PokeType.fire:
+//                defenderTimings.add(Timing.greatFireAttacked);
+//                break;
+//              case PokeType.water:
+//                defenderTimings.add(Timing.greatWaterAttacked);
+//                break;
+//              case PokeType.electric:
+//                defenderTimings.add(Timing.greatElectricAttacked);
+//                break;
+//              case PokeType.grass:
+//                defenderTimings.add(Timing.greatgrassAttacked);
+//                break;
+//              case PokeType.ice:
+//                defenderTimings.add(Timing.greatIceAttacked);
+//                break;
+//              case PokeType.fight:
+//                defenderTimings.add(Timing.greatFightAttacked);
+//                break;
+//              case PokeType.poison:
+//                defenderTimings.add(Timing.greatPoisonAttacked);
+//                break;
+//              case PokeType.ground:
+//                defenderTimings.add(Timing.greatGroundAttacked);
+//                break;
+//              case PokeType.fly:
+//                defenderTimings.add(Timing.greatFlyAttacked);
+//                break;
+//              case PokeType.psychic:
+//                defenderTimings.add(Timing.greatPsycoAttacked);
+//                break;
+//              case PokeType.bug:
+//                defenderTimings.add(Timing.greatBugAttacked);
+//                break;
+//              case PokeType.rock:
+//                defenderTimings.add(Timing.greatRockAttacked);
+//                break;
+//              case PokeType.ghost:
+//                defenderTimings.add(Timing.greatGhostAttacked);
+//                break;
+//              case PokeType.dragon:
+//                defenderTimings.add(Timing.greatDragonAttacked);
+//                break;
+//              case PokeType.evil:
+//                defenderTimings.add(Timing.greatEvilAttacked);
+//                break;
+//              case PokeType.steel:
+//                defenderTimings.add(Timing.greatSteelAttacked);
+//                break;
+//              case PokeType.fairy:
+//                defenderTimings.add(Timing.greatFairyAttacked);
+//                break;
+//              default:
+//                break;
+//            }
+//          } else {
+//            defenderTimings
+//                .add(Timing.notGreatAttacked); // 効果ばつぐん以外のタイプのこうげきざわを受けた時
+//          }
+//          if (replacedMoveType == PokeType.ground) {
+//            if (replacedMove.id != 28 && replacedMove.id != 614) {
+//              // すなかけ/サウザンアローではない
+//              defenderTimings.add(Timing
+//                  .groundFieldEffected); // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
+//            }
+//          }
+//          // とくせいがおどりこの場合
+//          if (phaseState
+//                      .getPokemonState(PlayerType.me, prevAction)
+//                      .currentAbility
+//                      .id ==
+//                  216 ||
+//              phaseState
+//                      .getPokemonState(PlayerType.opponent, prevAction)
+//                      .currentAbility
+//                      .id ==
+//                  216) {
+//            attackerTimings.addAll(defenderTimings);
+//            attackerTimings = attackerTimings.toSet().toList();
+//            defenderTimings = attackerTimings;
+//          }
+//        }
+//        break;
+//      case Timing.afterTerastal: // テラスタル後
+//        {
+//          timings.clear();
+//          attackerTimings.clear();
+//          defenderTimings.clear();
+//          if (playerType == PlayerType.me ||
+//              playerType == PlayerType.opponent) {
+//            bool isMe = playerType == PlayerType.me;
+//            bool isTerastal = pokemonState!.isTerastaling &&
+//                (isMe
+//                    ? !currentTurn.initialOwnHasTerastal
+//                    : !currentTurn.initialOpponentHasTerastal);
+//
+//            if (isTerastal && pokemonState.currentAbility.id == 303) {
+//              ret.add(TurnEffect()
+//                ..playerType = playerType
+//                ..effectType = EffectType.ability
+//                ..effectId = 303);
+//            }
+//          }
+//        }
+//        break;
+//      default:
+//        return [];
+//    }
+//
+//    if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
+//      if (effectType == EffectType.ability) {
+//        if (pokemonState!.currentAbility.id != 0) {
+//          // とくせいが確定している場合
+//          if (timings.contains(pokemonState.currentAbility.timing)) {
+//            retAbilityIDs.add(pokemonState.currentAbility.id);
+//          }
+//          // わざ使用後に発動する効果
+//          if (attacker == playerType &&
+//                  attackerTimings
+//                      .contains(pokemonState.currentAbility.timing) ||
+//              attacker != playerType &&
+//                  defenderTimings
+//                      .contains(pokemonState.currentAbility.timing)) {
+//            retAbilityIDs.add(pokemonState.currentAbility.id);
+//          }
+//        } else {
+//          // とくせいが確定していない場合
+//          for (final ability in pokemonState.possibleAbilities) {
+//            if (timings.contains(ability.timing)) {
+//              retAbilityIDs.add(ability.id);
+//            }
+//            // わざ使用後に発動する効果
+//            if (attacker == playerType &&
+//                    attackerTimings.contains(ability.timing) ||
+//                attacker != playerType &&
+//                    defenderTimings.contains(ability.timing)) {
+//              retAbilityIDs.add(ability.id);
+//            }
+//          }
+//        }
+//        if (playerType == PlayerType.opponent && phaseState.canAnyZoroark) {
+//          retAbilityIDs.add(149); // イリュージョン追加
+//        }
+//        final abilityIDs = retAbilityIDs.toSet();
+//        for (final abilityID in abilityIDs) {
+//          ret.add(TurnEffect()
+//            ..playerType = playerType
+//            ..effectType = EffectType.ability
+//            ..effectId = abilityID);
+//        }
+//      }
+//      if (effectType == EffectType.individualField) {
+//        for (var e in indiFieldEffectIDs) {
+//          var adding = TurnEffect()
+//            ..playerType = playerType
+//            ..effectType = EffectType.individualField
+//            ..effectId = e;
+//          if (adding.effectId == IndiFieldEffect.trickRoomEnd) {
+//            // 各々の場だが効果としては両フィールドのもの
+//            adding.playerType = PlayerType.entireField;
+//            if (ret.where((element) => element.nearEqual(adding)).isNotEmpty) {
+//              ret.add(adding);
+//            }
+//          } else {
+//            ret.add(adding);
+//          }
+//        }
+//      }
+//      if (effectType == EffectType.ailment) {
+//        for (var e in ailmentEffectIDs.entries) {
+//          ret.add(TurnEffect()
+//            ..playerType = playerType
+//            ..effectType = EffectType.ailment
+//            ..effectId = e.key
+//            ..extraArg1 = e.value);
+//        }
+//      }
+//      if (effectType == EffectType.item) {
+//        if (pokemonState!.holdingItem != null) {
+//          if (pokemonState.holdingItem!.id != 0) {
+//            // もちものが確定している場合
+//            if (timings.contains(pokemonState.holdingItem!.timing)) {
+//              ret.add(TurnEffect()
+//                ..playerType = playerType
+//                ..effectType = EffectType.item
+//                ..effectId = pokemonState.holdingItem!.id);
+//            }
+//            // わざ使用後に発動する効果
+//            if (attacker == playerType &&
+//                    attackerTimings
+//                        .contains(pokemonState.holdingItem!.timing) ||
+//                attacker != playerType &&
+//                    defenderTimings
+//                        .contains(pokemonState.holdingItem!.timing)) {
+//              ret.add(TurnEffect()
+//                ..playerType = playerType
+//                ..effectType = EffectType.item
+//                ..effectId = pokemonState.holdingItem!.id);
+//            }
+//          } else {
+//            // もちものが確定していない場合
+//            var allItems = [for (final item in pokeData.items.values) item];
+//            for (final item in pokemonState.impossibleItems) {
+//              allItems.removeWhere((e) => e.id == item.id);
+//            }
+//            for (final item in allItems) {
+//              if (timings.contains(item.timing)) {
+//                ret.add(TurnEffect()
+//                  ..playerType = playerType
+//                  ..effectType = EffectType.item
+//                  ..effectId = item.id);
+//              }
+//              // わざ使用後に発動する効果
+//              if (attacker == playerType &&
+//                      attackerTimings.contains(item.timing) ||
+//                  attacker != playerType &&
+//                      defenderTimings.contains(item.timing)) {
+//                ret.add(TurnEffect()
+//                  ..playerType = playerType
+//                  ..effectType = EffectType.item
+//                  ..effectId = item.id);
+//              }
+//            }
+//          }
+//        }
+//      }
+//    }
+//
+//    if (playerType == PlayerType.entireField) {
+//      for (var e in weatherEffectIDs) {
+//        ret.add(TurnEffect()
+//          ..playerType = PlayerType.entireField
+//          ..effectType = EffectType.weather
+//          ..effectId = e);
+//      }
+//      for (var e in fieldEffectIDs) {
+//        ret.add(TurnEffect()
+//          ..playerType = PlayerType.entireField
+//          ..effectType = EffectType.field
+//          ..effectId = e);
+//      }
+//    }
+//
+//    // argの自動セット
+//    var myState = playerType != PlayerType.opponent
+//        ? phaseState.getPokemonState(PlayerType.me, prevAction)
+//        : phaseState.getPokemonState(PlayerType.opponent, prevAction);
+//    var yourState = playerType != PlayerType.opponent
+//        ? phaseState.getPokemonState(PlayerType.opponent, prevAction)
+//        : phaseState.getPokemonState(PlayerType.me, prevAction);
+//    for (var effect in ret) {
+//      effect.timing = timing;
+//      effect.setAutoArgs(myState, yourState, phaseState, prevAction);
+//    }
+//
+//    return ret;
+//  }
 
-    // 全タイミング共通
-    if (phaseState.weather.id == Weather.sunny) {
-      // 天気が晴れのとき
-      timings.add(Timing.sunnyAbnormaled);
-      attackerTimings.add(Timing.sunnyAbnormaled);
-      defenderTimings.add(Timing.sunnyAbnormaled);
-    }
+  String displayName({
+    required AppLocalizations loc,
+  });
 
-    switch (timing) {
-      case Timing.pokemonAppear: // ポケモンを繰り出すとき
-        {
-          timings.addAll(pokemonAppearTimings);
-          attackerTimings.clear();
-          defenderTimings.clear();
-          if (phaseState.weather.id != Weather.rainy) {
-            // ポケモン登場時(天気が雨でない)
-            timings.add(Timing.pokemonAppearNotRained);
-          }
-          if (phaseState.weather.id != Weather.sandStorm) {
-            // ポケモン登場時(天気がすなあらしでない)
-            timings.add(Timing.pokemonAppearNotSandStormed);
-          }
-          if (phaseState.weather.id != Weather.sunny) {
-            // ポケモン登場時(天気が晴れでない)
-            timings.add(Timing.pokemonAppearNotSunny);
-          }
-          if (phaseState.weather.id != Weather.snowy) {
-            // ポケモン登場時(天気がゆきでない)
-            timings.add(Timing.pokemonAppearNotSnowed);
-          }
-          if (phaseState.field.id != Field.electricTerrain) {
-            // ポケモン登場時(エレキフィールドでない)
-            timings.add(Timing.pokemonAppearNotEreciField);
-          }
-          if (phaseState.field.id != Field.psychicTerrain) {
-            // ポケモン登場時(サイコフィールドでない)
-            timings.add(Timing.pokemonAppearNotPsycoField);
-          }
-          if (phaseState.field.id != Field.mistyTerrain) {
-            // ポケモン登場時(ミストフィールドでない)
-            timings.add(Timing.pokemonAppearNotMistField);
-          }
-          if (phaseState.field.id != Field.grassyTerrain) {
-            // ポケモン登場時(グラスフィールドでない)
-            timings.add(Timing.pokemonAppearNotGrassField);
-          }
-          var myFields = phaseState.getIndiFields(playerType);
-          for (final f in myFields) {
-            if (f.possiblyActive(timing)) {
-              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(f));
-            }
-          }
-        }
-        break;
-      case Timing.everyTurnEnd: // 毎ターン終了時
-        {
-          timings.addAll(everyTurnEndTimings);
-          attackerTimings.clear();
-          defenderTimings.clear();
-          if (currentTurn.getInitialPokemonIndex(playerType) ==
-              phaseState.getPokemonIndex(playerType, null)) {
-            timings.add(Timing.afterActedEveryTurnEnd); // 1度でも行動した後毎ターン終了時
-          }
-          if (phaseState.getPokemonState(PlayerType.me, null).holdingItem ==
-                  null &&
-              phaseState
-                      .getPokemonState(PlayerType.opponent, null)
-                      .holdingItem ==
-                  null) {
-            timings.add(
-                Timing.everyTurnEndOpponentItemConsumeed); // 相手が道具を消費したターン終了時
-          }
-          // 天気
-          switch (phaseState.weather.id) {
-            case Weather.sunny: // 天気が晴れのとき、毎ターン終了時
-              timings.addAll([
-                Timing.fireWaterAttackedSunnyRained,
-                Timing.everyTurnEndSunny
-              ]);
-              weatherEffectIDs.add(WeatherEffect.sunnyEnd);
-              break;
-            case Weather.rainy: // 天気があめのとき、毎ターン終了時
-              timings.addAll([
-                Timing.everyTurnEndRained,
-                Timing.fireWaterAttackedSunnyRained,
-                Timing.everyTurnEndRainedWithAbnormal
-              ]);
-              weatherEffectIDs.add(WeatherEffect.rainyEnd);
-              break;
-            case Weather.snowy: // 天気がゆきのとき、毎ターン終了時
-              timings.addAll([Timing.everyTurnEndSnowy]);
-              weatherEffectIDs.add(WeatherEffect.snowyEnd);
-              break;
-            case Weather.sandStorm: // 天気がすなあらしのとき、毎ターン終了時
-              weatherEffectIDs.addAll(
-                  [WeatherEffect.sandStormEnd, WeatherEffect.sandStormDamage]);
-              break;
-            default:
-              break;
-          }
-          // フィールド
-          switch (phaseState.field.id) {
-            case Field.electricTerrain:
-              fieldEffectIDs.add(FieldEffect.electricTerrainEnd);
-              break;
-            case Field.grassyTerrain:
-              fieldEffectIDs.addAll(
-                  [FieldEffect.grassHeal, FieldEffect.grassyTerrainEnd]);
-              break;
-            case Field.mistyTerrain:
-              fieldEffectIDs.add(FieldEffect.mistyTerrainEnd);
-              break;
-            case Field.psychicTerrain:
-              fieldEffectIDs.add(FieldEffect.psychicTerrainEnd);
-              break;
-            default:
-              break;
-          }
-          // 状態変化等
-          if (pokemonState != null && !pokemonState.isTerastaling) {
-            // テラスタルしていないとき
-            timings.add(Timing.everyTurnEndNotTerastaled);
-          }
-          if (pokemonState != null) {
-            for (final ailment in pokemonState.ailmentsIterable) {
-              if (ailment.possiblyActive(timing, pokemonState, phaseState)) {
-                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] =
-                    ailment.turns;
-              }
-            }
-          }
-          if (pokemonState != null &&
-              pokemonState
-                  .ailmentsWhere((e) =>
-                      e.id == Ailment.poison || e.id == Ailment.badPoison)
-                  .isNotEmpty) {
-            // どく/もうどく状態のとき
-            timings.add(Timing.poisonDamage);
-          }
+  PlayerType get playerType;
+  set playerType(PlayerType type);
+
 /*
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
-            ailmentEffectIDs.add(AilmentEffect.ingrain);
-          }
-*/
-          if (playerType == PlayerType.me ||
-              playerType == PlayerType.opponent) {
-            if (pokemonState!
-                .ailmentsWhere((e) => e.id <= Ailment.sleep)
-                .isEmpty) {
-              timings.add(Timing.everyTurnEndNotAbnormal); // 状態異常でない毎ターン終了時
-            }
-          }
-          // 各々の場
-          var myFields = phaseState.getIndiFields(playerType);
-          for (final field in myFields) {
-            if (field.possiblyActive(timing)) {
-              indiFieldEffectIDs.add(IndiFieldEffect.getIdFromIndiField(field));
-            }
-          }
-        }
-        break;
-      case Timing.afterActionDecision: // 行動決定直後
-        {
-          timings.addAll(afterActionDecisionTimings);
-          attackerTimings.clear();
-          defenderTimings.clear();
-        }
-        break;
-      case Timing.beforeMove: // わざ使用前
-        {
-          timings.clear();
-          attackerTimings.clear();
-          defenderTimings.clear();
-          attackerTimings.addAll(beforeMoveAttackerTimings);
-          defenderTimings.addAll(beforeMoveDefenderTimings);
-          if (playerType == PlayerType.me ||
-              playerType == PlayerType.opponent) {
-            var attackerState =
-                phaseState.getPokemonState(attacker, prevAction);
-            var defenderState =
-                phaseState.getPokemonState(attacker.opposite, prevAction);
-            var replacedMoveType = turnMove.getReplacedMoveType(
-                turnMove.move, 0, attackerState, phaseState);
-            if (replacedMoveType == PokeType.normal) {
-              // ノーマルタイプのわざを受けた時
-              defenderTimings.addAll([Timing.normalAttacked]);
-            }
-            if (PokeTypeEffectiveness.effectiveness(
-                    attackerState.currentAbility.id == 113 ||
-                        attackerState.currentAbility.id == 299,
-                    defenderState.holdingItem?.id == 586,
-                    defenderState
-                        .ailmentsWhere((e) => e.id == Ailment.miracleEye)
-                        .isNotEmpty,
-                    replacedMoveType,
-                    pokemonState!) ==
-                MoveEffectiveness.great) {
-              defenderTimings
-                  .add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
-              switch (replacedMoveType) {
-                case PokeType.fire:
-                  defenderTimings.add(Timing.greatFireAttacked);
-                  break;
-                case PokeType.water:
-                  defenderTimings.add(Timing.greatWaterAttacked);
-                  break;
-                case PokeType.electric:
-                  defenderTimings.add(Timing.greatElectricAttacked);
-                  break;
-                case PokeType.grass:
-                  defenderTimings.add(Timing.greatgrassAttacked);
-                  break;
-                case PokeType.ice:
-                  defenderTimings.add(Timing.greatIceAttacked);
-                  break;
-                case PokeType.fight:
-                  defenderTimings.add(Timing.greatFightAttacked);
-                  break;
-                case PokeType.poison:
-                  defenderTimings.add(Timing.greatPoisonAttacked);
-                  break;
-                case PokeType.ground:
-                  defenderTimings.add(Timing.greatGroundAttacked);
-                  break;
-                case PokeType.fly:
-                  defenderTimings.add(Timing.greatFlyAttacked);
-                  break;
-                case PokeType.psychic:
-                  defenderTimings.add(Timing.greatPsycoAttacked);
-                  break;
-                case PokeType.bug:
-                  defenderTimings.add(Timing.greatBugAttacked);
-                  break;
-                case PokeType.rock:
-                  defenderTimings.add(Timing.greatRockAttacked);
-                  break;
-                case PokeType.ghost:
-                  defenderTimings.add(Timing.greatGhostAttacked);
-                  break;
-                case PokeType.dragon:
-                  defenderTimings.add(Timing.greatDragonAttacked);
-                  break;
-                case PokeType.evil:
-                  defenderTimings.add(Timing.greatEvilAttacked);
-                  break;
-                case PokeType.steel:
-                  defenderTimings.add(Timing.greatSteelAttacked);
-                  break;
-                case PokeType.fairy:
-                  defenderTimings.add(Timing.greatFairyAttacked);
-                  break;
-                default:
-                  break;
-              }
-            }
-            // 状態変化
-            for (final ailment in attackerState.ailmentsIterable) {
-              if (ailment.possiblyActive(timing, attackerState, phaseState)) {
-                ailmentEffectIDs[AilmentEffect.getIdFromAilment(ailment)] =
-                    ailment.turns;
-              }
-            }
-          }
-        }
-        break;
-      case Timing.afterMove: // わざ使用後
-        if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
-          timings.clear(); // atacker/defenderに統合するするため削除
-          attackerTimings.addAll(afterMoveAttackerTimings);
-          defenderTimings.addAll(afterMoveDefenderTimings);
-          var attackerState = phaseState.getPokemonState(attacker, prevAction);
-          var defenderState =
-              phaseState.getPokemonState(attacker.opposite, prevAction);
-          var replacedMove =
-              turnMove.getReplacedMove(turnMove.move, 0, attackerState);
-          var replacedMoveType = turnMove.getReplacedMoveType(
-              turnMove.move, 0, attackerState, phaseState);
-          if (replacedMove.priority >= 1) {
-            // 優先度1以上のわざを受けた時
-            defenderTimings.addAll([Timing.priorityMoved]);
-          }
-          // へんかわざを受けた時
-          if (replacedMove.damageClass.id == 1) {
-            defenderTimings.addAll([Timing.statused]);
-          }
-          // こうげきしたとき/うけたとき
-          if (replacedMove.damageClass.id >= 2) {
-            defenderTimings.addAll([
-              Timing.attackedHitted,
-              Timing.attackedHittedWithChance,
-              Timing.attackedHittedWithBake,
-              Timing.pokemonAppearAttacked
-            ]);
-            attackerTimings
-                .addAll([Timing.attackHitted, Timing.defeatOpponentWithAttack]);
-            // うのみ状態/まるのみ状態で相手にこうげきされた後
-            final unomis = defenderState.buffDebuffs
-                .whereByAnyID([BuffDebuff.unomiForm, BuffDebuff.marunomiForm]);
-            if (unomis.isNotEmpty) {
-              ret.add(TurnEffect()
-                ..playerType = attacker.opposite
-                ..timing = Timing.afterMove
-                ..effectType = EffectType.ability
-                ..effectId = 10000 + unomis.first.id);
-            }
-            // ノーマルタイプのこうげきをした時
-            if (replacedMoveType == PokeType.normal) {
-              attackerTimings.addAll([Timing.normalAttackHit]);
-            }
-            // あくタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.evil) {
-              defenderTimings.addAll([Timing.evilAttacked]);
-            }
-            // みずタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.water) {
-              defenderTimings
-                  .addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
-            }
-            // ほのおタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.fire) {
-              defenderTimings
-                  .addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
-            }
-            // でんきタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.electric) {
-              defenderTimings.addAll([Timing.electricAttacked]);
-            }
-            // こおりタイプのこうげきを受けた時
-            if (replacedMoveType == PokeType.ice) {
-              defenderTimings.addAll([Timing.iceAttacked]);
-            }
-            // こうげきによりひんしになっているとき
-            if (defenderState.isFainting) {
-              defenderTimings.add(Timing.attackedFainting);
-            }
-          }
-          if (replacedMove.isPowder) {
-            defenderTimings.addAll([Timing.powdered]); // こな系のこうげきを受けた時
-          }
-          if (replacedMove.isBullet) {
-            defenderTimings.addAll([Timing.bulleted]); // 弾のこうげきを受けた時
-          }
-          if (replacedMove.damageClass.id == DamageClass.physical) {
-            defenderTimings
-                .addAll([Timing.phisycalAttackedHitted]); // ぶつりこうげきを受けた時
-          }
-          if (replacedMove.damageClass.id == DamageClass.special) {
-            defenderTimings
-                .addAll([Timing.specialAttackedHitted]); // とくしゅこうげきを受けた時
-          }
-          if (replacedMove.isDirect &&
-              !(replacedMove.isPunch &&
-                  attackerState.holdingItem?.id ==
-                      1700) && // パンチグローブをつけたパンチわざでない
-              attackerState.currentAbility.id != 203) {
-            defenderTimings
-                .add(Timing.directAttackedWithChance); // 直接攻撃を受けた時(確率)
-            defenderTimings.add(Timing.directAttacked); // 直接攻撃を受けた時
-            attackerTimings
-                .add(Timing.directAttackHitWithChance); // 直接攻撃をあてたとき(確率)
-            // 違う性別の相手から直接攻撃を受けた時（確率）
-            if (attackerState.sex != defenderState.sex &&
-                attackerState.sex != Sex.none) {
-              defenderTimings.add(Timing.directAttackedByOppositeSexWithChance);
-            }
-            // 直接攻撃によりひんしになっているとき
-            if (defenderState.isFainting) {
-              defenderTimings.add(Timing.directAttackedFainting);
-            }
-            // まもる系統のわざ相手に直接攻撃したとき
-            var findIdx = defenderState.ailmentsIndexWhere(
-                (e) => e.id == Ailment.protect && e.extraArg1 != 0);
-            if (findIdx >= 0 && attacker == playerType) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effectType = EffectType.afterMove
-                ..effectId = defenderState.ailments(findIdx).extraArg1);
-            }
-            // みちづれ状態の相手にこうげきしてひんしにしたとき
-            if (defenderState.isFainting &&
-                defenderState
-                    .ailmentsWhere((e) => e.id == Ailment.destinyBond)
-                    .isNotEmpty) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effectType = EffectType.afterMove
-                ..effectId = 194);
-            }
-          }
-          if (replacedMove.isSound) {
-            attackerTimings.add(Timing.soundAttack); // 音技を使ったとき
-            defenderTimings.add(Timing.soundAttacked); // 音技を受けた時
-          }
-          if (replacedMove.isDrain) {
-            defenderTimings.add(Timing.drained); // HP吸収わざを受けた時
-          }
-          if (replacedMove.isDance) {
-            defenderTimings.add(Timing.otherDance); // おどり技を受けた時
-          }
-          if (replacedMoveType == PokeType.normal) {
-            // ノーマルタイプのわざを受けた時
-            defenderTimings.addAll([Timing.normalAttacked]);
-          }
-          if (replacedMoveType == PokeType.electric) {
-            // でんきタイプのわざを受けた時
-            defenderTimings.addAll([Timing.electriced, Timing.electricUse]);
-          }
-          if (replacedMoveType == PokeType.water) {
-            // みずタイプのわざを受けた時
-            defenderTimings.addAll([
-              Timing.watered,
-              Timing.fireWaterAttackedSunnyRained,
-              Timing.waterUse
-            ]);
-          }
-          if (replacedMoveType == PokeType.fire) {
-            // ほのおタイプのわざを受けた時
-            defenderTimings
-                .addAll([Timing.fired, Timing.fireWaterAttackedSunnyRained]);
-          }
-          if (replacedMoveType == PokeType.grass) {
-            // くさタイプのわざを受けた時
-            defenderTimings.addAll([Timing.grassed]);
-          }
-          if (replacedMoveType == PokeType.ground) {
-            // じめんタイプのわざを受けた時
-            defenderTimings.addAll([Timing.grounded]);
-          }
-          if (PokeTypeEffectiveness.effectiveness(
-                  attackerState.currentAbility.id == 113 ||
-                      attackerState.currentAbility.id == 299,
-                  defenderState.holdingItem?.id == 586,
-                  defenderState
-                      .ailmentsWhere((e) => e.id == Ailment.miracleEye)
-                      .isNotEmpty,
-                  replacedMoveType,
-                  pokemonState!) ==
-              MoveEffectiveness.great) {
-            defenderTimings.add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
-            switch (replacedMoveType) {
-              case PokeType.fire:
-                defenderTimings.add(Timing.greatFireAttacked);
-                break;
-              case PokeType.water:
-                defenderTimings.add(Timing.greatWaterAttacked);
-                break;
-              case PokeType.electric:
-                defenderTimings.add(Timing.greatElectricAttacked);
-                break;
-              case PokeType.grass:
-                defenderTimings.add(Timing.greatgrassAttacked);
-                break;
-              case PokeType.ice:
-                defenderTimings.add(Timing.greatIceAttacked);
-                break;
-              case PokeType.fight:
-                defenderTimings.add(Timing.greatFightAttacked);
-                break;
-              case PokeType.poison:
-                defenderTimings.add(Timing.greatPoisonAttacked);
-                break;
-              case PokeType.ground:
-                defenderTimings.add(Timing.greatGroundAttacked);
-                break;
-              case PokeType.fly:
-                defenderTimings.add(Timing.greatFlyAttacked);
-                break;
-              case PokeType.psychic:
-                defenderTimings.add(Timing.greatPsycoAttacked);
-                break;
-              case PokeType.bug:
-                defenderTimings.add(Timing.greatBugAttacked);
-                break;
-              case PokeType.rock:
-                defenderTimings.add(Timing.greatRockAttacked);
-                break;
-              case PokeType.ghost:
-                defenderTimings.add(Timing.greatGhostAttacked);
-                break;
-              case PokeType.dragon:
-                defenderTimings.add(Timing.greatDragonAttacked);
-                break;
-              case PokeType.evil:
-                defenderTimings.add(Timing.greatEvilAttacked);
-                break;
-              case PokeType.steel:
-                defenderTimings.add(Timing.greatSteelAttacked);
-                break;
-              case PokeType.fairy:
-                defenderTimings.add(Timing.greatFairyAttacked);
-                break;
-              default:
-                break;
-            }
-          } else {
-            defenderTimings
-                .add(Timing.notGreatAttacked); // 効果ばつぐん以外のタイプのこうげきざわを受けた時
-          }
-          if (replacedMoveType == PokeType.ground) {
-            if (replacedMove.id != 28 && replacedMove.id != 614) {
-              // すなかけ/サウザンアローではない
-              defenderTimings.add(Timing
-                  .groundFieldEffected); // じめんタイプのわざ/まきびし/どくびし/ねばねばネット/ありじごく/たがやす/フィールドの効果を受けるとき
-            }
-          }
-          // とくせいがおどりこの場合
-          if (phaseState
-                      .getPokemonState(PlayerType.me, prevAction)
-                      .currentAbility
-                      .id ==
-                  216 ||
-              phaseState
-                      .getPokemonState(PlayerType.opponent, prevAction)
-                      .currentAbility
-                      .id ==
-                  216) {
-            attackerTimings.addAll(defenderTimings);
-            attackerTimings = attackerTimings.toSet().toList();
-            defenderTimings = attackerTimings;
-          }
-        }
-        break;
-      case Timing.afterTerastal: // テラスタル後
-        {
-          timings.clear();
-          attackerTimings.clear();
-          defenderTimings.clear();
-          if (playerType == PlayerType.me ||
-              playerType == PlayerType.opponent) {
-            bool isMe = playerType == PlayerType.me;
-            bool isTerastal = pokemonState!.isTerastaling &&
-                (isMe
-                    ? !currentTurn.initialOwnHasTerastal
-                    : !currentTurn.initialOpponentHasTerastal);
-
-            if (isTerastal && pokemonState.currentAbility.id == 303) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effectType = EffectType.ability
-                ..effectId = 303);
-            }
-          }
-        }
-        break;
-      default:
-        return [];
-    }
-
-    if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
-      if (effectType == EffectType.ability) {
-        if (pokemonState!.currentAbility.id != 0) {
-          // とくせいが確定している場合
-          if (timings.contains(pokemonState.currentAbility.timing)) {
-            retAbilityIDs.add(pokemonState.currentAbility.id);
-          }
-          // わざ使用後に発動する効果
-          if (attacker == playerType &&
-                  attackerTimings
-                      .contains(pokemonState.currentAbility.timing) ||
-              attacker != playerType &&
-                  defenderTimings
-                      .contains(pokemonState.currentAbility.timing)) {
-            retAbilityIDs.add(pokemonState.currentAbility.id);
-          }
-        } else {
-          // とくせいが確定していない場合
-          for (final ability in pokemonState.possibleAbilities) {
-            if (timings.contains(ability.timing)) {
-              retAbilityIDs.add(ability.id);
-            }
-            // わざ使用後に発動する効果
-            if (attacker == playerType &&
-                    attackerTimings.contains(ability.timing) ||
-                attacker != playerType &&
-                    defenderTimings.contains(ability.timing)) {
-              retAbilityIDs.add(ability.id);
-            }
-          }
-        }
-        if (playerType == PlayerType.opponent && phaseState.canAnyZoroark) {
-          retAbilityIDs.add(149); // イリュージョン追加
-        }
-        final abilityIDs = retAbilityIDs.toSet();
-        for (final abilityID in abilityIDs) {
-          ret.add(TurnEffect()
-            ..playerType = playerType
-            ..effectType = EffectType.ability
-            ..effectId = abilityID);
-        }
-      }
-      if (effectType == EffectType.individualField) {
-        for (var e in indiFieldEffectIDs) {
-          var adding = TurnEffect()
-            ..playerType = playerType
-            ..effectType = EffectType.individualField
-            ..effectId = e;
-          if (adding.effectId == IndiFieldEffect.trickRoomEnd) {
-            // 各々の場だが効果としては両フィールドのもの
-            adding.playerType = PlayerType.entireField;
-            if (ret.where((element) => element.nearEqual(adding)).isNotEmpty) {
-              ret.add(adding);
-            }
-          } else {
-            ret.add(adding);
-          }
-        }
-      }
-      if (effectType == EffectType.ailment) {
-        for (var e in ailmentEffectIDs.entries) {
-          ret.add(TurnEffect()
-            ..playerType = playerType
-            ..effectType = EffectType.ailment
-            ..effectId = e.key
-            ..extraArg1 = e.value);
-        }
-      }
-      if (effectType == EffectType.item) {
-        if (pokemonState!.holdingItem != null) {
-          if (pokemonState.holdingItem!.id != 0) {
-            // もちものが確定している場合
-            if (timings.contains(pokemonState.holdingItem!.timing)) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effectType = EffectType.item
-                ..effectId = pokemonState.holdingItem!.id);
-            }
-            // わざ使用後に発動する効果
-            if (attacker == playerType &&
-                    attackerTimings
-                        .contains(pokemonState.holdingItem!.timing) ||
-                attacker != playerType &&
-                    defenderTimings
-                        .contains(pokemonState.holdingItem!.timing)) {
-              ret.add(TurnEffect()
-                ..playerType = playerType
-                ..effectType = EffectType.item
-                ..effectId = pokemonState.holdingItem!.id);
-            }
-          } else {
-            // もちものが確定していない場合
-            var allItems = [for (final item in pokeData.items.values) item];
-            for (final item in pokemonState.impossibleItems) {
-              allItems.removeWhere((e) => e.id == item.id);
-            }
-            for (final item in allItems) {
-              if (timings.contains(item.timing)) {
-                ret.add(TurnEffect()
-                  ..playerType = playerType
-                  ..effectType = EffectType.item
-                  ..effectId = item.id);
-              }
-              // わざ使用後に発動する効果
-              if (attacker == playerType &&
-                      attackerTimings.contains(item.timing) ||
-                  attacker != playerType &&
-                      defenderTimings.contains(item.timing)) {
-                ret.add(TurnEffect()
-                  ..playerType = playerType
-                  ..effectType = EffectType.item
-                  ..effectId = item.id);
-              }
-            }
-          }
-        }
-      }
-    }
-
-    if (playerType == PlayerType.entireField) {
-      for (var e in weatherEffectIDs) {
-        ret.add(TurnEffect()
-          ..playerType = PlayerType.entireField
-          ..effectType = EffectType.weather
-          ..effectId = e);
-      }
-      for (var e in fieldEffectIDs) {
-        ret.add(TurnEffect()
-          ..playerType = PlayerType.entireField
-          ..effectType = EffectType.field
-          ..effectId = e);
-      }
-    }
-
-    // argの自動セット
-    var myState = playerType != PlayerType.opponent
-        ? phaseState.getPokemonState(PlayerType.me, prevAction)
-        : phaseState.getPokemonState(PlayerType.opponent, prevAction);
-    var yourState = playerType != PlayerType.opponent
-        ? phaseState.getPokemonState(PlayerType.opponent, prevAction)
-        : phaseState.getPokemonState(PlayerType.me, prevAction);
-    for (var effect in ret) {
-      effect.timing = timing;
-      effect.setAutoArgs(myState, yourState, phaseState, prevAction);
-    }
-
-    return ret;
-  }
-
-  String get displayName {
-    final pokeData = PokeDB();
-    switch (effectType) {
-      case EffectType.ability:
-        return pokeData.abilities[effectId]!.displayName;
-      case EffectType.item:
-        return pokeData.items[effectId]!.displayName;
-      case EffectType.ailment:
-        return AilmentEffect(effectId).displayName;
-      case EffectType.individualField:
-        return IndiFieldEffect(effectId).displayName;
-      case EffectType.weather:
-        return WeatherEffect(effectId).displayName;
-      case EffectType.field:
-        return FieldEffect(effectId).displayName;
-      case EffectType.move:
-        return move!.move.displayName;
-      case EffectType.afterMove:
-        return pokeData.moves[effectId]!.displayName;
-      default:
-        return '';
-    }
-  }
-
   // 効果に対応して、argsを自動でセット
   void setAutoArgs(
     PokemonState myState,
@@ -3294,148 +2662,66 @@ class TurnEffect extends Equatable implements Copyable {
       );
     }
   }
+*/
 
-  // SQLに保存された文字列からTurnMoveをパース
+  // SQLに保存された文字列からTurnEffectをパース
   static TurnEffect deserialize(
       dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
-    // -1は最新バージョン
-    TurnEffect effect = TurnEffect();
-    final effectElements = str.split(split1);
-    // playerType
-    effect.playerType =
-        PlayerTypeNum.createFromNumber(int.parse(effectElements[0]));
-    // timing
-    effect.timing = Timing.values[int.parse(effectElements[1])];
-    // effectType
-    effect.effectType = EffectType.values[int.parse(effectElements[2])];
-    // effectId
-    effect.effectId = int.parse(effectElements[3]);
-    // extraArg1
-    effect.extraArg1 = int.parse(effectElements[4]);
-    // extraArg2
-    effect.extraArg2 = int.parse(effectElements[5]);
-    // move
-    if (effectElements[6] == '') {
-      effect.move = null;
-    } else {
-      effect.move = TurnMove.deserialize(effectElements[6], split2, split3,
-          version: version);
+    final EffectType effectType =
+        EffectType.values[int.parse(str.split(split1)[0])];
+    switch (effectType) {
+      case EffectType.none:
+        throw Exception('arienai');
+      case EffectType.action:
+        return TurnEffectAction.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.ability:
+        return TurnEffectAction.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.item:
+        return TurnEffectItem.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.individualField:
+        return TurnEffectIndividualField.deserialize(
+            str, split1, split2, split3,
+            version: version);
+      case EffectType.ailment:
+        return TurnEffectAilment.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.weather:
+        return TurnEffectWeather.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.field:
+        return TurnEffectField.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.changeFaintingPokemon:
+        return TurnEffectChangeFaintingPokemon.deserialize(
+            str, split1, split2, split3,
+            version: version);
+      case EffectType.afterMove:
+        return TurnEffectAfterMove.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.userEdit:
+        return TurnEffectUserEdit.deserialize(str, split1, split2, split3,
+            version: version);
+      case EffectType.terastal:
+        return TurnEffectTerastal.deserialize(str, split1, split2, split3,
+            version: version);
     }
-    // isAdding
-    effect.isAdding = int.parse(effectElements[7]) != 0;
-    // isOwnFainting
-    effect.isOwnFainting = int.parse(effectElements[8]) != 0;
-    // isOpponentFainting
-    effect.isOpponentFainting = int.parse(effectElements[9]) != 0;
-    // isMyWin
-    effect.isMyWin = int.parse(effectElements[10]) != 0;
-    // isYourWin
-    effect.isYourWin = int.parse(effectElements[11]) != 0;
-    // _changePokemonIndexes
-    var changePokemonIndexes = effectElements[12].split(split2);
-    for (int i = 0; i < 2; i++) {
-      if (changePokemonIndexes[i] == '') {
-        effect._changePokemonIndexes[i] = null;
-      } else {
-        effect._changePokemonIndexes[i] = int.parse(changePokemonIndexes[i]);
-      }
-    }
-    // _prevPokemonIndexes
-    var prevPokemonIndexes = effectElements[13].split(split2);
-    for (int i = 0; i < 2; i++) {
-      effect._prevPokemonIndexes[i] = int.parse(prevPokemonIndexes[i]);
-    }
-    // userForces
-    effect.userForces =
-        UserForces.deserialize(effectElements[14], split2, split3);
-    // isAutoSet
-    effect.isAutoSet = int.parse(effectElements[15]) != 0;
-    // invalidGuideIDs
-    var invalidGuideIDs = effectElements[16].split(split2);
-    for (final id in invalidGuideIDs) {
-      if (id == '') break;
-      effect.invalidGuideIDs.add(int.parse(id));
-    }
-
-    return effect;
   }
 
   // SQL保存用の文字列に変換
-  String serialize(String split1, String split2, String split3) {
-    String ret = '';
-    // playerType
-    ret += playerType.number.toString();
-    ret += split1;
-    // timing
-    ret += timing.index.toString();
-    ret += split1;
-    // effectType
-    ret += '${effectType.index}';
-    ret += split1;
-    // effectId
-    ret += effectId.toString();
-    ret += split1;
-    // extraArg1
-    ret += extraArg1.toString();
-    ret += split1;
-    // extraArg2
-    ret += extraArg2.toString();
-    ret += split1;
-    // move
-    ret += move == null ? '' : move!.serialize(split2, split3);
-    ret += split1;
-    // isAdding
-    ret += isAdding ? '1' : '0';
-    ret += split1;
-    // isOwnFainting
-    ret += isOwnFainting ? '1' : '0';
-    ret += split1;
-    // isOpponentFainting
-    ret += isOpponentFainting ? '1' : '0';
-    ret += split1;
-    // isMyWin
-    ret += isMyWin ? '1' : '0';
-    ret += split1;
-    // isYourWin
-    ret += isYourWin ? '1' : '0';
-    ret += split1;
-    // _changePokemonIndexes
-    for (int i = 0; i < 2; i++) {
-      if (_changePokemonIndexes[i] != null) {
-        ret += _changePokemonIndexes[i].toString();
-      }
-      ret += split2;
-    }
-    ret += split1;
-    // _prevPokemonIndexes
-    for (int i = 0; i < 2; i++) {
-      ret += _prevPokemonIndexes[i].toString();
-      ret += split2;
-    }
-    ret += split1;
-    // userForces
-    ret += userForces.serialize(split2, split3);
-    ret += split1;
-    // isAutoSet
-    ret += isAutoSet ? '1' : '0';
-    ret += split1;
-    // invalidGuideIDs
-    for (final id in invalidGuideIDs) {
-      ret += id.toString();
-      ret += split2;
-    }
+  String serialize(String split1, String split2, String split3);
 
-    return ret;
-  }
-
-  static void swap(List<TurnEffect> list, int idx1, int idx2) {
-    TurnEffect tmp = list[idx1].copy();
-    list[idx1] = list[idx2].copy();
-    list[idx2] = tmp;
-  }
+//  static void swap(List<TurnEffect> list, int idx1, int idx2) {
+//    TurnEffect tmp = list[idx1].copy();
+//    list[idx1] = list[idx2].copy();
+//    list[idx2] = tmp;
+//  }
 }
 
+/*
 class TurnEffectAndStateAndGuide {
   int phaseIdx = -1;
   TurnEffect turnEffect = TurnEffect();

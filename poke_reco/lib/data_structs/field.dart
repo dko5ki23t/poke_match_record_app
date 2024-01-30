@@ -8,51 +8,6 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-// フィールドによる効果(TurnEffectのeffectIdに使用する定数を提供)
-class FieldEffect {
-  static const int none = 0;
-  static const int electricTerrainEnd = 1; // エレキフィールド終了
-  static const int grassyTerrainEnd = 2; // グラスフィールド終了
-  static const int mistyTerrainEnd = 3; // ミストフィールド終了
-  static const int psychicTerrainEnd = 4; // サイコフィールド終了
-  static const int grassHeal = 5; // グラスフィールドによる回復
-
-  static const Map<int, Tuple2<String, String>> _displayNameMap = {
-    0: Tuple2('', ''),
-    1: Tuple2('エレキフィールド終了', 'Electric Terrain ends'),
-    2: Tuple2('グラスフィールド終了', 'Grassy Terrain ends'),
-    3: Tuple2('ミストフィールド終了', 'Misty Terrain ends'),
-    4: Tuple2('サイコフィールド終了', 'Psychic Terrain ends'),
-    5: Tuple2('グラスフィールドによる回復', 'Recovery by Grassy Terrain'),
-  };
-
-  const FieldEffect(this.id);
-
-  static int getIdFromField(Field field) {
-    switch (field.id) {
-      case Field.electricTerrain:
-      case Field.grassyTerrain:
-      case Field.mistyTerrain:
-      case Field.psychicTerrain:
-        return field.id;
-      default:
-        return 0;
-    }
-  }
-
-  String get displayName {
-    switch (PokeDB().language) {
-      case Language.japanese:
-        return _displayNameMap[id]!.item1;
-      case Language.english:
-      default:
-        return _displayNameMap[id]!.item2;
-    }
-  }
-
-  final int id;
-}
-
 // フィールド
 class Field extends Equatable implements Copyable {
   static const int none = 0;

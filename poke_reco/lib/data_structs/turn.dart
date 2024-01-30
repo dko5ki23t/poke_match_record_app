@@ -2,13 +2,14 @@ import 'dart:collection';
 
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/timing.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/tool.dart';
 
 // 自身・相手の行動(timing==Timing.action)をそれぞれ1つずつ含んだリスト
@@ -20,23 +21,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
   List<Object?> get props => [l];
 
   PhaseList() {
-    TurnMove ownAction = TurnMove()
-      ..playerType = PlayerType.me
-      ..type = TurnMoveType.move;
-    TurnMove opponentAction = TurnMove()
-      ..playerType = PlayerType.opponent
-      ..type = TurnMoveType.move;
     l.addAll([
-      TurnEffect()
-        ..playerType = PlayerType.me
-        ..timing = Timing.action
-        ..effectType = EffectType.move
-        ..move = ownAction,
-      TurnEffect()
-        ..playerType = PlayerType.opponent
-        ..timing = Timing.action
-        ..effectType = EffectType.move
-        ..move = opponentAction
+      TurnEffectAction(player: PlayerType.me)..type = TurnMoveType.move,
+      TurnEffectAction(player: PlayerType.opponent)..type = TurnMoveType.move,
     ]);
   }
 
@@ -58,8 +45,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
   PhaseList copy() => PhaseList()..l.addAll(l);
 
   void checkAdd(TurnEffect element) {
-    if (element.timing == Timing.action ||
-        element.timing == Timing.changeFaintingPokemon) {
+    if (element is TurnEffectAction ||
+        element is TurnEffectChangeFaintingPokemon) {
       assert(
         element.playerType == PlayerType.me ||
             element.playerType == PlayerType.opponent,
@@ -69,7 +56,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       assert(
         l
             .where((e) =>
-                (e.timing == element.timing) &&
+                (e.runtimeType == element.runtimeType) &&
                 e.playerType == element.playerType)
             .isEmpty,
         'only 1 action effect for each player is allowed in 1 turn',
@@ -97,25 +84,24 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
   bool isExistAction(PlayerType playerType) => l
       .where((e) =>
-          (e.timing == Timing.action ||
-              e.timing == Timing.changeFaintingPokemon) &&
+          (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
           e.playerType == playerType)
       .isNotEmpty;
   TurnEffect getLatestAction(PlayerType playerType) => l
       .where((e) =>
-          (e.timing == Timing.action ||
-              e.timing == Timing.changeFaintingPokemon) &&
+          (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
           e.playerType == playerType)
       .last;
+  int getLatestActionIndex(PlayerType playerType) => l.lastIndexWhere((e) =>
+      (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
+      e.playerType == playerType);
   PlayerType? get firstActionPlayer {
     // 有効なactionで先に行動しているプレイヤーを返す
     int ownPlayerActionIndex = l.indexWhere((e) =>
-        (e.timing == Timing.action ||
-            e.timing == Timing.changeFaintingPokemon) &&
+        (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
         e.playerType == PlayerType.me);
     int opponentPlayerActionIndex = l.indexWhere((e) =>
-        (e.timing == Timing.action ||
-            e.timing == Timing.changeFaintingPokemon) &&
+        (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
         e.playerType == PlayerType.opponent);
     //どちらも(存在しない/無効)
     if ((ownPlayerActionIndex < 0 || !l[ownPlayerActionIndex].isValid()) &&
@@ -147,12 +133,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       'there are no own action or opponent action',
     );
     int myPlayerActionIndex = l.indexWhere((e) =>
-        (e.timing == Timing.action ||
-            e.timing == Timing.changeFaintingPokemon) &&
+        (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
         e.playerType == playerType);
     int yourPlayerActionIndex = l.indexWhere((e) =>
-        (e.timing == Timing.action ||
-            e.timing == Timing.changeFaintingPokemon) &&
+        (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
         e.playerType == playerType.opposite);
     // 対象の行動が後にあるなら
     if (myPlayerActionIndex > yourPlayerActionIndex) {
@@ -221,14 +205,18 @@ class Turn extends Equatable implements Copyable {
     int actionCount = 0;
     int validCount = 0;
     for (final phase in phases) {
-      if (phase.timing == Timing.action ||
-          phase.timing == Timing.changeFaintingPokemon) {
+      if (phase is TurnEffectAction ||
+          phase is TurnEffectChangeFaintingPokemon) {
         actionCount++;
         if (phase.isValid()) validCount++;
       }
     }
     return actionCount == validCount && actionCount >= 2;
   }
+
+  bool get isMyWin => _endingState.isMyWin;
+  bool get isYourWin => _endingState.isYourWin;
+  bool get isGameSet => isMyWin || isYourWin;
 
   void setInitialState(PhaseState state) {
     _initialState = state.copy();
@@ -247,21 +235,22 @@ class Turn extends Equatable implements Copyable {
 
     for (int i = 0; i < phaseIdx + 1; i++) {
       final effect = phases[i];
-      if (effect.isAdding) continue;
-      if (effect.timing == Timing.continuousMove) {
-        lastAction = effect;
-        continousCount++;
-      } else if (effect.timing == Timing.action) {
-        lastAction = effect;
-        continousCount = 0;
-      }
+      //if (effect.isAdding) continue;
+      //if (effect.timing == Timing.continuousMove) {
+      //  lastAction = effect;
+      //  continousCount++;
+      //} else if (effect.timing == Timing.action) {
+      //  lastAction = effect;
+      //  continousCount = 0;
+      //}
+      if (effect is TurnEffectAction) lastAction = effect;
       effect.processEffect(
         ownParty,
         ret.getPokemonState(PlayerType.me,
-            effect.timing == Timing.afterMove ? lastAction : null),
+            /*effect.timing == Timing.afterMove ? lastAction :*/ null),
         opponentParty,
         ret.getPokemonState(PlayerType.opponent,
-            effect.timing == Timing.afterMove ? lastAction : null),
+            /*effect.timing == Timing.afterMove ? lastAction :*/ null),
         ret,
         lastAction,
         continousCount,
@@ -291,61 +280,77 @@ class Turn extends Equatable implements Copyable {
     int i = 0;
     while (i < phases.length) {
       final phase = phases[i];
-      if (phase.isAdding) {
-        i++;
-        continue; // TODO
-      }
+//      if (phase.isAdding) {
+//        i++;
+//        continue; // TODO
+//      }
       if (!phase.isValid()) {
         i++;
         continue;
       }
-      if (phase.timing == Timing.continuousMove) {
-        lastAction = phase;
-        continousCount++;
-      } else if (phase.timing == Timing.action) {
-        lastAction = phase;
-        continousCount = 0;
-      }
+      //if (phase.timing == Timing.continuousMove) {
+      //  lastAction = phase;
+      //  continousCount++;
+      //} else if (phase.timing == Timing.action) {
+      //  lastAction = phase;
+      //  continousCount = 0;
+      //}
+      if (phase is TurnEffectAction) lastAction = phase;
       phase.processEffect(
         ownParty,
         _endingState.getPokemonState(PlayerType.me,
-            phase.timing == Timing.afterMove ? lastAction : null),
+            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
         opponentParty,
         _endingState.getPokemonState(PlayerType.opponent,
-            phase.timing == Timing.afterMove ? lastAction : null),
+            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
         _endingState,
         lastAction,
         continousCount,
         loc: loc,
       );
-      if (phase.timing == Timing.action) {
+      if (phase is TurnEffectAction) {
         alreadyActioned[phase.playerType] = true;
       }
       // ポケモンがひんしになっている場合、無ければひんし交代phaseを追加
-      if (phase.isOwnFainting) {
+      final ownState = _endingState.getPokemonState(PlayerType.me, null);
+      final opponentState =
+          _endingState.getPokemonState(PlayerType.opponent, null);
+      if (ownState.remainHP <= 0) {
+        ownState.remainHP = 0;
+        ownState.isFainting = true;
+        _endingState.incFaintingCount(PlayerType.me, 1);
         needChangeFaintingPlayer = PlayerType.me;
-      } else if (phase.isOpponentFainting) {
+      } else {
+        ownState.isFainting = false;
+      }
+      if (opponentState.remainHPPercent <= 0) {
+        opponentState.remainHPPercent = 0;
+        opponentState.isFainting = true;
+        _endingState.incFaintingCount(PlayerType.opponent, 1);
         needChangeFaintingPlayer = PlayerType.opponent;
+      } else {
+        opponentState.isFainting = false;
       }
       if (needChangeFaintingPlayer != null) {
-        if (phase.timing != Timing.changeFaintingPokemon) {
+        if (phase is! TurnEffectChangeFaintingPokemon) {
           // ひんし対象がまだ行動していないとき
           if (!alreadyActioned[needChangeFaintingPlayer]!) {
-            final target = phases.getLatestAction(needChangeFaintingPlayer);
-            target.timing = Timing.changeFaintingPokemon;
-            target.effectType = EffectType.changeFaintingPokemon;
-            target.move = null;
+            final target =
+                phases.getLatestActionIndex(needChangeFaintingPlayer);
+            // TODO
+            phases[target] = TurnEffectChangeFaintingPokemon(
+                player: needChangeFaintingPlayer, timing: Timing.afterMove);
           }
           // ひんし対象が行動済みのとき
           else {
             if (i == phases.length - 1 ||
-                phases[i + 1].timing != Timing.changeFaintingPokemon) {
+                phases[i + 1] is! TurnEffectChangeFaintingPokemon) {
               phases.insert(
                   i + 1,
-                  TurnEffect()
-                    ..playerType = needChangeFaintingPlayer
-                    ..effectType = EffectType.changeFaintingPokemon
-                    ..timing = Timing.changeFaintingPokemon);
+                  // TODO
+                  TurnEffectChangeFaintingPokemon(
+                      player: needChangeFaintingPlayer,
+                      timing: Timing.afterMove));
             }
           }
           needChangeFaintingPlayer = null;

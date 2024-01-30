@@ -5,7 +5,7 @@ import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -56,7 +56,7 @@ class HitCriticalInputRow extends StatefulWidget {
     required this.onUpdate,
   }) : super(key: key);
 
-  final TurnMove turnMove;
+  final TurnEffectAction turnMove;
   final void Function() onUpdate;
 
   @override
@@ -64,7 +64,7 @@ class HitCriticalInputRow extends StatefulWidget {
 }
 
 class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
-  TurnMove turnMove = TurnMove();
+  late final TurnEffectAction turnMove;
 
   @override
   void initState() {
@@ -137,7 +137,7 @@ class SelectMoveInput extends StatefulWidget {
   }) : super(key: key);
 
   final PlayerType playerType;
-  final TurnMove turnMove;
+  final TurnEffectAction turnMove;
   final PokemonState pokemonState;
   final PhaseState state;
   final void Function(Move) onSelect;
@@ -150,7 +150,7 @@ class SelectMoveInput extends StatefulWidget {
 class _SelectMoveInputState extends State<SelectMoveInput> {
   TextEditingController moveSearchTextController = TextEditingController();
   late PlayerType playerType;
-  late TurnMove turnMove;
+  late TurnEffectAction turnMove;
   late PokemonState pokemonState;
   late PhaseState state;
 

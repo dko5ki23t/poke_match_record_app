@@ -1,11 +1,14 @@
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/turn_effect.dart';
 import 'package:poke_reco/tool.dart';
 
 // ユーザが手動で変更した内容
-class UserForce extends Equatable {
+class UserEdit extends Equatable {
   static const int none = 0;
   static const int ability = 1;
   static const int item = 2;
@@ -42,118 +45,132 @@ class UserForce extends Equatable {
         arg1,
       ];
 
-  const UserForce(this.playerType, this.typeId, this.arg1);
+  const UserEdit(this.playerType, this.typeId, this.arg1);
 }
 
-class UserForces extends Equatable implements Copyable {
-  final List<UserForce> forces = [];
+class TurnEffectUserEdit extends TurnEffect {
+  TurnEffectUserEdit() : super(EffectType.userEdit);
+
+  final List<UserEdit> forces = [];
 
   @override
   List<Object?> get props => [forces];
 
   @override
-  UserForces copy() => UserForces()..forces.addAll([...forces]);
+  TurnEffectUserEdit copy() => TurnEffectUserEdit()..forces.addAll([...forces]);
 
-  void add(UserForce force) {
+  @override
+  String displayName({required AppLocalizations loc}) => '';
+
+  @override
+  PlayerType get playerType => PlayerType.none;
+  @override
+  set playerType(type) {}
+  @override
+  bool isValid() => true;
+
+  void add(UserEdit force) {
     // 既に同じプレイヤー・種類の修正がある場合はそれを削除して上書き
     forces.removeWhere(
         (e) => e.playerType == force.playerType && e.typeId == force.typeId);
     forces.add(force);
   }
 
-  List<String> processEffect(
-    PokemonState ownPokemonState,
-    PokemonState opponentPokemonState,
-    PhaseState state,
-    Party ownParty,
-    Party opponentParty,
-  ) {
+  @override
+  List<Guide> processEffect(
+      Party ownParty,
+      PokemonState ownState,
+      Party opponentParty,
+      PokemonState opponentState,
+      PhaseState state,
+      TurnEffect? prevAction,
+      int continuousCount,
+      {required AppLocalizations loc}) {
     var pokeData = PokeDB();
     for (var force in forces) {
       switch (force.typeId) {
-        case UserForce.ability:
+        case UserEdit.ability:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.setCurrentAbility(pokeData.abilities[force.arg1]!,
-                opponentPokemonState, true, state);
+            ownState.setCurrentAbility(
+                pokeData.abilities[force.arg1]!, opponentState, true, state);
           } else if (force.playerType == PlayerType.opponent) {
-            if (opponentPokemonState.getCurrentAbility().id == 0) {
-              opponentPokemonState.pokemon.ability =
-                  pokeData.abilities[force.arg1]!;
+            if (opponentState.getCurrentAbility().id == 0) {
+              opponentState.pokemon.ability = pokeData.abilities[force.arg1]!;
             }
-            opponentPokemonState.setCurrentAbility(
-                pokeData.abilities[force.arg1]!, ownPokemonState, false, state);
+            opponentState.setCurrentAbility(
+                pokeData.abilities[force.arg1]!, ownState, false, state);
           }
           break;
-        case UserForce.item:
+        case UserEdit.item:
           var item = force.arg1 < 0 ? null : pokeData.items[force.arg1]!;
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.holdingItem = item;
+            ownState.holdingItem = item;
           } else if (force.playerType == PlayerType.opponent) {
-            if (opponentPokemonState.pokemon.item?.id == 0) {
-              opponentPokemonState.pokemon.item = item;
+            if (opponentState.pokemon.item?.id == 0) {
+              opponentState.pokemon.item = item;
             }
-            opponentPokemonState.holdingItem = item;
+            opponentState.holdingItem = item;
           }
           break;
-        case UserForce.hp:
+        case UserEdit.hp:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.remainHP = force.arg1;
+            ownState.remainHP = force.arg1;
           } else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.remainHPPercent = force.arg1;
+            opponentState.remainHPPercent = force.arg1;
           }
           break;
-        case UserForce.rankA:
-        case UserForce.rankB:
-        case UserForce.rankC:
-        case UserForce.rankD:
-        case UserForce.rankS:
-        case UserForce.rankAc:
-        case UserForce.rankEv:
+        case UserEdit.rankA:
+        case UserEdit.rankB:
+        case UserEdit.rankC:
+        case UserEdit.rankD:
+        case UserEdit.rankS:
+        case UserEdit.rankAc:
+        case UserEdit.rankEv:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState.forceSetStatChanges(
-                force.typeId - UserForce.rankA, force.arg1);
+            ownState.forceSetStatChanges(
+                force.typeId - UserEdit.rankA, force.arg1);
           } else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState.forceSetStatChanges(
-                force.typeId - UserForce.rankA, force.arg1);
+            opponentState.forceSetStatChanges(
+                force.typeId - UserEdit.rankA, force.arg1);
           }
           break;
-        case UserForce.statMinH:
-        case UserForce.statMinA:
-        case UserForce.statMinB:
-        case UserForce.statMinC:
-        case UserForce.statMinD:
-        case UserForce.statMinS:
+        case UserEdit.statMinH:
+        case UserEdit.statMinA:
+        case UserEdit.statMinB:
+        case UserEdit.statMinC:
+        case UserEdit.statMinD:
+        case UserEdit.statMinS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState
+            ownState
                 .minStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserForce.statMinH)]
+                    force.typeId - UserEdit.statMinH)]
                 .real = force.arg1;
           } else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState
+            opponentState
                 .minStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserForce.statMinH)]
+                    force.typeId - UserEdit.statMinH)]
                 .real = force.arg1;
           }
           break;
-        case UserForce.statMaxH:
-        case UserForce.statMaxA:
-        case UserForce.statMaxB:
-        case UserForce.statMaxC:
-        case UserForce.statMaxD:
-        case UserForce.statMaxS:
+        case UserEdit.statMaxH:
+        case UserEdit.statMaxA:
+        case UserEdit.statMaxB:
+        case UserEdit.statMaxC:
+        case UserEdit.statMaxD:
+        case UserEdit.statMaxS:
           if (force.playerType == PlayerType.me) {
-            ownPokemonState
+            ownState
                 .maxStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserForce.statMaxH)]
+                    force.typeId - UserEdit.statMaxH)]
                 .real = force.arg1;
           } else if (force.playerType == PlayerType.opponent) {
-            opponentPokemonState
+            opponentState
                 .maxStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserForce.statMaxH)]
+                    force.typeId - UserEdit.statMaxH)]
                 .real = force.arg1;
           }
           break;
-        case UserForce.pokemon:
+        case UserEdit.pokemon:
           state.makePokemonOther(force.playerType, force.arg1,
               ownParty: ownParty, opponentParty: opponentParty);
           break;
@@ -164,13 +181,18 @@ class UserForces extends Equatable implements Copyable {
   }
 
   // SQLに保存された文字列からUserForcesをパース
-  static UserForces deserialize(dynamic str, String split1, String split2) {
-    UserForces userForces = UserForces();
-    final forceElements = str.split(split1);
+  static TurnEffectUserEdit deserialize(
+      dynamic str, String split1, String split2, String split3,
+      {int version = -1}) {
+    // -1は最新バージョン
+    TurnEffectUserEdit userForces = TurnEffectUserEdit();
+    final List forceElements = str.split(split1);
+    // effectType
+    forceElements.removeAt(0);
     for (var force in forceElements) {
       if (force == '') break;
       final f = force.split(split2);
-      userForces.forces.add(UserForce(
+      userForces.forces.add(UserEdit(
           PlayerTypeNum.createFromNumber(int.parse(f[0])),
           int.parse(f[1]),
           int.parse(f[2])));
@@ -179,8 +201,16 @@ class UserForces extends Equatable implements Copyable {
   }
 
   // SQL保存用の文字列に変換
-  String serialize(String split1, String split2) {
+  @override
+  String serialize(
+    String split1,
+    String split2,
+    String split3,
+  ) {
     String ret = '';
+    // effectType
+    ret += effectType.index.toString();
+    ret += split1;
     for (var e in forces) {
       // playerType
       ret += e.playerType.number.toString();

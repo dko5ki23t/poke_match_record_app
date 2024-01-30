@@ -2,7 +2,7 @@ import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';

@@ -1,16 +1,22 @@
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/field.dart';
-import 'package:poke_reco/data_structs/user_force.dart';
+import 'package:poke_reco/data_structs/turn_effect_ability.dart';
+import 'package:poke_reco/data_structs/turn_effect_after_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_ailment.dart';
+import 'package:poke_reco/data_structs/turn_effect_field.dart';
+import 'package:poke_reco/data_structs/turn_effect_individual_field.dart';
+import 'package:poke_reco/data_structs/turn_effect_item.dart';
+import 'package:poke_reco/data_structs/turn_effect_weather.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/tool.dart';
@@ -26,7 +32,6 @@ class PhaseState extends Equatable implements Copyable {
   Field _field = Field(0);
   List<TurnEffect> phases = [];
   int phaseIndex = 0;
-  UserForces userForces = UserForces(); // TODO
   bool hasOwnTerastal = false; // これまでのフェーズでテラスタルをしたことがあるか
   bool hasOpponentTerastal = false;
   bool canZorua = false; // 正体を明かしていないゾロアがいるかどうか
@@ -34,7 +39,7 @@ class PhaseState extends Equatable implements Copyable {
   bool canZoruaHisui = false;
   bool canZoroarkHisui = false;
   List<int> _faintingCount = [0, 0]; // ひんしになった回数
-  TurnMove? firstAction; // 行動2が行動1を参照するために使う(TODO:不要？)
+  TurnEffectAction? firstAction; // 行動2が行動1を参照するために使う(TODO:不要？)
 
   @override
   List<Object?> get props => [
@@ -46,7 +51,6 @@ class PhaseState extends Equatable implements Copyable {
         _field,
         phases,
         phaseIndex,
-        userForces,
         hasOwnTerastal,
         hasOpponentTerastal,
         canZorua,
@@ -80,9 +84,10 @@ class PhaseState extends Equatable implements Copyable {
   }
 
   int getPokemonIndex(PlayerType player, TurnEffect? prevAction) {
-    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
-      return prevAction.getPrevPokemonIndex(player);
-    }
+    // TODO
+//    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
+//      return prevAction.getPrevPokemonIndex(player);
+//    }
     if (player == PlayerType.me) {
       return _pokemonIndexes[0];
     } else {
@@ -107,14 +112,15 @@ class PhaseState extends Equatable implements Copyable {
   }
 
   PokemonState getPokemonState(PlayerType player, TurnEffect? prevAction) {
-    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
-      int idx = prevAction.getPrevPokemonIndex(player);
-      if (player == PlayerType.me) {
-        return _pokemonStates[0][idx - 1];
-      } else {
-        return _pokemonStates[1][idx - 1];
-      }
-    }
+    // TODO
+//    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
+//      int idx = prevAction.getPrevPokemonIndex(player);
+//      if (player == PlayerType.me) {
+//        return _pokemonStates[0][idx - 1];
+//      } else {
+//        return _pokemonStates[1][idx - 1];
+//      }
+//    }
     if (player == PlayerType.me) {
       return _pokemonStates[0][_pokemonIndexes[0] - 1];
     } else {
@@ -171,7 +177,6 @@ class PhaseState extends Equatable implements Copyable {
     ..field = field.copy()
     ..phases = [for (final phase in phases) phase.copy()]
     ..phaseIndex = phaseIndex
-    ..userForces = userForces.copy()
     ..hasOwnTerastal = hasOwnTerastal
     ..hasOpponentTerastal = hasOpponentTerastal
     ..canZorua = canZorua
@@ -242,7 +247,7 @@ class PhaseState extends Equatable implements Copyable {
       bool changedOwn,
       bool changedOpponent,
       PhaseState state,
-      TurnEffect? prevAction,
+      TurnEffectAction? prevAction,
       int continuousCount) {
     List<TurnEffect> ret = [];
     var players = [PlayerType.me, PlayerType.opponent];
@@ -272,25 +277,23 @@ class PhaseState extends Equatable implements Copyable {
               var myState = getPokemonState(player, null);
               var yourState = getPokemonState(player.opposite, null);
               var myTimingIDs = [...timingIDs];
-              var addingBase = TurnEffect()
-                ..playerType = player
-                ..timing = timing;
               // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing)) {
-                var addingAbility = addingBase.copy()
-                  ..effectType = EffectType.ability
-                  ..effectId = myState.currentAbility.id;
-                addingAbility.setAutoArgs(
-                    myState, yourState, state, prevAction);
-                ret.add(addingAbility);
+                final adding = TurnEffectAbility(
+                    player: player,
+                    timing: timing,
+                    abilityID: myState.currentAbility.id);
+                adding.setAutoArgs(myState, yourState, state, prevAction);
+                ret.add(adding);
               }
               // 各ポケモンの場
-              addingBase.effectType = EffectType.individualField;
               var indiField = getIndiFields(player);
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
-                  var adding = addingBase.copy()
-                    ..effectId = IndiFieldEffect.getIdFromIndiField(f);
+                  var adding = TurnEffectIndividualField(
+                      player: player,
+                      timing: timing,
+                      indiFieldEffectID: IndiFieldEffect.getIdFromIndiField(f));
                   adding.setAutoArgs(myState, yourState, state, prevAction);
                   ret.add(adding);
                 }
@@ -320,34 +323,31 @@ class PhaseState extends Equatable implements Copyable {
         for (final ailment in attackerState.ailmentsIterable) {
           if (ailment.isActive(attackerPlayerType == PlayerType.me, timing,
               attackerState, state)) {
-            var adding = TurnEffect()
-              ..playerType = attackerPlayerType
-              ..timing = timing
-              ..effectType = EffectType.ailment
-              ..effectId = AilmentEffect.getIdFromAilment(ailment);
-            adding.setAutoArgs(attackerState, defenderState, state, prevAction);
+            var adding = TurnEffectAilment(
+                player: attackerPlayerType,
+                timing: timing,
+                ailmentEffectID: AilmentEffect.getIdFromAilment(ailment));
+            adding.setAutoArgs(
+                attackerState, defenderState, state, prevAction, ailment.turns);
             ret.add(adding);
           }
         }
 
         if (prevAction != null &&
-            prevAction.move != null &&
-            prevAction.move!.isNormallyHit(0) &&
-            prevAction.move!.moveEffectivenesses[0] !=
-                MoveEffectiveness.noEffect) {
+            prevAction.isNormallyHit(0) &&
+            prevAction.moveEffectivenesses[0] != MoveEffectiveness.noEffect) {
           // わざ成功時
-          var replacedMoveType = prevAction.move!.getReplacedMoveType(
-              prevAction.move!.move, 0, attackerState, state);
+          var replacedMoveType = prevAction.getReplacedMoveType(
+              prevAction.move, 0, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
           if (!attackerState.isTerastaling &&
               !attackerState.hiddenBuffs.containsByID(BuffDebuff.protean) &&
               (attackerState.currentAbility.id == 168 ||
                   attackerState.currentAbility.id == 236)) {
-            ret.add(TurnEffect()
-              ..playerType = attackerPlayerType
-              ..timing = Timing.beforeMove
-              ..effectType = EffectType.ability
-              ..effectId = attackerState.currentAbility.id
+            ret.add(TurnEffectAbility(
+                player: attackerPlayerType,
+                timing: Timing.beforeMove,
+                abilityID: attackerState.currentAbility.id)
               ..extraArg1 = replacedMoveType.index);
           }
           // ノーマルタイプのこうげきをうけたとき
@@ -432,11 +432,10 @@ class PhaseState extends Equatable implements Copyable {
           if (defenderState.holdingItem != null &&
               defenderTimingIDList
                   .contains(defenderState.holdingItem!.timing)) {
-            var addingItem = TurnEffect()
-              ..playerType = defenderPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.item
-              ..effectId = defenderState.holdingItem!.id;
+            var addingItem = TurnEffectItem(
+                player: defenderPlayerType,
+                timing: Timing.afterMove,
+                itemID: defenderState.holdingItem!.id);
             addingItem.setAutoArgs(
                 defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
@@ -458,10 +457,10 @@ class PhaseState extends Equatable implements Copyable {
               : PlayerType.opponent;
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
-          var replacedMove = prevAction?.move
-              ?.getReplacedMove(prevAction.move!.move, 0, attackerState);
-          var replacedMoveType = prevAction?.move?.getReplacedMoveType(
-              prevAction.move!.move, 0, attackerState, state);
+          var replacedMove =
+              prevAction?.getReplacedMove(prevAction.move, 0, attackerState);
+          var replacedMoveType = prevAction?.getReplacedMoveType(
+              prevAction.move, 0, attackerState, state);
           // 直接こうげきをまもる系統のわざで防がれたとき
           if (prevAction != null &&
                   replacedMove!.isDirect &&
@@ -483,12 +482,9 @@ class PhaseState extends Equatable implements Copyable {
                   extraArg1 = 12;
                 }
               }
-              ret.add(TurnEffect()
-                ..playerType = attackerPlayerType
-                ..timing = Timing.afterMove
-                ..effectType = EffectType.afterMove
-                ..effectId = id
-                ..extraArg1 = extraArg1);
+              ret.add(
+                  TurnEffectAfterMove(player: attackerPlayerType, effectID: id)
+                    ..extraArg1 = extraArg1);
             }
           }
           // みちづれ状態の相手をひんしにしたとき
@@ -497,17 +493,12 @@ class PhaseState extends Equatable implements Copyable {
               defenderState
                   .ailmentsWhere((e) => e.id == Ailment.destinyBond)
                   .isNotEmpty) {
-            ret.add(TurnEffect()
-              ..playerType = attackerPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.afterMove
-              ..effectId = 194);
+            ret.add(
+                TurnEffectAfterMove(player: attackerPlayerType, effectID: 194));
           }
           if (prevAction != null &&
-              prevAction.move != null &&
-              prevAction.move!.isNormallyHit(0) &&
-              prevAction.move!.moveEffectivenesses[0] !=
-                  MoveEffectiveness.noEffect) {
+              prevAction.isNormallyHit(0) &&
+              prevAction.moveEffectivenesses[0] != MoveEffectiveness.noEffect) {
             // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
@@ -520,11 +511,10 @@ class PhaseState extends Equatable implements Copyable {
               final unomis = defenderState.buffDebuffs.whereByAnyID(
                   [BuffDebuff.unomiForm, BuffDebuff.marunomiForm]);
               if (unomis.isNotEmpty) {
-                ret.add(TurnEffect()
-                  ..playerType = defenderPlayerType
-                  ..timing = Timing.afterMove
-                  ..effectType = EffectType.ability
-                  ..effectId = 10000 + unomis.first.id);
+                ret.add(TurnEffectAbility(
+                    player: defenderPlayerType,
+                    timing: Timing.afterMove,
+                    abilityID: (10000 + unomis.first.id)));
               }
               // こうげきわざでひんしにした後
               if (defenderState.isFainting) {
@@ -733,11 +723,10 @@ class PhaseState extends Equatable implements Copyable {
           // 対応するタイミングに該当するとくせい
           if (attackerTimingIDList
               .contains(attackerState.currentAbility.timing)) {
-            ret.add(TurnEffect()
-              ..playerType = attackerPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.ability
-              ..effectId = attackerState.currentAbility.id);
+            ret.add(TurnEffectAbility(
+                player: attackerPlayerType,
+                timing: Timing.afterMove,
+                abilityID: attackerState.currentAbility.id));
           }
           // こうげきを受ける側のとくせいは、かたやぶり等によって発動しない場合あり
           if (defenderTimingIDList
@@ -747,11 +736,10 @@ class PhaseState extends Equatable implements Copyable {
                     BuffDebuff.noAbilityEffect,
                     BuffDebuff.myceliumMight
                   ]))) {
-            var addingAbility = TurnEffect()
-              ..playerType = defenderPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.ability
-              ..effectId = defenderState.currentAbility.id;
+            var addingAbility = TurnEffectAbility(
+                player: defenderPlayerType,
+                timing: Timing.afterMove,
+                abilityID: defenderState.currentAbility.id);
             addingAbility.setAutoArgs(
                 defenderState, attackerState, state, prevAction);
             ret.add(addingAbility);
@@ -760,11 +748,10 @@ class PhaseState extends Equatable implements Copyable {
           if (attackerState.holdingItem != null &&
               attackerTimingIDList
                   .contains(attackerState.holdingItem!.timing)) {
-            var addingItem = TurnEffect()
-              ..playerType = attackerPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.item
-              ..effectId = attackerState.holdingItem!.id;
+            var addingItem = TurnEffectItem(
+                player: attackerPlayerType,
+                timing: Timing.afterMove,
+                itemID: attackerState.holdingItem!.id);
             addingItem.setAutoArgs(
                 attackerState, defenderState, state, prevAction);
             ret.add(addingItem);
@@ -772,11 +759,10 @@ class PhaseState extends Equatable implements Copyable {
           if (defenderState.holdingItem != null &&
               defenderTimingIDList
                   .contains(defenderState.holdingItem!.timing)) {
-            var addingItem = TurnEffect()
-              ..playerType = defenderPlayerType
-              ..timing = Timing.afterMove
-              ..effectType = EffectType.item
-              ..effectId = defenderState.holdingItem!.id;
+            var addingItem = TurnEffectItem(
+                player: defenderPlayerType,
+                timing: Timing.afterMove,
+                itemID: defenderState.holdingItem!.id);
             addingItem.setAutoArgs(
                 defenderState, attackerState, state, prevAction);
             ret.add(addingItem);
@@ -879,11 +865,10 @@ class PhaseState extends Equatable implements Copyable {
 
             // とくせい
             if (playerTimingIDs.contains(myState.currentAbility.timing)) {
-              var addingAbility = TurnEffect()
-                ..playerType = player
-                ..timing = timing
-                ..effectType = EffectType.ability
-                ..effectId = myState.currentAbility.id;
+              var addingAbility = TurnEffectAbility(
+                  player: player,
+                  timing: timing,
+                  abilityID: myState.currentAbility.id);
               addingAbility.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingAbility);
             }
@@ -891,11 +876,10 @@ class PhaseState extends Equatable implements Copyable {
             // もちもの
             if (myState.holdingItem != null &&
                 playerTimingIDs.contains(myState.holdingItem!.timing)) {
-              var addingItem = TurnEffect()
-                ..playerType = player
-                ..timing = timing
-                ..effectType = EffectType.item
-                ..effectId = myState.holdingItem!.id;
+              var addingItem = TurnEffectItem(
+                  player: player,
+                  timing: timing,
+                  itemID: myState.holdingItem!.id);
               addingItem.setAutoArgs(myState, yourState, state, prevAction);
               ret.add(addingItem);
             }
@@ -905,15 +889,15 @@ class PhaseState extends Equatable implements Copyable {
               if (ailment.isActive(
                   player == PlayerType.me, timing, myState, state)) {
                 // ターン経過で効果が現れる状態変化の判定
-                var adding = TurnEffect()
-                  ..playerType = player
-                  ..timing = timing
-                  ..effectType = EffectType.ailment
-                  ..effectId = AilmentEffect.getIdFromAilment(ailment)
+                var adding = TurnEffectAilment(
+                    player: player,
+                    timing: timing,
+                    ailmentEffectID: AilmentEffect.getIdFromAilment(ailment))
                   ..extraArg1 = ailment.id == Ailment.partiallyTrapped
                       ? ailment.extraArg1
                       : ailment.turns;
-                adding.setAutoArgs(myState, yourState, state, prevAction);
+                adding.setAutoArgs(
+                    myState, yourState, state, prevAction, ailment.turns);
                 ret.add(adding);
               }
             }
@@ -923,14 +907,18 @@ class PhaseState extends Equatable implements Copyable {
             for (final field in fields) {
               if (field.isActive(timing, myState, state)) {
                 // ターン経過で終了する場の判定
-                var adding = TurnEffect()
-                  ..playerType =
-                      field.isEntireField ? PlayerType.entireField : player
-                  ..timing = timing
-                  ..effectType = EffectType.individualField
-                  ..effectId = IndiFieldEffect.getIdFromIndiField(field);
+                var adding = TurnEffectIndividualField(
+                    player:
+                        field.isEntireField ? PlayerType.entireField : player,
+                    timing: timing,
+                    indiFieldEffectID:
+                        IndiFieldEffect.getIdFromIndiField(field));
                 adding.setAutoArgs(myState, yourState, state, prevAction);
-                if (ret.where((element) => element.nearEqual(adding)).isEmpty) {
+                if (ret
+                    .where((element) =>
+                        element is TurnEffectIndividualField &&
+                        element.nearEqual(adding))
+                    .isEmpty) {
                   // 両者の場の場合に重複がないようにする
                   ret.add(adding);
                 }
@@ -985,11 +973,8 @@ class PhaseState extends Equatable implements Copyable {
                 extraArg2 = 6;
               }
             }
-            ret.add(TurnEffect()
-              ..playerType = PlayerType.entireField
-              ..timing = Timing.everyTurnEnd
-              ..effectType = EffectType.weather
-              ..effectId = e
+            ret.add(TurnEffectWeather(
+                timing: Timing.everyTurnEnd, weatherEffectID: e)
               ..extraArg1 = extraArg1
               ..extraArg2 = extraArg2);
           }
@@ -1010,13 +995,10 @@ class PhaseState extends Equatable implements Copyable {
                 extraArg2 = -6;
               }
             }
-            ret.add(TurnEffect()
-              ..playerType = PlayerType.entireField
-              ..timing = Timing.everyTurnEnd
-              ..effectType = EffectType.field
-              ..effectId = e
-              ..extraArg1 = extraArg1
-              ..extraArg2 = extraArg2);
+            ret.add(
+                TurnEffectField(timing: Timing.everyTurnEnd, fieldEffectID: e)
+                  ..extraArg1 = extraArg1
+                  ..extraArg2 = extraArg2);
           }
         }
         break;
@@ -1036,11 +1018,10 @@ class PhaseState extends Equatable implements Copyable {
                 (myState.currentAbility.id == 303 ||
                     myState.currentAbility.id == 306)) {
               // おもかげやどし/ゼロフォーミング
-              ret.add(TurnEffect()
-                ..playerType = player
-                ..timing = Timing.afterTerastal
-                ..effectType = EffectType.ability
-                ..effectId = myState.currentAbility.id);
+              ret.add(TurnEffectAbility(
+                  player: player,
+                  timing: Timing.afterTerastal,
+                  abilityID: myState.currentAbility.id));
             }
           }
         }
@@ -1107,11 +1088,10 @@ class PhaseState extends Equatable implements Copyable {
 
       // とくせい
       if (playerTimings.contains(myState.currentAbility.timing)) {
-        var addingAbility = TurnEffect()
-          ..playerType = player
-          ..timing = timing
-          ..effectType = EffectType.ability
-          ..effectId = myState.currentAbility.id;
+        var addingAbility = TurnEffectAbility(
+            player: player,
+            timing: timing,
+            abilityID: myState.currentAbility.id);
         addingAbility.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingAbility);
       }
@@ -1124,19 +1104,18 @@ class PhaseState extends Equatable implements Copyable {
       }
       if (myState.holdingItem != null &&
           playerTimings.contains(myState.holdingItem!.timing)) {
-        var addingItem = TurnEffect()
-          ..playerType = player
-          ..timing = timing
-          ..effectType = EffectType.item
-          ..effectId = myState.holdingItem!.id;
+        var addingItem = TurnEffectItem(
+            player: player, timing: timing, itemID: myState.holdingItem!.id);
         addingItem.setAutoArgs(myState, yourState, state, prevAction);
         ret.add(addingItem);
       }
     }
 
+/*
     for (var effect in ret) {
       effect.isAutoSet = true;
     }
+*/
 
     return ret;
   }
@@ -1281,9 +1260,6 @@ class PhaseState extends Equatable implements Copyable {
     }
     // phaseIndex
     ret.phaseIndex = int.parse(stateElements.removeAt(0));
-    // userForces
-    ret.userForces =
-        UserForces.deserialize(stateElements.removeAt(0), split2, split3);
     // hasOwnTerastal
     ret.hasOwnTerastal = stateElements.removeAt(0) == '1';
     // hasOpponentTerastal
@@ -1306,8 +1282,9 @@ class PhaseState extends Equatable implements Copyable {
     // firstAction
     final element = stateElements.removeAt(0);
     if (element != '') {
-      ret.firstAction =
-          TurnMove.deserialize(element, split2, split3, version: version);
+      ret.firstAction = TurnEffectAction.deserialize(
+          element, split2, split3, split4,
+          version: version);
     }
 
     return ret;
@@ -1365,9 +1342,6 @@ class PhaseState extends Equatable implements Copyable {
     // phaseIndex
     ret += phaseIndex.toString();
     ret += split1;
-    // userForces
-    ret += userForces.serialize(split2, split3);
-    ret += split1;
     // hasOwnTerastal
     ret += hasOwnTerastal ? '1' : '0';
     ret += split1;
@@ -1393,7 +1367,9 @@ class PhaseState extends Equatable implements Copyable {
     }
     ret += split1;
     // firstAction
-    ret += firstAction != null ? firstAction!.serialize(split2, split3) : '';
+    ret += firstAction != null
+        ? firstAction!.serialize(split2, split3, split4)
+        : '';
 
     return ret;
   }

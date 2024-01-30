@@ -7,51 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-// 天気による効果(TurnEffectのeffectIdに使用する定数を提供)
-class WeatherEffect {
-  static const int none = 0;
-  static const int sunnyEnd = 1; // 晴れ終了
-  static const int rainyEnd = 2; // あめ終了
-  static const int sandStormEnd = 3; // すなあらし終了
-  static const int snowyEnd = 4; // ゆき終了
-  static const int sandStormDamage = 5; // すなあらしダメージ
-
-  static const Map<int, Tuple2<String, String>> _displayNameMap = {
-    0: Tuple2('', ''),
-    1: Tuple2('晴れ終了', 'Sunny End'),
-    2: Tuple2('あめ終了', 'Rainy End'),
-    3: Tuple2('すなあらし終了', 'Sandstorm End'),
-    4: Tuple2('ゆき終了', 'Snowy End'),
-    5: Tuple2('すなあらしによるダメージ', 'Sandstorm Damage'),
-  };
-
-  const WeatherEffect(this.id);
-
-  static int getIdFromWeather(Weather weather) {
-    switch (weather.id) {
-      case Weather.sunny:
-      case Weather.rainy:
-      case Weather.sandStorm:
-      case Weather.snowy:
-        return weather.id;
-      default:
-        return 0;
-    }
-  }
-
-  String get displayName {
-    switch (PokeDB().language) {
-      case Language.japanese:
-        return _displayNameMap[id]!.item1;
-      case Language.english:
-      default:
-        return _displayNameMap[id]!.item2;
-    }
-  }
-
-  final int id;
-}
-
 // 天気
 class Weather extends Equatable implements Copyable {
   static const int none = 0;

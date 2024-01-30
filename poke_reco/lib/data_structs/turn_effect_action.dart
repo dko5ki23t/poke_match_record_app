@@ -6,7 +6,6 @@ import 'package:poke_reco/custom_widgets/stand_alone_checkbox.dart';
 import 'package:poke_reco/custom_widgets/stand_alone_switch_list.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/guide.dart';
-import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -16,6 +15,9 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -236,8 +238,8 @@ enum CommandWidgetTemplate {
   select2UpStat,
 }
 
-class TurnMove extends Equatable implements Copyable {
-  PlayerType playerType = PlayerType.none;
+class TurnEffectAction extends TurnEffect {
+  PlayerType _playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.unknown; // テラスタルなし
   Move move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
@@ -259,6 +261,10 @@ class TurnMove extends Equatable implements Copyable {
   PokeType moveType = PokeType.unknown;
   bool isFirst = false; // ターン内最初の行動か
   bool _isValid = false;
+
+  TurnEffectAction({required player}) : super(EffectType.action) {
+    _playerType = player;
+  }
 
   @override
   List<Object?> get props => [
@@ -284,8 +290,7 @@ class TurnMove extends Equatable implements Copyable {
       ];
 
   @override
-  TurnMove copy() => TurnMove()
-    ..playerType = playerType
+  TurnEffectAction copy() => TurnEffectAction(player: playerType)
     ..type = type
     ..teraType = teraType
     ..move = move.copy()
@@ -304,6 +309,15 @@ class TurnMove extends Equatable implements Copyable {
     ..moveType = moveType
     ..isFirst = isFirst
     .._isValid = _isValid;
+
+  @override
+  String displayName({required AppLocalizations loc}) => move.displayName;
+
+  @override
+  PlayerType get playerType => _playerType;
+
+  @override
+  set playerType(type) => _playerType = type;
 
   int? getChangePokemonIndex(PlayerType player) {
     if (player == PlayerType.me) return _changePokemonIndexes[0];
@@ -422,14 +436,15 @@ class TurnMove extends Equatable implements Copyable {
     }
   }
 
-  List<Guide> processMove(
+  @override
+  List<Guide> processEffect(
     Party ownParty,
-    Party opponentParty,
     PokemonState ownState,
+    Party opponentParty,
     PokemonState opponentState,
     PhaseState state,
-    int continuousCount,
-    List<int> invalidGuideIDs, {
+    TurnEffect? prevAction,
+    int continuousCount, {
     DamageGetter? damageGetter,
     required AppLocalizations loc,
   }) {
@@ -442,6 +457,11 @@ class TurnMove extends Equatable implements Copyable {
     var myState = playerType == PlayerType.me ? ownState : opponentState;
     var yourState = playerType == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copy();
+
+    // テラスタル済みならわざもテラスタル化
+    if (myState.isTerastaling) {
+      teraType = myState.teraType1;
+    }
 
     // 行動1の場合は登録
     if (isFirst) {
@@ -515,36 +535,36 @@ class TurnMove extends Equatable implements Copyable {
     // ゾロアーク判定
     // ゾロアーク判定だけは、有効/無効でこの後の処理が変わるため、
     // TurnEffectのinvalidGuideIDsに含まれるかどうかチェックする必要がある
-    if (!invalidGuideIDs.contains(Guide.confZoroark)) {
-      int check = 0;
-      check += state.canZorua ? PokeBase.zoruaNo : 0;
-      check += state.canZoroark ? PokeBase.zoroarkNo : 0;
-      check += state.canZoruaHisui ? PokeBase.zoruaHisuiNo : 0;
-      check += state.canZoroarkHisui ? PokeBase.zoroarkHisuiNo : 0;
-      if (check == PokeBase.zoruaNo ||
-          check == PokeBase.zoroarkNo ||
-          check == PokeBase.zoruaHisuiNo ||
-          check == PokeBase.zoroarkHisuiNo) {
-        // へんしん状態でなく、当該ポケモンが使えないわざを選択していたら
-        if (pokeData.pokeBase[myState.pokemon.no]!.move
-                .where((e) => e.id == move.id && e.id != 0)
-                .isEmpty &&
-            !myState.buffDebuffs.containsByID(BuffDebuff.transform)) {
-          ret.add(Guide()
-            ..guideId = Guide.confZoroark
-            ..canDelete = true
-            ..guideStr = loc.battleGuideConfZoroark(
-                myState.pokemon.name, pokeData.pokeBase[check]!.name));
-          state.makePokemonOther(playerType, check);
-          myState = state.getPokemonState(playerType, null);
-          myState.setCurrentAbility(pokeData.abilities[149]!, yourState,
-              playerType == PlayerType.me, state);
-          ownPokemonState = state.getPokemonState(PlayerType.me, null);
-          opponentPokemonState =
-              state.getPokemonState(PlayerType.opponent, null);
-        }
-      }
-    }
+//    if (!invalidGuideIDs.contains(Guide.confZoroark)) {
+//      int check = 0;
+//      check += state.canZorua ? PokeBase.zoruaNo : 0;
+//      check += state.canZoroark ? PokeBase.zoroarkNo : 0;
+//      check += state.canZoruaHisui ? PokeBase.zoruaHisuiNo : 0;
+//      check += state.canZoroarkHisui ? PokeBase.zoroarkHisuiNo : 0;
+//      if (check == PokeBase.zoruaNo ||
+//          check == PokeBase.zoroarkNo ||
+//          check == PokeBase.zoruaHisuiNo ||
+//          check == PokeBase.zoroarkHisuiNo) {
+//        // へんしん状態でなく、当該ポケモンが使えないわざを選択していたら
+//        if (pokeData.pokeBase[myState.pokemon.no]!.move
+//                .where((e) => e.id == move.id && e.id != 0)
+//                .isEmpty &&
+//            !myState.buffDebuffs.containsByID(BuffDebuff.transform)) {
+//          ret.add(Guide()
+//            ..guideId = Guide.confZoroark
+//            ..canDelete = true
+//            ..guideStr = loc.battleGuideConfZoroark(
+//                myState.pokemon.name, pokeData.pokeBase[check]!.name));
+//          state.makePokemonOther(playerType, check);
+//          myState = state.getPokemonState(playerType, null);
+//          myState.setCurrentAbility(pokeData.abilities[149]!, yourState,
+//              playerType == PlayerType.me, state);
+//          ownPokemonState = state.getPokemonState(PlayerType.me, null);
+//          opponentPokemonState =
+//              state.getPokemonState(PlayerType.opponent, null);
+//        }
+//      }
+//    }
 
     // わざ確定(失敗時でも確定はできる)
     var tmp = myState.moves
@@ -2048,17 +2068,13 @@ class TurnMove extends Equatable implements Copyable {
               Item usingItem = pokeData.items[extraArg1[continuousCount]]!;
               Item? mySavingItem = myState.holdingItem;
               targetState.holdingItem = null;
-              Item.processEffect(
-                usingItem.id,
-                myPlayerType,
-                myState,
-                targetState,
-                state,
-                extraArg2[continuousCount],
-                0,
-                getChangePokemonIndex(myPlayerType),
-                loc: loc,
-              );
+              final itemEffect = TurnEffectItem(
+                  player: playerType,
+                  timing: Timing.action,
+                  itemID: usingItem.id);
+              itemEffect.processEffect(ownParty, ownState, opponentParty,
+                  opponentState, state, prevAction, continuousCount,
+                  loc: loc, autoConsume: false);
               myState.holdingItem = mySavingItem;
             }
             break;
@@ -3296,15 +3312,12 @@ class TurnMove extends Equatable implements Copyable {
             break;
           case 424: // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
             if (extraArg1[continuousCount] != 0) {
-              Item.processEffect(
-                  extraArg1[continuousCount],
-                  playerType,
-                  myState,
-                  yourState,
-                  state,
-                  extraArg2[continuousCount],
-                  0,
-                  getChangePokemonIndex(myPlayerType),
+              final itemEffect = TurnEffectItem(
+                  player: playerType,
+                  timing: Timing.action,
+                  itemID: extraArg1[continuousCount]);
+              itemEffect.processEffect(ownParty, ownState, opponentParty,
+                  opponentState, state, prevAction, continuousCount,
                   loc: loc);
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState,
@@ -7624,25 +7637,28 @@ class TurnMove extends Equatable implements Copyable {
     _isValid = false;
   }
 
-  // SQLに保存された文字列からTurnMoveをパース
-  static TurnMove deserialize(dynamic str, String split1, String split2,
+  // SQLに保存された文字列からTurnEffectActionをパース
+  static TurnEffectAction deserialize(
+      dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
     // -1は最新バージョン
-    TurnMove turnMove = TurnMove();
     final List turnMoveElements = str.split(split1);
+    // effectType
+    turnMoveElements.removeAt(0);
     // playerType
-    turnMove.playerType =
+    final playerType =
         PlayerTypeNum.createFromNumber(int.parse(turnMoveElements.removeAt(0)));
+    TurnEffectAction turnEffectAction = TurnEffectAction(player: playerType);
     // type
-    turnMove.type = TurnMoveTypeNum.createFromNumber(
+    turnEffectAction.type = TurnMoveTypeNum.createFromNumber(
         int.parse(turnMoveElements.removeAt(0)));
     // teraType
-    turnMove.teraType =
+    turnEffectAction.teraType =
         PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // move
     if (version == 1) {
       final List moveElements = turnMoveElements.removeAt(0).split(split2);
-      turnMove.move = Move(
+      turnEffectAction.move = Move(
         int.parse(moveElements.removeAt(0)),
         moveElements.removeAt(0),
         '',
@@ -7657,89 +7673,99 @@ class TurnMove extends Equatable implements Copyable {
         int.parse(moveElements.removeAt(0)),
       );
     } else {
-      turnMove.move = PokeDB().moves[int.parse(turnMoveElements.removeAt(0))]!;
+      turnEffectAction.move =
+          PokeDB().moves[int.parse(turnMoveElements.removeAt(0))]!;
     }
     // isSuccess
-    turnMove.isSuccess = int.parse(turnMoveElements.removeAt(0)) != 0;
+    turnEffectAction.isSuccess = int.parse(turnMoveElements.removeAt(0)) != 0;
     // actionFailure
-    turnMove.actionFailure =
+    turnEffectAction.actionFailure =
         ActionFailure(int.parse(turnMoveElements.removeAt(0)));
     // hitCount
-    turnMove.hitCount = int.parse(turnMoveElements.removeAt(0));
+    turnEffectAction.hitCount = int.parse(turnMoveElements.removeAt(0));
     // criticalCount
-    turnMove.criticalCount = int.parse(turnMoveElements.removeAt(0));
+    turnEffectAction.criticalCount = int.parse(turnMoveElements.removeAt(0));
     // moveEffectiveness
     var moveEffectivenesses = turnMoveElements.removeAt(0).split(split2);
-    turnMove.moveEffectivenesses.clear();
+    turnEffectAction.moveEffectivenesses.clear();
     for (var moveEffectivenessElement in moveEffectivenesses) {
       if (moveEffectivenessElement == '') break;
-      turnMove.moveEffectivenesses
+      turnEffectAction.moveEffectivenesses
           .add(MoveEffectiveness.values[int.parse(moveEffectivenessElement)]);
     }
     // realDamage
     var realDamages = turnMoveElements.removeAt(0).split(split2);
-    turnMove.realDamage.clear();
+    turnEffectAction.realDamage.clear();
     for (var realDamage in realDamages) {
       if (realDamage == '') break;
-      turnMove.realDamage.add(int.parse(realDamage));
+      turnEffectAction.realDamage.add(int.parse(realDamage));
     }
     // percentDamage
     var percentDamages = turnMoveElements.removeAt(0).split(split2);
-    turnMove.percentDamage.clear();
+    turnEffectAction.percentDamage.clear();
     for (var percentDamage in percentDamages) {
       if (percentDamage == '') break;
-      turnMove.percentDamage.add(int.parse(percentDamage));
+      turnEffectAction.percentDamage.add(int.parse(percentDamage));
     }
     // moveAdditionalEffect
     var moveAdditionalEffects = turnMoveElements.removeAt(0).split(split2);
-    turnMove.moveAdditionalEffects.clear();
+    turnEffectAction.moveAdditionalEffects.clear();
     for (var moveAdditionalEffect in moveAdditionalEffects) {
       if (moveAdditionalEffect == '') break;
-      turnMove.moveAdditionalEffects
+      turnEffectAction.moveAdditionalEffects
           .add(MoveEffect(int.parse(moveAdditionalEffect)));
     }
     // extraArg1
     var extraArg1s = turnMoveElements.removeAt(0).split(split2);
-    turnMove.extraArg1.clear();
+    turnEffectAction.extraArg1.clear();
     for (var e in extraArg1s) {
       if (e == '') break;
-      turnMove.extraArg1.add(int.parse(e));
+      turnEffectAction.extraArg1.add(int.parse(e));
     }
     // extraArg2
     var extraArg2s = turnMoveElements.removeAt(0).split(split2);
-    turnMove.extraArg2.clear();
+    turnEffectAction.extraArg2.clear();
     for (var e in extraArg2s) {
       if (e == '') break;
-      turnMove.extraArg2.add(int.parse(e));
+      turnEffectAction.extraArg2.add(int.parse(e));
     }
     // extraArg3
     var extraArg3s = turnMoveElements.removeAt(0).split(split2);
-    turnMove.extraArg3.clear();
+    turnEffectAction.extraArg3.clear();
     for (var e in extraArg3s) {
       if (e == '') break;
-      turnMove.extraArg3.add(int.parse(e));
+      turnEffectAction.extraArg3.add(int.parse(e));
     }
     // _changePokemonIndexes
     var changePokemonIndexes = turnMoveElements.removeAt(0).split(split2);
     for (int i = 0; i < 2; i++) {
       if (changePokemonIndexes[i] == '') {
-        turnMove._changePokemonIndexes[i] = null;
+        turnEffectAction._changePokemonIndexes[i] = null;
       } else {
-        turnMove._changePokemonIndexes[i] = int.parse(changePokemonIndexes[i]);
+        turnEffectAction._changePokemonIndexes[i] =
+            int.parse(changePokemonIndexes[i]);
       }
     }
     // moveType
-    turnMove.moveType =
+    turnEffectAction.moveType =
         PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // isFirst
-    turnMove.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
+    turnEffectAction.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
 
-    return turnMove;
+    return turnEffectAction;
   }
 
   // SQL保存用の文字列に変換
-  String serialize(String split1, String split2) {
+  @override
+  String serialize(
+    String split1,
+    String split2,
+    String split3,
+  ) {
     String ret = '';
+    // effectType
+    ret += effectType.index.toString();
+    ret += split1;
     // playerType
     ret += playerType.number.toString();
     ret += split1;
@@ -7857,6 +7883,7 @@ class TurnMove extends Equatable implements Copyable {
     return ret;
   }
 
+  @override
   bool isValid() {
     if (!_isValid) {
       return false;

@@ -7,8 +7,9 @@ import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -93,7 +94,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   List<Color> opponentFilters = [];
   int turnNum = 1;
   int focusPhaseIdx = 0; // 0は無効
-  List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
+  //List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
   int viewMode = 0; // 0:ランク 1:種族値 2:ステータス(補正前) 3:ステータス(補正後)
   bool isEditMode = false;
 
@@ -108,6 +109,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
   PlayerType? firstActionPlayer;
 
+/*
   TurnEffect? _getPrevTimingEffect(int index) {
     TurnEffect? ret;
     var currentTurn = widget.battle.turns[turnNum - 1];
@@ -120,6 +122,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
     return ret;
   }
+*/
 
   @override
   Widget build(BuildContext context) {
@@ -215,13 +218,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }*/
     }
 
-    var ownLastAction = turns.isNotEmpty
+    final ownLastAction = turns.isNotEmpty
         ? turns[turnNum - 1].phases.getLatestAction(PlayerType.me)
-        : TurnEffect();
-    var opponentLastAction = turns.isNotEmpty
+        : null;
+    final opponentLastAction = turns.isNotEmpty
         ? turns[turnNum - 1].phases.getLatestAction(PlayerType.opponent)
-        : TurnEffect();
-    var prevState =
+        : null;
+    final prevState =
         turns.isNotEmpty ? turns[turnNum - 1].copyInitialState() : null;
 
     Widget lists;
@@ -233,15 +236,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       // TODO?: 入力された値が正しいかチェック
       var battle = widget.battle;
       if (turns.isNotEmpty) {
-        if (turns.last.phases.where((e) => e.isMyWin).isNotEmpty) {
+        if (turns.last.isMyWin) {
           battle.isMyWin = true;
         }
-        if (turns.last.phases.where((e) => e.isYourWin).isNotEmpty) {
+        if (turns.last.isYourWin) {
           battle.isYourWin = true;
         }
+/*
         for (var phase in turns[turnNum - 1].phases) {
           phase.isAutoSet = false;
         }
+*/
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
 
@@ -478,6 +483,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           appState.editingPhase =
               List.generate(currentTurn.phases.length, (index) => false);
           // テキストフィールドの初期値設定
+/*
           textEditingControllerList1 = List.generate(
               currentTurn.phases.length,
               (index) => TextEditingController(
@@ -504,14 +510,17 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   text: currentTurn.phases[index].getEditingControllerText4(
                       currentTurn.getProcessedStates(
                           index, ownParty, opponentParty, loc))));
+*/
           pageType = RegisterBattlePageType.turnPage;
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
           Turn prevTurn = turns[turnNum - 1];
+/*
           for (var phase in prevTurn.phases) {
             phase.isAutoSet = false;
           }
+*/
           turnNum++;
           if (turns.length < turnNum) {
             turns.add(Turn());
@@ -528,6 +537,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           appState.editingPhase =
               List.generate(currentTurn.phases.length, (index) => false);
           // テキストフィールドの初期値設定
+          /*
           textEditingControllerList1 = List.generate(
               currentTurn.phases.length,
               (index) => TextEditingController(
@@ -554,6 +564,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   text: currentTurn.phases[index].getEditingControllerText4(
                       currentTurn.getProcessedStates(
                           index, ownParty, opponentParty, loc))));
+                          */
           pageType = RegisterBattlePageType.turnPage;
           // 行動入力画面を初期化
           ownBattleCommandKey.currentState?.reset();
@@ -575,9 +586,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         case RegisterBattlePageType.turnPage:
           // 表示のスクロール位置をトップに
           //turnScrollController.jumpTo(0);
+/*
           for (var phase in turns[turnNum - 1].phases) {
             phase.isAutoSet = false;
           }
+*/
           turnNum--;
           if (turnNum == 0) {
             turnNum = 1;
@@ -586,6 +599,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             var currentTurn = turns[turnNum - 1];
             appState.editingPhase =
                 List.generate(currentTurn.phases.length, (index) => false);
+/*
             textEditingControllerList1 = List.generate(
                 currentTurn.phases.length,
                 (index) => TextEditingController(
@@ -617,6 +631,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             index, ownParty, opponentParty, loc),
                       ),
                     ));
+*/
             pageType = RegisterBattlePageType.turnPage;
           }
           focusPhaseIdx = 0;
@@ -694,8 +709,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
         if (widget.battle.turns.isNotEmpty &&
             widget.battle.turns[turnNum - 1].isValid() &&
-            widget.battle.turns[turnNum - 1].phases.last.timing !=
-                Timing.gameSet) {
+            !widget.battle.turns[turnNum - 1].isGameSet) {
           nextPressed = () => onNext();
         } else {
           nextPressed = null;
@@ -721,11 +735,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   ),
                   Expanded(
                     flex: 6,
-                    child: ownLastAction.effectType == EffectType.move
+                    child: ownLastAction is TurnEffectAction
                         ? BattleActionCommand(
                             key: ownBattleCommandKey,
                             playerType: PlayerType.me,
-                            turnMove: ownLastAction.move!,
+                            turnMove: ownLastAction,
                             phaseState: prevState!,
                             myParty: ownParty,
                             yourParty: opponentParty,
@@ -751,8 +765,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 ? firstActionPlayer == PlayerType.me
                                 : null,
                           )
-                        : ownLastAction.effectType ==
-                                EffectType.changeFaintingPokemon
+                        : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.me,
                                 turnEffect: ownLastAction,
@@ -811,11 +824,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   ),
                   Expanded(
                     flex: 6,
-                    child: opponentLastAction.effectType == EffectType.move
+                    child: opponentLastAction is TurnEffectAction
                         ? BattleActionCommand(
                             key: opponentBattleCommandKey,
                             playerType: PlayerType.opponent,
-                            turnMove: opponentLastAction.move!,
+                            turnMove: opponentLastAction,
                             phaseState: prevState!,
                             myParty: opponentParty,
                             yourParty: ownParty,
@@ -841,8 +854,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                 ? firstActionPlayer == PlayerType.opponent
                                 : null,
                           )
-                        : opponentLastAction.effectType ==
-                                EffectType.changeFaintingPokemon
+                        : opponentLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.opponent,
                                 turnEffect: opponentLastAction,

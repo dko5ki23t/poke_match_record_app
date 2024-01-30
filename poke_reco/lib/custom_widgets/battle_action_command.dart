@@ -4,7 +4,7 @@ import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/poke_move.dart';
+import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -31,7 +31,7 @@ class BattleActionCommand extends StatefulWidget {
   }) : super(key: key);
 
   final PlayerType playerType;
-  final TurnMove turnMove;
+  final TurnEffectAction turnMove;
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
@@ -92,7 +92,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];
         DamageGetter getter = DamageGetter();
-        TurnMove tmp = turnMove.copy();
+        TurnEffectAction tmp = turnMove.copy();
         tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
         if (turnMove.isCriticalFromMove(
             myMove, myState, yourState, yourFields)) {
@@ -110,14 +110,14 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 .isNotEmpty,
             turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState),
             yourState);
-        tmp.processMove(
+        tmp.processEffect(
           playerType == PlayerType.me ? myParty.copy() : yourParty.copy(),
-          playerType == PlayerType.me ? yourParty.copy() : myParty.copy(),
           playerType == PlayerType.me ? myState.copy() : yourState.copy(),
+          playerType == PlayerType.me ? yourParty.copy() : myParty.copy(),
           playerType == PlayerType.me ? yourState.copy() : myState.copy(),
           prevState.copy(),
+          null,
           0,
-          [],
           damageGetter: getter,
           loc: loc,
         );
