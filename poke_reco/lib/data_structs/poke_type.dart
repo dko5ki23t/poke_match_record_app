@@ -220,10 +220,12 @@ extension PokeTypeEffectiveness on PokeType {
     } else {
       types = [state.type1];
       if (state.type2 != null) types.add(state.type2!);
-      if (state.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty)
+      if (state.ailmentsWhere((e) => e.id == Ailment.halloween).isNotEmpty) {
         types.add(PokeType.ghost);
-      if (state.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty)
+      }
+      if (state.ailmentsWhere((e) => e.id == Ailment.forestCurse).isNotEmpty) {
         types.add(PokeType.grass);
+      }
     }
     int deg = 0;
     if (attackType == PokeType.stellar) {
@@ -235,8 +237,9 @@ extension PokeTypeEffectiveness on PokeType {
       for (final type in types) {
         switch (attackType) {
           case PokeType.normal:
-            if (type == PokeType.rock || type == PokeType.steel)
+            if (type == PokeType.rock || type == PokeType.steel) {
               deg--; // ノーマル->いわ/はがね
+            }
             if (!isRingTarget &&
                 !canNormalFightToGhost &&
                 type == PokeType.ghost) return 0; // ノーマル->ゴースト
@@ -280,8 +283,9 @@ extension PokeTypeEffectiveness on PokeType {
                 type == PokeType.steel) deg++;
             if (type == PokeType.grass || type == PokeType.bug) deg--;
             if (!isRingTarget &&
-                (type == PokeType.fly || state.holdingItem?.id == 584))
+                (type == PokeType.fly || state.holdingItem?.id == 584)) {
               return 0;
+            }
             break;
           case PokeType.rock:
             if (type == PokeType.fire ||
@@ -358,8 +362,9 @@ extension PokeTypeEffectiveness on PokeType {
           case PokeType.psychic:
             if (type == PokeType.fight || type == PokeType.poison) deg++;
             if (type == PokeType.psychic || type == PokeType.steel) deg--;
-            if (!isRingTarget && !isMiracleEye && type == PokeType.evil)
+            if (!isRingTarget && !isMiracleEye && type == PokeType.evil) {
               return 0;
+            }
             break;
           case PokeType.ice:
             if (type == PokeType.grass ||

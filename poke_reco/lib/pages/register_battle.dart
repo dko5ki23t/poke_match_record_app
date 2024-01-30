@@ -9,6 +9,7 @@ import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_user_edit.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
@@ -726,7 +727,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       playerType: PlayerType.me,
                       focusState: focusState!,
                       playerName: loc.battleYou,
-                      onStatusEdit: () => setState(() {}),
+                      onStatusEdit: (abilityChanged, ability, itemChanged, item,
+                          hpChanged, remainHP) {
+                        final TurnEffectUserEdit userEdit =
+                            TurnEffectUserEdit();
+                        if (abilityChanged) {
+                          userEdit.add(UserEdit(
+                              PlayerType.me, UserEdit.ability, ability.id));
+                        }
+                        if (itemChanged) {
+                          userEdit.add(UserEdit(PlayerType.me, UserEdit.item,
+                              item != null ? item.id : -1));
+                        }
+                        if (hpChanged) {
+                          userEdit.add(
+                              UserEdit(PlayerType.me, UserEdit.hp, remainHP));
+                        }
+                        turns[turnNum - 1].phases.addNextToLastValid(userEdit);
+                        setState(() {});
+                      },
                     ),
                   ),
                   SizedBox(
@@ -815,7 +834,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       playerType: PlayerType.opponent,
                       focusState: focusState,
                       playerName: widget.battle.opponentName,
-                      onStatusEdit: () => setState(() {}),
+                      onStatusEdit: (abilityChanged, ability, itemChanged, item,
+                          hpChanged, remainHP) {
+                        final TurnEffectUserEdit userEdit =
+                            TurnEffectUserEdit();
+                        if (abilityChanged) {
+                          userEdit.add(UserEdit(PlayerType.opponent,
+                              UserEdit.ability, ability.id));
+                        }
+                        if (itemChanged) {
+                          userEdit.add(UserEdit(PlayerType.opponent,
+                              UserEdit.item, item != null ? item.id : -1));
+                        }
+                        if (hpChanged) {
+                          userEdit.add(UserEdit(
+                              PlayerType.opponent, UserEdit.hp, remainHP));
+                        }
+                        turns[turnNum - 1].phases.addNextToLastValid(userEdit);
+                        setState(() {});
+                      },
                     ),
                   ),
                   SizedBox(

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_state_edit_dialog.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
+import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -18,7 +20,8 @@ class BattlePokemonStateInfo extends StatefulWidget {
   final PhaseState focusState;
   final PlayerType playerType;
   final String playerName;
-  final void Function() onStatusEdit;
+  final void Function(bool abilityChanged, Ability ability, bool itemChanged,
+      Item? item, bool hpChanged, int remainHP) onStatusEdit;
 
   @override
   BattlePokemonStateInfoState createState() => BattlePokemonStateInfoState();
@@ -47,25 +50,13 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
               showDialog(
                   context: context,
                   builder: (_) {
-                    return PokemonStateEditDialog(focusingPokemonState,
-                        (abilityChanged, ability, itemChanged, item, hpChanged,
-                            remainHP) {
-                      // TODO:userForceにする？
-                      if (abilityChanged) {
-                        focusingPokemonState.setCurrentAbilityNoEffect(ability);
-                      }
-                      if (itemChanged) {
-                        focusingPokemonState.holdingItem = item;
-                      }
-                      if (hpChanged) {
-                        if (playerType == PlayerType.me) {
-                          focusingPokemonState.remainHP = remainHP;
-                        } else {
-                          focusingPokemonState.remainHPPercent = remainHP;
-                        }
-                      }
-                      widget.onStatusEdit();
-                    });
+                    return PokemonStateEditDialog(
+                      focusingPokemonState,
+                      (abilityChanged, ability, itemChanged, item, hpChanged,
+                              remainHP) =>
+                          widget.onStatusEdit(abilityChanged, ability,
+                              itemChanged, item, hpChanged, remainHP),
+                    );
                   });
             },
             child: FittedBox(
