@@ -14,7 +14,7 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPokemonPage extends StatefulWidget {

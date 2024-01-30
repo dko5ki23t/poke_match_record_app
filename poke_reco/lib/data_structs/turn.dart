@@ -3,13 +3,13 @@ import 'dart:collection';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn_effect.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/tool.dart';
 
 // 自身・相手の行動(timing==Timing.action)をそれぞれ1つずつ含んだリスト

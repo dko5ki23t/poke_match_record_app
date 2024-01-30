@@ -1,7 +1,7 @@
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter/material.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
 class PokeTypeColor {

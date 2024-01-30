@@ -6,7 +6,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 
 class TurnEffectAfterMove extends TurnEffect {
   TurnEffectAfterMove({required player, required this.effectID})

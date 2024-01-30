@@ -1,6 +1,5 @@
-import 'package:collection/collection.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:test/test.dart';
 

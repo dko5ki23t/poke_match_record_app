@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/battle.dart';

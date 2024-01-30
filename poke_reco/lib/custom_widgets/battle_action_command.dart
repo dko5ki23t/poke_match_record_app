@@ -4,7 +4,7 @@ import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';

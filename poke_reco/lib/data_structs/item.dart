@@ -10,7 +10,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:poke_reco/data_structs/turn_effect_item.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/tool.dart';
 
 // なげつけたときの効果

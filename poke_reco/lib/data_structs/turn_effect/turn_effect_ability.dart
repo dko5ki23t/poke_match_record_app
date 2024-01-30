@@ -4,7 +4,6 @@ import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
-import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -12,9 +11,9 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn_effect.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
-import 'package:poke_reco/data_structs/turn_effect_item.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 
 class TurnEffectAbility extends TurnEffect {

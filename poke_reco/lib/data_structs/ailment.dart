@@ -1,10 +1,8 @@
 // 状態変化
 
-import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn_effect_action.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';

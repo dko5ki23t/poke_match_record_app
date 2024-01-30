@@ -6,7 +6,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
-import 'package:poke_reco/data_structs/turn_effect_change_fainting_pokemon.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 
 class BattleChangeFaintingCommand extends StatefulWidget {
   const BattleChangeFaintingCommand({
