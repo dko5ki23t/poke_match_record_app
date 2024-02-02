@@ -5,6 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "App of Integration Test",
+            "type": "dart",
+            "request": "launch",
+            "program": "poke_reco/test_driver/app.dart",
+            "args": ["--observatory-port", "8888", "--disable-service-auth-codes"]
+        },
+        {
             "name": "poke_reco",
             "cwd": "poke_reco",
             "request": "launch",

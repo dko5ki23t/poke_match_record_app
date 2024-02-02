@@ -1187,9 +1187,16 @@ class PhaseState extends Equatable implements Copyable {
   }
 
   // SQLに保存された文字列からTurnをパース
-  static PhaseState deserialize(dynamic str, String split1, String split2,
-      String split3, String split4, String split5, String split6,
-      {int version = -1}) // -1は最新バージョン
+  static PhaseState deserialize(
+    dynamic str,
+    String split1,
+    String split2,
+    String split3,
+    String split4,
+    String split5,
+    String split6, {
+    int version = -1,
+  }) // -1は最新バージョン
   {
     PhaseState ret = PhaseState();
     final List stateElements = str.split(split1);

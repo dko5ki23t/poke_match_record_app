@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_state_edit_dialog.dart';
+import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/ailment.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/field.dart';
+import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/weather.dart';
 
 class BattlePokemonStateInfo extends StatefulWidget {
   const BattlePokemonStateInfo({
@@ -40,6 +46,29 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     final focusingPokemonState = focusState.getPokemonState(playerType, null);
     final focusingPokemon = focusingPokemonState.pokemon;
     final PageController controller = PageController();
+
+    List<Widget> statusConditions = [
+      for (final ailment in focusingPokemonState.ailmentsIterable)
+        ailmentViewItem(ailment),
+      for (final buffDebuff in focusingPokemonState.buffDebuffs.list)
+        buffDebuffViewItem(buffDebuff),
+    ];
+    for (int i = 0; i < 7 - statusConditions.length; i++) {
+      statusConditions.add(nullItem());
+    }
+    List<Widget> fields = [
+      for (final indiField in focusState.getIndiFields(playerType))
+        indiFieldViewItem(indiField),
+    ];
+    if (focusState.weather.id != 0) {
+      fields.add(weatherViewItem(focusState.weather));
+    }
+    if (focusState.field.id != 0) {
+      fields.add(fieldViewItem(focusState.field));
+    }
+    for (int i = 0; i < 7 - fields.length; i++) {
+      fields.add(nullItem());
+    }
 
     return Column(
       children: [
@@ -95,13 +124,21 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
-                          fit: FlexFit.loose,
-                          child: focusingPokemonState.type1.displayIcon),
-                      focusingPokemonState.type2 != null
-                          ? Flexible(
+                      Opacity(
+                          opacity:
+                              focusingPokemonState.isTerastaling ? 0.3 : 1.0,
+                          child: Flexible(
                               fit: FlexFit.loose,
-                              child: focusingPokemonState.type2!.displayIcon)
+                              child: focusingPokemonState.type1.displayIcon)),
+                      focusingPokemonState.type2 != null
+                          ? Opacity(
+                              opacity: focusingPokemonState.isTerastaling
+                                  ? 0.3
+                                  : 1.0,
+                              child: Flexible(
+                                  fit: FlexFit.loose,
+                                  child:
+                                      focusingPokemonState.type2!.displayIcon))
                           : Container(),
                       SizedBox(
                         height: 20,
@@ -110,13 +147,22 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                         ),
                       ),
                       focusingPokemonState.isTerastaling
-                          ? Flexible(
-                              fit: FlexFit.loose,
-                              child: focusingPokemonState.teraType1.displayIcon)
-                          : Flexible(
-                              fit: FlexFit.loose,
-                              child: focusingPokemonState
-                                  .pokemon.teraType.displayIcon),
+                          ? Opacity(
+                              opacity: focusingPokemonState.isTerastaling
+                                  ? 1.0
+                                  : 0.3,
+                              child: Flexible(
+                                  fit: FlexFit.loose,
+                                  child: focusingPokemonState
+                                      .teraType1.displayIcon))
+                          : Opacity(
+                              opacity: focusingPokemonState.isTerastaling
+                                  ? 1.0
+                                  : 0.3,
+                              child: Flexible(
+                                  fit: FlexFit.loose,
+                                  child: focusingPokemonState
+                                      .pokemon.teraType.displayIcon)),
                     ],
                   ),
                   // とくせい
@@ -131,11 +177,6 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                     showNone: true,
                     loc: loc,
                   ),
-                  // HP
-                  //        isEditMode ?
-                  //        _HPInputRow(
-                  //          ownHPController, opponentHPController,
-                  //          (userForce) => userForceAdd(focusPhaseIdx, userForce)) :
                   hpBarRow(
                     playerType,
                     playerType == PlayerType.me
@@ -151,50 +192,154 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
         Expanded(
           flex: 6,
           // 各ステータス(HABCDS)の実数値/各ステータス(ABCDSAcEv)の変化/状態変化
-          // TODO
-          child: PageView(
-            controller: controller,
+          child: Stack(
             children: [
-              // 1. 各ステータス(HABCDS)の種族値
-              FittedBox(
-                child: Column(
-                  children: [
-                    Text('種族値'),
-                    for (final stat in StatIndexList.listHtoS)
-                      statStatusViewRow(
-                        stat.alphabet,
-                        focusingPokemonState.minStats[stat].race,
-                        focusingPokemonState.maxStats[stat].race,
+              PageView(
+                controller: controller,
+                children: [
+                  // 1. 各ステータス(HABCDS)の種族値
+                  FittedBox(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(loc.commonStatRace),
+                        for (final stat in StatIndexList.listHtoS)
+                          statStatusViewRow(
+                            stat.alphabet,
+                            focusingPokemonState.minStats[stat].race,
+                            focusingPokemonState.maxStats[stat].race,
+                          ),
+                        Text(' '),
+                      ],
+                    ),
+                  ),
+                  // 2. 各ステータス(HABCDS)の実数値
+                  FittedBox(
+                    child: Column(
+                      children: [
+                        Text(loc.commonStatReal),
+                        for (final stat in StatIndexList.listHtoS)
+                          statStatusViewRow(
+                            stat.alphabet,
+                            focusingPokemonState.minStats[stat].real,
+                            focusingPokemonState.maxStats[stat].real,
+                          ),
+                        Text(' '),
+                      ],
+                    ),
+                  ),
+                  // 3. 各ステータス(ABCDSAcEv)のランク変化
+                  FittedBox(
+                    child: Column(
+                      children: [
+                        Text(loc.battlesTabStatusModeRank),
+                        for (int i = 0; i < 7; i++)
+                          statChangeViewRow(
+                            statAlphabets[i],
+                            focusingPokemonState.statChanges(i),
+                            (idx) {},
+                          ),
+                      ],
+                    ),
+                  ),
+                  // 4. 状態変化
+                  FittedBox(
+                    child: Column(
+                      children: [
+                        Text(loc.commonStatusCondition),
+                        SizedBox(
+                          width: theme.iconTheme.size ?? 24.0 * 7,
+                          height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                              (theme.primaryTextTheme.bodyMedium!.height ??
+                                  1.0) *
+                              7,
+                          child: ListViewWithViewItemCount(
+                            viewItemCount: 7,
+                            children: statusConditions,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 5. 場
+                  FittedBox(
+                    child: Column(
+                      children: [
+                        Text(loc.commonFields),
+                        SizedBox(
+                          width: theme.iconTheme.size ?? 24.0 * 7,
+                          height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                              (theme.primaryTextTheme.bodyMedium!.height ??
+                                  1.0) *
+                              7,
+                          child: ListViewWithViewItemCount(
+                            viewItemCount: 7,
+                            children: fields,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FittedBox(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
+                            4,
                       ),
-                  ],
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_back_ios,
+                          color: Color(0x80000000),
+                        ),
+                        onPressed: () {
+                          controller.previousPage(
+                              duration: Duration(milliseconds: 500),
+                              curve: Curves.ease);
+                        },
+                      ),
+                      SizedBox(
+                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
+                            4,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-              // 2. 各ステータス(HABCDS)の実数値
-              FittedBox(
-                child: Column(
-                  children: [
-                    Text('実数値'),
-                    for (final stat in StatIndexList.listHtoS)
-                      statStatusViewRow(
-                        stat.alphabet,
-                        focusingPokemonState.minStats[stat].real,
-                        focusingPokemonState.maxStats[stat].real,
+              Align(
+                alignment: Alignment.centerRight,
+                child: FittedBox(
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
+                            4,
                       ),
-                  ],
-                ),
-              ),
-              // 3. 各ステータス(ABCDSAcEv)のランク変化
-              FittedBox(
-                child: Column(
-                  children: [
-                    Text('ランク'),
-                    for (int i = 0; i < 7; i++)
-                      statChangeViewRow(
-                        statAlphabets[i],
-                        focusingPokemonState.statChanges(i),
-                        (idx) {},
+                      IconButton(
+                        icon: Icon(
+                          Icons.arrow_forward_ios,
+                          color: Color(0x80000000),
+                        ),
+                        onPressed: () {
+                          controller.nextPage(
+                              duration: Duration(milliseconds: 500),
+                              curve: Curves.ease);
+                        },
                       ),
-                  ],
+                      SizedBox(
+                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
+                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
+                            4,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -306,6 +451,84 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget ailmentViewItem(
+    Ailment ailment,
+  ) {
+    return Flexible(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: Container(
+          color: ailment.bgColor,
+          child:
+              Text(ailment.displayName, style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  Widget buffDebuffViewItem(BuffDebuff buffDebuff) {
+    return Flexible(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: Container(
+          color: buffDebuff.bgColor,
+          child: Text(buffDebuff.displayName,
+              style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  Widget indiFieldViewItem(
+    IndividualField indiField,
+  ) {
+    return Flexible(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: Container(
+          color: indiField.bgColor,
+          child: Text(indiField.displayName,
+              style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  Widget weatherViewItem(Weather weather) {
+    return Flexible(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: Container(
+          color: weather.bgColor,
+          child:
+              Text(weather.displayName, style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  Widget fieldViewItem(Field field) {
+    return Flexible(
+      child: ClipRRect(
+        borderRadius: BorderRadius.all(Radius.circular(5.0)),
+        child: Container(
+          color: field.bgColor,
+          child: Text(field.displayName, style: TextStyle(color: Colors.white)),
+        ),
+      ),
+    );
+  }
+
+  Widget nullItem() {
+    return ClipRRect(
+      borderRadius: BorderRadius.all(Radius.circular(5.0)),
+      child: Container(
+        color: Color(0x00ffffff),
+        child: Text('null', style: TextStyle(color: Color(0x00ffffff))),
+      ),
     );
   }
 }

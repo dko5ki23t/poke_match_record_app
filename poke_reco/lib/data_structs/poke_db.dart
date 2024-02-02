@@ -243,7 +243,7 @@ const String sqlSplit7 = '{';
 const String sqlSplit8 = '|';
 
 // 事前準備したデータを使うかどうか
-bool replacePrepared = true;
+bool replacePrepared = false;
 
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
@@ -664,6 +664,12 @@ class Move extends Equatable implements Copyable {
       Target.allPokemon
     ];
     return list.contains(target);
+  }
+
+  int get minPP => pp;
+  int get maxPP {
+    if (pp == 1) return 1;
+    return pp + (pp / 5).floor() * 3;
   }
 
   bool get isDirect {
@@ -1478,6 +1484,7 @@ class PokeDB {
   bool getPokeAPI = true; // インターネットに接続してポケモンの画像を取得するか
   Language language = Language.japanese;
   bool _isTestMode = false;
+  bool showAd = true;
 
   bool isLoaded = false;
 
@@ -2778,5 +2785,6 @@ class PokeDB {
 
   void setTestMode() {
     _isTestMode = true;
+    showAd = false;
   }
 }

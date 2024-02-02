@@ -5,11 +5,13 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_terastal.dart';
 import 'package:poke_reco/tool.dart';
 
 // 自身・相手の行動(timing==Timing.action)をそれぞれ1つずつ含んだリスト
@@ -22,8 +24,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
   PhaseList() {
     l.addAll([
-      TurnEffectAction(player: PlayerType.me)..type = TurnMoveType.move,
-      TurnEffectAction(player: PlayerType.opponent)..type = TurnMoveType.move,
+      TurnEffectAction(
+        player: PlayerType.me,
+      )..type = TurnMoveType.move,
+      TurnEffectAction(
+        player: PlayerType.opponent,
+      )..type = TurnMoveType.move,
     ]);
   }
 
@@ -125,6 +131,53 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     }
   }
 
+  void updateActionOrder() {
+    // 有効なactionで先に行動しているプレイヤーを探す
+    final ownPlayerActions =
+        l.where((e) => e is TurnEffectAction && e.playerType == PlayerType.me);
+    final opponentPlayerActions = l.where(
+        (e) => e is TurnEffectAction && e.playerType == PlayerType.opponent);
+    //どちらも(存在しない/無効)
+    if ((ownPlayerActions.isEmpty || !ownPlayerActions.first.isValid()) &&
+        (opponentPlayerActions.isEmpty ||
+            !opponentPlayerActions.first.isValid())) {
+      if (ownPlayerActions.isNotEmpty) {
+        (ownPlayerActions.first as TurnEffectAction).isFirst = null;
+      }
+      if (opponentPlayerActions.isNotEmpty) {
+        (opponentPlayerActions.first as TurnEffectAction).isFirst = null;
+      }
+      return;
+    }
+    // 片方の行動のみ(存在かつ有効)
+    if (ownPlayerActions.isNotEmpty &&
+        ownPlayerActions.first.isValid() &&
+        (opponentPlayerActions.isEmpty ||
+            !opponentPlayerActions.first.isValid())) {
+      (ownPlayerActions.first as TurnEffectAction).isFirst = true;
+      (opponentPlayerActions.first as TurnEffectAction).isFirst = false;
+      setActionOrderFirst(PlayerType.me);
+      return;
+    }
+    if (opponentPlayerActions.isNotEmpty &&
+        opponentPlayerActions.first.isValid() &&
+        (ownPlayerActions.isEmpty || !ownPlayerActions.first.isValid())) {
+      (ownPlayerActions.first as TurnEffectAction).isFirst = false;
+      (opponentPlayerActions.first as TurnEffectAction).isFirst = true;
+      setActionOrderFirst(PlayerType.opponent);
+      return;
+    }
+    // 両行動ともに(存在かつ有効)
+    if (l.indexOf(ownPlayerActions.first) >
+        l.indexOf(opponentPlayerActions.first)) {
+      (ownPlayerActions.first as TurnEffectAction).isFirst = false;
+      (opponentPlayerActions.first as TurnEffectAction).isFirst = true;
+    } else {
+      (ownPlayerActions.first as TurnEffectAction).isFirst = true;
+      (opponentPlayerActions.first as TurnEffectAction).isFirst = false;
+    }
+  }
+
   // 指定したプレイヤーの行動順を先にする
   void setActionOrderFirst(PlayerType playerType) {
     // 行動がない
@@ -143,6 +196,25 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       // TODO:今後もっと複雑になる
       final removed = l.removeAt(yourPlayerActionIndex);
       l.add(removed);
+    }
+  }
+
+  // 対象プレイヤーのテラスタルのON/OFF切り替え
+  void turnOnOffTerastal(PlayerType playerType, PokeType type) {
+    final terastal = l.where((element) =>
+        element is TurnEffectTerastal && element.playerType == playerType);
+    if (terastal.isEmpty) {
+      int insertIndex =
+          l.lastIndexWhere((element) => element is TurnEffectTerastal);
+      if (insertIndex < 0) {
+        insertIndex = 0;
+      } else {
+        insertIndex++;
+      }
+      l.insert(
+          insertIndex, TurnEffectTerastal(player: playerType, teraType: type));
+    } else {
+      l.remove(terastal.first);
     }
   }
 }
@@ -260,6 +332,52 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
+  // 対象プレイヤーの行動直前のstateを返却する
+  // phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する
+  PhaseState getBeforeActionState(
+    PlayerType playerType,
+    Party ownParty,
+    Party opponentParty,
+    AppLocalizations loc,
+  ) {
+    PhaseState ret = _initialState.copy();
+    int continousCount = 0;
+    TurnEffect? lastAction;
+    int endIndex = phases.getLatestActionIndex(playerType);
+
+    for (int i = 0; i < endIndex; i++) {
+      final phase = phases[i];
+//      if (phase.isAdding) {
+//        i++;
+//        continue; // TODO
+//      }
+      if (!phase.isValid()) {
+        continue;
+      }
+      //if (phase.timing == Timing.continuousMove) {
+      //  lastAction = phase;
+      //  continousCount++;
+      //} else if (phase.timing == Timing.action) {
+      //  lastAction = phase;
+      //  continousCount = 0;
+      //}
+      if (phase is TurnEffectAction) lastAction = phase;
+      phase.processEffect(
+        ownParty,
+        ret.getPokemonState(PlayerType.me,
+            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+        opponentParty,
+        ret.getPokemonState(PlayerType.opponent,
+            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+        ret,
+        lastAction,
+        continousCount,
+        loc: loc,
+      );
+    }
+    return ret;
+  }
+
   // ターンの最終状態(_endingState)を更新する
   // phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する
   // _endingStateのコピーを返す
@@ -337,9 +455,10 @@ class Turn extends Equatable implements Copyable {
           if (!alreadyActioned[needChangeFaintingPlayer]!) {
             final target =
                 phases.getLatestActionIndex(needChangeFaintingPlayer);
-            // TODO
-            phases[target] = TurnEffectChangeFaintingPokemon(
-                player: needChangeFaintingPlayer, timing: Timing.afterMove);
+            if (phases[target] is! TurnEffectChangeFaintingPokemon) {
+              phases[target] = TurnEffectChangeFaintingPokemon(
+                  player: needChangeFaintingPlayer, timing: Timing.afterMove);
+            }
           }
           // ひんし対象が行動済みのとき
           else {
@@ -379,6 +498,7 @@ class Turn extends Equatable implements Copyable {
     ret._initialState = PhaseState.deserialize(turnElements.removeAt(0), split2,
         split3, split4, split5, split6, split7);
     // phases
+    ret.phases.clear();
     var turnEffects = turnElements.removeAt(0).split(split2);
     for (var turnEffect in turnEffects) {
       if (turnEffect == '') break;

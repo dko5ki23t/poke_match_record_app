@@ -16,6 +16,7 @@ import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';
@@ -259,7 +260,8 @@ class TurnEffectAction extends TurnEffect {
   List<int> extraArg3 = [0];
   List<int?> _changePokemonIndexes = [null, null];
   PokeType moveType = PokeType.unknown;
-  bool isFirst = false; // ターン内最初の行動か
+  bool? isFirst; // ターン内最初の行動か
+  //late final BoolPhaseList boolPhaseList;
   bool _isValid = false;
 
   TurnEffectAction({required player}) : super(EffectType.action) {
@@ -286,7 +288,7 @@ class TurnEffectAction extends TurnEffect {
         _changePokemonIndexes,
         moveType,
         isFirst,
-        _isValid
+        _isValid,
       ];
 
   @override
@@ -329,6 +331,9 @@ class TurnEffectAction extends TurnEffect {
       _changePokemonIndexes[0] = val;
     } else {
       _changePokemonIndexes[1] = val;
+    }
+    if (val != null && type == TurnMoveType.change) {
+      _isValid = true;
     }
   }
 
@@ -464,7 +469,7 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // 行動1の場合は登録
-    if (isFirst) {
+    if (isFirst != null && isFirst!) {
       state.firstAction = this;
     }
     // みちづれ状態解除
@@ -4217,7 +4222,8 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // あいてポケモンのすばやさ確定
-    if (!isFirst &&
+    if (isFirst != null &&
+        !isFirst! &&
         state.firstAction != null &&
         state.firstAction!.type == TurnMoveType.move) {
       if (move.priority == state.firstAction!.move.priority) {
@@ -4376,7 +4382,9 @@ class TurnEffectAction extends TurnEffect {
         myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
     if (damageClassID == 3 &&
         myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
-    if (!isFirst && myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
+    if (isFirst != null &&
+        !isFirst! &&
+        myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
       tmpPow *= 1.3;
     }
     if ((replacedMoveType == PokeType.ground ||
@@ -5296,7 +5304,9 @@ class TurnEffectAction extends TurnEffect {
         myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
     if (damageClassID == 3 &&
         myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
-    if (!isFirst && myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
+    if (isFirst != null &&
+        !isFirst! &&
+        myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
       tmpPow *= 1.3;
     }
     if ((replacedMoveType == PokeType.ground ||
@@ -5713,36 +5723,21 @@ class TurnEffectAction extends TurnEffect {
     return Tuple3(retStat, ret2, ret3);
   }
 
-  List<Widget> extraCommandInputList(
-//    Pokemon ownPokemon,
-//    Pokemon opponentPokemon,
-//    List<PokemonState> ownPokemonStates,
-//    List<PokemonState> opponentPokemonStates,
-//    TextEditingController hpController,
-//    TextEditingController hpController2,
-//    TextEditingController preMoveController,
-//    MyAppState appState,
-//    int phaseIdx,
-//    TurnEffectAndStateAndGuide turnEffectAndStateAndGuide,
-//    List<int> invalidGuideIDs,
-      {
-//      required bool isInput,
+  Widget extraCommandInputList({
     required int initialKeyNumber,
     required ThemeData theme,
     required void Function()
         onBackPressed, // 入力画面シーケンス最初の画面の「戻る」を押されたときに呼ぶコールバック
-    required void Function(int)
-        onListIndexChange, // 入力画面シーケンス内の表示インデックスが変更されたときに呼ぶコールバック
     required void Function()
         onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
     required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
-    required bool? isFirstAction,
     required Party myParty,
     required Party yourParty,
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
     required int continuousCount,
+    required CommandPagesController controller, // 入力画面シーケンスのコントローラ
     required AppLocalizations loc,
   }) {
     // TODO
@@ -6196,22 +6191,28 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    List<Widget> ret = [];
+    List<Widget> widgets = [];
 
     for (int index = 0; index < templateTitles.length; index++) {
       Widget template = _getCommandWidgetTemplate(
         templateTitles[index].item1,
         listIndex: index,
         theme: theme,
-        onListIndexChange: onListIndexChange,
         onConfirm: onConfirm,
         onUpdate: onUpdate,
+        onNext: index == templateTitles.length - 1
+            ? () {
+                _isValid = true;
+                onConfirm();
+              }
+            : () => controller.listIndex++,
         myParty: myParty,
         yourParty: yourParty,
         myState: myState,
         yourState: yourState,
         state: state,
         continuousCount: continuousCount,
+        controller: controller,
         loc: loc,
         extra: templateTitles[index].item3,
       );
@@ -6219,7 +6220,7 @@ class TurnEffectAction extends TurnEffect {
       // 返却Widget作成
       // 最初のWidgetの場合、戻るボタンタップ時の挙動が違う
       if (index == 0) {
-        ret.add(
+        widgets.add(
           Column(
             key: ValueKey<int>(initialKeyNumber + index),
             children: [
@@ -6236,8 +6237,8 @@ class TurnEffectAction extends TurnEffect {
                     ),
                     TextButton(
                         onPressed: () {},
-                        child: Text(isFirstAction != null
-                            ? isFirstAction
+                        child: Text(isFirst != null
+                            ? isFirst!
                                 ? loc.battleActFirst
                                 : loc.battleActSecond
                             : ' '))
@@ -6252,7 +6253,7 @@ class TurnEffectAction extends TurnEffect {
           ),
         );
       } else {
-        ret.add(
+        widgets.add(
           Column(
             key: ValueKey<int>(initialKeyNumber + index),
             children: [
@@ -6261,7 +6262,7 @@ class TurnEffectAction extends TurnEffect {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => onListIndexChange(index - 1),
+                      onPressed: () => controller.listIndex--,
                       icon: Icon(Icons.arrow_back),
                     ),
                     Expanded(
@@ -6269,8 +6270,8 @@ class TurnEffectAction extends TurnEffect {
                     ),
                     TextButton(
                         onPressed: () {},
-                        child: Text(isFirstAction != null
-                            ? isFirstAction
+                        child: Text(isFirst != null
+                            ? isFirst!
                                 ? loc.battleActFirst
                                 : loc.battleActSecond
                             : ' '))
@@ -6287,24 +6288,24 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    return ret;
+    return widgets[controller.listIndex];
   }
 
   Widget _getCommandWidgetTemplate(
     CommandWidgetTemplate template, {
     required int listIndex,
     required ThemeData theme,
-    required void Function(int)
-        onListIndexChange, // 入力画面シーケンス内の表示インデックスが変更されたときに呼ぶコールバック
     required void Function()
         onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
     required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
+    required void Function() onNext,
     required Party myParty,
     required Party yourParty,
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
     required int continuousCount,
+    required CommandPagesController controller,
     required AppLocalizations loc,
     required dynamic extra,
   }) {
@@ -6343,7 +6344,8 @@ class TurnEffectAction extends TurnEffect {
                   theme,
                   onTap: () {
                     setChangePokemonIndex(playerType, i + 1);
-                    onUpdate();
+                    //onUpdate();
+                    onNext();
                   },
                   selected: getChangePokemonIndex(playerType) == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6382,7 +6384,8 @@ class TurnEffectAction extends TurnEffect {
                   theme,
                   onTap: () {
                     setChangePokemonIndex(playerType.opposite, i + 1);
-                    onUpdate();
+                    //onUpdate();
+                    onNext();
                   },
                   selected: getChangePokemonIndex(playerType.opposite) == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6421,8 +6424,9 @@ class TurnEffectAction extends TurnEffect {
                   theme,
                   onTap: () {
                     extraArg1[continuousCount] = i + 1;
-                    _isValid = true;
-                    onConfirm();
+                    //_isValid = true;
+                    //onConfirm();
+                    onNext();
                   },
                   selected: extraArg1[continuousCount] == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6468,8 +6472,7 @@ class TurnEffectAction extends TurnEffect {
                   } else {
                     realDamage[continuousCount] = yourState.remainHP - remain;
                   }
-                  _isValid = true;
-                  onConfirm();
+                  onNext();
                 },
                 prefixText: loc.battleRemainHP(yourState.pokemon.name),
                 suffixText: playerType == PlayerType.me ? '%' : null,
@@ -6496,8 +6499,7 @@ class TurnEffectAction extends TurnEffect {
                     extraArg2[continuousCount] =
                         myState.remainHPPercent - remain;
                   }
-                  _isValid = true;
-                  onConfirm();
+                  onNext();
                 },
                 prefixText: loc.battleRemainHP(myState.pokemon.name),
                 suffixText: playerType == PlayerType.opponent ? '%' : null,
@@ -6533,7 +6535,7 @@ class TurnEffectAction extends TurnEffect {
             moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
                 ? MoveEffect(move.effect.id)
                 : MoveEffect(0);
-            onListIndexChange(listIndex + 1);
+            onNext();
           },
         );
       case CommandWidgetTemplate.selectAcquiringMove:
@@ -6547,7 +6549,7 @@ class TurnEffectAction extends TurnEffect {
             moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
                 ? MoveEffect(move.effect.id)
                 : MoveEffect(0);
-            onListIndexChange(listIndex + 1);
+            onNext();
           },
           onlyAcquiring: true,
         );
@@ -6633,7 +6635,8 @@ class TurnEffectAction extends TurnEffect {
           state: state,
           onSelect: (move) {
             extraArg3[continuousCount] = move.id;
-            onListIndexChange(listIndex + 1);
+            controller.listIndex++;
+            onNext();
           },
           onlyAcquiring: true,
         );
@@ -6646,6 +6649,7 @@ class TurnEffectAction extends TurnEffect {
                 extra[0] as String,
                 (val) {
                   extraArg1[continuousCount] = val;
+                  onNext();
                 },
                 extraArg1[continuousCount] == 0
                     ? null
@@ -6693,6 +6697,7 @@ class TurnEffectAction extends TurnEffect {
                 value: extraArg1[continuousCount],
                 onChanged: (value) {
                   extraArg1[continuousCount] = value;
+                  onNext();
                 },
                 theme: theme,
               ),
@@ -6738,6 +6743,7 @@ class TurnEffectAction extends TurnEffect {
                 value: extraArg1[continuousCount],
                 onChanged: (value) {
                   extraArg1[continuousCount] = value;
+                  onNext();
                 },
                 theme: theme,
               ),
@@ -6769,6 +6775,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: playerType,
                 pokemonState: myState,
@@ -6802,6 +6809,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: playerType.opposite,
                 pokemonState: yourState,
@@ -6835,6 +6843,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: playerType.opposite,
                 pokemonState: yourState,
@@ -6857,6 +6866,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: PlayerType.opponent,
                 pokemonState: playerType == PlayerType.me ? yourState : myState,
@@ -6879,6 +6889,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: playerType,
                 pokemonState: myState,
@@ -6901,6 +6912,7 @@ class TurnEffectAction extends TurnEffect {
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
                   extraArg1[continuousCount] = item.id;
+                  onNext();
                 },
                 playerType: playerType,
                 pokemonState: myState,
@@ -6921,6 +6933,7 @@ class TurnEffectAction extends TurnEffect {
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
                   extraArg1[continuousCount] = ability.id;
+                  onNext();
                 },
                 playerType: playerType,
                 pokemonState: myState,
@@ -6943,6 +6956,7 @@ class TurnEffectAction extends TurnEffect {
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
                   extraArg1[continuousCount] = ability.id;
+                  onNext();
                 },
                 playerType: playerType.opposite,
                 pokemonState: yourState,
@@ -6965,6 +6979,7 @@ class TurnEffectAction extends TurnEffect {
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
                   extraArg1[continuousCount] = ability.id;
+                  onNext();
                 },
                 playerType: PlayerType.opponent,
                 pokemonState: playerType == PlayerType.me ? yourState : myState,
@@ -7025,6 +7040,7 @@ class TurnEffectAction extends TurnEffect {
                 value: extraArg1[continuousCount],
                 onChanged: (value) {
                   extraArg1[continuousCount] = value;
+                  onNext();
                 },
                 theme: theme,
               ),
@@ -7750,7 +7766,9 @@ class TurnEffectAction extends TurnEffect {
     turnEffectAction.moveType =
         PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // isFirst
-    turnEffectAction.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
+    if (turnMoveElements.removeAt(0) != '') {
+      turnEffectAction.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
+    }
 
     return turnEffectAction;
   }
@@ -7878,7 +7896,9 @@ class TurnEffectAction extends TurnEffect {
     ret += moveType.index.toString();
     ret += split1;
     // isFirst
-    ret += isFirst ? '1' : '0';
+    if (isFirst != null) {
+      ret += isFirst! ? '1' : '0';
+    }
 
     return ret;
   }
@@ -7902,4 +7922,8 @@ class TurnEffectAction extends TurnEffect {
         return false;
     }
   }
+}
+
+class CommandPagesController {
+  int listIndex = 0;
 }

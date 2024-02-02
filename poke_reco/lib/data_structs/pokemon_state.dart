@@ -1443,13 +1443,13 @@ class PokemonState extends Equatable implements Copyable {
     final minStatElements = stateElements[14].split(split2);
     for (final stat in StatIndexList.listHtoS) {
       pokemonState.minStats[stat] =
-          SixParams.deserialize(minStatElements[stat], split3);
+          SixParams.deserialize(minStatElements[stat.index], split3);
     }
     // maxStats
     final maxStatElements = stateElements[15].split(split2);
     for (final stat in StatIndexList.listHtoS) {
       pokemonState.maxStats[stat] =
-          SixParams.deserialize(maxStatElements[stat], split3);
+          SixParams.deserialize(maxStatElements[stat.index], split3);
     }
     // possibleAbilities
     final abilities = stateElements[16].split(split2);

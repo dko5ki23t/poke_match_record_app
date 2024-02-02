@@ -237,36 +237,38 @@ class _MyHomePageState extends State<MyHomePage> {
             mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
-              FutureBuilder(
-                future: AdSize.getAnchoredAdaptiveBannerAdSize(
-                    Orientation.portrait,
-                    MediaQuery.of(context).size.width.truncate()),
-                builder: (
-                  BuildContext context,
-                  AsyncSnapshot<AnchoredAdaptiveBannerAdSize?> snapshot,
-                ) {
-                  if (snapshot.hasData) {
-                    final data = snapshot.data;
-                    if (data != null) {
-                      return Container(
-                        height: 70,
-                        color: Colors.white70,
-                        child: AdBanner(size: data),
-                      );
-                    } else {
-                      return Container(
-                        height: 70,
-                        color: Colors.white70,
-                      );
-                    }
-                  } else {
-                    return Container(
-                      height: 70,
-                      color: Colors.white70,
-                    );
-                  }
-                },
-              ),
+              PokeDB().showAd
+                  ? FutureBuilder(
+                      future: AdSize.getAnchoredAdaptiveBannerAdSize(
+                          Orientation.portrait,
+                          MediaQuery.of(context).size.width.truncate()),
+                      builder: (
+                        BuildContext context,
+                        AsyncSnapshot<AnchoredAdaptiveBannerAdSize?> snapshot,
+                      ) {
+                        if (snapshot.hasData) {
+                          final data = snapshot.data;
+                          if (data != null) {
+                            return Container(
+                              height: 70,
+                              color: Colors.white70,
+                              child: AdBanner(size: data),
+                            );
+                          } else {
+                            return Container(
+                              height: 70,
+                              color: Colors.white70,
+                            );
+                          }
+                        } else {
+                          return Container(
+                            height: 70,
+                            color: Colors.white70,
+                          );
+                        }
+                      },
+                    )
+                  : Container(),
               BottomNavigation(
                 currentTab: _currentTab,
                 onSelectTab: _selectTab,

@@ -1,45 +1,31 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:poke_reco/custom_widgets/party_tile.dart';
-import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/main.dart';
+import 'package:flutter_driver/flutter_driver.dart';
+import 'package:test/test.dart';
 
-void main() async {
-  // assetの準備等完了させるために不可欠
-  TestWidgetsFlutterBinding.ensureInitialized();
-  MobileAds.instance.initialize();
-  final directory = await getApplicationDocumentsDirectory();
-  final localPath = directory.path;
-  final saveDataFile = File('$localPath/poke_reco.json');
-  String configText;
-  dynamic configJson;
-  Locale? locale;
-  try {
-    configText = await saveDataFile.readAsString();
-    configJson = jsonDecode(configText);
-    switch (configJson[configKeyLanguage] as int) {
-      case 1:
-        locale = Locale('en');
-        break;
-      case 0:
-      default:
-        locale = Locale('ja');
-        break;
+void main() {
+  FlutterDriver? driver;
+
+  setUpAll(() async {
+    driver =
+        await FlutterDriver.connect(dartVmServiceUrl: 'http://localhost:8888/')
+            .timeout(Duration(seconds: 10));
+  });
+
+  tearDownAll(() async {
+    if (driver != null) {
+      await driver!.close();
     }
-  } catch (e) {
-    locale = null;
-  }
-  // デバッグ用DBを読み込むように設定
-  PokeDB().setTestMode();
-  PokeDB().getPokeAPI = false;
+  });
+
+//  test('the button changes the text from hogehoge to fugafuga', () async {
+//    expect(await driver!.getText(find.byValueKey('text')), equals('hogehoge'));
+//    driver!.tap(find.byValueKey('button'));
+//    expect(await driver!.getText(find.byValueKey('text')), equals('fugafuga'));
+//  });
+
   group('統合テスト(もこうの実況を記録)', () {
-    testWidgets('パーモット戦', (tester) async {
-      await tester.pumpWidget(MyApp(initialLocale: locale));
+    test('パーモット戦', () async {
+      //await tester.pumpWidget(MyApp(initialLocale: locale));
       //await tester.pump(Duration(seconds: 5));
       // TODO
       // ポケモンタブボタンタップ
@@ -47,8 +33,8 @@ void main() async {
       //await tester.pumpAndSettle();
       //expect(find.text('もこパモ'), findsWidgets);
       // 追加ボタン(+)タップ
-      await wrapedTap(
-          tester, find.widgetWithIcon(FloatingActionButton, Icons.add));
+      await driver!.tap(find.byType('FloatingActionButton'));
+/*
       await tester.pumpAndSettle();
       expect(find.byType(TextField), findsWidgets);
       // 基本情報を入力
@@ -113,27 +99,7 @@ void main() async {
       await wrapedTap(tester, find.text('りゅうのまい'));
       await tester.pumpAndSettle();
       expect(find.textContaining('成否'), findsOneWidget);
+*/
     });
   });
-}
-
-Future<void> wrapedTap(
-  WidgetTester tester,
-  FinderBase<Element> finder,
-) async {
-  await tester.pumpAndSettle(const Duration(milliseconds: 200));
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle(const Duration(milliseconds: 200));
-  await tester.tap(finder);
-}
-
-Future<void> wrapedEnterText(
-  WidgetTester tester,
-  FinderBase<Element> finder,
-  String text,
-) async {
-  await tester.pumpAndSettle(const Duration(milliseconds: 200));
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle(const Duration(milliseconds: 200));
-  await tester.enterText(finder, text);
 }

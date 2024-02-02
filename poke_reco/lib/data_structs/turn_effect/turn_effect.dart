@@ -1,5 +1,7 @@
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/turn.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_ability.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_after_move.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
@@ -2677,7 +2679,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         return TurnEffectAction.deserialize(str, split1, split2, split3,
             version: version);
       case EffectType.ability:
-        return TurnEffectAction.deserialize(str, split1, split2, split3,
+        return TurnEffectAbility.deserialize(str, split1, split2, split3,
             version: version);
       case EffectType.item:
         return TurnEffectItem.deserialize(str, split1, split2, split3,

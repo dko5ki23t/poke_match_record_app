@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/select_type_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_action_command.dart';
 import 'package:poke_reco/custom_widgets/battle_change_fainting_command.dart';
@@ -7,6 +8,7 @@ import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
+import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_user_edit.dart';
@@ -107,7 +109,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   final ownBattleCommandKey = GlobalKey<BattleCommandState>();
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
-  PlayerType? firstActionPlayer;
+  //PlayerType? firstActionPlayer;
 
 /*
   TurnEffect? _getPrevTimingEffect(int index) {
@@ -527,7 +529,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum - 1];
-          firstActionPlayer = currentTurn.phases.firstActionPlayer;
           PhaseState initialState = prevTurn.getProcessedStates(
               prevTurn.phases.length - 1, ownParty, opponentParty, loc);
           initialState.processTurnEnd(prevTurn);
@@ -758,36 +759,34 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: ownBattleCommandKey,
                             playerType: PlayerType.me,
                             turnMove: ownLastAction,
-                            phaseState: prevState!,
+                            phaseState: turns[turnNum - 1].getBeforeActionState(
+                                PlayerType.me, ownParty, opponentParty, loc),
                             myParty: ownParty,
                             yourParty: opponentParty,
                             parentSetState: setState,
-                            onConfirm: () {
-                              if (firstActionPlayer == null) {
-                                firstActionPlayer = PlayerType.me;
-                                turns[turnNum - 1]
-                                    .phases
-                                    .setActionOrderFirst(PlayerType.me);
-                              }
-                            },
-                            onUnConfirm: () {
-                              firstActionPlayer =
-                                  turns[turnNum - 1].phases.firstActionPlayer;
-                              if (firstActionPlayer == PlayerType.opponent) {
-                                turns[turnNum - 1]
-                                    .phases
-                                    .setActionOrderFirst(PlayerType.opponent);
-                              }
-                            },
-                            isFirstAction: firstActionPlayer != null
-                                ? firstActionPlayer == PlayerType.me
-                                : null,
+                            onConfirm: () => setState(() =>
+                                turns[turnNum - 1].phases.updateActionOrder()),
+                            onUnConfirm: () => setState(() =>
+                                turns[turnNum - 1].phases.updateActionOrder()),
+                            updateActionOrder: () =>
+                                turns[turnNum - 1].phases.updateActionOrder(),
+                            playerCanTerastal:
+                                !turns[turnNum - 1].initialOwnHasTerastal,
+                            onRequestTerastal: () => setState(() =>
+                                turns[turnNum - 1].phases.turnOnOffTerastal(
+                                    PlayerType.me,
+                                    focusState!
+                                        .getPokemonState(PlayerType.me, null)
+                                        .pokemon
+                                        .teraType)),
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.me,
                                 turnEffect: ownLastAction,
-                                phaseState: prevState!,
+                                phaseState: turns[turnNum - 1]
+                                    .getBeforeActionState(PlayerType.me,
+                                        ownParty, opponentParty, loc),
                                 myParty: ownParty,
                                 yourParty: opponentParty,
                                 parentSetState: setState,
@@ -865,36 +864,56 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: opponentBattleCommandKey,
                             playerType: PlayerType.opponent,
                             turnMove: opponentLastAction,
-                            phaseState: prevState!,
+                            phaseState: turns[turnNum - 1].getBeforeActionState(
+                                PlayerType.opponent,
+                                ownParty,
+                                opponentParty,
+                                loc),
                             myParty: opponentParty,
                             yourParty: ownParty,
                             parentSetState: setState,
-                            onConfirm: () {
-                              if (firstActionPlayer == null) {
-                                firstActionPlayer = PlayerType.opponent;
-                                turns[turnNum - 1]
-                                    .phases
-                                    .setActionOrderFirst(PlayerType.opponent);
+                            onConfirm: () => setState(() =>
+                                turns[turnNum - 1].phases.updateActionOrder()),
+                            onUnConfirm: () => setState(() =>
+                                turns[turnNum - 1].phases.updateActionOrder()),
+                            updateActionOrder: () =>
+                                turns[turnNum - 1].phases.updateActionOrder(),
+                            playerCanTerastal:
+                                !turns[turnNum - 1].initialOpponentHasTerastal,
+                            // 相手のテラスタイプ選択ダイアログ表示
+                            onRequestTerastal: () {
+                              if (turns[turnNum - 1]
+                                  .getBeforeActionState(PlayerType.opponent,
+                                      ownParty, opponentParty, loc)
+                                  .getPokemonState(PlayerType.opponent, null)
+                                  .isTerastaling) {
+                                setState(() {
+                                  turns[turnNum - 1].phases.turnOnOffTerastal(
+                                      PlayerType.opponent, PokeType.unknown);
+                                });
+                              } else {
+                                showDialog(
+                                    context: context,
+                                    builder: (_) {
+                                      return SelectTypeDialog(
+                                          (type) => setState(() =>
+                                              turns[turnNum - 1]
+                                                  .phases
+                                                  .turnOnOffTerastal(
+                                                      PlayerType.opponent,
+                                                      type)),
+                                          loc.commonTeraType);
+                                    });
                               }
                             },
-                            onUnConfirm: () {
-                              firstActionPlayer =
-                                  turns[turnNum - 1].phases.firstActionPlayer;
-                              if (firstActionPlayer == PlayerType.me) {
-                                turns[turnNum - 1]
-                                    .phases
-                                    .setActionOrderFirst(PlayerType.me);
-                              }
-                            },
-                            isFirstAction: firstActionPlayer != null
-                                ? firstActionPlayer == PlayerType.opponent
-                                : null,
                           )
                         : opponentLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.opponent,
                                 turnEffect: opponentLastAction,
-                                phaseState: prevState!,
+                                phaseState: turns[turnNum - 1]
+                                    .getBeforeActionState(PlayerType.opponent,
+                                        ownParty, opponentParty, loc),
                                 myParty: opponentParty,
                                 yourParty: ownParty,
                                 parentSetState: setState,

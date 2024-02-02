@@ -8,13 +8,13 @@ import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 
 class TurnEffectChangeFaintingPokemon extends TurnEffect {
-  TurnEffectChangeFaintingPokemon({required player, required timing})
+  TurnEffectChangeFaintingPokemon({required player, required this.timing})
       : super(EffectType.changeFaintingPokemon) {
     _playerType = player;
   }
 
   PlayerType _playerType = PlayerType.none;
-  Timing timing = Timing.none;
+  Timing timing;
   int changePokemonIndex = 0; // 0は無効値
 
   @override

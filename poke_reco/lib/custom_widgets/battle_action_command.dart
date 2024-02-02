@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
+import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
@@ -27,7 +28,9 @@ class BattleActionCommand extends StatefulWidget {
     required this.parentSetState,
     required this.onConfirm,
     required this.onUnConfirm,
-    required this.isFirstAction,
+    required this.updateActionOrder,
+    required this.playerCanTerastal,
+    required this.onRequestTerastal,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -38,7 +41,9 @@ class BattleActionCommand extends StatefulWidget {
   final Function(void Function()) parentSetState;
   final Function() onConfirm;
   final Function() onUnConfirm;
-  final bool? isFirstAction;
+  final Function() updateActionOrder;
+  final bool playerCanTerastal;
+  final Function() onRequestTerastal;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();
@@ -47,8 +52,7 @@ class BattleActionCommand extends StatefulWidget {
 class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
-  List<Widget> moveCommandWidgetList = [];
-  int listIndex = 0;
+  CommandPagesController commandPagesController = CommandPagesController();
 
   @override
   Widget build(BuildContext context) {
@@ -123,11 +127,16 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
         moveTiles.add(
           ListTile(
+            horizontalTitleGap: 8.0,
             dense: true,
             leading: turnMove
                 .getReplacedMoveType(myMove, 0, myState, prevState)
                 .displayIcon,
-            title: i < myState.moves.length
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+            ),
+            title: myState.moves.contains(myMove)
                 ? RichText(
                     text: TextSpan(children: [
                     TextSpan(
@@ -144,7 +153,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 : Text(myMove.displayName),
             subtitle:
                 Text('${getter.rangeString} (${getter.rangePercentString})'),
-            trailing: Icon(Icons.arrow_forward_ios),
             onTap: () {
               parentSetState(() {
                 turnMove.move = myMove;
@@ -166,30 +174,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         turnMove.getReplacedMoveType(
                             myMove, 0, myState, prevState),
                         yourState);
-                // 表示Widgetのリスト作成
-                moveCommandWidgetList = turnMove.extraCommandInputList(
-                    initialKeyNumber: CommandState.extraInput.index,
-                    theme: theme,
-                    onBackPressed: () => parentSetState(() {
-                          // いろいろ初期化
-                          turnMove.clearMove();
-                          state = CommandState.selectCommand;
-                          widget.onUnConfirm();
-                        }),
-                    onListIndexChange: (index) => setState(() {
-                          listIndex = index;
-                        }),
-                    onConfirm: () => parentSetState(() => widget.onConfirm),
-                    onUpdate: () => parentSetState(() {}),
-                    isFirstAction: widget.isFirstAction,
-                    myParty: myParty,
-                    yourParty: yourParty,
-                    myState: myState,
-                    yourState: yourState,
-                    state: prevState,
-                    continuousCount: 0,
-                    loc: loc);
-                listIndex = 0;
+                // 表示Widgetのコントローラリセット
+                commandPagesController = CommandPagesController();
                 state = CommandState.extraInput;
               });
             },
@@ -256,25 +242,53 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               typeCommand = [
                 Expanded(
                   flex: 1,
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: TextField(
-                      controller: moveSearchTextController,
-                      decoration: InputDecoration(
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.all(1),
+                  child: Row(
+                    children: [
+                      // テラスタル可能ならテラスタルボタン表示
+                      widget.playerCanTerastal
+                          ? Expanded(
+                              flex: 2,
+                              child: IconButton(
+                                icon: myState.isTerastaling
+                                    ? myState.teraType1.displayIcon
+                                    : Icon(
+                                        Icons.diamond,
+                                        color: Color(0x80000000),
+                                      ),
+                                onPressed: () => widget.onRequestTerastal(),
+                                isSelected: myState.isTerastaling,
+                              ),
+                            )
+                          : Container(),
+                      Expanded(
+                        flex: 8,
+                        child: Padding(
+                          padding: const EdgeInsets.all(4.0),
+                          child: TextField(
+                            controller: moveSearchTextController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.all(1),
+                            ),
+                            onChanged: (value) => setState(() {}),
+                          ),
+                        ),
                       ),
-                      onChanged: (value) => setState(() {}),
-                    ),
+                    ],
                   ),
                 ),
                 Expanded(
                   flex: 6,
-                  child: ListViewWithViewItemCount(
-                    viewItemCount: 4,
-                    children: moveTiles,
-                  ),
+                  child: Row(children: [
+                    Expanded(
+                      flex: 10,
+                      child: ListViewWithViewItemCount(
+                        viewItemCount: 4,
+                        children: moveTiles,
+                      ),
+                    ),
+                  ]),
                 ),
               ];
               break;
@@ -291,7 +305,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 .getPokemonState(playerType, null)
                                 .pokemon)) {
                   pokemonTiles.add(
-                    PokemonTile(
+                    ChangePokemonCommandTile(
                       myParty.pokemons[i]!,
                       theme,
                       onTap: () => parentSetState(() {
@@ -304,10 +318,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           widget.onConfirm();
                         }
                       }),
-                      dense: true,
                       selected:
                           turnMove.getChangePokemonIndex(playerType) == i + 1,
-                      selectedTileColor: Colors.black26,
+                      showNetworkImage: PokeDB().getPokeAPI,
                     ),
                   );
                   addedIndex.add(i);
@@ -331,8 +344,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     children: [
                       TextButton(
                           onPressed: () {},
-                          child: Text(widget.isFirstAction != null
-                              ? widget.isFirstAction!
+                          child: Text(turnMove.isFirst != null
+                              ? turnMove.isFirst!
                                   ? loc.battleActFirst
                                   : loc.battleActSecond
                               : ' '))
@@ -369,7 +382,28 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         }
         break;
       case CommandState.extraInput:
-        commandColumn = moveCommandWidgetList[listIndex];
+        commandColumn = turnMove.extraCommandInputList(
+            initialKeyNumber: CommandState.extraInput.index,
+            theme: theme,
+            onBackPressed: () => parentSetState(() {
+                  // いろいろ初期化
+                  turnMove.clearMove();
+                  state = CommandState.selectCommand;
+                  widget.onUnConfirm();
+                }),
+            onConfirm: () => parentSetState(() => widget.onConfirm),
+            onUpdate: () => parentSetState(() {}),
+            myParty: myParty,
+            yourParty: yourParty,
+            myState: myState,
+            yourState: yourState,
+            state: prevState,
+            continuousCount: 0,
+            controller: commandPagesController,
+            loc: loc);
+        // 選択するだけでvalidになるmoveがあるため、行動順をupdate
+        // TODO:この位置じゃないほうがいい？
+        widget.updateActionOrder();
         break;
       default:
         commandColumn = Container(

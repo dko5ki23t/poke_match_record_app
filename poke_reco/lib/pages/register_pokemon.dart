@@ -661,6 +661,12 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           (value) {
                             myPokemon.pps[i] = value.toInt();
                           },
+                          minPP: myPokemon.moves[i] != null
+                              ? myPokemon.moves[i]!.minPP
+                              : 0,
+                          maxPP: myPokemon.moves[i] != null
+                              ? myPokemon.moves[i]!.maxPP
+                              : 0,
                           moveEnabled: i == 0
                               ? myPokemon.name != ''
                               : myPokemon.moves[i - 1] != null &&
