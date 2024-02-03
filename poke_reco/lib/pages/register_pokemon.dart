@@ -145,6 +145,25 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
     }
 
+    Future<bool?> showBackDialog() async {
+      if (myPokemon != pokeData.pokemons[myPokemon.id]) {
+        return showDialog<bool?>(
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                null,
+                () {
+                  //Navigator.pop(context);
+                  appState.onTabChange = (func) => func();
+                },
+              );
+            });
+      } else {
+        appState.onTabChange = (func) => func();
+        return true;
+      }
+    }
+
     void onTabChange(void Function() func) {
       if (myPokemon.no != 0) {
         showDialog(
@@ -185,8 +204,15 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        onBack();
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          return;
+        }
+        final NavigatorState navigator = Navigator.of(context);
+        final bool? shouldPop = await showBackDialog();
+        if (shouldPop ?? false) {
+          navigator.pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -195,7 +221,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                 : Text(loc.pokemonsTabEditPokemon),
             actions: [
               TextButton(
-                onPressed: (myPokemon.isValid) ? () => onComplete() : null,
+                onPressed: (myPokemon.isValid &&
+                        myPokemon != pokeData.pokemons[myPokemon.id])
+                    ? () => onComplete()
+                    : null,
                 child: Text(loc.registerSave),
               ),
             ]),

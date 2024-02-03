@@ -168,9 +168,11 @@ class PartiesPageState extends State<PartiesPage> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        // TODO
-        //Navigator.of(context).pop(selectedParty);
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          return;
+        }
+        Navigator.of(context).pop(selectedParty);
       },
       child: Scaffold(
         appBar: AppBar(

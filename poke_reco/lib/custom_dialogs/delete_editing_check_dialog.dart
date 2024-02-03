@@ -8,29 +8,30 @@ class DeleteEditingCheckDialog extends StatelessWidget {
 
   const DeleteEditingCheckDialog(
     this.question,
-    this.onYesPressed,
-    {
-      Key? key,
-      this.onNoPressed,
-    }) : super(key: key);
+    this.onYesPressed, {
+    Key? key,
+    this.onNoPressed,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     var loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: question != null ? Text(question!) : Text(loc.dialogQuestionDeleteChanges),
+      title: question != null
+          ? Text(question!)
+          : Text(loc.dialogQuestionDeleteChanges),
       actions: <Widget>[
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonNo),
-          onTap: () {
-            Navigator.pop(context);
+          onPressed: () {
+            Navigator.of(context).pop(false);
             if (onNoPressed != null) onNoPressed!();
           },
         ),
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonYes),
-          onTap: () {
-            Navigator.pop(context);
+          onPressed: () {
+            Navigator.of(context).pop(true);
             onYesPressed();
           },
         ),
@@ -51,32 +52,34 @@ class DeleteEditingCheckDialogWithCancel extends StatelessWidget {
     required this.onNoPressed,
     Key? key,
     this.onCancelPressed,
-    }) : super(key: key);
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     var loc = AppLocalizations.of(context)!;
     return AlertDialog(
-      title: question != null ? Text(question!) : Text(loc.dialogQuestionDeleteChanges),
+      title: question != null
+          ? Text(question!)
+          : Text(loc.dialogQuestionDeleteChanges),
       actions: <Widget>[
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonCancel),
-          onTap: () {
-            Navigator.pop(context);
+          onPressed: () {
+            Navigator.of(context).pop(null);
             if (onCancelPressed != null) onCancelPressed!();
           },
         ),
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonNo),
-          onTap: () {
-            Navigator.pop(context);
+          onPressed: () {
+            Navigator.of(context).pop(false);
             onNoPressed();
           },
         ),
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonYes),
-          onTap: () {
-            Navigator.pop(context);
+          onPressed: () {
+            Navigator.of(context).pop(true);
             onYesPressed();
           },
         ),

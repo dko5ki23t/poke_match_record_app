@@ -170,6 +170,24 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
+    Future<bool?> showBackDialog() async {
+      if (widget.battle != pokeData.battles[widget.battle.id]) {
+        return showDialog<bool?>(
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                null,
+                () {
+                  //Navigator.pop(context);
+                  appState.onTabChange = (func) => func();
+                },
+              );
+            });
+      } else {
+        return true;
+      }
+    }
+
     void onTabChange(void Function() func) {
       showDialog(
           context: context,
@@ -226,8 +244,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     final opponentLastAction = turns.isNotEmpty
         ? turns[turnNum - 1].phases.getLatestAction(PlayerType.opponent)
         : null;
-    final prevState =
-        turns.isNotEmpty ? turns[turnNum - 1].copyInitialState() : null;
+//    final prevState =
+//        turns.isNotEmpty ? turns[turnNum - 1].copyInitialState() : null;
 
     Widget lists;
     Widget title;
@@ -940,8 +958,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        onBack();
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          return;
+        }
+        final NavigatorState navigator = Navigator.of(context);
+        final bool? shouldPop = await showBackDialog();
+        if (shouldPop ?? false) {
+          navigator.pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -968,7 +993,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             MyIconButton(
               theme: theme,
               onPressed: (pageType == RegisterBattlePageType.turnPage &&
-                      getSelectedNum(appState.editingPhase) == 0)
+                      getSelectedNum(appState.editingPhase) == 0 &&
+                      widget.battle != pokeData.battles[widget.battle.id])
                   ? () => onComplete()
                   : null,
               tooltip: loc.registerSave,

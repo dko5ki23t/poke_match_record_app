@@ -15,12 +15,12 @@ class ViewPokemonPage extends StatefulWidget {
   ViewPokemonPage({
     Key? key,
     required this.onEdit,
-    required this.pokemonList,
+    required this.pokemonIDList,
     required this.listIndex,
   }) : super(key: key);
 
   final void Function(Pokemon) onEdit;
-  final List<Pokemon> pokemonList;
+  final List<int> pokemonIDList;
   final int listIndex;
 
   @override
@@ -60,7 +60,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var pokeData = appState.pokeData;
-    var myPokemon = widget.pokemonList[listIndex];
+    var myPokemon = pokeData.pokemons[widget.pokemonIDList[listIndex]]!;
     var theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
 
@@ -110,7 +110,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
               tooltip: loc.viewToolTipPrev,
             ),
             MyIconButton(
-              onPressed: listIndex + 1 < widget.pokemonList.length
+              onPressed: listIndex + 1 < widget.pokemonIDList.length
                   ? () => setState(() {
                         listIndex++;
                       })
@@ -120,7 +120,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
               tooltip: loc.viewToolTipNext,
             ),
             MyIconButton(
-              onPressed: () => widget.onEdit(myPokemon),
+              onPressed: () => widget.onEdit(myPokemon.copy()),
               theme: theme,
               icon: Icon(Icons.edit),
               tooltip: loc.viewToolTipEdit,

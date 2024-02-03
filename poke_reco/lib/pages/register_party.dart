@@ -75,6 +75,26 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       }
     }
 
+    Future<bool?> showBackDialog() async {
+      if (widget.party != pokeData.parties[widget.party.id]) {
+        return showDialog<bool?>(
+            context: context,
+            builder: (_) {
+              return DeleteEditingCheckDialog(
+                null,
+                () {
+                  //Navigator.pop(context);
+                  appState.onTabChange = (func) => func();
+                },
+              );
+            });
+      } else {
+        //Navigator.pop(context);
+        appState.onTabChange = (func) => func();
+        return true;
+      }
+    }
+
     void onTabChange(void Function() func) {
       if (widget.party.pokemons[0]!.no != 0) {
         showDialog(
@@ -121,8 +141,15 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) {
-        onBack();
+      onPopInvoked: (didPop) async {
+        if (didPop) {
+          return;
+        }
+        final NavigatorState navigator = Navigator.of(context);
+        final bool? shouldPop = await showBackDialog();
+        if (shouldPop ?? false) {
+          navigator.pop();
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -131,8 +158,9 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
               : Text(loc.partiesTabEditParty),
           actions: [
             TextButton(
-              onPressed: ((widget.isEditPokemon && widget.party.name != '') ||
-                      widget.party.isValid)
+              onPressed: ((widget.isEditPokemon && widget.party.name != '' ||
+                      (widget.party.isValid &&
+                          widget.party != pokeData.parties[widget.party.id])))
                   ? () => onComplete()
                   : null,
               child: Text(loc.registerSave),

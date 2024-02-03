@@ -13,13 +13,13 @@ class ViewPartyPage extends StatefulWidget {
     Key? key,
     required this.onEdit,
     required this.onViewPokemon,
-    required this.partyList,
+    required this.partyIDList,
     required this.listIndex,
   }) : super(key: key);
 
   final void Function(Party) onEdit;
   final void Function(List<Pokemon>, int) onViewPokemon;
-  final List<Party> partyList;
+  final List<int> partyIDList; // IDで受け取ることで、編集画面でパーティ内容を変更してもbuildで更新できる
   final int listIndex;
 
   @override
@@ -39,7 +39,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
     var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-    var party = widget.partyList[widget.listIndex];
+    var party = PokeDB().parties[widget.partyIDList[widget.listIndex]]!;
 
     if (firstBuild) {
       for (final controller in pokemonController) {
@@ -48,7 +48,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
       listIndex = widget.listIndex;
       firstBuild = false;
     } else {
-      party = widget.partyList[listIndex];
+      party = PokeDB().parties[widget.partyIDList[listIndex]]!;
     }
 
     appState.onBackKeyPushed = () {};
@@ -85,7 +85,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
             tooltip: loc.viewToolTipPrev,
           ),
           MyIconButton(
-            onPressed: listIndex + 1 < widget.partyList.length
+            onPressed: listIndex + 1 < widget.partyIDList.length
                 ? () => setState(() {
                       listIndex++;
                     })
@@ -95,7 +95,7 @@ class ViewPartyPageState extends State<ViewPartyPage> {
             tooltip: loc.viewToolTipNext,
           ),
           MyIconButton(
-            onPressed: () => widget.onEdit(party),
+            onPressed: () => widget.onEdit(party.copy()),
             theme: theme,
             icon: Icon(Icons.edit),
             tooltip: loc.viewToolTipEdit,

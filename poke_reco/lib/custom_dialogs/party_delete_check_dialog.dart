@@ -5,10 +5,9 @@ class PartyDeleteCheckDialog extends StatefulWidget {
   final bool containedParty;
   final void Function() onClearPressed;
 
-  const PartyDeleteCheckDialog(
-    this.containedParty,
-    this.onClearPressed,
-    {Key? key}) : super(key: key);
+  const PartyDeleteCheckDialog(this.containedParty, this.onClearPressed,
+      {Key? key})
+      : super(key: key);
 
   @override
   PartyDeleteCheckDialogState createState() => PartyDeleteCheckDialogState();
@@ -20,23 +19,24 @@ class PartyDeleteCheckDialogState extends State<PartyDeleteCheckDialog> {
     var loc = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(loc.dialogQuestionDeleteParties1),
-      content: widget.containedParty ?
-        Text(loc.dialogQuestionDeleteParties2) : Text(''),
+      content: widget.containedParty
+          ? Text(loc.dialogQuestionDeleteParties2)
+          : Text(''),
       actions: <Widget>[
-          GestureDetector(
-            child: Text(loc.commonNo),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          GestureDetector(
-            child: Text(loc.commonYes),
-            onTap: () {
-              Navigator.pop(context);
-              widget.onClearPressed();
-            },
-          )
-        ],
+        TextButton(
+          child: Text(loc.commonNo),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text(loc.commonYes),
+          onPressed: () {
+            Navigator.pop(context);
+            widget.onClearPressed();
+          },
+        )
+      ],
     );
   }
 }

@@ -1,6 +1,5 @@
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_ability.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_after_move.dart';

@@ -40,14 +40,11 @@ enum BattleSort {
 }
 
 class BattleSortDialog extends StatefulWidget {
-  final Future<void> Function (
-    BattleSort? battleSort) onOK;
+  final Future<void> Function(BattleSort? battleSort) onOK;
   final BattleSort? currentSort;
 
-  const BattleSortDialog(
-    this.onOK,
-    this.currentSort,
-    {Key? key}) : super(key: key);
+  const BattleSortDialog(this.onOK, this.currentSort, {Key? key})
+      : super(key: key);
 
   @override
   BattleSortDialogState createState() => BattleSortDialogState();
@@ -72,37 +69,35 @@ class BattleSortDialogState extends State<BattleSortDialog> {
         child: Column(
           children: [
             for (var e in BattleSort.values)
-            ListTile(
-              title: Text(e.displayName),
-              leading: Radio<BattleSort>(
-                value: e,
-                groupValue: _battleSort,
-                onChanged: (BattleSort? value) {
-                  setState(() {
-                    _battleSort = value;
-                  });
-                }
+              ListTile(
+                title: Text(e.displayName),
+                leading: Radio<BattleSort>(
+                    value: e,
+                    groupValue: _battleSort,
+                    onChanged: (BattleSort? value) {
+                      setState(() {
+                        _battleSort = value;
+                      });
+                    }),
               ),
-            ),
           ],
         ),
       ),
-      actions:
-        <Widget>[
-          GestureDetector(
-            child: Text(loc.commonCancel),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          GestureDetector(
-            child: Text('OK'),
-            onTap: () async {
-              Navigator.pop(context);
-              await widget.onOK(_battleSort);
-            },
-          ),
-        ],
+      actions: <Widget>[
+        TextButton(
+          child: Text(loc.commonCancel),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text('OK'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await widget.onOK(_battleSort);
+          },
+        ),
+      ],
     );
   }
 }

@@ -46,14 +46,11 @@ enum PartySort {
 }
 
 class PartySortDialog extends StatefulWidget {
-  final Future<void> Function (
-    PartySort? partySort) onOK;
+  final Future<void> Function(PartySort? partySort) onOK;
   final PartySort? currentSort;
 
-  const PartySortDialog(
-    this.onOK,
-    this.currentSort,
-    {Key? key}) : super(key: key);
+  const PartySortDialog(this.onOK, this.currentSort, {Key? key})
+      : super(key: key);
 
   @override
   PartySortDialogState createState() => PartySortDialogState();
@@ -78,37 +75,35 @@ class PartySortDialogState extends State<PartySortDialog> {
         child: Column(
           children: [
             for (var e in PartySort.values)
-            ListTile(
-              title: Text(e.displayName),
-              leading: Radio<PartySort>(
-                value: e,
-                groupValue: _partySort,
-                onChanged: (PartySort? value) {
-                  setState(() {
-                    _partySort = value;
-                  });
-                }
+              ListTile(
+                title: Text(e.displayName),
+                leading: Radio<PartySort>(
+                    value: e,
+                    groupValue: _partySort,
+                    onChanged: (PartySort? value) {
+                      setState(() {
+                        _partySort = value;
+                      });
+                    }),
               ),
-            ),
           ],
         ),
       ),
-      actions:
-        <Widget>[
-          GestureDetector(
-            child: Text(loc.commonCancel),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          GestureDetector(
-            child: Text('OK'),
-            onTap: () async {
-              Navigator.pop(context);
-              await widget.onOK(_partySort);
-            },
-          ),
-        ],
+      actions: <Widget>[
+        TextButton(
+          child: Text(loc.commonCancel),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text('OK'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await widget.onOK(_partySort);
+          },
+        ),
+      ],
     );
   }
 }

@@ -219,8 +219,9 @@ class _MyHomePageState extends State<MyHomePage> {
     return LayoutBuilder(builder: (context, constraints) {
       return NavigatorPopHandler(
         onPop: () {
-          var appState = context.read<MyAppState>();
-          appState.onBackKeyPushed();
+          //var appState = context.read<MyAppState>();
+          //appState.onBackKeyPushed();
+          _navigatorKeys[_currentTab]!.currentState!.pop();
           // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
 /*            Navigator.pop(
               currentContext,
@@ -352,14 +353,14 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
     }
   }
 
-  void _pushView(BuildContext context, List<Pokemon> pokemonList, int index) {
+  void _pushView(BuildContext context, List<int> pokemonIDList, int index) {
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           // ポケモン詳細表示
           return ViewPokemonPage(
-            pokemonList: pokemonList,
+            pokemonIDList: pokemonIDList,
             listIndex: index,
             onEdit: (pokemon) => _pushRegister(context, pokemon, false),
           );
@@ -407,8 +408,8 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
                 return PokemonsPage(
                   onAdd: (myPokemon, isNew) =>
                       _pushRegister(context, myPokemon, isNew),
-                  onView: (pokemonList, index) =>
-                      _pushView(context, pokemonList, index),
+                  onView: (pokemonList, index) => _pushView(
+                      context, [for (final e in pokemonList) e.id], index),
                   onSelect: null,
                   selectMode: false,
                 );
@@ -462,18 +463,18 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
     });
   }
 
-  void _pushView(BuildContext context, List<Party> partyList, int index) {
+  void _pushView(BuildContext context, List<int> partyIDList, int index) {
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           // パーティ詳細表示
           return ViewPartyPage(
-            partyList: partyList,
+            partyIDList: partyIDList,
             listIndex: index,
             onEdit: (party) => _pushRegister(context, party, false),
-            onViewPokemon: (pokemonList, listIndex) =>
-                _pushPokemonView(context, pokemonList, listIndex),
+            onViewPokemon: (pokemonList, listIndex) => _pushPokemonView(
+                context, [for (final e in pokemonList) e.id], listIndex),
           );
         },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
@@ -494,14 +495,14 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
   }
 
   void _pushPokemonView(
-      BuildContext context, List<Pokemon> pokemonList, int index) {
+      BuildContext context, List<int> pokemonIDList, int index) {
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) {
           // ポケモン詳細表示
           return ViewPokemonPage(
-            pokemonList: pokemonList,
+            pokemonIDList: pokemonIDList,
             listIndex: index,
             onEdit: (pokemon) => _pushPokemonRegister(context, pokemon, false),
           );
@@ -606,8 +607,8 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                 return PartiesPage(
                   onAdd: (party, isNew) => _pushRegister(context, party, isNew),
                   onSelect: null,
-                  onView: (partyList, index) =>
-                      _pushView(context, partyList, index),
+                  onView: (partyList, index) => _pushView(
+                      context, [for (final e in partyList) e.id], index),
                   selectMode: false,
                 );
             }

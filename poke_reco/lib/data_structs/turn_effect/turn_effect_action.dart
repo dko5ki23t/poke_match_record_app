@@ -16,7 +16,6 @@ import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';

@@ -217,8 +217,10 @@ class PokemonsPageState extends State<PokemonsPage> {
     return PopScope(
         canPop: false,
         onPopInvoked: (didPop) {
-          // TODO
-          //Navigator.of(context).pop(selectedPokemon);
+          if (didPop) {
+            return;
+          }
+          Navigator.of(context).pop(selectedPokemon);
         },
         child: Scaffold(
           appBar: AppBar(
