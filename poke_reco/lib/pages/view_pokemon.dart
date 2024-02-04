@@ -64,9 +64,6 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
     var theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
 
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
-
     pokeNameController.text = myPokemon.name;
     pokeNickNameController.text = myPokemon.nickname;
     pokeType1Controller.text = myPokemon.type1.displayName;

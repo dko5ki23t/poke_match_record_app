@@ -46,8 +46,6 @@ class BattlesPageState extends State<BattlesPage> {
     var winFilter = pokeData.battlesWinFilter;
     var partyIDFilter = pokeData.battlesPartyIDFilter;
 
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
 
     // データ読み込みで待つ

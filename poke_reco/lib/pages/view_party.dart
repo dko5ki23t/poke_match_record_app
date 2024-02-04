@@ -3,8 +3,6 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_view_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/main.dart';
-import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -36,7 +34,6 @@ class ViewPartyPageState extends State<ViewPartyPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
     var party = PokeDB().parties[widget.partyIDList[widget.listIndex]]!;
@@ -51,8 +48,8 @@ class ViewPartyPageState extends State<ViewPartyPage> {
       party = PokeDB().parties[widget.partyIDList[listIndex]]!;
     }
 
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
+    //appState.onBackKeyPushed = () {};
+    //appState.onTabChange = (func) => func();
 
     partyNameController.text = party.name;
 

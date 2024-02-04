@@ -48,32 +48,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     var pokeData = appState.pokeData;
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-    void onBack() {
-      bool showAlert = false;
-      if (widget.party.pokemons[0]!.no != 0) {
-        if (widget.party.id == 0) {
-          showAlert = true;
-        } else if (widget.party.isDiff(pokeData.parties[widget.party.id]!)) {
-          showAlert = true;
-        }
-      }
-      if (showAlert) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                null,
-                () {
-                  Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
-                },
-              );
-            });
-      } else {
-        //Navigator.pop(context);
-        appState.onTabChange = (func) => func();
-      }
-    }
 
     Future<bool?> showBackDialog() async {
       if (widget.party != pokeData.parties[widget.party.id]) {
@@ -82,37 +56,15 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
             builder: (_) {
               return DeleteEditingCheckDialog(
                 null,
-                () {
-                  //Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
-                },
+                () {},
               );
             });
       } else {
-        //Navigator.pop(context);
-        appState.onTabChange = (func) => func();
         return true;
       }
     }
 
-    void onTabChange(void Function() func) {
-      if (widget.party.pokemons[0]!.no != 0) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                null,
-                () => func(),
-              );
-            });
-      } else {
-        func();
-      }
-    }
-
     if (firstBuild) {
-      appState.onBackKeyPushed = onBack;
-      appState.onTabChange = onTabChange;
       partyNameController.text = widget.party.name;
       for (final controller in pokemonController) {
         controller.text = loc.partiesTabSelectPokemon;

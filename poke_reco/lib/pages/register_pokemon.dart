@@ -55,7 +55,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final pokeMoveController = List.generate(4, (i) => TextEditingController());
   final pokePPController = List.generate(4, (i) => TextEditingController());
 
-  bool isFirstBuild = true;
   bool canChangeTeraType = true;
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
@@ -118,33 +117,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
     pokeMoveController[3].text =
         myPokemon.move4 == null ? '' : myPokemon.move4!.displayName;
 
-    void onBack() {
-      bool showAlert = false;
-      if (myPokemon.no != 0) {
-        if (myPokemon.id == 0) {
-          showAlert = true;
-        } else if (myPokemon.isDiff(pokeData.pokemons[myPokemon.id]!)) {
-          showAlert = true;
-        }
-      }
-      if (showAlert) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                null,
-                () {
-                  Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
-                },
-              );
-            });
-      } else {
-        //Navigator.pop(context);
-        appState.onTabChange = (func) => func();
-      }
-    }
-
     Future<bool?> showBackDialog() async {
       if (myPokemon != pokeData.pokemons[myPokemon.id]) {
         return showDialog<bool?>(
@@ -152,30 +124,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
             builder: (_) {
               return DeleteEditingCheckDialog(
                 null,
-                () {
-                  //Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
-                },
+                () {},
               );
             });
       } else {
-        appState.onTabChange = (func) => func();
         return true;
-      }
-    }
-
-    void onTabChange(void Function() func) {
-      if (myPokemon.no != 0) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                null,
-                () => func(),
-              );
-            });
-      } else {
-        func();
       }
     }
 
@@ -194,12 +147,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       }
       await pokeData.addMyPokemon(myPokemon, myPokemon.id == 0);
       widget.onFinish();
-    }
-
-    if (isFirstBuild) {
-      appState.onBackKeyPushed = onBack;
-      appState.onTabChange = onTabChange;
-      isFirstBuild = false;
     }
 
     return PopScope(

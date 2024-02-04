@@ -148,28 +148,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         ? pokeData.parties[widget.battle.getParty(PlayerType.me).id]!.name
         : loc.battlesTabSelectParty;
 
-    void onBack() {
-      bool showAlert = false;
-      if (widget.battle.id == 0) {
-        showAlert = true;
-      } else if (widget.battle.isDiff(pokeData.battles[widget.battle.id]!)) {
-        showAlert = true;
-      }
-      if (showAlert) {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return DeleteEditingCheckDialog(
-                null,
-                () {
-                  Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
-                },
-              );
-            });
-      }
-    }
-
     Future<bool?> showBackDialog() async {
       if (widget.battle != pokeData.battles[widget.battle.id]) {
         return showDialog<bool?>(
@@ -179,7 +157,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 null,
                 () {
                   //Navigator.pop(context);
-                  appState.onTabChange = (func) => func();
+                  //appState.onTabChange = (func) => func();
                 },
               );
             });
@@ -188,20 +166,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       }
     }
 
-    void onTabChange(void Function() func) {
-      showDialog(
-          context: context,
-          builder: (_) {
-            return DeleteEditingCheckDialog(
-              null,
-              () => func(),
-            );
-          });
-    }
-
     if (firstBuild) {
-      appState.onBackKeyPushed = onBack;
-      appState.onTabChange = onTabChange;
       if (widget.battle.name == '') {
         widget.battle.name =
             loc.tabBattles + pokeData.battles.length.toString();

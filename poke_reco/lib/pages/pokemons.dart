@@ -101,8 +101,6 @@ class PokemonsPageState extends State<PokemonsPage> {
     sortedPokemons
         .sort((a, b) => a.value.viewOrder.compareTo(b.value.viewOrder));
 
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
     final theme = Theme.of(context);
 
     // データ読み込みで待つ

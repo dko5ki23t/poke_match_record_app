@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/link.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -27,11 +26,7 @@ class SettingsPage extends StatefulWidget {
 class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -99,11 +94,7 @@ class SettingResetPageState extends State<SettingResetPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -171,11 +162,7 @@ class SettingLanguagePage extends StatefulWidget {
 class SettingLanguagePageState extends State<SettingLanguagePage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -245,12 +232,8 @@ class SettingLicensePageState extends State<SettingLicensePage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = () {};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(

@@ -25,6 +25,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:go_router/go_router.dart';
 
 const String pokeRecoVersion = '1.0.3';
 const int pokeRecoInternalVersion = 2; // SQLのテーブルバージョンに使用
@@ -41,6 +42,15 @@ const Map<TabItem, IconData> tabIcon = {
   TabItem.pokemons: Icons.catching_pokemon,
   TabItem.parties: Icons.groups,
   TabItem.settings: Icons.settings,
+};
+
+final GlobalKey<NavigatorState> _rootNavigatorKey =
+    GlobalKey<NavigatorState>(debugLabel: 'root');
+final _navigatorKeys = {
+  TabItem.battles: GlobalKey<NavigatorState>(debugLabel: 'battles'),
+  TabItem.pokemons: GlobalKey<NavigatorState>(debugLabel: 'pokemons'),
+  TabItem.parties: GlobalKey<NavigatorState>(debugLabel: 'parties'),
+  TabItem.settings: GlobalKey<NavigatorState>(debugLabel: 'settings'),
 };
 
 void main() async {
@@ -83,6 +93,243 @@ class MyApp extends StatefulWidget {
 class MyAppStateForLocale extends State<MyApp> {
   Locale? _locale;
 
+  final GoRouter _router = GoRouter(
+    navigatorKey: _rootNavigatorKey,
+    initialLocation: BattleTabPath.root.fullpath,
+    routes: <RouteBase>[
+      StatefulShellRoute.indexedStack(
+        builder: (BuildContext context, GoRouterState state,
+            StatefulNavigationShell navigationShell) {
+          return ScaffoldWithNavBar(navigationShell: navigationShell);
+        },
+        branches: <StatefulShellBranch>[
+          // 対戦タブ
+          StatefulShellBranch(
+            navigatorKey: _navigatorKeys[TabItem.battles],
+            routes: <RouteBase>[
+              GoRoute(
+                path: BattleTabPath.root.fullpath,
+                builder: (BuildContext context, GoRouterState state) =>
+                    const BattleTabScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: BattleTabPath.register.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      List argList = state.extra! as List;
+                      return RegisterBattleScreen(
+                        battle: argList[0],
+                        isNew: argList[1],
+                        pageType: argList[2],
+                        turnNum: argList[3],
+                      );
+                    },
+                    routes: <RouteBase>[
+                      GoRoute(
+                        path: BattleTabPath.registerSelectParty.path,
+                        builder: (BuildContext context, GoRouterState state) {
+                          List argList = state.extra! as List;
+                          return PartiesPage(
+                            onAdd: argList[0],
+                            onSelect: argList[1],
+                            onView: argList[2],
+                            selectMode: argList[3],
+                          );
+                        },
+                      ),
+                      GoRoute(
+                        path: BattleTabPath.registerRegisterParty.path,
+                        builder: (BuildContext context, GoRouterState state) {
+                          List argList = state.extra! as List;
+                          return RegisterPartyPage(
+                            onFinish: argList[0],
+                            onSelectPokemon: argList[1],
+                            party: argList[2],
+                            isNew: argList[3],
+                            isEditPokemon: argList[4],
+                            onEditPokemon: argList[5],
+                            phaseState: argList[6],
+                          );
+                        },
+                        routes: <RouteBase>[
+                          GoRoute(
+                            path: BattleTabPath
+                                .registerRegisterPartyEditPokemon.path,
+                            builder:
+                                (BuildContext context, GoRouterState state) {
+                              List argList = state.extra! as List;
+                              return RegisterPokemonPage(
+                                onFinish: argList[0],
+                                myPokemon: argList[1],
+                                pokemonState: argList[2],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // ポケモンタブ
+          StatefulShellBranch(
+            navigatorKey: _navigatorKeys[TabItem.pokemons],
+            routes: <RouteBase>[
+              GoRoute(
+                path: PokemonTabPath.root.fullpath,
+                builder: (BuildContext context, GoRouterState state) =>
+                    const PokemonTabScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: PokemonTabPath.register.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      List argList = state.extra! as List;
+                      return RegisterPokemonPage(
+                        onFinish: argList[0],
+                        myPokemon: argList[1],
+                      );
+                    },
+                  ),
+                  GoRoute(
+                    path: PokemonTabPath.view.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      List argList = state.extra! as List;
+                      return ViewPokemonPage(
+                        onEdit: argList[0],
+                        pokemonIDList: argList[1],
+                        listIndex: argList[2],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // パーティタブ
+          StatefulShellBranch(
+            navigatorKey: _navigatorKeys[TabItem.parties],
+            routes: <RouteBase>[
+              GoRoute(
+                path: PartyTabPath.root.fullpath,
+                builder: (BuildContext context, GoRouterState state) =>
+                    const PartyTabScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: PartyTabPath.register.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      List argList = state.extra! as List;
+                      return RegisterPartyPage(
+                        onFinish: argList[0],
+                        onSelectPokemon: argList[1],
+                        party: argList[2],
+                        isNew: argList[3],
+                        isEditPokemon: argList[4],
+                        onEditPokemon: argList[5],
+                      );
+                    },
+                    routes: <RouteBase>[
+                      GoRoute(
+                        path: PartyTabPath.registerSelectPokemon.path,
+                        builder: (BuildContext context, GoRouterState state) {
+                          List argList = state.extra! as List;
+                          return PokemonsPage(
+                            onAdd: argList[0],
+                            onView: argList[1],
+                            onSelect: argList[2],
+                            selectMode: argList[3],
+                            party: argList[4],
+                            selectingPokemonIdx: argList[5],
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  GoRoute(
+                    path: PartyTabPath.view.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      List argList = state.extra! as List;
+                      return ViewPartyPage(
+                        partyIDList: argList[0],
+                        listIndex: argList[1],
+                        onEdit: argList[2],
+                        onViewPokemon: argList[3],
+                      );
+                    },
+                    routes: [
+                      GoRoute(
+                        path: PartyTabPath.viewViewPokemon.path,
+                        builder: (BuildContext context, GoRouterState state) {
+                          List argList = state.extra! as List;
+                          return ViewPokemonPage(
+                            pokemonIDList: argList[0],
+                            listIndex: argList[1],
+                            onEdit: argList[2],
+                          );
+                        },
+                        routes: [
+                          GoRoute(
+                            path: PartyTabPath
+                                .viewViewPokemonRegisterPokemon.path,
+                            builder:
+                                (BuildContext context, GoRouterState state) {
+                              List argList = state.extra! as List;
+                              return RegisterPokemonPage(
+                                onFinish: argList[0],
+                                myPokemon: argList[1],
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // 設定タブ
+          StatefulShellBranch(
+            navigatorKey: _navigatorKeys[TabItem.settings],
+            routes: <RouteBase>[
+              GoRoute(
+                path: SettingTabPath.root.fullpath,
+                builder: (BuildContext context, GoRouterState state) =>
+                    const SettingTabScreen(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: SettingTabPath.reset.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      return SettingResetPage();
+                    },
+                  ),
+                  GoRoute(
+                    path: SettingTabPath.language.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      return SettingLanguagePage();
+                    },
+                  ),
+                  GoRoute(
+                    path: SettingTabPath.license.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      return SettingLicensePage();
+                    },
+                  ),
+                  GoRoute(
+                    path: SettingTabPath.policy.path,
+                    builder: (BuildContext context, GoRouterState state) {
+                      return SettingPolicyPage();
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    ],
+  );
+
   @override
   void initState() {
     super.initState();
@@ -94,7 +341,7 @@ class MyAppStateForLocale extends State<MyApp> {
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (context) => MyAppState(context, _locale),
-      child: MaterialApp(
+      child: MaterialApp.router(
         localizationsDelegates: [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -112,7 +359,8 @@ class MyAppStateForLocale extends State<MyApp> {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           fontFamily: 'Murecho',
         ),
-        home: MyHomePage(),
+        routerConfig: _router,
+        //home: MyHomePage(),
         builder: EasyLoading.init(),
       ),
     );
@@ -130,11 +378,10 @@ class MyAppState extends ChangeNotifier {
   Map<int, Pokemon> pokemons = {};
   Map<int, Party> parties = {};
   Map<int, Battle> battles = {};
-  void Function() onBackKeyPushed = () {};
-  void Function(void Function() func) onTabChange =
-      (func) {}; // 各ページで書き換えてもらう関数
-  void Function(void Function() func) changeTab = (func) {};
-  bool allowPop = false;
+  //void Function() onBackKeyPushed = () {};
+  //void Function(void Function() func) onTabChange =
+  //    (func) {}; // 各ページで書き換えてもらう関数
+  //void Function(void Function() func) changeTab = (func) {};
   // 対戦登録画面のわざ選択前後入力で必要なステート
   List<bool> editingPhase = [];
   // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
@@ -145,9 +392,9 @@ class MyAppState extends ChangeNotifier {
   bool adjustPhaseByDelete = false;
 
   MyAppState(BuildContext context, Locale? locale) {
-    changeTab = (func) {
-      onTabChange(func);
-    };
+    //changeTab = (func) {
+    //  onTabChange(func);
+    //};
     fetchPokeData(locale ?? Locale(Platform.localeName.substring(0, 2), ''));
   }
 
@@ -160,68 +407,40 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
+class ScaffoldWithNavBar extends StatelessWidget {
+  const ScaffoldWithNavBar({
+    required this.navigationShell,
+    Key? key,
+  }) : super(key: key ?? const ValueKey<String>('ScaffoldWithNavBar'));
 
-class _MyHomePageState extends State<MyHomePage> {
-  var _currentTab = TabItem.battles;
-  Widget page = Container();
-  final _navigatorKeys = {
-    TabItem.battles: GlobalKey<NavigatorState>(),
-    TabItem.pokemons: GlobalKey<NavigatorState>(),
-    TabItem.parties: GlobalKey<NavigatorState>(),
-  };
+  final StatefulNavigationShell navigationShell;
 
-  void _selectTab(TabItem tabItem) async {
-    if (_currentTab != tabItem) {
-      var appState = context.read<MyAppState>();
-      appState.changeTab(
-        () {
-          setState(() => _currentTab = tabItem);
-        },
-      );
-    }
+  void _selectTab(BuildContext context, int index) {
+    navigationShell.goBranch(index,
+        initialLocation: /*index == navigationShell.currentIndex*/ false);
   }
 
   @override
   Widget build(BuildContext context) {
-    switch (_currentTab) {
-      case TabItem.battles:
-        page = BattleTabNavigator(
-          navigatorKey: _navigatorKeys[TabItem.battles],
-          tabItem: TabItem.battles,
-        );
-        break;
-      case TabItem.pokemons:
-        page = PokemonTabNavigator(
-          navigatorKey: _navigatorKeys[TabItem.pokemons],
-          tabItem: TabItem.pokemons,
-        );
-        break;
-      case TabItem.parties:
-        page = PartyTabNavigator(
-          navigatorKey: _navigatorKeys[TabItem.parties],
-          tabItem: TabItem.parties,
-        );
-        break;
-      case TabItem.settings:
-        page = SettingTabNavigator(
-          navigatorKey: _navigatorKeys[TabItem.settings],
-          tabItem: TabItem.settings,
-        );
-        break;
-      default:
-        throw UnimplementedError('no widget');
-    }
-
     return LayoutBuilder(builder: (context, constraints) {
+      String tabName(TabItem item, BuildContext context) {
+        switch (item) {
+          case TabItem.battles:
+            return AppLocalizations.of(context)!.tabBattles;
+          case TabItem.pokemons:
+            return AppLocalizations.of(context)!.tabPokemons;
+          case TabItem.parties:
+            return AppLocalizations.of(context)!.tabParties;
+          case TabItem.settings:
+            return AppLocalizations.of(context)!.tabSettings;
+        }
+      }
+
       return NavigatorPopHandler(
         onPop: () {
           //var appState = context.read<MyAppState>();
           //appState.onBackKeyPushed();
-          _navigatorKeys[_currentTab]!.currentState!.pop();
+//          _navigatorKeys[_currentTab]!.currentState!.pop();
           // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
 /*            Navigator.pop(
               currentContext,
@@ -231,7 +450,7 @@ class _MyHomePageState extends State<MyHomePage> {
           body: Center(
             child: Container(
               color: Theme.of(context).colorScheme.primaryContainer,
-              child: page,
+              child: navigationShell,
             ),
           ),
           bottomNavigationBar: Column(
@@ -270,9 +489,17 @@ class _MyHomePageState extends State<MyHomePage> {
                       },
                     )
                   : Container(),
-              BottomNavigation(
-                currentTab: _currentTab,
-                onSelectTab: _selectTab,
+              BottomNavigationBar(
+                type: BottomNavigationBarType.fixed,
+                currentIndex: navigationShell.currentIndex,
+                onTap: (index) => _selectTab(context, index),
+                items: <BottomNavigationBarItem>[
+                  for (var tab in TabItem.values)
+                    BottomNavigationBarItem(
+                      icon: Icon(tabIcon[tab]),
+                      label: tabName(tab, context),
+                    ),
+                ],
               ),
             ],
           ),
@@ -282,59 +509,57 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
-class PokemonTabNavigatorRoutes {
-  static const String root = '/';
-  static const String register = '/register';
+enum PokemonTabPath {
+  root,
+  register,
+  view,
+  viewRegister,
 }
 
-class PokemonTabNavigator extends StatefulWidget {
-  const PokemonTabNavigator({
+extension PokemonTabPathStr on PokemonTabPath {
+  String get path {
+    switch (this) {
+      case PokemonTabPath.register:
+        return 'register';
+      case PokemonTabPath.view:
+        return 'view';
+      case PokemonTabPath.root:
+      default:
+        return 'pokemons';
+    }
+  }
+
+  String get fullpath {
+    switch (this) {
+      case PokemonTabPath.register:
+        return '/pokemons/register';
+      case PokemonTabPath.view:
+        return '/pokemons/view';
+      case PokemonTabPath.root:
+      default:
+        return '/pokemons';
+    }
+  }
+}
+
+class PokemonTabScreen extends StatelessWidget {
+  const PokemonTabScreen({
     Key? key,
-    required this.navigatorKey,
-    required this.tabItem,
   }) : super(key: key);
-  final GlobalKey<NavigatorState>? navigatorKey;
-  final TabItem tabItem;
 
-  @override
-  State<PokemonTabNavigator> createState() => _PokemonTabNavigatorState();
-
-  void pop() {}
-}
-
-class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
   void _pushRegister(
     BuildContext context,
     Pokemon myPokemon,
-    bool isNew, {
-    bool isChange = false,
-  }) {
-    if (isChange) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) {
-            // 新規作成
-            return RegisterPokemonPage(
-              onFinish: () => _pop(context),
-              myPokemon: myPokemon,
-            );
-          },
-        ),
-      ).then((value) {
-        setState(() {});
-      });
-    } else {
-      Navigator.push(
-        context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) {
-            // 新規作成
-            return RegisterPokemonPage(
-              onFinish: () => _pop(context),
-              myPokemon: myPokemon,
-            );
-          },
+  ) {
+    GoRouter.of(context).push(
+      PokemonTabPath.register.fullpath,
+      // 新規作成
+      extra: [
+        () => _pop(context),
+        myPokemon,
+      ],
+    );
+/*          },
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             final Offset begin = Offset(1.0, 0.0); // 右から左
             const Offset end = Offset.zero;
@@ -350,22 +575,20 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
       ).then((value) {
         setState(() {});
       });
-    }
+    }*/
   }
 
   void _pushView(BuildContext context, List<int> pokemonIDList, int index) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          // ポケモン詳細表示
-          return ViewPokemonPage(
-            pokemonIDList: pokemonIDList,
-            listIndex: index,
-            onEdit: (pokemon) => _pushRegister(context, pokemon, false),
-          );
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+    GoRouter.of(context).push(
+      // ポケモン詳細表示
+      PokemonTabPath.view.fullpath,
+      extra: [
+        (pokemon) => _pushRegister(context, pokemon),
+        pokemonIDList,
+        index,
+      ],
+    );
+/*        transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final Offset begin = Offset(1.0, 0.0); // 右から左
           const Offset end = Offset.zero;
           final Animatable<Offset> tween = Tween(begin: begin, end: end)
@@ -379,104 +602,110 @@ class _PokemonTabNavigatorState extends State<PokemonTabNavigator> {
       ),
     ).then((value) {
       setState(() {});
-    });
+    });*/
   }
 
   void _pop(BuildContext context) {
-    Navigator.pop(
-      context,
-    );
+    GoRouter.of(context).pop();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: widget.navigatorKey,
-      initialRoute: PokemonTabNavigatorRoutes.root,
-      onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) {
-            switch (routeSettings.name) {
-              case PokemonTabNavigatorRoutes.register:
-                // 新規作成
-                return RegisterPokemonPage(
-                  onFinish: () => _pop(context),
-                  myPokemon: Pokemon(),
-                  //isNew: true,
-                );
-              default:
-                return PokemonsPage(
-                  onAdd: (myPokemon, isNew) =>
-                      _pushRegister(context, myPokemon, isNew),
-                  onView: (pokemonList, index) => _pushView(
-                      context, [for (final e in pokemonList) e.id], index),
-                  onSelect: null,
-                  selectMode: false,
-                );
-            }
-          },
-        );
-      },
+    return PokemonsPage(
+      onAdd: (myPokemon, isNew) => _pushRegister(context, myPokemon),
+      onView: (pokemonList, index) =>
+          _pushView(context, [for (final e in pokemonList) e.id], index),
+      onSelect: null,
+      selectMode: false,
     );
   }
 }
 
-class PartyTabNavigatorRoutes {
-  static const String root = '/';
-  static const String register = '/register';
-  static const String registerPokemon = '/register/pokemon';
+enum PartyTabPath {
+  root,
+  view,
+  viewViewPokemon,
+  viewViewPokemonRegisterPokemon,
+  register,
+  registerSelectPokemon,
+  registerPokemon,
 }
 
-class PartyTabNavigator extends StatefulWidget {
-  const PartyTabNavigator({
+extension PartyTabPathStr on PartyTabPath {
+  String get path {
+    switch (this) {
+      case PartyTabPath.view:
+        return 'view';
+      case PartyTabPath.viewViewPokemon:
+        return 'viewPokemon';
+      case PartyTabPath.viewViewPokemonRegisterPokemon:
+        return 'registerPokemon';
+      case PartyTabPath.register:
+        return 'register';
+      case PartyTabPath.registerSelectPokemon:
+        return 'selectPokemon';
+      case PartyTabPath.registerPokemon:
+        return 'pokemon';
+      case PartyTabPath.root:
+      default:
+        return 'parties';
+    }
+  }
+
+  String get fullpath {
+    switch (this) {
+      case PartyTabPath.view:
+        return '/parties/view';
+      case PartyTabPath.viewViewPokemon:
+        return '/parties/view/viewPokemon';
+      case PartyTabPath.viewViewPokemonRegisterPokemon:
+        return '/parties/view/viewPokemon/registerPokemon';
+      case PartyTabPath.register:
+        return '/parties/register';
+      case PartyTabPath.registerSelectPokemon:
+        return '/parties/register/selectPokemon';
+      case PartyTabPath.registerPokemon:
+        return '/parties/register/pokemon';
+      case PartyTabPath.root:
+      default:
+        return '/parties';
+    }
+  }
+}
+
+class PartyTabScreen extends StatelessWidget {
+  const PartyTabScreen({
     Key? key,
-    required this.navigatorKey,
-    required this.tabItem,
   }) : super(key: key);
-  final GlobalKey<NavigatorState>? navigatorKey;
-  final TabItem tabItem;
 
-  @override
-  State<PartyTabNavigator> createState() => _PartyTabNavigatorState();
-}
-
-class _PartyTabNavigatorState extends State<PartyTabNavigator> {
   void _pushRegister(BuildContext context, Party party, bool isNew) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // 新規作成
-          return RegisterPartyPage(
-            onFinish: () => _pop(context),
-            onSelectPokemon: (party, idx) =>
-                _pushSelectPokemonPage(context, party, idx),
-            party: party,
-            isNew: isNew,
-            isEditPokemon: false,
-            onEditPokemon: (pokemon, pokemonState) => {},
-          );
-        },
-      ),
-    ).then((value) {
-      setState(() {});
-    });
+    GoRouter.of(context).push(
+      // 新規作成
+      PartyTabPath.register.fullpath,
+      extra: [
+        () => _pop(context),
+        (party, idx) => _pushSelectPokemonPage(context, party, idx),
+        party,
+        isNew,
+        false,
+        (pokemon, pokemonState) => {},
+      ],
+    );
   }
 
   void _pushView(BuildContext context, List<int> partyIDList, int index) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          // パーティ詳細表示
-          return ViewPartyPage(
-            partyIDList: partyIDList,
-            listIndex: index,
-            onEdit: (party) => _pushRegister(context, party, false),
-            onViewPokemon: (pokemonList, listIndex) => _pushPokemonView(
-                context, [for (final e in pokemonList) e.id], listIndex),
-          );
-        },
+    GoRouter.of(context).push(
+      // パーティ詳細表示
+      PartyTabPath.view.fullpath,
+      extra: [
+        partyIDList,
+        index,
+        (party) => _pushRegister(context, party, false),
+        (pokemonList, listIndex) => _pushPokemonView(
+            context, [for (final e in pokemonList) e.id], listIndex),
+      ],
+    );
+/*        },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final Offset begin = Offset(1.0, 0.0); // 右から左
           const Offset end = Offset.zero;
@@ -491,22 +720,21 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
       ),
     ).then((value) {
       setState(() {});
-    });
+    });*/
   }
 
   void _pushPokemonView(
       BuildContext context, List<int> pokemonIDList, int index) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          // ポケモン詳細表示
-          return ViewPokemonPage(
-            pokemonIDList: pokemonIDList,
-            listIndex: index,
-            onEdit: (pokemon) => _pushPokemonRegister(context, pokemon, false),
-          );
-        },
+    GoRouter.of(context).push(
+      // ポケモン詳細表示
+      PartyTabPath.viewViewPokemon.fullpath,
+      extra: [
+        pokemonIDList,
+        index,
+        (pokemon) => _pushPokemonRegister(context, pokemon, false),
+      ],
+    );
+/*        },
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           final Offset begin = Offset(1.0, 0.0); // 右から左
           const Offset end = Offset.zero;
@@ -521,69 +749,57 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
       ),
     ).then((value) {
       setState(() {});
-    });
+    });*/
   }
 
   void _pushPokemonRegister(BuildContext context, Pokemon pokemon, bool isNew) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // ポケモン編集
-          return RegisterPokemonPage(
-            onFinish: () => _pop(context),
-            myPokemon: pokemon,
-          );
-        },
-      ),
-    ).then((value) {
-      setState(() {});
-    });
+    GoRouter.of(context).push(
+      // ポケモン編集
+      PartyTabPath.viewViewPokemonRegisterPokemon.fullpath,
+      extra: [
+        () => _pop(context),
+        pokemon,
+      ],
+    );
   }
 
   Future<Pokemon?> _pushSelectPokemonPage(
       BuildContext context, Party party, int selectingPokemonIdx) async {
-    var result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // ポケモン選択
-          return PokemonsPage(
-            onAdd: (pokemon, isNew) {},
-            onView: (pokemonList, index) {},
-            onSelect: (pokemon) => _popSelectPokemonPage(context, pokemon),
-            selectMode: true,
-            party: party,
-            selectingPokemonIdx: selectingPokemonIdx,
-          );
-        },
-      ),
+    var result = await GoRouter.of(context).push<Pokemon?>(
+      // ポケモン選択
+      PartyTabPath.registerSelectPokemon.fullpath,
+      extra: [
+        (pokemon, isNew) {},
+        (pokemonList, index) {},
+        (pokemon) => _popSelectPokemonPage(context, pokemon),
+        true,
+        party,
+        selectingPokemonIdx,
+      ],
     );
     return Future<Pokemon?>.value(result);
   }
 
   void _pop(BuildContext context) {
-    Navigator.pop(
-      context,
-    );
+    GoRouter.of(context).pop();
   }
 
   void _popSelectPokemonPage(BuildContext context, Pokemon pokemon) {
-    Navigator.of(context).pop(
-      pokemon,
-    );
+    GoRouter.of(context).pop(pokemon);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
+/*    return Navigator(
       key: widget.navigatorKey,
-      initialRoute: PartyTabNavigatorRoutes.root,
+      initialRoute: PartyTabPaths.root,
       onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) {
+        //return MaterialPageRoute(
+        //builder: (context) {
+        return PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) {
             switch (routeSettings.name) {
-              case PartyTabNavigatorRoutes.register:
+              case PartyTabPaths.register:
                 // 新規作成
                 return RegisterPartyPage(
                   onFinish: () => _pop(context),
@@ -594,7 +810,7 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                   isEditPokemon: false,
                   onEditPokemon: (pokemon, pokemonState) => {},
                 );
-              case PartyTabNavigatorRoutes.registerPokemon:
+              case PartyTabPaths.registerPokemon:
                 // ポケモン選択
                 return PokemonsPage(
                   onAdd: (pokemon, isNew) {},
@@ -603,41 +819,73 @@ class _PartyTabNavigatorState extends State<PartyTabNavigator> {
                       _popSelectPokemonPage(context, pokemon),
                   selectMode: true,
                 );
-              default:
-                return PartiesPage(
-                  onAdd: (party, isNew) => _pushRegister(context, party, isNew),
-                  onSelect: null,
-                  onView: (partyList, index) => _pushView(
-                      context, [for (final e in partyList) e.id], index),
-                  selectMode: false,
-                );
             }
           },
         );
       },
+    );*/
+    return PartiesPage(
+      onAdd: (party, isNew) => _pushRegister(context, party, isNew),
+      onSelect: null,
+      onView: (partyList, index) =>
+          _pushView(context, [for (final e in partyList) e.id], index),
+      selectMode: false,
     );
   }
 }
 
-class BattleTabNavigatorRoutes {
-  static const String root = '/';
-  static const String register = '/register';
+enum BattleTabPath {
+  root,
+  view,
+  register,
+  registerSelectParty,
+  registerRegisterParty,
+  registerRegisterPartyEditPokemon,
 }
 
-class BattleTabNavigator extends StatefulWidget {
-  const BattleTabNavigator({
+extension BattleTabPathStr on BattleTabPath {
+  String get path {
+    switch (this) {
+      case BattleTabPath.view:
+        return 'view';
+      case BattleTabPath.register:
+        return 'register';
+      case BattleTabPath.registerSelectParty:
+        return 'selectParty';
+      case BattleTabPath.registerRegisterParty:
+        return 'registerParty';
+      case BattleTabPath.registerRegisterPartyEditPokemon:
+        return 'editPokemon';
+      case BattleTabPath.root:
+      default:
+        return 'battles';
+    }
+  }
+
+  String get fullpath {
+    switch (this) {
+      case BattleTabPath.view:
+        return '/battles/view';
+      case BattleTabPath.register:
+        return '/battles/register';
+      case BattleTabPath.registerSelectParty:
+        return '/battles/register/selectParty';
+      case BattleTabPath.registerRegisterParty:
+        return '/battles/register/registerParty';
+      case BattleTabPath.registerRegisterPartyEditPokemon:
+        return '/battles/register/registerParty/editPokemon';
+      case BattleTabPath.root:
+      default:
+        return '/battles';
+    }
+  }
+}
+
+class BattleTabScreen extends StatelessWidget {
+  const BattleTabScreen({
     Key? key,
-    required this.navigatorKey,
-    required this.tabItem,
   }) : super(key: key);
-  final GlobalKey<NavigatorState>? navigatorKey;
-  final TabItem tabItem;
 
-  @override
-  State<BattleTabNavigator> createState() => _BattleTabNavigatorState();
-}
-
-class _BattleTabNavigatorState extends State<BattleTabNavigator> {
   void _push(
     BuildContext context,
     Battle battle,
@@ -645,266 +893,178 @@ class _BattleTabNavigatorState extends State<BattleTabNavigator> {
     RegisterBattlePageType pageType = RegisterBattlePageType.basePage,
     int turnNum = 1,
   }) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // 新規作成
-          return RegisterBattlePage(
-            onFinish: () => _pop(context),
-            onSelectParty: () => _pushSelectPartyPage(context),
-            battle: battle,
-            isNew: isNew,
-            onSaveOpponentParty: (party, state) =>
-                _pushRegisterPartyPage(context, party, state),
-            firstPageType: pageType,
-            firstTurnNum: turnNum,
-          );
-        },
-      ),
-    ).then((value) {
-      setState(() {});
-    });
+    GoRouter.of(context).push(
+      BattleTabPath.register.fullpath,
+      extra: [battle, isNew, pageType, turnNum],
+    );
   }
 
-  void _pushBattleView(
-    BuildContext context,
-    Battle battle,
-  ) {
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          // 対戦詳細表示
-//          return ViewBattlePage(
-//            battle: battle,
-//            onEdit: (b, pageType, turnNum) =>
-//                _push(context, b, false, pageType: pageType, turnNum: turnNum),
-//          );
-          // TODO
-          return Container();
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final Offset begin = Offset(1.0, 0.0); // 右から左
-          const Offset end = Offset.zero;
-          final Animatable<Offset> tween = Tween(begin: begin, end: end)
-              .chain(CurveTween(curve: Curves.easeInOut));
-          final Animation<Offset> offsetAnimation = animation.drive(tween);
-          return SlideTransition(
-            position: offsetAnimation,
-            child: child,
-          );
-        },
-      ),
-    ).then((value) {
-      setState(() {});
-    });
+  @override
+  Widget build(BuildContext context) {
+    return BattlesPage(
+      onAdd: (battle, isNew) => _push(context, battle, isNew),
+      onView: (battle) => () {},
+    );
   }
+}
+
+class RegisterBattleScreen extends StatelessWidget {
+  const RegisterBattleScreen({
+    required this.battle,
+    required this.isNew,
+    required this.pageType,
+    required this.turnNum,
+    Key? key,
+  }) : super(key: key);
+
+  final Battle battle;
+  final bool isNew;
+  final RegisterBattlePageType pageType;
+  final int turnNum;
 
   void _pushEditPokemonPage(
       BuildContext context, Pokemon pokemon, PokemonState pokemonState) async {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // ポケモン編集
-          return RegisterPokemonPage(
-            onFinish: () => _pop(context),
-            myPokemon: pokemon,
-            //isNew: false,
-            pokemonState: pokemonState,
-          );
-        },
-      ),
+    GoRouter.of(context).push(
+      PokemonTabPath.register.fullpath,
+      extra: [
+        () => _pop(context),
+        pokemon,
+        pokemonState,
+      ],
     );
   }
 
   Future<Party?> _pushSelectPartyPage(BuildContext context) async {
-    var result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // パーティ選択
-          return PartiesPage(
-            onAdd: (party, isNew) {},
-            onSelect: (party) => _popSelectPartyPage(context, party),
-            onView: (partyList, index) {},
-            selectMode: true,
-          );
-        },
-      ),
+    var result = await GoRouter.of(context).push<Party?>(
+      // パーティ選択
+      BattleTabPath.registerSelectParty.fullpath,
+      extra: [
+        (party, isNew) {},
+        (party) => _popSelectPartyPage(context, party),
+        (partyList, index) {},
+        true,
+      ],
     );
     return Future<Party?>.value(result);
   }
 
   Future<void> _pushRegisterPartyPage(
       BuildContext context, Party party, PhaseState state) async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) {
-          // パーティ登録
-          return RegisterPartyPage(
-            onFinish: () => _pop(context),
-            onSelectPokemon: (party, idx) {
-              return Future<Pokemon?>.value(Pokemon());
-            }, // 使わない
-            party: party,
-            isNew: party.id == 0,
-            isEditPokemon: true,
-            onEditPokemon: (pokemon, pokemonState) =>
-                _pushEditPokemonPage(context, pokemon, pokemonState),
-            phaseState: state,
-          );
-        },
-      ),
+    GoRouter.of(context).push(
+      PartyTabPath.register.fullpath,
+      extra: [
+        () => _pop(context),
+        (party, idx) {
+          return Future<Pokemon?>.value(Pokemon());
+        }, // 使わない
+        party,
+        party.id == 0,
+        true,
+        (pokemon, pokemonState) =>
+            _pushEditPokemonPage(context, pokemon, pokemonState),
+        state,
+      ],
     );
-    return Future<void>.value();
   }
 
   void _pop(BuildContext context) {
-    Navigator.pop(
-      context,
-    );
+    GoRouter.of(context).pop();
   }
 
   void _popSelectPartyPage(BuildContext context, Party party) {
-    Navigator.of(context).pop(
-      party,
-    );
+    GoRouter.of(context).pop(party);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: widget.navigatorKey,
-      initialRoute: BattleTabNavigatorRoutes.root,
-      onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) {
-            switch (routeSettings.name) {
-              case BattleTabNavigatorRoutes.register:
-                // 新規作成
-                return RegisterBattlePage(
-                  onFinish: () => _pop(context),
-                  onSelectParty: () => _pushSelectPartyPage(context),
-                  battle: Battle(),
-                  isNew: true,
-                  onSaveOpponentParty: (party, state) =>
-                      _pushRegisterPartyPage(context, party, state),
-                  firstPageType: RegisterBattlePageType.basePage,
-                  firstTurnNum: 1,
-                );
-              default:
-                return BattlesPage(
-                  onAdd: (battle, isNew) => _push(context, battle, isNew),
-                  onView: (battle) => _pushBattleView(context, battle),
-                );
-            }
-          },
-        );
-      },
+    return RegisterBattlePage(
+      onFinish: () => _pop(context),
+      onSelectParty: () => _pushSelectPartyPage(context),
+      battle: battle,
+      isNew: isNew,
+      onSaveOpponentParty: (party, state) =>
+          _pushRegisterPartyPage(context, party, state),
+      firstPageType: pageType,
+      firstTurnNum: turnNum,
     );
   }
 }
 
-class SettingTabNavigatorRoutes {
-  static const String root = '/';
-  static const String reset = '/reset';
-  static const String language = '/language';
-  static const String license = '/license';
-  static const String policy = '/policy';
+enum SettingTabPath {
+  root,
+  reset,
+  language,
+  license,
+  policy,
 }
 
-class SettingTabNavigator extends StatefulWidget {
-  const SettingTabNavigator({
-    Key? key,
-    required this.navigatorKey,
-    required this.tabItem,
-  }) : super(key: key);
-  final GlobalKey<NavigatorState>? navigatorKey;
-  final TabItem tabItem;
-
-  @override
-  State<SettingTabNavigator> createState() => _SettingTabNavigatorState();
-}
-
-class _SettingTabNavigatorState extends State<SettingTabNavigator> {
-  void _push(BuildContext context, String route) {
-    Widget pushPage = Container();
-    switch (route) {
-      case SettingTabNavigatorRoutes.reset:
-        pushPage = SettingResetPage();
-        break;
-      case SettingTabNavigatorRoutes.language:
-        pushPage = SettingLanguagePage();
-        break;
-      case SettingTabNavigatorRoutes.license:
-        pushPage = SettingLicensePage();
-        break;
-      case SettingTabNavigatorRoutes.policy:
-        pushPage = SettingPolicyPage();
-        break;
+extension SettingTabPathStr on SettingTabPath {
+  String get path {
+    switch (this) {
+      case SettingTabPath.reset:
+        return 'reset';
+      case SettingTabPath.language:
+        return 'language';
+      case SettingTabPath.license:
+        return 'license';
+      case SettingTabPath.policy:
+        return 'policy';
+      case SettingTabPath.root:
+      default:
+        return 'settings';
     }
-
-    Navigator.push(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) {
-          return pushPage;
-        },
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          final Offset begin = Offset(1.0, 0.0); // 右から左
-          const Offset end = Offset.zero;
-          final Animatable<Offset> tween = Tween(begin: begin, end: end)
-              .chain(CurveTween(curve: Curves.easeInOut));
-          final Animation<Offset> offsetAnimation = animation.drive(tween);
-          return SlideTransition(
-            position: offsetAnimation,
-            child: child,
-          );
-        },
-      ),
-    ).then((value) {
-      setState(() {});
-    });
   }
 
-/*
-  void _pop(BuildContext context) {
-    Navigator.pop(
-      context,
-    );
+  String get fullpath {
+    switch (this) {
+      case SettingTabPath.reset:
+        return '/settings/reset';
+      case SettingTabPath.language:
+        return '/settings/language';
+      case SettingTabPath.license:
+        return '/settings/license';
+      case SettingTabPath.policy:
+        return '/settings/policy';
+      case SettingTabPath.root:
+      default:
+        return '/settings';
+    }
   }
-*/
+}
+
+class SettingTabScreen extends StatelessWidget {
+  const SettingTabScreen({
+    Key? key,
+  }) : super(key: key);
+
+  void _push(BuildContext context, SettingTabPath path) {
+    GoRouter.of(context).push(path.fullpath);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Navigator(
-      key: widget.navigatorKey,
-      initialRoute: SettingTabNavigatorRoutes.root,
-      onGenerateRoute: (routeSettings) {
-        return MaterialPageRoute(
-          builder: (context) {
-            switch (routeSettings.name) {
-              case SettingTabNavigatorRoutes.reset:
-                return SettingResetPage();
-              default:
-                return SettingsPage(
-                  onReset: () =>
-                      _push(context, SettingTabNavigatorRoutes.reset),
-                  viewLanguage: () =>
-                      _push(context, SettingTabNavigatorRoutes.language),
-                  viewLicense: () =>
-                      _push(context, SettingTabNavigatorRoutes.license),
-                  viewPolicy: () =>
-                      _push(context, SettingTabNavigatorRoutes.policy),
-                );
-            }
+    return SettingsPage(
+      onReset: () => _push(context, SettingTabPath.reset),
+      viewLanguage: () => _push(context, SettingTabPath.language),
+      viewLicense: () => _push(context, SettingTabPath.license),
+      viewPolicy: () => _push(context, SettingTabPath.policy),
+    );
+/*            }
+          },
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final Offset begin = Offset(1.0, 0.0); // 右から左
+            const Offset end = Offset.zero;
+            final Animatable<Offset> tween = Tween(begin: begin, end: end)
+                .chain(CurveTween(curve: Curves.easeInOut));
+            final Animation<Offset> offsetAnimation = animation.drive(tween);
+            return SlideTransition(
+              position: offsetAnimation,
+              child: child,
+            );
           },
         );
       },
-    );
+    );*/
   }
 }
 
