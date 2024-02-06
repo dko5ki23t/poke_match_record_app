@@ -1,5 +1,3 @@
-// 天気
-
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
@@ -7,7 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-// 天気
+/// 天気の情報を管理するclass
 class Weather extends Equatable implements Copyable {
   static const int none = 0;
   static const int sunny = 1; // 晴れ

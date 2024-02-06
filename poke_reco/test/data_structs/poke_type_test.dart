@@ -46,7 +46,7 @@ void main() {
       for (int j = 0; j < defenderTypes.length; j++) {
         defenderState.type1 = defenderTypes[j].item1;
         defenderState.type2 = defenderTypes[j].item2;
-        double result = PokeTypeEffectiveness.effectivenessRate(false, false, false, attackTypes[i], defenderState);
+        double result = PokeTypeEffectiveness.effectivenessRate(attackTypes[i], defenderState);
         test('タイプ相性 No[$i][$j]', () {
           double answer = 1.0;
           if (answers[i][j] == '〇') answer = 2.0;
@@ -54,6 +54,7 @@ void main() {
           if (answers[i][j] == '✕') answer = 0.0;
           expect(answer - result < 0.01, true);
         });
+        // TODO: とくせいや状態異常による相性変化もテストが必要
       }
     }
   });

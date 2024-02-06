@@ -5,7 +5,9 @@ import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/custom_widgets/stand_alone_checkbox.dart';
 import 'package:poke_reco/custom_widgets/stand_alone_switch_list.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -24,21 +26,6 @@ import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-// ダメージ
-class DamageClass extends Equatable {
-  static const int none = 0;
-  static const int status = 1; // へんか(ダメージなし)
-  static const int physical = 2; // ぶつり
-  static const int special = 3; // とくしゅ
-
-  const DamageClass(this.id);
-
-  @override
-  List<Object?> get props => [id];
-
-  final int id;
-}
 
 enum TurnMoveType {
   none,
@@ -118,10 +105,18 @@ extension MoveHitName on MoveHit {
   }
 }
 
+/// わざのタイプ相性による効果
 enum MoveEffectiveness {
+  /// 通常
   normal,
+
+  /// こうかはばつぐんだ
   great,
+
+  /// こうかはいまひとつのようだ
   notGood,
+
+  /// こうかはないようだ
   noEffect,
 }
 
@@ -242,8 +237,7 @@ class TurnEffectAction extends TurnEffect {
   PlayerType _playerType = PlayerType.none;
   TurnMoveType type = TurnMoveType.none;
   PokeType teraType = PokeType.unknown; // テラスタルなし
-  Move move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
-      DamageClass(0), MoveEffect(0), 0, 0);
+  Move move = Move.none();
   bool isSuccess = true; // 行動の成功/失敗
   ActionFailure actionFailure = ActionFailure(0); // 行動失敗の理由
   int hitCount = 1; // こうげきが命中した回数
@@ -2836,19 +2830,10 @@ class TurnEffectAction extends TurnEffect {
                 myState.minStats.d.race = 77;
                 myState.minStats.s.race = 128;
                 for (final stat in StatIndexList.listAtoS) {
-                  var biases = Temper.getTemperBias(myState.pokemon.temper);
-                  myState.maxStats[stat].real = SixParams.getRealABCDS(
-                      myState.pokemon.level,
-                      myState.maxStats[stat].race,
-                      myState.maxStats[stat].indi,
-                      myState.maxStats[stat].effort,
-                      biases[stat.index - 1]);
-                  myState.minStats[stat].real = SixParams.getRealABCDS(
-                      myState.pokemon.level,
-                      myState.minStats[stat].race,
-                      myState.minStats[stat].indi,
-                      myState.minStats[stat].effort,
-                      biases[stat.index - 1]);
+                  myState.maxStats[stat].updateReal(
+                      myState.pokemon.level, myState.pokemon.temper);
+                  myState.minStats[stat].updateReal(
+                      myState.pokemon.level, myState.pokemon.temper);
                 }
               } else {
                 myState.buffDebuffs.list[findIdx] =
@@ -2866,19 +2851,10 @@ class TurnEffectAction extends TurnEffect {
                 myState.minStats.d.race = 128;
                 myState.minStats.s.race = 90;
                 for (final stat in StatIndexList.listAtoS) {
-                  var biases = Temper.getTemperBias(myState.pokemon.temper);
-                  myState.maxStats[stat].real = SixParams.getRealABCDS(
-                      myState.pokemon.level,
-                      myState.maxStats[stat].race,
-                      myState.maxStats[stat].indi,
-                      myState.maxStats[stat].effort,
-                      biases[stat.index - 1]);
-                  myState.minStats[stat].real = SixParams.getRealABCDS(
-                      myState.pokemon.level,
-                      myState.minStats[stat].race,
-                      myState.minStats[stat].indi,
-                      myState.minStats[stat].effort,
-                      biases[stat.index - 1]);
+                  myState.maxStats[stat].updateReal(
+                      myState.pokemon.level, myState.pokemon.temper);
+                  myState.minStats[stat].updateReal(
+                      myState.pokemon.level, myState.pokemon.temper);
                 }
               }
             }
@@ -4174,13 +4150,9 @@ class TurnEffectAction extends TurnEffect {
                   if (reals.item1.index > StatIndex.H.index) {
                     // もともとある範囲より狭まるようにのみ上書き
                     int minS = opponentPokemonState
-                        .minStats[StatIndexNumber.getStatIndexFromIndex(
-                            reals.item1.index)]
-                        .real;
+                        .minStats[StatIndex.values[reals.item1.index]].real;
                     int maxS = opponentPokemonState
-                        .maxStats[StatIndexNumber.getStatIndexFromIndex(
-                            reals.item1.index)]
-                        .real;
+                        .maxStats[StatIndex.values[reals.item1.index]].real;
                     bool addGuide = false;
                     if (minS < reals.item3) {
                       minS = reals.item3;
@@ -4796,11 +4768,14 @@ class TurnEffectAction extends TurnEffect {
     }
     // 相性補正(切り捨て)
     double typeRate = PokeTypeEffectiveness.effectivenessRate(
-        myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
-        yourState.holdingItem?.id == 586,
-        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-        replacedMoveType,
-        yourState);
+      replacedMoveType,
+      yourState,
+      isScrappyMindEye:
+          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
+      isRingTarget: yourState.holdingItem?.id == 586,
+      isMiracleEye:
+          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+    );
     if (yourState.currentAbility.id == 305 &&
         (yourState.remainHP >= yourState.pokemon.h.real ||
             yourState.remainHPPercent >= 100) &&
@@ -4810,11 +4785,15 @@ class TurnEffectAction extends TurnEffect {
     }
     if (additionalMoveType != null) {
       typeRate *= PokeTypeEffectiveness.effectivenessRate(
-          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
-          yourState.holdingItem?.id == 586,
-          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-          additionalMoveType,
-          yourState);
+        additionalMoveType,
+        yourState,
+        isScrappyMindEye: myState.currentAbility.id == 113 ||
+            myState.currentAbility.id == 299,
+        isRingTarget: yourState.holdingItem?.id == 586,
+        isMiracleEye: yourState
+            .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+            .isNotEmpty,
+      );
     }
     damageVmax = (damageVmax * typeRate).floor();
     damageVmin = (damageVmin * typeRate).floor();
@@ -5012,11 +4991,14 @@ class TurnEffectAction extends TurnEffect {
 
     // タイプ相性を計算
     double typeRate = PokeTypeEffectiveness.effectivenessRate(
-        myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
-        yourState.holdingItem?.id == 586,
-        yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-        replacedMoveType,
-        yourState);
+      replacedMoveType,
+      yourState,
+      isScrappyMindEye:
+          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
+      isRingTarget: yourState.holdingItem?.id == 586,
+      isMiracleEye:
+          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
+    );
     if (yourState.currentAbility.id == 305 &&
         (yourState.remainHP >= yourState.pokemon.h.real ||
             yourState.remainHPPercent >= 100) &&
@@ -5026,11 +5008,15 @@ class TurnEffectAction extends TurnEffect {
     }
     if (additionalMoveType != null) {
       typeRate *= PokeTypeEffectiveness.effectivenessRate(
-          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
-          yourState.holdingItem?.id == 586,
-          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-          additionalMoveType,
-          yourState);
+        additionalMoveType,
+        yourState,
+        isScrappyMindEye: myState.currentAbility.id == 113 ||
+            myState.currentAbility.id == 299,
+        isRingTarget: yourState.holdingItem?.id == 586,
+        isMiracleEye: yourState
+            .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+            .isNotEmpty,
+      );
     }
 
     double tmp = realDamage.toDouble();
@@ -7627,7 +7613,7 @@ class TurnEffectAction extends TurnEffect {
     extraArg3 = [0];
     _changePokemonIndexes = [null, null];
     moveType = PokeType.unknown;
-    isFirst = false;
+    isFirst = null;
     _isValid = false;
   }
 
@@ -7648,7 +7634,7 @@ class TurnEffectAction extends TurnEffect {
     extraArg3 = [0];
     _changePokemonIndexes = [null, null];
     moveType = PokeType.unknown;
-    isFirst = false;
+    isFirst = null;
     _isValid = false;
   }
 
@@ -7765,8 +7751,9 @@ class TurnEffectAction extends TurnEffect {
     turnEffectAction.moveType =
         PokeType.values[int.parse(turnMoveElements.removeAt(0))];
     // isFirst
-    if (turnMoveElements.removeAt(0) != '') {
-      turnEffectAction.isFirst = int.parse(turnMoveElements.removeAt(0)) != 0;
+    final isFirstStr = turnMoveElements.removeAt(0);
+    if (isFirstStr != '') {
+      turnEffectAction.isFirst = int.parse(isFirstStr) != 0;
     }
 
     return turnEffectAction;

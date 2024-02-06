@@ -7,8 +7,11 @@ import 'package:poke_reco/custom_widgets/battle_change_fainting_command.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/battle_first_pokemon_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
+import 'package:poke_reco/custom_widgets/bubble_border.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_user_edit.dart';
@@ -266,9 +269,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 }*/
                   // TODO
                   for (final stat in StatIndexList.listHtoS) {
-                    poke.stats[stat.index].real =
+                    poke.stats.sixParams[stat.index].real =
                         pokemonState.minStats[stat].real;
-                    poke.updateStatsRefReal(stat.index);
+                    poke.updateStatsRefReal(stat);
                   }
                   // TODO
                   for (int j = 0; j < pokemonState.moves.length; j++) {
@@ -379,6 +382,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             ..canZoroarkHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkHisuiNo).isNotEmpty;*/
             // 初期状態設定ここから
             for (int i = 0; i < ownParty.pokemonNum; i++) {
+              // TODO:この一連の処理を関数としてPokemonStateが持つべき
               var pokeState = PokemonState()
                 ..playerType = PlayerType.me
                 ..pokemon = ownParty.pokemons[i]!
@@ -389,10 +393,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 ..usedPPs =
                     List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
                 ..setCurrentAbilityNoEffect(ownParty.pokemons[i]!.ability)
-                ..minStats =
-                    SixStats.generate((j) => ownParty.pokemons[i]!.stats[j])
-                ..maxStats =
-                    SixStats.generate((j) => ownParty.pokemons[i]!.stats[j])
+                ..minStats = SixStats.generate(
+                    (j) => ownParty.pokemons[i]!.stats.sixParams[j])
+                ..maxStats = SixStats.generate(
+                    (j) => ownParty.pokemons[i]!.stats.sixParams[j])
                 ..moves = [
                   for (int j = 0; j < ownParty.pokemons[i]!.moveNum; j++)
                     ownParty.pokemons[i]!.moves[j]!
@@ -406,21 +410,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             }
             for (int i = 0; i < opponentParty.pokemonNum; i++) {
               Pokemon poke = opponentParty.pokemons[i]!;
-              List<int> races = List.generate(
-                  StatIndex.size.index, (index) => poke.stats[index].race);
-              List<int> minReals = List.generate(
-                  StatIndex.size.index,
-                  (index) => index == StatIndex.H.index
-                      ? SixParams.getRealH(poke.level, races[index], 0, 0)
-                      : SixParams.getRealABCDS(
-                          poke.level, races[index], 0, 0, 0.9));
-              List<int> maxReals = List.generate(
-                  StatIndex.size.index,
-                  (index) => index == StatIndex.H.index
-                      ? SixParams.getRealH(poke.level, races[index],
-                          pokemonMaxIndividual, pokemonMaxEffort)
-                      : SixParams.getRealABCDS(poke.level, races[index],
-                          pokemonMaxIndividual, pokemonMaxEffort, 1.1));
               final state = PokemonState()
                 ..playerType = PlayerType.opponent
                 ..pokemon = poke
@@ -430,13 +419,24 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         : 0
                 ..setHoldingItemNoEffect(
                     pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
-                ..minStats = SixStats.generate(
-                    (j) => SixParams(poke.stats[j].race, 0, 0, minReals[j]))
-                ..maxStats = SixStats.generate((j) => SixParams(
-                    poke.stats[j].race,
-                    pokemonMaxIndividual,
-                    pokemonMaxEffort,
-                    maxReals[j]))
+                ..minStats = SixStats.generate((j) =>
+                    FourParams.createFromValues(
+                        statIndex: StatIndex.values[j],
+                        level: poke.level,
+                        race: poke.stats.sixParams[j].race,
+                        indi: 0,
+                        effort: 0,
+                        temper: Temper(
+                            0, '', '', StatIndex.values[j], StatIndex.none)))
+                ..maxStats = SixStats.generate((j) =>
+                    FourParams.createFromValues(
+                        statIndex: StatIndex.values[j],
+                        level: poke.level,
+                        race: poke.stats.sixParams[j].race,
+                        indi: pokemonMaxIndividual,
+                        effort: pokemonMaxEffort,
+                        temper: Temper(
+                            0, '', '', StatIndex.none, StatIndex.values[j])))
                 ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
                 ..type1 = poke.type1
                 ..type2 = poke.type2;
@@ -789,15 +789,32 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   height: 5,
                   thickness: 1,
                 ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: TextButton(
-                      style:
-                          TextButton.styleFrom(backgroundColor: Colors.white),
-                      onPressed: nextPressed,
-                      child: Text(loc.battlesTabToolTipNext),
+                FittedBox(
+                  child: SizedBox(
+                    width: MediaQuery.of(context).size.width,
+                    //height: theme.textTheme.bodyMedium!.fontSize! *
+                    //    theme.textTheme.bodyMedium!.height!,
+                    height: 50,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        for (final effect in turns[turnNum - 1]
+                            .phases
+                            .where((element) => element.isValid()))
+                          Container(
+                            decoration: ShapeDecoration(
+                              color: Colors.green[200],
+                              shape: BubbleBorder(
+                                  nipInBottom:
+                                      effect.playerType == PlayerType.opponent
+                                          ? true
+                                          : effect.playerType == PlayerType.me
+                                              ? false
+                                              : null),
+                            ),
+                            child: Text(effect.displayName(loc: loc)),
+                          ),
+                      ],
                     ),
                   ),
                 ),

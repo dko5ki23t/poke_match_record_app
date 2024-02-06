@@ -521,13 +521,13 @@ class TurnEffect extends Equatable implements Copyable {
           myState.minStats.s.race = 85;
           for (final stat in StatIndexList.listHtoS) {
             var biases = Temper.getTemperBias(myState.pokemon.temper);
-            myState.maxStats[stat].real = SixParams.getRealABCDS(
+            myState.maxStats[stat].real = FourParams.getRealABCDS(
                 myState.pokemon.level,
                 myState.maxStats[stat].race,
                 myState.maxStats[stat].indi,
                 myState.maxStats[stat].effort,
                 biases[stat.index - 1]);
-            myState.minStats[stat].real = SixParams.getRealABCDS(
+            myState.minStats[stat].real = FourParams.getRealABCDS(
                 myState.pokemon.level,
                 myState.minStats[stat].race,
                 myState.minStats[stat].indi,

@@ -1,5 +1,6 @@
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -91,19 +92,10 @@ class TurnEffectTerastal extends TurnEffect {
       myState.minStats.d.race = 110;
       myState.minStats.s.race = 85;
       for (final stat in StatIndexList.listHtoS) {
-        var biases = Temper.getTemperBias(myState.pokemon.temper);
-        myState.maxStats[stat].real = SixParams.getRealABCDS(
-            myState.pokemon.level,
-            myState.maxStats[stat].race,
-            myState.maxStats[stat].indi,
-            myState.maxStats[stat].effort,
-            biases[stat.index - 1]);
-        myState.minStats[stat].real = SixParams.getRealABCDS(
-            myState.pokemon.level,
-            myState.minStats[stat].race,
-            myState.minStats[stat].indi,
-            myState.minStats[stat].effort,
-            biases[stat.index - 1]);
+        myState.maxStats[stat]
+            .updateReal(myState.pokemon.level, myState.pokemon.temper);
+        myState.minStats[stat]
+            .updateReal(myState.pokemon.level, myState.pokemon.temper);
       }
       if (playerType == PlayerType.me) {
         myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();

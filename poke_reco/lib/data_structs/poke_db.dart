@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -232,7 +234,7 @@ const int pokemonMinEffort = 0;
 const int pokemonMaxEffort = 252;
 const int pokemonMaxEffortTotal = 510;
 
-// SQLのDatabaseにListやclassをserializeして保存する際に区切りとして使う文字
+/// SQLのDatabaseにListやclassをserializeして保存する際に区切りとして使う文字
 const String sqlSplit1 = ';';
 const String sqlSplit2 = ':';
 const String sqlSplit3 = '_';
@@ -242,9 +244,10 @@ const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
 const String sqlSplit8 = '|';
 
-// 事前準備したデータを使うかどうか
+/// 事前準備したデータを使うかどうか
 bool replacePrepared = false;
 
+/// せいべつ
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
   male(1, 'オス', 'Male', Icon(Icons.male, color: Colors.blue)),
@@ -281,36 +284,32 @@ enum Sex {
   final Icon displayIcon;
 }
 
-class OldPlayerType {
-  static const int none = 0;
-  static const int me = 1; // 自身
-  static const int opponent = 2; // 相手
-  static const int entireField = 3; // 全体の場(両者に影響あり)
-
-  const OldPlayerType(this.id);
-
-  OldPlayerType get opposite {
-    return id == me ? OldPlayerType(opponent) : OldPlayerType(me);
-  }
-
-  final int id;
-}
-
+/// 行動主
 enum PlayerType {
+  /// なし
   none,
-  me, // 自身
-  opponent, // 相手
-  entireField, // 全体の場(両者に影響あり)
+
+  /// 自身
+  me,
+
+  /// 相手
+  opponent,
+
+  /// 全体の場(両者に影響あり)
+  entireField,
 }
 
+/// 行動者の反対を表すextension
 extension PlayerTypeOpp on PlayerType {
+  /// 行動者の反対
   PlayerType get opposite {
     return this == PlayerType.me ? PlayerType.opponent : PlayerType.me;
   }
 }
 
-// リストのインデックス等に使う
+/// リストのインデックス等に使うextension
 extension PlayerTypeNum on PlayerType {
+  /// リストのインデックス等に使う番号
   int get number {
     switch (this) {
       case PlayerType.me:
@@ -325,6 +324,7 @@ extension PlayerTypeNum on PlayerType {
     }
   }
 
+  /// 番号から行動主を生成
   static PlayerType createFromNumber(int number) {
     switch (number) {
       case 0:
@@ -339,6 +339,7 @@ extension PlayerTypeNum on PlayerType {
   }
 }
 
+/// せいかく
 class Temper {
   final int id;
   final String _displayName;
@@ -357,6 +358,12 @@ class Temper {
     }
   }
 
+  /// 無効なせいかくを返す
+  factory Temper.none() {
+    return Temper(0, '', '', StatIndex.none, StatIndex.none);
+  }
+
+  /// 名前
   String get displayName {
     switch (PokeDB().language) {
       case Language.english:
@@ -367,6 +374,7 @@ class Temper {
     }
   }
 
+  /// ABCDSそれぞれのステータスに対するせいかく補正値をリストにして返す
   static List<double> getTemperBias(Temper temper) {
     var ret = [1.0, 1.0, 1.0, 1.0, 1.0]; // A, B, C, D, S
     if (StatIndex.H.index < temper.increasedStat.index &&
@@ -382,168 +390,7 @@ class Temper {
   }
 }
 
-class SixParams extends Equatable implements Copyable {
-  int race = 0;
-  int indi = 0;
-  int effort = 0;
-  int real = 0;
-
-  @override
-  List<Object?> get props => [
-        race,
-        indi,
-        effort,
-        real,
-      ];
-
-  SixParams(this.race, this.indi, this.effort, this.real);
-
-  static int getRealH(int level, int race, int indi, int effort) {
-    return (race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + level + 10;
-  }
-
-  static int getRealABCDS(
-      int level, int race, int indi, int effort, double temperBias) {
-    return (((race * 2 + indi + (effort ~/ 4)) * level ~/ 100 + 5) * temperBias)
-        .toInt();
-  }
-
-  static int getEffortH(int level, int race, int indi, int real) {
-    int ret =
-        (((real - level - 10) * 100) ~/ level - race * 2 - indi) * 4; // 暫定値
-    while (real > getRealH(level, race, indi, ret)) {
-      // 足りてない
-      ret += (4 - ret % 4);
-    }
-    while (real < getRealH(level, race, indi, ret)) {
-      // 大きい(たぶんこのwhileには入らない？)
-      ret -= ret % 4 == 0 ? 4 : ret % 4;
-    }
-    return ret;
-  }
-
-  static int getEffortABCDS(
-      int level, int race, int indi, int real, double temperBias) {
-    int ret = ((real ~/ temperBias - 5) * 100 ~/ level - race * 2 - indi) * 4;
-    while (real > getRealABCDS(level, race, indi, ret, temperBias)) {
-      // 足りてない
-      ret += (4 - ret % 4);
-    }
-    while (real < getRealABCDS(level, race, indi, ret, temperBias)) {
-      // 大きい(たぶんこのwhileには入らない？)
-      ret -= ret % 4 == 0 ? 4 : ret % 4;
-    }
-    return ret;
-  }
-
-  static int getIndiH(int level, int race, int effort, int real) {
-    int ret = ((real - level - 10) * 100) ~/ level - race * 2 - (effort ~/ 4);
-    while (real > getRealH(level, race, ret, effort)) {
-      // 足りてない
-      ret++;
-    }
-    while (real < getRealH(level, race, ret, effort)) {
-      // 大きい(たぶんこのwhileには入らない？)
-      ret--;
-    }
-    return ret;
-  }
-
-  static int getIndiABCDS(
-      int level, int race, int effort, int real, double temperBias) {
-    int ret =
-        ((real ~/ temperBias - 5) * 100) ~/ level - race * 2 - (effort ~/ 4);
-    while (real > getRealABCDS(level, race, ret, effort, temperBias)) {
-      // 足りてない
-      ret++;
-    }
-    while (real < getRealABCDS(level, race, ret, effort, temperBias)) {
-      // 大きい(たぶんこのwhileには入らない？)
-      ret--;
-    }
-    return ret;
-  }
-
-  factory SixParams.createFromLRIEtoH(
-      int level, int race, int indi, int effort) {
-    return SixParams(race, indi, effort, getRealH(level, race, indi, effort));
-  }
-
-  factory SixParams.createFromLRIEBtoABCDS(
-      int level, int race, int indi, int effort, double temperBias) {
-    return SixParams(race, indi, effort,
-        getRealABCDS(level, race, indi, effort, temperBias));
-  }
-
-  set(race, indi, effort, real) {
-    this.race = race;
-    this.indi = indi;
-    this.effort = effort;
-    this.real = real;
-  }
-
-  @override
-  SixParams copy() => SixParams(race, indi, effort, real);
-
-  // SQLに保存された文字列からSixParamsをパース
-  static SixParams deserialize(dynamic str, String split1) {
-    final elements = str.split(split1);
-    return SixParams(
-      int.parse(elements[0]),
-      int.parse(elements[1]),
-      int.parse(elements[2]),
-      int.parse(elements[3]),
-    );
-  }
-
-  // SQL保存用の文字列に変換
-  String serialize(String split1) {
-    return '$race$split1$indi$split1$effort$split1$real';
-  }
-}
-
-class SixStats extends Equatable implements Copyable {
-  List<SixParams> sixParams =
-      List.generate(6, (index) => SixParams(0, 0, 0, 0));
-
-  @override
-  List<Object?> get props => [sixParams];
-
-  SixParams get h => sixParams[StatIndex.H.index];
-  SixParams get a => sixParams[StatIndex.A.index];
-  SixParams get b => sixParams[StatIndex.B.index];
-  SixParams get c => sixParams[StatIndex.C.index];
-  SixParams get d => sixParams[StatIndex.D.index];
-  SixParams get s => sixParams[StatIndex.S.index];
-
-  SixParams operator [](StatIndex index) => sixParams[index.index];
-
-  void operator []=(StatIndex index, SixParams value) {
-    sixParams[index.index] = value;
-  }
-
-  @override
-  SixStats copy() =>
-      SixStats()..sixParams = [for (final e in sixParams) e.copy()];
-
-  static SixStats generate(SixParams Function(int) func) {
-    SixStats ret = SixStats();
-    ret.sixParams = List.generate(6, func);
-    return ret;
-  }
-
-  static SixStats generateMinStat() {
-    return SixStats();
-  }
-
-  static SixStats generateMaxStat() {
-    SixStats ret = SixStats();
-    ret.sixParams = List.generate(
-        6, (index) => SixParams(0, pokemonMaxIndividual, pokemonMaxEffort, 0));
-    return ret;
-  }
-}
-
+/// タマゴグループを管理するclass
 class EggGroup {
   final int id;
   final String displayName;
@@ -551,816 +398,22 @@ class EggGroup {
   const EggGroup(this.id, this.displayName);
 }
 
-// 対象
-enum Target {
-  // pokeAPIから引用
-  none/*=0*/,
-  specificMove/*=1*/,
-  selectedPokemonMeFirst/*=2*/,
-  ally, // (3)味方
-  usersField, // (4)自分の場
-  userOrAlly, // (5)自分自身or味方
-  opponentsField, // (6)相手の場
-  user, // (7)自分自身
-  randomOpponent, // (8)ランダムな相手
-  allOtherPokemon, // (9)他のすべてのポケモン
-  selectedPokemon, // (10)選択した相手
-  allOpponents, // (11)すべての相手ポケモン
-  entireField, // (12)両者の場
-  userAndAllies, // (13)自分自身とすべての味方
-  allPokemon, // (14)すべてのポケモン
-  allAllies, // (15)すべての味方
-  faintingPokemon, // (16)ひんしになったポケモン
-}
-
-// 効果
+/// 効果
 class AbilityEffect {
   const AbilityEffect(this.id);
 
   final int id;
 }
 
-// 効果
-class MoveEffect extends Equatable {
-  static const int none = 0;
-  // IDはpokeAPIのmove_effect_idに対応
-
-  const MoveEffect(this.id);
-
-  @override
-  List<Object> get props => [id];
-
-  final int id;
-}
-
-class Move extends Equatable implements Copyable {
-  final int id;
-  late final String _displayName;
-  late final String _displayNameEn;
-  final PokeType type;
-  int power;
-  int accuracy;
-  int priority;
-  Target target;
-  DamageClass damageClass;
-  MoveEffect effect;
-  int effectChance;
-  final int pp;
-
-  @override
-  List<Object?> get props => [
-        id,
-        _displayName,
-        _displayNameEn,
-        type,
-        power,
-        accuracy,
-        priority,
-        target,
-        damageClass,
-        effect,
-        effectChance,
-        pp,
-      ];
-
-  Move(
-    this.id,
-    String displayName,
-    String displayNameEn,
-    this.type,
-    this.power,
-    this.accuracy,
-    this.priority,
-    this.target,
-    this.damageClass,
-    this.effect,
-    this.effectChance,
-    this.pp,
-  ) {
-    _displayName = displayName;
-    _displayNameEn = displayNameEn;
-  }
-
-  String get displayName {
-    switch (PokeDB().language) {
-      case Language.english:
-        return _displayNameEn;
-      case Language.japanese:
-      default:
-        return _displayName;
-    }
-  }
-
-  bool get isValid => id != 0;
-
-  bool get isTargetYou {
-    // 相手を対象に含むかどうか
-    const list = [
-      Target.opponentsField,
-      Target.randomOpponent,
-      Target.allOtherPokemon,
-      Target.selectedPokemon,
-      Target.allOpponents,
-      Target.allPokemon
-    ];
-    return list.contains(target);
-  }
-
-  int get minPP => pp;
-  int get maxPP {
-    if (pp == 1) return 1;
-    return pp + (pp / 5).floor() * 3;
-  }
-
-  bool get isDirect {
-    // 直接攻撃かどうか
-    const physicalButNot = [
-      843,
-      788,
-      895,
-      621,
-      856,
-      88,
-      157,
-      479,
-      783,
-      854,
-      780,
-      662,
-      317,
-      439,
-      616,
-      559,
-      454,
-      420,
-      143,
-      614,
-      615,
-      864,
-      89,
-      363,
-      523,
-      120,
-      708,
-      90,
-      799,
-      794,
-      444,
-      328,
-      221,
-      897,
-      153,
-      833,
-      591,
-      441,
-      402,
-      331,
-      41,
-      121,
-      140,
-      619,
-      556,
-      333,
-      893,
-      851,
-      40,
-      839,
-      131,
-      751,
-      778,
-      870,
-      374,
-      6,
-      896,
-      75,
-      572,
-      290,
-      836,
-      899,
-      364,
-      722,
-      251,
-      553,
-      824,
-      217,
-      198,
-      898,
-      809,
-      125,
-      155,
-      900,
-      222,
-      443,
-      42,
-      594,
-      368,
-      350,
-    ];
-    const specialButNot = [
-      879,
-      376,
-      447,
-      378,
-      577,
-      80,
-      611,
-    ];
-    return ((damageClass.id == DamageClass.physical &&
-            !physicalButNot.contains(id)) ||
-        (damageClass.id == DamageClass.special && specialButNot.contains(id)));
-  }
-
-  bool get isSound {
-    // 音技かどうか
-    const soundMoveIDs = [
-      547,
-      173,
-      215,
-      103,
-      47,
-      664,
-      497,
-      786,
-      448,
-      568,
-      319,
-      320,
-      253,
-      691,
-      575,
-      775,
-      10016,
-      574,
-      48,
-      336,
-      590,
-      45,
-      555,
-      304,
-      586,
-      826,
-      871,
-      728,
-      46,
-      195,
-      405,
-      496,
-      463,
-      914,
-    ];
-    return soundMoveIDs.contains(id);
-  }
-
-  bool get isDrain {
-    // HP吸収わざかどうか
-    const drainMoveIDs = [
-      202,
-      141,
-      71,
-      72,
-      73,
-      138,
-      409,
-      532,
-      613,
-      577,
-      570,
-      668,
-      891,
-    ];
-    return drainMoveIDs.contains(id);
-  }
-
-  bool get isPunch {
-    // パンチわざかどうか
-    const punchMoveIDs = [
-      359,
-      665,
-      817,
-      9,
-      264,
-      612,
-      309,
-      857,
-      325,
-      818,
-      327,
-      742,
-      409,
-      223,
-      418,
-      146,
-      838,
-      721,
-      889,
-      7,
-      183,
-      5,
-      8,
-      4,
-    ];
-    return punchMoveIDs.contains(id);
-  }
-
-  bool get isWave {
-    // はどうわざかどうか
-    const waveMoveIDs = [
-      399,
-      618,
-      805,
-      396,
-      352,
-      406,
-      505,
-    ];
-    return waveMoveIDs.contains(id);
-  }
-
-  bool get isDance {
-    // おどりわざかどうか
-    const danceMoveIDs = [
-      872,
-      837,
-      775,
-      483,
-      14,
-      80,
-      297,
-      298,
-      552,
-      461,
-      686,
-      349,
-    ];
-    return danceMoveIDs.contains(id);
-  }
-
-  bool get isRecoil {
-    // 反動わざかどうか(とくせい「すてみ」の対象)
-    const recoilMoveIDs = [
-      543,
-      834,
-      452,
-      853,
-      66,
-      38,
-      36,
-      26,
-      136,
-      617,
-      394,
-      413,
-      344,
-      457,
-      528,
-    ];
-    return recoilMoveIDs.contains(id);
-  }
-
-  bool get isAdditionalEffect {
-    // 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
-    // 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はfalseを返す
-    const additionalEffectMoveIDs = [
-      677,
-      664,
-      703,
-      662,
-      830,
-      864,
-      675,
-      845,
-      290,
-      826,
-      903,
-      440,
-      143,
-      843,
-      840,
-      394,
-      344,
-    ];
-    const noAdditionalEffectMoveIDs = [
-      165,
-      720,
-      796,
-      835,
-      276,
-      621,
-      799,
-      691,
-      874,
-      315,
-      354,
-      437,
-      434,
-      705,
-      359,
-      665,
-      859,
-      890,
-      370,
-      838,
-      620,
-      557,
-      130,
-      800,
-      565,
-      499,
-      265,
-      358,
-      479,
-      614,
-      615,
-      746,
-      687,
-      168,
-      343,
-      365,
-      450,
-      282,
-      510,
-      481,
-      99,
-      37,
-      80,
-      200,
-      833,
-      253,
-      682,
-      892,
-      721,
-      727,
-      798,
-      861,
-      364,
-      467,
-      566,
-      593,
-      621,
-      712,
-      280,
-      706,
-      873,
-      6,
-      874,
-      690,
-    ];
-    const noAdditionalEffectIDs = [
-      // 追加効果とみなされない追加効果
-      1, 104, 86, 370, 371, 379, 383, 406, 417, 439, // 追加効果なし
-      4, 9, 33, 49, 133, 199, 255, 270, 346, 349, 382, 387, 420, 441,
-      388, // HP吸収
-      18, 79, 381, // 必中
-      43, 262, // バインド状態にする
-      44, 289, 422, 462, 486, // 急所に当たりやすい/急所確定
-      8, 169, 221, 271, 321, 450, // ひんしになる
-      81, // 次のターン動けない
-      126, 254, 275, 460, 490, 500, // こおりをかいふくする
-      29, 314, 128, 154, 229, 347, 492, 493, // 自分/あいてを交代
-    ];
-    if (damageClass.id == 1) return true;
-    if (additionalEffectMoveIDs.contains(id)) return true;
-    if (noAdditionalEffectMoveIDs.contains(id)) return false;
-    if (isRecoil) return false;
-    return (damageClass.id > 1 && !noAdditionalEffectIDs.contains(effect.id));
-  }
-
-  bool get isAdditionalEffect2 {
-    // 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
-    // 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はtrueを返す
-    bool ret = isAdditionalEffect;
-    const additionalEffectIDs = [
-      // 追加効果も含まれている追加効果
-      126, 254, 275, 460, 490, 500, // こおりをかいふくする
-    ];
-    if (additionalEffectIDs.contains(effect.id)) ret = true;
-    return ret;
-  }
-
-  bool get isBite {
-    // かみつきわざかどうか
-    const biteMoveIDs = [
-      755,
-      242,
-      44,
-      422,
-      746,
-      423,
-      706,
-      305,
-      158,
-      424,
-    ];
-    return biteMoveIDs.contains(id);
-  }
-
-  bool get isCut {
-    // 切るわざかどうか
-    const cutMoveIDs = [
-      895,
-      15,
-      314,
-      403,
-      830,
-      781,
-      163,
-      440,
-      427,
-      875,
-      534,
-      404,
-      548,
-      533,
-      669,
-      400,
-      332,
-      869,
-      860,
-      75,
-      845,
-      891,
-      348,
-      210,
-      910,
-      911,
-    ];
-    return cutMoveIDs.contains(id);
-  }
-
-  bool get isWind {
-    // 風わざかどうか
-    const windMoveIDs = [
-      314,
-      16,
-      847,
-      846,
-      196,
-      239,
-      848,
-      257,
-      572,
-      831,
-      18,
-      59,
-      542,
-      584,
-    ];
-    return windMoveIDs.contains(id);
-  }
-
-  bool get isPowder {
-    // こなやほうしのわざかどうか
-    const powderMoveIDs = [
-      476,
-      147,
-      78,
-      77,
-      79,
-      600,
-      750,
-      178,
-    ];
-    return powderMoveIDs.contains(id);
-  }
-
-  bool get isBullet {
-    // 弾のわざかどうか
-    const bulletMoveIDs = [
-      301,
-      491,
-      311,
-      412,
-      486,
-      190,
-      545,
-      780,
-      676,
-      439,
-      411,
-      690,
-      360,
-      247,
-      331,
-      402,
-      121,
-      140,
-      192,
-      426,
-      396,
-      188,
-      443,
-      296,
-      903,
-      350,
-    ];
-    return bulletMoveIDs.contains(id);
-  }
-
-  @override
-  Move copy() => Move(
-        id,
-        _displayName,
-        _displayNameEn,
-        type,
-        power,
-        accuracy,
-        priority,
-        target,
-        damageClass,
-        effect,
-        effectChance,
-        pp,
-      );
-
-  // 連続こうげきの場合、その最大回数を返す（連続こうげきではない場合は1を返す）
-  int maxMoveCount() {
-    if (effect.id == 30) return 5;
-    if (effect.id == 45) return 2;
-    if (effect.id == 78) return 2;
-    if (effect.id == 105) return 3;
-    if (effect.id == 155) return 6;
-    if (effect.id == 361) return 5;
-    if (effect.id == 428) return 2;
-    if (effect.id == 443) return 5;
-    if (effect.id == 459) return 3;
-    if (effect.id == 462) return 3;
-    if (effect.id == 480) return 10;
-    if (effect.id == 483) return 3;
-    if (effect.id == 507) return 2;
-    return 1;
-  }
-
-  // 必ず追加効果が起こるかどうかを返す
-  bool isSurelyEffect() {
-    switch (effect.id) {
-      case 3: // どくにする(確率)
-      case 78: // 2回こうげき、どくにする(確率)
-      case 210: // どくにする(確率)。急所に当たりやすい
-      case 5: // やけどにする(確率)
-      case 201: // やけどにする(確率)。急所に当たりやすい
-      case 6: // こおりにする(確率)
-      case 261: // こおりにする(確率)。天気がゆきのときは必中
-      case 7: // まひにする(確率)
-      case 153: // まひにする(確率)。天気があめなら必中、はれなら命中率が下がる。そらをとぶ状態でも命中する
-      case 372: // まひにする(確率)
-      case 140: // 使用者のこうげきを1段階上げる(確率)
-      case 139: // 使用者のぼうぎょを1段階上げる(確率)
-      case 277: // 使用者のとくこうを1段階上げる(確率)
-      case 69: // こうげきを1段階下げる(確率)
-      case 70: // ぼうぎょを1段階下げる(確率)
-      case 71: // すばやさを1段階下げる(確率)
-      case 74: // めいちゅうを1段階下げる(確率)
-      case 32: // ひるませる(確率)
-      case 93: // ひるませる(確率)。ねむり状態のときのみ成功
-      case 203: // もうどくにする(確率)
-      case 37: // やけど・こおり・まひのいずれかにする(確率)
-      case 77: // こんらんさせる(確率)
-      case 268: // こんらんさせる(確率)
-      case 334: // こんらんさせる(確率)。そらをとぶ状態の相手にも当たる。天気があめだと必中、はれだと命中率50になる
-      case 359: // 使用者のぼうぎょを2段階上げる(確率)
-      case 272: // とくぼうを2段階下げる(確率)
-      case 72: // とくこうを1段階下げる(確率)
-      case 73: // とくぼうを1段階下げる(確率)
-      case 141: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさを1段階上げる(確率)
-      case 227: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
-      case 254: // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
-      case 263: // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
-        if (effectChance < 100) {
-          return false;
-        }
-        return true;
-      default:
-        return true;
-    }
-  }
-
-/*
-  Map<String, Object?> toMap() {
-    var map = <String, Object?>{
-      moveColumnId: id,
-      moveColumnName: displayName,
-      moveColumnPP: pp,
-    };
-    return map;
-  }
-*/
-}
-
-// Pokemonのstatsのインデックスに使う
-enum StatIndex {
-  H,
-  A,
-  B,
-  C,
-  D,
-  S,
-  size,
-  none,
-}
-
-extension StatIndexList on StatIndex {
-  static List<StatIndex> get listHtoS {
-    return [
-      StatIndex.H,
-      StatIndex.A,
-      StatIndex.B,
-      StatIndex.C,
-      StatIndex.D,
-      StatIndex.S
-    ];
-  }
-
-  static List<StatIndex> get listAtoS {
-    return [StatIndex.A, StatIndex.B, StatIndex.C, StatIndex.D, StatIndex.S];
-  }
-}
-
-extension StatIndexNumber on StatIndex {
-  static StatIndex getStatIndexFromIndex(int index) {
-    switch (index) {
-      case 0:
-        return StatIndex.H;
-      case 1:
-        return StatIndex.A;
-      case 2:
-        return StatIndex.B;
-      case 3:
-        return StatIndex.C;
-      case 4:
-        return StatIndex.D;
-      case 5:
-        return StatIndex.S;
-      default:
-        return StatIndex.none;
-    }
-  }
-}
-
-extension StatStr on StatIndex {
-  String get name {
-    switch (PokeDB().language) {
-      case Language.japanese:
-        switch (this) {
-          case StatIndex.H:
-            return 'HP';
-          case StatIndex.A:
-            return 'こうげき';
-          case StatIndex.B:
-            return 'ぼうぎょ';
-          case StatIndex.C:
-            return 'とくこう';
-          case StatIndex.D:
-            return 'とくぼう';
-          case StatIndex.S:
-            return 'すばやさ';
-          default:
-            return '';
-        }
-      case Language.english:
-      default:
-        switch (this) {
-          case StatIndex.H:
-            return 'HP';
-          case StatIndex.A:
-            return 'Attack';
-          case StatIndex.B:
-            return 'Defense';
-          case StatIndex.C:
-            return 'Special Attack';
-          case StatIndex.D:
-            return 'Special Defense';
-          case StatIndex.S:
-            return 'Speed';
-          default:
-            return '';
-        }
-    }
-  }
-
-  String get alphabet {
-    switch (this) {
-      case StatIndex.H:
-        return 'H';
-      case StatIndex.A:
-        return 'A';
-      case StatIndex.B:
-        return 'B';
-      case StatIndex.C:
-        return 'C';
-      case StatIndex.D:
-        return 'D';
-      case StatIndex.S:
-        return 'S';
-      default:
-        return '';
-    }
-  }
-}
-
-// 登録しているポケモンの作成者
+/// 登録しているポケモン・パーティの作成者
 enum Owner {
+  /// 自身
   mine,
+
+  /// 対戦から(対戦相手が作成)
   fromBattle,
+
+  /// 非表示
   hidden,
 }
 
@@ -1376,9 +429,12 @@ Owner toOwner(int idx) {
   }
 }
 
-// 表示言語
+/// 表示言語
 enum Language {
+  /// 日本語
   japanese,
+
+  /// 英語
   english,
 }
 
@@ -1412,16 +468,12 @@ class PokeDB {
   List<int> battlesPartyIDFilter = [];
   BattleSort? battlesSort;
 
-  Map<int, Ability> abilities = {
-    0: Ability(0, '', '', Timing.none, Target.none)
-  }; // 無効なとくせい
+  Map<int, Ability> abilities = {0: Ability.none()}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''}; // 無効なとくせい
   late Database abilityFlavorDb;
-  Map<int, Temper> tempers = {
-    0: Temper(0, '', '', StatIndex.none, StatIndex.none)
-  }; // 無効なせいかく
+  Map<int, Temper> tempers = {0: Temper.none()}; // 無効なせいかく
   late Database temperDb;
   Map<int, Item> items = {
     0: Item(
@@ -1438,10 +490,7 @@ class PokeDB {
   Map<int, String> _itemFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
   late Database itemFlavorDb;
-  Map<int, Move> moves = {
-    0: Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0),
-        MoveEffect(0), 0, 0)
-  }; // 無効なわざ
+  Map<int, Move> moves = {0: Move.none()}; // 無効なわざ
   late Database moveDb;
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
@@ -1481,18 +530,28 @@ class PokeDB {
   Map<int, Battle> battles = {0: Battle()};
   late Database battleDb;
 
-  bool getPokeAPI = true; // インターネットに接続してポケモンの画像を取得するか
+  /// インターネットに接続してポケモンの画像を取得するか
+  bool getPokeAPI = true;
+
+  /// 表示言語
   Language language = Language.japanese;
+
+  /// テストモード
   bool _isTestMode = false;
+
+  /// 広告を表示するかどうか
   bool showAd = true;
 
+  /// 読み込みが完了したか
   bool isLoaded = false;
 
-  // コンストラクタ（private）
+  /// コンストラクタ（private）
   PokeDB._internal();
-  // インスタンスはただ１つだけ
+
+  /// 唯一のインスタンス
   static final PokeDB instance = PokeDB._internal();
-  // キャッシュしたインスタンスを返す
+
+  /// 唯一のインスタンスを返す
   factory PokeDB() => instance;
 
   List<int> parseIntList(dynamic str) {
@@ -1704,8 +763,8 @@ class PokeDB {
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnEnglishName],
-        StatIndexNumber.getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
-        StatIndexNumber.getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
+        StatIndex.values[(map[temperColumnDe] as int) - 1],
+        StatIndex.values[(map[temperColumnIn] as int) - 1],
       );
     }
 

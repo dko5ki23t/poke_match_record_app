@@ -1,8 +1,9 @@
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
@@ -81,8 +82,8 @@ class TestPokeDB {
         map[temperColumnId],
         map[temperColumnName],
         map[temperColumnEnglishName],
-        StatIndexNumber.getStatIndexFromIndex((map[temperColumnDe] as int) - 1),
-        StatIndexNumber.getStatIndexFromIndex((map[temperColumnIn] as int) - 1),
+        StatIndex.values[(map[temperColumnDe] as int) - 1],
+        StatIndex.values[(map[temperColumnIn] as int) - 1],
       );
     }
 

@@ -1,38 +1,67 @@
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/move.dart';
+import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/item.dart';
-import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/tool.dart';
 
+/// 各ポケモンの個体を管理するclass
 class Pokemon extends Equatable implements Copyable {
-  int id = 0; // データベースのプライマリーキー
-  int viewOrder = 0; // 表示順
-  String _name = ''; // ポケモン名(日本語)
-  String _nameEn = ''; // ポケモン名(英語)
-  String nickname = ''; // ニックネーム
-  int level = 50; // レベル
-  Sex sex = Sex.none; // せいべつ
-  int _no = 0; // 図鑑No.
-  PokeType type1 = PokeType.unknown; // タイプ1
-  PokeType? type2; // タイプ2(null OK)
-  PokeType teraType = PokeType.unknown; // テラスタルタイプ
-  Temper temper = Temper(0, '', '', StatIndex.none, StatIndex.none); // せいかく
-  // HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ
-  List<SixParams> _stats = List.generate(
-      StatIndex.size.index, (i) => SixParams(0, pokemonMaxIndividual, 0, 0));
-  Ability ability = Ability(0, '', '', Timing.none, Target.none); // とくせい
-  Item? item; // もちもの(null OK)
-  List<Move?> _moves = [
-    Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none, DamageClass(0),
-        MoveEffect(0), 0, 0),
-    null,
-    null,
-    null
-  ]; // わざ
-  List<int?> _pps = [0, null, null, null]; // PP
-  Owner owner = Owner.mine; // 自分でつくったか、対戦相手が作ったものか
+  /// データベースのプライマリーキー
+  int id = 0;
+
+  /// 表示順
+  int viewOrder = 0;
+
+  /// ポケモン名(日本語)
+  String _name = '';
+
+  /// ポケモン名(英語)
+  String _nameEn = '';
+
+  /// ニックネーム
+  String nickname = '';
+
+  /// レベル
+  int level = 50;
+
+  /// せいべつ
+  Sex sex = Sex.none;
+
+  /// 図鑑No
+  int _no = 0;
+
+  /// タイプ1
+  PokeType type1 = PokeType.unknown;
+
+  /// タイプ2(null OK)
+  PokeType? type2;
+
+  /// テラスタルタイプ
+  PokeType teraType = PokeType.unknown;
+
+  /// せいかく
+  Temper temper = Temper.none();
+
+  /// 6つのステータス[HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ]
+  SixStats _stats = SixStats.generateUniformedStat(indi: pokemonMaxIndividual);
+
+  /// とくせい
+  Ability ability = Ability.none();
+
+  /// もちもの(null OK)
+  Item? item;
+
+  /// 覚えているわざ
+  List<Move?> _moves = [Move.none(), null, null, null];
+
+  /// 各わざの最大PP
+  List<int?> _pps = [0, null, null, null];
+
+  /// 自分でつくったか、対戦相手が作ったものか
+  Owner owner = Owner.mine;
 
   @override
   List<Object?> get props => [
@@ -58,6 +87,10 @@ class Pokemon extends Equatable implements Copyable {
 
   Pokemon();
 
+  /// Databaseから取得したMapからclassを生成
+  /// ```
+  /// map: Databaseから取得したMap
+  /// ```
   Pokemon.createFromDBMap(Map<String, dynamic> map) {
     var pokeData = PokeDB();
     int pokeNo = map[myPokemonColumnNo];
@@ -82,42 +115,19 @@ class Pokemon extends Equatable implements Copyable {
     type2 = pokeData.pokeBase[pokeNo]!.type2;
     teraType = PokeType.values[map[myPokemonColumnTeraType]];
     temper = pokeData.tempers[map[myPokemonColumnTemper]]!;
-    h = SixParams(
-      pokeData.pokeBase[pokeNo]!.h,
-      map[myPokemonColumnIndividual[0]],
-      map[myPokemonColumnEffort[0]],
-      0,
-    );
-    a = SixParams(
-      pokeData.pokeBase[pokeNo]!.a,
-      map[myPokemonColumnIndividual[1]],
-      map[myPokemonColumnEffort[1]],
-      0,
-    );
-    b = SixParams(
-      pokeData.pokeBase[pokeNo]!.b,
-      map[myPokemonColumnIndividual[2]],
-      map[myPokemonColumnEffort[2]],
-      0,
-    );
-    c = SixParams(
-      pokeData.pokeBase[pokeNo]!.c,
-      map[myPokemonColumnIndividual[3]],
-      map[myPokemonColumnEffort[3]],
-      0,
-    );
-    d = SixParams(
-      pokeData.pokeBase[pokeNo]!.d,
-      map[myPokemonColumnIndividual[4]],
-      map[myPokemonColumnEffort[4]],
-      0,
-    );
-    s = SixParams(
-      pokeData.pokeBase[pokeNo]!.s,
-      map[myPokemonColumnIndividual[5]],
-      map[myPokemonColumnEffort[5]],
-      0,
-    );
+    // 実数値はあとでまとめて更新
+    _stats.h.set(pokeData.pokeBase[pokeNo]!.h,
+        map[myPokemonColumnIndividual[0]], map[myPokemonColumnEffort[0]], 0);
+    _stats.a.set(pokeData.pokeBase[pokeNo]!.a,
+        map[myPokemonColumnIndividual[1]], map[myPokemonColumnEffort[1]], 0);
+    _stats.b.set(pokeData.pokeBase[pokeNo]!.b,
+        map[myPokemonColumnIndividual[2]], map[myPokemonColumnEffort[2]], 0);
+    _stats.c.set(pokeData.pokeBase[pokeNo]!.c,
+        map[myPokemonColumnIndividual[3]], map[myPokemonColumnEffort[3]], 0);
+    _stats.d.set(pokeData.pokeBase[pokeNo]!.d,
+        map[myPokemonColumnIndividual[4]], map[myPokemonColumnEffort[4]], 0);
+    _stats.s.set(pokeData.pokeBase[pokeNo]!.s,
+        map[myPokemonColumnIndividual[5]], map[myPokemonColumnEffort[5]], 0);
     ability = pokeData.abilities[map[myPokemonColumnAbility]]!;
     item = (map[myPokemonColumnItem] != null)
         ? pokeData.items[map[myPokemonColumnItem]]
@@ -140,7 +150,31 @@ class Pokemon extends Equatable implements Copyable {
     updateRealStats();
   }
 
-  // getter
+  /// 図鑑Noを基に基本的な情報をセットする
+  /// 基本的な情報＝No,名前,タイプ1・2,[せいべつ,とくせい]
+  /// ```
+  /// number: 図鑑No
+  /// setDefaultSex: 適当にせいべつをセットするかどうか
+  /// setDefaultAbility: 適当にとくせいをセットするかどうか
+  /// ```
+  void setBasicInfoFromNo(
+    int number, {
+    bool setDefaultSex = true,
+    bool setDefaultAbility = true,
+  }) {
+    no = number;
+    final pokeBase = PokeDB().pokeBase[no]!;
+    type1 = pokeBase.type1;
+    type2 = pokeBase.type2;
+    if (setDefaultSex) {
+      sex = pokeBase.sex[0];
+    }
+    if (setDefaultAbility) {
+      ability = pokeBase.ability[0];
+    }
+  }
+
+  /// ポケモン名
   String get name {
     switch (PokeDB().language) {
       case Language.english:
@@ -151,62 +185,14 @@ class Pokemon extends Equatable implements Copyable {
     }
   }
 
-  // getter
+  /// フォーム名等を除いたポケモン名
   String get omittedName {
     return name.split('(')[0];
   }
 
+  /// 図鑑No(変更すると名前も変更する)
   int get no => _no;
-  SixParams get h => _stats[StatIndex.H.index];
-  SixParams get a => _stats[StatIndex.A.index];
-  SixParams get b => _stats[StatIndex.B.index];
-  SixParams get c => _stats[StatIndex.C.index];
-  SixParams get d => _stats[StatIndex.D.index];
-  SixParams get s => _stats[StatIndex.S.index];
-  List<SixParams> get stats => _stats;
-  Move get move1 => _moves[0]!;
-  int get pp1 => _pps[0]!;
-  Move? get move2 => _moves[1];
-  int? get pp2 => _pps[1];
-  Move? get move3 => _moves[2];
-  int? get pp3 => _pps[2];
-  Move? get move4 => _moves[3];
-  int? get pp4 => _pps[3];
-  List<Move?> get moves => _moves;
-  List<int?> get pps => _pps;
-  int get moveNum {
-    for (int i = 0; i < 4; i++) {
-      if (moves[i] == null) return i;
-    }
-    return 4;
-  }
-
-  bool get isValid {
-    return (name != '' &&
-        (level >= pokemonMinLevel && level <= pokemonMaxLevel) &&
-        no >= pokemonMinNo &&
-        temper.id != 0 &&
-        teraType != PokeType.unknown &&
-        ability.id != 0 &&
-        _moves[0]!.id != 0 &&
-        totalEffort() <= pokemonMaxEffortTotal);
-  }
-
-  bool get refs {
-    for (final e in PokeDB().parties.values) {
-      for (int i = 0; i < e.pokemonNum; i++) {
-        if (e.pokemons[i]!.id == id) return true;
-      }
-    }
-    return false;
-  }
-
-  // TODO:しんかのきせきが適用できるかどうか
-  bool get isEvolvable => true;
-
-  // setter
   set no(int n) {
-    // No変えると名前も変える
     var pokeData = PokeDB();
     _no = n;
     if (pokeData.language == Language.japanese) {
@@ -222,38 +208,103 @@ class Pokemon extends Equatable implements Copyable {
     }
   }
 
-  set h(SixParams x) {
-    _stats[StatIndex.H.index] = x;
-  }
+  /// HP
+  FourParams get h => _stats.h;
 
-  set a(SixParams x) {
-    _stats[StatIndex.A.index] = x;
-  }
+  /// こうげき
+  FourParams get a => _stats.a;
 
-  set b(SixParams x) {
-    _stats[StatIndex.B.index] = x;
-  }
+  /// ぼうぎょ
+  FourParams get b => _stats.b;
 
-  set c(SixParams x) {
-    _stats[StatIndex.C.index] = x;
-  }
+  /// とくこう
+  FourParams get c => _stats.c;
 
-  set d(SixParams x) {
-    _stats[StatIndex.D.index] = x;
-  }
+  /// とくぼう
+  FourParams get d => _stats.d;
 
-  set s(SixParams x) {
-    _stats[StatIndex.S.index] = x;
-  }
+  /// すばやさ
+  FourParams get s => _stats.s;
 
+  /// 6つのステータス[HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ]
+  SixStats get stats => _stats;
+
+  /// わざ1
+  Move get move1 => _moves[0]!;
   set move1(Move x) => _moves[0] = x;
+
+  /// わざ1の最大PP
+  int get pp1 => _pps[0]!;
   set pp1(int x) => _pps[0] = x;
+
+  /// わざ2
+  Move? get move2 => _moves[1];
   set move2(Move? x) => _moves[1] = x;
+
+  /// わざ2の最大PP
+  int? get pp2 => _pps[1];
   set pp2(int? x) => _pps[1] = x;
+
+  /// わざ3
+  Move? get move3 => _moves[2];
   set move3(Move? x) => _moves[2] = x;
+
+  /// わざ3の最大PP
+  int? get pp3 => _pps[2];
   set pp3(int? x) => _pps[2] = x;
+
+  /// わざ4
+  Move? get move4 => _moves[3];
   set move4(Move? x) => _moves[3] = x;
+
+  /// わざ4の最大PP
+  int? get pp4 => _pps[3];
   set pp4(int? x) => _pps[3] = x;
+
+  /// 覚えているわざ
+  List<Move?> get moves => _moves;
+
+  /// 各わざの最大PP
+  List<int?> get pps => _pps;
+
+  /// 覚えているわざの数
+  int get moveNum {
+    for (int i = 0; i < 4; i++) {
+      if (moves[i] == null) return i;
+    }
+    return 4;
+  }
+
+  /// 有効かどうか
+  bool get isValid {
+    return (name != '' &&
+        (level >= pokemonMinLevel && level <= pokemonMaxLevel) &&
+        no >= pokemonMinNo &&
+        temper.id != 0 &&
+        teraType != PokeType.unknown &&
+        ability.id != 0 &&
+        _moves[0]!.id != 0 &&
+        totalEffort <= pokemonMaxEffortTotal);
+  }
+
+  /// このポケモンが参照されている数
+  bool get refs {
+    for (final e in PokeDB().parties.values) {
+      for (int i = 0; i < e.pokemonNum; i++) {
+        if (e.pokemons[i]!.id == id) return true;
+      }
+    }
+    return false;
+  }
+
+  /// 種族値の合計
+  int get totalRace => _stats.totalRace;
+
+  /// 努力値の合計
+  int get totalEffort => _stats.totalEffort;
+
+  /// TODO:しんかのきせきが適用できるかどうか
+  bool get isEvolvable => true;
 
   @override
   Pokemon copy() => Pokemon()
@@ -269,120 +320,41 @@ class Pokemon extends Equatable implements Copyable {
     ..type2 = type2
     ..teraType = teraType
     ..temper = temper
-    .._stats = List.generate(
-        StatIndex.size.index,
-        (i) => SixParams(
-            _stats[i].race, _stats[i].indi, _stats[i].effort, _stats[i].real))
+    .._stats = _stats.copy()
     ..ability = ability.copy()
     ..item = item?.copy()
     .._moves = [move1.copy(), move2?.copy(), move3?.copy(), move4?.copy()]
     .._pps = [..._pps]
     ..owner = owner;
 
-  // 編集したかどうかのチェックに使う
-  bool isDiff(Pokemon pokemon) {
-    bool ret = id != pokemon.id ||
-        name != pokemon.name ||
-        nickname != pokemon.nickname ||
-        level != pokemon.level ||
-        sex != pokemon.sex ||
-        no != pokemon.no ||
-        type1 != pokemon.type1 ||
-        type2 != pokemon.type2 ||
-        teraType != pokemon.teraType ||
-        temper.id != pokemon.temper.id ||
-        ability.id != pokemon.ability.id ||
-        item?.id != pokemon.item?.id ||
-        owner != pokemon.owner;
-    if (ret) return true;
-    if (_stats.length != pokemon._stats.length) return true;
-    if (_moves.length != pokemon._moves.length) return true;
-    if (_pps.length != pokemon._pps.length) return true;
-    for (int i = 0; i < _stats.length; i++) {
-      if (_stats[i] != pokemon._stats[i]) return true;
-    }
-    for (int i = 0; i < _moves.length; i++) {
-      if (_moves[i]?.id != pokemon._moves[i]?.id) return true;
-    }
-    for (int i = 0; i < _pps.length; i++) {
-      if (_pps[i] != pokemon._pps[i]) return true;
-    }
-    return false;
-  }
-
-  // レベル、種族値、個体値、努力値、せいかくから実数値を更新
-  // TODO habcdsのsetterで自動的に呼ぶ？
+  /// レベル、種族値、個体値、努力値、せいかくから実数値を更新
   void updateRealStats() {
-    final temperBias = Temper.getTemperBias(temper);
-    _stats[StatIndex.H.index].real =
-        SixParams.getRealH(level, h.race, h.indi, h.effort);
-    _stats[StatIndex.A.index].real =
-        SixParams.getRealABCDS(level, a.race, a.indi, a.effort, temperBias[0]);
-    _stats[StatIndex.B.index].real =
-        SixParams.getRealABCDS(level, b.race, b.indi, b.effort, temperBias[1]);
-    _stats[StatIndex.C.index].real =
-        SixParams.getRealABCDS(level, c.race, c.indi, c.effort, temperBias[2]);
-    _stats[StatIndex.D.index].real =
-        SixParams.getRealABCDS(level, d.race, d.indi, d.effort, temperBias[3]);
-    _stats[StatIndex.S.index].real =
-        SixParams.getRealABCDS(level, s.race, s.indi, s.effort, temperBias[4]);
+    for (final stat in _stats.sixParams) {
+      stat.updateReal(level, temper);
+    }
   }
 
-  // 実数値から努力値、個体値を更新
-  void updateStatsRefReal(int statIndex) {
-    if (statIndex == StatIndex.H.index) {
-      int effort = SixParams.getEffortH(level, h.race, h.indi, h.real);
-      // 努力値の変化だけでは実数値が出せない場合は個体値を更新
-      if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-        _stats[StatIndex.H.index].effort =
-            effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-        int indi = SixParams.getIndiH(level, h.race, h.effort, h.real);
-        // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
-        if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-          _stats[StatIndex.H.index].indi =
-              indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-          _stats[StatIndex.H.index].real =
-              SixParams.getRealH(level, h.race, h.indi, h.effort);
-        } else {
-          _stats[StatIndex.H.index].indi = indi;
-        }
-      } else {
-        _stats[StatIndex.H.index].effort = effort;
-      }
-    } else if (statIndex < StatIndex.size.index) {
-      final temperBias = Temper.getTemperBias(temper);
-      int i = statIndex;
-      int effort = SixParams.getEffortABCDS(level, _stats[i].race,
-          _stats[i].indi, _stats[i].real, temperBias[i - 1]);
-      if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
-        _stats[i].effort = effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-        int indi = SixParams.getIndiABCDS(level, _stats[i].race,
-            _stats[i].effort, _stats[i].real, temperBias[i - 1]);
-        if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
-          _stats[i].indi =
-              indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-          _stats[i].real = SixParams.getRealABCDS(level, _stats[i].race,
-              _stats[i].indi, _stats[i].effort, temperBias[i - 1]);
-        } else {
-          _stats[i].indi = indi;
-        }
-      } else {
-        _stats[i].effort = effort;
+  /// 実数値から努力値、個体値を更新
+  /// ```
+  /// statIndex: 更新対象のパラメータ
+  /// ```
+  void updateStatsRefReal(StatIndex statIndex) {
+    int effort = _stats.sixParams[statIndex.index].updateEffort(level, temper);
+    // 努力値の変化だけでは実数値が出せない場合は個体値を更新
+    if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
+      _stats.sixParams[statIndex.index].effort =
+          effort.clamp(pokemonMinEffort, pokemonMaxEffort);
+      int indi = _stats.sixParams[statIndex.index].updateIndi(level, temper);
+      // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
+      if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
+        _stats.sixParams[statIndex.index].indi =
+            indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
+        _stats.sixParams[statIndex.index].updateReal(level, temper);
       }
     }
   }
 
-  // 種族値の合計
-  int totalRace() {
-    return h.race + a.race + b.race + c.race + d.race + s.race;
-  }
-
-  // 努力値の合計
-  int totalEffort() {
-    return h.effort + a.effort + b.effort + c.effort + d.effort + s.effort;
-  }
-
-  // SQLite保存用
+  /// SQLite保存用Mapを返す
   Map<String, dynamic> toMap() {
     return {
       myPokemonColumnId: id,

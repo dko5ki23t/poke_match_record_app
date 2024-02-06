@@ -4,6 +4,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/tool.dart';
 
+/// バトルの種類
 enum BattleType {
   //casual(0, 'カジュアルバトル', 'Casual Battle'),
   rankmatch(0, 'ランクバトル', 'Ranked Battle'),
@@ -11,6 +12,7 @@ enum BattleType {
 
   const BattleType(this.id, this.ja, this.en);
 
+  /// IDからバトルの種類を生成
   factory BattleType.createFromId(int id) {
     switch (id) {
 //      case 1:
@@ -21,6 +23,7 @@ enum BattleType {
     }
   }
 
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
@@ -36,16 +39,36 @@ enum BattleType {
   final String en;
 }
 
+/// 対戦記録を管理するclass
 class Battle extends Equatable implements Copyable {
-  int id = 0; // 無効値
-  int viewOrder = 0; // 無効値
+  /// データベースのプライマリーキー
+  int id = 0;
+
+  /// 表示順
+  int viewOrder = 0;
+
+  /// 名前
   String name = '';
+
+  /// 対戦の種類
   BattleType type = BattleType.rankmatch;
+
+  /// 対戦日時
   DateTime datetime = DateTime.now();
+
+  /// 両者のパーティ
   List<Party> _parties = [Party(), Party()];
+
+  /// 対戦相手の名前
   String opponentName = '';
+
+  /// ターン
   List<Turn> turns = [];
+
+  /// 自身(ユーザー)が勝利したかどうか
   bool isMyWin = false;
+
+  /// 対戦相手が勝利したかどうか
   bool isYourWin = false;
 
   @override
@@ -66,9 +89,14 @@ class Battle extends Equatable implements Copyable {
 
   Battle();
 
+  /// Databaseから取得したMapからclassを生成
+  /// ```
+  /// map: Databaseから取得したMap
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
   Battle.createFromDBMap(Map<String, dynamic> map, {int version = -1}) {
     // -1は最新バージョン
-    var pokeData = PokeDB();
+    final pokeData = PokeDB();
     id = map[battleColumnId];
     viewOrder = map[battleColumnViewOrder];
     name = map[battleColumnName];
@@ -118,7 +146,7 @@ class Battle extends Equatable implements Copyable {
     ..isMyWin = isMyWin
     ..isYourWin = isYourWin;
 
-  // getter
+  /// 有効かどうか
   bool get isValid {
     return name != '' &&
         _parties[0].isValid &&
@@ -126,25 +154,7 @@ class Battle extends Equatable implements Copyable {
         _parties[1].pokemons[0]!.name != '';
   }
 
-  // 編集したかどうかのチェックに使う
-  bool isDiff(Battle battle) {
-    bool ret = id != battle.id ||
-        name != battle.name ||
-        type != battle.type ||
-        datetime != battle.datetime ||
-        _parties[0].id != battle._parties[0].id ||
-        _parties[1].id != battle._parties[1].id ||
-        opponentName != battle.opponentName ||
-        isMyWin != battle.isMyWin ||
-        isYourWin != battle.isYourWin;
-    if (ret) return true;
-    if (turns.length != battle.turns.length) return true;
-    for (int i = 0; i < turns.length; i++) {
-      if (turns[i] != battle.turns[i]) return true;
-    }
-    return false;
-  }
-
+  /// 内容をクリア
   void clear() {
     name = '';
     type = BattleType.rankmatch;
@@ -156,10 +166,15 @@ class Battle extends Equatable implements Copyable {
     isYourWin = false;
   }
 
+  /// フォーマットされた対戦日時
+  /// ```dart
+  /// 'yyyy-MM-dd HH:mm'
+  /// ```
   String get formattedDateTime {
     return outputFormat.format(datetime);
   }
 
+  /// 対戦日
   set date(DateTime t) {
     DateFormat dateFormat = DateFormat('yyyy-MM-dd');
     DateFormat timeFormat = DateFormat('HH:mm');
@@ -167,6 +182,7 @@ class Battle extends Equatable implements Copyable {
     datetime = outputFormat.parse(p);
   }
 
+  /// 対戦時
   set time(DateTime t) {
     DateFormat dateFormat = DateFormat('yyyy-MM-dd');
     DateFormat timeFormat = DateFormat('HH:mm');
@@ -174,15 +190,28 @@ class Battle extends Equatable implements Copyable {
     datetime = outputFormat.parse(p);
   }
 
+  /// フォーマットされた文字列から対戦日時をセット
+  /// ```dart
+  /// 'yyyy-MM-dd HH:mm'
+  /// ```
   set datetimeFromStr(String s) {
     datetime = outputFormat.parse(s);
   }
 
+  /// パーティを取得
+  /// ```
+  /// player: 取得対象のプレイヤー
+  /// ```
   Party getParty(PlayerType player) {
     assert(player == PlayerType.me || player == PlayerType.opponent);
     return player == PlayerType.me ? _parties[0] : _parties[1];
   }
 
+  /// パーティを設定
+  /// ```
+  /// player: 設定対象のプレイヤー
+  /// party: 設定するパーティ
+  /// ```
   void setParty(PlayerType player, Party party) {
     assert(player == PlayerType.me || player == PlayerType.opponent);
     if (player == PlayerType.me) {
@@ -192,7 +221,7 @@ class Battle extends Equatable implements Copyable {
     }
   }
 
-  // SQLite保存用
+  /// SQLite保存用Mapを返す
   Map<String, dynamic> toMap() {
     String turnsStr = '';
     for (final turn in turns) {

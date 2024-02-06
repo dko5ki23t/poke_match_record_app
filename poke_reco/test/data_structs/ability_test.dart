@@ -1,4 +1,4 @@
-import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:test/test.dart';
 import 'package:poke_reco/data_structs/ability.dart';
@@ -23,5 +23,7 @@ void main() {
       final str = ability.serialize(',');
       expect(str, sqlStr);
     });
+
+    // TODO? processPassiveEffect()やclearPassiveEffect()
   });
 }

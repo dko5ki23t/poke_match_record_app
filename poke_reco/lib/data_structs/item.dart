@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -683,8 +684,7 @@ class Item extends Equatable implements Copyable {
                 ],
                 value: extraArg1,
                 onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue:
-                    StatIndexNumber.getStatIndexFromIndex(extraArg1 + 1).name,
+                textValue: StatIndex.values[extraArg1 + 1].name,
                 isInput: isInput,
                 onFocus: onFocus,
               ),

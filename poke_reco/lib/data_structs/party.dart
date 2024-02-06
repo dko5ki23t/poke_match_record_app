@@ -6,15 +6,33 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/tool.dart';
 
+/// パーティを管理するclass
 class Party extends Equatable implements Copyable {
-  int id = 0; // データベースのプライマリーキー
-  int viewOrder = 0; // 無効値
+  /// データベースのプライマリーキー
+  int id = 0;
+
+  /// 表示順
+  int viewOrder = 0;
+
+  /// パーティ名
   String name = '';
+
+  /// パーティ内のポケモンリスト
   List<Pokemon?> _pokemons = [Pokemon(), null, null, null, null, null];
+
+  /// パーティ内ポケモンのもちものリスト
   List<Item?> items = List.generate(6, (i) => null);
+
+  /// 所有者
   Owner owner = Owner.mine;
+
+  /// パーティの勝利数
   int winCount = 0;
+
+  /// パーティが対戦で使われた回数
   int usedCount = 0;
+
+  /// パーティの勝率
   int winRate = 0;
 
   @override
@@ -32,6 +50,10 @@ class Party extends Equatable implements Copyable {
 
   Party();
 
+  /// Databaseから取得したMapからclassを生成
+  /// ```
+  /// map: Databaseから取得したMap
+  /// ```
   Party.createFromDBMap(Map<String, dynamic> map) {
     var pokeData = PokeDB();
     id = map[partyColumnId];
@@ -86,8 +108,10 @@ class Party extends Equatable implements Copyable {
     owner = toOwner(map[partyColumnOwnerID]);
   }
 
-  // getter
+  /// パーティ内のポケモンリスト
   List<Pokemon?> get pokemons => _pokemons;
+
+  /// パーティ内のポケモン数
   int get pokemonNum {
     for (int i = 0; i < 6; i++) {
       if (pokemons[i] == null) return i;
@@ -95,10 +119,12 @@ class Party extends Equatable implements Copyable {
     return 6;
   }
 
+  /// 有効かどうか
   bool get isValid {
     return name != '' && _pokemons[0]!.isValid;
   }
 
+  /// このパーティが参照されている数
   bool get refs {
     for (final e in PokeDB().battles.values) {
       if (e.getParty(PlayerType.me).id == id) return true;
@@ -106,8 +132,6 @@ class Party extends Equatable implements Copyable {
     }
     return false;
   }
-
-  // setter
 
   @override
   Party copy() {
@@ -120,23 +144,10 @@ class Party extends Equatable implements Copyable {
       ..owner = owner;
   }
 
-  // 編集したかどうかのチェックに使う
-  bool isDiff(Party party) {
-    bool ret = id != party.id || name != party.name || owner != party.owner;
-    if (ret) return true;
-    if (_pokemons.length != party._pokemons.length) return true;
-    if (items.length != party.items.length) return true;
-    for (int i = 0; i < _pokemons.length; i++) {
-      if (_pokemons[i]?.id != party._pokemons[i]?.id) return true;
-    }
-    for (int i = 0; i < items.length; i++) {
-      if (items[i]?.id != party.items[i]?.id) return true;
-    }
-    return false;
-  }
-
-  // 指定したポケモンが、パーティ内の各ポケモンに対してタイプ相性有利か不利かを判定し、色で結果を返す
-  // 有利：赤(半透明) 不利：青(半透明) 有利不利なし：透明
+  /// 指定したポケモンが、パーティ内の各ポケモンに対してタイプ相性有利か不利かを判定し、色で結果を返す
+  /// * 有利：赤(半透明)
+  /// * 不利：青(半透明)
+  /// * 有利不利なし：透明
   List<Color> getCompatibilities(Pokemon pokemon) {
     List<Color> ret = [];
     for (int i = 0; i < pokemonNum; i++) {
@@ -144,9 +155,6 @@ class Party extends Equatable implements Copyable {
       double point = 1.0;
       // 引数のポケモンがこうげきするとき
       point += PokeTypeEffectiveness.effectivenessRate(
-              false,
-              false,
-              false,
               pokemon.type1,
               PokemonState()
                 ..type1 = partyPokemon.type1
@@ -154,9 +162,6 @@ class Party extends Equatable implements Copyable {
           1.0;
       if (pokemon.type2 != null) {
         point += PokeTypeEffectiveness.effectivenessRate(
-                false,
-                false,
-                false,
                 pokemon.type2!,
                 PokemonState()
                   ..type1 = partyPokemon.type1
@@ -165,9 +170,6 @@ class Party extends Equatable implements Copyable {
       }
       // パーティ内のポケモンがこうげきするとき
       point += PokeTypeEffectiveness.effectivenessRate(
-              false,
-              false,
-              false,
               partyPokemon.type1,
               PokemonState()
                 ..type1 = pokemon.type1
@@ -175,9 +177,6 @@ class Party extends Equatable implements Copyable {
           1.0;
       if (partyPokemon.type2 != null) {
         point += PokeTypeEffectiveness.effectivenessRate(
-                false,
-                false,
-                false,
                 partyPokemon.type2!,
                 PokemonState()
                   ..type1 = pokemon.type1
@@ -195,7 +194,7 @@ class Party extends Equatable implements Copyable {
     return ret;
   }
 
-  // SQLite保存用
+  /// SQLite保存用Mapを返す
   Map<String, dynamic> toMap() {
     return {
       partyColumnId: id,

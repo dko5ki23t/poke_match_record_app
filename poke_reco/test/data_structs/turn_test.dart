@@ -1,5 +1,5 @@
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
-import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
@@ -51,15 +51,15 @@ void main() async {
       List<int> minReals = List.generate(
           StatIndex.size.index,
           (index) => index == StatIndex.H.index
-              ? SixParams.getRealH(poke.level, races[index], 0, 0)
-              : SixParams.getRealABCDS(
+              ? FourParams.getRealH(poke.level, races[index], 0, 0)
+              : FourParams.getRealABCDS(
                   poke.level, races[index], 0, 0, 0.9));
       List<int> maxReals = List.generate(
           StatIndex.size.index,
           (index) => index == StatIndex.H.index
-              ? SixParams.getRealH(poke.level, races[index],
+              ? FourParams.getRealH(poke.level, races[index],
                   pokemonMaxIndividual, pokemonMaxEffort)
-              : SixParams.getRealABCDS(poke.level, races[index],
+              : FourParams.getRealABCDS(poke.level, races[index],
                   pokemonMaxIndividual, pokemonMaxEffort, 1.1));*/
       final pokeState = PokemonState()
         ..playerType = PlayerType.opponent
@@ -68,8 +68,8 @@ void main() async {
 //        ..setHoldingItemNoEffect(
 //            pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
 //        ..minStats = SixStats.generate(
-//            (j) => SixParams(poke.stats[j].race, 0, 0, minReals[j]))
-//        ..maxStats = SixStats.generate((j) => SixParams(
+//            (j) => FourParams(poke.stats[j].race, 0, 0, minReals[j]))
+//        ..maxStats = SixStats.generate((j) => FourParams(
 //            poke.stats[j].race,
 //            pokemonMaxIndividual,
 //            pokemonMaxEffort,

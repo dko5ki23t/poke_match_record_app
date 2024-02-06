@@ -4,6 +4,8 @@ import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
@@ -14,7 +16,6 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
-import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class RegisterPokemonPage extends StatefulWidget {
@@ -63,20 +64,20 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
 
     for (int i = 0; i < StatIndex.size.index; i++) {
       pokeStatRealController[i].text =
-          widget.myPokemon.stats[i].real.toString();
+          widget.myPokemon.stats[StatIndex.values[i]].real.toString();
     }
     // notify
     setState(() {});
   }
 
-  void updateStatsRefReal(int statIndex) {
+  void updateStatsRefReal(StatIndex statIndex) {
     widget.myPokemon.updateStatsRefReal(statIndex);
 
     for (int i = 0; i < StatIndex.size.index; i++) {
       pokeStatEffortController[i].text =
-          widget.myPokemon.stats[i].effort.toString();
+          widget.myPokemon.stats[StatIndex.values[i]].effort.toString();
       pokeStatIndiController[i].text =
-          widget.myPokemon.stats[i].indi.toString();
+          widget.myPokemon.stats[StatIndex.values[i]].indi.toString();
     }
     // notify
     setState(() {});
@@ -246,19 +247,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             pokeStatRaceController[5].text =
                                 'S ${myPokemon.s.race}';
                             updateRealStat();
-                            myPokemon.move1 = Move(
-                                0,
-                                '',
-                                '',
-                                PokeType.unknown,
-                                0,
-                                0,
-                                0,
-                                Target.none,
-                                DamageClass(0),
-                                MoveEffect(0),
-                                0,
-                                0); // 無効なわざ
+                            myPokemon.move1 = Move.none(); // 無効なわざ
                             myPokemon.move2 = null;
                             myPokemon.move3 = null;
                             myPokemon.move4 = null;
@@ -524,33 +513,36 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                   for (int i = 0; i < StatIndex.size.index; i++)
                     Column(children: [
                       StatInputRow(
-                        StatIndexNumber.getStatIndexFromIndex(i).name,
+                        StatIndex.values[i].name,
                         myPokemon,
                         pokeStatRaceController[i],
                         pokeStatIndiController[i],
                         pokemonMinIndividual,
                         pokemonMaxIndividual,
-                        myPokemon.stats[i].indi,
+                        myPokemon.stats[StatIndex.values[i]].indi,
                         (value) {
-                          myPokemon.stats[i].indi = value.toInt();
+                          myPokemon.stats[StatIndex.values[i]].indi =
+                              value.toInt();
                           updateRealStat();
                         },
                         pokeStatEffortController[i],
                         pokemonMinEffort,
                         pokemonMaxEffort,
-                        myPokemon.stats[i].effort,
+                        myPokemon.stats[StatIndex.values[i]].effort,
                         (value) {
-                          myPokemon.stats[i].effort = value.toInt();
+                          myPokemon.stats[StatIndex.values[i]].effort =
+                              value.toInt();
                           updateRealStat();
                         },
                         pokeStatRealController[i],
-                        myPokemon.stats[i].real,
+                        myPokemon.stats[StatIndex.values[i]].real,
                         (value) {
-                          myPokemon.stats[i].real = value.toInt();
-                          updateStatsRefReal(i);
+                          myPokemon.stats[StatIndex.values[i]].real =
+                              value.toInt();
+                          updateStatsRefReal(StatIndex.values[i]);
                         },
                         effectTemper: i != 0,
-                        statIndex: StatIndexNumber.getStatIndexFromIndex(i),
+                        statIndex: StatIndex.values[i],
                         loc: loc,
                       ),
                       pokemonState != null
@@ -561,7 +553,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                                   child: Align(
                                     alignment: Alignment.centerRight,
                                     child: Text(
-                                      '${loc.pokemonsTabConfValueRange} : ${pokemonState.minStats[StatIndexNumber.getStatIndexFromIndex(i)].real} ~ ${pokemonState.maxStats[StatIndexNumber.getStatIndexFromIndex(i)].real}',
+                                      '${loc.pokemonsTabConfValueRange} : ${pokemonState.minStats[StatIndex.values[i]].real} ~ ${pokemonState.maxStats[StatIndex.values[i]].real}',
                                       style: TextStyle(
                                           color: theme.primaryColor,
                                           fontSize: theme
@@ -575,8 +567,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                     ]),
                   // ステータスの合計値
                   StatTotalRow(
-                    myPokemon.totalRace(),
-                    myPokemon.totalEffort(),
+                    myPokemon.totalRace,
+                    myPokemon.totalEffort,
                     loc: loc,
                   ),
 
@@ -611,21 +603,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                                 myPokemon.pps[j] = myPokemon.pps[j + 1];
                               } else {
                                 pokeMoveController[j].text = '';
-                                myPokemon.moves[j] = j == 0
-                                    ? Move(
-                                        0,
-                                        '',
-                                        '',
-                                        PokeType.unknown,
-                                        0,
-                                        0,
-                                        0,
-                                        Target.none,
-                                        DamageClass(0),
-                                        MoveEffect(0),
-                                        0,
-                                        0)
-                                    : null;
+                                myPokemon.moves[j] =
+                                    j == 0 ? Move.none() : null;
                                 pokePPController[j].text = '0';
                                 myPokemon.pps[j] = 0;
                                 break;

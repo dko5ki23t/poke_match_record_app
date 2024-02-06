@@ -1,17 +1,28 @@
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
 
+/// とくせいの情報を管理するclass
 class Ability extends Equatable implements Copyable {
+  /// ID
   final int id;
+
+  /// 名前(日本語)
   final String _displayName;
+
+  /// 名前(英語)
   final String _displayNameEn;
+
+  /// 発動タイミング
   final Timing timing;
+
+  /// 対象
   final Target target;
 
   @override
@@ -23,6 +34,7 @@ class Ability extends Equatable implements Copyable {
         target,
       ];
 
+  /// とくせい
   const Ability(
     this.id,
     this._displayName,
@@ -31,9 +43,13 @@ class Ability extends Equatable implements Copyable {
     this.target,
   );
 
+  /// 無効なとくせいを生成
+  factory Ability.none() => Ability(0, '', '', Timing.none, Target.none);
+
   @override
   Ability copy() => Ability(id, _displayName, _displayNameEn, timing, target);
 
+  /// 名前
   String get displayName {
     switch (PokeDB().language) {
       case Language.english:
@@ -44,6 +60,7 @@ class Ability extends Equatable implements Copyable {
     }
   }
 
+  /// SQLite保存用Mapを返す
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       abilityColumnId: id,
@@ -55,7 +72,7 @@ class Ability extends Equatable implements Copyable {
     return map;
   }
 
-  // 交換可能なとくせいかどうか
+  /// 交換可能なとくせいかどうか
   bool get canExchange {
     const ids = [
       225,
@@ -75,7 +92,7 @@ class Ability extends Equatable implements Copyable {
     return !ids.contains(id);
   }
 
-  // 上書きできるとくせいかどうか
+  /// 上書きできるとくせいかどうか
   bool get canOverWrite {
     const ids = [
       225,
@@ -99,7 +116,7 @@ class Ability extends Equatable implements Copyable {
     return !ids.contains(id);
   }
 
-  // コピー可能なとくせいかどうか
+  /// コピー可能なとくせいかどうか
   bool get canCopy {
     const ids = [
       225,
@@ -134,7 +151,7 @@ class Ability extends Equatable implements Copyable {
     return !ids.contains(id);
   }
 
-  // かたやぶり/きんしのちから/ターボブレイズ/テラボルテージで無視されるとくせいかどうか
+  /// かたやぶり/きんしのちから/ターボブレイズ/テラボルテージで無視されるとくせいかどうか
   bool get canIgnored {
     const ids = [
       248,
@@ -223,13 +240,20 @@ class Ability extends Equatable implements Copyable {
     return ids.contains(id);
   }
 
+  /// 常時発動する効果を処理(該当ポケモン登場時等に呼び出す)
+  /// ```
+  /// myState: とくせい保持者の状態
+  /// yourState: とくせい保持者の相手の状態
+  /// isMe: とくせい保持者が自身(ユーザ・me)かどうか
+  /// state: フェーズの状態
+  /// ```
   void processPassiveEffect(
     PokemonState myState,
     PokemonState yourState,
-    bool isOwn,
+    bool isMe,
     PhaseState state,
   ) {
-    var yourFields = isOwn
+    var yourFields = isMe
         ? state.getIndiFields(PlayerType.opponent)
         : state.getIndiFields(PlayerType.me);
     switch (id) {
@@ -366,8 +390,8 @@ class Ability extends Equatable implements Copyable {
         break;
       case 136: // マルチスケイル
       case 231: // ファントムガード
-        if ((isOwn && myState.remainHP == myState.pokemon.h.real) ||
-            (!isOwn && myState.remainHPPercent == 100)) {
+        if ((isMe && myState.remainHP == myState.pokemon.h.real) ||
+            (!isMe && myState.remainHPPercent == 100)) {
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.damaged0_5));
         }
         break;
@@ -423,8 +447,8 @@ class Ability extends Equatable implements Copyable {
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.shieldForm));
         break;
       case 177: // はやてのつばさ
-        if ((isOwn && myState.remainHP == myState.pokemon.h.real) ||
-            (!isOwn && myState.remainHPPercent == 100)) {
+        if ((isMe && myState.remainHP == myState.pokemon.h.real) ||
+            (!isMe && myState.remainHPPercent == 100)) {
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.galeWings));
         }
         break;
@@ -588,13 +612,20 @@ class Ability extends Equatable implements Copyable {
     }
   }
 
+  /// 常時発動する効果を消す(該当ポケモン退出時等に呼び出す)
+  /// ```
+  /// myState: とくせい保持者の状態
+  /// yourState: とくせい保持者の相手の状態
+  /// isMe: とくせい保持者が自身(ユーザ・me)かどうか
+  /// state: フェーズの状態
+  /// ```
   void clearPassiveEffect(
     PokemonState myState,
     PokemonState yourState,
-    bool isOwn,
+    bool isMe,
     PhaseState state,
   ) {
-    var yourFields = isOwn
+    var yourFields = isMe
         ? state.getIndiFields(PlayerType.opponent)
         : state.getIndiFields(PlayerType.me);
     switch (id) {
@@ -907,7 +938,11 @@ class Ability extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からabilityをパース
+  /// SQLに保存された文字列からabilityをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字
+  /// ```
   static Ability deserialize(dynamic str, String split1) {
     final List elements = str.split(split1);
     return Ability(
@@ -918,7 +953,10 @@ class Ability extends Equatable implements Copyable {
         Target.values[int.parse(elements.removeAt(0))]);
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字
+  /// ```
   String serialize(String split1) {
     return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}';
   }

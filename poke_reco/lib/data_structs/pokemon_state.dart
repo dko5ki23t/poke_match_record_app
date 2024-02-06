@@ -1,7 +1,10 @@
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -12,15 +15,33 @@ import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
 
+/// ポケモンのstate(状態)を管理するclass
 class PokemonState extends Equatable implements Copyable {
-  PlayerType playerType = PlayerType.none; // ポケモンの所有者
-  Pokemon pokemon = Pokemon(); // ポケモン(DBへの保存時はIDだけ)
-  int remainHP = 0; // 残りHP
-  int remainHPPercent = 100; // 残りHP割合
-  bool isTerastaling = false; // テラスタルしているかどうか
-  PokeType teraType1 = PokeType.unknown; // テラスタルした場合のタイプ
-  bool _isFainting = false; // ひんしかどうか
-  int battlingNum = 0; // バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
+  /// ポケモンの所有者
+  PlayerType playerType = PlayerType.none;
+
+  /// ポケモン(DBへの保存時はIDだけ)
+  Pokemon pokemon = Pokemon();
+
+  /// 残りHP
+  int remainHP = 0;
+
+  /// 残りHP割合
+  int remainHPPercent = 100;
+
+  /// テラスタルしているかどうか
+  bool isTerastaling = false;
+
+  /// テラスタルした場合のタイプ
+  PokeType teraType1 = PokeType.unknown;
+
+  /// ひんしかどうか
+  bool _isFainting = false;
+
+  /// バトルでの選出順(選出されていなければ0、選出順を気にしない場合は単に0/1)
+  int battlingNum = 0;
+
+  /// 持っているもちもの(失えばnullにする)
   Item? _holdingItem = Item(
       id: 0,
       displayName: '',
@@ -29,23 +50,49 @@ class PokemonState extends Equatable implements Copyable {
       flingEffectId: 0,
       timing: Timing.none,
       isBerry: false,
-      imageUrl: ''); // 持っているもちもの(失えばnullにする)
-  List<int> usedPPs = List.generate(4, (index) => 0); // 各わざの消費PP
-  List<int> _statChanges = List.generate(7, (i) => 0); // のうりょく変化
-  BuffDebuffList buffDebuffs = BuffDebuffList(); // その他の補正(フォルムとか)
-  BuffDebuffList hiddenBuffs =
-      BuffDebuffList(); // 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
-  Ability _currentAbility = Ability(
-      0, '', '', Timing.none, Target.none); // 現在のとくせい(バトル中にとくせいが変わることあるので)
-  Ailments _ailments = Ailments(); // 状態変化
-  SixStats minStats = SixStats.generateMinStat(); // 個体値や努力値のあり得る範囲の最小値
-  SixStats maxStats = SixStats.generateMaxStat(); // 個体値や努力値のあり得る範囲の最大値
-  List<Ability> possibleAbilities = []; // 候補のとくせい
-  List<Item> impossibleItems = []; // 候補から外れたもちもの(他ポケモンが持ってる等)
-  List<Move> moves = []; // 判明しているわざ
-  PokeType type1 = PokeType.unknown; // ポケモンのタイプ1(対戦中変わることもある)
-  PokeType? type2; // ポケモンのタイプ2
-  Move? lastMove; // 最後に使用した(PP消費した)わざ
+      imageUrl: '');
+
+  /// 各わざの消費PP
+  List<int> usedPPs = List.generate(4, (index) => 0);
+
+  /// のうりょく変化
+  List<int> _statChanges = List.generate(7, (i) => 0);
+
+  /// その他の補正(フォルムとか)
+  BuffDebuffList buffDebuffs = BuffDebuffList();
+
+  /// 画面上には表示させないその他の補正(わざ「ものまね」の変化後とか)
+  BuffDebuffList hiddenBuffs = BuffDebuffList();
+
+  /// 現在のとくせい(バトル中にとくせいが変わることもある)
+  Ability _currentAbility = Ability.none();
+
+  /// 状態変化
+  Ailments _ailments = Ailments();
+
+  /// 個体値や努力値のあり得る範囲の最小値
+  SixStats minStats = SixStats.generateMinStat();
+
+  /// 個体値や努力値のあり得る範囲の最大値
+  SixStats maxStats = SixStats.generateMaxStat();
+
+  /// 候補のとくせい
+  List<Ability> possibleAbilities = [];
+
+  /// 候補から外れたもちもの(他ポケモンが持ってる等)
+  List<Item> impossibleItems = [];
+
+  /// 判明しているわざ
+  List<Move> moves = [];
+
+  /// ポケモンのタイプ1(対戦中変わることもある)
+  PokeType type1 = PokeType.unknown;
+
+  /// ポケモンのタイプ2
+  PokeType? type2;
+
+  /// 最後に使用した(PP消費した)わざ
+  Move? lastMove;
 
   @override
   List<Object?> get props => [
@@ -436,19 +483,8 @@ class PokemonState extends Equatable implements Copyable {
           StatIndex.C,
           StatIndex.D
         ]) {
-          var biases = Temper.getTemperBias(pokemon.temper);
-          maxStats[stat].real = SixParams.getRealABCDS(
-              pokemon.level,
-              maxStats[stat].race,
-              maxStats[stat].indi,
-              maxStats[stat].effort,
-              biases[stat.index - 1]);
-          minStats[stat].real = SixParams.getRealABCDS(
-              pokemon.level,
-              minStats[stat].race,
-              minStats[stat].indi,
-              minStats[stat].effort,
-              biases[stat.index - 1]);
+          maxStats[stat].updateReal(pokemon.level, pokemon.temper);
+          minStats[stat].updateReal(pokemon.level, pokemon.temper);
         }
       }
     }
@@ -1359,18 +1395,11 @@ class PokemonState extends Equatable implements Copyable {
     return ret.floor();
   }
 
-  // ガードシェア等によって変更された実数値を元に戻す
+  /// ガードシェア等によって変更された実数値を元に戻す
   void resetRealSixParams() {
-    SixParams.getRealH(pokemon.level, maxStats[StatIndex.H].race,
-        maxStats[StatIndex.H].indi, maxStats[StatIndex.H].effort);
-    final temperBiases = Temper.getTemperBias(pokemon.temper);
     for (final stat in StatIndexList.listAtoS) {
-      SixParams.getRealABCDS(
-          pokemon.level,
-          maxStats[stat].race,
-          maxStats[stat].indi,
-          maxStats[stat].effort,
-          temperBiases[stat.index - 1]);
+      maxStats[stat].updateReal(pokemon.level, pokemon.temper);
+      minStats[stat].updateReal(pokemon.level, pokemon.temper);
     }
   }
 
@@ -1442,14 +1471,16 @@ class PokemonState extends Equatable implements Copyable {
     // minStats
     final minStatElements = stateElements[14].split(split2);
     for (final stat in StatIndexList.listHtoS) {
-      pokemonState.minStats[stat] =
-          SixParams.deserialize(minStatElements[stat.index], split3);
+      pokemonState.minStats[stat] = FourParams.deserialize(
+          minStatElements[stat.index], split3,
+          version: version, statIndex: stat);
     }
     // maxStats
     final maxStatElements = stateElements[15].split(split2);
     for (final stat in StatIndexList.listHtoS) {
-      pokemonState.maxStats[stat] =
-          SixParams.deserialize(maxStatElements[stat.index], split3);
+      pokemonState.maxStats[stat] = FourParams.deserialize(
+          maxStatElements[stat.index], split3,
+          version: version, statIndex: stat);
     }
     // possibleAbilities
     final abilities = stateElements[16].split(split2);

@@ -4,6 +4,7 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
 import 'package:poke_reco/custom_widgets/stat_view_row.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -87,9 +88,12 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
     pokeStatRaceController[5].text =
         myPokemon.name == '' ? 'S -' : 'S ${myPokemon.s.race}';
     for (int i = 0; i < StatIndex.size.index; i++) {
-      pokeStatIndiController[i].text = myPokemon.stats[i].indi.toString();
-      pokeStatEffortController[i].text = myPokemon.stats[i].effort.toString();
-      pokeStatRealController[i].text = myPokemon.stats[i].real.toString();
+      pokeStatIndiController[i].text =
+          myPokemon.stats[StatIndex.values[i]].indi.toString();
+      pokeStatEffortController[i].text =
+          myPokemon.stats[StatIndex.values[i]].effort.toString();
+      pokeStatRealController[i].text =
+          myPokemon.stats[StatIndex.values[i]].real.toString();
     }
 
     return Scaffold(
@@ -292,21 +296,21 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                 for (int i = 0; i < StatIndex.size.index; i++)
                   Column(children: [
                     StatViewRow(
-                      StatIndexNumber.getStatIndexFromIndex(i).name,
+                      StatIndex.values[i].name,
                       myPokemon,
                       pokeStatRaceController[i],
                       pokeStatIndiController[i],
                       pokeStatEffortController[i],
                       pokeStatRealController[i],
                       effectTemper: i != 0,
-                      statIndex: StatIndexNumber.getStatIndexFromIndex(i),
+                      statIndex: StatIndex.values[i],
                       loc: loc,
                     ),
                   ]),
                 // ステータスの合計値
                 StatTotalRow(
-                  myPokemon.totalRace(),
-                  myPokemon.totalEffort(),
+                  myPokemon.totalRace,
+                  myPokemon.totalEffort,
                   loc: loc,
                 ),
                 SizedBox(

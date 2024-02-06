@@ -1,5 +1,3 @@
-// 状態変化
-
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -9,80 +7,201 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 
-// 状態変化
+/// 状態変化
 class Ailment extends Equatable implements Copyable {
+  /// 状態変化なし
   static const int none = 0;
-  static const int burn = 1; // やけど
-  static const int freeze = 2; // こおり
-  static const int paralysis = 3; // まひ
-  static const int poison = 4; // どく
-  static const int badPoison = 5; // もうどく
-  static const int sleep = 6; // ねむり     ここまで、重複しない
-  static const int confusion = 7; // こんらん
-  static const int curse = 8; // のろい
-  static const int encore = 9; // アンコール
-  static const int flinch = 10; // ひるみ
-  static const int identify = 11; // みやぶられている
-  static const int infatuation = 12; // メロメロ
-  static const int leechSeed = 13; // やどりぎのタネ
-  static const int lockOn = 15; // ロックオン
+
+  /// やけど
+  static const int burn = 1;
+
+  /// こおり
+  static const int freeze = 2;
+
+  /// まひ
+  static const int paralysis = 3;
+
+  /// どく
+  static const int poison = 4;
+
+  /// もうどく
+  static const int badPoison = 5;
+
+  /// ねむり(ここまでは重複しない)
+  static const int sleep = 6;
+
+  /// こんらん
+  static const int confusion = 7;
+
+  /// のろい
+  static const int curse = 8;
+
+  /// アンコール
+  static const int encore = 9;
+
+  /// ひるみ
+  static const int flinch = 10;
+
+  /// みやぶられている
+  static const int identify = 11;
+
+  /// メロメロ
+  static const int infatuation = 12;
+
+  /// やどりぎのタネ
+  static const int leechSeed = 13;
+
+  /// ロックオン
+  static const int lockOn = 15;
 //  static const int nightmare = 16;          // あくむ
-  static const int partiallyTrapped = 17; // バインド(交代不可、毎ターンダメージ)
-  static const int perishSong = 18; // ほろびのうた
-  static const int taunt =
-      19; // ちょうはつ(3ターンの間へんかわざ使用不可)  extraArg1に、ちょうはつ状態になってからのわざ使用回数を記録
-  static const int torment = 20; // いちゃもん
-  static const int saltCure = 22; // しおづけ
-  static const int disable = 23; // かなしばり
-  static const int magnetRise = 24; // でんじふゆう
-  static const int telekinesis = 25; // テレキネシス
-  static const int healBlock = 26; // かいふくふうじ(extraArgに継続ターン数)
-  static const int embargo = 27; // さしおさえ
-  static const int sleepy = 28; // ねむけ
-  static const int ingrain = 29; // ねをはる
-  static const int uproar = 30; // さわぐ
-  static const int antiAir = 31; // うちおとす
-  static const int magicCoat = 32; // マジックコート
-  static const int charging = 33; // じゅうでん
-  static const int thrash = 34; // あばれる
+  /// バインド(交代不可、毎ターンダメージ)
+  static const int partiallyTrapped = 17;
+
+  /// ほろびのうた
+  static const int perishSong = 18;
+
+  /// ちょうはつ(3ターンの間へんかわざ使用不可)  extraArg1に、ちょうはつ状態になってからのわざ使用回数を記録
+  static const int taunt = 19;
+
+  /// いちゃもん
+  static const int torment = 20;
+
+  /// しおづけ
+  static const int saltCure = 22;
+
+  /// かなしばり
+  static const int disable = 23;
+
+  /// でんじふゆう
+  static const int magnetRise = 24;
+
+  /// テレキネシス
+  static const int telekinesis = 25;
+
+  /// かいふくふうじ(extraArgに継続ターン数)
+  static const int healBlock = 26;
+
+  /// さしおさえ
+  static const int embargo = 27;
+
+  /// ねむけ
+  static const int sleepy = 28;
+
+  /// ねをはる
+  static const int ingrain = 29;
+
+  /// さわぐ
+  static const int uproar = 30;
+
+  /// うちおとす
+  static const int antiAir = 31;
+
+  /// マジックコート
+  static const int magicCoat = 32;
+
+  /// じゅうでん
+  static const int charging = 33;
+
+  /// あばれる
+  static const int thrash = 34;
+
 //  static const int bide = 35;               // がまん
-  static const int destinyBond = 36; // みちづれ
-  static const int cannotRunAway =
-      37; // にげられない(あいてに使われた場合はextraArg1 >= 1, extraArg1 == 2→「じりょく」によるにげられない extraArg == 3→「ありじごく」によるにげられない)
-  static const int minimize = 38; // ちいさくなる
-  static const int flying = 39; // そらをとぶ
-  static const int digging = 40; // あなをほる
-  static const int curl = 41; // まるくなる(ころがる・アイスボールの威力2倍)
-  static const int stock1 =
-      42; // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
-  static const int stock2 = 43; // たくわえる(2)
-  static const int stock3 = 44; // たくわえる(3)
-  static const int attention = 45; // ちゅうもくのまと
+  /// みちづれ
+  static const int destinyBond = 36;
+
+  /// にげられない
+  /// * あいてに使われた場合はextraArg1 >= 1,
+  /// * extraArg1 == 2→「じりょく」によるにげられない
+  /// * extraArg == 3→「ありじごく」によるにげられない)
+  static const int cannotRunAway = 37;
+
+  /// ちいさくなる
+  static const int minimize = 38;
+
+  /// そらをとぶ
+  static const int flying = 39;
+
+  /// あなをほる
+  static const int digging = 40;
+
+  /// まるくなる(ころがる・アイスボールの威力2倍)
+  static const int curl = 41;
+
+  /// たくわえる(1)
+  /// * extraArg1の1の位：たくわえたときに上がったぼうぎょ
+  /// * extraArg1の10の位：たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
+  static const int stock1 = 42;
+
+  /// たくわえる(2)
+  /// * extraArg1の1の位：たくわえたときに上がったぼうぎょ
+  /// * extraArg1の10の位：たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
+  static const int stock2 = 43;
+
+  /// たくわえる(3)
+  /// * extraArg1の1の位：たくわえたときに上がったぼうぎょ
+  /// * extraArg1の10の位：たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
+  static const int stock3 = 44;
+
+  /// ちゅうもくのまと
+  static const int attention = 45;
+
 //  static const int helpHand = 46;           // てだすけ(シングルバトルではこの状態にできない)
-  static const int imprison = 47; // ふういん
-  static const int grudge = 48; // おんねん
-  static const int roost = 49; // はねやすめ
-  static const int miracleEye = 50; // ミラクルアイ (+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
-  static const int powerTrick = 51; // パワートリック
-  static const int abilityNoEffect = 52; // とくせいなし
-  static const int aquaRing = 53; // アクアリング
-  static const int diving = 54; // ダイビング
-  static const int shadowForcing = 55; // シャドーダイブ(姿を消した状態)
-  static const int electrify = 56; // そうでん
+  /// ふういん
+  static const int imprison = 47;
+
+  /// おんねん
+  static const int grudge = 48;
+
+  /// はねやすめ
+  static const int roost = 49;
+
+  /// ミラクルアイ(+1以上かいひランク無視、エスパーわざがあくタイプに等倍)
+  static const int miracleEye = 50;
+
+  /// パワートリック
+  static const int powerTrick = 51;
+
+  /// とくせいなし
+  static const int abilityNoEffect = 52;
+
+  /// アクアリング
+  static const int aquaRing = 53;
+
+  /// ダイビング
+  static const int diving = 54;
+
+  /// シャドーダイブ(姿を消した状態)
+  static const int shadowForcing = 55;
+
+  /// そうでん
+  static const int electrify = 56;
 //  static const int powder = 57;             // ふんじん
-  static const int throatChop = 58; // じごくづき
-  static const int tarShot = 59; // タールショット
-  static const int octoLock = 60; // たこがため
-  static const int protect = 61; // まもる extraArg1 =
-  // 588:キングシールド(直接攻撃してきた相手のこうげき1段階DOWN)
-  // 596:ニードルガード(直接攻撃してきた相手に最大HP1/8ダメージ)
-  // 661:トーチカ(直接攻撃してきた相手をどく状態にする)
-  // 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
-  // 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
-  // 908:かえんのまもり(直接攻撃してきた相手をやけど状態にする)
-  static const int candyCandy = 62; // あめまみれ
-  static const int halloween = 63; // ハロウィン(ゴーストタイプ)
-  static const int forestCurse = 64; // もりののろい(くさタイプ)
+  /// じごくづき
+  static const int throatChop = 58;
+
+  /// タールショット
+  static const int tarShot = 59;
+
+  /// たこがため
+  static const int octoLock = 60;
+
+  /// まもる extraArg1 =
+  /// * 588:キングシールド(直接攻撃してきた相手のこうげき1段階DOWN)
+  /// * 596:ニードルガード(直接攻撃してきた相手に最大HP1/8ダメージ)
+  /// * 661:トーチカ(直接攻撃してきた相手をどく状態にする)
+  /// * 792:ブロッキング(直接攻撃してきた相手のぼうぎょ2段階DOWN)
+  /// * 852:スレッドトラップ(直接攻撃してきた相手のすばやさ1段階DOWN)
+  /// * 908:かえんのまもり(直接攻撃してきた相手をやけど状態にする)
+  static const int protect = 61;
+
+  /// あめまみれ
+  static const int candyCandy = 62;
+
+  /// ハロウィン(ゴーストタイプ)
+  static const int halloween = 63;
+
+  /// もりののろい(くさタイプ)
+  static const int forestCurse = 64;
 
   static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
       {
@@ -151,9 +270,14 @@ class Ailment extends Equatable implements Copyable {
     64: Tuple4('もりののろい', 'Forest Curse', PokeTypeColor.grass, 0),
   };
 
+  /// ID
   final int id;
-  int turns = 0; // 経過ターン
-  int extraArg1 = 0; // アンコール対象のわざID等
+
+  /// 経過ターン
+  int turns = 0;
+
+  /// アンコール対象のわざID等
+  int extraArg1 = 0;
 
   @override
   List<Object?> get props => [
@@ -169,6 +293,7 @@ class Ailment extends Equatable implements Copyable {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
+  /// 表示名(経過ターン数含む)
   String get displayName {
     final pokeData = PokeDB();
     String extraStr = '';
@@ -203,6 +328,7 @@ class Ailment extends Equatable implements Copyable {
     }
   }
 
+  /// 表示背景色
   Color get bgColor => _nameColorTurnMap[id]!.item3;
   int get maxTurn {
     int ret = _nameColorTurnMap[id]!.item4;
@@ -212,7 +338,13 @@ class Ailment extends Equatable implements Copyable {
     return ret;
   }
 
-  // 発動するタイミング・条件かどうかを返す
+  /// 発動するタイミング・条件かどうかを返す
+  /// ```
+  /// isMe: 状態変化の持ち主が自身(ユーザー)かどうか
+  /// timing: タイミング
+  /// pokemonState: 状態変化の持ち主ポケモンの状態
+  /// state: フェーズの状態
+  /// ```
   bool isActive(
       bool isMe, Timing timing, PokemonState pokemonState, PhaseState state) {
     switch (timing) {
@@ -269,7 +401,12 @@ class Ailment extends Equatable implements Copyable {
     }
   }
 
-  // 発動する可能性のあるタイミング・条件かどうかを返す
+  /// 発動する可能性のあるタイミング・条件かどうかを返す
+  /// ```
+  /// timing: タイミング
+  /// pokemonState: 状態変化の持ち主ポケモンの状態
+  /// state: フェーズの状態
+  /// ```
   bool possiblyActive(
       Timing timing, PokemonState pokemonState, PhaseState state) {
     switch (timing) {
@@ -315,7 +452,11 @@ class Ailment extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からAilmentをパース
+  /// SQLに保存された文字列からAilmentをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字
+  /// ```
   static Ailment deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
     return Ailment(int.parse(elements[0]))
@@ -323,7 +464,10 @@ class Ailment extends Equatable implements Copyable {
       ..extraArg1 = int.parse(elements[2]);
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字
+  /// ```
   String serialize(String split1) {
     return '$id$split1$turns$split1$extraArg1';
   }

@@ -273,9 +273,9 @@ class TurnEffectIndividualField extends TurnEffect {
         return;
       case IndiFieldEffect.stealthRock: // ステルスロック
         {
-          var rate = PokeTypeEffectiveness.effectivenessRate(
-                  false, false, false, PokeType.rock, myState) /
-              8;
+          var rate =
+              PokeTypeEffectiveness.effectivenessRate(PokeType.rock, myState) /
+                  8;
           extraArg1 = isMe
               ? (myState.pokemon.h.real * rate).floor()
               : (100 * rate).floor();

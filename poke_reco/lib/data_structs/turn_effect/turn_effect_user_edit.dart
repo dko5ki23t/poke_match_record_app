@@ -1,4 +1,5 @@
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -142,13 +143,11 @@ class TurnEffectUserEdit extends TurnEffect {
         case UserEdit.statMinS:
           if (force.playerType == PlayerType.me) {
             ownState
-                .minStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserEdit.statMinH)]
+                .minStats[StatIndex.values[force.typeId - UserEdit.statMinH]]
                 .real = force.arg1;
           } else if (force.playerType == PlayerType.opponent) {
             opponentState
-                .minStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserEdit.statMinH)]
+                .minStats[StatIndex.values[force.typeId - UserEdit.statMinH]]
                 .real = force.arg1;
           }
           break;
@@ -160,13 +159,11 @@ class TurnEffectUserEdit extends TurnEffect {
         case UserEdit.statMaxS:
           if (force.playerType == PlayerType.me) {
             ownState
-                .maxStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserEdit.statMaxH)]
+                .maxStats[StatIndex.values[force.typeId - UserEdit.statMaxH]]
                 .real = force.arg1;
           } else if (force.playerType == PlayerType.opponent) {
             opponentState
-                .maxStats[StatIndexNumber.getStatIndexFromIndex(
-                    force.typeId - UserEdit.statMaxH)]
+                .maxStats[StatIndex.values[force.typeId - UserEdit.statMaxH]]
                 .real = force.arg1;
           }
           break;

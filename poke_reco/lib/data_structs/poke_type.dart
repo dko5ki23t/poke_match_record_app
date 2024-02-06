@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
+/// タイプを表す色
 class PokeTypeColor {
   static const unknown = Colors.grey;
   static const normal = Color(0xffaeaeae);
@@ -27,6 +28,7 @@ class PokeTypeColor {
   static const stellar = Colors.white;
 }
 
+/// 日本語表示名
 const _displayNames = {
   PokeType.unknown: '不明',
   PokeType.normal: 'ノーマル',
@@ -50,6 +52,7 @@ const _displayNames = {
   PokeType.stellar: 'ステラ',
 };
 
+/// 英語表示名
 const _displayNamesEn = {
   PokeType.unknown: 'Unknown',
   PokeType.normal: 'Normal',
@@ -73,6 +76,7 @@ const _displayNamesEn = {
   PokeType.stellar: 'Stellar',
 };
 
+/// 表示色
 const _displayColors = {
   PokeType.unknown: PokeTypeColor.unknown,
   PokeType.normal: PokeTypeColor.normal,
@@ -95,6 +99,7 @@ const _displayColors = {
   PokeType.fairy: PokeTypeColor.fairy,
 };
 
+/// 表示アイコン
 const _displayIcons = {
   PokeType.unknown: Icon(Icons.question_mark, color: PokeTypeColor.unknown),
   PokeType.normal:
@@ -118,31 +123,72 @@ const _displayIcons = {
   PokeType.fairy: Icon(Icons.emoji_nature, color: PokeTypeColor.fairy),
 };
 
+/// タイプ
 enum PokeType {
+  /// 不明
   unknown,
+
+  /// ノーマル
   normal,
+
+  /// かくとう
   fight,
+
+  /// ひこう
   fly,
+
+  /// どく
   poison,
+
+  /// じめん
   ground,
+
+  /// いわ
   rock,
+
+  /// むし
   bug,
+
+  /// ゴースト
   ghost,
+
+  /// はがね
   steel,
+
+  /// ほのお
   fire,
+
+  /// みず
   water,
+
+  /// くさ
   grass,
+
+  /// でんき
   electric,
+
+  /// エスパー
   psychic,
+
+  /// こおり
   ice,
+
+  /// ドラゴン
   dragon,
+
+  /// あく
   evil,
+
+  /// フェアリー
   fairy,
+
+  /// ステラ
   stellar,
 }
 
-// 表示用extension
+/// タイプの表示用extension
 extension PokeTypeDisplay on PokeType {
+  /// タイプ名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
@@ -153,6 +199,7 @@ extension PokeTypeDisplay on PokeType {
     }
   }
 
+  /// タイプアイコン
   Widget get displayIcon {
     if (this == PokeType.stellar) {
       return ShaderMask(
@@ -177,23 +224,36 @@ extension PokeTypeDisplay on PokeType {
     }
   }
 
+  /// タイプを表す色
   Color get displayColor {
     return _displayColors[this]!;
   }
 }
 
-// タイプ相性用extension
+/// タイプ相性用extension
 extension PokeTypeEffectiveness on PokeType {
+  /// タイプ相性の効果を返す
+  /// ```
+  /// attackType: こうげきわざのタイプ
+  /// state: ぼうぎょ側のstate
+  /// isScrappyMindEye: こうげき側が きもったま/しんがん かどうか
+  /// isRingTarget: こうげき側が ねらいのまと かどうか
+  /// isMiracleEye: こうげき側が ミラクルアイ かどうか
+  /// ```
   static MoveEffectiveness effectiveness(
-    bool isScrappyMindEye,
-    bool isRingTarget,
-    bool isMiracleEye,
+    bool isScrappyMindEye, // きもったま/しんがん
+    bool isRingTarget, // ねらいのまと
+    bool isMiracleEye, // ミラクルアイ
     PokeType attackType,
     PokemonState defenseState,
-    // きもったま/しんがん, ねらいのまと, ミラクルアイ
   ) {
     double rate = effectivenessRate(
-        isScrappyMindEye, isRingTarget, isMiracleEye, attackType, defenseState);
+      attackType,
+      defenseState,
+      isScrappyMindEye: isScrappyMindEye,
+      isRingTarget: isRingTarget,
+      isMiracleEye: isMiracleEye,
+    );
     if (rate == 0) {
       return MoveEffectiveness.noEffect;
     } else if (rate == 1) {
@@ -205,13 +265,21 @@ extension PokeTypeEffectiveness on PokeType {
     }
   }
 
+  /// タイプ相性の倍率を返す
+  /// ```
+  /// attackType: こうげきわざのタイプ
+  /// state: ぼうぎょ側のstate
+  /// isScrappyMindEye: こうげき側が きもったま/しんがん かどうか
+  /// isRingTarget: ぼうぎょ側が ねらいのまと かどうか
+  /// isMiracleEye: こうげき側が ミラクルアイ かどうか
+  /// ```
   static double effectivenessRate(
-    bool isScrappyMindEye,
-    bool isRingTarget,
-    bool isMiracleEye,
     PokeType attackType,
-    PokemonState state,
-  ) {
+    PokemonState state, {
+    bool isScrappyMindEye = false,
+    bool isRingTarget = false,
+    bool isMiracleEye = false,
+  }) {
     bool canNormalFightToGhost = isScrappyMindEye ||
         state.ailmentsWhere((e) => e.id == Ailment.identify).isNotEmpty;
     List<PokeType> types = [];

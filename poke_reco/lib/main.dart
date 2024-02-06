@@ -28,7 +28,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
 const String pokeRecoVersion = '1.0.3';
-const int pokeRecoInternalVersion = 2; // SQLのテーブルバージョンに使用
+const int pokeRecoInternalVersion = 3; // SQLのテーブルバージョンに使用
 
 enum TabItem {
   battles,
