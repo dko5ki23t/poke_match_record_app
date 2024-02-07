@@ -5,15 +5,25 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-/// 天気の情報を管理するclass
+/// 天気
 class Weather extends Equatable implements Copyable {
+  /// なし
   static const int none = 0;
-  static const int sunny = 1; // 晴れ
-  static const int rainy = 2; // あめ
-  static const int sandStorm = 3; // すなあらし
-  static const int snowy = 4; // ゆき
 
-  static const int invalid = 100; // 天気無効化
+  /// 晴れ
+  static const int sunny = 1;
+
+  /// あめ
+  static const int rainy = 2;
+
+  /// すなあらし
+  static const int sandStorm = 3;
+
+  /// ゆき
+  static const int snowy = 4;
+
+  /// 天気無効化
+  static const int invalid = 100;
 
   static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
       {
@@ -24,6 +34,7 @@ class Weather extends Equatable implements Copyable {
     4: Tuple4('ゆき', 'Snowy', Colors.blue, 5),
   };
 
+  /// 表示名
   String get displayName {
     if (isValid) {
       switch (PokeDB().language) {
@@ -44,7 +55,10 @@ class Weather extends Equatable implements Copyable {
     }
   }
 
+  /// 表示背景色
   Color get bgColor => isValid ? _nameColorTurnMap[id]!.item3 : Colors.grey;
+
+  /// 最大継続ターン
   int get maxTurns {
     if (extraArg1 == 8) {
       return 8;
@@ -52,9 +66,14 @@ class Weather extends Equatable implements Copyable {
     return _nameColorTurnMap[id]!.item4;
   }
 
+  /// ID
   int id;
-  int turns = 0; // 経過ターン
-  int extraArg1 = 0; //
+
+  /// 経過ターン
+  int turns = 0;
+
+  /// 引数
+  int extraArg1 = 0;
 
   @override
   List<Object?> get props => [
@@ -63,6 +82,7 @@ class Weather extends Equatable implements Copyable {
         extraArg1,
       ];
 
+  /// 天気
   Weather(this.id);
 
   @override
@@ -70,6 +90,7 @@ class Weather extends Equatable implements Copyable {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
+  /// 有効かどうか
   bool get isValid => id < invalid;
   set valid(bool b) {
     if (b && id >= invalid) {
@@ -79,8 +100,14 @@ class Weather extends Equatable implements Copyable {
     }
   }
 
-  // 天気変化もしくは場に登場したポケモンに対して天気の効果をかける
-  // (場に出たポケモンに対しては、変化前を「天気なし」として引数を渡すとよい)
+  /// 天気変化もしくは場に登場したポケモンに対して天気の効果をかける
+  /// (場に出たポケモンに対しては、変化前を「天気なし」として引数を渡すとよい)
+  /// ```
+  /// before: 変化前の天気
+  /// after: 変化後の天気
+  /// ownPokemonState: 自身(ユーザー)のポケモンの状態
+  /// opponentPokemonState: 相手のポケモンの状態
+  /// ```
   static void processWeatherEffect(Weather before, Weather after,
       PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
     if (ownPokemonState != null &&
@@ -317,7 +344,11 @@ class Weather extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からWeatherをパース
+  /// SQLに保存された文字列からWeatherをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字
+  /// ```
   static Weather deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
     return Weather(int.parse(elements[0]))
@@ -325,7 +356,10 @@ class Weather extends Equatable implements Copyable {
       ..extraArg1 = int.parse(elements[2]);
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字
+  /// ```
   String serialize(String split1) {
     return '$id$split1$turns$split1$extraArg1';
   }

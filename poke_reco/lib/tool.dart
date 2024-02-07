@@ -133,12 +133,13 @@ int roundOff5(double a) {
   return ret;
 }
 
-// コピー関数を必須にする
+/// コピー関数を必須にする
 abstract class Copyable<T> {
+  /// ディープコピー
   T copy();
 }
 
-// ==演算子を有効にする
+/// ==演算子を有効にする
 abstract class Equatable {
   const Equatable();
 

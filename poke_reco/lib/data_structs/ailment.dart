@@ -473,12 +473,14 @@ class Ailment extends Equatable implements Copyable {
   }
 }
 
+/// 状態変化のリスト
 class Ailments extends Equatable implements Copyable {
   List<Ailment> _ailments = [];
 
   @override
   List<Object?> get props => [_ailments];
 
+  /// 状態変化のリスト
   Ailments();
 
   @override
@@ -490,7 +492,11 @@ class Ailments extends Equatable implements Copyable {
     return ret;
   }
 
-  // 既に重複不可な状態異常になっていたら失敗する
+  /// 状態変化を追加し、成功すればtrue、失敗すればfalseを返す。
+  /// 既に重複不可な状態変化になっていた場合失敗する
+  /// ```
+  /// ailment: 追加する状態変化
+  /// ```
   bool add(Ailment ailment) {
     if (ailment.id <= 6 &&
         _ailments
@@ -507,24 +513,38 @@ class Ailments extends Equatable implements Copyable {
     return true;
   }
 
+  /// 状態変化の数
   int get length => _ailments.length;
+
+  /// 状態変化のイテレータ
   Iterable<Ailment> get iterable => _ailments;
 
+  /// 要素アクセス
   Ailment operator [](int i) => _ailments[i];
 
+  /// 条件に合う状態変化
   Iterable<Ailment> where(bool Function(Ailment) test) => _ailments.where(test);
 
+  /// 条件に合う最初の状態変化のインデックス
   int indexWhere(bool Function(Ailment) test) => _ailments.indexWhere(test);
 
+  /// 指定インデックスの状態変化を削除
   Ailment removeAt(int index) => _ailments.removeAt(index);
 
+  /// 指定した状態変化を削除し、成否を返す
   bool remove(Object? e) => _ailments.remove(e);
 
+  /// 条件に合う状態変化をすべて削除
   void removeWhere(bool Function(Ailment) test) => _ailments.removeWhere(test);
 
+  /// すべての状態変化を削除
   void clear() => _ailments.clear();
 
-  // SQLに保存された文字列からAilmentをパース
+  /// SQLに保存された文字列からAilmentをパース
+  /// /// ```
+  /// str: SQLに保存された文字列
+  /// split1,split2: 区切り文字
+  /// ```
   static Ailments deserialize(dynamic str, String split1, String split2) {
     Ailments ret = Ailments();
     final ailmentElements = str.split(split1);
@@ -535,7 +555,10 @@ class Ailments extends Equatable implements Copyable {
     return ret;
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// /// ```
+  /// split1,split2: 区切り文字
+  /// ```
   String serialize(String split1, String split2) {
     String ret = '';
     for (final ailment in _ailments) {

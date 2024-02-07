@@ -455,10 +455,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   .getInitialLastExitedStates(PlayerType.opponent)
                   .add(state.copy());
             }
-            turn.initialOwnPokemonState.processEnterEffect(true,
-                turn.copyInitialState(), turn.initialOpponentPokemonState);
+            turn.initialOwnPokemonState.processEnterEffect(
+                turn.initialOpponentPokemonState, turn.copyInitialState());
             turn.initialOpponentPokemonState.processEnterEffect(
-                false, turn.copyInitialState(), turn.initialOwnPokemonState);
+                turn.initialOwnPokemonState, turn.copyInitialState());
             // 初期状態設定ここまで
             turns.add(turn);
             isNewTurn = true;

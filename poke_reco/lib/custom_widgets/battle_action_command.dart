@@ -73,7 +73,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     final yourState = prevState.getPokemonState(playerType.opposite, null);
     List<Move> moves = [];
     List<ListTile> moveTiles = [];
-    if (turnMove.type == TurnMoveType.move) {
+    if (turnMove.type == TurnActionType.move) {
       var myPokemon = myState.pokemon;
       var yourFields = prevState.getIndiFields(playerType.opposite);
       // 覚えているわざをリストの先頭に
@@ -199,11 +199,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 children: [
                   TextButton(
                     onPressed: () => parentSetState(() {
-                      turnMove.type = TurnMoveType.move;
+                      turnMove.type = TurnActionType.move;
                       // TODO: typeを変えたら他も変える？class継承とかでどうにか
                       turnMove.setChangePokemonIndex(playerType, null);
                     }),
-                    style: turnMove.type == TurnMoveType.move
+                    style: turnMove.type == TurnActionType.move
                         ? pressedStyle
                         : null,
                     child: Text(loc.commonMove),
@@ -211,9 +211,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   SizedBox(width: 10),
                   TextButton(
                     onPressed: () => parentSetState(() {
-                      turnMove.type = TurnMoveType.change;
+                      turnMove.type = TurnActionType.change;
                     }),
-                    style: turnMove.type == TurnMoveType.change
+                    style: turnMove.type == TurnActionType.change
                         ? pressedStyle
                         : null,
                     child: Text(loc.battlePokemonChange),
@@ -223,10 +223,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   ),
                   TextButton(
                     onPressed: () => parentSetState(() {
-                      turnMove.type = TurnMoveType.surrender;
+                      turnMove.type = TurnActionType.surrender;
                       turnMove.setChangePokemonIndex(playerType, null);
                     }),
-                    style: turnMove.type == TurnMoveType.surrender
+                    style: turnMove.type == TurnActionType.surrender
                         ? pressedStyle
                         : null,
                     child: Text(loc.battleSurrender),
@@ -239,7 +239,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           late List<Widget> typeCommand;
           // 行動の種類ごとに変わる
           switch (turnMove.type) {
-            case TurnMoveType.move: // わざ
+            case TurnActionType.move: // わざ
               typeCommand = [
                 Expanded(
                   flex: 1,
@@ -293,7 +293,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 ),
               ];
               break;
-            case TurnMoveType.change: // ポケモン交代
+            case TurnActionType.change: // ポケモン交代
               List<ListTile> pokemonTiles = [];
               List<int> addedIndex = [];
               for (int i = 0; i < myParty.pokemonNum; i++) {
@@ -362,7 +362,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 ),
               ];
               break;
-            case TurnMoveType.surrender: // こうさん
+            case TurnActionType.surrender: // こうさん
             default:
               typeCommand = [
                 Expanded(

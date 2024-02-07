@@ -57,12 +57,12 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
             : ownState;
 
     // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-    myState.processExitEffect(true, yourState, state);
+    myState.processExitEffect(yourState, state);
     if (changePokemonIndex != 0) {
       state.setPokemonIndex(playerType, changePokemonIndex);
       state
           .getPokemonState(playerType, null)
-          .processEnterEffect(true, state, yourState);
+          .processEnterEffect(yourState, state);
     }
 
     return [];

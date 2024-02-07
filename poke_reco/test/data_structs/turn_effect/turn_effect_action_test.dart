@@ -22,7 +22,7 @@ void main() async {
   PokeDB pokeData = testPokeData.data;
   group('TurnEffectAction class の単体テスト', () {
     final TurnEffectAction turnMove = TurnEffectAction(player: PlayerType.me)
-      ..type = TurnMoveType.move
+      ..type = TurnActionType.move
       ..teraType = PokeType.fire
       ..move = pokeData.moves[1]!
       ..isSuccess = false
@@ -60,12 +60,14 @@ void main() async {
 
     // ハバタクカミ
     final attackerBase = pokeData.pokeBase[987]!;
-    Pokemon attacker = Pokemon()..setBasicInfoFromNo(987);
+    Pokemon attacker = Pokemon()
+      ..setBasicInfoFromNo(987, setDefaultAbility: false);
     attacker.c.set(attackerBase.c, 31, 252, 0);
     attacker.updateRealStats();
     // カイリュー
     final defenderBase = pokeData.pokeBase[149]!;
-    Pokemon defender = Pokemon()..setBasicInfoFromNo(149);
+    Pokemon defender = Pokemon()
+      ..setBasicInfoFromNo(149, setDefaultAbility: false);
     defender.h.set(defenderBase.h, 31, 0, 0);
     defender.b.set(defenderBase.b, 31, 0, 0);
     defender.d.set(defenderBase.d, 31, 0, 0);
@@ -103,19 +105,19 @@ void main() async {
       ..setHoldingItemNoEffect(
           pokeData.items[pokeData.pokeBase[defender.no]!.fixedItemID])
       ..minStats = SixStats.generate((j) => FourParams.createFromValues(
-          statIndex: StatIndex.values[j],
-          level: defender.level,
-          race: defender.stats[StatIndex.values[j]].race,
-          indi: 0,
-          effort: 0,
-          temper: Temper(0, '', '', StatIndex.values[j], StatIndex.none)))
+            statIndex: StatIndex.values[j],
+            level: defender.level,
+            race: defender.stats[StatIndex.values[j]].race,
+            indi: 31, // 今回個体値は固定で
+            effort: 0, // 今回努力値は固定で
+          )) // 今回せいかく補正はなし固定で
       ..maxStats = SixStats.generate((j) => FourParams.createFromValues(
-          statIndex: StatIndex.values[j],
-          level: defender.level,
-          race: defender.stats[StatIndex.values[j]].race,
-          indi: pokemonMaxIndividual,
-          effort: pokemonMaxEffort,
-          temper: Temper(0, '', '', StatIndex.none, StatIndex.values[j])))
+            statIndex: StatIndex.values[j],
+            level: defender.level,
+            race: defender.stats[StatIndex.values[j]].race,
+            indi: 31, // 今回個体値は固定で
+            effort: 0, // 今回努力値は固定で
+          )) // 今回せいかく補正はなし固定で
       ..possibleAbilities = pokeData.pokeBase[defender.no]!.ability
       ..type1 = defender.type1
       ..type2 = defender.type2;
@@ -124,11 +126,11 @@ void main() async {
         .getInitialLastExitedStates(PlayerType.opponent)
         .add(defenderState.copy());
     turn.initialOwnPokemonState.processEnterEffect(
-        true, turn.copyInitialState(), turn.initialOpponentPokemonState);
+        turn.initialOpponentPokemonState, turn.copyInitialState());
     turn.initialOpponentPokemonState.processEnterEffect(
-        false, turn.copyInitialState(), turn.initialOwnPokemonState);
+        turn.initialOwnPokemonState, turn.copyInitialState());
     final action = TurnEffectAction(player: PlayerType.me)
-      ..type = TurnMoveType.move;
+      ..type = TurnActionType.move;
     final myMove = pokeData.moves[585]!; // ムーンフォース
     final phaseState = turn.copyInitialState();
     final yourFields = phaseState.getIndiFields(PlayerType.opponent);
@@ -163,8 +165,10 @@ void main() async {
     );
 
     test('ダメージ計算（${attacker.name} -> ${defender.name}）', () {
-      expect(getter.maxDamagePercent, 120.4);
-      expect(getter.minDamagePercent, 101.2);
+      expect(getter.maxDamage, 200.0);
+      expect(getter.minDamage, 168.0);
+      expect(getter.maxDamagePercent, 120);
+      expect(getter.minDamagePercent, 101);
     });
 
     test('SQL文字列から変換', () {

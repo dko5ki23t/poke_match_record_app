@@ -237,7 +237,16 @@ abstract class TurnEffect extends Equatable implements Copyable {
 
   bool isValid();
 
-  // 効果やわざの結果から、各ポケモン等の状態を更新する
+  /// 効果やわざの結果から、各ポケモン等の状態を更新する
+  /// ```
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// ownState: 自身(ユーザー)のポケモンの状態
+  /// opponentParty: 相手のパーティ
+  /// opponentState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: この行動の直前に起きた行動(わざ使用後の処理等に用いる)
+  /// continuousCount: 連続わざのインデックス
+  /// ```
   List<Guide> processEffect(
     Party ownParty,
     PokemonState ownState,

@@ -42,20 +42,12 @@ class PokemonState extends Equatable implements Copyable {
   int battlingNum = 0;
 
   /// 持っているもちもの(失えばnullにする)
-  Item? _holdingItem = Item(
-      id: 0,
-      displayName: '',
-      displayNameEn: '',
-      flingPower: 0,
-      flingEffectId: 0,
-      timing: Timing.none,
-      isBerry: false,
-      imageUrl: '');
+  Item? _holdingItem = Item.none();
 
   /// 各わざの消費PP
   List<int> usedPPs = List.generate(4, (index) => 0);
 
-  /// のうりょく変化
+  /// 能力ランク変化[A,B,C,D,S,Ac(命中率),Ev(回避率)]
   List<int> _statChanges = List.generate(7, (i) => 0);
 
   /// その他の補正(フォルムとか)
@@ -147,40 +139,54 @@ class PokemonState extends Equatable implements Copyable {
     ..type2 = type2
     ..lastMove = lastMove?.copy();
 
+  /// 持っているもちもの(持っていない場合はnull)
   Item? get holdingItem => _holdingItem != null
       ? canUseItem
           ? _holdingItem
           : PokeDB().items[0]
       : null;
+
+  /// 現在のとくせい(バトル中にとくせいが変わることもある)
   Ability get currentAbility =>
       isEffectAbility ? _currentAbility : PokeDB().abilities[0]!;
+
+  /// ひんしかどうか
   bool get isFainting => _isFainting;
-  // たかさ・おもさ・せいべつはメタモンのへんしん状態に応じて変化
+
+  /// おもさ(メタモンはへんしん状態に応じて変化)
   int get weight {
     final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.weight;
   }
 
+  /// たかさ(メタモンはへんしん状態に応じて変化)
   int get height {
     final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.height;
   }
 
+  /// せいべつ(メタモンはへんしん状態に応じて変化)
   Sex get sex {
     final trans = buffDebuffs.whereByID(BuffDebuff.transform);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
 
+  /// 所有者はユーザーかどうか
   bool get isMe => playerType == PlayerType.me;
+
+  /// どれか1回でもわざを使用したかどうか
   bool get usedAnyPP => usedPPs.where((element) => element > 0).isNotEmpty;
+
+  /// もちものを使えるかどうか
   bool get canUseItem {
     return ailmentsWhere((e) => e.id == Ailment.embargo).isEmpty &&
         !buffDebuffs.containsByID(BuffDebuff.noItemEffect) &&
         !hiddenBuffs.containsByID(BuffDebuff.magicRoom);
   }
 
+  /// とくせいの効果は発動できる状態にあるか
   bool get isEffectAbility {
     return ailmentsWhere((e) => e.id == Ailment.abilityNoEffect).isEmpty;
   }
@@ -210,16 +216,17 @@ class PokemonState extends Equatable implements Copyable {
     _holdingItem = item;
   }
 
+  /// 「もちものの効果なし」かどうかに関わらずもちもの取得
   Item? getHoldingItem() {
-    // もちものの効果なしかどうかに関わらずもちもの取得
     return _holdingItem;
   }
 
+  /// 「とくせいの効果なし」かどうかに関わらずとくせい取得
   Ability getCurrentAbility() {
-    // とくせいの効果なしかどうかに関わらずとくせい取得
     return _currentAbility;
   }
 
+  /// 現在のとくせいをセット
   void setCurrentAbility(
       Ability ability, PokemonState yourState, bool isOwn, PhaseState state) {
     _currentAbility.clearPassiveEffect(this, yourState, isOwn, state);
@@ -232,23 +239,33 @@ class PokemonState extends Equatable implements Copyable {
     }*/
   }
 
+  /// ひんしかどうかをセット(ひんしにする場合、テラスタルは解除される)
   set isFainting(bool t) {
     // テラスタル解除
     if (t) isTerastaling = false;
     _isFainting = t;
   }
 
-  // 効果等を起こさずもちものをセット
+  /// 効果等を起こさずもちものをセット
+  /// ```
+  /// item: もちもの
+  /// ```
   void setHoldingItemNoEffect(Item? item) {
     _holdingItem = item;
   }
 
-  // 効果等を起こさずとくせいをセット
+  /// 効果等を起こさずとくせいをセット
+  /// ```
+  /// ability: とくせい
+  /// ```
   void setCurrentAbilityNoEffect(Ability ability) {
     _currentAbility = ability;
   }
 
-  // 地面にいるかどうかの判定
+  /// 地面にいるかどうかを返す
+  /// ```
+  /// fields: このポケモンがいる場
+  /// ```
   bool isGround(List<IndividualField> fields) {
     if (ailmentsWhere((e) => e.id == Ailment.ingrain || e.id == Ailment.antiAir)
             .isNotEmpty ||
@@ -267,11 +284,15 @@ class PokemonState extends Equatable implements Copyable {
     return true;
   }
 
-  // 相手のこうげきわざ以外でのダメージを受けるかどうか
+  /// 相手のこうげきわざ以外でのダメージを受けるかどうか
   bool get isNotAttackedDamaged =>
       !buffDebuffs.containsByID(BuffDebuff.magicGuard);
 
-  // 交代可能な状態かどうか
+  /// 交代可能な状態かどうかを返す
+  /// ```
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// ```
   bool canChange(PokemonState yourState, PhaseState state) {
     var fields = isMe
         ? state.getIndiFields(PlayerType.me)
@@ -294,7 +315,10 @@ class PokemonState extends Equatable implements Copyable {
                     !isGround(fields))));
   }
 
-  // きゅうしょランク加算
+  /// きゅうしょランクを加算する
+  /// ```
+  /// i: 加減値(マイナスもOK)
+  /// ```
   void addVitalRank(int i) {
     int findIdx = buffDebuffs.list.indexWhere((element) =>
         BuffDebuff.vital1 <= element.id && element.id <= BuffDebuff.vital3);
@@ -314,7 +338,10 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
-  // タイプが含まれるか判定(テラスタル後ならテラスタイプで判定)
+  /// 指定したタイプが含まれるか判定(テラスタル後ならテラスタイプで判定)
+  /// ```
+  /// type: タイプ
+  /// ```
   bool isTypeContain(PokeType type) {
     if (isTerastaling && teraType1 != PokeType.stellar) {
       return teraType1 == type;
@@ -331,7 +358,11 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
-  // ダメージ計算におけるタイプ一致ボーナス
+  /// ダメージ計算におけるタイプ一致ボーナスを返す
+  /// ```
+  /// moveType: わざのタイプ
+  /// isAdaptability: てきおうりょくかどうか
+  /// ```
   double typeBonusRate(PokeType moveType, bool isAdaptability) {
     double rate = 1.0;
     if (isTerastaling) {
@@ -377,12 +408,20 @@ class PokemonState extends Equatable implements Copyable {
     return rate;
   }
 
+  /// テラスタル補正を受けるかどうかを返す
+  /// ```
+  /// type: わざのタイプ
+  /// ```
   bool canGetTerastalHosei(PokeType type) {
     if (!isTerastaling || teraType1 == PokeType.stellar) return false; // 前提
     if (teraType1 == type) return true;
     return false;
   }
 
+  /// テラスステラ補正を受けるかどうかを返す
+  /// ```
+  /// type: わざのタイプ
+  /// ```
   bool canGetStellarHosei(PokeType type) {
     if (!isTerastaling || teraType1 != PokeType.stellar) return false; // 前提
     final founds = hiddenBuffs.whereByID(BuffDebuff.stellarUsed);
@@ -393,6 +432,10 @@ class PokemonState extends Equatable implements Copyable {
     return true;
   }
 
+  /// テラスステラ補正使用状態を更新する
+  /// ```
+  /// type: わざのタイプ
+  /// ```
   void addStellarUsed(PokeType type) {
     if (!isTerastaling || teraType1 != PokeType.stellar || pokemon.no == 1024) {
       return; // 前提
@@ -407,7 +450,7 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
-  // すなあらしダメージを受けるか判定
+  /// すなあらしダメージを受けるか判定
   bool isSandstormDamaged() {
     if (isTypeContain(PokeType.ground) ||
         isTypeContain(PokeType.rock) ||
@@ -425,8 +468,13 @@ class PokemonState extends Equatable implements Copyable {
     return true;
   }
 
-  // ポケモン交代やひんしにより退場する場合の処理
-  void processExitEffect(bool isOwn, PokemonState yourState, PhaseState state) {
+  /// ポケモン交代やひんしにより退場する場合の処理を行う
+  /// ```
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// ```
+  void processExitEffect(PokemonState yourState, PhaseState state) {
+    bool isOwn = playerType == PlayerType.me;
     resetStatChanges();
     resetRealSixParams();
     setCurrentAbilityNoEffect(pokemon.ability);
@@ -543,21 +591,28 @@ class PokemonState extends Equatable implements Copyable {
         [state.getPokemonIndex(playerType, null) - 1] = copy();
   }
 
-  // ポケモン交代や死に出しにより登場する場合の処理
-  void processEnterEffect(
-      bool isOwn, PhaseState state, PokemonState yourState) {
+  /// ポケモン交代や死に出しにより登場する場合の処理を行う
+  /// ```
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// ```
+  void processEnterEffect(PokemonState yourState, PhaseState state) {
+    bool isOwn = playerType == PlayerType.me;
     if (battlingNum < 1) battlingNum = 1;
     setCurrentAbilityNoEffect(pokemon.ability);
-    processPassiveEffect(isOwn, state, yourState); // パッシブ効果
+    processPassiveEffect(yourState, state); // パッシブ効果
     Weather.processWeatherEffect(Weather(0), state.weather, isOwn ? this : null,
         isOwn ? null : this); // 天気の影響
     Field.processFieldEffect(Field(0), state.field, isOwn ? this : null,
         isOwn ? null : this); // フィールドの影響
   }
 
-  // ポケモンのとくせい/もちもの等で常に働く効果を付与。ポケモン登場時に一度だけ呼ぶ
-  void processPassiveEffect(
-      bool isOwn, PhaseState state, PokemonState yourState) {
+  /// ポケモンのとくせい/もちもの等で常に働く効果を付与する。ポケモン登場時に一度だけ呼ぶ
+  /// ```
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// ```
+  void processPassiveEffect(PokemonState yourState, PhaseState state) {
     // ポケモン固有のフォルム等
     if (pokemon.no == 648) {
       // メロエッタ
@@ -565,7 +620,8 @@ class PokemonState extends Equatable implements Copyable {
     }
 
     // とくせいの効果を反映
-    currentAbility.processPassiveEffect(this, yourState, isOwn, state);
+    currentAbility.processPassiveEffect(
+        this, yourState, playerType == PlayerType.me, state);
 
     // もちものの効果を反映
     holdingItem?.processPassiveEffect(this);
@@ -579,7 +635,11 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
-  // ターン終了時に行う処理
+  /// ターン終了時の処理を行う
+  /// ```
+  /// state: フェーズの状態
+  /// isFaintingChange: ひんしによる交代があったかどうか(状態変化の経過ターンに影響する)
+  /// ```
   void processTurnEnd(
     PhaseState state,
     bool isFaintingChange,
@@ -634,7 +694,13 @@ class PokemonState extends Equatable implements Copyable {
         .removeWhere((e) => e.id == BuffDebuff.recoiling && e.turns >= 2);
   }
 
-  // 状態異常に関する関数群ここから
+  // 状態変化に関する関数群ここから
+  /// 状態変化を追加する
+  /// ```
+  /// ailment: 追加する状態変化
+  /// state: フェーズの状態
+  /// forceAdd: 強制的に追加する
+  /// ```
   bool ailmentsAdd(Ailment ailment, PhaseState state, {bool forceAdd = false}) {
     var indiFields = isMe
         ? state.getIndiFields(PlayerType.me)
@@ -799,21 +865,37 @@ class PokemonState extends Equatable implements Copyable {
     return true;
   }
 
+  /// 状態変化数
   int get ailmentsLength => _ailments.length;
+
+  /// 状態変化のIterable
   Iterable<Ailment> get ailmentsIterable => _ailments.iterable;
 
-  Ailment ailments(int i) {
-    return _ailments[i];
-  }
+  /// 状態変化のi番目
+  Ailment ailments(int i) => _ailments[i];
 
+  /// 条件に合致する状態変化を返す
+  /// ```
+  /// test: 条件
+  /// ```
   Iterable<Ailment> ailmentsWhere(bool Function(Ailment) test) {
     return _ailments.where(test);
   }
 
+  /// 条件に合致する最初の状態変化のインデックスを返す
+  /// ```
+  /// test: 条件
+  /// ```
   int ailmentsIndexWhere(bool Function(Ailment) test) {
     return _ailments.indexWhere(test);
   }
 
+  /// 指定インデックスの状態変化を削除する
+  /// ```
+  /// index: インデックス
+  /// yourState: 相手のポケモンの状態(※削除対象がとくせいなしの場合は必須)
+  /// state: フェーズの状態(※削除対象がとくせいなしの場合は必須)
+  /// ```
   Ailment ailmentsRemoveAt(int index,
       {PokemonState? yourState, PhaseState? state}) {
     var ret = _ailments.removeAt(index);
@@ -859,6 +941,12 @@ class PokemonState extends Equatable implements Copyable {
     return ret;
   }
 
+  /// 条件に合う状態変化を削除する
+  /// ```
+  /// test: 条件
+  /// yourState: 相手のポケモンの状態(※削除対象がとくせいなしの場合は必須)
+  /// state: フェーズの状態(※削除対象がとくせいなしの場合は必須)
+  /// ```
   void ailmentsRemoveWhere(bool Function(Ailment) test,
       {PokemonState? yourState, PhaseState? state}) {
     bool embargo = _ailments.where((e) => e.id == Ailment.embargo).isNotEmpty;
@@ -913,6 +1001,11 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
+  /// すべての状態変化を削除する
+  /// ```
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// ```
   void ailmentsClear(PokemonState yourState, PhaseState state) {
     bool embargo = _ailments.where((e) => e.id == Ailment.embargo).isNotEmpty;
     bool abilityNoEffect =
@@ -954,11 +1047,14 @@ class PokemonState extends Equatable implements Copyable {
   // 状態異常に関する関数群ここまで
 
   // ランク変化に関する関数群ここから
-  int statChanges(int i) {
-    return _statChanges[i];
-  }
+  /// 能力ランク変化[A,B,C,D,S,Ac(命中率),Ev(回避率)]からインデックスを指定して取得
+  int statChanges(int i) => _statChanges[i];
 
-  // 引数で指定した値そのものにする。とくせいの効果等に影響されない変化をさせたいときに使う
+  /// 能力ランク変化を、引数で指定した値に設定する。とくせいの効果等に影響されない変化をさせたいときに使う
+  /// ```
+  /// index: 能力ランクのインデックス
+  /// num: 変化値(-6 ~ +6)
+  /// ```
   void forceSetStatChanges(
     int index,
     int num,
@@ -968,11 +1064,23 @@ class PokemonState extends Equatable implements Copyable {
     if (_statChanges[index] > 6) _statChanges[index] = 6;
   }
 
-  // とくせい等によって変化できなかった場合はfalseが返る
+  /// とくせい等によって変化できなかった場合はfalseが返る
+  /// ```
+  /// isMyEffect: 自身のわざやとくせい等で起こった変化かどうか
+  /// index: 能力ランクのインデックス
+  /// delta: 変化量
+  /// yourState: 相手のポケモンの状態
+  /// moveId: この変化を起こしたわざのID
+  /// abilityId: この変化を起こしたとくせいのID
+  /// itemId: この変化を起こしたもちもののID
+  /// lastMirror: 跳ね返しはもう起きないかどうか(この関数の使用者は考えなくてよい)
+  /// myFields: 自身の場
+  /// yourFields: 相手の場
+  /// ```
   bool addStatChanges(
     bool isMyEffect,
     int index,
-    int num,
+    int delta,
     PokemonState yourState, {
     int? moveId,
     int? abilityId,
@@ -981,15 +1089,15 @@ class PokemonState extends Equatable implements Copyable {
     List<IndividualField>? myFields,
     List<IndividualField>? yourFields,
   }) {
-    int change = num;
+    int change = delta;
     if (!isMyEffect &&
         buffDebuffs.containsByID(BuffDebuff.substitute) &&
-        num < 0) return false; // みがわり
+        delta < 0) return false; // みがわり
     if (!isMyEffect &&
         myFields!.where((e) => e.id == IndividualField.mist).isNotEmpty &&
         !yourState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
-        num < 0) return false; // しろいきり
-    if (!isMyEffect && holdingItem?.id == 1698 && num < 0) {
+        delta < 0) return false; // しろいきり
+    if (!isMyEffect && holdingItem?.id == 1698 && delta < 0) {
       // クリアチャーム
       return false;
     }
@@ -1011,27 +1119,28 @@ class PokemonState extends Equatable implements Copyable {
         (currentAbility.id == 29 ||
             currentAbility.id == 73 ||
             currentAbility.id == 230) &&
-        num < 0) return false; // クリアボディ/しろいけむり/メタルプロテクト
+        delta < 0) return false; // クリアボディ/しろいけむり/メタルプロテクト
     if (!isMyEffect &&
         (currentAbility.id == 35 || currentAbility.id == 51) &&
         index == 5 &&
-        num < 0) return false; // はっこう/するどいめ
-    if (!isMyEffect && currentAbility.id == 52 && index == 0 && num < 0) {
+        delta < 0) return false; // はっこう/するどいめ
+    if (!isMyEffect && currentAbility.id == 52 && index == 0 && delta < 0) {
       // かいりきバサミ
       return false;
     }
-    if (!isMyEffect && currentAbility.id == 145 && index == 1 && num < 0) {
+    if (!isMyEffect && currentAbility.id == 145 && index == 1 && delta < 0) {
       // はとむね
       return false;
     }
     if (!isMyEffect &&
         currentAbility.id == 166 &&
         isTypeContain(PokeType.grass) &&
-        num < 0) return false; // フラワーベール
-    if (currentAbility.id == 299 && index == 5 && num < 0) return false; //しんがん
-    if (!isMyEffect && currentAbility.id == 240 && num < 0 && !lastMirror) {
+        delta < 0) return false; // フラワーベール
+    if (currentAbility.id == 299 && index == 5 && delta < 0)
+      return false; //しんがん
+    if (!isMyEffect && currentAbility.id == 240 && delta < 0 && !lastMirror) {
       // ミラーアーマー
-      yourState.addStatChanges(isMyEffect, index, num, this,
+      yourState.addStatChanges(isMyEffect, index, delta, this,
           myFields: yourFields, yourFields: myFields, lastMirror: true);
       return false;
     }
@@ -1042,7 +1151,7 @@ class PokemonState extends Equatable implements Copyable {
 
     if (currentAbility.id == 86) change *= 2; // たんじゅん
     if (currentAbility.id == 126) change *= -1; // あまのじゃく
-    if (!isMyEffect && currentAbility.id == 128 && num < 0) {
+    if (!isMyEffect && currentAbility.id == 128 && delta < 0) {
       // まけんき
       _statChanges[0] = (_statChanges[0] + 2).clamp(-6, 6);
     }
@@ -1060,16 +1169,20 @@ class PokemonState extends Equatable implements Copyable {
     return true;
   }
 
-  void resetStatChanges() {
-    _statChanges = List.generate(7, (index) => 0);
-  }
+  /// 能力ランク変化をすべて0にリセットする
+  void resetStatChanges() => _statChanges = List.generate(7, (index) => 0);
 
+  /// 下がった能力ランク変化をすべて0に戻す(上がった変化はそのまま)
   void resetDownedStatChanges() {
     for (int i = 0; i < 7; i++) {
       if (_statChanges[i] < 0) _statChanges[i] = 0;
     }
   }
 
+  /// 7つの能力ランク変化をintに詰める
+  /// ```
+  /// statChanges: 能力ランク変化
+  /// ```
   static int packStatChanges(List<int> statChanges) {
     int ret = 0;
     for (int i = 0; i < statChanges.length && i < 7; i++) {
@@ -1080,6 +1193,10 @@ class PokemonState extends Equatable implements Copyable {
     return ret;
   }
 
+  /// intから7つの能力ランク変化に展開する
+  /// ```
+  /// statChanges: 能力ランク変化のint表現
+  /// ```
   static List<int> unpackStatChanges(int statChanges) {
     int t = statChanges;
     List<int> ret = List.generate(7, (i) => 0);
@@ -1091,7 +1208,13 @@ class PokemonState extends Equatable implements Copyable {
     return ret;
   }
 
-  // ランク補正後の実数値を返す
+  /// ランク補正後の実数値を返す
+  /// ```
+  /// val: ランク補正前の実数値
+  /// statIdx: ステータスのインデックス
+  /// plusCut: ランク上昇分を無視するかどうか
+  /// minusCut: ランク下降分を無視するかどうか
+  /// ```
   int getRankedStat(int val, StatIndex statIdx,
       {bool plusCut = false, bool minusCut = false}) {
     if (statIdx == StatIndex.H) {
@@ -1142,7 +1265,11 @@ class PokemonState extends Equatable implements Copyable {
     return ret.floor();
   }
 
-  // ランク補正後の実数値→ランク補正なしの実数値を得る
+  /// ランク補正後の実数値から、ランク補正なしの実数値を計算してその値を返す
+  /// ```
+  /// statIdx: ステータスのインデックス
+  /// stat: ランク補正後の実数値
+  /// ```
   int getNotRankedStat(StatIndex statIdx, int stat) {
     if (statIdx == StatIndex.H) {
       return stat;
@@ -1200,7 +1327,15 @@ class PokemonState extends Equatable implements Copyable {
 
   // ランク変化に関する関数群ここまで
 
-  // ランク補正等込みのHABCDSを返す(※やけど・まひの補正は入ってないので注意)
+  /// ランク補正等込みのHABCDS実数値(最大値)を返す(※やけど・まひの補正は入ってないので注意)
+  /// ```
+  /// statIdx: ステータスのインデックス
+  /// type: こうげき側(自分)わざのタイプ
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// plusCut: ランク上昇分を無視するかどうか
+  /// minusCut: ランク下降分を無視するかどうか
+  /// ```
   int finalizedMaxStat(StatIndex statIdx, PokeType type, PokemonState yourState,
       PhaseState state,
       {bool plusCut = false, bool minusCut = false}) {
@@ -1212,6 +1347,15 @@ class PokemonState extends Equatable implements Copyable {
         plusCut: plusCut, minusCut: minusCut);
   }
 
+  /// ランク補正等込みのHABCDS実数値(最小値)を返す(※やけど・まひの補正は入ってないので注意)
+  /// ```
+  /// statIdx: ステータスのインデックス
+  /// type: こうげき側(自分)わざのタイプ
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// plusCut: ランク上昇分を無視するかどうか
+  /// minusCut: ランク下降分を無視するかどうか
+  /// ```
   int finalizedMinStat(StatIndex statIdx, PokeType type, PokemonState yourState,
       PhaseState state,
       {bool plusCut = false, bool minusCut = false}) {
@@ -1223,6 +1367,16 @@ class PokemonState extends Equatable implements Copyable {
         plusCut: plusCut, minusCut: minusCut);
   }
 
+  /// ランク補正等込みのHABCDS実数値を返す(※やけど・まひの補正は入ってないので注意)
+  /// ```
+  /// val: 補正前の実数値
+  /// statIdx: ステータスのインデックス
+  /// type: こうげき側(自分)わざのタイプ
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// plusCut: ランク上昇分を無視するかどうか
+  /// minusCut: ランク下降分を無視するかどうか
+  /// ```
   int _finalizedStat(int val, StatIndex statIdx, PokeType type,
       PokemonState yourState, PhaseState state,
       {bool plusCut = false, bool minusCut = false}) {
@@ -1403,7 +1557,12 @@ class PokemonState extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からPokemonStateをパース
+  /// SQLに保存された文字列からPokemonStateをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1 ~ split3: 区切り文字
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
   static PokemonState deserialize(
       dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
@@ -1520,7 +1679,10 @@ class PokemonState extends Equatable implements Copyable {
     return pokemonState;
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1 ~ split3: 区切り文字
+  /// ```
   String serialize(String split1, String split2, String split3) {
     String ret = '';
     // pokemon

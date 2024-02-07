@@ -1,5 +1,3 @@
-// 各々の場
-
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -11,34 +9,79 @@ import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 
+/// 各々の場
 class IndividualField extends Equatable implements Copyable {
+  /// なし
   static const int none = 0;
-  static const int toxicSpikes =
-      1; // どくびし (extraArg1 <= 1ならどくびし、2以上ならどくどくびしを表す)
-  static const int spikes = 2; // まきびし (extraArg1に重ね掛けした回数を保持。最大3回まで重ね掛け可)
-  static const int stealthRock = 3; // ステルスロック
-  static const int stickyWeb = 4; // ねばねばネット
-  static const int healingWish = 5; // いやしのねがい
-  static const int lunarDance = 6; // みかづきのまい
-  static const int futureAttack =
-      8; // みらいにこうげき(TODO? このダメージによりもちものやとくせいは発動し得るが、ユーザが選択できる候補には入れていない)
-  static const int wish = 10; // ねがいごと
-  static const int reflector = 12; // リフレクター(extraArg1に持続ターン数を保持(わかる範囲で))
-  static const int lightScreen = 13; // ひかりのかべ(extraArg1に持続ターン数を保持(わかる範囲で))
-  static const int safeGuard = 14; // しんぴのまもり
-  static const int mist = 15; // しろいきり
-  static const int tailwind = 16; // おいかぜ
+
+  /// どくびし (extraArg1 <= 1ならどくびし、2以上ならどくどくびしを表す)
+  static const int toxicSpikes = 1;
+
+  /// まきびし (extraArg1に重ね掛けした回数を保持。最大3回まで重ね掛け可)
+  static const int spikes = 2;
+
+  /// ステルスロック
+  static const int stealthRock = 3;
+
+  /// ねばねばネット
+  static const int stickyWeb = 4;
+
+  /// いやしのねがい
+  static const int healingWish = 5;
+
+  /// みかづきのまい
+  static const int lunarDance = 6;
+
+  /// みらいにこうげき(TODO? このダメージによりもちものやとくせいは発動し得るが、ユーザが選択できる候補には入れていない)
+  static const int futureAttack = 8;
+
+  /// ねがいごと
+  static const int wish = 10;
+
+  /// リフレクター(extraArg1に持続ターン数を保持(わかる範囲で))
+  static const int reflector = 12;
+
+  /// ひかりのかべ(extraArg1に持続ターン数を保持(わかる範囲で))
+  static const int lightScreen = 13;
+
+  /// しんぴのまもり
+  static const int safeGuard = 14;
+
+  /// しろいきり
+  static const int mist = 15;
+
+  /// おいかぜ
+  static const int tailwind = 16;
 //  static const int luckyChant = 17;       // おまじない(SVで使用不可)
-  static const int auroraVeil = 18; // オーロラベール
-  static const int gravity = 19; // じゅうりょく
-  static const int trickRoom = 20; // トリックルーム
-  static const int waterSport = 21; // みずあそび
-  static const int mudSport = 22; // どろあそび
-  static const int wonderRoom = 23; // ワンダールーム
-  static const int magicRoom = 24; // マジックルーム
-  static const int ionDeluge = 25; // プラズマシャワー(わざタイプ：ノーマル→でんき)
-  static const int fairyLock = 26; // フェアリーロック
-  static const int noBerry = 27; // きのみを食べられない状態(きんちょうかん)
+  /// オーロラベール
+  static const int auroraVeil = 18;
+
+  /// じゅうりょく
+  static const int gravity = 19;
+
+  /// トリックルーム
+  static const int trickRoom = 20;
+
+  /// みずあそび
+  static const int waterSport = 21;
+
+  /// どろあそび
+  static const int mudSport = 22;
+
+  /// ワンダールーム
+  static const int wonderRoom = 23;
+
+  /// マジックルーム
+  static const int magicRoom = 24;
+
+  /// プラズマシャワー(わざタイプ：ノーマル→でんき)
+  static const int ionDeluge = 25;
+
+  /// フェアリーロック
+  static const int fairyLock = 26;
+
+  /// きのみを食べられない状態(きんちょうかん)
+  static const int noBerry = 27;
 
   static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
       {
@@ -69,9 +112,14 @@ class IndividualField extends Equatable implements Copyable {
     27: Tuple4('きのみを食べられない状態', 'Cannot eat berrys', PokeTypeColor.evil, 0),
   };
 
+  /// ID
   final int id;
-  int turns = 0; // 経過ターン
-  int extraArg1 = 0; //
+
+  /// 経過ターン
+  int turns = 0;
+
+  /// 引数
+  int extraArg1 = 0;
 
   @override
   List<Object?> get props => [
@@ -80,6 +128,7 @@ class IndividualField extends Equatable implements Copyable {
         extraArg1,
       ];
 
+  /// 各々の場
   IndividualField(this.id);
 
   @override
@@ -87,6 +136,7 @@ class IndividualField extends Equatable implements Copyable {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
+  /// 表示名
   String get displayName {
     String extraStr = '';
     switch (id) {
@@ -119,6 +169,7 @@ class IndividualField extends Equatable implements Copyable {
     }
   }
 
+  /// 表示背景色
   Color get bgColor => _nameColorTurnMap[id]!.item3;
   int get maxTurn {
     int ret = _nameColorTurnMap[id]!.item4;
@@ -128,6 +179,7 @@ class IndividualField extends Equatable implements Copyable {
     return ret;
   }
 
+  /// 両者の場に発生するものかどうか
   bool get isEntireField {
     return id == gravity ||
         id == trickRoom ||
@@ -139,7 +191,12 @@ class IndividualField extends Equatable implements Copyable {
         id == fairyLock;
   }
 
-  // 発動するタイミング・条件かどうかを返す
+  /// 発動するタイミング・条件かどうかを返す
+  /// ```
+  /// timing: タイミング
+  /// pokemonState: この場を持つポケモンの状態
+  /// state: フェーズの状態
+  /// ```
   bool isActive(Timing timing, PokemonState pokemonState, PhaseState state) {
     switch (timing) {
       case Timing.pokemonAppear: // ポケモン登場時発動する場
@@ -195,7 +252,10 @@ class IndividualField extends Equatable implements Copyable {
     }
   }
 
-  // 発動する可能性のあるタイミング・条件かどうかを返す
+  /// 発動する可能性のあるタイミング・条件かどうかを返す
+  /// ```
+  /// timing: タイミング
+  /// ```
   bool possiblyActive(Timing timing) {
     switch (timing) {
       case Timing.pokemonAppear: // ポケモン登場時発動する場
@@ -217,7 +277,11 @@ class IndividualField extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からIndividualFieldをパース
+  /// SQLに保存された文字列からIndividualFieldをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字
+  /// ```
   static IndividualField deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
     return IndividualField(int.parse(elements[0]))
@@ -225,7 +289,10 @@ class IndividualField extends Equatable implements Copyable {
       ..extraArg1 = int.parse(elements[2]);
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字
+  /// ```
   String serialize(String split1) {
     return '$id$split1$turns$split1$extraArg1';
   }

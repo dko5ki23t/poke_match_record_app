@@ -327,26 +327,22 @@ class TurnEffectItem extends TurnEffect {
         break;
       case 585: // レッドカード
         if (changePokemonIndex != 0) {
-          yourState.processExitEffect(
-              playerType.opposite == PlayerType.me, myState, state);
+          yourState.processExitEffect(myState, state);
           state.setPokemonIndex(playerType.opposite, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite, null);
-          newState.processEnterEffect(
-              playerType.opposite == PlayerType.me, state, myState);
+          newState.processEnterEffect(myState, state);
           if (autoConsume) myState.holdingItem = null; // アイテム消費
         }
         break;
       case 1177: // だっしゅつパック
       case 590: // だっしゅつボタン
         if (changePokemonIndex != 0) {
-          myState.processExitEffect(
-              playerType == PlayerType.me, yourState, state);
+          myState.processExitEffect(yourState, state);
           state.setPokemonIndex(playerType, changePokemonIndex);
           PokemonState newState;
           newState = state.getPokemonState(playerType, null);
-          newState.processEnterEffect(
-              playerType == PlayerType.me, state, yourState);
+          newState.processEnterEffect(yourState, state);
           if (autoConsume) myState.holdingItem = null; // アイテム消費
         }
         break;

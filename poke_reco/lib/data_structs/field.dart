@@ -1,5 +1,3 @@
-// フィールド
-
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
@@ -8,13 +6,22 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-// フィールド
+/// フィールド
 class Field extends Equatable implements Copyable {
+  /// なし
   static const int none = 0;
-  static const int electricTerrain = 1; // エレキフィールド
-  static const int grassyTerrain = 2; // グラスフィールド
-  static const int mistyTerrain = 3; // ミストフィールド
-  static const int psychicTerrain = 4; // サイコフィールド
+
+  /// エレキフィールド
+  static const int electricTerrain = 1;
+
+  /// グラスフィールド
+  static const int grassyTerrain = 2;
+
+  /// ミストフィールド
+  static const int mistyTerrain = 3;
+
+  /// サイコフィールド
+  static const int psychicTerrain = 4;
 
   static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
       {
@@ -25,6 +32,7 @@ class Field extends Equatable implements Copyable {
     4: Tuple4('サイコフィールド', 'Psychic Terrain', PokeTypeColor.psychic, 5),
   };
 
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
@@ -35,7 +43,10 @@ class Field extends Equatable implements Copyable {
     }
   }
 
+  /// 表示背景色
   Color get bgColor => _nameColorTurnMap[id]!.item3;
+
+  /// 最大継続ターン
   int get maxTurns {
     if (extraArg1 == 8) {
       return 8;
@@ -43,9 +54,14 @@ class Field extends Equatable implements Copyable {
     return _nameColorTurnMap[id]!.item4;
   }
 
+  /// ID
   final int id;
-  int turns = 0; // 経過ターン
-  int extraArg1 = 0; //
+
+  /// 経過ターン
+  int turns = 0;
+
+  /// 引数1
+  int extraArg1 = 0;
 
   @override
   List<Object?> get props => [
@@ -54,6 +70,7 @@ class Field extends Equatable implements Copyable {
         extraArg1,
       ];
 
+  /// フィールド
   Field(this.id);
 
   @override
@@ -61,8 +78,14 @@ class Field extends Equatable implements Copyable {
     ..turns = turns
     ..extraArg1 = extraArg1;
 
-  // フィールド変化もしくは場に登場したポケモンに対してフィールドの効果をかける
-  // (場に出たポケモンに対しては、変化前を「フィールドなし」として引数を渡すとよい)
+  /// フィールド変化もしくは場に登場したポケモンに対してフィールドの効果をかける
+  /// (場に出たポケモンに対しては、変化前を「フィールドなし」として引数を渡すとよい)
+  /// ```
+  /// before: 変化前フィールド
+  /// after: 変化後フィールド
+  /// ownPokemonState: 自身(ユーザー)のポケモンの状態
+  /// opponentPokemonState: 相手のポケモンの状態
+  /// ```
   static void processFieldEffect(Field before, Field after,
       PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
     // ぎたい
@@ -171,7 +194,11 @@ class Field extends Equatable implements Copyable {
     }
   }
 
-  // SQLに保存された文字列からFieldをパース
+  /// SQLに保存された文字列からFieldをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字
+  /// ```
   static Field deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
     return Field(int.parse(elements[0]))
@@ -179,7 +206,10 @@ class Field extends Equatable implements Copyable {
       ..extraArg1 = int.parse(elements[2]);
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字
+  /// ```
   String serialize(String split1) {
     return '$id$split1$turns$split1$extraArg1';
   }

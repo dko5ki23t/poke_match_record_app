@@ -14,25 +14,54 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/tool.dart';
 
-// なげつけたときの効果
+/// なげつけたときの効果
 class FlingItemEffect {
-  static const int badPoison = 1; // もうどくにする
-  static const int burn = 2; // やけどにする
-  static const int berry = 3; // きのみの効果を発動
-  static const int herb = 4; // ハーブの効果を発動
-  static const int paralysis = 5; // まひにする
-  static const int poison = 6; // どくにする
-  static const int flinch = 7; // ひるませる
+  /// もうどくにする
+  static const int badPoison = 1;
+
+  /// やけどにする
+  static const int burn = 2;
+
+  /// きのみの効果を発動
+  static const int berry = 3;
+
+  /// ハーブの効果を発動
+  static const int herb = 4;
+
+  /// まひにする
+  static const int paralysis = 5;
+
+  /// どくにする
+  static const int poison = 6;
+
+  /// ひるませる
+  static const int flinch = 7;
 }
 
+/// もちものの情報を管理するclass
 class Item extends Equatable implements Copyable {
+  /// ID
   final int id;
+
+  /// 名前(日本語)
   late final String _displayName;
+
+  /// 名前(英語)
   late final String _displayNameEn;
+
+  /// なげつけたときの威力
   final int flingPower;
+
+  /// なげつけたときの効果ID
   final int flingEffectId;
+
+  /// 発動タイミング
   final Timing timing;
+
+  /// きのみかどうか
   final bool isBerry;
+
+  /// 画像URL
   final String imageUrl;
 
   @override
@@ -48,9 +77,13 @@ class Item extends Equatable implements Copyable {
       ];
 
   // 特徴的なもちもののNo
-  static int atsuzoko = 1178; // あつぞこブーツ
-  static int bannougasa = 1181; // ばんのうがさ
+  /// あつぞこブーツ
+  static int atsuzoko = 1178;
 
+  /// ばんのうがさ
+  static int bannougasa = 1181;
+
+  /// もちものの情報を管理するclass
   Item({
     required this.id,
     required String displayName,
@@ -65,6 +98,17 @@ class Item extends Equatable implements Copyable {
     _displayNameEn = displayNameEn;
   }
 
+  /// 無効なもちもの
+  factory Item.none() => Item(
+      id: 0,
+      displayName: '',
+      displayNameEn: '',
+      flingPower: 0,
+      flingEffectId: 0,
+      timing: Timing.none,
+      isBerry: false,
+      imageUrl: '');
+
   @override
   Item copy() => Item(
       id: id,
@@ -76,6 +120,7 @@ class Item extends Equatable implements Copyable {
       isBerry: isBerry,
       imageUrl: imageUrl);
 
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.english:
@@ -86,6 +131,17 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// なげつけたときの処理を行う
+  /// ```
+  /// playerType: 行動主
+  /// myState: 行動主のポケモンの状態
+  /// yourState: 行動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// extraArg1: 引数1
+  /// extraArg2: 引数2
+  /// changePokemonIndex: ポケモン交代する場合は交代するポケモンのパーティ内インデックス、
+  ///                     交代しなければnull
+  /// ```
   void processFlingEffect(
     PlayerType playerType,
     PokemonState myState,
@@ -125,6 +181,11 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// 常時発動する効果を処理
+  /// ```
+  /// myState: もちもの保持者の状態
+  /// processForm: フォルムチェンジを行うかどうか
+  /// ```
   void processPassiveEffect(PokemonState myState, {bool processForm = true}) {
     switch (id) {
       case 112: // こんごうだま
@@ -368,6 +429,11 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// 常時発動する効果を消す
+  /// ```
+  /// myState: もちもの保持者の状態
+  /// clearForm: フォルムチェンジを消すかどうか
+  /// ```
   void clearPassiveEffect(PokemonState myState, {bool clearForm = true}) {
     switch (id) {
       case 112: // こんごうだま
@@ -609,6 +675,7 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// TODO:削除対象？
   String getEditingControllerText2(
       PlayerType playerType, PokemonState myState, PokemonState yourState) {
     switch (id) {
@@ -643,6 +710,7 @@ class Item extends Equatable implements Copyable {
     return '';
   }
 
+  /// TODO:削除対象？
   Widget extraWidget(
     void Function() onFocus,
     ThemeData theme,
@@ -1173,6 +1241,14 @@ class Item extends Equatable implements Copyable {
     return Container();
   }
 
+  /// カスタムしたDropdownButtonFormField
+  /// ```
+  /// onFocus: フォーカスされたとき(タップされたとき)に呼ぶコールバック
+  /// isInput: 入力モードかどうか
+  /// textValue: 出力文字列(isInput==falseのとき必須)
+  /// prefixIconPokemon: フィールド前に配置するアイコンのポケモン
+  /// showNetworkImage: インターネットから取得したポケモンの画像を使うかどうか
+  /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
     required List<DropdownMenuItem<T>>? items,
@@ -1206,7 +1282,7 @@ class Item extends Equatable implements Copyable {
     EdgeInsetsGeometry? padding,
     required void Function() onFocus,
     required bool isInput,
-    required String? textValue, // isInput==falseのとき、出力する文字列として必須
+    required String? textValue,
     Pokemon? prefixIconPokemon,
     bool showNetworkImage = false,
     ThemeData? theme,
@@ -1270,6 +1346,7 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// SQLite保存用Mapを返す
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       itemColumnId: id,

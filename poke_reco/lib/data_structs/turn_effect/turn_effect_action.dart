@@ -27,51 +27,39 @@ import 'package:poke_reco/tool.dart';
 import 'package:tuple/tuple.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
-enum TurnMoveType {
+/// 行動の種類
+enum TurnActionType {
+  /// なし、無効
   none,
+
+  /// わざ
   move,
+
+  /// ポケモン交代
   change,
+
+  /// こうさん
   surrender,
 }
 
-// リストのインデックス等に使う
-extension TurnMoveTypeNum on TurnMoveType {
-  int get number {
-    switch (this) {
-      case TurnMoveType.move:
-        return 1;
-      case TurnMoveType.change:
-        return 2;
-      case TurnMoveType.surrender:
-        return 3;
-      case TurnMoveType.none:
-      default:
-        return 0;
-    }
-  }
-
-  static TurnMoveType createFromNumber(int number) {
-    switch (number) {
-      case 1:
-        return TurnMoveType.move;
-      case 2:
-        return TurnMoveType.change;
-      case 3:
-        return TurnMoveType.surrender;
-      default:
-        return TurnMoveType.none;
-    }
-  }
-}
-
+/// わざの命中
 enum MoveHit {
+  /// 命中
   hit,
+
+  /// 急所
   critical,
+
+  /// 当たらなかった
   notHit,
+
+  /// うまく決まらなかった
   fail,
 }
 
+/// 表示名に関するextension
 extension MoveHitName on MoveHit {
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
@@ -120,26 +108,52 @@ enum MoveEffectiveness {
   noEffect,
 }
 
+/// わざの追加効果
 class MoveAdditionalEffect {
   static const int none = 0;
 
   const MoveAdditionalEffect(this.id);
 
+  /// ID
   final int id;
 }
 
+/// 行動失敗の原因(削除候補)
 class ActionFailure extends Equatable {
+  /// なし、無効
   static const int none = 0;
-  static const int recoil = 1; // わざの反動
-  static const int sleep = 2; // ねむり(カウント消費)
-  static const int freeze = 3; // こおり(回復判定で失敗)
-  static const int flinch = 4; // ひるみ
-  static const int taunt = 5; // ちょうはつ
-  static const int confusion = 6; // こんらんにより自傷
-  static const int paralysis = 7; // まひ
-  static const int infatuation = 8; // メロメロ
-  static const int protected = 9; // 相手にこうげきを防がれた
-  static const int other = 10; // その他
+
+  /// わざの反動
+  static const int recoil = 1;
+
+  /// ねむり(カウント消費)
+  static const int sleep = 2;
+
+  /// こおり(回復判定で失敗)
+  static const int freeze = 3;
+
+  /// ひるみ
+  static const int flinch = 4;
+
+  /// ちょうはつ
+  static const int taunt = 5;
+
+  /// こんらんにより自傷
+  static const int confusion = 6;
+
+  /// まひ
+  static const int paralysis = 7;
+
+  /// メロメロ
+  static const int infatuation = 8;
+
+  /// 相手にこうげきを防がれた
+  static const int protected = 9;
+
+  /// その他
+  static const int other = 10;
+
+  /// サイズ
   static const int size = 11;
 
   static const Map<int, Tuple2<String, String>> _displayNameMap = {
@@ -147,14 +161,8 @@ class ActionFailure extends Equatable {
     1: Tuple2('わざの反動', 'Need recharge of move'),
     2: Tuple2('ねむり', 'Sleep'),
     3: Tuple2('こおり', 'Freeze'),
-//    4: Tuple2('PPが残っていない', ''),
-//    5: Tuple2('なまけ', ''),
-//    6: Tuple2('きあいパンチ中にダメージを受けた', ''),
     4: Tuple2('ひるみ', 'Flinch'),
-//    11: Tuple2('じごくづき', ''),
-//    12: Tuple2('こだわり中以外のわざを使った', ''),
     5: Tuple2('ちょうはつ', 'Taunt'),
-//    14: Tuple2('ふういん', ''),
     6: Tuple2('こんらん', 'Confusion'),
     7: Tuple2('まひ', 'Paralysis'),
     8: Tuple2('メロメロ', 'Attract'),
@@ -162,6 +170,7 @@ class ActionFailure extends Equatable {
     10: Tuple2('その他', 'Others'),
   };
 
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
@@ -177,15 +186,28 @@ class ActionFailure extends Equatable {
   @override
   List<Object?> get props => [id];
 
+  /// ID
   final int id;
 }
 
+/// ダメージの情報を管理するclass
 class DamageGetter {
+  /// 最小ダメージ
   int minDamage = 0;
+
+  /// 最大ダメージ
   int maxDamage = 0;
+
+  /// 相手最大HPに対する最大ダメージの割合
   int minDamagePercent = 0;
+
+  /// 相手最大HPに対する最小ダメージの割合
   int maxDamagePercent = 0;
 
+  /// ダメージ範囲を表す文字列
+  /// ```
+  /// [例]168 ~ 200
+  /// ```
   String get rangeString {
     if (minDamage == maxDamage) {
       return minDamage.toString();
@@ -194,6 +216,10 @@ class DamageGetter {
     }
   }
 
+  /// 相手最大HPに対するダメージ割合の範囲を表す文字列
+  /// ```
+  /// [例]101% ~ 120%
+  /// ```
   String get rangePercentString {
     if (minDamagePercent == maxDamagePercent) {
       return '$minDamagePercent%';
@@ -203,60 +229,153 @@ class DamageGetter {
   }
 }
 
-// ダメージ等入力Widgetの作成時に使う
+/// ダメージ等入力Widgetの作成時に使う
 enum CommandWidgetTemplate {
+  /// 成否を選択
   successOrFail,
+
+  /// 自身のポケモンを選択
   selectMyPokemons,
+
+  /// 相手のポケモンを選択
   selectYourPokemons,
+
+  /// 自身のひんしポケモンを選択
   selectMyFaintingPokemons,
+
+  /// 相手の残りHPを入力
   inputYourHP,
+
+  /// 自身の残りHPを入力
   inputMyHP,
+
+  /// 失敗(入力不可)
   fail,
+
+  /// わざを選択
   selectMove,
+
+  /// 覚えているわざを選択
   selectAcquiringMove,
+
+  /// 相手の覚えているわざを選択
   selectYourAcquiringMove,
+
+  /// 1つの追加効果の発動/未発動を選択
   effect1Switch,
+
+  /// 1つの追加効果の発動/未発動を選択
   effect1Switch2,
+
+  /// 2つの追加効果の発動/未発動を選択
   effect2Switch,
+
+  /// わざのタイプを選択
   selectMoveType,
+
+  /// やけど/こおり/まひのいずれかを選択
   selectBurnFreezeParalysis,
+
+  /// どく/まひ/ねむりのいずれかを選択
   selectPoisonParalysisSleep,
+
+  /// 自身のもちものを選択
   selectMyHoldingItem,
+
+  /// 相手のもちものを選択
   selectYourHoldingItem,
+
+  /// 相手のもちものを選択(条件付き)
   selectYourItemWithFilter,
+
+  /// 自身が得たもちものを選択
   selectMyGettingItem,
+
+  /// 自身のもちものを選択(条件付き)
   selectMyItemWithFilter,
+
+  /// もちものを選択
   selectItem,
+
+  /// 自身のとくせいを選択
   selectMyAbility,
+
+  /// 相手のとくせいを選択
   selectYourAbility,
+
+  /// 自身が得たとくせいを選択
   selectMyGettingAbility,
+
+  /// 2段階あがったステータスを選択
   select2UpStat,
 }
 
+/// ターン内処理のうち、「行動」について管理するclass
 class TurnEffectAction extends TurnEffect {
+  /// 行動主
   PlayerType _playerType = PlayerType.none;
-  TurnMoveType type = TurnMoveType.none;
-  PokeType teraType = PokeType.unknown; // テラスタルなし
+
+  /// 行動の種類
+  TurnActionType type = TurnActionType.none;
+
+  /// テラスタルしているならそのタイプ、していないなら[PokeType.unknown]
+  PokeType teraType = PokeType.unknown;
+
+  /// 使用するわざ
   Move move = Move.none();
-  bool isSuccess = true; // 行動の成功/失敗
-  ActionFailure actionFailure = ActionFailure(0); // 行動失敗の理由
-  int hitCount = 1; // こうげきが命中した回数
-  int criticalCount = 0; // 急所に当たった回数
-  List<MoveEffectiveness> moveEffectivenesses = [
-    MoveEffectiveness.normal
-  ]; // こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
-  List<int> realDamage = [0]; // わざによって受けたダメージ（確定値）
-  List<int> percentDamage = [0]; // わざによって与えたダメージ（概算値、割合）
+
+  /// 行動の成功/失敗
+  bool isSuccess = true;
+
+  /// 行動失敗の原因(削除候補)
+  ActionFailure actionFailure = ActionFailure(0);
+
+  /// こうげきが命中した回数
+  int hitCount = 1;
+
+  /// 急所に当たった回数
+  int criticalCount = 0;
+
+  /// わざの(タイプ相性的な)効果
+  /// ```
+  /// こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
+  /// ```
+  List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness.normal];
+
+  /// わざによって受けたダメージ（確定値）
+  List<int> realDamage = [0];
+
+  /// わざによって与えたダメージ（概算値、割合）
+  List<int> percentDamage = [0];
+
+  /// 追加効果
   List<MoveEffect> moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
+
+  /// オプション引数1
   List<int> extraArg1 = [0];
+
+  /// オプション引数2
   List<int> extraArg2 = [0];
+
+  /// オプション引数3
   List<int> extraArg3 = [0];
+
+  /// 自身・相手の(あるなら)交換先ポケモンのパーティ内インデックス(1始まり)
   List<int?> _changePokemonIndexes = [null, null];
+
+  /// わざのタイプ
   PokeType moveType = PokeType.unknown;
-  bool? isFirst; // ターン内最初の行動か
-  //late final BoolPhaseList boolPhaseList;
+
+  /// ターン内最初の行動かどうか
+  bool? isFirst;
+
+  /// 有効かどうか
   bool _isValid = false;
 
+  /// ターン内処理のうち、「行動」について管理するclassを生成
+  /// ```
+  /// player: 行動主
+  /// ```
   TurnEffectAction({required player}) : super(EffectType.action) {
     _playerType = player;
   }
@@ -305,40 +424,59 @@ class TurnEffectAction extends TurnEffect {
     ..isFirst = isFirst
     .._isValid = _isValid;
 
+  /// 表示名
   @override
   String displayName({required AppLocalizations loc}) => move.displayName;
 
+  /// 行動主
   @override
   PlayerType get playerType => _playerType;
-
   @override
   set playerType(type) => _playerType = type;
 
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
   int? getChangePokemonIndex(PlayerType player) {
     if (player == PlayerType.me) return _changePokemonIndexes[0];
     return _changePokemonIndexes[1];
   }
 
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
+  /// nullを設定すると交換していないことを表す
+  /// ```
+  /// player: 行動主
+  /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
+  /// ```
   void setChangePokemonIndex(PlayerType player, int? val) {
     if (player == PlayerType.me) {
       _changePokemonIndexes[0] = val;
     } else {
       _changePokemonIndexes[1] = val;
     }
-    if (val != null && type == TurnMoveType.change) {
+    if (val != null && type == TurnActionType.change) {
       _isValid = true;
     }
   }
 
-  // わざが成功＆ヒットしたかどうか
-  // へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
-  bool isNormallyHit(int continousCount) {
-    // TODO
+  /// わざが成功＆ヒットしたかどうか
+  /// へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
+  /// ```
+  /// continuousCount: 連続わざのインデックス(削除予定)
+  /// ```
+  bool isNormallyHit(int continuousCount) {
+    // TODO 引数削除
     return isSuccess && (move.damageClass.id >= 2 && hitCount > 0) ||
         (move.damageClass.id == 1);
   }
 
-  // 追加効果に対応する文字列
+  /// 追加効果に対応する文字列を返す
+  /// ```
+  /// id: わざのID
+  /// name: 追加効果を受けるポケモン名
+  /// ```
   String _getMoveEffectText(int id, String name, AppLocalizations loc) {
     switch (id) {
       //case 2:
@@ -422,6 +560,11 @@ class TurnEffectAction extends TurnEffect {
     }
   }
 
+  /// 追加効果に対応する文字列2を返す
+  /// ```
+  /// id: わざのID
+  /// name: 追加効果を受けるポケモン名
+  /// ```
   String _getMoveEffectText2(int id, String name, AppLocalizations loc) {
     switch (id) {
       case 274:
@@ -434,6 +577,17 @@ class TurnEffectAction extends TurnEffect {
     }
   }
 
+  /// 行動を処理し、表示ガイドのリストを返す
+  /// ```
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// ownState: 自身(ユーザー)のポケモンの状態
+  /// opponentParty: 相手のパーティ
+  /// opponentState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: この行動の直前に起きた行動(わざ使用後の処理等に用いる)
+  /// continuousCount: 連続わざのインデックス
+  /// damageGetter: わざのダメージを取得するインスタンス
+  /// ```
   @override
   List<Guide> processEffect(
     Party ownParty,
@@ -473,7 +627,7 @@ class TurnEffectAction extends TurnEffect {
     myState.buffDebuffs.removeAllByID(BuffDebuff.certainlyHittedDamage2);
 
     // こうさん
-    if (type == TurnMoveType.surrender) {
+    if (type == TurnActionType.surrender) {
       // パーティ全員ひんし状態にする
       for (var pokeState in state.getPokemonStates(playerType)) {
         pokeState.remainHP = 0;
@@ -495,13 +649,13 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // ポケモン交代
-    if (type == TurnMoveType.change) {
+    if (type == TurnActionType.change) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
-      myState.processExitEffect(playerType == PlayerType.me, yourState, state);
+      myState.processExitEffect(yourState, state);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
       state
           .getPokemonState(playerType, null)
-          .processEnterEffect(true, state, yourState);
+          .processEnterEffect(yourState, state);
       state
           .getPokemonState(playerType, null)
           .hiddenBuffs
@@ -569,7 +723,7 @@ class TurnEffectAction extends TurnEffect {
         .where((element) => element.id != 0 && element.id == move.id);
     if (move.id != 165 && // わるあがきは除外
         playerType == PlayerType.opponent &&
-        type == TurnMoveType.move &&
+        type == TurnActionType.move &&
         opponentPokemonState.moves.length < 4 &&
         tmp.isEmpty) {
       ret.add(Guide()
@@ -933,14 +1087,12 @@ class TurnEffectAction extends TurnEffect {
           case 29: // 相手ポケモンをランダムに交代させる
           case 314: // 相手ポケモンをランダムに交代させる
             if (getChangePokemonIndex(targetPlayerType) != null) {
-              targetState.processExitEffect(
-                  targetPlayerType == PlayerType.me, myState, state);
+              targetState.processExitEffect(myState, state);
               PokemonState newState;
               state.setPokemonIndex(playerType.opposite,
                   getChangePokemonIndex(targetPlayerType)!);
               newState = state.getPokemonState(playerType.opposite, null);
-              newState.processEnterEffect(
-                  targetPlayerType == PlayerType.me, state, myState);
+              newState.processEnterEffect(myState, state);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -1454,14 +1606,12 @@ class TurnEffectAction extends TurnEffect {
                   BuffDebuff.substitute
                 ])
               ];
-              myState.processExitEffect(
-                  myPlayerType == PlayerType.me, yourState, state);
+              myState.processExitEffect(yourState, state);
               PokemonState newState;
               state.setPokemonIndex(
                   playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(
-                  myPlayerType == PlayerType.me, state, yourState);
+              newState.processEnterEffect(yourState, state);
               for (int i = 0; i < 7; i++) {
                 newState.forceSetStatChanges(i, statChanges[i]);
               }
@@ -1609,14 +1759,12 @@ class TurnEffectAction extends TurnEffect {
           case 154: // 控えのポケモンと交代する
           case 229: // 控えのポケモンと交代する
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(
-                  myPlayerType == PlayerType.me, yourState, state);
+              myState.processExitEffect(yourState, state);
               PokemonState newState;
               state.setPokemonIndex(
                   playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(
-                  myPlayerType == PlayerType.me, state, yourState);
+              newState.processEnterEffect(yourState, state);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -2966,14 +3114,12 @@ class TurnEffectAction extends TurnEffect {
                 yourFields: myFields,
                 moveId: replacedMove.id);
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(
-                  myPlayerType == PlayerType.me, yourState, state);
+              myState.processExitEffect(yourState, state);
               PokemonState newState;
               state.setPokemonIndex(
                   playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(
-                  myPlayerType == PlayerType.me, state, yourState);
+              newState.processEnterEffect(yourState, state);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
@@ -3835,14 +3981,12 @@ class TurnEffectAction extends TurnEffect {
             myState.remainHP -= extraArg1[continuousCount];
             myState.remainHPPercent -= extraArg2[continuousCount];
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(
-                  myPlayerType == PlayerType.me, yourState, state);
+              myState.processExitEffect(yourState, state);
               PokemonState newState;
               state.setPokemonIndex(
                   playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(
-                  myPlayerType == PlayerType.me, state, yourState);
+              newState.processEnterEffect(yourState, state);
               newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
@@ -3851,14 +3995,12 @@ class TurnEffectAction extends TurnEffect {
             state.weather = Weather(Weather.snowy)
               ..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(
-                  myPlayerType == PlayerType.me, yourState, state);
+              myState.processExitEffect(yourState, state);
               PokemonState newState;
               state.setPokemonIndex(
                   playerType, getChangePokemonIndex(myPlayerType)!);
               newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(
-                  myPlayerType == PlayerType.me, state, yourState);
+              newState.processEnterEffect(yourState, state);
               newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             effectOnce = true;
@@ -4196,7 +4338,7 @@ class TurnEffectAction extends TurnEffect {
     if (isFirst != null &&
         !isFirst! &&
         state.firstAction != null &&
-        state.firstAction!.type == TurnMoveType.move) {
+        state.firstAction!.type == TurnActionType.move) {
       if (move.priority == state.firstAction!.move.priority) {
         // わざの優先度が同じ
         // もともとある範囲より狭まるようにのみ上書き
@@ -4236,6 +4378,35 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
+  /// わざのダメージを計算する
+  /// ```
+  /// myState: 自身のポケモンの状態
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// continuousCount: 連続わざのインデックス
+  /// myPlayerType: 自身のタイプ(ユーザーか対戦相手か)
+  /// move: 使用するわざ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
+  /// replacedMoveType: 使用するわざのタイプ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
+  /// power: 威力
+  /// damageClassID: わざの分類のID
+  /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態
+  /// isNormalized1_2: ノーマルわざ威力1.2倍かどうか
+  /// isCritical: 急所かどうか
+  /// isFoulPlay: イカサマかどうか
+  /// defenseAltAttack: こうげきではなくぼうぎょの値でダメージ計算するかどうか
+  /// ignoreTargetRank: 相手の能力ランクを無視するかどうか
+  /// invDeffense: 相手のとくぼうではなくぼうぎょでダメージ計算するかどうか
+  /// isSunny1_5: 晴れ下でダメージ1.5倍かどうか
+  /// ignoreAbility: 相手とくせいを無視するかどうか
+  /// mTwice: 2倍補正がかかるかどうか
+  /// additionalMoveType: わざの追加タイプ
+  /// halvedBerry: 相手が半減きのみを食べたかどうか
+  ///
+  /// 戻り値item1: ダメージ計算式
+  ///       item2: ダメージ最大値
+  ///       item3: ダメージ最小値
+  ///       item4: テラスステラの補正がかかったかどうか
+  /// ```
   Tuple4<String, int, int, bool> calcDamage(
     PokemonState myState,
     PokemonState yourState,
@@ -4693,14 +4864,12 @@ class TurnEffectAction extends TurnEffect {
                 50 +
             2)
         .floor();
-    int damageVmin = ((((myState.pokemon.level * 2 / 5 + 2).floor() *
-                                movePower *
-                                (attackVmin / defenseVmax))
-                            .floor() /
-                        50 +
-                    2)
-                .floor() *
-            0.85)
+    int damageVmin = (((myState.pokemon.level * 2 / 5 + 2).floor() *
+                        movePower *
+                        (attackVmin / defenseVmax))
+                    .floor() /
+                50 +
+            2)
         .floor();
     ret = loc.battleDamageCalcBase(
         myState.pokemon.level, movePower, attackStr, defenseStr);
@@ -4956,6 +5125,36 @@ class TurnEffectAction extends TurnEffect {
     return Tuple4(ret, damageVmax, damageVmin, isTeraStellarHosei);
   }
 
+  /// わざのダメージから実数値を計算する
+  /// ```
+  /// realDamage: 受けたダメージ
+  /// myState: 自身のポケモンの状態
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// continuousCount: 連続わざのインデックス
+  /// myPlayerType: 自身のタイプ(ユーザーか対戦相手か)
+  /// move: 使用するわざ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
+  /// replacedMoveType: 使用するわざのタイプ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
+  /// power: 威力
+  /// damageClassID: わざの分類のID
+  /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態
+  /// isNormalized1_2: ノーマルわざ威力1.2倍かどうか
+  /// isCritical: 急所かどうか
+  /// isFoulPlay: イカサマかどうか
+  /// defenseAltAttack: こうげきではなくぼうぎょの値でダメージ計算するかどうか
+  /// ignoreTargetRank: 相手の能力ランクを無視するかどうか
+  /// invDeffense: 相手のとくぼうではなくぼうぎょでダメージ計算するかどうか
+  /// isSunny1_5: 晴れ下でダメージ1.5倍かどうか
+  /// ignoreAbility: 相手とくせいを無視するかどうか
+  /// mTwice: 2倍補正がかかるかどうか
+  /// additionalMoveType: わざの追加タイプ
+  /// halvedBerry: 相手が半減きのみを食べたかどうか
+  /// isTeraStellarHosei: テラスステラの補正がかかったかどうか
+  ///
+  /// 戻り値item1: 計算結果ステータス
+  ///       item2: 実数値の最大値
+  ///       item3: 実数値の最小値
+  /// ```
   Tuple3<StatIndex, int, int> calcRealFromDamage(
     int realDamage,
     PokemonState myState,
@@ -5708,21 +5907,33 @@ class TurnEffectAction extends TurnEffect {
     return Tuple3(retStat, ret2, ret3);
   }
 
+  /// 現在のコマンド入力の1画面を返す
+  /// ```
+  /// initialKeyNumber: 最初の画面のキー
+  /// onBackPressed: 入力画面シーケンス最初の画面の「戻る」を押されたときに呼ぶコールバック
+  /// onConfirm: 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
+  /// onUpdate: 入力内容によって描画更新が必要な時に呼ぶコールバック
+  /// myParty: 自身のパーティ
+  /// yourParty: 相手のパーティ
+  /// myState: 自身のポケモンの状態
+  /// yourParty: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// continuousCount: 連続わざのインデックス
+  /// controller: コマンド入力ページ遷移を管理するコントローラ
+  /// ```
   Widget extraCommandInputList({
     required int initialKeyNumber,
     required ThemeData theme,
-    required void Function()
-        onBackPressed, // 入力画面シーケンス最初の画面の「戻る」を押されたときに呼ぶコールバック
-    required void Function()
-        onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
-    required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
+    required void Function() onBackPressed,
+    required void Function() onConfirm,
+    required void Function() onUpdate,
     required Party myParty,
     required Party yourParty,
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
     required int continuousCount,
-    required CommandPagesController controller, // 入力画面シーケンスのコントローラ
+    required CommandPagesController controller,
     required AppLocalizations loc,
   }) {
     // TODO
@@ -5756,7 +5967,7 @@ class TurnEffectAction extends TurnEffect {
     bool fixTemplates = false;
 
     if (playerType != PlayerType.none &&
-        type == TurnMoveType.move &&
+        type == TurnActionType.move &&
         move.id != 0) {
       // 追加効果
       switch (move.effect.id) {
@@ -6181,7 +6392,6 @@ class TurnEffectAction extends TurnEffect {
     for (int index = 0; index < templateTitles.length; index++) {
       Widget template = _getCommandWidgetTemplate(
         templateTitles[index].item1,
-        listIndex: index,
         theme: theme,
         onConfirm: onConfirm,
         onUpdate: onUpdate,
@@ -6190,7 +6400,7 @@ class TurnEffectAction extends TurnEffect {
                 _isValid = true;
                 onConfirm();
               }
-            : () => controller.listIndex++,
+            : () => controller.pageIndex++,
         myParty: myParty,
         yourParty: yourParty,
         myState: myState,
@@ -6247,7 +6457,7 @@ class TurnEffectAction extends TurnEffect {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => controller.listIndex--,
+                      onPressed: () => controller.pageIndex--,
                       icon: Icon(Icons.arrow_back),
                     ),
                     Expanded(
@@ -6273,16 +6483,29 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    return widgets[controller.listIndex];
+    return widgets[controller.pageIndex];
   }
 
+  /// コマンド入力の1画面を返す
+  /// ```
+  /// template: 作成する画面テンプレート
+  /// onConfirm: 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
+  /// onUpdate: 入力内容によって描画更新が必要な時に呼ぶコールバック
+  /// onNext: 次の画面に進む時に呼ぶコールバック
+  /// myParty: 自身のパーティ
+  /// yourParty: 相手のパーティ
+  /// myState: 自身のポケモンの状態
+  /// yourParty: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// continuousCount: 連続わざのインデックス
+  /// controller: コマンド入力ページ遷移を管理するコントローラ
+  /// extra: 画面作成に必要なその他引数
+  /// ```
   Widget _getCommandWidgetTemplate(
     CommandWidgetTemplate template, {
-    required int listIndex,
     required ThemeData theme,
-    required void Function()
-        onConfirm, // 入力画面シーケンス最後の画面でわざの詳細入力が確定したときに呼ぶコールバック
-    required void Function() onUpdate, // 入力内容によって描画更新が必要な時に呼ぶコールバック
+    required void Function() onConfirm,
+    required void Function() onUpdate,
     required void Function() onNext,
     required Party myParty,
     required Party yourParty,
@@ -6620,7 +6843,7 @@ class TurnEffectAction extends TurnEffect {
           state: state,
           onSelect: (move) {
             extraArg3[continuousCount] = move.id;
-            controller.listIndex++;
+            controller.pageIndex++;
             onNext();
           },
           onlyAcquiring: true,
@@ -7039,6 +7262,11 @@ class TurnEffectAction extends TurnEffect {
     }
   }
 
+  /// カスタムしたDropdownButtonFormField
+  /// ```
+  /// prefixIconPokemon: フィールド前に配置するアイコンのポケモン
+  /// showNetworkImage: インターネットから取得したポケモンの画像を使うかどうか
+  /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
     required List<DropdownMenuItem<T>>? items,
@@ -7108,6 +7336,14 @@ class TurnEffectAction extends TurnEffect {
     );
   }
 
+  /// タイプのDropdownButton
+  /// ```
+  /// labelText: ラベル名
+  /// onChanged: 変更された際に呼び出すコールバック
+  /// value: 選択されているタイプのインデックス
+  /// isError: エラー表示にするかどうか
+  /// isTeraType: テラスタイプ選択のDropdownButtonかどうか(trueならステラも選択可)
+  /// ```
   Widget _myTypeDropdownButton(
     String? labelText,
     void Function(dynamic)? onChanged,
@@ -7124,7 +7360,10 @@ class TurnEffectAction extends TurnEffect {
     );
   }
 
-  // 行動が確定するなら自動で設定する。自動で設定した場合はtrueを返す
+  /// 行動が確定するなら自動で設定する。自動で設定した場合はtrueを返す
+  /// ```
+  /// state: フェーズの状態
+  /// ```
   bool fillAuto(PhaseState state) {
     var myState = state.getPokemonState(playerType, null);
     var yourState = state.getPokemonState(playerType.opposite, null);
@@ -7202,6 +7441,7 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
+  /// TODO:削除対象？
   String getEditingControllerText4(PhaseState state) {
     var pokeData = PokeDB();
     switch (move.effect.id) {
@@ -7215,7 +7455,11 @@ class TurnEffectAction extends TurnEffect {
     return '';
   }
 
-  // わざに対応して、args等を自動でセット
+  /// わざに対応して、args等を自動でセット
+  /// ```
+  /// state: フェーズの状態
+  /// continuousCount: 連続わざのインデックス
+  /// ```
   void setAutoArgs(PhaseState state, int continuousCount) {
     var myState = state.getPokemonState(playerType, null);
     var yourState = state.getPokemonState(playerType.opposite, null);
@@ -7374,6 +7618,12 @@ class TurnEffectAction extends TurnEffect {
     }
   }
 
+  /// 置き換わるわざは置き換え後のわざを返す。それ以外の場合は元のわざをそのまま返す
+  /// ```
+  /// move: 対象のわざ
+  /// continuousCount: 連続わざのインデックス
+  /// myState: 自身のポケモンの状態
+  /// ```
   Move getReplacedMove(Move move, int continuousCount, PokemonState myState) {
     var pokeData = PokeDB();
     Move ret = move;
@@ -7401,6 +7651,12 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
+  /// わざの名前を返す。置き換わるわざは置き換え後のわざの名前を返す
+  /// ```
+  /// move: 対象のわざ
+  /// continuousCount: 連続わざのインデックス
+  /// myState: 自身のポケモンの状態
+  /// ```
   String getReplacedMoveName(
       Move move, int continuousCount, PokemonState myState) {
     var pokeData = PokeDB();
@@ -7431,6 +7687,13 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
+  /// わざのタイプを返す。置き換わるわざは置き換え後のわざのタイプを返す
+  /// ```
+  /// move: 対象のわざ
+  /// continuousCount: 連続わざのインデックス
+  /// myState: 自身のポケモンの状態
+  /// yourState: 相手のポケモンの状態
+  /// ```
   PokeType getReplacedMoveType(
       Move move, int continuousCount, PokemonState myState, PhaseState state) {
     // わざの内容変更
@@ -7567,7 +7830,13 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
-  // 主に確定急所の判定を行う
+  /// 確定で急所になるかどうかを返す
+  /// ```
+  /// move: 対象のわざ
+  /// myState: 自身のポケモンの状態
+  /// yourState: 相手のポケモンの状態
+  /// yourFields: 相手の場
+  /// ```
   bool isCriticalFromMove(Move move, PokemonState myState,
       PokemonState yourState, List<IndividualField> yourFields) {
     var mA = myState.currentAbility.id;
@@ -7594,12 +7863,12 @@ class TurnEffectAction extends TurnEffect {
     return false;
   }
 
+  /// 内容をクリアする
   void clear() {
     playerType = PlayerType.none;
-    type = TurnMoveType.none;
+    type = TurnActionType.none;
     teraType = PokeType.unknown;
-    move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
-        DamageClass(0), MoveEffect(0), 0, 0);
+    move = Move.none();
     isSuccess = true;
     actionFailure = ActionFailure(0);
     hitCount = 1;
@@ -7617,10 +7886,10 @@ class TurnEffectAction extends TurnEffect {
     _isValid = false;
   }
 
+  /// わざに関する情報のみクリアする
   void clearMove() {
     teraType = PokeType.unknown;
-    move = Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
-        DamageClass(0), MoveEffect(0), 0, 0);
+    move = Move.none();
     isSuccess = true;
     actionFailure = ActionFailure(0);
     hitCount = 1;
@@ -7638,11 +7907,17 @@ class TurnEffectAction extends TurnEffect {
     _isValid = false;
   }
 
-  // SQLに保存された文字列からTurnEffectActionをパース
+  /// SQLに保存された文字列からTurnEffectActionをパース
+  /// /// ```
+  /// str: SQLに保存された文字列
+  /// split1: 区切り文字1
+  /// split2: 区切り文字2
+  /// split3: 区切り文字3
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
   static TurnEffectAction deserialize(
       dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
-    // -1は最新バージョン
     final List turnMoveElements = str.split(split1);
     // effectType
     turnMoveElements.removeAt(0);
@@ -7651,8 +7926,8 @@ class TurnEffectAction extends TurnEffect {
         PlayerTypeNum.createFromNumber(int.parse(turnMoveElements.removeAt(0)));
     TurnEffectAction turnEffectAction = TurnEffectAction(player: playerType);
     // type
-    turnEffectAction.type = TurnMoveTypeNum.createFromNumber(
-        int.parse(turnMoveElements.removeAt(0)));
+    turnEffectAction.type =
+        TurnActionType.values[int.parse(turnMoveElements.removeAt(0))];
     // teraType
     turnEffectAction.teraType =
         PokeType.values[int.parse(turnMoveElements.removeAt(0))];
@@ -7759,7 +8034,12 @@ class TurnEffectAction extends TurnEffect {
     return turnEffectAction;
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1: 区切り文字1
+  /// split2: 区切り文字2
+  /// split3: 区切り文字3
+  /// ```
   @override
   String serialize(
     String split1,
@@ -7774,7 +8054,7 @@ class TurnEffectAction extends TurnEffect {
     ret += playerType.number.toString();
     ret += split1;
     // type
-    ret += type.number.toString();
+    ret += type.index.toString();
     ret += split1;
     // teraType
     ret += teraType.index.toString();
@@ -7889,6 +8169,7 @@ class TurnEffectAction extends TurnEffect {
     return ret;
   }
 
+  /// 有効かどうか
   @override
   bool isValid() {
     if (!_isValid) {
@@ -7898,11 +8179,11 @@ class TurnEffectAction extends TurnEffect {
       return playerType != PlayerType.none /* && actionFailure.id != 0*/;
     }
     switch (type) {
-      case TurnMoveType.move:
+      case TurnActionType.move:
         return playerType != PlayerType.none && move.id != 0;
-      case TurnMoveType.change:
+      case TurnActionType.change:
         return getChangePokemonIndex(playerType) != null;
-      case TurnMoveType.surrender:
+      case TurnActionType.surrender:
         return true;
       default:
         return false;
@@ -7910,6 +8191,8 @@ class TurnEffectAction extends TurnEffect {
   }
 }
 
+/// コマンド入力ページ遷移を管理するclass
 class CommandPagesController {
-  int listIndex = 0;
+  /// ページのインデックス
+  int pageIndex = 0;
 }
