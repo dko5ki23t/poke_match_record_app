@@ -1,7 +1,9 @@
 import 'dart:collection';
 
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
@@ -12,6 +14,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_terastal.dart';
+import 'package:poke_reco/pages/register_battle.dart';
 import 'package:poke_reco/tool.dart';
 
 /// 自身・相手の行動(timing==Timing.action)1つずつを含むTurnEffectのリスト
@@ -371,6 +374,90 @@ class Turn extends Equatable implements Copyable {
   /// ```
   void setInitialState(PhaseState state) {
     _initialState = state.copy();
+  }
+
+  /// パーティと選出ポケモンからターンの情報を初期化する
+  /// ```
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 相手のパーティ
+  /// checkedPokemons: 選出ポケモン情報
+  /// ```
+  void initializeFromPartyInfo(
+    Party ownParty,
+    Party opponentParty,
+    CheckedPokemons checkedPokemons,
+  ) {
+    final pokeData = PokeDB();
+
+    setInitialPokemonIndex(PlayerType.me, checkedPokemons.own[0]);
+    setInitialPokemonIndex(PlayerType.opponent, checkedPokemons.opponent);
+    // TODO:ゾロア系の設定
+    //canZorua = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaNo).isNotEmpty
+    //canZoroark = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkNo).isNotEmpty
+    //canZoruaHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaHisuiNo).isNotEmpty
+    //canZoroarkHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkHisuiNo).isNotEmpty;
+    // 自身のポケモンの状態の初期設定
+    for (int i = 0; i < ownParty.pokemonNum; i++) {
+      final poke = ownParty.pokemons[i]!;
+      final pokeState = PokemonState()
+        ..playerType = PlayerType.me
+        ..pokemon = poke
+        ..remainHP = poke.h.real
+        ..battlingNum = checkedPokemons.own.indexWhere((e) => e == i + 1) + 1
+        ..setHoldingItemNoEffect(ownParty.items[i])
+        ..usedPPs = List.generate(poke.moves.length, (i) => 0)
+        ..setCurrentAbilityNoEffect(poke.ability)
+        ..minStats = SixStats.generate((j) => poke.stats.sixParams[j])
+        ..maxStats = SixStats.generate((j) => poke.stats.sixParams[j])
+        ..moves = [for (int j = 0; j < poke.moveNum; j++) poke.moves[j]!]
+        ..type1 = poke.type1
+        ..type2 = poke.type2;
+      getInitialPokemonStates(PlayerType.me).add(pokeState);
+      getInitialLastExitedStates(PlayerType.me).add(pokeState.copy());
+    }
+    // 相手ポケモン状態の初期設定
+    for (int i = 0; i < opponentParty.pokemonNum; i++) {
+      final poke = opponentParty.pokemons[i]!;
+      final state = PokemonState()
+        ..playerType = PlayerType.opponent
+        ..pokemon = poke
+        ..battlingNum = i + 1 == checkedPokemons.opponent ? 1 : 0
+        ..setHoldingItemNoEffect(
+            pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
+        ..minStats = SixStats.generate((j) => FourParams.createFromValues(
+            statIndex: StatIndex.values[j],
+            level: poke.level,
+            race: poke.stats.sixParams[j].race,
+            indi: 0,
+            effort: 0,
+            temper: Temper(0, '', '', StatIndex.values[j], StatIndex.none)))
+        ..maxStats = SixStats.generate((j) => FourParams.createFromValues(
+            statIndex: StatIndex.values[j],
+            level: poke.level,
+            race: poke.stats.sixParams[j].race,
+            indi: pokemonMaxIndividual,
+            effort: pokemonMaxEffort,
+            temper: Temper(0, '', '', StatIndex.none, StatIndex.values[j])))
+        ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
+        ..type1 = poke.type1
+        ..type2 = poke.type2;
+      if (pokeData.pokeBase[poke.no]!.fixedItemID != 0) {
+        // もちもの確定
+        poke.item = pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID];
+      }
+      if (state.possibleAbilities.length == 1) {
+        // 対象ポケモンのとくせいが1つしかあり得ないなら確定
+        opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
+        state.setCurrentAbilityNoEffect(state.possibleAbilities[0]);
+      }
+      getInitialPokemonStates(PlayerType.opponent).add(state);
+      getInitialLastExitedStates(PlayerType.opponent).add(state.copy());
+    }
+    // 登場時処理を行う
+    initialOwnPokemonState.processEnterEffect(
+        initialOpponentPokemonState, copyInitialState());
+    initialOpponentPokemonState.processEnterEffect(
+        initialOwnPokemonState, copyInitialState());
   }
 
   /// とある時点(フェーズ)での状態を返す

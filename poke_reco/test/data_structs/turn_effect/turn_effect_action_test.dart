@@ -5,12 +5,12 @@ import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/pages/register_battle.dart';
 import 'package:test/test.dart';
 
 import '../test_poke_db.dart';
@@ -76,59 +76,31 @@ void main() async {
     Party ownParty = Party()..pokemons[0] = attacker;
     Party opponentParty = Party()..pokemons[0] = defender;
     Turn turn = Turn()
-      ..setInitialPokemonIndex(PlayerType.me, 1)
-      ..setInitialPokemonIndex(PlayerType.opponent, 1);
-    PokemonState attackerState = PokemonState()
-      ..playerType = PlayerType.me
-      ..pokemon = ownParty.pokemons[0]!
-      ..remainHP = ownParty.pokemons[0]!.h.real
-      ..battlingNum = 1
-      ..setHoldingItemNoEffect(ownParty.items[0])
-      ..usedPPs = List.generate(ownParty.pokemons[0]!.moves.length, (i) => 0)
-      ..setCurrentAbilityNoEffect(ownParty.pokemons[0]!.ability)
-      ..minStats = SixStats.generate(
-          (j) => ownParty.pokemons[0]!.stats[StatIndex.values[j]])
-      ..maxStats = SixStats.generate(
-          (j) => ownParty.pokemons[0]!.stats[StatIndex.values[j]])
-      ..moves = [
-        for (int j = 0; j < ownParty.pokemons[0]!.moveNum; j++)
-          ownParty.pokemons[0]!.moves[j]!
-      ]
-      ..type1 = ownParty.pokemons[0]!.type1
-      ..type2 = ownParty.pokemons[0]!.type2;
-    turn.getInitialPokemonStates(PlayerType.me).add(attackerState);
-    turn.getInitialLastExitedStates(PlayerType.me).add(attackerState.copy());
-    PokemonState defenderState = PokemonState()
-      ..playerType = PlayerType.opponent
-      ..pokemon = defender
-      ..battlingNum = 1
-      ..setHoldingItemNoEffect(
-          pokeData.items[pokeData.pokeBase[defender.no]!.fixedItemID])
-      ..minStats = SixStats.generate((j) => FourParams.createFromValues(
-            statIndex: StatIndex.values[j],
-            level: defender.level,
-            race: defender.stats[StatIndex.values[j]].race,
-            indi: 31, // 今回個体値は固定で
-            effort: 0, // 今回努力値は固定で
-          )) // 今回せいかく補正はなし固定で
-      ..maxStats = SixStats.generate((j) => FourParams.createFromValues(
-            statIndex: StatIndex.values[j],
-            level: defender.level,
-            race: defender.stats[StatIndex.values[j]].race,
-            indi: 31, // 今回個体値は固定で
-            effort: 0, // 今回努力値は固定で
-          )) // 今回せいかく補正はなし固定で
-      ..possibleAbilities = pokeData.pokeBase[defender.no]!.ability
-      ..type1 = defender.type1
-      ..type2 = defender.type2;
-    turn.getInitialPokemonStates(PlayerType.opponent).add(defenderState);
-    turn
-        .getInitialLastExitedStates(PlayerType.opponent)
-        .add(defenderState.copy());
-    turn.initialOwnPokemonState.processEnterEffect(
-        turn.initialOpponentPokemonState, turn.copyInitialState());
-    turn.initialOpponentPokemonState.processEnterEffect(
-        turn.initialOwnPokemonState, turn.copyInitialState());
+      ..initializeFromPartyInfo(
+          ownParty,
+          opponentParty,
+          CheckedPokemons()
+            ..own = [1, 0, 0]
+            ..opponent = 1);
+    final attackerState = turn.getInitialPokemonStates(PlayerType.me)[0];
+    final defenderState = turn.getInitialPokemonStates(PlayerType.opponent)[0];
+    defenderState.minStats =
+        SixStats.generate((j) => FourParams.createFromValues(
+              statIndex: StatIndex.values[j],
+              level: defender.level,
+              race: defender.stats[StatIndex.values[j]].race,
+              indi: 31, // 今回個体値は固定で
+              effort: 0, // 今回努力値は固定で
+            )); // 今回せいかく補正はなし固定で
+    defenderState.maxStats =
+        SixStats.generate((j) => FourParams.createFromValues(
+              statIndex: StatIndex.values[j],
+              level: defender.level,
+              race: defender.stats[StatIndex.values[j]].race,
+              indi: 31, // 今回個体値は固定で
+              effort: 0, // 今回努力値は固定で
+            )); // 今回せいかく補正はなし固定で
+
     final action = TurnEffectAction(player: PlayerType.me)
       ..type = TurnActionType.move;
     final myMove = pokeData.moves[585]!; // ムーンフォース

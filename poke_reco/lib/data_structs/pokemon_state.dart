@@ -12,7 +12,6 @@ import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/weather.dart';
-import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
 
 /// ポケモンのstate(状態)を管理するclass
@@ -1135,9 +1134,14 @@ class PokemonState extends Equatable implements Copyable {
     if (!isMyEffect &&
         currentAbility.id == 166 &&
         isTypeContain(PokeType.grass) &&
-        delta < 0) return false; // フラワーベール
-    if (currentAbility.id == 299 && index == 5 && delta < 0)
-      return false; //しんがん
+        delta < 0) {
+      // フラワーベール
+      return false;
+    }
+    if (currentAbility.id == 299 && index == 5 && delta < 0) {
+      // しんがん
+      return false;
+    }
     if (!isMyEffect && currentAbility.id == 240 && delta < 0 && !lastMirror) {
       // ミラーアーマー
       yourState.addStatChanges(isMyEffect, index, delta, this,

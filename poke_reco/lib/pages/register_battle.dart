@@ -33,6 +33,9 @@ enum RegisterBattlePageType {
   turnPage,
 }
 
+/// 選出ポケモン
+/// * own: 選出ポケモンのパーティ内インデックス(3匹分)
+/// * opponent: 最初に選出されたポケモンのパーティ内インデックス(1匹分)
 class CheckedPokemons {
   List<int> own = [];
   int opponent = 0;
@@ -371,95 +374,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               turns.first.getInitialPokemonIndex(PlayerType.opponent) !=
                   checkedPokemons.opponent) {
             turns.clear();
+            // パーティを基に初期設定したターンを作成
             Turn turn = Turn()
-              ..setInitialPokemonIndex(PlayerType.me, checkedPokemons.own[0])
-              ..setInitialPokemonIndex(
-                  PlayerType.opponent, checkedPokemons.opponent);
-            // TODO
-/*            ..canZorua = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaNo).isNotEmpty
-            ..canZoroark = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkNo).isNotEmpty
-            ..canZoruaHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaHisuiNo).isNotEmpty
-            ..canZoroarkHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkHisuiNo).isNotEmpty;*/
-            // 初期状態設定ここから
-            for (int i = 0; i < ownParty.pokemonNum; i++) {
-              // TODO:この一連の処理を関数としてPokemonStateが持つべき
-              var pokeState = PokemonState()
-                ..playerType = PlayerType.me
-                ..pokemon = ownParty.pokemons[i]!
-                ..remainHP = ownParty.pokemons[i]!.h.real
-                ..battlingNum =
-                    checkedPokemons.own.indexWhere((e) => e == i + 1) + 1
-                ..setHoldingItemNoEffect(ownParty.items[i])
-                ..usedPPs =
-                    List.generate(ownParty.pokemons[i]!.moves.length, (i) => 0)
-                ..setCurrentAbilityNoEffect(ownParty.pokemons[i]!.ability)
-                ..minStats = SixStats.generate(
-                    (j) => ownParty.pokemons[i]!.stats.sixParams[j])
-                ..maxStats = SixStats.generate(
-                    (j) => ownParty.pokemons[i]!.stats.sixParams[j])
-                ..moves = [
-                  for (int j = 0; j < ownParty.pokemons[i]!.moveNum; j++)
-                    ownParty.pokemons[i]!.moves[j]!
-                ]
-                ..type1 = ownParty.pokemons[i]!.type1
-                ..type2 = ownParty.pokemons[i]!.type2;
-              turn.getInitialPokemonStates(PlayerType.me).add(pokeState);
-              turn
-                  .getInitialLastExitedStates(PlayerType.me)
-                  .add(pokeState.copy());
-            }
-            for (int i = 0; i < opponentParty.pokemonNum; i++) {
-              Pokemon poke = opponentParty.pokemons[i]!;
-              final state = PokemonState()
-                ..playerType = PlayerType.opponent
-                ..pokemon = poke
-                ..battlingNum =
-                    i + 1 == turn.getInitialPokemonIndex(PlayerType.opponent)
-                        ? 1
-                        : 0
-                ..setHoldingItemNoEffect(
-                    pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID])
-                ..minStats = SixStats.generate((j) =>
-                    FourParams.createFromValues(
-                        statIndex: StatIndex.values[j],
-                        level: poke.level,
-                        race: poke.stats.sixParams[j].race,
-                        indi: 0,
-                        effort: 0,
-                        temper: Temper(
-                            0, '', '', StatIndex.values[j], StatIndex.none)))
-                ..maxStats = SixStats.generate((j) =>
-                    FourParams.createFromValues(
-                        statIndex: StatIndex.values[j],
-                        level: poke.level,
-                        race: poke.stats.sixParams[j].race,
-                        indi: pokemonMaxIndividual,
-                        effort: pokemonMaxEffort,
-                        temper: Temper(
-                            0, '', '', StatIndex.none, StatIndex.values[j])))
-                ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
-                ..type1 = poke.type1
-                ..type2 = poke.type2;
-              if (pokeData.pokeBase[poke.no]!.fixedItemID != 0) {
-                // もちもの確定
-                poke.item =
-                    pokeData.items[pokeData.pokeBase[poke.no]!.fixedItemID];
-              }
-              if (state.possibleAbilities.length == 1) {
-                // 対象ポケモンのとくせいが1つしかあり得ないなら確定
-                opponentParty.pokemons[i]!.ability = state.possibleAbilities[0];
-                state.setCurrentAbilityNoEffect(state.possibleAbilities[0]);
-              }
-              turn.getInitialPokemonStates(PlayerType.opponent).add(state);
-              turn
-                  .getInitialLastExitedStates(PlayerType.opponent)
-                  .add(state.copy());
-            }
-            turn.initialOwnPokemonState.processEnterEffect(
-                turn.initialOpponentPokemonState, turn.copyInitialState());
-            turn.initialOpponentPokemonState.processEnterEffect(
-                turn.initialOwnPokemonState, turn.copyInitialState());
-            // 初期状態設定ここまで
+              ..initializeFromPartyInfo(
+                  ownParty, opponentParty, checkedPokemons);
             turns.add(turn);
             isNewTurn = true;
           }
@@ -512,10 +430,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum - 1];
+          /*
           PhaseState initialState = prevTurn.getProcessedStates(
-              prevTurn.phases.length - 1, ownParty, opponentParty, loc);
-          initialState.processTurnEnd(prevTurn);
+              prevTurn.phases.length - 1, ownParty, opponentParty, loc);*/
           // 前ターンの最終状態を初期状態とする
+          PhaseState initialState =
+              prevTurn.updateEndingState(ownParty, opponentParty, loc);
+          initialState.processTurnEnd(prevTurn);
           currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
           appState.editingPhase =
