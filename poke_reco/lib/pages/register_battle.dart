@@ -11,7 +11,6 @@ import 'package:poke_reco/custom_widgets/bubble_border.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
-import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_user_edit.dart';
@@ -23,8 +22,6 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum RegisterBattlePageType {
