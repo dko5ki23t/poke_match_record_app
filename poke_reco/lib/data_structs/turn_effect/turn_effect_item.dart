@@ -19,18 +19,20 @@ class TurnEffectItem extends TurnEffect {
   @override
   Timing timing = Timing.none;
   int itemID = 0;
-  int changePokemonIndex = 0;
+
+  /// 自身・相手の(あるなら)交換先ポケモンのパーティ内インデックス(1始まり)
+  List<int?> _changePokemonIndexes = [null, null];
   int extraArg1 = 0;
   int extraArg2 = 0;
 
   @override
   List<Object?> get props =>
-      [playerType, timing, itemID, changePokemonIndex, extraArg1, extraArg2];
+      [playerType, timing, itemID, _changePokemonIndexes, extraArg1, extraArg2];
 
   @override
   TurnEffectItem copy() =>
       TurnEffectItem(player: playerType, timing: timing, itemID: itemID)
-        ..changePokemonIndex = changePokemonIndex
+        .._changePokemonIndexes = [..._changePokemonIndexes]
         ..extraArg1 = extraArg1
         ..extraArg2 = extraArg2;
 
@@ -43,6 +45,34 @@ class TurnEffectItem extends TurnEffect {
 
   @override
   set playerType(type) => _playerType = type;
+
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getChangePokemonIndex(PlayerType player) {
+    if (player == PlayerType.me) {
+      return _changePokemonIndexes[0];
+    }
+    return _changePokemonIndexes[1];
+  }
+
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
+  /// nullを設定すると交換していないことを表す
+  /// ```
+  /// player: 行動主
+  /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
+  /// ```
+  @override
+  void setChangePokemonIndex(PlayerType player, int? val) {
+    if (player == PlayerType.me) {
+      _changePokemonIndexes[0] = val;
+    } else {
+      _changePokemonIndexes[1] = val;
+    }
+  }
 
   @override
   List<Guide> processEffect(
@@ -327,9 +357,10 @@ class TurnEffectItem extends TurnEffect {
         }
         break;
       case 585: // レッドカード
-        if (changePokemonIndex != 0) {
+        int? val = getChangePokemonIndex(playerType.opposite);
+        if (val != null && val != 0) {
           yourState.processExitEffect(myState, state);
-          state.setPokemonIndex(playerType.opposite, changePokemonIndex);
+          state.setPokemonIndex(playerType.opposite, val);
           PokemonState newState;
           newState = state.getPokemonState(playerType.opposite, null);
           newState.processEnterEffect(myState, state);
@@ -338,9 +369,10 @@ class TurnEffectItem extends TurnEffect {
         break;
       case 1177: // だっしゅつパック
       case 590: // だっしゅつボタン
-        if (changePokemonIndex != 0) {
+        int? val = getChangePokemonIndex(playerType.opposite);
+        if (val != null && val != 0) {
           myState.processExitEffect(yourState, state);
-          state.setPokemonIndex(playerType, changePokemonIndex);
+          state.setPokemonIndex(playerType, val);
           PokemonState newState;
           newState = state.getPokemonState(playerType, null);
           newState.processEnterEffect(yourState, state);
@@ -482,8 +514,16 @@ class TurnEffectItem extends TurnEffect {
     final itemID = int.parse(turnEffectElements.removeAt(0));
     TurnEffectItem turnEffect =
         TurnEffectItem(player: playerType, timing: timing, itemID: itemID);
-    // changePokemonIndex
-    turnEffect.changePokemonIndex = int.parse(turnEffectElements.removeAt(0));
+    // _changePokemonIndexes
+    var changePokemonIndexes = turnEffectElements.removeAt(0).split(split2);
+    for (int i = 0; i < 2; i++) {
+      if (changePokemonIndexes[i] == '') {
+        turnEffect._changePokemonIndexes[i] = null;
+      } else {
+        turnEffect._changePokemonIndexes[i] =
+            int.parse(changePokemonIndexes[i]);
+      }
+    }
     // extraArg1
     turnEffect.extraArg1 = int.parse(turnEffectElements.removeAt(0));
     // extraArg2
@@ -512,8 +552,13 @@ class TurnEffectItem extends TurnEffect {
     // itemID
     ret += itemID.toString();
     ret += split1;
-    // changePokemonIndex
-    ret += changePokemonIndex.toString();
+    // _changePokemonIndex
+    for (int i = 0; i < 2; i++) {
+      if (_changePokemonIndexes[i] != null) {
+        ret += _changePokemonIndexes[i].toString();
+      }
+      ret += split2;
+    }
     ret += split1;
     // extraArg1
     ret += extraArg1.toString();

@@ -83,6 +83,25 @@ class TurnEffectUserEdit extends TurnEffect {
     forces.add(force);
   }
 
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getChangePokemonIndex(PlayerType player) {
+    return null;
+  }
+
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
+  /// nullを設定すると交換していないことを表す
+  /// ```
+  /// player: 行動主
+  /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
+  /// ```
+  @override
+  void setChangePokemonIndex(PlayerType player, int? val) {}
+
   @override
   List<Guide> processEffect(
       Party ownParty,

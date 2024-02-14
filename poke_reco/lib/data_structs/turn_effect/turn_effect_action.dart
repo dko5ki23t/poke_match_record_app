@@ -486,6 +486,17 @@ class TurnEffectAction extends TurnEffect {
   @override
   set timing(Timing t) {}
 
+  /// 交換先ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getChangePokemonIndex(PlayerType player) {
+    if (player == PlayerType.me) return _changePokemonIndexes[0];
+    return _changePokemonIndexes[1];
+  }
+
   /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
   /// nullを設定すると交換していないことを表す
   /// ```
@@ -494,7 +505,11 @@ class TurnEffectAction extends TurnEffect {
   /// ```
   @override
   void setChangePokemonIndex(PlayerType player, int? val) {
-    super.setChangePokemonIndex(player, val);
+    if (player == PlayerType.me) {
+      _changePokemonIndexes[0] = val;
+    } else {
+      _changePokemonIndexes[1] = val;
+    }
     if (val != null && type == TurnActionType.change) {
       _isValid = true;
     }

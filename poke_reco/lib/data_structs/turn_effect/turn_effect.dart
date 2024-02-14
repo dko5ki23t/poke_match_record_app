@@ -197,13 +197,6 @@ const List<Timing> everyTurnEndTimings = [
 abstract class TurnEffect extends Equatable implements Copyable {
   /// 効果の種類
   final EffectType effectType;
-//  PlayerType playerType = PlayerType.none;
-//  Timing timing = Timing.none;
-  /// (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換先インデックス
-  List<int?> _changePokemonIndexes = [
-    null,
-    null,
-  ];
 
   /// 効果処理前から自身のポケモンがひんしだったかどうか
   bool _alreadyOwnFainting = false;
@@ -511,10 +504,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// ```
   /// player: 行動主
   /// ```
-  int? getChangePokemonIndex(PlayerType player) {
-    if (player == PlayerType.me) return _changePokemonIndexes[0];
-    return _changePokemonIndexes[1];
-  }
+  int? getChangePokemonIndex(PlayerType player);
 
   /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
   /// nullを設定すると交換していないことを表す
@@ -522,13 +512,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// player: 行動主
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
-  void setChangePokemonIndex(PlayerType player, int? val) {
-    if (player == PlayerType.me) {
-      _changePokemonIndexes[0] = val;
-    } else {
-      _changePokemonIndexes[1] = val;
-    }
-  }
+  void setChangePokemonIndex(PlayerType player, int? val);
 
   /// 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
   /// ```
