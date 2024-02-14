@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 
 class TurnEffectAfterMove extends TurnEffect {
   TurnEffectAfterMove({required player, required this.effectID})
@@ -15,14 +16,12 @@ class TurnEffectAfterMove extends TurnEffect {
   }
 
   PlayerType _playerType = PlayerType.none;
-  final Timing timing = Timing.afterMove;
   int effectID;
   int extraArg1 = 0;
 
   @override
   List<Object?> get props => [
         _playerType,
-        timing,
         effectID,
         extraArg1,
       ];
@@ -37,9 +36,13 @@ class TurnEffectAfterMove extends TurnEffect {
 
   @override
   PlayerType get playerType => _playerType;
-
   @override
   set playerType(type) => _playerType = type;
+
+  @override
+  Timing get timing => Timing.afterMove;
+  @override
+  set timing(Timing t) {}
 
   @override
   List<Guide> processEffect(
@@ -48,8 +51,7 @@ class TurnEffectAfterMove extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     final myState = timing == Timing.afterMove && prevAction != null
         ? state.getPokemonState(playerType, prevAction)
@@ -63,6 +65,8 @@ class TurnEffectAfterMove extends TurnEffect {
             : ownState;
     final myFields = state.getIndiFields(playerType);
     final yourFields = state.getIndiFields(playerType.opposite);
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     switch (effectID) {
       case 194: // みちづれ
@@ -97,12 +101,38 @@ class TurnEffectAfterMove extends TurnEffect {
         break;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
   @override
   bool isValid() =>
       playerType != PlayerType.none && timing != Timing.none && effectID != 0;
+
+  /// 引数を自動で設定(TurnEffectAfterMoveでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectAfterMove &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        effectID == (t as TurnEffectAfterMove).effectID;
+  }
 
   // SQLに保存された文字列からTurnEffectAfterMoveをパース
   static TurnEffectAfterMove deserialize(

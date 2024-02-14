@@ -17,6 +17,7 @@ import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 
+/// ターン内効果のうち、「とくせい」によるものについて管理するclass
 class TurnEffectAbility extends TurnEffect {
   TurnEffectAbility(
       {required player, required this.timing, required this.abilityID})
@@ -24,10 +25,18 @@ class TurnEffectAbility extends TurnEffect {
     playerType = player;
   }
 
-  PlayerType _playerType = PlayerType.none;
+  @override
+  PlayerType playerType = PlayerType.none;
+  @override
   Timing timing = Timing.none;
+
+  /// とくせいID
   int abilityID = 0;
+
+  /// 引数1
   int extraArg1 = 0;
+
+  /// 引数2
   int extraArg2 = 0;
 
   @override
@@ -49,26 +58,15 @@ class TurnEffectAbility extends TurnEffect {
   String displayName({required AppLocalizations loc}) =>
       PokeDB().abilities[abilityID]!.displayName;
 
-  @override
-  PlayerType get playerType => _playerType;
-
-  @override
-  set playerType(type) => _playerType = type;
-
-  /*static List<Guide> processEffect(
-    int abilityID,
-    PlayerType playerType,
-    PokemonState myState,
-    PokemonState yourState,
-    PhaseState state,
-    Party myParty,
-    int myPokemonIndex,
-    PokemonState opponentPokemonState,
-    int extraArg1,
-    int extraArg2,
-    int? changePokemonIndex, {
-    required AppLocalizations loc,
-  })*/
+  /// とくせいの効果を処理し、表示ガイドのリストを返す
+  /// ```
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// ownState: 自身(ユーザー)のポケモンの状態
+  /// opponentParty: 相手のパーティ
+  /// opponentState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: この行動の直前に起きた行動(わざ使用後の処理等に用いる)
+  /// ```
   @override
   List<Guide> processEffect(
     Party ownParty,
@@ -76,9 +74,7 @@ class TurnEffectAbility extends TurnEffect {
     Party opponentParty,
     PokemonState opponentState,
     PhaseState state,
-    TurnEffect? prevAction,
-    int continuousCount, {
-    int? changePokemonIndex,
+    TurnEffectAction? prevAction, {
     required AppLocalizations loc,
   }) {
     final pokeData = PokeDB();
@@ -90,6 +86,8 @@ class TurnEffectAbility extends TurnEffect {
     final isMe = playerType == PlayerType.me;
     final myState = isMe ? ownState : opponentState;
     final yourState = isMe ? opponentState : ownState;
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     switch (abilityID) {
       case 1: // あくしゅう
@@ -771,8 +769,8 @@ class TurnEffectAbility extends TurnEffect {
       case 291: // はんすう
         final itemEffecct = TurnEffectItem(
             player: playerType, timing: timing, itemID: extraArg1);
-        ret.addAll(itemEffecct.processEffect(ownParty, ownState, opponentParty,
-            opponentState, state, prevAction, continuousCount,
+        ret.addAll(itemEffecct.processEffect(
+            ownParty, ownState, opponentParty, opponentState, state, prevAction,
             loc: loc));
         break;
       case 293: // そうだいしょう
@@ -883,6 +881,8 @@ class TurnEffectAbility extends TurnEffect {
           myState.pokemon.ability, yourState, isMe, state); // とくせい確定
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return ret;
   }
 
@@ -890,6 +890,14 @@ class TurnEffectAbility extends TurnEffect {
   bool isValid() =>
       playerType != PlayerType.none && timing != Timing.none && abilityID != 0;
 
+  /// 現在のポケモンの状態等から決定できる引数を自動で設定
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
   void setAutoArgs(
     PokemonState myState,
     PokemonState yourState,
@@ -906,7 +914,7 @@ class TurnEffectAbility extends TurnEffect {
         extraArg1 = isMe ? -((myState.pokemon.h.real / 4).floor()) : -25;
         return;
       case 87: // かんそうはだ
-        if (prevAction!.getReplacedMove(prevAction.move, 0, myState).type ==
+        if (prevAction!.getReplacedMove(prevAction.move, myState).type ==
             PokeType.water) {
           // みずタイプのわざを受けた時
           extraArg1 = isMe ? -((myState.pokemon.h.real / 4).floor()) : -25;
@@ -983,7 +991,21 @@ class TurnEffectAbility extends TurnEffect {
     }
   }
 
-  // SQLに保存された文字列からTurnEffectAbilityをパース
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectAbility &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        abilityID == (t as TurnEffectAbility).abilityID;
+  }
+
+  /// SQLに保存された文字列からTurnEffectAbilityをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1~split3: 区切り文字
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
   static TurnEffectAbility deserialize(
       dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
@@ -1008,7 +1030,10 @@ class TurnEffectAbility extends TurnEffect {
     return turnEffect;
   }
 
-  // SQL保存用の文字列に変換
+  /// SQL保存用の文字列に変換
+  /// ```
+  /// split1~split3: 区切り文字
+  /// ```
   @override
   String serialize(
     String split1,

@@ -164,7 +164,7 @@ class Item extends Equatable implements Copyable {
         final itemEffect =
             TurnEffectItem(player: playerType, timing: timing, itemID: id);
         itemEffect.processEffect(
-            Party(), yourState, Party(), myState, state, null, 0,
+            Party(), yourState, Party(), myState, state, null,
             loc: loc, autoConsume: false);
         break;
       case FlingItemEffect.paralysis:

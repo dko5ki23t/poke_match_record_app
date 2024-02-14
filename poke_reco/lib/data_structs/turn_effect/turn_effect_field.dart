@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:tuple/tuple.dart';
 
 // フィールドによる効果(TurnEffectのeffectIdに使用する定数を提供)
@@ -58,6 +59,7 @@ class TurnEffectField extends TurnEffect {
   TurnEffectField({required this.timing, required this.fieldEffectID})
       : super(EffectType.field);
 
+  @override
   Timing timing;
   int fieldEffectID;
   int extraArg1 = 0;
@@ -92,9 +94,10 @@ class TurnEffectField extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
+    super.beforeProcessEffect(ownState, opponentState);
+
     switch (fieldEffectID) {
       case FieldEffect.electricTerrainEnd:
       case FieldEffect.grassyTerrainEnd:
@@ -108,6 +111,8 @@ class TurnEffectField extends TurnEffect {
         break;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
@@ -116,6 +121,30 @@ class TurnEffectField extends TurnEffect {
       playerType != PlayerType.none &&
       timing != Timing.none &&
       fieldEffectID != 0;
+
+  /// 引数を自動で設定(TurnEffectFieldでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectField &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        fieldEffectID == (t as TurnEffectField).fieldEffectID;
+  }
 
   // SQLに保存された文字列からTurnEffectFieldをパース
   static TurnEffectField deserialize(

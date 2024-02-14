@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 
 class TurnEffectChangeFaintingPokemon extends TurnEffect {
   TurnEffectChangeFaintingPokemon({required player, required this.timing})
@@ -14,6 +15,7 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
   }
 
   PlayerType _playerType = PlayerType.none;
+  @override
   Timing timing;
   int changePokemonIndex = 0; // 0は無効値
 
@@ -27,7 +29,7 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
 
   @override
   String displayName({required AppLocalizations loc}) =>
-      loc.battlePokemonChange;
+      loc.battleChangeFainting;
 
   @override
   PlayerType get playerType => _playerType;
@@ -42,8 +44,7 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     final myState = timing == Timing.afterMove && prevAction != null
         ? state.getPokemonState(playerType, prevAction)
@@ -56,6 +57,8 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
             ? opponentState
             : ownState;
 
+    super.beforeProcessEffect(ownState, opponentState);
+
     // のうりょく変化リセット、現在のポケモンを表すインデックス更新
     myState.processExitEffect(yourState, state);
     if (changePokemonIndex != 0) {
@@ -65,6 +68,8 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
           .processEnterEffect(yourState, state);
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
@@ -73,6 +78,31 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
       playerType != PlayerType.none &&
       timing != Timing.none &&
       changePokemonIndex != 0;
+
+  /// 引数を自動で設定(TurnEffectChangeFaintingPokemonでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectChangeFaintingPokemon &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        changePokemonIndex ==
+            (t as TurnEffectChangeFaintingPokemon).changePokemonIndex;
+  }
 
   // SQLに保存された文字列からTurnEffectChangeFaintingPokemonをパース
   static TurnEffectChangeFaintingPokemon deserialize(

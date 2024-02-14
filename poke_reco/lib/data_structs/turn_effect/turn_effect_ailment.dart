@@ -200,18 +200,21 @@ class TurnEffectAilment extends TurnEffect {
       : super(EffectType.ailment);
 
   PlayerType _playerType = PlayerType.none;
+  @override
   Timing timing = Timing.none;
   int ailmentEffectID = 0;
+  int turns = 0;
   int extraArg1 = 0;
   int extraArg2 = 0;
 
   @override
   List<Object?> get props =>
-      [playerType, timing, ailmentEffectID, extraArg1, extraArg2];
+      [playerType, timing, ailmentEffectID, turns, extraArg1, extraArg2];
 
   @override
   TurnEffectAilment copy() => TurnEffectAilment(
       player: playerType, timing: timing, ailmentEffectID: ailmentEffectID)
+    ..turns
     ..extraArg1 = extraArg1
     ..extraArg2 = extraArg2;
 
@@ -232,8 +235,7 @@ class TurnEffectAilment extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     final myState = timing == Timing.afterMove && prevAction != null
         ? state.getPokemonState(playerType, prevAction)
@@ -245,6 +247,8 @@ class TurnEffectAilment extends TurnEffect {
         : playerType == PlayerType.me
             ? opponentState
             : ownState;
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     switch (ailmentEffectID) {
       case AilmentEffect.sleepy:
@@ -332,6 +336,8 @@ class TurnEffectAilment extends TurnEffect {
         break;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
@@ -341,12 +347,19 @@ class TurnEffectAilment extends TurnEffect {
       timing != Timing.none &&
       ailmentEffectID != 0;
 
+  /// 現在のポケモンの状態等から決定できる引数を自動で設定
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
   void setAutoArgs(
     PokemonState myState,
     PokemonState yourState,
     PhaseState state,
     TurnEffectAction? prevAction,
-    int turns,
   ) {
     extraArg1 = 0;
     extraArg2 = 0;
@@ -403,6 +416,15 @@ class TurnEffectAilment extends TurnEffect {
     }
   }
 
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectAilment &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        ailmentEffectID == (t as TurnEffectAilment).ailmentEffectID;
+  }
+
   // SQLに保存された文字列からTurnEffectAilmentをパース
   static TurnEffectAilment deserialize(
       dynamic str, String split1, String split2, String split3,
@@ -420,6 +442,8 @@ class TurnEffectAilment extends TurnEffect {
     final ailmentEffectID = int.parse(turnEffectElements.removeAt(0));
     TurnEffectAilment turnEffect = TurnEffectAilment(
         player: playerType, timing: timing, ailmentEffectID: ailmentEffectID);
+    // turns
+    turnEffect.turns = int.parse(turnEffectElements.removeAt(0));
     // extraArg1
     turnEffect.extraArg1 = int.parse(turnEffectElements.removeAt(0));
     // extraArg2
@@ -447,6 +471,9 @@ class TurnEffectAilment extends TurnEffect {
     ret += split1;
     // ailmentEffectID
     ret += ailmentEffectID.toString();
+    ret += split1;
+    // turns
+    ret += turns.toString();
     ret += split1;
     // extraArg1
     ret += extraArg1.toString();

@@ -98,22 +98,22 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         final myMove = moves[i];
         DamageGetter getter = DamageGetter();
         TurnEffectAction tmp = turnMove.copy();
-        tmp.move = turnMove.getReplacedMove(myMove, 0, myState);
+        tmp.move = turnMove.getReplacedMove(myMove, myState);
         if (turnMove.isCriticalFromMove(
             myMove, myState, yourState, yourFields)) {
           tmp.criticalCount = 1;
         }
-        tmp.moveAdditionalEffects[0] = tmp.move.isSurelyEffect()
+        tmp.moveAdditionalEffects = tmp.move.isSurelyEffect()
             ? MoveEffect(tmp.move.effect.id)
             : MoveEffect(0);
-        tmp.moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
+        tmp.moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
             myState.currentAbility.id == 113 ||
                 myState.currentAbility.id == 299,
             yourState.holdingItem?.id == 586,
             yourState
                 .ailmentsWhere((e) => e.id == Ailment.miracleEye)
                 .isNotEmpty,
-            turnMove.getReplacedMoveType(tmp.move, 0, myState, prevState),
+            turnMove.getReplacedMoveType(tmp.move, myState, prevState),
             yourState);
         tmp.processEffect(
           playerType == PlayerType.me ? myParty.copy() : yourParty.copy(),
@@ -122,7 +122,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           playerType == PlayerType.me ? yourState.copy() : myState.copy(),
           prevState.copy(),
           null,
-          0,
           damageGetter: getter,
           loc: loc,
         );
@@ -131,7 +130,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             horizontalTitleGap: 8.0,
             dense: true,
             leading: turnMove
-                .getReplacedMoveType(myMove, 0, myState, prevState)
+                .getReplacedMoveType(myMove, myState, prevState)
                 .displayIcon,
             trailing: Icon(
               Icons.arrow_forward_ios,
@@ -161,10 +160,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     myMove, myState, yourState, yourFields)) {
                   turnMove.criticalCount = 1;
                 }
-                turnMove.moveAdditionalEffects[0] = myMove.isSurelyEffect()
+                turnMove.moveAdditionalEffects = myMove.isSurelyEffect()
                     ? MoveEffect(myMove.effect.id)
                     : MoveEffect(0);
-                turnMove.moveEffectivenesses[0] =
+                turnMove.moveEffectivenesses =
                     PokeTypeEffectiveness.effectiveness(
                         myState.currentAbility.id == 113 ||
                             myState.currentAbility.id == 299,
@@ -173,7 +172,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                             .ailmentsWhere((e) => e.id == Ailment.miracleEye)
                             .isNotEmpty,
                         turnMove.getReplacedMoveType(
-                            myMove, 0, myState, prevState),
+                            myMove, myState, prevState),
                         yourState);
                 // 表示Widgetのコントローラリセット
                 commandPagesController = CommandPagesController();
@@ -399,7 +398,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             myState: myState,
             yourState: yourState,
             state: prevState,
-            continuousCount: 0,
             controller: commandPagesController,
             loc: loc);
         // 選択するだけでvalidになるmoveがあるため、行動順をupdate

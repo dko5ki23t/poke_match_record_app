@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:tuple/tuple.dart';
 
@@ -58,6 +59,7 @@ class TurnEffectWeather extends TurnEffect {
   TurnEffectWeather({required this.timing, required this.weatherEffectID})
       : super(EffectType.weather);
 
+  @override
   Timing timing;
   int weatherEffectID;
   int extraArg1 = 0;
@@ -92,9 +94,9 @@ class TurnEffectWeather extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
+    super.beforeProcessEffect(ownState, opponentState);
     switch (weatherEffectID) {
       case WeatherEffect.sunnyEnd:
       case WeatherEffect.rainyEnd:
@@ -107,6 +109,7 @@ class TurnEffectWeather extends TurnEffect {
         opponentState.remainHPPercent -= extraArg2;
         break;
     }
+    super.afterProcessEffect(ownState, opponentState, state);
 
     return [];
   }
@@ -116,6 +119,30 @@ class TurnEffectWeather extends TurnEffect {
       playerType != PlayerType.none &&
       timing != Timing.none &&
       weatherEffectID != 0;
+
+  /// 引数を自動で設定(TurnEffectWeatherでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectWeather &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        weatherEffectID == (t as TurnEffectWeather).weatherEffectID;
+  }
 
   // SQLに保存された文字列からTurnEffectWeatherをパース
   static TurnEffectWeather deserialize(

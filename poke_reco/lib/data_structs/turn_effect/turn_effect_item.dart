@@ -16,6 +16,7 @@ class TurnEffectItem extends TurnEffect {
       : super(EffectType.item);
 
   PlayerType _playerType = PlayerType.none;
+  @override
   Timing timing = Timing.none;
   int itemID = 0;
   int changePokemonIndex = 0;
@@ -50,8 +51,7 @@ class TurnEffectItem extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {bool autoConsume = true,
       required AppLocalizations loc}) {
     final pokeData = PokeDB();
@@ -65,6 +65,7 @@ class TurnEffectItem extends TurnEffect {
         : playerType == PlayerType.me
             ? opponentState
             : ownState;
+    super.beforeProcessEffect(ownState, opponentState);
     List<Guide> ret = [];
     if (playerType == PlayerType.opponent &&
         myState.getHoldingItem()?.id == 0) {
@@ -366,6 +367,8 @@ class TurnEffectItem extends TurnEffect {
         break;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return ret;
   }
 
@@ -373,6 +376,14 @@ class TurnEffectItem extends TurnEffect {
   bool isValid() =>
       playerType != PlayerType.none && timing != Timing.none && itemID != 0;
 
+  /// 現在のポケモンの状態等から決定できる引数を自動で設定
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
   void setAutoArgs(
     PokemonState myState,
     PokemonState yourState,
@@ -443,6 +454,15 @@ class TurnEffectItem extends TurnEffect {
       default:
         return;
     }
+  }
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectItem &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        itemID == (t as TurnEffectItem).itemID;
   }
 
   // SQLに保存された文字列からTurnEffectItemをパース

@@ -9,33 +9,30 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 
 class TurnEffectTerastal extends TurnEffect {
-  TurnEffectTerastal({required player, required this.teraType})
-      : super(EffectType.terastal) {
-    _playerType = player;
-  }
+  TurnEffectTerastal({required this.playerType, required this.teraType})
+      : super(EffectType.terastal);
 
-  PlayerType _playerType = PlayerType.none;
-  final Timing timing = Timing.terastaling;
+  @override
+  PlayerType playerType = PlayerType.none;
   PokeType teraType;
 
   @override
-  List<Object?> get props => [playerType, timing, teraType];
+  List<Object?> get props => [playerType, teraType];
 
   @override
   TurnEffectTerastal copy() =>
-      TurnEffectTerastal(player: playerType, teraType: teraType);
+      TurnEffectTerastal(playerType: playerType, teraType: teraType);
 
   @override
-  String displayName({required AppLocalizations loc}) =>
-      loc.battlePokemonChange;
+  String displayName({required AppLocalizations loc}) => loc.commonTerastal;
 
   @override
-  PlayerType get playerType => _playerType;
-
+  Timing get timing => Timing.terastaling;
   @override
-  set playerType(type) => _playerType = type;
+  set timing(Timing t) {}
 
   @override
   List<Guide> processEffect(
@@ -44,8 +41,7 @@ class TurnEffectTerastal extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     final myState = timing == Timing.afterMove && prevAction != null
         ? state.getPokemonState(playerType, prevAction)
@@ -58,6 +54,8 @@ class TurnEffectTerastal extends TurnEffect {
             ? opponentState
             : ownState;
     final pokeData = PokeDB();
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     myState.isTerastaling = true;
     myState.teraType1 = teraType;
@@ -107,6 +105,8 @@ class TurnEffectTerastal extends TurnEffect {
       state.hasOpponentTerastal = true;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
@@ -115,6 +115,27 @@ class TurnEffectTerastal extends TurnEffect {
       playerType != PlayerType.none &&
       timing != Timing.none &&
       teraType != PokeType.unknown;
+
+  /// 引数を自動で設定(TurnEffectTerastalでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return this == t;
+  }
 
   // SQLに保存された文字列からTurnEffectTerastalをパース
   static TurnEffectTerastal deserialize(
@@ -130,7 +151,7 @@ class TurnEffectTerastal extends TurnEffect {
     // teraType
     final teraType = PokeType.values[int.parse(turnEffectElements.removeAt(0))];
     TurnEffectTerastal turnEffect =
-        TurnEffectTerastal(player: playerType, teraType: teraType);
+        TurnEffectTerastal(playerType: playerType, teraType: teraType);
 
     return turnEffect;
   }

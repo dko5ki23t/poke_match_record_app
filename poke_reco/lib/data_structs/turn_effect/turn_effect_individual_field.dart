@@ -142,6 +142,7 @@ class TurnEffectIndividualField extends TurnEffect {
       : super(EffectType.individualField);
 
   PlayerType _playerType = PlayerType.none;
+  @override
   Timing timing = Timing.none;
   int indiFieldEffectID = 0;
   int extraArg1 = 0;
@@ -171,8 +172,7 @@ class TurnEffectIndividualField extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     final myState = timing == Timing.afterMove && prevAction != null
         ? state.getPokemonState(playerType, prevAction)
@@ -187,6 +187,8 @@ class TurnEffectIndividualField extends TurnEffect {
     final myFields = state.getIndiFields(playerType);
     final yourFields = state.getIndiFields(playerType.opposite);
     final bool isMe = playerType == PlayerType.me;
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     switch (indiFieldEffectID) {
       case IndiFieldEffect.toxicSpikes: // どくびし
@@ -237,6 +239,8 @@ class TurnEffectIndividualField extends TurnEffect {
         break;
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
   }
 
@@ -246,12 +250,23 @@ class TurnEffectIndividualField extends TurnEffect {
       timing != Timing.none &&
       indiFieldEffectID != 0;
 
-  bool nearEqual(TurnEffectIndividualField other) {
-    return playerType == other.playerType &&
-        timing == other.timing &&
-        indiFieldEffectID == other.indiFieldEffectID;
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return t.runtimeType == TurnEffectIndividualField &&
+        playerType == t.playerType &&
+        timing == t.timing &&
+        indiFieldEffectID == (t as TurnEffectIndividualField).indiFieldEffectID;
   }
 
+  /// 現在のポケモンの状態等から決定できる引数を自動で設定
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
   void setAutoArgs(
     PokemonState myState,
     PokemonState yourState,

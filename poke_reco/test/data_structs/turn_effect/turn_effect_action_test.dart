@@ -71,19 +71,19 @@ void main() async {
       ..actionFailure = ActionFailure(1)
       ..hitCount = 2
       ..criticalCount = 1
-      ..moveEffectivenesses = [MoveEffectiveness.great]
-      ..realDamage = [50]
-      ..percentDamage = [25]
-      ..moveAdditionalEffects = [MoveEffect(1)]
-      ..extraArg1 = [1]
-      ..extraArg2 = [2]
-      ..extraArg3 = [3]
+      ..moveEffectivenesses = MoveEffectiveness.great
+      ..realDamage = 50
+      ..percentDamage = 25
+      ..moveAdditionalEffects = MoveEffect(1)
+      ..extraArg1 = 1
+      ..extraArg2 = 2
+      ..extraArg3 = 3
       ..moveType = PokeType.water
       ..isFirst = true;
     turnMove.setChangePokemonIndex(PlayerType.me, 1);
     turnMove.setChangePokemonIndex(PlayerType.opponent, 2);
     final String sqlStr =
-        '7:0:1:${PokeType.fire.index}:1:0:1:2:1:${MoveEffectiveness.great.index};:50;:25;:1;:1;:2;:3;:1;2;:${PokeType.water.index}:1';
+        '7:0:1:${PokeType.fire.index}:1:0:1:2:1:${MoveEffectiveness.great.index}:50:25:1:1:2:3:1;2;:${PokeType.water.index}:1';
 
     test('clear()', () {
       TurnEffectAction testingTurnMove = turnMove.copy();
@@ -117,8 +117,9 @@ void main() async {
       defender.d.set(defenderBase.d, 31, 0, 0);
       defender.updateRealStats();
       // パーティ作成
-      Party ownParty = Party()..pokemons[0] = attacker;
-      Party opponentParty = Party()..pokemons[0] = defender;
+      // ダメージ→ステータス計算をする状況を作るため、対戦相手から攻撃された場合を想定してテストする
+      Party ownParty = Party()..pokemons[0] = defender;
+      Party opponentParty = Party()..pokemons[0] = attacker;
       Turn turn = Turn()
         ..initializeFromPartyInfo(
             ownParty,
@@ -126,67 +127,101 @@ void main() async {
             CheckedPokemons()
               ..own = [1, 0, 0]
               ..opponent = 1);
-      final attackerState = turn.getInitialPokemonStates(PlayerType.me)[0];
-      final defenderState =
+      final attackerState =
           turn.getInitialPokemonStates(PlayerType.opponent)[0];
-      defenderState.minStats =
+      final defenderState = turn.getInitialPokemonStates(PlayerType.me)[0];
+      attackerState.minStats =
           SixStats.generate((j) => FourParams.createFromValues(
                 statIndex: StatIndex.values[j],
-                level: defender.level,
-                race: defender.stats[StatIndex.values[j]].race,
-                indi: 31, // 今回個体値は固定で
-                effort: 0, // 今回努力値は固定で
-              )); // 今回せいかく補正はなし固定で
-      defenderState.maxStats =
+                level: attacker.level,
+                race: attacker.stats[StatIndex.values[j]].race,
+                indi: 31, // ダメージ計算時個体値は固定で
+                effort: 252, // ダメージ計算時努力値は固定で
+              )); // ダメージ計算時せいかく補正はなし固定で
+      attackerState.maxStats =
           SixStats.generate((j) => FourParams.createFromValues(
                 statIndex: StatIndex.values[j],
-                level: defender.level,
-                race: defender.stats[StatIndex.values[j]].race,
-                indi: 31, // 今回個体値は固定で
-                effort: 0, // 今回努力値は固定で
-              )); // 今回せいかく補正はなし固定で
+                level: attacker.level,
+                race: attacker.stats[StatIndex.values[j]].race,
+                indi: 31, // ダメージ計算時個体値は固定で
+                effort: 252, // ダメージ計算時努力値は固定で
+              )); // ダメージ計算時せいかく補正はなし固定で
 
-      final action = TurnEffectAction(player: PlayerType.me)
+      final action = TurnEffectAction(player: PlayerType.opponent)
         ..type = TurnActionType.move;
       final myMove = pokeData.moves[testData.moveID]!; // わざ
       final phaseState = turn.copyInitialState();
-      final yourFields = phaseState.getIndiFields(PlayerType.opponent);
+      final yourFields = phaseState.getIndiFields(PlayerType.me);
       final getter = DamageGetter();
-      action.move = turnMove.getReplacedMove(myMove, 0, attackerState);
+      action.move = turnMove.getReplacedMove(myMove, attackerState);
       if (turnMove.isCriticalFromMove(
           myMove, attackerState, defenderState, yourFields)) {
         action.criticalCount = 1;
       }
-      action.moveAdditionalEffects[0] = action.move.isSurelyEffect()
+      action.moveAdditionalEffects = action.move.isSurelyEffect()
           ? MoveEffect(action.move.effect.id)
           : MoveEffect(0);
-      action.moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
+      action.moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
           attackerState.currentAbility.id == 113 ||
               attackerState.currentAbility.id == 299,
           defenderState.holdingItem?.id == 586,
           defenderState
               .ailmentsWhere((e) => e.id == Ailment.miracleEye)
               .isNotEmpty,
-          turnMove.getReplacedMoveType(
-              action.move, 0, attackerState, phaseState),
+          turnMove.getReplacedMoveType(action.move, attackerState, phaseState),
           defenderState);
       action.processEffect(
         ownParty,
-        attackerState.copy(),
-        opponentParty,
         defenderState.copy(),
+        opponentParty,
+        attackerState.copy(),
         phaseState.copy(),
         null,
-        0,
         damageGetter: getter,
         loc: lookupAppLocalizations(Locale('ja')),
       );
-
-      test('ダメージ計算（${attacker.name} -> ${defender.name}）', () {
+      test(
+          'ダメージ計算（${attacker.name} -> ${defender.name} : ${testData.moveName}）',
+          () {
         expect(getter.maxDamage, testData.maxDamage);
         expect(getter.minDamage, testData.minDamage);
         expect(getter.maxDamagePercent, testData.maxDamagePercent);
         expect(getter.minDamagePercent, testData.minDamagePercent);
+      });
+
+      action.realDamage = testData.maxDamage;
+      // ステータス予想のために、相手のステータスを確定状態からぼかす
+      attackerState.minStats = SixStats.generate((j) =>
+          FourParams.createFromValues(
+              statIndex: StatIndex.values[j],
+              level: attacker.level,
+              race: attacker.stats.sixParams[j].race,
+              indi: 0,
+              effort: 0,
+              temper: Temper(0, '', '', StatIndex.values[j], StatIndex.none)));
+      attackerState.maxStats = SixStats.generate((j) =>
+          FourParams.createFromValues(
+              statIndex: StatIndex.values[j],
+              level: attacker.level,
+              race: attacker.stats.sixParams[j].race,
+              indi: pokemonMaxIndividual,
+              effort: pokemonMaxEffort,
+              temper: Temper(0, '', '', StatIndex.none, StatIndex.values[j])));
+      final guides = action.processEffect(
+        ownParty,
+        defenderState.copy(),
+        opponentParty,
+        attackerState.copy(),
+        phaseState.copy(),
+        null,
+        loc: lookupAppLocalizations(Locale('ja')),
+      );
+      final correct =
+          attacker.stats[StatIndex.values[guides.last.args[0]]].real;
+
+      test('ステータス逆算（${attacker.name}）', () {
+        expect(guides.last.args[1] <= correct && correct <= guides.last.args[2],
+            true);
       });
     }
 

@@ -192,6 +192,7 @@
   "battleTimingBeforeMove": "わざ使用前",
   "battleTimingAfterMove": "わざ使用後",
   "battleTimingAfterTerastal": "テラスタル後",
+  "battleChangeFainting": "ひんしポケモン交代",
   "battleTimingGameSet": "対戦終了！",
   "battleSelectPokemonPrompt": "あなたの選出ポケモン3匹と相手の先頭ポケモンを選んでください。",
   "battleResultDraw": "引き分け",

@@ -183,14 +183,18 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         (opponentPlayerActions.isEmpty ||
             !opponentPlayerActions.first.isValid())) {
       (ownPlayerActions.first as TurnEffectAction).isFirst = true;
-      (opponentPlayerActions.first as TurnEffectAction).isFirst = false;
+      if (opponentPlayerActions.isNotEmpty) {
+        (opponentPlayerActions.first as TurnEffectAction).isFirst = false;
+      }
       setActionOrderFirst(PlayerType.me);
       return;
     }
     if (opponentPlayerActions.isNotEmpty &&
         opponentPlayerActions.first.isValid() &&
         (ownPlayerActions.isEmpty || !ownPlayerActions.first.isValid())) {
-      (ownPlayerActions.first as TurnEffectAction).isFirst = false;
+      if (ownPlayerActions.isNotEmpty) {
+        (ownPlayerActions.first as TurnEffectAction).isFirst = false;
+      }
       (opponentPlayerActions.first as TurnEffectAction).isFirst = true;
       setActionOrderFirst(PlayerType.opponent);
       return;
@@ -246,11 +250,1338 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       } else {
         insertIndex++;
       }
-      l.insert(
-          insertIndex, TurnEffectTerastal(player: playerType, teraType: type));
+      l.insert(insertIndex,
+          TurnEffectTerastal(playerType: playerType, teraType: type));
     } else {
       l.remove(terastal.first);
     }
+  }
+
+  /// 指定したインデックスに挿入可能なタイミングのリストを返す
+  /// ```
+  /// index: 挿入するインデックス
+  /// turnNum: 現在のターン数
+  /// currentTurn: 現在のターン
+  /// ```
+  List<Timing> insertableTimings(int index, int turnNum, Turn currentTurn) {
+    Set<Timing> ret = {};
+    int s1 = turnNum == 1 ? 0 : 1; // 試合最初のポケモン登場時処理状態
+    int s2 = 0; // どちらもひんしでない状態
+    int end = 100;
+    int i = 0;
+    int actionCount = 0;
+    int terastalCount = 0;
+    int maxTerastal = 0;
+    if (!currentTurn.initialOwnHasTerastal) maxTerastal++;
+    if (!currentTurn.initialOpponentHasTerastal) maxTerastal++;
+    const Map<int, Timing> s1TimingMap = {
+      0: Timing.pokemonAppear,
+      1: Timing.afterActionDecision,
+      2: Timing.action,
+      3: Timing.pokemonAppear,
+      4: Timing.afterMove,
+      6: Timing.afterMove,
+      7: Timing.changePokemonMove,
+      8: Timing.everyTurnEnd,
+      9: Timing.gameSet,
+      10: Timing.terastaling,
+      11: Timing.afterTerastal,
+      12: Timing.beforeMove,
+    };
+    const Map<int, Timing> s2TimingMap = {
+      1: Timing.afterMove,
+      2: Timing.changeFaintingPokemon,
+      3: Timing.pokemonAppear,
+      4: Timing.changeFaintingPokemon,
+      5: Timing.pokemonAppear,
+      6: Timing.changeFaintingPokemon,
+      7: Timing.changeFaintingPokemon,
+    };
+    Timing currentTiming = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+    bool changingState = false; // 効果によってポケモン交代した状態
+    bool isOwnFainting = false;
+    bool isOpponentFainting = false;
+
+    while (s1 != end) {
+      currentTiming = changingState
+          ? Timing.pokemonAppear
+          : s2 == 0
+              ? s1TimingMap[s1]!
+              : s2TimingMap[s2]!;
+      ret.add(currentTiming);
+      bool toNext = false;
+      if (changingState) {
+        // ポケモン交代後状態
+        if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+          changingState = false;
+        } else {
+          // TODO?
+          toNext = true;
+        }
+      } else {
+        switch (s2) {
+          case 1: // わざでひんし状態
+            if (i >= l.length || l[i].timing != Timing.afterMove) {
+              s2++; // わざでひんし交代状態へ
+            } else {
+              toNext = true;
+            }
+            break;
+          case 2: // わざでひんし交代状態
+            {
+              if (i >= l.length ||
+                  l[i].runtimeType != TurnEffectChangeFaintingPokemon) {
+                // ありえない？
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  } else {
+                    s2 = 6; // わざでひんし交代状態(2匹目)へ
+                  }
+                } else if (isOpponentFainting) {
+                  s2 = 0;
+                  if (actionCount == 2) {
+                    s1 = 8; // ターン終了状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                }
+              } else {
+                toNext = true;
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                } else if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2++; // わざでひんし交代後状態へ
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  } else {
+                    s2 = 6; // わざでひんし交代状態(2匹目)へ
+                  }
+                }
+              }
+            }
+            break;
+          case 3: // わざでひんし交代後状態
+            if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+              if (!isOpponentFainting) {
+                s2 = 0;
+                if (actionCount == 2) {
+                  s1 = 8; // ターン終了状態へ
+                } else {
+                  s1 = 12; // 行動選択前状態へ
+                }
+              } else {
+                s2 = 2; // わざでひんし交代状態へ
+              }
+            } else {
+              toNext = true;
+            }
+            break;
+          case 4: // わざ以外でひんし状態
+            {
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon) {
+                // ありえない？
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  } else {
+                    s2 = 7; // わざ以外でひんし状態(2匹目)へ
+                  }
+                } else if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  s2 = 0;
+                }
+              } else if (l[i].timing == Timing.changeFaintingPokemon) {
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                } else if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  toNext = true;
+                  s2++; // わざ以外でひんし交代後状態へ
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  } else {
+                    s2 = 7; // わざ以外でひんし状態(2匹目)へ
+                  }
+                }
+              }
+            }
+            break;
+          case 5: // わざ以外でひんし交代後状態
+            if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+              if (!isOpponentFainting) {
+                s2 = 0;
+              } else {
+                s2 = 4; // わざ以外でひんし状態へ
+              }
+            } else {
+              toNext = true;
+            }
+            break;
+          case 6: // わざでひんし交代状態(2匹目)
+            {
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon ||
+                  (isOpponentFainting && l[i].playerType == PlayerType.me)) {
+                if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  s2 = 0;
+                  s1 = 8; // ターン終了状態へ
+                }
+              } else {
+                toNext = true;
+                if (l[i].playerType == PlayerType.me) {
+                  isOwnFainting = false;
+                } else {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2 = 3; // わざでひんし交代後状態へ
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    s1 = 8; // ターン終了状態へ
+                  }
+                }
+              }
+            }
+            break;
+          case 7: // わざ以外でひんし状態(2匹目)
+            {
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon ||
+                  (isOpponentFainting && l[i].playerType == PlayerType.me)) {
+                if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  s2 = 0;
+                }
+              } else {
+                toNext = true;
+                if (l[i].playerType == PlayerType.me) {
+                  isOwnFainting = false;
+                } else {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2 = 5; // わざ以外でひんし交代後状態へ
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  }
+                }
+              }
+            }
+            break;
+          case 0: // どちらもひんしでない状態
+            switch (s1) {
+              case 0: // 試合最初のポケモン登場時処理状態
+                if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+                  s1++; // 行動決定直後処理状態へ
+                  //timingListIdx++;
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 1: // 行動決定直後処理状態
+                if (i >= l.length ||
+                    l[i].timing != Timing.afterActionDecision) {
+                  if (maxTerastal > 0) {
+                    s1 = 10; // テラスタル処理状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 10: // テラスタル処理状態
+                if (i >= l.length || l[i].timing != Timing.terastaling) {
+                  s1 = 11; // テラスタル後状態へ
+                } else {
+                  toNext = true;
+                }
+                terastalCount++;
+                if (terastalCount >= maxTerastal) {
+                  s1 = 11; // テラスタル後状態へ
+                }
+                break;
+              case 11: // テラスタル後状態
+                if (i >= l.length || l[i].timing != Timing.afterTerastal) {
+                  s1 = 12; // 行動選択前状態へ
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 12: // 行動選択前状態
+                if (i >= l.length || l[i].timing != Timing.beforeMove) {
+                  s1 = 2; // 行動選択状態へ
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 2: // 行動選択状態
+                {
+                  actionCount++;
+                  if (i >= l.length || l[i].runtimeType != TurnEffectAction) {
+                    // TODO:ありえない？
+                  } else {
+                    // TODO?
+                    toNext = true;
+                    final action = l[i] as TurnEffectAction;
+                    if (!action.isValid() ||
+                        action.type == TurnActionType.surrender) {
+                      if (actionCount == 2) {
+                        s1 = 8; // ターン終了状態へ
+                      } else {
+                        s1 = 12; // 行動選択前状態へ
+                      }
+                    } else if (action.type == TurnActionType.move) {
+                      if (action.getChangePokemonIndex(PlayerType.me) != null ||
+                          action.getChangePokemonIndex(PlayerType.opponent) !=
+                              null) {
+                        // わざが失敗/命中していなければポケモン交代も発生しない
+                        if (!action.isNormallyHit()) {
+                          s1 = 4; // わざ使用後状態へ
+                        } else {
+                          s1 = 6; // 交代わざ使用後状態へ
+                        }
+                      } else {
+                        s1 = 4; // わざ使用後状態へ
+                      }
+                    } else if (action
+                            .getChangePokemonIndex(action.playerType) !=
+                        null) {
+                      s1++; // ポケモン交代後状態へ
+                    }
+                  }
+                }
+                break;
+              case 3: // ポケモン交代後状態
+                if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+                  if (actionCount == 2) {
+                    s1 = 8; // ターン終了状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 4: // わざ使用後状態
+                if (i >= l.length || l[i].timing != Timing.afterMove) {
+                  if (actionCount == 2) {
+                    s1 = 8; // ターン終了状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                } else {
+                  toNext = true;
+                  if (l[i].getChangePokemonIndex(PlayerType.me) != null ||
+                      l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
+                    // 効果によりポケモン交代が生じた場合
+                    changingState = true;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  }
+                }
+                break;
+              case 6: // 交代わざ使用後状態
+                if (i >= l.length || l[i].timing != Timing.afterMove) {
+                  s1 = 3; // ポケモン交代後状態へ
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 8: // ターン終了状態
+                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
+                  s1 = end;
+                } else {
+                  toNext = true;
+                }
+                break;
+              case 9: // 試合終了状態
+                s1 = end;
+                break;
+            }
+            break;
+        }
+      }
+      if (toNext) {
+        if (i == index) {
+          return ret.toList();
+        }
+        ret.clear();
+        i++;
+      }
+    }
+
+    return ret.toList();
+  }
+
+  /// TODO:フェーズを最適化する
+  ///
+  //List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
+  void adjust(
+    bool isNewTurn,
+    int turnNum,
+    Turn currentTurn,
+    Party ownParty,
+    Party opponentParty,
+    AppLocalizations loc,
+  ) {
+    //_clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
+    int beginIdx = 0;
+    Timing timing = Timing.none;
+    //List<List<TurnEffectAndStateAndGuide>> ret = [];
+    //List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
+    //Turn currentTurn = widget.battle.turns[turnNum - 1];
+    PhaseState currentState = currentTurn.copyInitialState();
+    int s1 = turnNum == 1 ? 0 : 1; // 試合最初のポケモン登場時処理状態
+    int s2 = 0; // どちらもひんしでない状態
+    int end = 100;
+    int i = 0;
+    int actionCount = 0;
+    int terastalCount = 0;
+    int maxTerastal = 0;
+    if (!currentTurn.initialOwnHasTerastal) maxTerastal++;
+    if (!currentTurn.initialOpponentHasTerastal) maxTerastal++;
+    bool isOwnFainting = false;
+    bool isOpponentFainting = false;
+    bool isMyWin = false;
+    bool isYourWin = false;
+    bool changeOwn = turnNum == 1;
+    bool changeOpponent = turnNum == 1;
+    const Map<int, Timing> s1TimingMap = {
+      0: Timing.pokemonAppear,
+      1: Timing.afterActionDecision,
+      2: Timing.action,
+      3: Timing.pokemonAppear,
+      4: Timing.afterMove,
+      6: Timing.afterMove,
+      7: Timing.changePokemonMove,
+      8: Timing.everyTurnEnd,
+      9: Timing.gameSet,
+      10: Timing.terastaling,
+      11: Timing.afterTerastal,
+      12: Timing.beforeMove,
+    };
+    const Map<int, Timing> s2TimingMap = {
+      1: Timing.afterMove,
+      2: Timing.changeFaintingPokemon,
+      3: Timing.pokemonAppear,
+      4: Timing.changeFaintingPokemon,
+      5: Timing.pokemonAppear,
+      6: Timing.changeFaintingPokemon,
+      7: Timing.changeFaintingPokemon,
+    };
+    int timingListIdx = 0;
+    Timing currentTiming = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
+    List<TurnEffect> assistList = [];
+    //List<TurnEffect> delAssistList = [];
+    PlayerType? firstActionPlayer;
+    TurnEffectAction? lastAction;
+    bool changingState = false; // 効果によってポケモン交代した状態
+    bool isAssisting = false;
+    // 自動入力リスト作成
+    if (isNewTurn) {
+      assistList = currentState.getDefaultEffectList(
+        currentTurn,
+        currentTiming,
+        changeOwn,
+        changeOpponent,
+        currentState,
+        lastAction,
+      );
+      // TODO
+/*
+      for (final effect in currentTurn.noAutoAddEffect) {
+        assistList.removeWhere((e) => effect.nearEqual(e));
+      }
+*/
+    }
+
+    while (s1 != end) {
+      currentTiming = changingState
+          ? Timing.pokemonAppear
+          : s2 == 0
+              ? s1TimingMap[s1]!
+              : s2TimingMap[s2]!;
+      bool isInserted = false;
+      if (changingState) {
+        // ポケモン交代後状態
+        if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+          // 自動追加
+          if (assistList.isNotEmpty) {
+            l.insert(i, assistList.removeAt(0));
+            isAssisting = true;
+            isInserted = true;
+          } else {
+            //isInserted = true;
+            timingListIdx++;
+            isAssisting = false;
+            changingState = false;
+          }
+        } else {
+          isAssisting = true;
+        }
+      } else {
+        switch (s2) {
+          case 1: // わざでひんし状態
+            if (i >= l.length || l[i].timing != Timing.afterMove) {
+              // 自動追加
+              if (assistList.isNotEmpty) {
+                l.insert(i, assistList.removeAt(0));
+                isAssisting = true;
+                isInserted = true;
+              } else {
+                //isInserted = true;
+                s2++; // わざでひんし交代状態へ
+                timingListIdx++;
+                isAssisting = false;
+              }
+            } else {
+              isAssisting = true;
+            }
+            break;
+          case 2: // わざでひんし交代状態
+            {
+              changeOwn = changeOpponent = false;
+              if (i >= l.length ||
+                  l[i].runtimeType != TurnEffectChangeFaintingPokemon) {
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                  /*_insertPhase(
+                      i,
+                      TurnEffect()
+                        ..playerType = PlayerType.me
+                        ..effectType = EffectType.changeFaintingPokemon
+                        ..timing = Timing.changeFaintingPokemon,
+                      appState);*/
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.me,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  } else {
+                    s2 = 6; // わざでひんし交代状態(2匹目)へ
+                  }
+                } else if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  /*_insertPhase(
+                      i,
+                      TurnEffect()
+                        ..playerType = PlayerType.opponent
+                        ..effectType = EffectType.changeFaintingPokemon
+                        ..timing = Timing.changeFaintingPokemon,
+                      appState);*/
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.opponent,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  s2 = 0;
+                  if (actionCount == 2) {
+                    s1 = 8; // ターン終了状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                }
+              } else {
+                if (isOwnFainting) {
+                  l[i].playerType = PlayerType.me;
+                  isOwnFainting = false;
+                } else if (isOpponentFainting) {
+                  l[i].playerType = PlayerType.opponent;
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2++; // わざでひんし交代後状態へ
+                  if (l[i].playerType == PlayerType.me) {
+                    changeOwn = true;
+                  } else {
+                    changeOpponent = true;
+                  }
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  } else {
+                    s2 = 6; // わざでひんし交代状態(2匹目)へ
+                  }
+                }
+              }
+              timingListIdx++;
+            }
+            break;
+          case 3: // わざでひんし交代後状態
+            if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+              // 自動追加
+              if (assistList.isNotEmpty) {
+                l.insert(i, assistList.removeAt(0));
+                isAssisting = true;
+                isInserted = true;
+              } else {
+                //isInserted = true;
+                timingListIdx++;
+                isAssisting = false;
+                if (!isOpponentFainting) {
+                  changeOwn = false;
+                  changeOpponent = false;
+                  s2 = 0;
+                  if (actionCount == 2) {
+                    s1 = 8; // ターン終了状態へ
+                  } else {
+                    s1 = 12; // 行動選択前状態へ
+                  }
+                } else {
+                  s2 = 2; // わざでひんし交代状態へ
+                }
+              }
+            } else {
+              isAssisting = true;
+            }
+            break;
+          case 4: // わざ以外でひんし状態
+            {
+              changeOwn = changeOpponent = false;
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon) {
+                if (isOwnFainting) {
+                  isOwnFainting = false;
+                  /*_insertPhase(
+                      i,
+                      TurnEffect()
+                        ..playerType = PlayerType.me
+                        ..effectType = EffectType.changeFaintingPokemon
+                        ..timing = Timing.changeFaintingPokemon,
+                      appState);*/
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.me,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  } else {
+                    s2 = 7; // わざ以外でひんし状態(2匹目)へ
+                  }
+                } else if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  /*_insertPhase(
+                      i,
+                      TurnEffect()
+                        ..playerType = PlayerType.opponent
+                        ..effectType = EffectType.changeFaintingPokemon
+                        ..timing = Timing.changeFaintingPokemon,
+                      appState);*/
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.opponent,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  s2 = 0;
+                }
+              } else if (l[i].timing == Timing.changeFaintingPokemon) {
+                if (isOwnFainting) {
+                  l[i].playerType = PlayerType.me;
+                  isOwnFainting = false;
+                } else if (isOpponentFainting) {
+                  l[i].playerType = PlayerType.opponent;
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2++; // わざ以外でひんし交代後状態へ
+                  if (l[i].playerType == PlayerType.me) {
+                    changeOwn = true;
+                  } else {
+                    changeOpponent = true;
+                  }
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  } else {
+                    s2 = 7; // わざ以外でひんし状態(2匹目)へ
+                  }
+                }
+              }
+              timingListIdx++;
+            }
+            break;
+          case 5: // わざ以外でひんし交代後状態
+            if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+              // 自動追加
+              if (assistList.isNotEmpty) {
+                l.insert(i, assistList.removeAt(0));
+                isAssisting = true;
+                isInserted = true;
+              } else {
+                //isInserted = true;
+                timingListIdx++;
+                isAssisting = false;
+                if (!isOpponentFainting) {
+                  changeOwn = false;
+                  changeOpponent = false;
+                  s2 = 0;
+                } else {
+                  s2 = 4; // わざ以外でひんし状態へ
+                }
+              }
+            } else {
+              isAssisting = true;
+            }
+            break;
+          case 6: // わざでひんし交代状態(2匹目)
+            {
+              changeOwn = changeOpponent = false;
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon ||
+                  (isOpponentFainting && l[i].playerType == PlayerType.me)) {
+                if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.opponent,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  s2 = 0;
+                  s1 = 8; // ターン終了状態へ
+                }
+              } else {
+                if (l[i].playerType == PlayerType.me) {
+                  isOwnFainting = false;
+                } else {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2 = 3; // わざでひんし交代後状態へ
+                  if (l[i].playerType == PlayerType.me) {
+                    changeOwn = true;
+                  } else {
+                    changeOpponent = true;
+                  }
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                    s1 = 8; // ターン終了状態へ
+                  }
+                }
+              }
+              timingListIdx++;
+            }
+            break;
+          case 7: // わざ以外でひんし状態(2匹目)
+            {
+              changeOwn = changeOpponent = false;
+              if (i >= l.length ||
+                  l[i].timing != Timing.changeFaintingPokemon ||
+                  (isOpponentFainting && l[i].playerType == PlayerType.me)) {
+                if (isOpponentFainting) {
+                  isOpponentFainting = false;
+                  // TODO:タイミングの設定必要？
+                  l.insert(
+                      i,
+                      TurnEffectChangeFaintingPokemon(
+                          player: PlayerType.opponent,
+                          timing: Timing.changeFaintingPokemon));
+                  isInserted = true;
+                  s2 = 0;
+                }
+              } else {
+                if (l[i].playerType == PlayerType.me) {
+                  isOwnFainting = false;
+                } else {
+                  isOpponentFainting = false;
+                }
+                if (l[i].isValid()) {
+                  s2 = 5; // わざ以外でひんし交代後状態へ
+                  if (l[i].playerType == PlayerType.me) {
+                    changeOwn = true;
+                  } else {
+                    changeOpponent = true;
+                  }
+                } else {
+                  if (!isOpponentFainting) {
+                    s2 = 0;
+                  }
+                }
+              }
+              timingListIdx++;
+            }
+            break;
+          case 0: // どちらもひんしでない状態
+            switch (s1) {
+              case 0: // 試合最初のポケモン登場時処理状態
+                if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    s1++; // 行動決定直後処理状態へ
+                    timingListIdx++;
+                    isAssisting = false;
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 1: // 行動決定直後処理状態
+                if (i >= l.length ||
+                    l[i].timing != Timing.afterActionDecision) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    if (maxTerastal > 0) {
+                      s1 = 10; // テラスタル処理状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                    timingListIdx++;
+                    isAssisting = false;
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 10: // テラスタル処理状態
+                if (i >= l.length || l[i].timing != Timing.terastaling) {
+                  //isInserted = true;
+                  s1 = 11; // テラスタル後状態へ
+                  timingListIdx++;
+                  isAssisting = false;
+                }
+                terastalCount++;
+                if (terastalCount >= maxTerastal) {
+                  s1 = 11; // テラスタル後状態へ
+                  timingListIdx++;
+                  isAssisting = false;
+                }
+                break;
+              case 11: // テラスタル後状態
+                if (i >= l.length || l[i].timing != Timing.afterTerastal) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    s1 = 12; // 行動選択前状態へ
+                    timingListIdx++;
+                    isAssisting = false;
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 12: // 行動選択前状態
+                if (i >= l.length || l[i].timing != Timing.beforeMove) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    s1 = 2; // 行動選択状態へ
+                    timingListIdx++;
+                    isAssisting = false;
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 2: // 行動選択状態
+                {
+                  // TODO
+                  //_clearInvalidPhase(appState, i, true, true);
+                  changeOwn = changeOpponent = false;
+                  actionCount++;
+                  if (i >= l.length || l[i].runtimeType != TurnEffectAction) {
+                    // TODO:ありえない？
+                    /*_insertPhase(
+                        i,
+                        TurnEffect()
+                          ..timing = Timing.action
+                          ..effectType = EffectType.move
+                          ..move = TurnMove(),
+                        appState);
+                    if (actionCount == 1) l[i].move!.isFirst = true;
+                    isInserted = true;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }*/
+                  } else {
+                    // TODO?
+                    isInserted = true;
+                    final action = l[i] as TurnEffectAction;
+                    if (!action.isValid() ||
+                        action.type == TurnActionType.surrender) {
+                      if (actionCount == 2) {
+                        s1 = 8; // ターン終了状態へ
+                      } else {
+                        s1 = 12; // 行動選択前状態へ
+                      }
+                    } else if (action.type == TurnActionType.move) {
+                      if (action.getChangePokemonIndex(PlayerType.me) != null ||
+                          action.getChangePokemonIndex(PlayerType.opponent) !=
+                              null) {
+                        // わざが失敗/命中していなければポケモン交代も発生しない
+                        if (!action.isNormallyHit()) {
+                          s1 = 4; // わざ使用後状態へ
+                        } else {
+                          changeOwn =
+                              action.getChangePokemonIndex(PlayerType.me) !=
+                                  null;
+                          changeOpponent = action
+                                  .getChangePokemonIndex(PlayerType.opponent) !=
+                              null;
+                          s1 = 6; // 交代わざ使用後状態へ
+                        }
+                      } else {
+                        s1 = 4; // わざ使用後状態へ
+                      }
+                    } else if (action
+                            .getChangePokemonIndex(action.playerType) !=
+                        null) {
+                      s1++; // ポケモン交代後状態へ
+                      if (action.playerType == PlayerType.me) {
+                        changeOwn = true;
+                      } else {
+                        changeOpponent = true;
+                      }
+                    }
+                  }
+                  // 行動主の自動選択
+                  /*if (firstActionPlayer == null) {
+                    // 1つ目の行動
+                    if (l[i].playerType != PlayerType.none) {
+                      // 1つ目の行動主が入力されているなら
+                      firstActionPlayer = l[i].playerType;
+                      if (!l[i].isValid()) {
+                        // 行動主が入力されているが、入力された行動がまだ有効でないとき
+                        // 自動補完
+                        l[i].move!.fillAuto(currentState);
+                        textEditingControllerList1[i].text =
+                            l[i].getEditingControllerText1();
+                        textEditingControllerList2[i].text = l[i]
+                            .getEditingControllerText2(
+                                currentState, lastAction);
+                        textEditingControllerList3[i].text = l[i]
+                            .getEditingControllerText3(
+                                currentState, lastAction);
+                        textEditingControllerList4[i].text =
+                            l[i].getEditingControllerText4(currentState);
+                      }
+                    } else {
+                      TurnMove tmp = TurnMove()
+                        ..playerType = PlayerType.me
+                        ..type = TurnMoveType(TurnMoveType.move);
+                      if (tmp.fillAuto(currentState)) {
+                        l[i].playerType = PlayerType.me;
+                        firstActionPlayer = l[i].playerType;
+                        l[i].move = tmp;
+                        textEditingControllerList1[i].text =
+                            l[i].getEditingControllerText1();
+                        textEditingControllerList2[i].text = l[i]
+                            .getEditingControllerText2(
+                                currentState, lastAction);
+                        textEditingControllerList3[i].text = l[i]
+                            .getEditingControllerText3(
+                                currentState, lastAction);
+                        textEditingControllerList4[i].text =
+                            l[i].getEditingControllerText4(currentState);
+                      } else {
+                        tmp = TurnMove()
+                          ..playerType = PlayerType.opponent
+                          ..type = TurnMoveType(TurnMoveType.move);
+                        if (tmp.fillAuto(currentState)) {
+                          l[i].playerType = PlayerType.opponent;
+                          firstActionPlayer = l[i].playerType;
+                          l[i].move = tmp;
+                          textEditingControllerList1[i].text =
+                              l[i].getEditingControllerText1();
+                          textEditingControllerList2[i].text = l[i]
+                              .getEditingControllerText2(
+                                  currentState, lastAction);
+                          textEditingControllerList3[i].text = l[i]
+                              .getEditingControllerText3(
+                                  currentState, lastAction);
+                          textEditingControllerList4[i].text =
+                              l[i].getEditingControllerText4(currentState);
+                        }
+                      }
+                    }
+                  } else if (l[i].playerType == PlayerType.none) {
+                    // 2つ目の行動主が未入力の場合
+                    l[i].playerType = firstActionPlayer.opposite;
+                    if (l[i].move != null) {
+                      l[i].move!.clear();
+                      l[i].move!.playerType = firstActionPlayer.opposite;
+                      l[i].move!.type = TurnMoveType(TurnMoveType.move);
+                      l[i].move!.fillAuto(currentState);
+                      textEditingControllerList1[i].text =
+                          l[i].getEditingControllerText1();
+                      textEditingControllerList2[i].text = l[i]
+                          .getEditingControllerText2(currentState, lastAction);
+                      textEditingControllerList3[i].text = l[i]
+                          .getEditingControllerText3(currentState, lastAction);
+                      textEditingControllerList4[i].text =
+                          l[i].getEditingControllerText4(currentState);
+                    }
+                  } else {
+                    if (!l[i].isValid()) {
+                      // 2つ目の行動主が入力されているが、入力された行動がまだ有効でないとき
+                      // 自動補完
+                      l[i].move!.fillAuto(currentState);
+                      textEditingControllerList1[i].text =
+                          l[i].getEditingControllerText1();
+                      textEditingControllerList2[i].text = l[i]
+                          .getEditingControllerText2(currentState, lastAction);
+                      textEditingControllerList3[i].text = l[i]
+                          .getEditingControllerText3(currentState, lastAction);
+                      textEditingControllerList4[i].text =
+                          l[i].getEditingControllerText4(currentState);
+                    }
+                  }*/
+                  lastAction = l[i] as TurnEffectAction;
+                  timingListIdx++;
+                }
+                break;
+              case 3: // ポケモン交代後状態
+                if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    timingListIdx++;
+                    isAssisting = false;
+                    changeOwn = false;
+                    changeOpponent = false;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 4: // わざ使用後状態
+                if (i >= l.length || l[i].timing != Timing.afterMove) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    timingListIdx++;
+                    isAssisting = false;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  }
+                } else {
+                  isAssisting = true;
+                  if (l[i].getChangePokemonIndex(PlayerType.me) != null ||
+                      l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
+                    // 効果によりポケモン交代が生じた場合
+                    changingState = true;
+                    if (actionCount == 2) {
+                      s1 = 8; // ターン終了状態へ
+                    } else {
+                      s1 = 12; // 行動選択前状態へ
+                    }
+                  }
+                }
+                break;
+              case 6: // 交代わざ使用後状態
+                if (i >= l.length || l[i].timing != Timing.afterMove) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    timingListIdx++;
+                    isAssisting = false;
+                    s1 = 3; // ポケモン交代後状態へ
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 8: // ターン終了状態
+                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
+                  // 自動追加
+                  if (assistList.isNotEmpty) {
+                    l.insert(i, assistList.removeAt(0));
+                    isAssisting = true;
+                    isInserted = true;
+                  } else {
+                    //isInserted = true;
+                    isAssisting = false;
+                    // TODO?
+                    //l.removeRange(i + 1, l.length);
+                    s1 = end;
+                  }
+                } else {
+                  isAssisting = true;
+                }
+                break;
+              case 9: // 試合終了状態
+                // TODO
+                /*_insertPhase(
+                    i,
+                    TurnEffect()
+                      ..timing = Timing.gameSet
+                      ..isMyWin = isMyWin
+                      ..isYourWin = isYourWin,
+                    appState);*/
+                l.removeRange(i + 1, l.length);
+                s1 = end;
+                break;
+            }
+            break;
+        }
+      }
+
+      if (i >= l.length) break;
+
+      final guides = l[i].processEffect(
+        ownParty,
+        currentState.getPokemonState(PlayerType.me, null),
+        opponentParty,
+        currentState.getPokemonState(PlayerType.opponent, null),
+        currentState,
+        lastAction,
+        loc: loc,
+      );
+      /*
+      turnEffectAndStateAndGuides.add(TurnEffectAndStateAndGuide()
+        ..phaseIdx = i
+        ..turnEffect = l[i]
+        ..phaseState = currentState.copy()
+        ..guides = guides);
+      // 更新要求インデックス以降はフォームの内容を変える
+      // 追加されたフェーズのフォームの内容を変える
+      if (isInserted ||
+          (appState.needAdjustPhases >= 0 && appState.needAdjustPhases <= i)) {
+        if (!l[i].isAdding) {
+          textEditingControllerList1[i].text = l[i].getEditingControllerText1();
+          textEditingControllerList2[i].text =
+              l[i].getEditingControllerText2(currentState, lastAction);
+          textEditingControllerList3[i].text =
+              l[i].getEditingControllerText3(currentState, lastAction);
+          textEditingControllerList4[i].text =
+              l[i].getEditingControllerText4(currentState);
+        }
+      }
+      */
+
+      if (s1 != end &&
+          (!isInserted || isAssisting) &&
+          i < l.length &&
+          (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
+      {
+        isMyWin = l[i].isMyWin;
+        isYourWin = l[i].isYourWin;
+        s2 = 0;
+        s1 = 9; // 試合終了状態へ
+      } else {
+        if (s1 != end &&
+            (!isInserted || isAssisting) &&
+            i < l.length &&
+            (l[i].isOwnFainting || l[i].isOpponentFainting)) {
+          // どちらかがひんしになる場合
+          if (l[i].isOwnFainting) isOwnFainting = true;
+          if (l[i].isOpponentFainting) isOpponentFainting = true;
+          if (s2 == 1 ||
+              l[i].timing == Timing.action ||
+              l[i].timing == Timing.continuousMove) {
+            if ((isOwnFainting &&
+                    !isOpponentFainting &&
+                    l[i].playerType == PlayerType.me) ||
+                (isOpponentFainting &&
+                    !isOwnFainting &&
+                    l[i].playerType == PlayerType.opponent)) {
+            } else {
+              // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
+              actionCount = 2;
+            }
+            s2 = 1; // わざでひんし状態へ
+          } else {
+            s2 = 4; // わざ以外でひんし状態へ
+          }
+        }
+      }
+
+      if (i < l.length) i++;
+
+      // 自動入力効果を作成
+      // 前回までと違うタイミング、かつ更新要求インデックス以降のとき作成
+      if (s1 != end) {
+        var nextTiming = changingState
+            ? Timing.pokemonAppear
+            : s2 == 0
+                ? s1TimingMap[s1]!
+                : s2TimingMap[s2]!;
+        if (/*(timingListIdx >= sameTimingList.length ||
+            sameTimingList[timingListIdx].first.turnEffect.timing != nextTiming ||*/
+            ((currentTiming !=
+                nextTiming) /*||
+            sameTimingList[timingListIdx].first.needAssist*/
+            ) /*&&
+                appState.needAdjustPhases <= i &&
+                !appState.adjustPhaseByDelete*/
+            ) {
+          var tmpAction = lastAction;
+          if (nextTiming == Timing.beforeMove) {
+            // わざの先読みをする
+            for (int j = i; j < l.length; j++) {
+              if (l[j].timing == Timing.action) {
+                if (l[j].isValid() && l[j].runtimeType == TurnEffectAction) {
+                  tmpAction = l[j] as TurnEffectAction;
+                  break;
+                } else {
+                  break;
+                }
+              }
+            }
+          }
+          assistList = currentState.getDefaultEffectList(
+            currentTurn,
+            nextTiming,
+            changeOwn,
+            changeOpponent,
+            currentState,
+            tmpAction,
+          );
+          for (final effect in currentTurn.noAutoAddEffect) {
+            // TODO
+            //assistList.removeWhere((e) => effect.nearEqual(e));
+            assistList.removeWhere((e) => effect == e);
+          }
+          // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
+          // それ以外で入力済みの自動入力は削除
+          List<int> removeIdxs = [];
+          for (int j = i; j < l.length; j++) {
+            if (l[j].timing != nextTiming) break;
+            // TODO
+            int findIdx =
+                assistList.indexWhere((element) => element.nearEqual(l[j]));
+            if (findIdx >= 0) {
+              assistList.removeAt(findIdx);
+              // TODO
+              /*} else if (l[j].isAutoSet) {
+              removeIdxs.add(j);*/
+            }
+          }
+/*          
+          // 削除インデックスリストの重複削除、ソート(念のため)
+          removeIdxs = removeIdxs.toSet().toList();
+          removeIdxs.sort();
+          for (int i = removeIdxs.length - 1; i >= 0; i--) {
+            l.removeAt(removeIdxs[i]);
+          }
+          if (timingListIdx < sameTimingList.length) {
+            for (var e in sameTimingList[timingListIdx]) {
+              e.needAssist = false;
+            }
+          }
+*/
+          changeOwn = false;
+          changeOpponent = false;
+        } else if (currentTiming != nextTiming) {
+          assistList.clear();
+          //delAssistList.clear();
+        }
+      }
+    }
+
+/*
+    for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
+      turnEffectAndStateAndGuides[i].phaseIdx = i;
+      if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
+          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
+      ) {
+        if (i != 0) {
+          turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
+            currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
+          ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
+        }
+        beginIdx = i;
+        timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
+      }
+    }
+
+    if (phases.isNotEmpty) {
+      turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
+        currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
+      ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
+    }
+    return ret;*/
   }
 }
 
@@ -473,8 +1804,7 @@ class Turn extends Equatable implements Copyable {
     AppLocalizations loc,
   ) {
     PhaseState ret = copyInitialState();
-    int continousCount = 0;
-    TurnEffect? lastAction;
+    TurnEffectAction? lastAction;
 
     for (int i = 0; i < phaseIdx + 1; i++) {
       final effect = phases[i];
@@ -496,7 +1826,6 @@ class Turn extends Equatable implements Copyable {
             /*effect.timing == Timing.afterMove ? lastAction :*/ null),
         ret,
         lastAction,
-        continousCount,
         loc: loc,
       );
     }
@@ -517,8 +1846,7 @@ class Turn extends Equatable implements Copyable {
     AppLocalizations loc,
   ) {
     PhaseState ret = _initialState.copy();
-    int continousCount = 0;
-    TurnEffect? lastAction;
+    TurnEffectAction? lastAction;
     int endIndex = phases.getLatestActionIndex(playerType);
 
     for (int i = 0; i < endIndex; i++) {
@@ -547,7 +1875,6 @@ class Turn extends Equatable implements Copyable {
             /*phase.timing == Timing.afterMove ? lastAction :*/ null),
         ret,
         lastAction,
-        continousCount,
         loc: loc,
       );
     }
@@ -567,8 +1894,7 @@ class Turn extends Equatable implements Copyable {
     AppLocalizations loc,
   ) {
     _endingState = _initialState.copy();
-    int continousCount = 0;
-    TurnEffect? lastAction;
+    TurnEffectAction? lastAction;
     PlayerType? needChangeFaintingPlayer;
     Map<PlayerType, bool> alreadyActioned = {
       PlayerType.me: false,
@@ -603,7 +1929,6 @@ class Turn extends Equatable implements Copyable {
             /*phase.timing == Timing.afterMove ? lastAction :*/ null),
         _endingState,
         lastAction,
-        continousCount,
         loc: loc,
       );
       if (phase is TurnEffectAction) {
@@ -658,6 +1983,183 @@ class Turn extends Equatable implements Copyable {
       i++;
     }
     return _endingState.copy();
+  }
+
+  /// TODO:関数コメント
+  /// 現在のフェーズの状態で起こる効果の候補を返す
+  /// 効果->挿入可能インデックスのMapを返す
+  /// ```
+  /// ```
+  Map<TurnEffect, Set<int>> getEffectCandidates(
+    PlayerType? playerType,
+    EffectType? effectType,
+    Party ownParty,
+    Party opponentParty,
+    AppLocalizations loc,
+    int turnNum,
+  ) {
+    Map<TurnEffect, Set<int>> ret = {};
+    PhaseState state = copyInitialState();
+    TurnEffectAction? lastAction;
+
+    for (int i = 0; i <= phases.length; i++) {
+      List<TurnEffect> effectList = [];
+      final timingList = phases.insertableTimings(i, turnNum, this);
+      if (i != 0) {
+        final currentEffect = phases[i - 1];
+        //if (effect.isAdding) continue;
+        //if (effect.timing == Timing.continuousMove) {
+        //  lastAction = effect;
+        //  continousCount++;
+        //} else if (effect.timing == Timing.action) {
+        //  lastAction = effect;
+        //  continousCount = 0;
+        //}
+        if (currentEffect is TurnEffectAction) lastAction = currentEffect;
+        currentEffect.processEffect(
+          ownParty,
+          state.getPokemonState(PlayerType.me,
+              /*effect.timing == Timing.afterMove ? lastAction :*/ null),
+          opponentParty,
+          state.getPokemonState(PlayerType.opponent,
+              /*effect.timing == Timing.afterMove ? lastAction :*/ null),
+          state,
+          lastAction,
+          loc: loc,
+        );
+      }
+      for (final timing in timingList) {
+        if (playerType != null) {
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            i,
+            playerType,
+            effectType,
+            state,
+          ));
+        } else {
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            i,
+            PlayerType.me,
+            effectType,
+            state,
+          ));
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            i,
+            PlayerType.opponent,
+            effectType,
+            state,
+          ));
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            i,
+            PlayerType.entireField,
+            effectType,
+            state,
+          ));
+        }
+      }
+      for (final effect in effectList) {
+        if (ret.containsKey(effect)) {
+          ret[effect]!.add(i);
+        } else {
+          ret[effect] = {i};
+        }
+      }
+    }
+    return ret;
+  }
+
+  List<TurnEffect> _getEffectCandidates(
+    Timing timing,
+    int phaseIdx,
+    PlayerType playerType,
+    EffectType? effectType,
+    PhaseState phaseState,
+  ) {
+    if (playerType == PlayerType.none) return [];
+
+    // prevActionを設定
+    TurnEffectAction? prevAction;
+    if (timing == Timing.afterMove) {
+      for (int i = phaseIdx - 1; i >= 0; i--) {
+        if (phases[i].runtimeType == TurnEffectAction) {
+          prevAction = phases[i] as TurnEffectAction;
+          break;
+        } else if (phases[i].timing != timing) {
+          break;
+        }
+      }
+    } else if (timing == Timing.beforeMove) {
+      for (int i = phaseIdx + 1; i < phases.length; i++) {
+        if (phases[i].runtimeType == TurnEffectAction) {
+          prevAction = phases[i] as TurnEffectAction;
+          break;
+        } else if (phases[i].timing != timing) {
+          break;
+        }
+      }
+    }
+    PlayerType attacker =
+        prevAction != null ? prevAction.playerType : PlayerType.none;
+    // TODO?
+    //TurnMove turnMove =
+    //    prevAction?.move != null ? prevAction!.move : TurnMove();
+    final turnMove = prevAction ?? TurnEffectAction(player: playerType);
+
+    if (playerType == PlayerType.entireField) {
+      return _getEffectCandidatesWithEffectType(timing, playerType,
+          EffectType.ability, attacker, turnMove, prevAction, phaseState);
+    }
+    if (effectType == null) {
+      List<TurnEffect> ret = [];
+      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+          EffectType.ability, attacker, turnMove, prevAction, phaseState));
+      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+          EffectType.item, attacker, turnMove, prevAction, phaseState));
+      ret.addAll(_getEffectCandidatesWithEffectType(
+          timing,
+          playerType,
+          EffectType.individualField,
+          attacker,
+          turnMove,
+          prevAction,
+          phaseState));
+      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+          EffectType.ailment, attacker, turnMove, prevAction, phaseState));
+      return ret;
+    } else {
+      return _getEffectCandidatesWithEffectType(timing, playerType, effectType,
+          attacker, turnMove, prevAction, phaseState);
+    }
+  }
+
+  List<TurnEffect> _getEffectCandidatesWithEffectType(
+    Timing timing,
+    PlayerType playerType,
+    EffectType effectType,
+    PlayerType attacker,
+    TurnEffectAction turnMove,
+    TurnEffectAction? prevAction,
+    PhaseState phaseState,
+  ) {
+    return TurnEffect.getPossibleEffects(
+        timing,
+        playerType,
+        effectType,
+        playerType == PlayerType.me || playerType == PlayerType.opponent
+            ? phaseState.getPokemonState(playerType, prevAction).pokemon
+            : null,
+        playerType == PlayerType.me || playerType == PlayerType.opponent
+            ? phaseState.getPokemonState(playerType, prevAction)
+            : null,
+        phaseState,
+        attacker,
+        turnMove,
+        this,
+        prevAction);
   }
 
   /// 初期状態のみ残してクリア

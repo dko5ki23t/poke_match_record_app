@@ -210,7 +210,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
         ListTile(
           dense: true,
           leading: turnMove
-              .getReplacedMoveType(myMove, 0, pokemonState, state)
+              .getReplacedMoveType(myMove, pokemonState, state)
               .displayIcon,
           title: Text(myMove.displayName),
           trailing: Icon(Icons.arrow_forward_ios),

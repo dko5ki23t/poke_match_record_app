@@ -310,7 +310,44 @@ enum CommandWidgetTemplate {
   select2UpStat,
 }
 
-/// ターン内処理のうち、「行動」について管理するclass
+/// 該当ページが表示される=入力中のわざは有効ということ、かどうか
+extension ImmediatelyValid on CommandWidgetTemplate {
+  /// 該当ページが表示される=入力中のわざは有効ということ、かどうか
+  bool get isImmediatelyValid {
+    switch (this) {
+      case CommandWidgetTemplate.successOrFail:
+      case CommandWidgetTemplate.fail:
+      case CommandWidgetTemplate.effect1Switch:
+      case CommandWidgetTemplate.effect1Switch2:
+      case CommandWidgetTemplate.effect2Switch:
+      case CommandWidgetTemplate.selectBurnFreezeParalysis:
+      case CommandWidgetTemplate.selectPoisonParalysisSleep:
+      case CommandWidgetTemplate.selectMyHoldingItem:
+      case CommandWidgetTemplate.selectYourHoldingItem:
+      case CommandWidgetTemplate.selectYourItemWithFilter:
+      case CommandWidgetTemplate.selectMyGettingItem:
+      case CommandWidgetTemplate.selectMyItemWithFilter:
+      case CommandWidgetTemplate.selectItem:
+      case CommandWidgetTemplate.selectMyAbility:
+      case CommandWidgetTemplate.selectYourAbility:
+      case CommandWidgetTemplate.selectMyGettingAbility:
+      case CommandWidgetTemplate.select2UpStat:
+        return true;
+      case CommandWidgetTemplate.selectMyPokemons:
+      case CommandWidgetTemplate.selectYourPokemons:
+      case CommandWidgetTemplate.selectMyFaintingPokemons:
+      case CommandWidgetTemplate.inputYourHP:
+      case CommandWidgetTemplate.inputMyHP:
+      case CommandWidgetTemplate.selectMove:
+      case CommandWidgetTemplate.selectAcquiringMove:
+      case CommandWidgetTemplate.selectYourAcquiringMove:
+      case CommandWidgetTemplate.selectMoveType:
+        return false;
+    }
+  }
+}
+
+/// ターン内効果のうち、「行動」について管理するclass
 class TurnEffectAction extends TurnEffect {
   /// 行動主
   PlayerType _playerType = PlayerType.none;
@@ -340,25 +377,25 @@ class TurnEffectAction extends TurnEffect {
   /// ```
   /// こうかは(テキスト無し)/ばつぐん/いまひとつ/なし
   /// ```
-  List<MoveEffectiveness> moveEffectivenesses = [MoveEffectiveness.normal];
+  MoveEffectiveness moveEffectivenesses = MoveEffectiveness.normal;
 
   /// わざによって受けたダメージ（確定値）
-  List<int> realDamage = [0];
+  int realDamage = 0;
 
   /// わざによって与えたダメージ（概算値、割合）
-  List<int> percentDamage = [0];
+  int percentDamage = 0;
 
   /// 追加効果
-  List<MoveEffect> moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
+  MoveEffect moveAdditionalEffects = MoveEffect(MoveEffect.none);
 
   /// オプション引数1
-  List<int> extraArg1 = [0];
+  int extraArg1 = 0;
 
   /// オプション引数2
-  List<int> extraArg2 = [0];
+  int extraArg2 = 0;
 
   /// オプション引数3
-  List<int> extraArg3 = [0];
+  int extraArg3 = 0;
 
   /// 自身・相手の(あるなら)交換先ポケモンのパーティ内インデックス(1始まり)
   List<int?> _changePokemonIndexes = [null, null];
@@ -372,7 +409,7 @@ class TurnEffectAction extends TurnEffect {
   /// 有効かどうか
   bool _isValid = false;
 
-  /// ターン内処理のうち、「行動」について管理するclassを生成
+  /// ターン内効果のうち、「行動」について管理するclassを生成
   /// ```
   /// player: 行動主
   /// ```
@@ -412,13 +449,13 @@ class TurnEffectAction extends TurnEffect {
     ..actionFailure = actionFailure
     ..hitCount = hitCount
     ..criticalCount = criticalCount
-    ..moveEffectivenesses = [...moveEffectivenesses]
-    ..realDamage = [...realDamage]
-    ..percentDamage = [...percentDamage]
-    ..moveAdditionalEffects = [...moveAdditionalEffects]
-    ..extraArg1 = [...extraArg1]
-    ..extraArg2 = [...extraArg2]
-    ..extraArg3 = [...extraArg3]
+    ..moveEffectivenesses = moveEffectivenesses
+    ..realDamage = realDamage
+    ..percentDamage = percentDamage
+    ..moveAdditionalEffects = moveAdditionalEffects
+    ..extraArg1 = extraArg1
+    ..extraArg2 = extraArg2
+    ..extraArg3 = extraArg3
     .._changePokemonIndexes = [..._changePokemonIndexes]
     ..moveType = moveType
     ..isFirst = isFirst
@@ -426,23 +463,28 @@ class TurnEffectAction extends TurnEffect {
 
   /// 表示名
   @override
-  String displayName({required AppLocalizations loc}) => move.displayName;
+  String displayName({required AppLocalizations loc}) {
+    switch (type) {
+      case TurnActionType.move:
+        return move.displayName;
+      case TurnActionType.change:
+        return loc.battlePokemonChange;
+      case TurnActionType.surrender:
+        return loc.battleSurrender;
+      default:
+        return '';
+    }
+  }
 
-  /// 行動主
   @override
   PlayerType get playerType => _playerType;
   @override
   set playerType(type) => _playerType = type;
 
-  /// 交換先ポケモンのパーティ内インデックス(1始まり)を返す。
-  /// 交換していなければnullを返す
-  /// ```
-  /// player: 行動主
-  /// ```
-  int? getChangePokemonIndex(PlayerType player) {
-    if (player == PlayerType.me) return _changePokemonIndexes[0];
-    return _changePokemonIndexes[1];
-  }
+  @override
+  Timing get timing => Timing.action;
+  @override
+  set timing(Timing t) {}
 
   /// 交換先ポケモンのパーティ内インデックス(1始まり)を設定する
   /// nullを設定すると交換していないことを表す
@@ -450,12 +492,9 @@ class TurnEffectAction extends TurnEffect {
   /// player: 行動主
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
+  @override
   void setChangePokemonIndex(PlayerType player, int? val) {
-    if (player == PlayerType.me) {
-      _changePokemonIndexes[0] = val;
-    } else {
-      _changePokemonIndexes[1] = val;
-    }
+    super.setChangePokemonIndex(player, val);
     if (val != null && type == TurnActionType.change) {
       _isValid = true;
     }
@@ -463,11 +502,7 @@ class TurnEffectAction extends TurnEffect {
 
   /// わざが成功＆ヒットしたかどうか
   /// へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
-  /// ```
-  /// continuousCount: 連続わざのインデックス(削除予定)
-  /// ```
-  bool isNormallyHit(int continuousCount) {
-    // TODO 引数削除
+  bool isNormallyHit() {
     return isSuccess && (move.damageClass.id >= 2 && hitCount > 0) ||
         (move.damageClass.id == 1);
   }
@@ -585,7 +620,6 @@ class TurnEffectAction extends TurnEffect {
   /// opponentState: 相手のポケモンの状態
   /// state: フェーズの状態
   /// prevAction: この行動の直前に起きた行動(わざ使用後の処理等に用いる)
-  /// continuousCount: 連続わざのインデックス
   /// damageGetter: わざのダメージを取得するインスタンス
   /// ```
   @override
@@ -595,8 +629,7 @@ class TurnEffectAction extends TurnEffect {
     Party opponentParty,
     PokemonState opponentState,
     PhaseState state,
-    TurnEffect? prevAction,
-    int continuousCount, {
+    TurnEffectAction? prevAction, {
     DamageGetter? damageGetter,
     required AppLocalizations loc,
   }) {
@@ -609,6 +642,8 @@ class TurnEffectAction extends TurnEffect {
     var myState = playerType == PlayerType.me ? ownState : opponentState;
     var yourState = playerType == PlayerType.me ? opponentState : ownState;
     var beforeChangeMyState = myState.copy();
+
+    super.beforeProcessEffect(ownState, opponentState);
 
     // テラスタル済みならわざもテラスタル化
     if (myState.isTerastaling) {
@@ -663,22 +698,20 @@ class TurnEffectAction extends TurnEffect {
       return ret;
     }
 
-    if (continuousCount == 0) {
-      // ねむりカウント加算
-      var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
-      if (sleep.isNotEmpty) sleep.first.turns++;
-      // アンコールカウント加算
-      var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
-      if (encore.isNotEmpty) encore.first.turns++;
-      // ちょうはつのカウントインクリメント
-      var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
-      if (taunt.isNotEmpty) taunt.first.extraArg1++;
-    }
+    // ねむりカウント加算
+    var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
+    if (sleep.isNotEmpty) sleep.first.turns++;
+    // アンコールカウント加算
+    var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
+    if (encore.isNotEmpty) encore.first.turns++;
+    // ちょうはつのカウントインクリメント
+    var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
+    if (taunt.isNotEmpty) taunt.first.extraArg1++;
 
     // こんらんによる自傷
     if (actionFailure.id == ActionFailure.confusion) {
-      myState.remainHP -= extraArg1[continuousCount];
-      myState.remainHPPercent -= extraArg2[continuousCount];
+      myState.remainHP -= extraArg1;
+      myState.remainHPPercent -= extraArg2;
       return ret;
     }
 
@@ -735,7 +768,7 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // わざPP消費
-    if (continuousCount == 0 && isSuccess) {
+    if (isSuccess) {
       int moveIdx = myState.moves
           .indexWhere((element) => element.id != 0 && element.id == move.id);
       if (moveIdx >= 0) {
@@ -745,7 +778,7 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // メトロノーム用
-    if (continuousCount == 0) {
+    {
       final findIdx = myState.hiddenBuffs.list.indexWhere(
           (element) => element.id == BuffDebuff.continuousMoveDamageInc0_2);
       if (findIdx >= 0) {
@@ -767,8 +800,9 @@ class TurnEffectAction extends TurnEffect {
 
     // ダメージ計算式を表示するかどうか
     bool showDamageCalc = false;
-    // わざの威力(わざによっては変動するため)
-    int movePower = 0;
+
+    /// わざの威力(連続わざの場合はそれぞれの威力)
+    Map<int, int> movePower = {0: 0};
     // ダメージ計算式文字列
     String? damageCalc;
     // 最終ダメージが2倍になるか
@@ -801,8 +835,7 @@ class TurnEffectAction extends TurnEffect {
     bool isTeraStellarHosei = false;
 
     {
-      Move replacedMove =
-          getReplacedMove(move, continuousCount, myState); // 必要に応じてわざの内容変更
+      Move replacedMove = getReplacedMove(move, myState); // 必要に応じてわざの内容変更
       moveDamageClassID = replacedMove.damageClass.id;
 
       // わざの対象決定
@@ -874,7 +907,7 @@ class TurnEffectAction extends TurnEffect {
         }
       }
       // メトロノーム用
-      if (continuousCount == 0) {
+      {
         final findIdx = myState.hiddenBuffs.list
             .indexWhere((element) => element.id == BuffDebuff.sameMoveCount);
         if (findIdx >= 0) {
@@ -903,9 +936,7 @@ class TurnEffectAction extends TurnEffect {
 
       // ダメージ計算式を表示するかどうか
       showDamageCalc = false;
-      // ダメージ計算式が特殊か(固定ダメージ等)
-      // わざの威力(わざによっては変動するため)
-      movePower = replacedMove.power;
+      movePower[0] = replacedMove.power;
       // わざのタイプ(わざによっては変動するため)
       moveType = replacedMove.type;
       // ダメージ計算式文字列
@@ -942,7 +973,7 @@ class TurnEffectAction extends TurnEffect {
         var targetState = targetStates[i];
         var targetIndiField = targetIndiFields[i];
         var targetPlayerType = targetPlayerTypes[i];
-        switch (moveAdditionalEffects[continuousCount].id) {
+        switch (moveAdditionalEffects.id) {
           case 1: // 追加効果なし
           case 104: // 追加効果なし
           case 86: // なにも起きない
@@ -978,8 +1009,8 @@ class TurnEffectAction extends TurnEffect {
           case 387: // 最大HPの半分だけ回復する。場がグラスフィールドの場合は2/3回復する
           case 420: // 最大HP1/2(小数点切り上げ)を削ってこうげき
           case 441: // 最大HP1/4だけ回復
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             break;
           case 5: // やけどにする(確率)
           case 168: // やけどにする
@@ -1077,7 +1108,7 @@ class TurnEffectAction extends TurnEffect {
           case 28: // 2～3ターンの間あばれる状態になり、攻撃し続ける。攻撃終了後、自身がこんらん状態となる
             myState.ailmentsAdd(
                 Ailment(Ailment.thrash)..extraArg1 = replacedMove.id, state);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               // あばれるの解除
               myState.ailmentsRemoveWhere((e) => e.id == Ailment.thrash);
               // こんらんする
@@ -1101,8 +1132,8 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 31: // 使用者のタイプを、使用者が覚えているわざの一番上のタイプに変更する
           case 94: // 使用者のタイプを、相手が直前に使ったわざのタイプを半減/無効にするタイプに変更する
-            if (extraArg1[continuousCount] != 0) {
-              myState.type1 = PokeType.values[extraArg1[continuousCount]];
+            if (extraArg1 != 0) {
+              myState.type1 = PokeType.values[extraArg1];
               myState.type2 = null;
             }
             break;
@@ -1126,9 +1157,8 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 37: // やけど・こおり・まひのいずれかにする(確率)
-            if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(
-                  Ailment(extraArg1[continuousCount]), state);
+            if (extraArg1 != 0) {
+              targetState.ailmentsAdd(Ailment(extraArg1), state);
             }
             break;
           case 38: // 使用者はHP満タン・状態異常を回復して2ターン眠る
@@ -1182,8 +1212,8 @@ class TurnEffectAction extends TurnEffect {
           case 45: // 2回こうげき
             break;
           case 46: // わざを外すと使用者に、使用者の最大HP1/2のダメージ
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             break;
           case 47: // 場に「しろいきり」を発生させる
             int findIdx =
@@ -1327,20 +1357,18 @@ class TurnEffectAction extends TurnEffect {
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
-                if (extraArg1[continuousCount] != 0) {
+                if (extraArg1 != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
                 }
               }
             }
             break;
           case 80: // 場に「みがわり」を発生させる
-            targetState.remainHP -= extraArg1[continuousCount];
-            targetState.remainHPPercent -= extraArg2[continuousCount];
+            targetState.remainHP -= extraArg1;
+            targetState.remainHPPercent -= extraArg2;
             if (!targetState.buffDebuffs.containsByID(BuffDebuff.substitute)) {
               targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute)
-                ..extraArg1 = extraArg1[continuousCount] != 0
-                    ? -extraArg1[continuousCount]
-                    : 25);
+                ..extraArg1 = extraArg1 != 0 ? -extraArg1 : 25);
             }
             break;
           case 81: // 使用者は次のターン動けない
@@ -1360,9 +1388,9 @@ class TurnEffectAction extends TurnEffect {
           case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
             // 本来はコピーできるわざに制限があるが、そこはユーザ入力にゆだねる
             if (!myState.hiddenBuffs.containsByID(BuffDebuff.copiedMove)) {
-              if (extraArg3[continuousCount] != 0) {
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.copiedMove)
-                  ..extraArg1 = extraArg3[continuousCount]);
+              if (extraArg3 != 0) {
+                myState.hiddenBuffs.add(
+                    BuffDebuff(BuffDebuff.copiedMove)..extraArg1 = extraArg3);
               }
             }
             break;
@@ -1416,17 +1444,17 @@ class TurnEffectAction extends TurnEffect {
                 x = (myState.remainHPPercent * 48 / 100).floor();
               }
               if (33 <= x) {
-                movePower = 20;
+                movePower[0] = 20;
               } else if (17 <= x) {
-                movePower = 40;
+                movePower[0] = 40;
               } else if (10 <= x) {
-                movePower = 80;
+                movePower[0] = 80;
               } else if (5 <= x) {
-                movePower = 100;
+                movePower[0] = 100;
               } else if (2 <= x) {
-                movePower = 150;
+                movePower[0] = 150;
               } else {
-                movePower = 200;
+                movePower[0] = 200;
               }
             }
             break;
@@ -1447,17 +1475,17 @@ class TurnEffectAction extends TurnEffect {
             if (findIdx >= 0) targetState.ailmentsRemoveAt(findIdx);
             break;
           case 105: // 3回連続こうげき。2回目以降の威力は最初の100%分大きくなる
-            movePower = movePower * (continuousCount + 1);
+            movePower[1] = movePower[0]! * 2;
+            movePower[2] = movePower[0]! * 3;
             break;
           case 106: // もちものを盗む
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               // もちもの確定のため、一度持たせる
               if (targetPlayerType == PlayerType.opponent &&
                   opponentPokemonState.getHoldingItem()?.id == 0) {
-                targetState.holdingItem =
-                    pokeData.items[extraArg1[continuousCount]]!;
+                targetState.holdingItem = pokeData.items[extraArg1]!;
               }
-              myState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+              myState.holdingItem = pokeData.items[extraArg1]!;
               targetState.holdingItem = null;
             }
             break;
@@ -1481,8 +1509,8 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 110: // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
             if (myState.isTypeContain(PokeType.ghost)) {
-              myState.remainHP -= extraArg1[continuousCount];
-              myState.remainHPPercent -= extraArg2[continuousCount];
+              myState.remainHP -= extraArg1;
+              myState.remainHPPercent -= extraArg2;
               yourState.ailmentsAdd(Ailment(Ailment.curse), state);
             } else {
               myState.addStatChanges(true, 0, 1, targetState,
@@ -1525,11 +1553,12 @@ class TurnEffectAction extends TurnEffect {
           case 117: // ひんしダメージをHP1で耐える。連続使用で失敗しやすくなる
             break;
           case 118: // 最高5ターン連続でこうげき、当てるたびに威力が2倍になる(まるくなる状態だと威力2倍)
+            // TODO: 計算間違ってない？
             if (myState.lastMove?.id == replacedMove.id) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             if (myState.ailmentsWhere((e) => e.id == Ailment.curl).isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 119: // こうげきを2段階上げ、こんらん状態にする
@@ -1540,10 +1569,11 @@ class TurnEffectAction extends TurnEffect {
             targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 120: // 当てるたびに威力が2倍ずつ増える。最大160
+            // TODO: 計算間違ってない？
             if (myState.lastMove?.id == replacedMove.id) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
-            if (movePower > 160) movePower = 160;
+            if (movePower[0]! > 160) movePower[0] = 160;
             break;
           case 121: // 性別が異なる場合、メロメロ状態にする
             if (myState.sex != Sex.none &&
@@ -1572,7 +1602,7 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 126: // 使用者のこおり状態を消す。相手をやけど状態にする(確率)
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
@@ -1640,8 +1670,8 @@ class TurnEffectAction extends TurnEffect {
             damageCalc = loc.battleDamageFixed5;
             break;
           case 136: // 個体値によってわざのタイプが変わる
-            if (extraArg1[continuousCount] != 0) {
-              moveType = PokeType.values[extraArg1[continuousCount]];
+            if (extraArg1 != 0) {
+              moveType = PokeType.values[extraArg1];
             }
             break;
           case 137: // 天気を雨にする
@@ -1699,13 +1729,13 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 147: // ひるませる(確率)。そらをとぶ状態でも命中し、その場合威力が2倍
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             if (targetState
                 .ailmentsWhere((e) => e.id == Ailment.flying)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 148: // あなをほる状態でも命中し、その場合ダメージが2倍。グラスフィールドの影響を受けている相手には威力が半減
@@ -1714,7 +1744,7 @@ class TurnEffectAction extends TurnEffect {
                 .isNotEmpty) mTwice = true;
             if (targetState.isGround(targetIndiField) &&
                 state.field.id == Field.grassyTerrain) {
-              movePower = (movePower / 2).floor();
+              movePower[0] = (movePower[0]! / 2).floor();
             }
             break;
           case 149: // 2ターン後の相手にダメージを与える
@@ -1725,11 +1755,11 @@ class TurnEffectAction extends TurnEffect {
             if (targetState
                 .ailmentsWhere((e) => e.id == Ailment.flying)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 151: // ひるませる(確率)。ちいさくなる状態に対して必中、その場合ダメージ2倍
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             if (targetState
@@ -1751,7 +1781,7 @@ class TurnEffectAction extends TurnEffect {
                 if (state.weather.id == Weather.rainy ||
                     state.weather.id == Weather.sandStorm ||
                     state.weather.id == Weather.snowy) {
-                  movePower = (movePower / 2).floor();
+                  movePower[0] = (movePower[0]! / 2).floor();
                 }
               }
             }
@@ -1829,13 +1859,15 @@ class TurnEffectAction extends TurnEffect {
             int findIdx = myState.ailmentsIndexWhere(
                 (e) => e.id >= Ailment.stock1 && e.id <= Ailment.stock3);
             if (findIdx >= 0) {
-              movePower *= myState.ailments(findIdx).id - Ailment.stock1 + 1;
+              movePower[0] = movePower[0]! * myState.ailments(findIdx).id -
+                  Ailment.stock1 +
+                  1;
               myState.ailmentsRemoveAt(findIdx);
             }
             break;
           case 163: // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             int findIdx = myState.ailmentsIndexWhere(
                 (e) => e.id >= Ailment.stock1 && e.id <= Ailment.stock3);
             if (findIdx >= 0) {
@@ -1877,7 +1909,7 @@ class TurnEffectAction extends TurnEffect {
                     e.id == Ailment.poison ||
                     e.id == Ailment.badPoison)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 171: // そのターンでこうげきする前に使用者がこうげきわざによるダメージを受けていると失敗する
@@ -1886,7 +1918,7 @@ class TurnEffectAction extends TurnEffect {
             int findIdx = targetState
                 .ailmentsIndexWhere((e) => e.id == Ailment.paralysis);
             if (findIdx >= 0) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
               targetState.ailmentsRemoveAt(findIdx);
             }
             break;
@@ -1909,32 +1941,27 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 178: // 使用者ともちものを入れ替える
             var ownItem = ownPokemonState.getHoldingItem();
-            if (extraArg1[continuousCount] > 0) {
+            if (extraArg1 > 0) {
               // もちもの確定のため、一度持たせる
               if (opponentPokemonState.getHoldingItem()?.id == 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
-                  ..args = [extraArg1[continuousCount]]
+                  ..args = [extraArg1]
                   ..guideStr = loc.battleGuideConfItem1(
-                      pokeData.items[extraArg1[continuousCount]]!.displayName,
+                      pokeData.items[extraArg1]!.displayName,
                       opponentPokemonState.pokemon.omittedName));
-                opponentPokemonState.holdingItem =
-                    pokeData.items[extraArg1[continuousCount]]!;
+                opponentPokemonState.holdingItem = pokeData.items[extraArg1]!;
               }
-              ownPokemonState.holdingItem =
-                  pokeData.items[extraArg1[continuousCount]]!;
+              ownPokemonState.holdingItem = pokeData.items[extraArg1]!;
             } else {
               ownPokemonState.holdingItem = null;
             }
             opponentPokemonState.holdingItem = ownItem;
             break;
           case 179: // 相手と同じとくせいになる
-            if (extraArg1[continuousCount] != 0) {
-              myState.setCurrentAbility(
-                  pokeData.abilities[extraArg1[continuousCount]]!,
-                  yourState,
-                  playerType == PlayerType.me,
-                  state);
+            if (extraArg1 != 0) {
+              myState.setCurrentAbility(pokeData.abilities[extraArg1]!,
+                  yourState, playerType == PlayerType.me, state);
             }
             break;
           case 180: // 使用者の場に「ねがいごと」を発生させる
@@ -1956,8 +1983,8 @@ class TurnEffectAction extends TurnEffect {
           case 184: // 使用者に使われた変化技を相手に跳ね返す(SV使用不可のため処理なし)
             break;
           case 185: // 戦闘中自分が最後に使用したもちものを復活させる
-            if (extraArg1[continuousCount] != 0) {
-              myState.holdingItem = pokeData.items[extraArg1[continuousCount]]!;
+            if (extraArg1 != 0) {
+              myState.holdingItem = pokeData.items[extraArg1]!;
             }
             break;
           case 186: // このターンに、対象からダメージを受けていた場合は威力2倍
@@ -1978,29 +2005,28 @@ class TurnEffectAction extends TurnEffect {
                 targetState.getHoldingItem()?.id == 0) {
               ret.add(Guide()
                 ..guideId = Guide.confItem
-                ..args = [extraArg1[continuousCount]]
+                ..args = [extraArg1]
                 ..guideStr = loc.battleGuideConfItem1(
-                    pokeData.items[extraArg1[continuousCount]]!.displayName,
+                    pokeData.items[extraArg1]!.displayName,
                     opponentPokemonState.pokemon.omittedName));
-              if (extraArg1[continuousCount] != 0) {
-                targetState.holdingItem =
-                    pokeData.items[extraArg1[continuousCount]]!;
+              if (extraArg1 != 0) {
+                targetState.holdingItem = pokeData.items[extraArg1]!;
               }
             }
             targetState.holdingItem = null;
-            movePower *= 2;
+            movePower[0] = movePower[0]! * 2;
             break;
           case 190: // 相手の残りHP-使用者の残りHP(負数なら失敗)分の固定ダメージを与える
             showDamageCalc = false;
             break;
           case 191: // 威力=150×使用者の残りHP/最大HP
             if (myPlayerType == PlayerType.me) {
-              movePower =
+              movePower[0] =
                   (150 * myState.remainHP / myState.pokemon.h.real).floor();
             } else {
-              movePower = (150 * myState.remainHPPercent / 100).floor();
+              movePower[0] = (150 * myState.remainHPPercent / 100).floor();
             }
-            if (movePower == 0) movePower = 1;
+            if (movePower[0] == 0) movePower[0] = 1;
             break;
           case 192: // 使用者ととくせいを入れ替える
             opponentPokemonState.setCurrentAbility(
@@ -2008,12 +2034,9 @@ class TurnEffectAction extends TurnEffect {
                 ownPokemonState,
                 false,
                 state);
-            if (extraArg1[continuousCount] != 0) {
-              ownPokemonState.setCurrentAbility(
-                  pokeData.abilities[extraArg1[continuousCount]]!,
-                  opponentPokemonState,
-                  true,
-                  state);
+            if (extraArg1 != 0) {
+              ownPokemonState.setCurrentAbility(pokeData.abilities[extraArg1]!,
+                  opponentPokemonState, true, state);
             }
             break;
           case 193: // 使用者をふういん状態にする
@@ -2043,17 +2066,17 @@ class TurnEffectAction extends TurnEffect {
               weight = (weight / 2).floor();
             }
             if (weight <= 99) {
-              movePower = 20;
+              movePower[0] = 20;
             } else if (weight <= 249) {
-              movePower = 40;
+              movePower[0] = 40;
             } else if (weight <= 499) {
-              movePower = 60;
+              movePower[0] = 60;
             } else if (weight <= 999) {
-              movePower = 80;
+              movePower[0] = 80;
             } else if (weight <= 1999) {
-              movePower = 100;
+              movePower[0] = 100;
             } else {
-              movePower = 120;
+              movePower[0] = 120;
             }
             break;
           case 198: // 地形に応じた追加効果を与える(SV使用不可のため処理なし)
@@ -2068,19 +2091,19 @@ class TurnEffectAction extends TurnEffect {
           case 204: // 天気が変わっていると威力2倍、タイプも変わる
             switch (state.weather.id) {
               case Weather.sunny:
-                movePower *= 2;
+                movePower[0] = movePower[0]! * 2;
                 moveType = PokeType.fire;
                 break;
               case Weather.rainy:
-                movePower *= 2;
+                movePower[0] = movePower[0]! * 2;
                 moveType = PokeType.water;
                 break;
               case Weather.snowy:
-                movePower *= 2;
+                movePower[0] = movePower[0]! * 2;
                 moveType = PokeType.ice;
                 break;
               case Weather.sandStorm:
-                movePower *= 2;
+                movePower[0] = movePower[0]! * 2;
                 moveType = PokeType.rock;
                 break;
               default:
@@ -2137,8 +2160,8 @@ class TurnEffectAction extends TurnEffect {
           case 214: // 使用者のタイプを地形やフィールドに応じて変える(SV使用不可のため処理なし)
             break;
           case 215: // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             int lostFly = 0;
             if (!myState.isTerastaling && myState.type1 == PokeType.fly) {
               if (myState.type2 == null) {
@@ -2178,7 +2201,7 @@ class TurnEffectAction extends TurnEffect {
             int findIdx =
                 targetState.ailmentsIndexWhere((e) => e.id == Ailment.sleep);
             if (findIdx >= 0) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
               targetState.ailmentsRemoveAt(findIdx);
             }
             break;
@@ -2199,10 +2222,10 @@ class TurnEffectAction extends TurnEffect {
             if (targetPlayerType == PlayerType.me &&
                 targetState.remainHP <=
                     (targetState.pokemon.h.real / 2).floor()) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             } else if (targetPlayerType == PlayerType.opponent &&
                 targetState.remainHPPercent <= 50) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 223: // 持っているきのみによってタイプと威力が変わる。きのみはなくなる(SV使用不可のため処理なし)
@@ -2210,8 +2233,8 @@ class TurnEffectAction extends TurnEffect {
           case 224: // まもる等の状態を解除してこうげきできる
             break;
           case 225: // 相手がきのみを持っている場合はその効果を使用者が受ける(きのみを消費)
-            if (extraArg1[continuousCount] != 0) {
-              Item usingItem = pokeData.items[extraArg1[continuousCount]]!;
+            if (extraArg1 != 0) {
+              Item usingItem = pokeData.items[extraArg1]!;
               Item? mySavingItem = myState.holdingItem;
               targetState.holdingItem = null;
               final itemEffect = TurnEffectItem(
@@ -2219,7 +2242,7 @@ class TurnEffectAction extends TurnEffect {
                   timing: Timing.action,
                   itemID: usingItem.id);
               itemEffect.processEffect(ownParty, ownState, opponentParty,
-                  opponentState, state, prevAction, continuousCount,
+                  opponentState, state, prevAction,
                   loc: loc, autoConsume: false);
               myState.holdingItem = mySavingItem;
             }
@@ -2232,8 +2255,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 227: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・めいちゅう・かいひのうちランダムにいずれかを2段階上げる(確率)
-            myState.addStatChanges(
-                true, extraArg1[continuousCount], 2, targetState,
+            myState.addStatChanges(true, extraArg1, 2, targetState,
                 moveId: replacedMove.id);
             break;
           case 228: // そのターンで最後に相手から受けたこうげきわざのダメージを1.5倍にして返す
@@ -2255,15 +2277,15 @@ class TurnEffectAction extends TurnEffect {
             targetState.ailmentsAdd(Ailment(Ailment.embargo), state);
             break;
           case 234: // 使用者のもちものによって威力と追加効果が変わる
-            if (extraArg1[continuousCount] != 0) {
-              var flingItem = pokeData.items[extraArg1[continuousCount]]!;
-              movePower = flingItem.flingPower;
+            if (extraArg1 != 0) {
+              var flingItem = pokeData.items[extraArg1]!;
+              movePower[0] = flingItem.flingPower;
               flingItem.processFlingEffect(
                 playerType,
                 myState,
                 yourState,
                 state,
-                extraArg2[continuousCount],
+                extraArg2,
                 0,
                 getChangePokemonIndex(myPlayerType),
                 loc: loc,
@@ -2291,11 +2313,11 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 238: // 相手の残りHPが多いほど威力が高くなる(120×相手の残りHP/相手の最大HP)
             if (targetPlayerType == PlayerType.me) {
-              movePower =
+              movePower[0] =
                   (120 * targetState.remainHP / targetState.pokemon.h.real)
                       .floor();
             } else {
-              movePower = (120 * targetState.remainHPPercent / 100).floor();
+              movePower[0] = (120 * targetState.remainHPPercent / 100).floor();
             }
             break;
           case 239: // 使用者をパワートリック状態にする
@@ -2329,10 +2351,10 @@ class TurnEffectAction extends TurnEffect {
           case 246: // 相手がランク変化で強くなっているほど威力があがる(max200)
             for (int i = 0; i < 7; i++) {
               if (targetState.statChanges(i) > 0) {
-                movePower += 20 * targetState.statChanges(i);
+                movePower[0] = movePower[0]! + 20 * targetState.statChanges(i);
               }
             }
-            if (movePower > 200) movePower = 200;
+            if (movePower[0]! > 200) movePower[0] = 200;
             break;
           case 247: // 他に覚えているわざをそれぞれ1回以上使っていないと失敗
             break;
@@ -2370,13 +2392,13 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 254: // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             if (myPlayerType == PlayerType.me) {
-              myState.remainHP -= extraArg2[continuousCount];
+              myState.remainHP -= extraArg2;
             } else {
-              myState.remainHPPercent -= extraArg2[continuousCount];
+              myState.remainHPPercent -= extraArg2;
             }
             break;
           case 256: // 使用者はダイビング状態になり、次のターンにこうげきする
@@ -2480,13 +2502,13 @@ class TurnEffectAction extends TurnEffect {
                 .isNotEmpty) mTwice = true;
             break;
           case 263: // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             }
             if (myPlayerType == PlayerType.me) {
-              myState.remainHP -= extraArg2[continuousCount];
+              myState.remainHP -= extraArg2;
             } else {
-              myState.remainHPPercent -= extraArg2[continuousCount];
+              myState.remainHPPercent -= extraArg2;
             }
             break;
           case 264: // 使用者はそらをとぶ状態になり、次のターンにこうげきする。相手をまひ状態にする(確率)
@@ -2501,7 +2523,7 @@ class TurnEffectAction extends TurnEffect {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
-                if (extraArg1[continuousCount] != 0) {
+                if (extraArg1 != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
               }
@@ -2606,26 +2628,26 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 274: // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
-            if (extraArg2[continuousCount] != 0) {
+            if (extraArg2 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 275: // 相手をこおり状態にする(確率)。相手をひるませる(確率)。
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.freeze), state);
             }
-            if (extraArg2[continuousCount] != 0) {
+            if (extraArg2 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
           case 276: // 相手をまひ状態にする(確率)。相手をひるませる(確率)。
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
             }
-            if (extraArg2[continuousCount] != 0) {
+            if (extraArg2 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
@@ -2702,7 +2724,7 @@ class TurnEffectAction extends TurnEffect {
                 .ailmentsWhere(
                     (e) => e.id == Ailment.poison || e.id == Ailment.badPoison)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 285: // 使用者のすばやさを2段階上げる。おもさが100kg軽くなる(SV使用不可のため処理なし)
@@ -2759,15 +2781,15 @@ class TurnEffectAction extends TurnEffect {
               }
               int targetWeight = targetState.weight;
               if (targetWeight <= myWeight / 5) {
-                movePower = 120;
+                movePower[0] = 120;
               } else if (targetWeight <= myWeight / 4) {
-                movePower = 100;
+                movePower[0] = 100;
               } else if (targetWeight <= myWeight / 3) {
-                movePower = 80;
+                movePower[0] = 80;
               } else if (targetWeight <= myWeight / 2) {
-                movePower = 60;
+                movePower[0] = 60;
               } else {
-                movePower = 40;
+                movePower[0] = 40;
               }
               if (targetState
                   .ailmentsWhere((e) => e.id == Ailment.minimize)
@@ -2798,12 +2820,9 @@ class TurnEffectAction extends TurnEffect {
                 targetPlayerType == PlayerType.me, state);
             break;
           case 300: // 相手のとくせいを使用者のとくせいと同じにする
-            if (extraArg1[continuousCount] != 0) {
-              targetState.setCurrentAbility(
-                  pokeData.abilities[extraArg1[continuousCount]]!,
-                  myState,
-                  targetPlayerType == PlayerType.me,
-                  state);
+            if (extraArg1 != 0) {
+              targetState.setCurrentAbility(pokeData.abilities[extraArg1]!,
+                  myState, targetPlayerType == PlayerType.me, state);
             }
             break;
           case 301: // 選択対象の行動順を、このわざの直後に変更する
@@ -2824,7 +2843,7 @@ class TurnEffectAction extends TurnEffect {
             for (int i = 0; i < 7; i++) {
               if (myState.statChanges(i) > 0) plus += myState.statChanges(i);
             }
-            movePower += plus * 20;
+            movePower[0] = movePower[0]! + plus * 20;
             break;
           case 308: // 位置を入れ替える(代わりにわざを受けたりできる)
             break;
@@ -2855,7 +2874,7 @@ class TurnEffectAction extends TurnEffect {
             if (targetState
                 .ailmentsWhere((e) => e.id <= Ailment.sleep)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 312: // 1ターン目で相手を空に連れ去り(両者はそらをとぶ状態)、2ターン目にこうげき。連れ去っている間は相手は行動できない。ひこうタイプにはダメージがない(SV使用不可のため処理なし)
@@ -2885,7 +2904,7 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 318: // 使用者がもちものを持っていない場合威力2倍
             if (myState.holdingItem == null) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 319: // 相手と同じタイプになる
@@ -2932,9 +2951,8 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 324: // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
-            if (extraArg1[continuousCount] != 0) {
-              targetState.holdingItem =
-                  pokeData.items[extraArg1[continuousCount]]!;
+            if (extraArg1 != 0) {
+              targetState.holdingItem = pokeData.items[extraArg1]!;
               myState.holdingItem = null;
             }
             break;
@@ -2953,7 +2971,7 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 330: // ねむり状態にする(確率)。メロエッタのフォルムが変わる
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.sleep), state);
             }
             final findIdx = myState.buffDebuffs.list.indexWhere((element) => [
@@ -3017,7 +3035,7 @@ class TurnEffectAction extends TurnEffect {
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
-                if (extraArg1[continuousCount] != 0) {
+                if (extraArg1 != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.paralysis), state);
                 }
               }
@@ -3033,7 +3051,7 @@ class TurnEffectAction extends TurnEffect {
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
-                if (extraArg1[continuousCount] != 0) {
+                if (extraArg1 != 0) {
                   targetState.ailmentsAdd(Ailment(Ailment.burn), state);
                 }
               }
@@ -3071,11 +3089,9 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 342: // このわざで相手を倒すと使用者のこうげきが3段階上がる
             if ((targetPlayerType == PlayerType.me &&
-                    targetState.remainHP - realDamage[continuousCount] <= 0) ||
+                    targetState.remainHP - realDamage <= 0) ||
                 (targetPlayerType == PlayerType.opponent &&
-                    targetState.remainHPPercent -
-                            percentDamage[continuousCount] <=
-                        0)) {
+                    targetState.remainHPPercent - percentDamage <= 0)) {
               myState.addStatChanges(true, 0, 3, targetState,
                   moveId: replacedMove.id);
             }
@@ -3254,11 +3270,11 @@ class TurnEffectAction extends TurnEffect {
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
             break;
           case 388: // 相手のこうげきを1段階下げ、下げる前のこうげき実数値と同じ値だけ使用者のHPを回復する
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             // 相手こうげき確定
             if (myPlayerType == PlayerType.me) {
-              int drain = extraArg1[continuousCount].abs();
+              int drain = extraArg1.abs();
               if (myState.remainHP < myState.pokemon.h.real && drain > 0) {
                 if (myState.holdingItem?.id == 273) {
                   // おおきなねっこ
@@ -3437,13 +3453,11 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 424: // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               final itemEffect = TurnEffectItem(
-                  player: playerType,
-                  timing: Timing.action,
-                  itemID: extraArg1[continuousCount]);
+                  player: playerType, timing: Timing.action, itemID: extraArg1);
               itemEffect.processEffect(ownParty, ownState, opponentParty,
-                  opponentState, state, prevAction, continuousCount,
+                  opponentState, state, prevAction,
                   loc: loc);
               myState.holdingItem = null;
               myState.addStatChanges(true, 1, 2, targetState,
@@ -3567,8 +3581,8 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             myState.addStatChanges(true, 4, 1, targetState,
                 moveId: replacedMove.id);
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             break;
           case 434: // こうげきの代わりにぼうぎょの数値とランク補正を使ってダメージを計算する
             defenseAltAttack = true;
@@ -3595,12 +3609,10 @@ class TurnEffectAction extends TurnEffect {
                 Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 443: // 2～5回連続でこうげきする。使用者のぼうぎょが1段階下がり、すばやさが1段階上がる
-            if (continuousCount == 0) {
-              myState.addStatChanges(true, 1, -1, targetState,
-                  moveId: replacedMove.id);
-              myState.addStatChanges(true, 4, 1, targetState,
-                  moveId: replacedMove.id);
-            }
+            myState.addStatChanges(true, 1, -1, targetState,
+                moveId: replacedMove.id);
+            myState.addStatChanges(true, 4, 1, targetState,
+                moveId: replacedMove.id);
             break;
           case 444: // テラスタルしている場合はわざのタイプがテラスタイプに変わる。
             // ランク補正込みのステータスがこうげき>とくこうなら物理技になる
@@ -3610,7 +3622,7 @@ class TurnEffectAction extends TurnEffect {
             }
             if (myState.teraType1 == PokeType.stellar) {
               // ステラタイプの場合
-              movePower = 100;
+              movePower[0] = 100;
               myState.addStatChanges(true, 0, -1, targetState,
                   moveId: replacedMove.id);
               myState.addStatChanges(true, 2, -1, targetState,
@@ -3635,7 +3647,7 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 445: // ひんし状態のポケモンを最大HPの1/2を回復して復活させる
             {
-              int targetIdx = extraArg1[continuousCount];
+              int targetIdx = extraArg1;
               if (targetIdx != 0) {
                 var target =
                     state.getPokemonStates(myPlayerType)[targetIdx - 1];
@@ -3651,7 +3663,7 @@ class TurnEffectAction extends TurnEffect {
           case 446: // サイコフィールドの効果を受けているとき威力1.5倍・相手全体へのこうげきになる
             if (state.field.id == Field.psychicTerrain &&
                 myState.isGround(state.getIndiFields(myPlayerType))) {
-              movePower = (movePower * 1.5).floor();
+              movePower[0] = (movePower[0]! * 1.5).floor();
             }
             break;
           case 447: // 場にフィールドが発生しているときのみ成功し、フィールドを解除する
@@ -3689,14 +3701,14 @@ class TurnEffectAction extends TurnEffect {
             } else {
               showDamageCalc = false;
             }
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 450: // 使用者はひんしになる。ミストフィールドの効果を受けているとき威力1.5倍
             if (state.field.id == Field.mistyTerrain &&
                 myState.isGround(state.getIndiFields(myPlayerType))) {
-              movePower = (movePower * 1.5).floor();
+              movePower[0] = (movePower[0]! * 1.5).floor();
             }
             myState.remainHP = 0;
             myState.remainHPPercent = 0;
@@ -3707,7 +3719,7 @@ class TurnEffectAction extends TurnEffect {
           case 452: // 対象がエレキフィールドの効果を受けているとき威力2倍
             if (state.field.id == Field.electricTerrain &&
                 targetState.isGround(state.getIndiFields(targetPlayerType))) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 453: // フィールドの効果を受けているとき威力2倍・わざのタイプが変わる
@@ -3715,19 +3727,19 @@ class TurnEffectAction extends TurnEffect {
               switch (state.field.id) {
                 case Field.electricTerrain:
                   moveType = PokeType.electric;
-                  movePower *= 2;
+                  movePower[0] = movePower[0]! * 2;
                   break;
                 case Field.grassyTerrain:
                   moveType = PokeType.grass;
-                  movePower *= 2;
+                  movePower[0] = movePower[0]! * 2;
                   break;
                 case Field.mistyTerrain:
                   moveType = PokeType.fairy;
-                  movePower *= 2;
+                  movePower[0] = movePower[0]! * 2;
                   break;
                 case Field.psychicTerrain:
                   moveType = PokeType.psychic;
-                  movePower *= 2;
+                  movePower[0] = movePower[0]! * 2;
                   break;
               }
             }
@@ -3738,22 +3750,21 @@ class TurnEffectAction extends TurnEffect {
           case 455: // このターンに使用者の能力が下がっていた場合、威力2倍
             if (myState.hiddenBuffs
                 .containsByID(BuffDebuff.thisTurnDownStatChange)) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
             break;
           case 456: // 対象にもちものがあるときのみ成功
             // もちもの確定のため、一度持たせる
             if (targetPlayerType == PlayerType.opponent &&
                 targetState.getHoldingItem()!.id == 0) {
-              if (extraArg1[continuousCount] != 0) {
+              if (extraArg1 != 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
-                  ..args = [extraArg1[continuousCount]]
+                  ..args = [extraArg1]
                   ..guideStr = loc.battleGuideConfItem2(
-                      pokeData.items[extraArg1[continuousCount]]!.displayName,
+                      pokeData.items[extraArg1]!.displayName,
                       opponentPokemonState.pokemon.omittedName));
-                targetState.holdingItem =
-                    pokeData.items[extraArg1[continuousCount]]!;
+                targetState.holdingItem = pokeData.items[extraArg1]!;
               }
             }
             break;
@@ -3761,15 +3772,14 @@ class TurnEffectAction extends TurnEffect {
             // もちもの確定のため、一度持たせる
             if (targetPlayerType == PlayerType.opponent &&
                 targetState.getHoldingItem()?.id == 0) {
-              if (extraArg1[continuousCount] != 0) {
+              if (extraArg1 != 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem
-                  ..args = [extraArg1[continuousCount]]
+                  ..args = [extraArg1]
                   ..guideStr = loc.battleGuideConfItem1(
-                      pokeData.items[extraArg1[continuousCount]]!.displayName,
+                      pokeData.items[extraArg1]!.displayName,
                       opponentPokemonState.pokemon.omittedName));
-                targetState.holdingItem =
-                    pokeData.items[extraArg1[continuousCount]]!;
+                targetState.holdingItem = pokeData.items[extraArg1]!;
               }
             }
             targetState.holdingItem = null;
@@ -3777,18 +3787,19 @@ class TurnEffectAction extends TurnEffect {
           case 458: // 自分以外の味方全員のこうげきとぼうぎょを1段階ずつ上げる
             break;
           case 459: // 3回連続でこうげきする。こうげきのたびに威力が20ずつ上がる
-            movePower += continuousCount * 20;
+            movePower[1] = movePower[0]! + 20;
+            movePower[2] = movePower[0]! + 40;
             break;
           case 460: // やけど状態にする(確率)。使用者、対象ともにこおりを治す
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
           case 461: // 最大HP1/4回復、状態異常を治す
-            targetState.remainHP -= extraArg1[continuousCount];
-            targetState.remainHPPercent -= extraArg2[continuousCount];
+            targetState.remainHP -= extraArg1;
+            targetState.remainHPPercent -= extraArg2;
             targetState.ailmentsRemoveWhere((e) => e.id <= Ailment.sleep);
             break;
           case 462: // 3回連続でこうげきする。かならず急所に当たる
@@ -3803,9 +3814,8 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 464: // どく・まひ・ねむりのいずれかにする(確率)
-            if (extraArg1[continuousCount] != 0) {
-              targetState.ailmentsAdd(
-                  Ailment(extraArg1[continuousCount]), state);
+            if (extraArg1 != 0) {
+              targetState.ailmentsAdd(Ailment(extraArg1), state);
             }
             break;
           case 465: // 使用者のこうげき・ぼうぎょ・すばやさを1段階ずつ上げる
@@ -3821,20 +3831,20 @@ class TurnEffectAction extends TurnEffect {
                 .ailmentsWhere(
                     (e) => e.id == Ailment.poison || e.id == Ailment.badPoison)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 468: // 相手のぼうぎょを1段階下げる(確率)。相手をひるませる(確率)。急所に当たりやすい
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.addStatChanges(targetState == myState, 1, 1, myState,
                   myFields: yourFields,
                   yourFields: myFields,
                   moveId: replacedMove.id);
             }
-            if (extraArg2[continuousCount] != 0) {
+            if (extraArg2 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.flinch), state);
             }
             break;
@@ -3842,9 +3852,9 @@ class TurnEffectAction extends TurnEffect {
             if (targetState
                 .ailmentsWhere((e) => e.id <= Ailment.sleep)
                 .isNotEmpty) {
-              movePower *= 2;
+              movePower[0] = movePower[0]! * 2;
             }
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             break;
@@ -3860,18 +3870,18 @@ class TurnEffectAction extends TurnEffect {
                 Ailment(Ailment.protect)..extraArg1 = replacedMove.id, state);
             break;
           case 475: // こんらんさせる(確率)。わざを外すと使用者に、使用者の最大HP1/2のダメージ
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             }
             if (myPlayerType == PlayerType.me) {
-              myState.remainHP -= extraArg2[continuousCount];
+              myState.remainHP -= extraArg2;
             } else {
-              myState.remainHPPercent -= extraArg2[continuousCount];
+              myState.remainHPPercent -= extraArg2;
             }
             break;
           case 476: // その戦闘で味方がひんしになるたび、威力が50ずつ上がる
             int faintingNum = state.getFaintingCount(playerType);
-            movePower += (faintingNum) * 50;
+            movePower[0] = movePower[0]! + (faintingNum) * 50;
             break;
           case 477: // ヘイラッシャがシャリタツを飲み込んでいた場合、使用者の能力を上げる
             break;
@@ -3914,13 +3924,13 @@ class TurnEffectAction extends TurnEffect {
                 e.id == IndividualField.toxicSpikes ||
                 e.id == IndividualField.stealthRock ||
                 e.id == IndividualField.stickyWeb);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.poison), state);
             }
             break;
           case 485: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してこうげき・とくこう・すばやさを1段階ずつ上げる
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             myState.addStatChanges(true, 0, 1, targetState,
                 moveId: replacedMove.id);
             myState.addStatChanges(true, 2, 1, targetState,
@@ -3953,7 +3963,7 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 489: // 場がエレキフィールドのとき威力1.5倍
             if (state.field.id == Field.electricTerrain) {
-              movePower = (movePower * 1.5).floor();
+              movePower[0] = (movePower[0]! * 1.5).floor();
             }
             break;
           case 490: // はれによるダメージ補正率が0.5倍→1.5倍。使用者・対象のこおり状態を治す
@@ -3974,12 +3984,12 @@ class TurnEffectAction extends TurnEffect {
                     moveType,
                     targetState) ==
                 MoveEffectiveness.great) {
-              movePower = (movePower / 3 * 4).floor();
+              movePower[0] = (movePower[0]! / 3 * 4).floor();
             }
             break;
           case 492: // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
-            myState.remainHP -= extraArg1[continuousCount];
-            myState.remainHPPercent -= extraArg2[continuousCount];
+            myState.remainHP -= extraArg1;
+            myState.remainHPPercent -= extraArg2;
             if (getChangePokemonIndex(myPlayerType) != null) {
               myState.processExitEffect(yourState, state);
               PokemonState newState;
@@ -4033,7 +4043,7 @@ class TurnEffectAction extends TurnEffect {
               final founds =
                   myState.hiddenBuffs.whereByID(BuffDebuff.attackedCount);
               if (founds.isNotEmpty) {
-                movePower += founds.first.extraArg1 * 50;
+                movePower[0] = movePower[0]! + founds.first.extraArg1 * 50;
               }
             }
             break;
@@ -4054,13 +4064,13 @@ class TurnEffectAction extends TurnEffect {
           case 500: // 与えたダメージの半分だけ回復する。両者のこおり状態を消す。相手をやけど状態にする(確率)
             myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
             targetState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-            if (extraArg1[continuousCount] != 0) {
+            if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.burn), state);
             }
             if (myPlayerType == PlayerType.me) {
-              myState.remainHP -= extraArg2[continuousCount];
+              myState.remainHP -= extraArg2;
             } else {
-              myState.remainHPPercent -= extraArg2[continuousCount];
+              myState.remainHPPercent -= extraArg2;
             }
             break;
           case 501: // あめまみれ状態にする
@@ -4113,7 +4123,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 505: // 威力が2倍になる(確率)
-            movePower *= 2;
+            movePower[0] = movePower[0]! * 2;
             break;
           case 506: // そのターンに受けるこうげきわざを無効化し、直接攻撃わざを使用した相手をやけど状態にする
             myState.ailmentsAdd(
@@ -4123,11 +4133,11 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 508: // 相手の残りHPが多いほど威力が高くなる(100×相手の残りHP/相手の最大HP)
             if (targetPlayerType == PlayerType.me) {
-              movePower =
+              movePower[0] =
                   (100 * targetState.remainHP / targetState.pokemon.h.real)
                       .floor();
             } else {
-              movePower = (100 * targetState.remainHPPercent / 100).floor();
+              movePower[0] = (100 * targetState.remainHPPercent / 100).floor();
             }
             break;
           case 509: // 使用者以外の味方全員をきゅうしょアップ状態にする(ドラゴンタイプは+2,それ以外は+1)
@@ -4161,8 +4171,7 @@ class TurnEffectAction extends TurnEffect {
         }
 
         // わざの相性をここで変えちゃう
-        moveEffectivenesses[continuousCount] =
-            PokeTypeEffectiveness.effectiveness(
+        moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
           myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
           yourState.holdingItem?.id == 586,
           yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
@@ -4180,7 +4189,6 @@ class TurnEffectAction extends TurnEffect {
           myState,
           targetStates[0],
           state,
-          continuousCount,
           playerType,
           replacedMove,
           moveType,
@@ -4248,8 +4256,8 @@ class TurnEffectAction extends TurnEffect {
                       .containsByID(BuffDebuff.substitute) ||
                   replacedMove.isSound ||
                   myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall)) {
-                targetState.remainHP -= realDamage[continuousCount];
-                targetState.remainHPPercent -= percentDamage[continuousCount];
+                targetState.remainHP -= realDamage;
+                targetState.remainHPPercent -= percentDamage;
                 // こうげきを受けた数をカウント
                 final findIdx = targetState.hiddenBuffs.list.indexWhere(
                     (element) => element.id == BuffDebuff.attackedCount);
@@ -4261,14 +4269,13 @@ class TurnEffectAction extends TurnEffect {
                 }
                 // あいてポケモンのステータス確定
                 if (playerType == PlayerType.opponent &&
-                    realDamage[continuousCount] > 0 &&
+                    realDamage > 0 &&
                     targetState.remainHP > 0) {
                   var reals = calcRealFromDamage(
-                    realDamage[continuousCount],
+                    realDamage,
                     myState,
                     targetStates[0],
                     state,
-                    continuousCount,
                     playerType,
                     replacedMove,
                     moveType,
@@ -4322,7 +4329,7 @@ class TurnEffectAction extends TurnEffect {
                   }
                 }
               } else {
-                if (realDamage[continuousCount] > 0) {
+                if (realDamage > 0) {
                   targetState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
                 }
               }
@@ -4375,6 +4382,8 @@ class TurnEffectAction extends TurnEffect {
     // 最後に使用した(PP消費した)わざセット
     myState.lastMove = move;
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return ret;
   }
 
@@ -4383,7 +4392,6 @@ class TurnEffectAction extends TurnEffect {
   /// myState: 自身のポケモンの状態
   /// yourState: 相手のポケモンの状態
   /// state: フェーズの状態
-  /// continuousCount: 連続わざのインデックス
   /// myPlayerType: 自身のタイプ(ユーザーか対戦相手か)
   /// move: 使用するわざ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
   /// replacedMoveType: 使用するわざのタイプ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
@@ -4411,11 +4419,10 @@ class TurnEffectAction extends TurnEffect {
     PokemonState myState,
     PokemonState yourState,
     PhaseState state,
-    int continuousCount,
     PlayerType myPlayerType,
     Move move,
     PokeType replacedMoveType,
-    int power,
+    Map<int, int> power,
     int damageClassID,
     PokemonState beforeChangeMyState,
     bool isNormalized1_2,
@@ -4431,530 +4438,533 @@ class TurnEffectAction extends TurnEffect {
     double halvedBerry, {
     required AppLocalizations loc,
   }) {
-    int movePower = power;
     Move replacedMove = move;
     var myFields = state.getIndiFields(myPlayerType);
     var yourFields = state.getIndiFields(myPlayerType.opposite);
     String ret = '';
     bool isTeraStellarHosei = false;
+    int maxDamage = 0;
+    int minDamage = 0;
 
-    // じゅうでん補正&消費
-    int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
-    if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
-      movePower *= 2;
-      myState.ailmentsRemoveAt(findIdx);
-    }
+    // 連続わざのヒット回数分ループ
+    for (int i = 0; i < hitCount; i++) {
+      int movePower = power[i]!;
+      // じゅうでん補正&消費
+      int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
+      if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
+        movePower *= 2;
+        myState.ailmentsRemoveAt(findIdx);
+      }
 
-    if (getChangePokemonIndex(myPlayerType) != null) {
-      myState = beforeChangeMyState;
-    }
+      if (getChangePokemonIndex(myPlayerType) != null) {
+        myState = beforeChangeMyState;
+      }
 
-    // とくせい等によるわざタイプの変更
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
-      replacedMoveType = PokeType.ice;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
-      replacedMoveType = PokeType.fairy;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
-      replacedMoveType = PokeType.fly;
-    }
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
-      replacedMoveType = PokeType.water;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-      replacedMoveType = PokeType.electric;
-    }
-    if (replacedMove.id != 165 &&
-        replacedMoveType == PokeType.normal &&
-        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
-      replacedMoveType = PokeType.electric;
-    }
+      // とくせい等によるわざタイプの変更
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
+        replacedMoveType = PokeType.ice;
+      }
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
+        replacedMoveType = PokeType.fairy;
+      }
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
+        replacedMoveType = PokeType.fly;
+      }
+      if (replacedMove.isSound &&
+          myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
+        replacedMoveType = PokeType.water;
+      }
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+        replacedMoveType = PokeType.electric;
+      }
+      if (replacedMove.id != 165 &&
+          replacedMoveType == PokeType.normal &&
+          myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
+        replacedMoveType = PokeType.electric;
+      }
 
-    // とくせい等による威力変動
-    double tmpPow = movePower.toDouble();
-    // テクニシャン補正は一番最初
-    if (replacedMove.power <= 60 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.technician)) {
-      tmpPow *= 1.5;
-    }
-    if (isNormalized1_2) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
-    if (myState.sex.id != 0 &&
-        yourState.sex.id != 0 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
-      if (myState.sex.id != yourState.sex.id) {
-        tmpPow *= 1.25;
-      } else {
+      // とくせい等による威力変動
+      double tmpPow = movePower.toDouble();
+      // テクニシャン補正は一番最初
+      if (replacedMove.power <= 60 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.technician)) {
+        tmpPow *= 1.5;
+      }
+      if (isNormalized1_2) tmpPow *= 1.2;
+      if (replacedMoveType == PokeType.grass &&
+          myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
+      if (replacedMoveType == PokeType.fire &&
+          myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
+      if (replacedMoveType == PokeType.water &&
+          myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
+      if (replacedMoveType == PokeType.bug &&
+          myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
+      if (myState.sex.id != 0 &&
+          yourState.sex.id != 0 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
+        if (myState.sex.id != yourState.sex.id) {
+          tmpPow *= 1.25;
+        } else {
+          tmpPow *= 0.75;
+        }
+      }
+      if (replacedMove.isPunch &&
+          myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
+      if (replacedMove.isRecoil &&
+          myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
+      if (replacedMove.isAdditionalEffect2 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) {
+        tmpPow *= 1.3;
+      }
+      if (replacedMove.isWave &&
+          myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) {
+        tmpPow *= 1.5;
+      }
+      if (replacedMove.isDirect &&
+          !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+          myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
+        tmpPow *= 1.3;
+      }
+      if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
+          yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
+        tmpPow *= 2;
+      }
+      if (damageClassID == 2 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) {
+        tmpPow *= 1.5;
+      }
+      if (damageClassID == 3 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) {
+        tmpPow *= 1.5;
+      }
+      if (isFirst != null &&
+          !isFirst! &&
+          myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
+        tmpPow *= 1.3;
+      }
+      if ((replacedMoveType == PokeType.ground ||
+              replacedMoveType == PokeType.rock ||
+              replacedMoveType == PokeType.steel) &&
+          myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
+        tmpPow *= 1.3;
+      }
+      if (replacedMove.isBite &&
+          myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
+      if (replacedMoveType == PokeType.ice &&
+          myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.fairy &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
+      if (replacedMoveType == PokeType.fly &&
+          myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
+      if (replacedMoveType == PokeType.evil &&
+          myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
+      if (replacedMoveType == PokeType.fairy &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) {
+        tmpPow *= 1.33;
+      }
+      if (replacedMoveType == PokeType.evil &&
+          myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
         tmpPow *= 0.75;
       }
-    }
-    if (replacedMove.isPunch &&
-        myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
-    if (replacedMove.isRecoil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
-    if (replacedMove.isAdditionalEffect2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) tmpPow *= 1.3;
-    if (replacedMove.isWave &&
-        myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) {
-      tmpPow *= 1.5;
-    }
-    if (replacedMove.isDirect &&
-        !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-        myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
-        yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
-      tmpPow *= 2;
-    }
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
-    if (isFirst != null &&
-        !isFirst! &&
-        myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
-      tmpPow *= 1.3;
-    }
-    if ((replacedMoveType == PokeType.ground ||
-            replacedMoveType == PokeType.rock ||
-            replacedMoveType == PokeType.steel) &&
-        myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMove.isBite &&
-        myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
-      tmpPow *= 0.75;
-    }
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
-      tmpPow *= 0.75;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
-    if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
-    if (replacedMove.isCut &&
-        myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
-    final pow = myState.buffDebuffs.list
-        .where((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-    if (pow.isNotEmpty) {
-      tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
-    }
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) tmpPow *= 1.1;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) tmpPow *= 1.1;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fight &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.poison &&
-        myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ground &&
-        myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.rock &&
-        myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ghost &&
-        myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.psychic &&
-        myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.dragon &&
-        myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMove.isPunch &&
-        myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
-      tmpPow *= 1.1;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
+      if (replacedMoveType == PokeType.fairy &&
+          myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
+        tmpPow *= 0.75;
+      }
+      if (replacedMoveType == PokeType.electric &&
+          myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMove.isSound &&
+          myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
+      if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
+        tmpPow *= 1.3;
+      }
+      if (replacedMoveType == PokeType.steel &&
+          myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
+      if (replacedMove.isCut &&
+          myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
+      final pow = myState.buffDebuffs.list.where(
+          (e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
+      if (pow.isNotEmpty) {
+        tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
+      }
+      if (damageClassID == 2 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) {
+        tmpPow *= 1.1;
+      }
+      if (damageClassID == 3 &&
+          myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) {
+        tmpPow *= 1.1;
+      }
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
+        tmpPow *= 1.3;
+      }
+      if (replacedMoveType == PokeType.normal &&
+          myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.fight &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.fly &&
+          myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.poison &&
+          myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.ground &&
+          myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.rock &&
+          myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.bug &&
+          myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.ghost &&
+          myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.steel &&
+          myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.fire &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.water &&
+          myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.grass &&
+          myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.electric &&
+          myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.psychic &&
+          myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.ice &&
+          myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.dragon &&
+          myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.evil &&
+          myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMoveType == PokeType.fairy &&
+          myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
+        tmpPow *= 1.2;
+      }
+      if (replacedMove.isPunch &&
+          myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
+        tmpPow *= 1.1;
+      }
+      if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
 
-    if (replacedMoveType == PokeType.electric &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.grass &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.psychic &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.dragon &&
-        yourState.isGround(yourFields) &&
-        state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+      if (replacedMoveType == PokeType.electric &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.grass &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.psychic &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.dragon &&
+          yourState.isGround(yourFields) &&
+          state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
 
-    if (replacedMoveType == PokeType.fire &&
-        yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) tmpPow *= 1.25;
+      if (replacedMoveType == PokeType.fire &&
+          yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) {
+        tmpPow *= 1.25;
+      }
 
-    if (replacedMoveType == PokeType.fire &&
-        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
-      tmpPow = tmpPow * 1352 / 4096;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
-      tmpPow = tmpPow * 1352 / 4096;
-    }
+      if (replacedMoveType == PokeType.fire &&
+          myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
+        tmpPow = tmpPow * 1352 / 4096;
+      }
+      if (replacedMoveType == PokeType.electric &&
+          myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
+        tmpPow = tmpPow * 1352 / 4096;
+      }
 
-    movePower = tmpPow.floor();
-    // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
-    if (movePower < 60 &&
-        (myState.canGetStellarHosei(replacedMoveType) ||
-            myState.canGetTerastalHosei(replacedMoveType))) {
-      movePower = 60;
-    }
+      movePower = tmpPow.floor();
+      // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
+      if (movePower < 60 &&
+          (myState.canGetStellarHosei(replacedMoveType) ||
+              myState.canGetTerastalHosei(replacedMoveType))) {
+        movePower = 60;
+      }
 
-    // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
-    bool plusIgnore = yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-    bool minusIgnore =
-        isCritical || yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-    int calcMaxAttack =
-        myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? myState.finalizedMaxStat(
-                StatIndex.A, replacedMoveType, yourState, state,
-                plusCut: plusIgnore, minusCut: minusIgnore)
-            : myState.finalizedMaxStat(
-                StatIndex.B, replacedMoveType, yourState, state,
-                plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMinAttack =
-        myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? myState.finalizedMinStat(
-                StatIndex.A, replacedMoveType, yourState, state,
-                plusCut: plusIgnore, minusCut: minusIgnore)
-            : myState.finalizedMinStat(
-                StatIndex.B, replacedMoveType, yourState, state,
-                plusCut: plusIgnore, minusCut: minusIgnore);
-    if (isFoulPlay) {
-      calcMaxAttack =
-          yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-              ? yourState.finalizedMaxStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore)
-              : yourState.finalizedMaxStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore);
-      calcMinAttack =
-          yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-              ? yourState.finalizedMinStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore)
-              : yourState.finalizedMinStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore);
-    } else if (defenseAltAttack) {
-      calcMaxAttack =
+      // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
+      bool plusIgnore =
+          yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      bool minusIgnore = isCritical ||
+          yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      int calcMaxAttack =
           myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
               ? myState.finalizedMaxStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
+                  StatIndex.A, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore)
               : myState.finalizedMaxStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
+                  StatIndex.B, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore);
-      calcMinAttack =
+      int calcMinAttack =
           myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
               ? myState.finalizedMinStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
+                  StatIndex.A, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore)
               : myState.finalizedMinStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
+                  StatIndex.B, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore);
-    }
-    int attackVmax = damageClassID == 2
-        ? calcMaxAttack
-        : myState.finalizedMaxStat(
-            StatIndex.C, replacedMoveType, yourState, state,
-            plusCut: plusIgnore, minusCut: minusIgnore);
-    int attackVmin = damageClassID == 2
-        ? calcMinAttack
-        : myState.finalizedMinStat(
-            StatIndex.C, replacedMoveType, yourState, state,
-            plusCut: plusIgnore, minusCut: minusIgnore);
-    String attackStr = '';
-    if (attackVmax == attackVmin) {
-      attackStr = attackVmax.toString();
-    } else {
-      attackStr = '$attackVmin ~ $attackVmax';
-    }
-    if (isFoulPlay) {
-      attackStr += loc.battleDamageAttackerAttack;
-    } else {
-      attackStr += damageClassID == 2
-          ? loc.battleDamageAttackerAttack
-          : loc.battleDamageAttackerSAttack;
-    }
-    plusIgnore =
-        isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-    minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-    int calcMaxDefense =
-        yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? ignoreTargetRank
-                ? yourState.maxStats.b.real
+      if (isFoulPlay) {
+        calcMaxAttack =
+            yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+                ? yourState.finalizedMaxStat(
+                    StatIndex.A, replacedMoveType, yourState, state,
+                    plusCut: plusIgnore, minusCut: minusIgnore)
                 : yourState.finalizedMaxStat(
                     StatIndex.B, replacedMoveType, yourState, state,
-                    plusCut: plusIgnore, minusCut: minusIgnore)
-            : ignoreTargetRank
-                ? yourState.maxStats.a.real
-                : yourState.finalizedMaxStat(
-                    StatIndex.A, replacedMoveType, yourState, state,
                     plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMaxSDefense = ignoreTargetRank
-        ? yourState.maxStats.d.real
-        : yourState.finalizedMaxStat(
-            StatIndex.D, replacedMoveType, yourState, state,
-            plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMinDefense =
-        yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? ignoreTargetRank
-                ? yourState.minStats.b.real
+        calcMinAttack =
+            yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+                ? yourState.finalizedMinStat(
+                    StatIndex.A, replacedMoveType, yourState, state,
+                    plusCut: plusIgnore, minusCut: minusIgnore)
                 : yourState.finalizedMinStat(
                     StatIndex.B, replacedMoveType, yourState, state,
+                    plusCut: plusIgnore, minusCut: minusIgnore);
+      } else if (defenseAltAttack) {
+        calcMaxAttack =
+            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+                ? myState.finalizedMaxStat(
+                    StatIndex.B, replacedMoveType, yourState, state,
                     plusCut: plusIgnore, minusCut: minusIgnore)
-            : ignoreTargetRank
-                ? yourState.minStats.a.real
-                : yourState.finalizedMinStat(
+                : myState.finalizedMaxStat(
                     StatIndex.A, replacedMoveType, yourState, state,
                     plusCut: plusIgnore, minusCut: minusIgnore);
-    int calcMinSDefense = ignoreTargetRank
-        ? yourState.minStats.d.real
-        : yourState.finalizedMinStat(
-            StatIndex.D, replacedMoveType, yourState, state,
-            plusCut: plusIgnore, minusCut: minusIgnore);
-    int defenseVmax = damageClassID == 2
-        ? myFields
-                .where((element) => element.id == IndividualField.wonderRoom)
-                .isEmpty
-            ? // ワンダールーム
-            calcMaxDefense
-            : calcMaxSDefense
-        : myFields
-                .where((element) => element.id == IndividualField.wonderRoom)
-                .isEmpty
-            ? // ワンダールーム
-            invDeffense
-                ? calcMaxDefense
-                : calcMaxSDefense
-            : invDeffense
-                ? calcMaxSDefense
-                : calcMaxDefense;
-    int defenseVmin = damageClassID == 2
-        ? myFields
-                .where((element) => element.id == IndividualField.wonderRoom)
-                .isEmpty
-            ? // ワンダールーム
-            calcMinDefense
-            : calcMinSDefense
-        : myFields
-                .where((element) => element.id == IndividualField.wonderRoom)
-                .isEmpty
-            ? // ワンダールーム
-            invDeffense
-                ? calcMinDefense
-                : calcMinSDefense
-            : invDeffense
-                ? calcMinSDefense
-                : calcMinDefense;
-    String defenseStr = '';
-    if (defenseVmax == defenseVmin) {
-      defenseStr = defenseVmax.toString();
-    } else {
-      defenseStr = '$defenseVmin ~ $defenseVmax';
-    }
-    if (invDeffense) {
-      defenseStr += loc.battleDamageDefenderDefense;
-    } else {
-      defenseStr += damageClassID == 2
-          ? loc.battleDamageDefenderDefense
-          : loc.battleDamageDefenderSDefense;
-    }
-    int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() *
-                        movePower *
-                        (attackVmax / defenseVmin))
-                    .floor() /
-                50 +
-            2)
-        .floor();
-    int damageVmin = (((myState.pokemon.level * 2 / 5 + 2).floor() *
-                        movePower *
-                        (attackVmin / defenseVmax))
-                    .floor() /
-                50 +
-            2)
-        .floor();
-    ret = loc.battleDamageCalcBase(
-        myState.pokemon.level, movePower, attackStr, defenseStr);
-    // 天気補正(五捨五超入)
-    if (yourState.holdingItem?.id != 1181) {
-      // 相手がばんのうがさを持っていない
-      if (state.weather.id == Weather.sunny) {
-        if (replacedMoveType == PokeType.fire) {
-          // はれ下ほのおわざ
-          damageVmax = roundOff5(damageVmax * 1.5);
-          damageVmin = roundOff5(damageVmin * 1.5);
-          ret += loc.battleDamageWeather1_5;
-        } else if (replacedMoveType == PokeType.water) {
-          // はれ下みずわざ
-          if (isSunny1_5) {
+        calcMinAttack =
+            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+                ? myState.finalizedMinStat(
+                    StatIndex.B, replacedMoveType, yourState, state,
+                    plusCut: plusIgnore, minusCut: minusIgnore)
+                : myState.finalizedMinStat(
+                    StatIndex.A, replacedMoveType, yourState, state,
+                    plusCut: plusIgnore, minusCut: minusIgnore);
+      }
+      int attackVmax = damageClassID == 2
+          ? calcMaxAttack
+          : myState.finalizedMaxStat(
+              StatIndex.C, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
+      int attackVmin = damageClassID == 2
+          ? calcMinAttack
+          : myState.finalizedMinStat(
+              StatIndex.C, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
+      String attackStr = '';
+      if (attackVmax == attackVmin) {
+        attackStr = attackVmax.toString();
+      } else {
+        attackStr = '$attackVmin ~ $attackVmax';
+      }
+      if (isFoulPlay) {
+        attackStr += loc.battleDamageAttackerAttack;
+      } else {
+        attackStr += damageClassID == 2
+            ? loc.battleDamageAttackerAttack
+            : loc.battleDamageAttackerSAttack;
+      }
+      plusIgnore =
+          isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      int calcMaxDefense =
+          yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+              ? ignoreTargetRank
+                  ? yourState.maxStats.b.real
+                  : yourState.finalizedMaxStat(
+                      StatIndex.B, replacedMoveType, yourState, state,
+                      plusCut: plusIgnore, minusCut: minusIgnore)
+              : ignoreTargetRank
+                  ? yourState.maxStats.a.real
+                  : yourState.finalizedMaxStat(
+                      StatIndex.A, replacedMoveType, yourState, state,
+                      plusCut: plusIgnore, minusCut: minusIgnore);
+      int calcMaxSDefense = ignoreTargetRank
+          ? yourState.maxStats.d.real
+          : yourState.finalizedMaxStat(
+              StatIndex.D, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
+      int calcMinDefense =
+          yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+              ? ignoreTargetRank
+                  ? yourState.minStats.b.real
+                  : yourState.finalizedMinStat(
+                      StatIndex.B, replacedMoveType, yourState, state,
+                      plusCut: plusIgnore, minusCut: minusIgnore)
+              : ignoreTargetRank
+                  ? yourState.minStats.a.real
+                  : yourState.finalizedMinStat(
+                      StatIndex.A, replacedMoveType, yourState, state,
+                      plusCut: plusIgnore, minusCut: minusIgnore);
+      int calcMinSDefense = ignoreTargetRank
+          ? yourState.minStats.d.real
+          : yourState.finalizedMinStat(
+              StatIndex.D, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
+      int defenseVmax = damageClassID == 2
+          ? myFields
+                  .where((element) => element.id == IndividualField.wonderRoom)
+                  .isEmpty
+              ? // ワンダールーム
+              calcMaxDefense
+              : calcMaxSDefense
+          : myFields
+                  .where((element) => element.id == IndividualField.wonderRoom)
+                  .isEmpty
+              ? // ワンダールーム
+              invDeffense
+                  ? calcMaxDefense
+                  : calcMaxSDefense
+              : invDeffense
+                  ? calcMaxSDefense
+                  : calcMaxDefense;
+      int defenseVmin = damageClassID == 2
+          ? myFields
+                  .where((element) => element.id == IndividualField.wonderRoom)
+                  .isEmpty
+              ? // ワンダールーム
+              calcMinDefense
+              : calcMinSDefense
+          : myFields
+                  .where((element) => element.id == IndividualField.wonderRoom)
+                  .isEmpty
+              ? // ワンダールーム
+              invDeffense
+                  ? calcMinDefense
+                  : calcMinSDefense
+              : invDeffense
+                  ? calcMinSDefense
+                  : calcMinDefense;
+      String defenseStr = '';
+      if (defenseVmax == defenseVmin) {
+        defenseStr = defenseVmax.toString();
+      } else {
+        defenseStr = '$defenseVmin ~ $defenseVmax';
+      }
+      if (invDeffense) {
+        defenseStr += loc.battleDamageDefenderDefense;
+      } else {
+        defenseStr += damageClassID == 2
+            ? loc.battleDamageDefenderDefense
+            : loc.battleDamageDefenderSDefense;
+      }
+      int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() *
+                          movePower *
+                          (attackVmax / defenseVmin))
+                      .floor() /
+                  50 +
+              2)
+          .floor();
+      int damageVmin = (((myState.pokemon.level * 2 / 5 + 2).floor() *
+                          movePower *
+                          (attackVmin / defenseVmax))
+                      .floor() /
+                  50 +
+              2)
+          .floor();
+      ret = loc.battleDamageCalcBase(
+          myState.pokemon.level, movePower, attackStr, defenseStr);
+      // 天気補正(五捨五超入)
+      if (yourState.holdingItem?.id != 1181) {
+        // 相手がばんのうがさを持っていない
+        if (state.weather.id == Weather.sunny) {
+          if (replacedMoveType == PokeType.fire) {
+            // はれ下ほのおわざ
             damageVmax = roundOff5(damageVmax * 1.5);
             damageVmin = roundOff5(damageVmin * 1.5);
             ret += loc.battleDamageWeather1_5;
-          } else {
+          } else if (replacedMoveType == PokeType.water) {
+            // はれ下みずわざ
+            if (isSunny1_5) {
+              damageVmax = roundOff5(damageVmax * 1.5);
+              damageVmin = roundOff5(damageVmin * 1.5);
+              ret += loc.battleDamageWeather1_5;
+            } else {
+              damageVmax = roundOff5(damageVmax * 0.5);
+              damageVmin = roundOff5(damageVmin * 0.5);
+              ret += loc.battleDamageWeather0_5;
+            }
+          }
+        } else if (state.weather.id == Weather.rainy) {
+          if (replacedMoveType == PokeType.water) {
+            // 雨下みずわざ
+            damageVmax = roundOff5(damageVmax * 1.5);
+            damageVmin = roundOff5(damageVmin * 1.5);
+            ret += loc.battleDamageWeather1_5;
+          } else if (replacedMoveType == PokeType.fire) {
+            // 雨下ほのおわざ
             damageVmax = roundOff5(damageVmax * 0.5);
             damageVmin = roundOff5(damageVmin * 0.5);
             ret += loc.battleDamageWeather0_5;
           }
         }
-      } else if (state.weather.id == Weather.rainy) {
-        if (replacedMoveType == PokeType.water) {
-          // 雨下みずわざ
-          damageVmax = roundOff5(damageVmax * 1.5);
-          damageVmin = roundOff5(damageVmin * 1.5);
-          ret += loc.battleDamageWeather1_5;
-        } else if (replacedMoveType == PokeType.fire) {
-          // 雨下ほのおわざ
-          damageVmax = roundOff5(damageVmax * 0.5);
-          damageVmin = roundOff5(damageVmin * 0.5);
-          ret += loc.battleDamageWeather0_5;
-        }
       }
-    }
-    // 急所補正(五捨五超入)
-    // TODO
-    //if (moveHits[continuousCount] == MoveHit.critical) {
-    if (criticalCount > 0) {
-      damageVmax = roundOff5(damageVmax * 1.5);
-      damageVmin = roundOff5(damageVmin * 1.5);
-      ret += loc.battleDamageCritical1_5;
-    }
-    // 乱数補正(切り捨て)
-    damageVmax = (damageVmax * 100 / 100).floor();
-    damageVmin = (damageVmin * 85 / 100).floor();
-    ret += loc.battleDamageRandom85_100;
-    // タイプ一致補正(五捨五超入)
-    if (myState.canGetStellarHosei(replacedMoveType)) {
-      myState.addStellarUsed(replacedMoveType);
-      isTeraStellarHosei = true;
-    }
-    if (myState.canGetTerastalHosei(replacedMoveType)) {
-      isTeraStellarHosei = true;
-    }
-    var rate = myState.typeBonusRate(replacedMoveType,
-        myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
-    if (rate > 1.0) {
-      damageVmax = roundOff5(damageVmax * rate);
-      damageVmin = roundOff5(damageVmin * rate);
-      ret += loc.battleDamageTypeBonus(rate);
-    }
-    // 相性補正(切り捨て)
-    double typeRate = PokeTypeEffectiveness.effectivenessRate(
-      replacedMoveType,
-      yourState,
-      isScrappyMindEye:
-          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
-      isRingTarget: yourState.holdingItem?.id == 586,
-      isMiracleEye:
-          yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
-    );
-    if (yourState.currentAbility.id == 305 &&
-        (yourState.remainHP >= yourState.pokemon.h.real ||
-            yourState.remainHPPercent >= 100) &&
-        typeRate > 0.5) {
-      // テラスシェル
-      typeRate = 0.5;
-    }
-    if (additionalMoveType != null) {
-      typeRate *= PokeTypeEffectiveness.effectivenessRate(
-        additionalMoveType,
+      // 急所補正(五捨五超入)
+      // TODO
+      if (criticalCount > 0) {
+        damageVmax = roundOff5(damageVmax * 1.5);
+        damageVmin = roundOff5(damageVmin * 1.5);
+        ret += loc.battleDamageCritical1_5;
+      }
+      // 乱数補正(切り捨て)
+      damageVmax = (damageVmax * 100 / 100).floor();
+      damageVmin = (damageVmin * 85 / 100).floor();
+      ret += loc.battleDamageRandom85_100;
+      // タイプ一致補正(五捨五超入)
+      if (myState.canGetStellarHosei(replacedMoveType)) {
+        myState.addStellarUsed(replacedMoveType);
+        isTeraStellarHosei = true;
+      }
+      if (myState.canGetTerastalHosei(replacedMoveType)) {
+        isTeraStellarHosei = true;
+      }
+      var rate = myState.typeBonusRate(replacedMoveType,
+          myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
+      if (rate > 1.0) {
+        damageVmax = roundOff5(damageVmax * rate);
+        damageVmin = roundOff5(damageVmin * rate);
+        ret += loc.battleDamageTypeBonus(rate);
+      }
+      // 相性補正(切り捨て)
+      double typeRate = PokeTypeEffectiveness.effectivenessRate(
+        replacedMoveType,
         yourState,
         isScrappyMindEye: myState.currentAbility.id == 113 ||
             myState.currentAbility.id == 299,
@@ -4963,166 +4973,190 @@ class TurnEffectAction extends TurnEffect {
             .ailmentsWhere((e) => e.id == Ailment.miracleEye)
             .isNotEmpty,
       );
-    }
-    damageVmax = (damageVmax * typeRate).floor();
-    damageVmin = (damageVmin * typeRate).floor();
-    ret += loc.battleDamageTypeEffectiveness(typeRate);
-    // やけど補正(五捨五超入)
-    if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty &&
-        damageClassID == 2 &&
-        move.id != 263) {
-      // からげんき以外のぶつりわざ
-      if (!myState.buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
-        damageVmax = roundOff5(damageVmax * 0.5);
-        damageVmin = roundOff5(damageVmin * 0.5);
-        ret += loc.battleDamageBurned;
+      if (yourState.currentAbility.id == 305 &&
+          (yourState.remainHP >= yourState.pokemon.h.real ||
+              yourState.remainHPPercent >= 100) &&
+          typeRate > 0.5) {
+        // テラスシェル
+        typeRate = 0.5;
       }
-    }
-    // M(五捨五超入)
-    {
-      double tmpMax = damageVmax.toDouble();
-      double tmpMin = damageVmin.toDouble();
-      // 壁補正
-      if (!isCritical &&
-          !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
-          ((damageClassID == 2 &&
-                  yourFields
-                      .where((e) =>
-                          e.id == IndividualField.auroraVeil ||
-                          e.id == IndividualField.reflector)
-                      .isNotEmpty) ||
-              (damageClassID == 3 &&
-                  yourFields
-                      .where((e) =>
-                          e.id == IndividualField.auroraVeil ||
-                          e.id == IndividualField.lightScreen)
-                      .isNotEmpty))) {
-        tmpMax *= 0.5;
-        tmpMin *= 0.5;
-        ret += loc.battleDamageWall;
+      if (additionalMoveType != null) {
+        typeRate *= PokeTypeEffectiveness.effectivenessRate(
+          additionalMoveType,
+          yourState,
+          isScrappyMindEye: myState.currentAbility.id == 113 ||
+              myState.currentAbility.id == 299,
+          isRingTarget: yourState.holdingItem?.id == 586,
+          isMiracleEye: yourState
+              .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+              .isNotEmpty,
+        );
       }
-      // ブレインフォース補正
-      if (typeRate >= 2.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
-        tmpMax *= 1.25;
-        tmpMin *= 1.25;
-        ret += loc.battleDamageBrainForce;
-      }
-      // スナイパー補正
-      // TODO
-      //if (moveHits[continuousCount] == MoveHit.critical &&
-      if (criticalCount > 0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
-        tmpMax *= 1.5;
-        tmpMin *= 1.5;
-        ret += loc.battleDamageSniper;
-      }
-      // いろめがね補正
-      if (typeRate > 0.0 &&
-          typeRate < 1.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
-        tmpMax *= 2;
-        tmpMin *= 2;
-        ret += loc.battleDamageTintedLens;
-      }
-      // もふもふほのお補正
-      if (!ignoreAbility &&
-          (damageClassID == 2 || damageClassID == 3) &&
-          replacedMoveType == PokeType.fire &&
-          yourState.buffDebuffs.containsByID(BuffDebuff.fireAttackedDamage2)) {
-        tmpMax *= 2;
-        tmpMin *= 2;
-        ret += loc.battleDamageFluffy;
-      }
-      // Mhalf
-      if (!ignoreAbility &&
-              // こおりのりんぷん
-              (damageClassID == 3 &&
-                  yourState.buffDebuffs
-                      .containsByID(BuffDebuff.specialDamaged0_5)) ||
-          // パンクロック
-          (replacedMove.isSound &&
-              yourState.buffDebuffs
-                  .containsByID(BuffDebuff.soundedDamage0_5)) ||
-          // ファントムガード
-          // マルチスケイル
-          ((yourState.remainHP >= yourState.pokemon.h.real ||
-                  yourState.remainHPPercent >= 100) &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
-          // もふもふ直接こうげき
-          (replacedMove.isDirect &&
-              !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-              yourState.buffDebuffs
-                  .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
-          // たいねつ
-          (replacedMoveType == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.heatproof))) {
-        tmpMax *= 0.5;
-        tmpMin *= 0.5;
-        ret += loc.battleDamageAbility0_5;
-      }
-      // Mfilter
-      if (!ignoreAbility &&
-          // ハードロック
-          // フィルター
-          // プリズムアーマー
-          typeRate >= 2.0 &&
-          yourState.buffDebuffs.containsByID(BuffDebuff.greatDamaged0_75)) {
-        tmpMax *= 0.75;
-        tmpMin *= 0.75;
-        ret += loc.battleDamageAbility0_75;
-      }
-      // たつじんのおび補正
-      if (typeRate >= 2.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
-        tmpMax *= 1.2;
-        tmpMin *= 1.2;
-        ret += loc.battleDamageExpertBelt;
-      }
-      // メトロノーム補正
-      if (myState.buffDebuffs
-          .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
-        final founds = myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
-        if (founds.isNotEmpty) {
-          int count = founds.first.extraArg1 % 100;
-          if (count > 0) {
-            tmpMax *= (1.0 + 0.2 * count);
-            tmpMin *= (1.0 + 0.2 * count);
-            ret += loc.battleDamageMetronome(1.0 + 0.2 * count);
-          }
+      damageVmax = (damageVmax * typeRate).floor();
+      damageVmin = (damageVmin * typeRate).floor();
+      ret += loc.battleDamageTypeEffectiveness(typeRate);
+      // やけど補正(五捨五超入)
+      if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty &&
+          damageClassID == 2 &&
+          move.id != 263) {
+        // からげんき以外のぶつりわざ
+        if (!myState.buffDebuffs
+            .containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
+          damageVmax = roundOff5(damageVmax * 0.5);
+          damageVmin = roundOff5(damageVmin * 0.5);
+          ret += loc.battleDamageBurned;
         }
       }
-      // いのちのたま補正
-      if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
-        tmpMax *= 1.3;
-        tmpMin *= 1.3;
-        ret += loc.battleDamageLifeOrb;
-      }
-      // 半減きのみ補正
-      if (halvedBerry > 0) {
-        //double mult = yourState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
-        tmpMax *= halvedBerry;
-        tmpMin *= halvedBerry;
-        ret += loc.battleDamageBerry(halvedBerry);
-        yourState.buffDebuffs.removeAllByID(BuffDebuff.halvedBerry);
-      }
-      // Mtwice
-      if (mTwice ||
-          yourState.buffDebuffs
-              .containsByID(BuffDebuff.certainlyHittedDamage2)) {
-        tmpMax *= 2;
-        tmpMin *= 2;
-        ret += loc.battleDamageOthers;
-      }
+      // M(五捨五超入)
+      {
+        double tmpMax = damageVmax.toDouble();
+        double tmpMin = damageVmin.toDouble();
+        // 壁補正
+        if (!isCritical &&
+            !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
+            ((damageClassID == 2 &&
+                    yourFields
+                        .where((e) =>
+                            e.id == IndividualField.auroraVeil ||
+                            e.id == IndividualField.reflector)
+                        .isNotEmpty) ||
+                (damageClassID == 3 &&
+                    yourFields
+                        .where((e) =>
+                            e.id == IndividualField.auroraVeil ||
+                            e.id == IndividualField.lightScreen)
+                        .isNotEmpty))) {
+          tmpMax *= 0.5;
+          tmpMin *= 0.5;
+          ret += loc.battleDamageWall;
+        }
+        // ブレインフォース補正
+        if (typeRate >= 2.0 &&
+            myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
+          tmpMax *= 1.25;
+          tmpMin *= 1.25;
+          ret += loc.battleDamageBrainForce;
+        }
+        // スナイパー補正
+        // TODO
+        //if (moveHits[continuousCount] == MoveHit.critical &&
+        if (criticalCount > 0 &&
+            myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
+          tmpMax *= 1.5;
+          tmpMin *= 1.5;
+          ret += loc.battleDamageSniper;
+        }
+        // いろめがね補正
+        if (typeRate > 0.0 &&
+            typeRate < 1.0 &&
+            myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
+          tmpMax *= 2;
+          tmpMin *= 2;
+          ret += loc.battleDamageTintedLens;
+        }
+        // もふもふほのお補正
+        if (!ignoreAbility &&
+            (damageClassID == 2 || damageClassID == 3) &&
+            replacedMoveType == PokeType.fire &&
+            yourState.buffDebuffs
+                .containsByID(BuffDebuff.fireAttackedDamage2)) {
+          tmpMax *= 2;
+          tmpMin *= 2;
+          ret += loc.battleDamageFluffy;
+        }
+        // Mhalf
+        if (!ignoreAbility &&
+                // こおりのりんぷん
+                (damageClassID == 3 &&
+                    yourState.buffDebuffs
+                        .containsByID(BuffDebuff.specialDamaged0_5)) ||
+            // パンクロック
+            (replacedMove.isSound &&
+                yourState.buffDebuffs
+                    .containsByID(BuffDebuff.soundedDamage0_5)) ||
+            // ファントムガード
+            // マルチスケイル
+            ((yourState.remainHP >= yourState.pokemon.h.real ||
+                    yourState.remainHPPercent >= 100) &&
+                yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
+            // もふもふ直接こうげき
+            (replacedMove.isDirect &&
+                !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+                yourState.buffDebuffs
+                    .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
+            // たいねつ
+            (replacedMoveType == PokeType.fire &&
+                yourState.buffDebuffs.containsByID(BuffDebuff.heatproof))) {
+          tmpMax *= 0.5;
+          tmpMin *= 0.5;
+          ret += loc.battleDamageAbility0_5;
+        }
+        // Mfilter
+        if (!ignoreAbility &&
+            // ハードロック
+            // フィルター
+            // プリズムアーマー
+            typeRate >= 2.0 &&
+            yourState.buffDebuffs.containsByID(BuffDebuff.greatDamaged0_75)) {
+          tmpMax *= 0.75;
+          tmpMin *= 0.75;
+          ret += loc.battleDamageAbility0_75;
+        }
+        // たつじんのおび補正
+        if (typeRate >= 2.0 &&
+            myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
+          tmpMax *= 1.2;
+          tmpMin *= 1.2;
+          ret += loc.battleDamageExpertBelt;
+        }
+        // メトロノーム補正
+        if (myState.buffDebuffs
+            .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
+          final founds =
+              myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
+          if (founds.isNotEmpty) {
+            int count = founds.first.extraArg1 % 100;
+            if (count > 0) {
+              tmpMax *= (1.0 + 0.2 * count);
+              tmpMin *= (1.0 + 0.2 * count);
+              ret += loc.battleDamageMetronome(1.0 + 0.2 * count);
+            }
+          }
+        }
+        // いのちのたま補正
+        if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
+          tmpMax *= 1.3;
+          tmpMin *= 1.3;
+          ret += loc.battleDamageLifeOrb;
+        }
+        // 半減きのみ補正
+        if (halvedBerry > 0) {
+          //double mult = yourState.buffDebuffs[findIdx].extraArg1 == 1 ? 0.25 : 0.5;
+          tmpMax *= halvedBerry;
+          tmpMin *= halvedBerry;
+          ret += loc.battleDamageBerry(halvedBerry);
+          yourState.buffDebuffs.removeAllByID(BuffDebuff.halvedBerry);
+        }
+        // Mtwice
+        if (mTwice ||
+            yourState.buffDebuffs
+                .containsByID(BuffDebuff.certainlyHittedDamage2)) {
+          tmpMax *= 2;
+          tmpMin *= 2;
+          ret += loc.battleDamageOthers;
+        }
 
-      damageVmax = roundOff5(tmpMax);
-      damageVmin = roundOff5(tmpMin);
+        damageVmax = roundOff5(tmpMax);
+        damageVmin = roundOff5(tmpMin);
+        maxDamage += damageVmax;
+        minDamage += damageVmin;
+      }
+      // Mprotect(五捨五超入)
+      // ダイマックスわざに関する計算のため、SVでは不要
+      {}
+      ret += '= $damageVmin ~ $damageVmax';
     }
-    // Mprotect(五捨五超入)
-    // ダイマックスわざに関する計算のため、SVでは不要
-    {}
-    ret += '= $damageVmin ~ $damageVmax';
-    return Tuple4(ret, damageVmax, damageVmin, isTeraStellarHosei);
+    return Tuple4(ret, maxDamage, minDamage, isTeraStellarHosei);
   }
 
   /// わざのダメージから実数値を計算する
@@ -5131,7 +5165,6 @@ class TurnEffectAction extends TurnEffect {
   /// myState: 自身のポケモンの状態
   /// yourState: 相手のポケモンの状態
   /// state: フェーズの状態
-  /// continuousCount: 連続わざのインデックス
   /// myPlayerType: 自身のタイプ(ユーザーか対戦相手か)
   /// move: 使用するわざ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
   /// replacedMoveType: 使用するわざのタイプ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
@@ -5160,11 +5193,10 @@ class TurnEffectAction extends TurnEffect {
     PokemonState myState,
     PokemonState yourState,
     PhaseState state,
-    int continuousCount,
     PlayerType myPlayerType,
     Move move,
     PokeType replacedMoveType,
-    int power,
+    Map<int, int> power,
     int damageClassID,
     PokemonState beforeChangeMyState,
     bool isNormalized1_2,
@@ -5183,7 +5215,17 @@ class TurnEffectAction extends TurnEffect {
   }) {
     // ダメージから逆算
     if (isFoulPlay) return Tuple3(StatIndex.H, 0, 0);
-    int movePower = power;
+    // 連続わざの場合、1回目のこうげきで判断する
+    int movePower = power[0]!;
+    // 1ヒット目のダメージ
+    int firstRealDamage = realDamage;
+    if (hitCount > 1) {
+      int allPower = 0;
+      for (int i = 0; i < hitCount; i++) {
+        allPower += power[i]!;
+      }
+      firstRealDamage = (realDamage * movePower / allPower).ceil();
+    }
     Move replacedMove = move;
     var myFields = state.getIndiFields(myPlayerType);
     var yourFields = state.getIndiFields(myPlayerType.opposite);
@@ -5218,10 +5260,10 @@ class TurnEffectAction extends TurnEffect {
       );
     }
 
-    double tmp = realDamage.toDouble();
-    int tmpInt = realDamage;
-    int tmpMax = realDamage;
-    int tmpMin = realDamage;
+    double tmp = firstRealDamage.toDouble();
+    int tmpInt = firstRealDamage;
+    int tmpMax = firstRealDamage;
+    int tmpMin = firstRealDamage;
     // Mprotect(五捨五超入)
     // ダイマックスわざに関する計算のため、SVでは不要
     {}
@@ -5779,7 +5821,6 @@ class TurnEffectAction extends TurnEffect {
         copiedMyState,
         yourState,
         state,
-        continuousCount,
         myPlayerType,
         move,
         replacedMoveType,
@@ -5809,7 +5850,6 @@ class TurnEffectAction extends TurnEffect {
         copiedMyState,
         yourState,
         state,
-        continuousCount,
         myPlayerType,
         move,
         replacedMoveType,
@@ -5847,7 +5887,6 @@ class TurnEffectAction extends TurnEffect {
         copiedMyState,
         yourState,
         state,
-        continuousCount,
         myPlayerType,
         move,
         replacedMoveType,
@@ -5877,7 +5916,6 @@ class TurnEffectAction extends TurnEffect {
         copiedMyState,
         yourState,
         state,
-        continuousCount,
         myPlayerType,
         move,
         replacedMoveType,
@@ -5918,7 +5956,6 @@ class TurnEffectAction extends TurnEffect {
   /// myState: 自身のポケモンの状態
   /// yourParty: 相手のポケモンの状態
   /// state: フェーズの状態
-  /// continuousCount: 連続わざのインデックス
   /// controller: コマンド入力ページ遷移を管理するコントローラ
   /// ```
   Widget extraCommandInputList({
@@ -5932,7 +5969,6 @@ class TurnEffectAction extends TurnEffect {
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
-    required int continuousCount,
     required CommandPagesController controller,
     required AppLocalizations loc,
   }) {
@@ -5986,7 +6022,7 @@ class TurnEffectAction extends TurnEffect {
       }
 
       // 必要に応じてわざの内容変更
-      Move replacedMove = getReplacedMove(move, continuousCount, myState);
+      Move replacedMove = getReplacedMove(move, myState);
 
       // 1.分類による返却Widgetリストの対応
       switch (replacedMove.damageClass.id) {
@@ -6400,13 +6436,21 @@ class TurnEffectAction extends TurnEffect {
                 _isValid = true;
                 onConfirm();
               }
-            : () => controller.pageIndex++,
+            : () {
+                controller.pageIndex++;
+                if (templateTitles[index + 1].item1.isImmediatelyValid) {
+                  _isValid = true;
+                  onConfirm();
+                  // TODO:戻るボタン押したとき無効に戻す処理
+                } else {
+                  onUpdate();
+                }
+              },
         myParty: myParty,
         yourParty: yourParty,
         myState: myState,
         yourState: yourState,
         state: state,
-        continuousCount: continuousCount,
         controller: controller,
         loc: loc,
         extra: templateTitles[index].item3,
@@ -6457,7 +6501,10 @@ class TurnEffectAction extends TurnEffect {
                 child: Row(
                   children: [
                     IconButton(
-                      onPressed: () => controller.pageIndex--,
+                      onPressed: () {
+                        controller.pageIndex--;
+                        onUpdate();
+                      },
                       icon: Icon(Icons.arrow_back),
                     ),
                     Expanded(
@@ -6497,7 +6544,6 @@ class TurnEffectAction extends TurnEffect {
   /// myState: 自身のポケモンの状態
   /// yourParty: 相手のポケモンの状態
   /// state: フェーズの状態
-  /// continuousCount: 連続わざのインデックス
   /// controller: コマンド入力ページ遷移を管理するコントローラ
   /// extra: 画面作成に必要なその他引数
   /// ```
@@ -6512,7 +6558,6 @@ class TurnEffectAction extends TurnEffect {
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
-    required int continuousCount,
     required CommandPagesController controller,
     required AppLocalizations loc,
     required dynamic extra,
@@ -6631,12 +6676,12 @@ class TurnEffectAction extends TurnEffect {
                   myParty.pokemons[i]!,
                   theme,
                   onTap: () {
-                    extraArg1[continuousCount] = i + 1;
+                    extraArg1 = i + 1;
                     //_isValid = true;
                     //onConfirm();
                     onNext();
                   },
-                  selected: extraArg1[continuousCount] == i + 1,
+                  selected: extraArg1 == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
                 ),
               );
@@ -6673,12 +6718,10 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 initialNum: 0, // TODO?
                 onConfirm: (remain) {
-                  int continuousCount = 0;
                   if (playerType == PlayerType.me) {
-                    percentDamage[continuousCount] =
-                        yourState.remainHPPercent - remain;
+                    percentDamage = yourState.remainHPPercent - remain;
                   } else {
-                    realDamage[continuousCount] = yourState.remainHP - remain;
+                    realDamage = yourState.remainHP - remain;
                   }
                   onNext();
                 },
@@ -6700,12 +6743,10 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 initialNum: 0, // TODO?
                 onConfirm: (remain) {
-                  int continuousCount = 0;
                   if (playerType == PlayerType.me) {
-                    extraArg1[continuousCount] = myState.remainHP - remain;
+                    extraArg1 = myState.remainHP - remain;
                   } else {
-                    extraArg2[continuousCount] =
-                        myState.remainHPPercent - remain;
+                    extraArg2 = myState.remainHPPercent - remain;
                   }
                   onNext();
                 },
@@ -6739,8 +6780,8 @@ class TurnEffectAction extends TurnEffect {
           pokemonState: myState,
           state: state,
           onSelect: (move) {
-            extraArg3[continuousCount] = move.id;
-            moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
+            extraArg3 = move.id;
+            moveAdditionalEffects = move.isSurelyEffect()
                 ? MoveEffect(move.effect.id)
                 : MoveEffect(0);
             onNext();
@@ -6753,8 +6794,8 @@ class TurnEffectAction extends TurnEffect {
           pokemonState: myState,
           state: state,
           onSelect: (move) {
-            extraArg3[continuousCount] = move.id;
-            moveAdditionalEffects[continuousCount] = move.isSurelyEffect()
+            extraArg3 = move.id;
+            moveAdditionalEffects = move.isSurelyEffect()
                 ? MoveEffect(move.effect.id)
                 : MoveEffect(0);
             onNext();
@@ -6769,11 +6810,11 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  moveAdditionalEffects[continuousCount] =
+                  moveAdditionalEffects =
                       MoveEffect((extra[1] as Move).effect.id);
                   onUpdate();
                 },
-                initialValue: moveAdditionalEffects[continuousCount] ==
+                initialValue: moveAdditionalEffects ==
                     MoveEffect((extra[1] as Move).effect.id),
               ),
             ),
@@ -6791,11 +6832,10 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  extraArg1[continuousCount] = (extra[1] as Move).effect.id;
+                  extraArg1 = (extra[1] as Move).effect.id;
                   onUpdate();
                 },
-                initialValue:
-                    extraArg1[continuousCount] == (extra[1] as Move).effect.id,
+                initialValue: extraArg1 == (extra[1] as Move).effect.id,
               ),
             ),
             Expanded(
@@ -6812,10 +6852,10 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  extraArg1[continuousCount] = 1;
+                  extraArg1 = 1;
                   onUpdate();
                 },
-                initialValue: extraArg1[continuousCount] == 1,
+                initialValue: extraArg1 == 1,
               ),
             ),
             Expanded(
@@ -6823,10 +6863,10 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[1] as String),
                 onChanged: (change) {
-                  extraArg2[continuousCount] = 1;
+                  extraArg2 = 1;
                   onUpdate();
                 },
-                initialValue: extraArg2[continuousCount] == 1,
+                initialValue: extraArg2 == 1,
               ),
             ),
             Expanded(
@@ -6842,7 +6882,7 @@ class TurnEffectAction extends TurnEffect {
           pokemonState: yourState,
           state: state,
           onSelect: (move) {
-            extraArg3[continuousCount] = move.id;
+            extraArg3 = move.id;
             controller.pageIndex++;
             onNext();
           },
@@ -6856,12 +6896,10 @@ class TurnEffectAction extends TurnEffect {
               child: _myTypeDropdownButton(
                 extra[0] as String,
                 (val) {
-                  extraArg1[continuousCount] = val;
+                  extraArg1 = val;
                   onNext();
                 },
-                extraArg1[continuousCount] == 0
-                    ? null
-                    : extraArg1[continuousCount],
+                extraArg1 == 0 ? null : extraArg1,
               ),
             ),
             Expanded(
@@ -6902,9 +6940,9 @@ class TurnEffectAction extends TurnEffect {
                         loc.battlePararised(yourState.pokemon.omittedName)),
                   ),
                 ],
-                value: extraArg1[continuousCount],
+                value: extraArg1,
                 onChanged: (value) {
-                  extraArg1[continuousCount] = value;
+                  extraArg1 = value;
                   onNext();
                 },
                 theme: theme,
@@ -6948,9 +6986,9 @@ class TurnEffectAction extends TurnEffect {
                         loc.battleFellAsleep(yourState.pokemon.omittedName)),
                   ),
                 ],
-                value: extraArg1[continuousCount],
+                value: extraArg1,
                 onChanged: (value) {
-                  extraArg1[continuousCount] = value;
+                  extraArg1 = value;
                   onNext();
                 },
                 theme: theme,
@@ -6969,20 +7007,18 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
-                initialSwitchValue: moveAdditionalEffects[continuousCount] ==
-                    (extra[1] as Move).effect,
+                initialSwitchValue:
+                    moveAdditionalEffects == (extra[1] as Move).effect,
                 onSwitchChanged: (value) {
                   if (value) {
-                    moveAdditionalEffects[continuousCount] =
-                        (extra[1] as Move).effect;
+                    moveAdditionalEffects = (extra[1] as Move).effect;
                   } else {
-                    moveAdditionalEffects[continuousCount] =
-                        MoveEffect(MoveEffect.none);
+                    moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: playerType,
@@ -7003,20 +7039,18 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
-                initialSwitchValue: moveAdditionalEffects[continuousCount] ==
-                    (extra[1] as Move).effect,
+                initialSwitchValue:
+                    moveAdditionalEffects == (extra[1] as Move).effect,
                 onSwitchChanged: (value) {
                   if (value) {
-                    moveAdditionalEffects[continuousCount] =
-                        (extra[1] as Move).effect;
+                    moveAdditionalEffects = (extra[1] as Move).effect;
                   } else {
-                    moveAdditionalEffects[continuousCount] =
-                        MoveEffect(MoveEffect.none);
+                    moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: playerType.opposite,
@@ -7037,20 +7071,18 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
-                initialSwitchValue: moveAdditionalEffects[continuousCount] ==
-                    (extra[1] as Move).effect,
+                initialSwitchValue:
+                    moveAdditionalEffects == (extra[1] as Move).effect,
                 onSwitchChanged: (value) {
                   if (value) {
-                    moveAdditionalEffects[continuousCount] =
-                        (extra[1] as Move).effect;
+                    moveAdditionalEffects = (extra[1] as Move).effect;
                   } else {
-                    moveAdditionalEffects[continuousCount] =
-                        MoveEffect(MoveEffect.none);
+                    moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: playerType.opposite,
@@ -7073,7 +7105,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: PlayerType.opponent,
@@ -7096,7 +7128,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: playerType,
@@ -7119,7 +7151,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
-                  extraArg1[continuousCount] = item.id;
+                  extraArg1 = item.id;
                   onNext();
                 },
                 playerType: playerType,
@@ -7140,7 +7172,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
-                  extraArg1[continuousCount] = ability.id;
+                  extraArg1 = ability.id;
                   onNext();
                 },
                 playerType: playerType,
@@ -7163,7 +7195,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
-                  extraArg1[continuousCount] = ability.id;
+                  extraArg1 = ability.id;
                   onNext();
                 },
                 playerType: playerType.opposite,
@@ -7186,7 +7218,7 @@ class TurnEffectAction extends TurnEffect {
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
                 onAbilitySelected: (ability) {
-                  extraArg1[continuousCount] = ability.id;
+                  extraArg1 = ability.id;
                   onNext();
                 },
                 playerType: PlayerType.opponent,
@@ -7245,9 +7277,9 @@ class TurnEffectAction extends TurnEffect {
                         loc.battleEvasivenessUp2(myState.pokemon.omittedName)),
                   ),
                 ],
-                value: extraArg1[continuousCount],
+                value: extraArg1,
                 onChanged: (value) {
-                  extraArg1[continuousCount] = value;
+                  extraArg1 = value;
                   onNext();
                 },
                 theme: theme,
@@ -7388,14 +7420,14 @@ class TurnEffectAction extends TurnEffect {
     }
     // そのターンに先にちょうはつを使われた
     if (myState.ailmentsWhere((e) => e.id == Ailment.taunt).isNotEmpty &&
-        getReplacedMove(move, 0, myState).damageClass.id == 1) {
+        getReplacedMove(move, myState).damageClass.id == 1) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.taunt);
       ret = true;
     }
     // まもる系統のわざを使われた
     if (yourState.ailmentsWhere((e) => e.id == Ailment.protect).isNotEmpty &&
-        getReplacedMove(move, 0, myState).damageClass.id >= 2) {
+        getReplacedMove(move, myState).damageClass.id >= 2) {
       isSuccess = false;
       actionFailure = ActionFailure(ActionFailure.protected);
       ret = true;
@@ -7428,9 +7460,9 @@ class TurnEffectAction extends TurnEffect {
     }
 
     if (isMoveChanged) {
-      moveAdditionalEffects[0] =
+      moveAdditionalEffects =
           move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
-      moveEffectivenesses[0] = PokeTypeEffectiveness.effectiveness(
+      moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
           myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
           yourState.holdingItem?.id == 586,
           yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
@@ -7448,59 +7480,66 @@ class TurnEffectAction extends TurnEffect {
       case 84: // ほぼすべてのわざから1つをランダムで使う
       case 98: // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
       case 243: // 最後に出されたわざを出す(相手のわざとは限らない)
-        return pokeData.moves[extraArg3[0]]!.displayName;
+        return pokeData.moves[extraArg3]!.displayName;
       default:
         break;
     }
     return '';
   }
 
-  /// わざに対応して、args等を自動でセット
+  /// 現在のポケモンの状態等から決定できる引数を自動で設定
   /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
   /// state: フェーズの状態
-  /// continuousCount: 連続わざのインデックス
+  /// prevAction: 直前の行動
   /// ```
-  void setAutoArgs(PhaseState state, int continuousCount) {
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {
     var myState = state.getPokemonState(playerType, null);
     var yourState = state.getPokemonState(playerType.opposite, null);
     var opponentState = state.getPokemonState(PlayerType.opponent, null);
 
-    switch (moveAdditionalEffects[continuousCount].id) {
+    switch (moveAdditionalEffects.id) {
       case 33: // 最大HPの半分だけ回復する
       case 215: // 使用者の最大HP1/2だけ回復する。ターン終了までひこうタイプを失う
-        extraArg1[continuousCount] = -((myState.pokemon.h.real / 2).ceil());
-        extraArg2[continuousCount] = -50;
+        extraArg1 = -((myState.pokemon.h.real / 2).ceil());
+        extraArg2 = -50;
         break;
       case 80: // 場に「みがわり」を発生させる
-        extraArg1[continuousCount] = (myState.pokemon.h.real / 4).floor();
-        extraArg2[continuousCount] = 25;
+        extraArg1 = (myState.pokemon.h.real / 4).floor();
+        extraArg2 = 25;
         break;
       case 110: // 使用者がゴーストタイプ：使用者のHPを最大HPの半分だけ減らし、相手をのろいにする。ゴースト以外：使用者のこうげき・ぼうぎょ1段階UP、すばやさ1段階DOWN
         if (myState.isTypeContain(PokeType.ghost)) {
-          extraArg1[continuousCount] = (myState.pokemon.h.real / 2).floor();
-          extraArg2[continuousCount] = 50;
+          extraArg1 = (myState.pokemon.h.real / 2).floor();
+          extraArg2 = 50;
         }
         break;
       case 106: // もちものを盗む
       case 189: // もちものを持っていれば失わせ、威力1.5倍
         if (yourState.getHoldingItem() != null &&
             yourState.getHoldingItem()!.id != 0) {
-          extraArg1[continuousCount] = yourState.getHoldingItem()!.id;
+          extraArg1 = yourState.getHoldingItem()!.id;
         }
         break;
       case 133: // 使用者のHP回復。回復量は天気による
         if (state.weather.id == Weather.sunny) {
-          extraArg1[continuousCount] =
-              -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
-          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+          extraArg1 = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2 = -roundOff5(2732 / 4096);
         } else if (state.weather.id == Weather.rainy ||
             state.weather.id == Weather.sandStorm ||
             state.weather.id == Weather.snowy) {
-          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 4));
-          extraArg2[continuousCount] = -25;
+          extraArg1 = -(roundOff5(myState.pokemon.h.real / 4));
+          extraArg2 = -25;
         } else {
-          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
-          extraArg2[continuousCount] = -50;
+          extraArg1 = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2 = -50;
         }
         break;
       case 163: // たくわえた回数が多いほど回復量が上がる。たくわえた回数を0にする
@@ -7510,18 +7549,16 @@ class TurnEffectAction extends TurnEffect {
           int t = myState.ailments(findIdx).id - Ailment.stock1;
           switch (t) {
             case 0:
-              extraArg1[continuousCount] =
-                  -((myState.pokemon.h.real / 4).floor());
-              extraArg2[continuousCount] = -25;
+              extraArg1 = -((myState.pokemon.h.real / 4).floor());
+              extraArg2 = -25;
               break;
             case 1:
-              extraArg1[continuousCount] =
-                  -((myState.pokemon.h.real / 2).floor());
-              extraArg2[continuousCount] = -50;
+              extraArg1 = -((myState.pokemon.h.real / 2).floor());
+              extraArg2 = -50;
               break;
             case 2:
-              extraArg1[continuousCount] = -myState.pokemon.h.real;
-              extraArg2[continuousCount] = -100;
+              extraArg1 = -myState.pokemon.h.real;
+              extraArg2 = -100;
               break;
             default:
               break;
@@ -7531,7 +7568,7 @@ class TurnEffectAction extends TurnEffect {
       case 178: // 使用者ともちものを入れ替える
         if (opponentState.getHoldingItem() != null &&
             opponentState.getHoldingItem()!.id != 0) {
-          extraArg1[continuousCount] = opponentState.getHoldingItem()!.id;
+          extraArg1 = opponentState.getHoldingItem()!.id;
         }
         break;
       case 185: // 戦闘中自分が最後に使用したもちものを復活させる
@@ -7541,77 +7578,75 @@ class TurnEffectAction extends TurnEffect {
         if (yourState.getHoldingItem() != null &&
             yourState.getHoldingItem()!.id != 0 &&
             yourState.getHoldingItem()!.isBerry) {
-          extraArg1[continuousCount] = yourState.getHoldingItem()!.id;
+          extraArg1 = yourState.getHoldingItem()!.id;
         }
         break;
       case 234: // 使用者のもちものによって威力と追加効果が変わる
       case 324: // 相手がもちものを持っていない場合、使用者が持っているもちものを渡す
         if (myState.getHoldingItem() != null &&
             myState.getHoldingItem()!.id != 0) {
-          extraArg1[continuousCount] = myState.getHoldingItem()!.id;
+          extraArg1 = myState.getHoldingItem()!.id;
         }
         break;
       case 424: // 持っているきのみを消費して効果を受ける。その場合、追加で使用者のぼうぎょを2段階上げる
         if (myState.getHoldingItem() != null &&
             myState.getHoldingItem()!.id != 0 &&
             myState.getHoldingItem()!.isBerry) {
-          extraArg1[continuousCount] = myState.getHoldingItem()!.id;
+          extraArg1 = myState.getHoldingItem()!.id;
         }
         break;
       case 179: // 相手と同じとくせいになる
         if (yourState.getCurrentAbility().id != 0) {
-          extraArg1[continuousCount] = yourState.getCurrentAbility().id;
+          extraArg1 = yourState.getCurrentAbility().id;
         }
         break;
       case 192: // 使用者ととくせいを入れ替える
         if (opponentState.getCurrentAbility().id != 0) {
-          extraArg1[continuousCount] = opponentState.getCurrentAbility().id;
+          extraArg1 = opponentState.getCurrentAbility().id;
         }
         break;
       case 300: // 相手のとくせいを使用者のとくせいと同じにする
         if (myState.currentAbility.id != 0) {
-          extraArg1[continuousCount] = myState.currentAbility.id;
+          extraArg1 = myState.currentAbility.id;
         }
         break;
       case 382: // 最大HPの半分だけ回復する。天気がすなあらしの場合は2/3回復する
         if (state.weather.id == Weather.sandStorm) {
-          extraArg1[continuousCount] =
-              -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
-          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+          extraArg1 = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2 = -roundOff5(2732 / 4096);
         } else {
-          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
-          extraArg2[continuousCount] = -50;
+          extraArg1 = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2 = -50;
         }
         break;
       case 387: // 最大HPの半分だけ回復する。場がグラスフィールドの場合は2/3回復する
         if (state.field.id == Field.grassyTerrain) {
-          extraArg1[continuousCount] =
-              -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
-          extraArg2[continuousCount] = -roundOff5(2732 / 4096);
+          extraArg1 = -(roundOff5(myState.pokemon.h.real * 2732 / 4096));
+          extraArg2 = -roundOff5(2732 / 4096);
         } else {
-          extraArg1[continuousCount] = -(roundOff5(myState.pokemon.h.real / 2));
-          extraArg2[continuousCount] = -50;
+          extraArg1 = -(roundOff5(myState.pokemon.h.real / 2));
+          extraArg2 = -50;
         }
         break;
       case 441: // 最大HP1/4だけ回復
-        extraArg1[continuousCount] = -((myState.pokemon.h.real / 4).round());
-        extraArg2[continuousCount] = -25;
+        extraArg1 = -((myState.pokemon.h.real / 4).round());
+        extraArg2 = -25;
         break;
       case 420: // 最大HP1/2(小数点切り上げ)を削ってこうげき
-        extraArg1[continuousCount] = (myState.pokemon.h.real / 2).ceil();
-        extraArg2[continuousCount] = 50;
+        extraArg1 = (myState.pokemon.h.real / 2).ceil();
+        extraArg2 = 50;
         break;
       case 433: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ1段階ずつ上がる。最大HP1/3が削られる
-        extraArg1[continuousCount] = (myState.pokemon.h.real / 3).floor();
-        extraArg2[continuousCount] = 33;
+        extraArg1 = (myState.pokemon.h.real / 3).floor();
+        extraArg2 = 33;
         break;
       case 461: // 最大HP1/4回復、状態異常を治す
-        extraArg1[continuousCount] = -((myState.pokemon.h.real / 4).floor());
-        extraArg2[continuousCount] = -25;
+        extraArg1 = -((myState.pokemon.h.real / 4).floor());
+        extraArg2 = -25;
         break;
       case 492: // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
-        extraArg1[continuousCount] = ((myState.pokemon.h.real / 2).ceil());
-        extraArg2[continuousCount] = 50;
+        extraArg1 = ((myState.pokemon.h.real / 2).ceil());
+        extraArg2 = 50;
         break;
       default:
         break;
@@ -7621,10 +7656,9 @@ class TurnEffectAction extends TurnEffect {
   /// 置き換わるわざは置き換え後のわざを返す。それ以外の場合は元のわざをそのまま返す
   /// ```
   /// move: 対象のわざ
-  /// continuousCount: 連続わざのインデックス
   /// myState: 自身のポケモンの状態
   /// ```
-  Move getReplacedMove(Move move, int continuousCount, PokemonState myState) {
+  Move getReplacedMove(Move move, PokemonState myState) {
     var pokeData = PokeDB();
     Move ret = move;
     // わざの内容変更
@@ -7640,8 +7674,8 @@ class TurnEffectAction extends TurnEffect {
       case 84: // ほぼすべてのわざから1つをランダムで使う
       case 98: // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
       case 243: // 最後に出されたわざを出す(相手のわざとは限らない)
-        if (extraArg3[continuousCount] != 0) {
-          ret = pokeData.moves[extraArg3[continuousCount]]!;
+        if (extraArg3 != 0) {
+          ret = pokeData.moves[extraArg3]!;
         }
         break;
       default:
@@ -7654,11 +7688,9 @@ class TurnEffectAction extends TurnEffect {
   /// わざの名前を返す。置き換わるわざは置き換え後のわざの名前を返す
   /// ```
   /// move: 対象のわざ
-  /// continuousCount: 連続わざのインデックス
   /// myState: 自身のポケモンの状態
   /// ```
-  String getReplacedMoveName(
-      Move move, int continuousCount, PokemonState myState) {
+  String getReplacedMoveName(Move move, PokemonState myState) {
     var pokeData = PokeDB();
     String ret = move.displayName;
     // わざの内容変更
@@ -7675,9 +7707,8 @@ class TurnEffectAction extends TurnEffect {
       case 84: // ほぼすべてのわざから1つをランダムで使う
       case 98: // ねむり状態のとき、使用者が覚えているわざをランダムに使用する
       case 243: // 最後に出されたわざを出す(相手のわざとは限らない)
-        if (extraArg3[continuousCount] != 0) {
-          ret =
-              '${pokeData.moves[extraArg3[continuousCount]]!.displayName}(${move.displayName}';
+        if (extraArg3 != 0) {
+          ret = '${pokeData.moves[extraArg3]!.displayName}(${move.displayName}';
         }
         break;
       default:
@@ -7690,14 +7721,13 @@ class TurnEffectAction extends TurnEffect {
   /// わざのタイプを返す。置き換わるわざは置き換え後のわざのタイプを返す
   /// ```
   /// move: 対象のわざ
-  /// continuousCount: 連続わざのインデックス
   /// myState: 自身のポケモンの状態
   /// yourState: 相手のポケモンの状態
   /// ```
   PokeType getReplacedMoveType(
-      Move move, int continuousCount, PokemonState myState, PhaseState state) {
+      Move move, PokemonState myState, PhaseState state) {
     // わざの内容変更
-    var replacedMove = getReplacedMove(move, continuousCount, myState);
+    var replacedMove = getReplacedMove(move, myState);
     var ret = replacedMove.type;
     switch (replacedMove.effect.id) {
       //case 136:   // 個体値によってわざのタイプが変わる
@@ -7863,6 +7893,12 @@ class TurnEffectAction extends TurnEffect {
     return false;
   }
 
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return this == t;
+  }
+
   /// 内容をクリアする
   void clear() {
     playerType = PlayerType.none;
@@ -7873,13 +7909,13 @@ class TurnEffectAction extends TurnEffect {
     actionFailure = ActionFailure(0);
     hitCount = 1;
     criticalCount = 0;
-    moveEffectivenesses = [MoveEffectiveness.normal];
-    realDamage = [0];
-    percentDamage = [0];
-    moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
-    extraArg1 = [0];
-    extraArg2 = [0];
-    extraArg3 = [0];
+    moveEffectivenesses = MoveEffectiveness.normal;
+    realDamage = 0;
+    percentDamage = 0;
+    moveAdditionalEffects = MoveEffect(MoveEffect.none);
+    extraArg1 = 0;
+    extraArg2 = 0;
+    extraArg3 = 0;
     _changePokemonIndexes = [null, null];
     moveType = PokeType.unknown;
     isFirst = null;
@@ -7894,13 +7930,13 @@ class TurnEffectAction extends TurnEffect {
     actionFailure = ActionFailure(0);
     hitCount = 1;
     criticalCount = 0;
-    moveEffectivenesses = [MoveEffectiveness.normal];
-    realDamage = [0];
-    percentDamage = [0];
-    moveAdditionalEffects = [MoveEffect(MoveEffect.none)];
-    extraArg1 = [0];
-    extraArg2 = [0];
-    extraArg3 = [0];
+    moveEffectivenesses = MoveEffectiveness.normal;
+    realDamage = 0;
+    percentDamage = 0;
+    moveAdditionalEffects = MoveEffect(MoveEffect.none);
+    extraArg1 = 0;
+    extraArg2 = 0;
+    extraArg3 = 0;
     _changePokemonIndexes = [null, null];
     moveType = PokeType.unknown;
     isFirst = null;
@@ -7962,56 +7998,21 @@ class TurnEffectAction extends TurnEffect {
     // criticalCount
     turnEffectAction.criticalCount = int.parse(turnMoveElements.removeAt(0));
     // moveEffectiveness
-    var moveEffectivenesses = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.moveEffectivenesses.clear();
-    for (var moveEffectivenessElement in moveEffectivenesses) {
-      if (moveEffectivenessElement == '') break;
-      turnEffectAction.moveEffectivenesses
-          .add(MoveEffectiveness.values[int.parse(moveEffectivenessElement)]);
-    }
+    turnEffectAction.moveEffectivenesses =
+        MoveEffectiveness.values[int.parse(turnMoveElements.removeAt(0))];
     // realDamage
-    var realDamages = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.realDamage.clear();
-    for (var realDamage in realDamages) {
-      if (realDamage == '') break;
-      turnEffectAction.realDamage.add(int.parse(realDamage));
-    }
+    turnEffectAction.realDamage = int.parse(turnMoveElements.removeAt(0));
     // percentDamage
-    var percentDamages = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.percentDamage.clear();
-    for (var percentDamage in percentDamages) {
-      if (percentDamage == '') break;
-      turnEffectAction.percentDamage.add(int.parse(percentDamage));
-    }
+    turnEffectAction.percentDamage = int.parse(turnMoveElements.removeAt(0));
     // moveAdditionalEffect
-    var moveAdditionalEffects = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.moveAdditionalEffects.clear();
-    for (var moveAdditionalEffect in moveAdditionalEffects) {
-      if (moveAdditionalEffect == '') break;
-      turnEffectAction.moveAdditionalEffects
-          .add(MoveEffect(int.parse(moveAdditionalEffect)));
-    }
+    turnEffectAction.moveAdditionalEffects =
+        MoveEffect(int.parse(turnMoveElements.removeAt(0)));
     // extraArg1
-    var extraArg1s = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.extraArg1.clear();
-    for (var e in extraArg1s) {
-      if (e == '') break;
-      turnEffectAction.extraArg1.add(int.parse(e));
-    }
+    turnEffectAction.extraArg1 = int.parse(turnMoveElements.removeAt(0));
     // extraArg2
-    var extraArg2s = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.extraArg2.clear();
-    for (var e in extraArg2s) {
-      if (e == '') break;
-      turnEffectAction.extraArg2.add(int.parse(e));
-    }
+    turnEffectAction.extraArg2 = int.parse(turnMoveElements.removeAt(0));
     // extraArg3
-    var extraArg3s = turnMoveElements.removeAt(0).split(split2);
-    turnEffectAction.extraArg3.clear();
-    for (var e in extraArg3s) {
-      if (e == '') break;
-      turnEffectAction.extraArg3.add(int.parse(e));
-    }
+    turnEffectAction.extraArg3 = int.parse(turnMoveElements.removeAt(0));
     // _changePokemonIndexes
     var changePokemonIndexes = turnMoveElements.removeAt(0).split(split2);
     for (int i = 0; i < 2; i++) {
@@ -8109,46 +8110,25 @@ class TurnEffectAction extends TurnEffect {
     ret += criticalCount.toString();
     ret += split1;
     // moveEffectivenesses
-    for (final moveEffectiveness in moveEffectivenesses) {
-      ret += moveEffectiveness.index.toString();
-      ret += split2;
-    }
+    ret += moveEffectivenesses.index.toString();
     ret += split1;
     // realDamage
-    for (final damage in realDamage) {
-      ret += damage.toString();
-      ret += split2;
-    }
+    ret += realDamage.toString();
     ret += split1;
     // percentDamage
-    for (final damage in percentDamage) {
-      ret += damage.toString();
-      ret += split2;
-    }
+    ret += percentDamage.toString();
     ret += split1;
     // moveAdditionalEffects
-    for (final moveAdditionalEffect in moveAdditionalEffects) {
-      ret += moveAdditionalEffect.id.toString();
-      ret += split2;
-    }
+    ret += moveAdditionalEffects.id.toString();
     ret += split1;
     // extraArg1
-    for (final arg in extraArg1) {
-      ret += arg.toString();
-      ret += split2;
-    }
+    ret += extraArg1.toString();
     ret += split1;
     // extraArg2
-    for (final arg in extraArg2) {
-      ret += arg.toString();
-      ret += split2;
-    }
+    ret += extraArg2.toString();
     ret += split1;
     // extraArg3
-    for (final arg in extraArg3) {
-      ret += arg.toString();
-      ret += split2;
-    }
+    ret += extraArg3.toString();
     ret += split1;
     // _changePokemonIndex
     for (int i = 0; i < 2; i++) {

@@ -5,7 +5,9 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/tool.dart';
 
 // ユーザが手動で変更した内容
@@ -68,6 +70,10 @@ class TurnEffectUserEdit extends TurnEffect {
   @override
   set playerType(type) {}
   @override
+  Timing get timing => Timing.none;
+  @override
+  set timing(Timing t) {}
+  @override
   bool isValid() => true;
 
   void add(UserEdit force) {
@@ -84,10 +90,11 @@ class TurnEffectUserEdit extends TurnEffect {
       Party opponentParty,
       PokemonState opponentState,
       PhaseState state,
-      TurnEffect? prevAction,
-      int continuousCount,
+      TurnEffectAction? prevAction,
       {required AppLocalizations loc}) {
     var pokeData = PokeDB();
+    super.beforeProcessEffect(ownState, opponentState);
+
     for (var force in forces) {
       switch (force.typeId) {
         case UserEdit.ability:
@@ -174,7 +181,30 @@ class TurnEffectUserEdit extends TurnEffect {
       }
     }
 
+    super.afterProcessEffect(ownState, opponentState, state);
+
     return [];
+  }
+
+  /// 引数を自動で設定(TurnEffectUserEditでは何も処理しない)
+  /// ```
+  /// myState: 効果発動主のポケモンの状態
+  /// yourState: 効果発動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// prevAction: 直前の行動
+  /// ```
+  @override
+  void setAutoArgs(
+    PokemonState myState,
+    PokemonState yourState,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {}
+
+  /// extraArg等以外同じ、ほぼ同じかどうか
+  @override
+  bool nearEqual(TurnEffect t) {
+    return this == t;
   }
 
   // SQLに保存された文字列からUserForcesをパース

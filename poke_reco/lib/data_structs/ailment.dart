@@ -556,7 +556,7 @@ class Ailments extends Equatable implements Copyable {
   }
 
   /// SQL保存用の文字列に変換
-  /// /// ```
+  /// ```
   /// split1,split2: 区切り文字
   /// ```
   String serialize(String split1, String split2) {

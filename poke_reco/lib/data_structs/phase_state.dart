@@ -243,13 +243,13 @@ class PhaseState extends Equatable implements Copyable {
 
   // 現在の状態で、指定されたタイミングで起こるべき効果のリストを返す
   List<TurnEffect> getDefaultEffectList(
-      Turn currentTurn,
-      Timing timing,
-      bool changedOwn,
-      bool changedOpponent,
-      PhaseState state,
-      TurnEffectAction? prevAction,
-      int continuousCount) {
+    Turn currentTurn,
+    Timing timing,
+    bool changedOwn,
+    bool changedOpponent,
+    PhaseState state,
+    TurnEffectAction? prevAction,
+  ) {
     List<TurnEffect> ret = [];
     var players = [PlayerType.me, PlayerType.opponent];
 
@@ -327,19 +327,19 @@ class PhaseState extends Equatable implements Copyable {
             var adding = TurnEffectAilment(
                 player: attackerPlayerType,
                 timing: timing,
-                ailmentEffectID: AilmentEffect.getIdFromAilment(ailment));
-            adding.setAutoArgs(
-                attackerState, defenderState, state, prevAction, ailment.turns);
+                ailmentEffectID: AilmentEffect.getIdFromAilment(ailment))
+              ..turns = ailment.turns;
+            adding.setAutoArgs(attackerState, defenderState, state, prevAction);
             ret.add(adding);
           }
         }
 
         if (prevAction != null &&
-            prevAction.isNormallyHit(0) &&
-            prevAction.moveEffectivenesses[0] != MoveEffectiveness.noEffect) {
+            prevAction.isNormallyHit() &&
+            prevAction.moveEffectivenesses != MoveEffectiveness.noEffect) {
           // わざ成功時
           var replacedMoveType = prevAction.getReplacedMoveType(
-              prevAction.move, 0, attackerState, state);
+              prevAction.move, attackerState, state);
           // とくせい「へんげんじざい」「リベロ」
           if (!attackerState.isTerastaling &&
               !attackerState.hiddenBuffs.containsByID(BuffDebuff.protean) &&
@@ -459,9 +459,9 @@ class PhaseState extends Equatable implements Copyable {
           var defenderTimingIDList = [];
           var attackerTimingIDList = [];
           var replacedMove =
-              prevAction?.getReplacedMove(prevAction.move, 0, attackerState);
+              prevAction?.getReplacedMove(prevAction.move, attackerState);
           var replacedMoveType = prevAction?.getReplacedMoveType(
-              prevAction.move, 0, attackerState, state);
+              prevAction.move, attackerState, state);
           // 直接こうげきをまもる系統のわざで防がれたとき
           if (prevAction != null &&
                   replacedMove!.isDirect &&
@@ -498,8 +498,8 @@ class PhaseState extends Equatable implements Copyable {
                 TurnEffectAfterMove(player: attackerPlayerType, effectID: 194));
           }
           if (prevAction != null &&
-              prevAction.isNormallyHit(0) &&
-              prevAction.moveEffectivenesses[0] != MoveEffectiveness.noEffect) {
+              prevAction.isNormallyHit() &&
+              prevAction.moveEffectivenesses != MoveEffectiveness.noEffect) {
             // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
@@ -894,11 +894,11 @@ class PhaseState extends Equatable implements Copyable {
                     player: player,
                     timing: timing,
                     ailmentEffectID: AilmentEffect.getIdFromAilment(ailment))
+                  ..turns = ailment.turns
                   ..extraArg1 = ailment.id == Ailment.partiallyTrapped
                       ? ailment.extraArg1
                       : ailment.turns;
-                adding.setAutoArgs(
-                    myState, yourState, state, prevAction, ailment.turns);
+                adding.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(adding);
               }
             }
