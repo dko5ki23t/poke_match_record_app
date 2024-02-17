@@ -464,8 +464,9 @@ class PartiesPageState extends State<PartiesPage> {
                                                       deleteIDs.add(e);
                                                     }
                                                   }
-                                                  await pokeData
-                                                      .deleteParty(deleteIDs);
+                                                  await pokeData.deleteParty(
+                                                      deleteIDs,
+                                                      appState.notify);
                                                   setState(() {
                                                     checkList = {};
                                                     for (final e
@@ -494,8 +495,8 @@ class PartiesPageState extends State<PartiesPage> {
                                           if (checkList![e]!) {
                                             Party copiedParty =
                                                 parties[e]!.copy();
-                                            await pokeData.addParty(
-                                                copiedParty, true);
+                                            await pokeData.addParty(copiedParty,
+                                                true, appState.notify);
                                           }
                                         }
                                         setState(() {

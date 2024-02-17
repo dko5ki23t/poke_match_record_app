@@ -159,7 +159,7 @@ class BattlesPageState extends State<BattlesPage> {
                     for (int i = 0; i < sortedBattles.length; i++) {
                       var battle = battles[sortedBattles[i].key]!;
                       battle.viewOrder = i + 1;
-                      await pokeData.addBattle(battle, false);
+                      await pokeData.addBattle(battle, false, appState.notify);
                     }
                     pokeData.battlesSort = null;
                     setState(() {
@@ -302,8 +302,8 @@ class BattlesPageState extends State<BattlesPage> {
                                                     deleteIDs.add(e);
                                                   }
                                                 }
-                                                await pokeData
-                                                    .deleteBattle(deleteIDs);
+                                                await pokeData.deleteBattle(
+                                                    deleteIDs, appState.notify);
                                                 setState(() {
                                                   checkList = {};
                                                   for (final e
@@ -330,8 +330,8 @@ class BattlesPageState extends State<BattlesPage> {
                                         if (checkList![e]!) {
                                           Battle copiedBattle =
                                               battles[e]!.copy();
-                                          await pokeData.addBattle(
-                                              copiedBattle, true);
+                                          await pokeData.addBattle(copiedBattle,
+                                              true, appState.notify);
                                         }
                                       }
                                       setState(() {

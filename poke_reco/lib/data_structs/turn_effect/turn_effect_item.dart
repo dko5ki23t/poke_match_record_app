@@ -12,8 +12,11 @@ import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 
 class TurnEffectItem extends TurnEffect {
-  TurnEffectItem({required player, required this.timing, required this.itemID})
-      : super(EffectType.item);
+  TurnEffectItem(
+      {required PlayerType player, required this.timing, required this.itemID})
+      : super(EffectType.item) {
+    _playerType = player;
+  }
 
   PlayerType _playerType = PlayerType.none;
   @override

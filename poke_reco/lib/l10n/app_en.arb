@@ -176,7 +176,7 @@
   "battleAddMoveTimes3": "Add {move}(3rd time)",
   "battleAddMoveTimes4": "Add {move}({count}th time)",
   "battleProcess": "Process",
-  "battleAddProcess": "Add Process {timing}",
+  "battleAddProcess": "Add Process",
   "battleWeatherField": "Weather/Field",
   "battleEffectType": "Type",
   "battleEffectPlayer": "Player",

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -55,10 +56,12 @@ class HitCriticalInputRow extends StatefulWidget {
     Key? key,
     required this.turnMove,
     required this.onUpdate,
+    required this.maxMoveCount,
   }) : super(key: key);
 
   final TurnEffectAction turnMove;
   final void Function() onUpdate;
+  final int maxMoveCount;
 
   @override
   State<HitCriticalInputRow> createState() => _HitCriticalInputRowState();
@@ -66,6 +69,8 @@ class HitCriticalInputRow extends StatefulWidget {
 
 class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
   late final TurnEffectAction turnMove;
+  final TextEditingController hitController = TextEditingController();
+  final TextEditingController criticalController = TextEditingController();
 
   @override
   void initState() {
@@ -79,47 +84,95 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
       children: [
         Expanded(
           flex: 1,
-          child: Row(
-            children: [
-              Checkbox(
-                  value: turnMove.hitCount > 0,
-                  onChanged: (change) {
-                    if (change != null) {
-                      if (change) {
-                        turnMove.hitCount = 1;
-                      } else {
-                        turnMove.hitCount = 0;
-                        turnMove.criticalCount = 0;
-                      }
-                      widget.onUpdate();
-                      setState(() {});
-                    }
-                  }),
-              Text(MoveHit.hit.displayName),
-            ],
-          ),
+          child: widget.maxMoveCount <= 1
+              ? Row(
+                  children: [
+                    Checkbox(
+                        value: turnMove.hitCount > 0,
+                        onChanged: (change) {
+                          if (change != null) {
+                            if (change) {
+                              turnMove.hitCount = 1;
+                            } else {
+                              turnMove.hitCount = 0;
+                              turnMove.criticalCount = 0;
+                            }
+                            widget.onUpdate();
+                            setState(() {});
+                          }
+                        }),
+                    Text(MoveHit.hit.displayName),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Text(MoveHit.hit.displayName),
+                    Expanded(
+                      child: NumberInputWithIncrementDecrement(
+                        controller: hitController,
+                        numberFieldDecoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                        ),
+                        widgetContainerDecoration: const BoxDecoration(
+                          border: null,
+                        ),
+                        min: 0,
+                        max: widget.maxMoveCount,
+                        initialValue: turnMove.hitCount,
+                        onIncrement: (val) => turnMove.hitCount = val as int,
+                        onDecrement: (val) => turnMove.hitCount = val as int,
+                        onChanged: (val) => turnMove.hitCount = val as int,
+                      ),
+                    ),
+                  ],
+                ),
         ),
         Expanded(
           flex: 1,
-          child: Row(
-            children: [
-              Checkbox(
-                  value: turnMove.criticalCount > 0,
-                  onChanged: (change) {
-                    if (change != null) {
-                      if (change) {
-                        turnMove.hitCount = 1;
-                        turnMove.criticalCount = 1;
-                      } else {
-                        turnMove.criticalCount = 0;
-                      }
-                      widget.onUpdate();
-                      setState(() {});
-                    }
-                  }),
-              Text(MoveHit.critical.displayName),
-            ],
-          ),
+          child: widget.maxMoveCount <= 1
+              ? Row(
+                  children: [
+                    Checkbox(
+                        value: turnMove.criticalCount > 0,
+                        onChanged: (change) {
+                          if (change != null) {
+                            if (change) {
+                              turnMove.hitCount = 1;
+                              turnMove.criticalCount = 1;
+                            } else {
+                              turnMove.criticalCount = 0;
+                            }
+                            widget.onUpdate();
+                            setState(() {});
+                          }
+                        }),
+                    Text(MoveHit.critical.displayName),
+                  ],
+                )
+              : Row(
+                  children: [
+                    Text(MoveHit.critical.displayName),
+                    Expanded(
+                      child: NumberInputWithIncrementDecrement(
+                        controller: criticalController,
+                        numberFieldDecoration: const InputDecoration(
+                          border: UnderlineInputBorder(),
+                        ),
+                        widgetContainerDecoration: const BoxDecoration(
+                          border: null,
+                        ),
+                        min: 0,
+                        max: widget.maxMoveCount,
+                        initialValue: turnMove.criticalCount,
+                        onIncrement: (val) =>
+                            turnMove.criticalCount = val as int,
+                        onDecrement: (val) =>
+                            turnMove.criticalCount = val as int,
+                        onChanged: (val) => turnMove.criticalCount = val as int,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ],
     );

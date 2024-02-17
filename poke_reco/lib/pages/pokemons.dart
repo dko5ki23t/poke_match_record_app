@@ -546,7 +546,8 @@ class PokemonsPageState extends State<PokemonsPage> {
                                                     }
                                                     await pokeData
                                                         .deleteMyPokemon(
-                                                            deleteIDs);
+                                                            deleteIDs,
+                                                            appState.notify);
                                                     setState(() {});
                                                   },
                                                 );
@@ -570,7 +571,9 @@ class PokemonsPageState extends State<PokemonsPage> {
                                               Pokemon copiedPokemon =
                                                   pokemons[e]!.copy();
                                               await pokeData.addMyPokemon(
-                                                  copiedPokemon, true);
+                                                  copiedPokemon,
+                                                  true,
+                                                  appState.notify);
                                             }
                                           }
                                           setState(() {

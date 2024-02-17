@@ -176,7 +176,7 @@
   "battleAddMoveTimes3": "{move}(3回目)を追加",
   "battleAddMoveTimes4": "{move}({count}回目)を追加",
   "battleProcess": "処理",
-  "battleAddProcess": "{timing}処理を追加",
+  "battleAddProcess": "処理を追加",
   "battleWeatherField": "天気・フィールド",
   "battleEffectType": "種別",
   "battleEffectPlayer": "発動主",

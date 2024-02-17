@@ -87,7 +87,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     }
 
     void onComplete() async {
-      await pokeData.addParty(widget.party, widget.isNew);
+      await pokeData.addParty(widget.party, widget.isNew, appState.notify);
       widget.onFinish();
     }
 

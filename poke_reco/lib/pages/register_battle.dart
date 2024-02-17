@@ -113,6 +113,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   final ownBattleCommandKey = GlobalKey<BattleCommandState>();
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
+  bool deleteEffectMode = false;
   //PlayerType? firstActionPlayer;
 
 /*
@@ -193,8 +194,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 //      focusState = turns[turnNum-1].
 //                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      turns[turnNum - 1].phases.adjust(
-          isNewTurn, turnNum, turns[turnNum - 1], ownParty, opponentParty, loc);
+      turns[turnNum - 1].phases.adjust(isNewTurn, turnNum, turns[turnNum - 1],
+          ownParty, opponentParty, widget.battle.opponentName, loc);
       isNewTurn = false;
       focusState =
           turns[turnNum - 1].updateEndingState(ownParty, opponentParty, loc);
@@ -243,75 +244,72 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
 
-      showDialog(
+      /*showDialog(
           context: context,
           builder: (_) {
             return DeleteEditingCheckDialogWithCancel(
               question: loc.battlesTabQuestionSavePartyPokemon,
-              onYesPressed: () async {
-                var lastState = turns.last.phases.isNotEmpty
-                    ? turns.last.getProcessedStates(
-                        turns.last.phases.length - 1,
-                        ownParty,
-                        opponentParty,
-                        loc)
-                    : turns.last.copyInitialState();
-                var oppPokemonStates =
-                    lastState.getPokemonStates(PlayerType.opponent);
-                // 現在無効のポケモンを有効化し、DBに保存
-                for (int i = 0; i < opponentParty.pokemonNum; i++) {
-                  var poke = opponentParty.pokemons[i]!;
-                  var pokemonState = oppPokemonStates[i];
-                  poke.owner = Owner.fromBattle;
-                  // もちもの
-                  opponentParty.items[i] = poke.item;
-                  // 対戦で確定できなかったものを穴埋めする
-                  if (poke.ability.id == 0) {
-                    poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
-                  }
-                  /*if (poke.temper.id == 0) {
+              onYesPressed: () async */
+      {
+        var lastState = turns.last.phases.isNotEmpty
+            ? turns.last.updateEndingState(ownParty, opponentParty, loc)
+            : turns.last.copyInitialState();
+        var oppPokemonStates = lastState.getPokemonStates(PlayerType.opponent);
+        // 現在無効のポケモンを有効化し、DBに保存
+        for (int i = 0; i < opponentParty.pokemonNum; i++) {
+          var poke = opponentParty.pokemons[i]!;
+          var pokemonState = oppPokemonStates[i];
+          poke.owner = Owner.fromBattle;
+          // もちもの
+          opponentParty.items[i] = poke.item;
+          // 対戦で確定できなかったものを穴埋めする
+          if (poke.ability.id == 0) {
+            poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
+          }
+          /*if (poke.temper.id == 0) {
                   poke.temper = pokeData.tempers[1]!;
                 }*/
-                  // TODO
-                  for (final stat in StatIndexList.listHtoS) {
-                    poke.stats.sixParams[stat.index].real =
-                        pokemonState.minStats[stat].real;
-                    poke.updateStatsRefReal(stat);
-                  }
-                  // TODO
-                  for (int j = 0; j < pokemonState.moves.length; j++) {
-                    if (j < poke.moves.length) {
-                      poke.moves[j] = pokemonState.moves[j];
-                    } else {
-                      poke.moves.add(pokemonState.moves[j]);
-                    }
-                    if (j < poke.pps.length) {
-                      poke.pps[j] = pokeData.moves[poke.moves[j]!.id]!.pp;
-                    } else {
-                      poke.pps.add(pokeData.moves[poke.moves[j]!.id]!.pp);
-                    }
-                  }
-                  poke.teraType = pokemonState.teraType1;
-                  /*if (poke.move1.id == 0) {
+          // TODO
+          for (final stat in StatIndexList.listHtoS) {
+            poke.stats.sixParams[stat.index].real =
+                pokemonState.minStats[stat].real;
+            poke.updateStatsRefReal(stat);
+          }
+          // TODO
+          for (int j = 0; j < pokemonState.moves.length; j++) {
+            if (j < poke.moves.length) {
+              poke.moves[j] = pokemonState.moves[j];
+            } else {
+              poke.moves.add(pokemonState.moves[j]);
+            }
+            if (j < poke.pps.length) {
+              poke.pps[j] = pokeData.moves[poke.moves[j]!.id]!.pp;
+            } else {
+              poke.pps.add(pokeData.moves[poke.moves[j]!.id]!.pp);
+            }
+          }
+          poke.teraType = pokemonState.teraType1;
+          /*if (poke.move1.id == 0) {
                   poke.move1 = pokeData.pokeBase[poke.no]!.move.first;
                 }
                 if (poke.teraType.id == 0) {
                   poke.teraType = PokeType.createFromId(1);
                 }*/
-                  await pokeData.addMyPokemon(poke, poke.id == 0);
-                }
-                opponentParty.owner = Owner.fromBattle;
+          await pokeData.addMyPokemon(poke, poke.id == 0, appState.notify);
+        }
+        opponentParty.owner = Owner.fromBattle;
 
-                await widget.onSaveOpponentParty(
+        // TODO
+        /*await widget.onSaveOpponentParty(
                   opponentParty,
                   lastState,
-                );
+                );*/
 
-                // TODO パーティを保存されなかった場合は、hiddenとして残す必要あり（battleを正しく保存できないため）
-                // TODO refCount
-                await pokeData.addBattle(battle, widget.isNew);
-                widget.onFinish();
-              },
+        // TODO パーティを保存されなかった場合は、hiddenとして残す必要あり（battleを正しく保存できないため）
+        // TODO refCount
+        await pokeData.addBattle(battle, widget.isNew, appState.notify);
+        widget.onFinish();
+      } /*,
               onNoPressed: () async {
                 // ポケモンとパーティを(ID決まってないやつは)hiddenとして保存する必要あり(battleを正しく保存できないため)
                 for (int i = 0; i < opponentParty.pokemonNum; i++) {
@@ -329,7 +327,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 widget.onFinish();
               },
             );
-          });
+          });*/
     }
 
     void onNext() {
@@ -711,6 +709,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                 const Divider(
                   height: 5,
                   thickness: 1,
+                  indent: 5,
+                  endIndent: 5,
                 ),
                 FittedBox(
                   child: SizedBox(
@@ -718,64 +718,121 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     //height: theme.textTheme.bodyMedium!.fontSize! *
                     //    theme.textTheme.bodyMedium!.height!,
                     height: 50,
-                    //child: ReorderableListView(
-                    child: ListView(
+                    child: ReorderableListView(
                       scrollDirection: Axis.horizontal,
-                      //onReorder: (oldIndex, newIndex) {
-/*                        setState(() {
+                      onReorder: (oldIndex, newIndex) {
+                        if (oldIndex == turns[turnNum - 1].phases.length ||
+                            newIndex == turns[turnNum - 1].phases.length) {
+                          // 処理追加ボタンの入れ替えや処理追加ボタンの後ろへの移動は無効
+                          return;
+                        }
+                        setState(() {
                           if (oldIndex < newIndex) {
                             newIndex -= 1;
                           }
-                          final item = sortedPokemons.removeAt(oldIndex);
-                          sortedPokemons.insert(newIndex, item);
-                          for (int i = 0; i < sortedPokemons.length; i++) {
-                            var pokemon = pokemons[sortedPokemons[i].key]!;
-                            pokemon.viewOrder = i + 1;
+                          final item =
+                              turns[turnNum - 1].phases.removeAt(oldIndex);
+                          if (turns[turnNum - 1]
+                              .phases
+                              .insertableTimings(
+                                  newIndex, turnNum, turns[turnNum - 1])
+                              .contains(item.timing)) {
+                            turns[turnNum - 1].phases.insert(newIndex, item);
+                          } else {
+                            // 入れ替えない
+                            turns[turnNum - 1].phases.insert(oldIndex, item);
                           }
-                        });*/
-                      //},
+                        });
+                      },
+                      onReorderStart: (index) {
+                        setState(() {
+                          deleteEffectMode = true;
+                        });
+                      },
+                      padding: EdgeInsets.symmetric(horizontal: 10),
                       children: [
                         for (final effect in turns[turnNum - 1]
                             .phases
                             .where((element) => element.isValid()))
-                          Container(
-                            //key: Key('TurnEffect${effect.hashCode}'),
-                            decoration: ShapeDecoration(
-                              color: Colors.green[200],
-                              shape: BubbleBorder(
-                                  nipInBottom:
-                                      effect.playerType == PlayerType.opponent
+                          GestureDetector(
+                            key: Key('TurnEffect${effect.hashCode}'),
+                            onTap: () {},
+                            /*() => showDialog(
+                              context: context,
+                              builder: (_) {
+                                return AlertDialog(
+                                  title: Text('OK'),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: Text(loc.commonCancel),
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),*/
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 5),
+                              child: Container(
+                                decoration: ShapeDecoration(
+                                  color: Colors.green[200],
+                                  shape: BubbleBorder(
+                                      nipInBottom: effect.playerType ==
+                                              PlayerType.opponent
                                           ? true
                                           : effect.playerType == PlayerType.me
                                               ? false
                                               : null),
+                                ),
+                                alignment: Alignment.center,
+                                padding: EdgeInsets.all(4),
+                                child: Text(effect.displayName(loc: loc)),
+                              ),
+                              /*Align(
+                                    alignment: Alignment.topRight,
+                                    child: GestureDetector(
+                                      child: Icon(Icons.remove_circle),
+                                      onTap: () {
+                                        setState(() {
+                                          turns[turnNum - 1]
+                                              .phases
+                                              .remove(effect);
+                                        });
+                                      },
+                                    ),
+                                  ),*/
                             ),
-                            child: Text(effect.displayName(loc: loc)),
                           ),
-                        // 効果追加ボタン
-                        IconButton(
-                          //key: Key('addIcon'),
-                          icon: Icon(Icons.add_circle),
-                          onPressed: () {
-                            final effectInsertIdxMap = turns[turnNum - 1]
-                                .getEffectCandidates(null, null, ownParty,
-                                    opponentParty, loc, turnNum);
-                            final effectList = effectInsertIdxMap.keys.toList();
-                            showDialog(
-                                context: context,
-                                builder: (_) {
-                                  return AddEffectDialog(
-                                    (effect) {
-                                      turns[turnNum - 1].phases.insert(
-                                          effectInsertIdxMap[effect]!.last,
-                                          effect);
-                                      setState(() {});
-                                    },
-                                    '効果を追加する',
-                                    effectList,
-                                  );
-                                });
-                          },
+                        // 処理追加ボタン
+                        GestureDetector(
+                          key: Key('addIcon'),
+                          onLongPress: () {}, // 移動禁止
+                          child: IconButton(
+                            icon: Icon(Icons.add_circle),
+                            onPressed: () {
+                              final effectInsertIdxMap = turns[turnNum - 1]
+                                  .getEffectCandidates(null, null, ownParty,
+                                      opponentParty, loc, turnNum);
+                              final effectList =
+                                  effectInsertIdxMap.keys.toList();
+                              showDialog(
+                                  context: context,
+                                  builder: (_) {
+                                    return AddEffectDialog(
+                                      (effect) {
+                                        turns[turnNum - 1].phases.insert(
+                                            effectInsertIdxMap[effect]!.last,
+                                            effect);
+                                        setState(() {});
+                                      },
+                                      loc.battleAddProcess,
+                                      effectList,
+                                    );
+                                  });
+                            },
+                          ),
                         ),
                       ],
                     ),
@@ -913,41 +970,48 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           navigator.pop();
         }
       },
-      child: Scaffold(
-        appBar: AppBar(
-          title: title,
-          actions: [
-            MyIconButton(
-              theme: theme,
-              onPressed: backPressed,
-              tooltip: loc.battlesTabToolTipPrev,
-              icon: Icon(Icons.navigate_before),
-            ),
-            MyIconButton(
-              theme: theme,
-              onPressed: nextPressed,
-              tooltip: loc.battlesTabToolTipNext,
-              icon: Icon(Icons.navigate_next),
-            ),
-            SizedBox(
-              height: 20,
-              child: VerticalDivider(
-                thickness: 1,
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            deleteEffectMode = false;
+          });
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: title,
+            actions: [
+              MyIconButton(
+                theme: theme,
+                onPressed: backPressed,
+                tooltip: loc.battlesTabToolTipPrev,
+                icon: Icon(Icons.navigate_before),
               ),
-            ),
-            MyIconButton(
-              theme: theme,
-              onPressed: (pageType == RegisterBattlePageType.turnPage &&
-                      getSelectedNum(appState.editingPhase) == 0 &&
-                      widget.battle != pokeData.battles[widget.battle.id])
-                  ? () => onComplete()
-                  : null,
-              tooltip: loc.registerSave,
-              icon: Icon(Icons.save),
-            ),
-          ],
+              MyIconButton(
+                theme: theme,
+                onPressed: nextPressed,
+                tooltip: loc.battlesTabToolTipNext,
+                icon: Icon(Icons.navigate_next),
+              ),
+              SizedBox(
+                height: 20,
+                child: VerticalDivider(
+                  thickness: 1,
+                ),
+              ),
+              MyIconButton(
+                theme: theme,
+                onPressed: (pageType == RegisterBattlePageType.turnPage &&
+                        getSelectedNum(appState.editingPhase) == 0 &&
+                        widget.battle != pokeData.battles[widget.battle.id])
+                    ? () => onComplete()
+                    : null,
+                tooltip: loc.registerSave,
+                icon: Icon(Icons.save),
+              ),
+            ],
+          ),
+          body: lists,
         ),
-        body: lists,
       ),
     );
   }

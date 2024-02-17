@@ -405,6 +405,8 @@ class MyAppState extends ChangeNotifier {
     battles = pokeData.battles;
     notifyListeners();
   }
+
+  void notify() => notifyListeners();
 }
 
 class ScaffoldWithNavBar extends StatelessWidget {

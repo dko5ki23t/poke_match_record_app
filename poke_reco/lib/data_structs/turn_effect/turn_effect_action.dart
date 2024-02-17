@@ -699,7 +699,8 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // ポケモン交代
-    if (type == TurnActionType.change) {
+    if (type == TurnActionType.change &&
+        getChangePokemonIndex(playerType) != null) {
       // のうりょく変化リセット、現在のポケモンを表すインデックス更新
       myState.processExitEffect(yourState, state);
       state.setPokemonIndex(playerType, getChangePokemonIndex(playerType)!);
@@ -951,7 +952,9 @@ class TurnEffectAction extends TurnEffect {
 
       // ダメージ計算式を表示するかどうか
       showDamageCalc = false;
-      movePower[0] = replacedMove.power;
+      for (int i = 0; i < replacedMove.maxMoveCount(); i++) {
+        movePower[i] = replacedMove.power;
+      }
       // わざのタイプ(わざによっては変動するため)
       moveType = replacedMove.type;
       // ダメージ計算式文字列
@@ -6070,7 +6073,7 @@ class TurnEffectAction extends TurnEffect {
             default:
               // ダメージ入力のWidgetを追加
               templateTitles.add(Tuple3(CommandWidgetTemplate.inputYourHP,
-                  replacedMove.displayName, null));
+                  replacedMove.displayName, [replacedMove.maxMoveCount()]));
               break;
           }
           break;
@@ -6722,11 +6725,13 @@ class TurnEffectAction extends TurnEffect {
       case CommandWidgetTemplate.inputYourHP:
         return Column(
           children: [
+            // 命中・急所(ON/OFF)。連続わざの場合はそれぞれの回数を入力
             Expanded(
                 flex: 1,
                 child: HitCriticalInputRow(
                   turnMove: this,
                   onUpdate: onUpdate,
+                  maxMoveCount: extra[0] as int,
                 )),
             Expanded(
               flex: 6,

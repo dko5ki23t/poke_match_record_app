@@ -13,6 +13,7 @@ import 'package:poke_reco/data_structs/turn_effect/turn_effect_after_move.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_field.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_gameset.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_individual_field.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_terastal.dart';
@@ -42,6 +43,7 @@ enum EffectType {
   terastal,
   afterMove,
   userEdit,
+  gameset,
 }
 
 /// 効果の種類名のextension
@@ -59,6 +61,7 @@ extension EffectTypename on EffectType {
     9: Tuple2('', ''),
     10: Tuple2('行動', 'Action'),
     11: Tuple2('', ''),
+    12: Tuple2('対戦終了', 'Game Set'),
   };
 
   /// 表示名
@@ -2950,6 +2953,12 @@ abstract class TurnEffect extends Equatable implements Copyable {
       case EffectType.terastal:
         return TurnEffectTerastal.deserialize(str, split1, split2, split3,
             version: version);
+      case EffectType.gameset:
+        return TurnEffectGameset.deserialize(
+          str,
+          split1,
+          version: version,
+        );
     }
   }
 

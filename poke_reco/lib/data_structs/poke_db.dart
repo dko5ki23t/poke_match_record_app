@@ -1143,7 +1143,7 @@ class PokeDB {
           await deleteDatabase(myPokemonDBPath);
           await _createMyPokemonDB();
           for (final pokemon in pokemons.values) {
-            addMyPokemon(pokemon, false);
+            addMyPokemon(pokemon, false, () {});
           }
         }
 
@@ -1181,7 +1181,7 @@ class PokeDB {
           await deleteDatabase(partyDBPath);
           await _createPartyDB();
           for (final party in parties.values) {
-            addParty(party, false);
+            addParty(party, false, () {});
           }
         }
       }
@@ -1388,7 +1388,11 @@ class PokeDB {
     }
   }
 
-  Future<void> addMyPokemon(Pokemon myPokemon, bool createNew) async {
+  Future<void> addMyPokemon(
+    Pokemon myPokemon,
+    bool createNew,
+    void Function() notify,
+  ) async {
     await _prepareMyPokemonDB();
 
     // 新規作成なら新たなIDを割り振る
@@ -1404,6 +1408,9 @@ class PokeDB {
       myPokemon.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    // 通知
+    notify();
   }
 
   Future<void> updateAllMyPokemonViewOrder() async {
@@ -1495,7 +1502,7 @@ class PokeDB {
             for (var map in maps) {
               var battle = Battle.createFromDBMap(map, version: v);
               // 現バージョンで保存し直す
-              await addBattle(battle, false);
+              await addBattle(battle, false, () {});
             }
             // バージョン変更
             database.setVersion(pokeRecoInternalVersion);
@@ -1507,7 +1514,10 @@ class PokeDB {
     }
   }
 
-  Future<void> deleteMyPokemon(List<int> ids) async {
+  Future<void> deleteMyPokemon(
+    List<int> ids,
+    void Function() notify,
+  ) async {
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1525,6 +1535,9 @@ class PokeDB {
     }
 
     await _deleteUnrefs();
+
+    // 通知
+    notify();
   }
 
   Future<void> _preparePartyDB() async {
@@ -1553,7 +1566,11 @@ class PokeDB {
     }
   }
 
-  Future<void> addParty(Party party, bool createNew) async {
+  Future<void> addParty(
+    Party party,
+    bool createNew,
+    void Function() notify,
+  ) async {
     await _preparePartyDB();
 
     // 新規作成なら新たなIDを割り振る
@@ -1569,6 +1586,9 @@ class PokeDB {
       party.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+
+    // 通知
+    notify();
   }
 
   Future<void> updateAllPartyViewOrder() async {
@@ -1588,7 +1608,10 @@ class PokeDB {
     }
   }
 
-  Future<void> deleteParty(List<int> ids) async {
+  Future<void> deleteParty(
+    List<int> ids,
+    void Function() notify,
+  ) async {
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1606,6 +1629,9 @@ class PokeDB {
     }
 
     await _deleteUnrefs();
+
+    // 通知
+    notify();
   }
 
   Future<void> _prepareBattleDB() async {
@@ -1634,7 +1660,11 @@ class PokeDB {
     }
   }
 
-  Future<void> addBattle(Battle battle, bool createNew) async {
+  Future<void> addBattle(
+    Battle battle,
+    bool createNew,
+    void Function() notify,
+  ) async {
     await _prepareBattleDB();
 
     // 新規作成なら新たなIDを割り振る
@@ -1653,6 +1683,8 @@ class PokeDB {
       battle.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
+    // 通知
+    notify();
   }
 
   Future<void> updateAllBattleViewOrder() async {
@@ -1672,7 +1704,10 @@ class PokeDB {
     }
   }
 
-  Future<void> deleteBattle(List<int> ids) async {
+  Future<void> deleteBattle(
+    List<int> ids,
+    void Function() notify,
+  ) async {
     if (ids.isEmpty) return;
     if (kIsWeb) {
       databaseFactory = databaseFactoryFfiWeb;
@@ -1701,6 +1736,8 @@ class PokeDB {
     _deleteUnrefs();
     // パーティの勝率を更新
     updatePartyWinRate();
+    // 通知
+    notify();
   }
 
   Future<Database> _createMyPokemonDB() async {

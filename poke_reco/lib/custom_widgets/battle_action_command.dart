@@ -73,7 +73,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     final yourState = prevState.getPokemonState(playerType.opposite, null);
     List<Move> moves = [];
     List<ListTile> moveTiles = [];
-    if (turnMove.type == TurnActionType.move) {
+    if (turnMove.type == TurnActionType.move &&
+        state == CommandState.selectCommand) {
       var myPokemon = myState.pokemon;
       var yourFields = prevState.getIndiFields(playerType.opposite);
       // 覚えているわざをリストの先頭に
@@ -156,9 +157,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             onTap: () {
               parentSetState(() {
                 turnMove.move = myMove;
+                turnMove.hitCount = myMove.maxMoveCount();
                 if (turnMove.isCriticalFromMove(
                     myMove, myState, yourState, yourFields)) {
-                  turnMove.criticalCount = 1;
+                  turnMove.criticalCount = turnMove.hitCount;
                 }
                 turnMove.moveAdditionalEffects = myMove.isSurelyEffect()
                     ? MoveEffect(myMove.effect.id)

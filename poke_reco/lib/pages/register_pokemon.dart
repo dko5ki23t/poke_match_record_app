@@ -146,7 +146,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
           }
         }
       }
-      await pokeData.addMyPokemon(myPokemon, myPokemon.id == 0);
+      await pokeData.addMyPokemon(
+          myPokemon, myPokemon.id == 0, appState.notify);
       widget.onFinish();
     }
 
