@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
-import 'package:poke_reco/custom_widgets/pokemon_tile.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -345,11 +344,12 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               for (int i = 0; i < myParty.pokemonNum; i++) {
                 if (addedIndex.contains(i)) continue;
                 pokemonTiles.add(
-                  PokemonTile(
+                  ChangePokemonCommandTile(
                     myParty.pokemons[i]!,
                     theme,
+                    onTap: null,
                     enabled: false,
-                    dense: true,
+                    showNetworkImage: PokeDB().getPokeAPI,
                   ),
                 );
               }
