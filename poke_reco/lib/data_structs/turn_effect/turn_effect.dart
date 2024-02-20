@@ -517,6 +517,27 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// ```
   void setChangePokemonIndex(PlayerType player, int? val);
 
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  });
+
   /// 引数で指定したポケモンor nullならフィールドや天気が起こし得る処理を返す
   /// ```
   /// ```

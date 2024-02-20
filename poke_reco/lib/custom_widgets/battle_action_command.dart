@@ -176,6 +176,20 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         turnMove.getReplacedMoveType(
                             myMove, myState, prevState),
                         yourState);
+                // わざ選択で即isValid()==trueになるわざのために呼び出す
+                turnMove.extraCommandInputList(
+                    initialKeyNumber: 0,
+                    theme: theme,
+                    onBackPressed: () {},
+                    onConfirm: () {},
+                    onUpdate: () {},
+                    myParty: myParty,
+                    yourParty: yourParty,
+                    myState: myState,
+                    yourState: yourState,
+                    state: prevState,
+                    controller: commandPagesController,
+                    loc: loc);
                 // 表示Widgetのコントローラリセット
                 commandPagesController = CommandPagesController();
                 state = CommandState.extraInput;
@@ -342,17 +356,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               typeCommand = [
                 Expanded(
                   flex: 1,
-                  child: Row(
-                    children: [
-                      TextButton(
-                          onPressed: () {},
-                          child: Text(turnMove.isFirst != null
-                              ? turnMove.isFirst!
-                                  ? loc.battleActFirst
-                                  : loc.battleActSecond
-                              : ' '))
-                    ],
-                  ),
+                  child: Container(),
                 ),
                 Expanded(
                   flex: 6,

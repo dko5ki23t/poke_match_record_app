@@ -1,21 +1,30 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/field.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/data_structs/weather.dart';
+import 'package:poke_reco/tool.dart';
 
 /// ターン内効果のうち、「とくせい」によるものについて管理するclass
 class TurnEffectAbility extends TurnEffect {
@@ -905,6 +914,695 @@ class TurnEffectAbility extends TurnEffect {
     return ret;
   }
 
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  @override
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    // とくせいによる効果
+    switch (abilityID) {
+      case 10: // ちくでん
+      case 11: // ちょすい
+      case 44: // あめうけざら
+      case 87: // かんそうはだ
+      case 90: // ポイズンヒール
+      case 94: // サンパワー
+      case 115: // アイスボディ
+      case 209: // ばけのかわ
+      case 211: // スワームチェンジ
+      case 297: // どしょく
+        return DamageIndicateRow(
+          myState.pokemon,
+          controller,
+          playerType == PlayerType.me,
+          (value) {
+            if (playerType == PlayerType.me) {
+              extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+            } else {
+              extraArg1 = myState.remainHPPercent - (int.tryParse(value) ?? 0);
+            }
+          },
+          extraArg1,
+          true,
+          loc: loc,
+        );
+      case 16: // へんしょく
+      case 168: // へんげんじざい
+      case 236: // リベロ
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: TypeDropdownButton(
+                loc.battleTypeToChange,
+                (value) {
+                  extraArg1 = value;
+                },
+                extraArg1 == 0 ? null : PokeType.values[extraArg1],
+              ),
+            ),
+          ],
+        );
+      case 24: // さめはだ
+      case 106: // ゆうばく
+      case 123: // ナイトメア
+      case 160: // てつのトゲ
+      case 215: // とびだすなかみ
+        return DamageIndicateRow(
+          yourState.pokemon,
+          controller,
+          playerType != PlayerType.me,
+          (value) {
+            if (playerType == PlayerType.me) {
+              extraArg1 =
+                  yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+            } else {
+              extraArg1 = yourState.remainHP - (int.tryParse(value) ?? 0);
+            }
+          },
+          extraArg1,
+          true,
+          loc: loc,
+        );
+      case 27: // ほうし
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  label: Text(loc.battleOpponentAilments),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: Ailment.poison,
+                    child: Text(Ailment(Ailment.poison).displayName),
+                  ),
+                  DropdownMenuItem(
+                    value: Ailment.paralysis,
+                    child: Text(Ailment(Ailment.paralysis).displayName),
+                  ),
+                  DropdownMenuItem(
+                    value: Ailment.sleep,
+                    child: Text(Ailment(Ailment.sleep).displayName),
+                  ),
+                ],
+                value: extraArg1 == 0 ? null : extraArg1,
+                onChanged: (value) {
+                  extraArg1 = value;
+                },
+                isInput: true,
+                textValue: Ailment(extraArg1).displayName,
+              ),
+            ),
+          ],
+        );
+      case 36: // トレース
+        return Row(
+          children: [
+            Expanded(
+              child: _myTypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.battleAbilityTraced,
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Ability> matches = [];
+                  if (playerType == PlayerType.me) {
+                    if (yourState.getCurrentAbility().id != 0) {
+                      matches.add(yourState.getCurrentAbility());
+                    } else {
+                      matches.addAll(yourState.possibleAbilities);
+                    }
+                    if (state.canAnyZoroark) {
+                      matches.add(PokeDB().abilities[149]!);
+                    }
+                  } else {
+                    matches.add(yourState.getCurrentAbility());
+                  }
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                },
+                isInput: true,
+              ),
+            ),
+          ],
+        );
+      case 53: // ものひろい
+      case 139: // しゅうかく
+        return Row(
+          children: [
+            Expanded(
+              child: _myTypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.commonItem,
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Item> matches = PokeDB().items.values.toList();
+                  matches.removeWhere((e) => e.id == 0);
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                },
+                isInput: true,
+              ),
+            ),
+          ],
+        );
+      case 88: // ダウンロード
+        return Row(
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text(loc.commonAttack),
+                  ),
+                  DropdownMenuItem(
+                    value: 2,
+                    child: Text(loc.commonSAttack),
+                  ),
+                ],
+                value: extraArg1,
+                onChanged: (value) {
+                  extraArg1 = value;
+                },
+                isInput: true,
+                textValue:
+                    extraArg1 == 0 ? loc.commonAttack : loc.commonSAttack,
+              ),
+            ),
+            Text(loc.battleRankUp1),
+          ],
+        );
+      case 108: // よちむ
+      case 130: // のろわれボディ
+        return Row(
+          children: [
+            Expanded(
+              child: _myTypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.commonMove,
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Move> matches = [];
+                  if (playerType == PlayerType.me) {
+                    matches.addAll(yourState.moves);
+                  } else {
+                    matches.add(yourState.pokemon.move1);
+                    if (yourState.pokemon.move2 != null) {
+                      matches.add(yourState.pokemon.move2!);
+                    }
+                    if (yourState.pokemon.move3 != null) {
+                      matches.add(yourState.pokemon.move3!);
+                    }
+                    if (yourState.pokemon.move4 != null) {
+                      matches.add(yourState.pokemon.move4!);
+                    }
+                  }
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                },
+                isInput: true,
+              ),
+            ),
+          ],
+        );
+      case 119: // おみとおし
+      case 124: // わるいてぐせ
+      case 170: // マジシャン
+        return Row(
+          children: [
+            Expanded(
+              child: _myTypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.commonItem,
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<Item> matches = [];
+                  if (playerType == PlayerType.me) {
+                    if (yourState.holdingItem != null &&
+                        yourState.holdingItem!.id != 0) {
+                      matches.add(yourState.holdingItem!);
+                    } else {
+                      matches = PokeDB().items.values.toList();
+                      for (var item in yourState.impossibleItems) {
+                        matches.removeWhere((element) => element.id == item.id);
+                      }
+                    }
+                  } else if (yourState.holdingItem != null) {
+                    matches = [yourState.holdingItem!];
+                  }
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                },
+                isInput: true,
+              ),
+            ),
+          ],
+        );
+      case 141: // ムラっけ
+        return Column(
+          children: [
+            Row(
+              children: [
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (final statIndex in StatIndexList.listAtoS)
+                        DropdownMenuItem(
+                          value: statIndex.index - 1,
+                          child: Text(statIndex.name),
+                        ),
+                    ],
+                    value: extraArg1,
+                    onChanged: (value) {
+                      extraArg1 = value;
+                    },
+                    isInput: true,
+                    textValue: StatIndex.values[extraArg1 + 1].name,
+                  ),
+                ),
+                Text(loc.battleRankUp2),
+              ],
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            Row(
+              children: [
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (final statIndex in StatIndexList.listAtoS)
+                        DropdownMenuItem(
+                          value: statIndex.index - 1,
+                          child: Text(statIndex.name),
+                        ),
+                    ],
+                    value: extraArg2,
+                    onChanged: (value) {
+                      extraArg2 = value;
+                    },
+                    isInput: true,
+                    textValue: StatIndex.values[extraArg2 + 1].name,
+                  ),
+                ),
+                Text(loc.battleRankDown1),
+              ],
+            ),
+          ],
+        );
+      case 149: // イリュージョン
+        if (playerType == PlayerType.opponent) {
+          return Row(
+            children: [
+              Flexible(
+                child: _myDropdownButtonFormField(
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.battleIllusionedPokemon,
+                  ),
+                  items: <DropdownMenuItem>[
+                    for (int i = 0; i < opponentParty.pokemonNum; i++)
+                      DropdownMenuItem(
+                        value: i + 1,
+                        //enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
+                        child: Text(
+                          opponentParty.pokemons[i]!.name,
+                          overflow: TextOverflow.ellipsis,
+                          /*style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
+                              Colors.black : Colors.grey),*/
+                        ),
+                      ),
+                  ],
+                  value: extraArg1 <= 0 ? null : extraArg1,
+                  onChanged: (value) {
+                    extraArg1 = value;
+                  },
+                  isInput: true,
+                  textValue: extraArg1 > 0
+                      ? opponentParty.pokemons[extraArg1 - 1]?.name
+                      : '',
+                ),
+              ),
+            ],
+          );
+        }
+        break;
+      case 281: // こだいかっせい
+      case 282: // クォークチャージ
+      case 224: // ビーストブースト
+        return Row(
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: -1,
+                    child: Text(loc.battleEffectExpired),
+                  ),
+                  for (final statIndex in StatIndexList.listAtoS)
+                    DropdownMenuItem(
+                      value: statIndex.index - 1,
+                      child: Text(statIndex.name),
+                    ),
+                ],
+                value: extraArg1,
+                onChanged: (value) {
+                  extraArg1 = value;
+                },
+                isInput: true,
+                textValue: extraArg1 == -1
+                    ? loc.battleEffectExpired
+                    : StatIndex.values[extraArg1 + 1].name,
+              ),
+            ),
+            extraArg1 >= 0 ? Text(loc.battleStatIncrease) : Text(''),
+          ],
+        );
+      case 290: // びんじょう
+        return Row(
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  for (final statIndex in StatIndexList.listAtoS)
+                    DropdownMenuItem(
+                      value: statIndex.index - 1,
+                      child: Text(statIndex.name),
+                    ),
+                ],
+                value: extraArg1,
+                onChanged: (value) {
+                  extraArg1 = value;
+                },
+                isInput: true,
+                textValue: StatIndex.values[extraArg1 + 1].name,
+              ),
+            ),
+            Text(loc.battleOpportunist1),
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text('1'),
+                  ),
+                  DropdownMenuItem(
+                    value: 2,
+                    child: Text('2'),
+                  ),
+                  DropdownMenuItem(
+                    value: 3,
+                    child: Text('3'),
+                  ),
+                  DropdownMenuItem(
+                    value: 4,
+                    child: Text('4'),
+                  ),
+                  DropdownMenuItem(
+                    value: 5,
+                    child: Text('5'),
+                  ),
+                  DropdownMenuItem(
+                    value: 6,
+                    child: Text('6'),
+                  ),
+                ],
+                value: extraArg2 == 0 ? null : extraArg2,
+                onChanged: (value) {
+                  extraArg2 = value;
+                },
+                isInput: true,
+                textValue: extraArg2.toString(),
+              ),
+            ),
+            Text(loc.battleOpportunist2),
+          ],
+        );
+      case 216: // おどりこ
+        return Column(
+          children: [
+            Expanded(
+              child: _myTypeAheadField(
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.commonMove,
+                  ),
+                ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<int> ids = [
+                    872,
+                    837,
+                    775,
+                    483,
+                    14,
+                    80,
+                    297,
+                    298,
+                    552,
+                    461,
+                    686,
+                    349,
+                  ];
+                  List<Move> matches = [];
+                  for (var i in ids) {
+                    matches.add(PokeDB().moves[i]!);
+                  }
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                },
+                isInput: true,
+              ),
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            extraArg1 == 872 ||
+                    extraArg1 == 80 ||
+                    extraArg1 == 552 ||
+                    extraArg1 == 10552 ||
+                    extraArg1 == 686
+                ? DamageIndicateRow(
+                    yourState.pokemon,
+                    controller,
+                    playerType != PlayerType.me,
+                    (value) {
+                      if (playerType == PlayerType.me) {
+                        extraArg2 = yourState.remainHPPercent -
+                            (int.tryParse(value) ?? 0);
+                      } else {
+                        extraArg2 =
+                            yourState.remainHP - (int.tryParse(value) ?? 0);
+                      }
+                    },
+                    extraArg2,
+                    true,
+                    loc: loc,
+                  )
+                : extraArg1 == 775
+                    ? DamageIndicateRow(
+                        myState.pokemon,
+                        controller,
+                        playerType == PlayerType.me,
+                        (value) {
+                          if (playerType == PlayerType.me) {
+                            extraArg2 =
+                                myState.remainHP - (int.tryParse(value) ?? 0);
+                          } else {
+                            extraArg2 = myState.remainHPPercent -
+                                (int.tryParse(value) ?? 0);
+                          }
+                        },
+                        extraArg2,
+                        true,
+                        loc: loc,
+                      )
+                    : Container(),
+            extraArg1 == 552 || extraArg1 == 10552
+                ? SizedBox(
+                    height: 10,
+                  )
+                : Container(),
+            extraArg1 == 552 || extraArg1 == 10552
+                ? Expanded(
+                    child: _myDropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: loc.battleAdditionalEffect,
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: 552,
+                          child: Text(loc.commonNone),
+                        ),
+                        DropdownMenuItem(
+                          value: 10552,
+                          child: Text(loc
+                              .battleSAttackUp1(myState.pokemon.omittedName)),
+                        ),
+                      ],
+                      value: extraArg1,
+                      onChanged: (value) {
+                        extraArg1 = value;
+                      },
+                      isInput: true,
+                      textValue: extraArg1 == 552
+                          ? loc.commonNone
+                          : loc.battleSAttackUp1(myState.pokemon.omittedName),
+                    ),
+                  )
+                : Container(),
+          ],
+        );
+      default:
+        break;
+    }
+    return Container();
+  }
+
   @override
   bool isValid() =>
       playerType != PlayerType.none && timing != Timing.none && abilityID != 0;
@@ -1017,6 +1715,187 @@ class TurnEffectAbility extends TurnEffect {
         playerType == t.playerType &&
         timing == t.timing &&
         abilityID == (t as TurnEffectAbility).abilityID;
+  }
+
+  /// カスタムしたDropdownButtonFormField
+  /// ```
+  /// onFocus: フォーカスされたとき(タップされたとき)に呼ぶコールバック
+  /// isInput: 入力モードかどうか
+  /// textValue: 出力文字列(isInput==falseのとき必須)
+  /// prefixIconPokemon: フィールド前に配置するアイコンのポケモン
+  /// showNetworkImage: インターネットから取得したポケモンの画像を使うかどうか
+  /// ```
+  Widget _myDropdownButtonFormField<T>({
+    Key? key,
+    required List<DropdownMenuItem<T>>? items,
+    DropdownButtonBuilder? selectedItemBuilder,
+    T? value,
+    Widget? hint,
+    Widget? disabledHint,
+    required ValueChanged<T?>? onChanged,
+    VoidCallback? onTap,
+    int elevation = 8,
+    TextStyle? style,
+    Widget? icon,
+    Color? iconDisabledColor,
+    Color? iconEnabledColor,
+    double iconSize = 24.0,
+    bool isDense = true,
+    bool isExpanded = false,
+    double? itemHeight,
+    Color? focusColor,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Color? dropdownColor,
+    InputDecoration? decoration,
+    void Function(T?)? onSaved,
+    String? Function(T?)? validator,
+    AutovalidateMode? autovalidateMode,
+    double? menuMaxHeight,
+    bool? enableFeedback,
+    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    required bool isInput,
+    required String? textValue,
+    Pokemon? prefixIconPokemon,
+    bool showNetworkImage = false,
+    ThemeData? theme,
+  }) {
+    if (isInput) {
+      return DropdownButtonFormField(
+        key: key,
+        items: items,
+        selectedItemBuilder: selectedItemBuilder,
+        value: value,
+        hint: hint,
+        disabledHint: disabledHint,
+        onChanged: onChanged,
+        onTap: onTap,
+        elevation: elevation,
+        style: style,
+        icon: icon,
+        iconDisabledColor: iconDisabledColor,
+        iconEnabledColor: iconEnabledColor,
+        iconSize: iconSize,
+        isDense: isDense,
+        isExpanded: isExpanded,
+        itemHeight: itemHeight,
+        focusColor: focusColor,
+        focusNode: focusNode,
+        autofocus: autofocus,
+        dropdownColor: dropdownColor,
+        decoration: decoration,
+        onSaved: onSaved,
+        validator: validator,
+        autovalidateMode: autovalidateMode,
+        menuMaxHeight: menuMaxHeight,
+        enableFeedback: enableFeedback,
+        alignment: alignment,
+        borderRadius: borderRadius,
+        padding: padding,
+      );
+    } else {
+      return TextField(
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: decoration?.labelText,
+          prefixIcon: prefixIconPokemon != null
+              ? showNetworkImage
+                  ? Image.network(
+                      PokeDB().pokeBase[prefixIconPokemon.no]!.imageUrl,
+                      height: theme?.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    )
+                  : const Icon(Icons.catching_pokemon)
+              : null,
+        ),
+        controller: TextEditingController(
+          text: textValue,
+        ),
+        readOnly: true,
+      );
+    }
+  }
+
+  Widget _myTypeAheadField<T>({
+    required SuggestionsCallback<T> suggestionsCallback,
+    required ItemBuilder<T> itemBuilder,
+    required SuggestionSelectionCallback<T> onSuggestionSelected,
+    TextFieldConfiguration textFieldConfiguration =
+        const TextFieldConfiguration(),
+    SuggestionsBoxDecoration suggestionsBoxDecoration =
+        const SuggestionsBoxDecoration(),
+    Duration debounceDuration = const Duration(milliseconds: 300),
+    SuggestionsBoxController? suggestionsBoxController,
+    ScrollController? scrollController,
+    WidgetBuilder? loadingBuilder,
+    WidgetBuilder? noItemsFoundBuilder,
+    ErrorBuilder? errorBuilder,
+    AnimationTransitionBuilder? transitionBuilder,
+    double animationStart = 0.25,
+    Duration animationDuration = const Duration(milliseconds: 500),
+    bool getImmediateSuggestions = false,
+    double suggestionsBoxVerticalOffset = 5.0,
+    AxisDirection direction = AxisDirection.down,
+    bool hideOnLoading = false,
+    bool hideOnEmpty = false,
+    bool hideOnError = false,
+    bool hideSuggestionsOnKeyboardHide = true,
+    bool keepSuggestionsOnLoading = true,
+    bool keepSuggestionsOnSuggestionSelected = false,
+    bool autoFlipDirection = false,
+    bool autoFlipListDirection = true,
+    bool hideKeyboard = false,
+    int minCharsForSuggestions = 0,
+    void Function(bool)? onSuggestionsBoxToggle,
+    bool hideKeyboardOnDrag = false,
+    Key? key,
+    required bool isInput,
+  }) {
+    if (isInput) {
+      return TypeAheadField(
+        suggestionsCallback: suggestionsCallback,
+        itemBuilder: itemBuilder,
+        onSuggestionSelected: onSuggestionSelected,
+        textFieldConfiguration: textFieldConfiguration,
+        suggestionsBoxDecoration: suggestionsBoxDecoration,
+        debounceDuration: debounceDuration,
+        suggestionsBoxController: suggestionsBoxController,
+        scrollController: scrollController,
+        loadingBuilder: loadingBuilder,
+        noItemsFoundBuilder: noItemsFoundBuilder,
+        errorBuilder: errorBuilder,
+        transitionBuilder: transitionBuilder,
+        animationStart: animationStart,
+        animationDuration: animationDuration,
+        getImmediateSuggestions: getImmediateSuggestions,
+        suggestionsBoxVerticalOffset: suggestionsBoxVerticalOffset,
+        direction: direction,
+        hideOnLoading: hideOnLoading,
+        hideOnEmpty: hideOnEmpty,
+        hideOnError: hideOnError,
+        hideSuggestionsOnKeyboardHide: hideSuggestionsOnKeyboardHide,
+        keepSuggestionsOnLoading: keepSuggestionsOnLoading,
+        keepSuggestionsOnSuggestionSelected:
+            keepSuggestionsOnSuggestionSelected,
+        autoFlipDirection: autoFlipDirection,
+        autoFlipListDirection: autoFlipListDirection,
+        hideKeyboard: hideKeyboard,
+        minCharsForSuggestions: minCharsForSuggestions,
+        onSuggestionsBoxToggle: onSuggestionsBoxToggle,
+        hideKeyboardOnDrag: hideKeyboardOnDrag,
+        key: key,
+      );
+    } else {
+      return TextField(
+        controller: textFieldConfiguration.controller,
+        decoration: textFieldConfiguration.decoration,
+        readOnly: true,
+      );
+    }
   }
 
   /// SQLに保存された文字列からTurnEffectAbilityをパース

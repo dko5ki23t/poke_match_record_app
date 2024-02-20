@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -62,6 +64,50 @@ class TurnEffectAfterMove extends TurnEffect {
   /// ```
   @override
   void setChangePokemonIndex(PlayerType player, int? val) {}
+
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  @override
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    switch (effectID) {
+      case 596: // ニードルガード
+        return DamageIndicateRow(
+          myState.pokemon,
+          controller,
+          playerType == PlayerType.me,
+          (value) {
+            if (playerType == PlayerType.me) {
+              extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+            } else {
+              extraArg1 = myState.remainHPPercent - (int.tryParse(value) ?? 0);
+            }
+          },
+          extraArg1,
+          true,
+          loc: loc,
+        );
+      default:
+        break;
+    }
+    return Container();
+  }
 
   @override
   List<Guide> processEffect(

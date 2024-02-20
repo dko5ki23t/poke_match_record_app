@@ -150,8 +150,6 @@
   "battleSuccessFailure": "Success/Failure",
   "battleSucceeded": "Succeeded",
   "battleFailed": "Failed",
-  "battleActFirst": "Act First",
-  "battleActSecond": "Act Second",
   "battleRevivePokemon": "Pokémon to revive",
   "battleAdditionalEffect": "Additional Effect",
   "battleConsumedItem": "Consumed item",

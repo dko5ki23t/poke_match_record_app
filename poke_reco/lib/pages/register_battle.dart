@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
+import 'package:poke_reco/custom_dialogs/edit_effect_dialog.dart';
 import 'package:poke_reco/custom_dialogs/select_type_dialog.dart';
 import 'package:poke_reco/custom_widgets/battle_basic_listview.dart';
 import 'package:poke_reco/custom_widgets/battle_action_command.dart';
@@ -682,7 +683,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                     focusState!
                                         .getPokemonState(PlayerType.me, null)
                                         .pokemon
-                                        .teraType)),
+                                        .teraType,
+                                    turnNum,
+                                    turns[turnNum - 1])),
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
@@ -756,23 +759,77 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             .where((element) => element.isValid()))
                           GestureDetector(
                             key: Key('TurnEffect${effect.hashCode}'),
-                            onTap: () {},
-                            /*() => showDialog(
+                            onTap: () => showDialog(
                               context: context,
                               builder: (_) {
-                                return AlertDialog(
-                                  title: Text('OK'),
-                                  actions: <Widget>[
-                                    TextButton(
-                                      child: Text(loc.commonCancel),
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                    ),
-                                  ],
+                                // TODO: さすがに長い、変数用意するかなんかしたい
+                                return EditEffectDialog(
+                                  () => setState(() {
+                                    turns[turnNum - 1].phases.remove(effect);
+                                  }),
+                                  (newEffect) {
+                                    setState(() {
+                                      int findIdx = turns[turnNum - 1]
+                                          .phases
+                                          .indexOf(effect);
+                                      turns[turnNum - 1].phases[findIdx] =
+                                          newEffect;
+                                    });
+                                  },
+                                  effect.displayName(
+                                    loc: loc,
+                                  ),
+                                  effect,
+                                  effect.playerType == PlayerType.me
+                                      ? turns[turnNum - 1]
+                                          .getProcessedStates(
+                                              turns[turnNum - 1]
+                                                  .phases
+                                                  .indexOf(effect),
+                                              ownParty,
+                                              opponentParty,
+                                              loc)
+                                          .getPokemonState(PlayerType.me, null)
+                                      : turns[turnNum - 1]
+                                          .getProcessedStates(
+                                              turns[turnNum - 1]
+                                                  .phases
+                                                  .indexOf(effect),
+                                              ownParty,
+                                              opponentParty,
+                                              loc)
+                                          .getPokemonState(
+                                              PlayerType.opponent, null),
+                                  effect.playerType == PlayerType.me
+                                      ? turns[turnNum - 1]
+                                          .getProcessedStates(
+                                              turns[turnNum - 1]
+                                                  .phases
+                                                  .indexOf(effect),
+                                              ownParty,
+                                              opponentParty,
+                                              loc)
+                                          .getPokemonState(
+                                              PlayerType.opponent, null)
+                                      : turns[turnNum - 1]
+                                          .getProcessedStates(
+                                              turns[turnNum - 1]
+                                                  .phases
+                                                  .indexOf(effect),
+                                              ownParty,
+                                              opponentParty,
+                                              loc)
+                                          .getPokemonState(PlayerType.me, null),
+                                  ownParty,
+                                  opponentParty,
+                                  turns[turnNum - 1].getProcessedStates(
+                                      turns[turnNum - 1].phases.indexOf(effect),
+                                      ownParty,
+                                      opponentParty,
+                                      loc),
                                 );
                               },
-                            ),*/
+                            ),
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: 5),
                               child: Container(
@@ -909,7 +966,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   .isTerastaling) {
                                 setState(() {
                                   turns[turnNum - 1].phases.turnOnOffTerastal(
-                                      PlayerType.opponent, PokeType.unknown);
+                                      PlayerType.opponent,
+                                      PokeType.unknown,
+                                      turnNum,
+                                      turns[turnNum - 1]);
                                 });
                               } else {
                                 showDialog(
@@ -921,7 +981,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                                   .phases
                                                   .turnOnOffTerastal(
                                                       PlayerType.opponent,
-                                                      type)),
+                                                      type,
+                                                      turnNum,
+                                                      turns[turnNum - 1])),
                                           loc.commonTeraType);
                                     });
                               }

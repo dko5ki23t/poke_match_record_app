@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
@@ -847,6 +849,8 @@ class TurnEffectAction extends TurnEffect {
     PokeType? additionalMoveType;
     // 半減きのみを使用したか
     double halvedBerry = 0.0;
+    // こうげき/とくこうのうちどちらの値を使うか不明だが、大きい方を使うかどうか
+    bool useLargerAC = false;
     // ダメージ計算時、テラスタルまたはステラの補正がかかったか
     bool isTeraStellarHosei = false;
 
@@ -3660,7 +3664,7 @@ class TurnEffectAction extends TurnEffect {
                 moveDamageClassID = 2; // ぶつりわざに変更
               }
             } else {
-              showDamageCalc = false;
+              useLargerAC = true;
             }
             break;
           case 445: // ひんし状態のポケモンを最大HPの1/2を回復して復活させる
@@ -4224,6 +4228,7 @@ class TurnEffectAction extends TurnEffect {
           mTwice,
           additionalMoveType,
           halvedBerry,
+          useLargerAC,
           loc: loc,
         );
         damageCalc ??= damage.item1;
@@ -4427,6 +4432,7 @@ class TurnEffectAction extends TurnEffect {
   /// mTwice: 2倍補正がかかるかどうか
   /// additionalMoveType: わざの追加タイプ
   /// halvedBerry: 相手が半減きのみを食べたかどうか
+  /// useLargerAC: こうげき/とくこうのうちどちらの値を使うか不明だが、大きい方を使うかどうか
   ///
   /// 戻り値item1: ダメージ計算式
   ///       item2: ダメージ最大値
@@ -4453,7 +4459,8 @@ class TurnEffectAction extends TurnEffect {
     bool ignoreAbility,
     bool mTwice,
     PokeType? additionalMoveType,
-    double halvedBerry, {
+    double halvedBerry,
+    bool useLargerAC, {
     required AppLocalizations loc,
   }) {
     Move replacedMove = move;
@@ -4796,16 +4803,31 @@ class TurnEffectAction extends TurnEffect {
                     StatIndex.A, replacedMoveType, yourState, state,
                     plusCut: plusIgnore, minusCut: minusIgnore);
       }
-      int attackVmax = damageClassID == 2
-          ? calcMaxAttack
-          : myState.finalizedMaxStat(
-              StatIndex.C, replacedMoveType, yourState, state,
-              plusCut: plusIgnore, minusCut: minusIgnore);
-      int attackVmin = damageClassID == 2
-          ? calcMinAttack
-          : myState.finalizedMinStat(
-              StatIndex.C, replacedMoveType, yourState, state,
-              plusCut: plusIgnore, minusCut: minusIgnore);
+      int attackVmax = 0;
+      int attackVmin = 0;
+      if (useLargerAC) {
+        attackVmax = max(
+            calcMaxAttack,
+            myState.finalizedMaxStat(
+                StatIndex.C, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore));
+        attackVmin = max(
+            calcMinAttack,
+            myState.finalizedMinStat(
+                StatIndex.C, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore));
+      } else {
+        attackVmax = damageClassID == 2
+            ? calcMaxAttack
+            : myState.finalizedMaxStat(
+                StatIndex.C, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
+        attackVmin = damageClassID == 2
+            ? calcMinAttack
+            : myState.finalizedMinStat(
+                StatIndex.C, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
+      }
       String attackStr = '';
       if (attackVmax == attackVmin) {
         attackStr = attackVmax.toString();
@@ -5856,6 +5878,8 @@ class TurnEffectAction extends TurnEffect {
         mTwice,
         additionalMoveType,
         halvedBerry,
+        // TODO
+        false,
         loc: loc,
       );
       if (ret.item2 < realDamage) {
@@ -5885,6 +5909,8 @@ class TurnEffectAction extends TurnEffect {
         mTwice,
         additionalMoveType,
         halvedBerry,
+        // TODO
+        false,
         loc: loc,
       );
       if (ret.item3 > realDamage) {
@@ -5922,6 +5948,8 @@ class TurnEffectAction extends TurnEffect {
         mTwice,
         additionalMoveType,
         halvedBerry,
+        // TODO
+        false,
         loc: loc,
       );
       if (ret.item2 > realDamage) {
@@ -5951,6 +5979,8 @@ class TurnEffectAction extends TurnEffect {
         mTwice,
         additionalMoveType,
         halvedBerry,
+        // TODO
+        false,
         loc: loc,
       );
       if (ret.item3 < realDamage) {
@@ -6492,13 +6522,6 @@ class TurnEffectAction extends TurnEffect {
                     Expanded(
                       child: Text(templateTitles[index].item2),
                     ),
-                    TextButton(
-                        onPressed: () {},
-                        child: Text(isFirst != null
-                            ? isFirst!
-                                ? loc.battleActFirst
-                                : loc.battleActSecond
-                            : ' '))
                   ],
                 ),
               ),
@@ -6528,13 +6551,6 @@ class TurnEffectAction extends TurnEffect {
                     Expanded(
                       child: Text(templateTitles[index].item2),
                     ),
-                    TextButton(
-                        onPressed: () {},
-                        child: Text(isFirst != null
-                            ? isFirst!
-                                ? loc.battleActFirst
-                                : loc.battleActSecond
-                            : ' '))
                   ],
                 ),
               ),
@@ -7961,6 +7977,30 @@ class TurnEffectAction extends TurnEffect {
     moveType = PokeType.unknown;
     isFirst = null;
     _isValid = false;
+  }
+
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  @override
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    return Container();
   }
 
   /// SQLに保存された文字列からTurnEffectActionをパース

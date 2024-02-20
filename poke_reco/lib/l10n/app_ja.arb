@@ -150,8 +150,6 @@
   "battleSuccessFailure": "成否",
   "battleSucceeded": "成功",
   "battleFailed": "うまく決まらなかった",
-  "battleActFirst": "先に行動",
-  "battleActSecond": "後に行動",
   "battleRevivePokemon": "復活させるポケモン",
   "battleAdditionalEffect": "追加効果",
   "battleConsumedItem": "消費したもちもの",

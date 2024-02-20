@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -75,6 +76,50 @@ class TurnEffectItem extends TurnEffect {
     } else {
       _changePokemonIndexes[1] = val;
     }
+  }
+
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  @override
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    return PokeDB().items[itemID]!.extraWidget(
+          theme,
+          playerType,
+          myState.pokemon,
+          yourState.pokemon,
+          myState,
+          yourState,
+          playerType == PlayerType.me ? ownParty : opponentParty,
+          playerType == PlayerType.me ? opponentParty : ownParty,
+          state,
+          controller,
+          extraArg1,
+          extraArg2,
+          getChangePokemonIndex(playerType),
+          (value) => extraArg1 = value,
+          (value) => extraArg2 = value,
+          (value) => setChangePokemonIndex(playerType, value),
+          true,
+          showNetworkImage: PokeDB().getPokeAPI,
+          loc: loc,
+        );
   }
 
   @override

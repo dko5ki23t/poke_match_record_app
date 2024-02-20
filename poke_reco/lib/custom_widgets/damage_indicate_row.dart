@@ -8,59 +8,61 @@ class DamageIndicateRow extends Row {
     Pokemon pokemon,
     TextEditingController controller,
     bool isMe,
-    void Function()? onTap,
     void Function(String)? onChanged,
     int damage,
-    bool isInput,
-    {
-      bool enabled = true,
-      required AppLocalizations loc,
-    }
-  ) : 
-  super(
-    mainAxisAlignment: MainAxisAlignment.center,
-    children: [
-      Flexible(
-        child: isInput ?
-          TextFormField(
-            controller: controller,
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              border: UnderlineInputBorder(),
-              labelText: loc.battleRemainHP(pokemon.name),
+    bool isInput, {
+    bool enabled = true,
+    required AppLocalizations loc,
+  }) : super(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: isInput
+                  ? TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: loc.battleRemainHP(pokemon.name),
+                      ),
+                      enabled: enabled,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      onChanged: onChanged,
+                    )
+                  : TextFormField(
+                      controller: controller,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: loc.battleRemainHP(pokemon.name),
+                      ),
+                      readOnly: true,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    ),
             ),
-            enabled: enabled,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onTap: onTap,
-            onChanged: onChanged,
-          ) :
-          TextFormField(
-            controller: controller,
-            textAlign: TextAlign.center,
-            decoration: InputDecoration(
-              border: UnderlineInputBorder(),
-              labelText: loc.battleRemainHP(pokemon.name),
+            isMe
+                ? Flexible(child: Text('/${pokemon.h.real}'))
+                : Flexible(child: Text('% /100%')),
+            SizedBox(
+              width: 10,
             ),
-            readOnly: true,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            onTap: onTap,
-          ),
-      ),
-      isMe ?
-      Flexible(child: Text('/${pokemon.h.real}')) :
-      Flexible(child: Text('% /100%')),
-      SizedBox(width: 10,),
-      isMe ?
-        damage != 0 ?
-        damage > 0 ?
-        Flexible(child: Text('= ${loc.battleDamage(damage)}')) :
-        Flexible(child: Text('= ${loc.battleRecovery(-damage)}')) : Container() :
-        damage != 0 ?
-        damage > 0 ?
-        Flexible(child: Text('= ${loc.battleDamage('$damage%')}')) :
-        Flexible(child: Text('= ${loc.battleRecovery('${-damage}%')}')) : Container(),
-    ],
-  );
+            isMe
+                ? damage != 0
+                    ? damage > 0
+                        ? Flexible(child: Text('= ${loc.battleDamage(damage)}'))
+                        : Flexible(
+                            child: Text('= ${loc.battleRecovery(-damage)}'))
+                    : Container()
+                : damage != 0
+                    ? damage > 0
+                        ? Flexible(
+                            child: Text('= ${loc.battleDamage('$damage%')}'))
+                        : Flexible(
+                            child:
+                                Text('= ${loc.battleRecovery('${-damage}%')}'))
+                    : Container(),
+          ],
+        );
 }

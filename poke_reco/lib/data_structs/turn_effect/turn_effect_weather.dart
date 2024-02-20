@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -105,6 +107,71 @@ class TurnEffectWeather extends TurnEffect {
   /// ```
   @override
   void setChangePokemonIndex(PlayerType player, int? val) {}
+
+  /// 効果のextraArg等を編集するWidgetを返す
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// controller: テキスト入力コントローラ
+  /// ```
+  @override
+  Widget editArgWidget(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state,
+    TextEditingController controller,
+    TextEditingController controller2, {
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    var ownPokemonState =
+        myState.playerType == PlayerType.me ? myState : yourState;
+    var opponentPokemonState =
+        myState.playerType == PlayerType.me ? yourState : myState;
+    var ownPokemon = ownPokemonState.pokemon;
+    var opponentPokemon = opponentPokemonState.pokemon;
+    switch (weatherEffectID) {
+      case WeatherEffect.sandStormDamage: // すなあらしによるダメージ
+        return Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            DamageIndicateRow(
+              ownPokemon,
+              controller,
+              true,
+              (value) {
+                extraArg1 =
+                    ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
+              },
+              extraArg1,
+              true,
+              loc: loc,
+            ),
+            SizedBox(
+              height: 10,
+            ),
+            DamageIndicateRow(
+              opponentPokemon,
+              controller2,
+              false,
+              (value) {
+                extraArg2 = opponentPokemonState.remainHPPercent -
+                    (int.tryParse(value) ?? 0);
+              },
+              extraArg2,
+              true,
+              loc: loc,
+            ),
+          ],
+        );
+    }
+    return Container();
+  }
 
   @override
   List<Guide> processEffect(

@@ -710,9 +710,7 @@ class Item extends Equatable implements Copyable {
     return '';
   }
 
-  /// TODO:削除対象？
   Widget extraWidget(
-    void Function() onFocus,
     ThemeData theme,
     PlayerType playerType,
     Pokemon myPokemon,
@@ -754,7 +752,6 @@ class Item extends Equatable implements Copyable {
                 onChanged: (value) => extraArg1ChangeFunc(value),
                 textValue: StatIndex.values[extraArg1 + 1].name,
                 isInput: isInput,
-                onFocus: onFocus,
               ),
             ),
             Text(loc.battleRankUp1),
@@ -773,7 +770,6 @@ class Item extends Equatable implements Copyable {
           myState.pokemon,
           controller,
           playerType == PlayerType.me,
-          onFocus,
           (value) {
             int val = myState.remainHP - (int.tryParse(value) ?? 0);
             if (playerType == PlayerType.opponent) {
@@ -818,7 +814,6 @@ class Item extends Equatable implements Copyable {
                           ? loc.battleConfused2
                           : '',
                   isInput: isInput,
-                  onFocus: onFocus,
                 ),
               ),
             ]),
@@ -832,7 +827,6 @@ class Item extends Equatable implements Copyable {
                     myPokemon,
                     controller,
                     playerType == PlayerType.me,
-                    onFocus,
                     (value) {
                       int val = myState.remainHP - (int.tryParse(value) ?? 0);
                       if (playerType == PlayerType.opponent) {
@@ -855,7 +849,6 @@ class Item extends Equatable implements Copyable {
           yourPokemon,
           controller,
           playerType != PlayerType.me,
-          onFocus,
           (value) {
             int val = yourState.remainHPPercent - (int.tryParse(value) ?? 0);
             if (playerType == PlayerType.opponent) {
@@ -895,7 +888,6 @@ class Item extends Equatable implements Copyable {
                         ? loc.battleBalloonBurst
                         : '',
                 isInput: isInput,
-                onFocus: onFocus,
               ),
             ),
           ],
@@ -931,7 +923,6 @@ class Item extends Equatable implements Copyable {
                     ? null
                     : yourParty.pokemons[changePokemonIndex ?? 1 - 1]!.name,
                 isInput: isInput,
-                onFocus: onFocus,
                 prefixIconPokemon: isInput
                     ? null
                     : yourParty.pokemons[changePokemonIndex ?? 1 - 1]!,
@@ -977,7 +968,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[0])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
                 Text('${loc.commonDefense}:'),
@@ -1010,7 +1000,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[1])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
                 Text('${loc.commonSAttack}:'),
@@ -1043,7 +1032,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[2])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1081,7 +1069,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[3])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
                 SizedBox(
@@ -1117,7 +1104,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[4])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1155,7 +1141,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[5])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
                 SizedBox(
@@ -1191,7 +1176,6 @@ class Item extends Equatable implements Copyable {
                             : PokemonState.unpackStatChanges(extraArg1)[6])
                         .toString(),
                     isInput: isInput,
-                    onFocus: onFocus,
                   ),
                 ),
               ],
@@ -1227,7 +1211,6 @@ class Item extends Equatable implements Copyable {
                     ? null
                     : myParty.pokemons[changePokemonIndex ?? 1 - 1]!.name,
                 isInput: isInput,
-                onFocus: onFocus,
                 prefixIconPokemon: isInput
                     ? null
                     : myParty.pokemons[changePokemonIndex ?? 1 - 1]!,
@@ -1280,7 +1263,6 @@ class Item extends Equatable implements Copyable {
     AlignmentGeometry alignment = AlignmentDirectional.centerStart,
     BorderRadius? borderRadius,
     EdgeInsetsGeometry? padding,
-    required void Function() onFocus,
     required bool isInput,
     required String? textValue,
     Pokemon? prefixIconPokemon,
@@ -1341,7 +1323,6 @@ class Item extends Equatable implements Copyable {
           text: textValue,
         ),
         readOnly: true,
-        onTap: onFocus,
       );
     }
   }
