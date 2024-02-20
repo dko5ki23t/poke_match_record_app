@@ -38,32 +38,37 @@ class AddEffectDialogState extends State<AddEffectDialog> {
 
     return AlertDialog(
       title: Text(widget.title),
-      content: /*Column(
+      content: Column(
         children: [
-          TextField(
-            controller: nameController,
-            decoration: InputDecoration(
-              prefixIcon: const Icon(Icons.search),
-              border: OutlineInputBorder(),
+          Flexible(
+            child: TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (value) => setState(() {}),
             ),
-            onChanged: (value) => setState(() {}),
-          ),*/
-          SingleChildScrollView(
-        child: Column(
-          children: [
-            for (final effect in filteredList)
-              ListTile(
-                title: Text(effect.displayName(loc: loc)),
-                onTap: () {
-                  Navigator.pop(context);
-                  widget.onSelect(effect);
-                },
-              )
-          ],
-        ),
+          ),
+          Flexible(
+            flex: 10,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  for (final effect in filteredList)
+                    ListTile(
+                      title: Text(effect.displayName(loc: loc)),
+                      onTap: () {
+                        Navigator.pop(context);
+                        widget.onSelect(effect);
+                      },
+                    )
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
-      /*],
-      ),*/
       actions: <Widget>[
         TextButton(
           child: Text(loc.commonCancel),

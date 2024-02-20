@@ -30,23 +30,13 @@ class SelectTypeDialogState extends State<SelectTypeDialog> {
           children: [
             for (final type
                 in widget.isTeraType ? PokeDB().teraTypes : PokeDB().types)
-              GestureDetector(
+              ListTile(
+                leading: type.displayIcon,
+                title: Text(type.displayName),
                 onTap: () {
                   Navigator.pop(context);
                   widget.onSelect(type);
                 },
-                child: Padding(
-                  padding: EdgeInsets.all(5),
-                  child: Row(
-                    children: [
-                      type.displayIcon,
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Text(type.displayName),
-                    ],
-                  ),
-                ),
               ),
           ],
         ),

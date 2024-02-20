@@ -438,5 +438,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   void reset() {
     state = CommandState.selectCommand;
     moveSearchTextController.text = '';
+    // 表示Widgetのコントローラリセット
+    commandPagesController = CommandPagesController();
   }
 }

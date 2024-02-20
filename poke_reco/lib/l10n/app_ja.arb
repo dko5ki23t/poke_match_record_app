@@ -163,6 +163,7 @@
   "battlePlayer": "行動主",
   "battleYou": "あなた",
   "battleAction": "行動",
+  "battleParameterEdit": "パラメータ編集",
   "battleSuccessFailureOfAction": "行動の成否",
   "battleActionSuccessed": "行動成功",
   "battleActionFailed": "行動失敗",

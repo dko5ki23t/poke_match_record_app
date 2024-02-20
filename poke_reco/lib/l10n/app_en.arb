@@ -163,6 +163,7 @@
   "battlePlayer": "Player",
   "battleYou": "You",
   "battleAction": "Action",
+  "battleParameterEdit": "Edit Parameter",
   "battleSuccessFailureOfAction": "Success/Failure of Action",
   "battleActionSuccessed": "Succeeded",
   "battleActionFailed": "Failed",

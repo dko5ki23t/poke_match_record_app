@@ -10,14 +10,14 @@ import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 
 class TurnEffectChangeFaintingPokemon extends TurnEffect {
-  TurnEffectChangeFaintingPokemon({required player, required this.timing})
+  TurnEffectChangeFaintingPokemon({required player})
       : super(EffectType.changeFaintingPokemon) {
     _playerType = player;
   }
 
   PlayerType _playerType = PlayerType.none;
   @override
-  Timing timing;
+  Timing timing = Timing.changeFaintingPokemon;
   int changePokemonIndex = 0; // 0は無効値
 
   @override
@@ -25,7 +25,7 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
 
   @override
   TurnEffectChangeFaintingPokemon copy() =>
-      TurnEffectChangeFaintingPokemon(player: playerType, timing: timing)
+      TurnEffectChangeFaintingPokemon(player: playerType)
         ..changePokemonIndex = changePokemonIndex;
 
   @override
@@ -166,10 +166,8 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
     // playerType
     final playerType = PlayerTypeNum.createFromNumber(
         int.parse(turnEffectElements.removeAt(0)));
-    // timing
-    final timing = Timing.values[int.parse(turnEffectElements.removeAt(0))];
     TurnEffectChangeFaintingPokemon turnEffect =
-        TurnEffectChangeFaintingPokemon(player: playerType, timing: timing);
+        TurnEffectChangeFaintingPokemon(player: playerType);
     // changePokemonIndex
     turnEffect.changePokemonIndex = int.parse(turnEffectElements.removeAt(0));
 
@@ -189,9 +187,6 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
     ret += split1;
     // playerType
     ret += playerType.number.toString();
-    ret += split1;
-    // timing
-    ret += timing.index.toString();
     ret += split1;
     // changePokemonIndex
     ret += changePokemonIndex.toString();

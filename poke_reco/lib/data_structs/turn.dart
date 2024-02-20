@@ -1169,12 +1169,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   l[i].runtimeType != TurnEffectChangeFaintingPokemon) {
                 if (isOwnFainting) {
                   isOwnFainting = false;
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.me,
-                          timing: Timing.changeFaintingPokemon));
+                        player: PlayerType.me,
+                      ));
                   isInserted = true;
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.me) > i) {
@@ -1201,12 +1200,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                         ..effectType = EffectType.changeFaintingPokemon
                         ..timing = Timing.changeFaintingPokemon,
                       appState);*/
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.opponent,
-                          timing: Timing.changeFaintingPokemon));
+                        player: PlayerType.opponent,
+                      ));
                   isInserted = true;
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.opponent) > i) {
@@ -1289,12 +1287,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   l[i].timing != Timing.changeFaintingPokemon) {
                 if (isOwnFainting) {
                   isOwnFainting = false;
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.me,
-                          timing: Timing.changeFaintingPokemon));
+                        player: PlayerType.me,
+                      ));
                   isInserted = true;
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.me) > i) {
@@ -1309,12 +1306,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   }
                 } else if (isOpponentFainting) {
                   isOpponentFainting = false;
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.opponent,
-                          timing: Timing.changeFaintingPokemon));
+                        player: PlayerType.opponent,
+                      ));
                   isInserted = true;
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.opponent) > i) {
@@ -1383,12 +1379,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   (isOpponentFainting && l[i].playerType == PlayerType.me)) {
                 if (isOpponentFainting) {
                   isOpponentFainting = false;
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.opponent,
-                          timing: Timing.changeFaintingPokemon));
+                          player: PlayerType.opponent));
                   isInserted = true;
                   s2 = 0;
                   s1 = 8; // ターン終了状態へ
@@ -1424,12 +1418,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   (isOpponentFainting && l[i].playerType == PlayerType.me)) {
                 if (isOpponentFainting) {
                   isOpponentFainting = false;
-                  // TODO:タイミングの設定必要？
                   l.insert(
                       i,
                       TurnEffectChangeFaintingPokemon(
-                          player: PlayerType.opponent,
-                          timing: Timing.changeFaintingPokemon));
+                        player: PlayerType.opponent,
+                      ));
                   isInserted = true;
                   s2 = 0;
                 }
@@ -1610,98 +1603,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       }
                     }
                   }
-                  // 行動主の自動選択
-                  /*if (firstActionPlayer == null) {
-                    // 1つ目の行動
-                    if (l[i].playerType != PlayerType.none) {
-                      // 1つ目の行動主が入力されているなら
-                      firstActionPlayer = l[i].playerType;
-                      if (!l[i].isValid()) {
-                        // 行動主が入力されているが、入力された行動がまだ有効でないとき
-                        // 自動補完
-                        l[i].move!.fillAuto(currentState);
-                        textEditingControllerList1[i].text =
-                            l[i].getEditingControllerText1();
-                        textEditingControllerList2[i].text = l[i]
-                            .getEditingControllerText2(
-                                currentState, lastAction);
-                        textEditingControllerList3[i].text = l[i]
-                            .getEditingControllerText3(
-                                currentState, lastAction);
-                        textEditingControllerList4[i].text =
-                            l[i].getEditingControllerText4(currentState);
-                      }
-                    } else {
-                      TurnMove tmp = TurnMove()
-                        ..playerType = PlayerType.me
-                        ..type = TurnMoveType(TurnMoveType.move);
-                      if (tmp.fillAuto(currentState)) {
-                        l[i].playerType = PlayerType.me;
-                        firstActionPlayer = l[i].playerType;
-                        l[i].move = tmp;
-                        textEditingControllerList1[i].text =
-                            l[i].getEditingControllerText1();
-                        textEditingControllerList2[i].text = l[i]
-                            .getEditingControllerText2(
-                                currentState, lastAction);
-                        textEditingControllerList3[i].text = l[i]
-                            .getEditingControllerText3(
-                                currentState, lastAction);
-                        textEditingControllerList4[i].text =
-                            l[i].getEditingControllerText4(currentState);
-                      } else {
-                        tmp = TurnMove()
-                          ..playerType = PlayerType.opponent
-                          ..type = TurnMoveType(TurnMoveType.move);
-                        if (tmp.fillAuto(currentState)) {
-                          l[i].playerType = PlayerType.opponent;
-                          firstActionPlayer = l[i].playerType;
-                          l[i].move = tmp;
-                          textEditingControllerList1[i].text =
-                              l[i].getEditingControllerText1();
-                          textEditingControllerList2[i].text = l[i]
-                              .getEditingControllerText2(
-                                  currentState, lastAction);
-                          textEditingControllerList3[i].text = l[i]
-                              .getEditingControllerText3(
-                                  currentState, lastAction);
-                          textEditingControllerList4[i].text =
-                              l[i].getEditingControllerText4(currentState);
-                        }
-                      }
-                    }
-                  } else if (l[i].playerType == PlayerType.none) {
-                    // 2つ目の行動主が未入力の場合
-                    l[i].playerType = firstActionPlayer.opposite;
-                    if (l[i].move != null) {
-                      l[i].move!.clear();
-                      l[i].move!.playerType = firstActionPlayer.opposite;
-                      l[i].move!.type = TurnMoveType(TurnMoveType.move);
-                      l[i].move!.fillAuto(currentState);
-                      textEditingControllerList1[i].text =
-                          l[i].getEditingControllerText1();
-                      textEditingControllerList2[i].text = l[i]
-                          .getEditingControllerText2(currentState, lastAction);
-                      textEditingControllerList3[i].text = l[i]
-                          .getEditingControllerText3(currentState, lastAction);
-                      textEditingControllerList4[i].text =
-                          l[i].getEditingControllerText4(currentState);
-                    }
-                  } else {
-                    if (!l[i].isValid()) {
-                      // 2つ目の行動主が入力されているが、入力された行動がまだ有効でないとき
-                      // 自動補完
-                      l[i].move!.fillAuto(currentState);
-                      textEditingControllerList1[i].text =
-                          l[i].getEditingControllerText1();
-                      textEditingControllerList2[i].text = l[i]
-                          .getEditingControllerText2(currentState, lastAction);
-                      textEditingControllerList3[i].text = l[i]
-                          .getEditingControllerText3(currentState, lastAction);
-                      textEditingControllerList4[i].text =
-                          l[i].getEditingControllerText4(currentState);
-                    }
-                  }*/
                   lastAction = l[i] as TurnEffectAction;
                   //timingListIdx++;
                 }
@@ -1806,6 +1707,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                         winner: isMyWin ? PlayerType.me : PlayerType.opponent,
                         opponentName: opponentName));
                 l.removeRange(i + 1, l.length);
+                // 行動がなくなった場合は不都合が出るので無効な行動を追加
+                if (getLatestActionIndex(PlayerType.me) < 0) {
+                  l.add(TurnEffectAction(player: PlayerType.me));
+                } else if (getLatestActionIndex(PlayerType.opponent) < 0) {
+                  l.add(TurnEffectAction(player: PlayerType.opponent));
+                }
                 s1 = end;
                 break;
             }
@@ -1923,9 +1830,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             tmpAction,
           );
           for (final effect in currentTurn.noAutoAddEffect) {
-            // TODO
-            //assistList.removeWhere((e) => effect.nearEqual(e));
-            assistList.removeWhere((e) => effect == e);
+            assistList.removeWhere((e) => effect.nearEqual(e));
           }
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
           // それ以外で入力済みの自動入力は削除

@@ -64,7 +64,8 @@ class TurnEffectUserEdit extends TurnEffect {
   TurnEffectUserEdit copy() => TurnEffectUserEdit()..forces.addAll([...forces]);
 
   @override
-  String displayName({required AppLocalizations loc}) => '';
+  String displayName({required AppLocalizations loc}) =>
+      loc.battleParameterEdit;
 
   @override
   PlayerType get playerType => PlayerType.none;
