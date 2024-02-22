@@ -146,11 +146,17 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
   ) {}
 
   /// extraArg等以外同じ、ほぼ同じかどうか
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
   @override
-  bool nearEqual(TurnEffect t) {
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  }) {
     return t.runtimeType == TurnEffectChangeFaintingPokemon &&
         playerType == t.playerType &&
-        timing == t.timing &&
+        (allowTimingDiff || timing == t.timing) &&
         changePokemonIndex ==
             (t as TurnEffectChangeFaintingPokemon).changePokemonIndex;
   }

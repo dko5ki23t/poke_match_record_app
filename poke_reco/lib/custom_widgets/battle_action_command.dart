@@ -238,6 +238,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     width: 10,
                   ),
                   TextButton(
+                    key: Key(
+                        'BattleActionCommandSurrender${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnActionType.surrender;
                       turnMove.setChangePokemonIndex(playerType, null);

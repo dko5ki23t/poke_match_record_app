@@ -186,8 +186,14 @@ class TurnEffectTerastal extends TurnEffect {
   ) {}
 
   /// extraArg等以外同じ、ほぼ同じかどうか
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
   @override
-  bool nearEqual(TurnEffect t) {
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  }) {
     return this == t;
   }
 

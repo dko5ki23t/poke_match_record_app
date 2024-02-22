@@ -664,10 +664,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     if (!currentTurn.initialOpponentHasTerastal) maxTerastal++;
     bool isOwnFainting = false;
     bool isOpponentFainting = false;
-    bool isMyWin = false;
+    //bool isMyWin = false;
     //bool isYourWin = false;
-    bool changeOwn = turnNum == 1;
-    bool changeOpponent = turnNum == 1;
+    //bool changeOwn = turnNum == 1;
+    //bool changeOpponent = turnNum == 1;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -1027,7 +1027,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           toNext &&
           (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
       {
-        isMyWin = l[i].isMyWin;
+        //isMyWin = l[i].isMyWin;
         //isYourWin = l[i].isYourWin;
         s2 = 0;
         s1 = 9; // 試合終了状態へ
@@ -1081,6 +1081,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     String opponentName,
     AppLocalizations loc,
   ) {
+    // 試合終了フェーズは一旦削除する
+    l.removeWhere(
+      (element) => element is TurnEffectGameset,
+    );
     //_clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
     //int beginIdx = 0;
     //Timing timing = Timing.none;
@@ -2419,6 +2423,61 @@ class Turn extends Equatable implements Copyable {
       }
     }
     return ret;
+  }
+
+  /// TODO:関数コメント
+  /// 現在のフェーズの状態で起こる効果の候補を返す
+  /// 効果->挿入可能インデックスのMapを返す
+  /// ```
+  /// ```
+  List<TurnEffect> getEffectCandidatesWithPhaseIdx(
+    PlayerType? playerType,
+    EffectType? effectType,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState phaseState,
+    AppLocalizations loc,
+    int turnNum,
+    int phaseIdx,
+  ) {
+    List<TurnEffect> effectList = [];
+
+    final timingList = phases.insertableTimings(phaseIdx, turnNum, this);
+    for (final timing in timingList) {
+      if (playerType != null) {
+        effectList.addAll(_getEffectCandidates(
+          timing,
+          phaseIdx,
+          playerType,
+          effectType,
+          phaseState,
+        ));
+      } else {
+        effectList.addAll(_getEffectCandidates(
+          timing,
+          phaseIdx,
+          PlayerType.me,
+          effectType,
+          phaseState,
+        ));
+        effectList.addAll(_getEffectCandidates(
+          timing,
+          phaseIdx,
+          PlayerType.opponent,
+          effectType,
+          phaseState,
+        ));
+        effectList.addAll(_getEffectCandidates(
+          timing,
+          phaseIdx,
+          PlayerType.entireField,
+          effectType,
+          phaseState,
+        ));
+      }
+    }
+
+    return effectList;
   }
 
   List<TurnEffect> _getEffectCandidates(

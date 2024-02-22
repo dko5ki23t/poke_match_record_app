@@ -191,11 +191,17 @@ class TurnEffectAfterMove extends TurnEffect {
   ) {}
 
   /// extraArg等以外同じ、ほぼ同じかどうか
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
   @override
-  bool nearEqual(TurnEffect t) {
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  }) {
     return t.runtimeType == TurnEffectAfterMove &&
         playerType == t.playerType &&
-        timing == t.timing &&
+        (allowTimingDiff || timing == t.timing) &&
         effectID == (t as TurnEffectAfterMove).effectID;
   }
 

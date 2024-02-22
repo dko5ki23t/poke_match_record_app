@@ -189,7 +189,8 @@ void main() {
         await testExistAnyWidgets(find.text('テツノツツミ'), driver!);
         await driver!.tap(find.text('テツノツツミ'));
         // クォークチャージ発動
-        await driver!.tap(find.byValueKey('RegisterBattleEffectAddIconButton'));
+        await driver!
+            .tap(find.byValueKey('RegisterBattleEffectAddIconButton2'));
         await testExistAnyWidgets(
             find.byValueKey('AddEffectDialogSearchBar'), driver!);
         await driver!.tap(find.byValueKey('AddEffectDialogSearchBar'));
@@ -206,7 +207,8 @@ void main() {
         );
         // クォークチャージの内容編集
         await driver!.tap(designatedWidget);
-        await driver!.tap(find.text('こうげき'));
+        // TODO? 「効果が切れた」は期待通りか・・・？
+        await driver!.tap(find.text('効果が切れた'));
         await driver!.tap(find.text('とくこう'));
         await driver!.tap(find.text('OK'));
 
@@ -233,17 +235,20 @@ void main() {
         await testExistAnyWidgets(find.text('ギャラドス'), driver!);
         await driver!.tap(find.text('ギャラドス'));
         // いかく発動
-        await driver!.tap(find.byValueKey('RegisterBattleEffectAddIconButton'));
+        await driver!
+            .tap(find.byValueKey('RegisterBattleEffectAddIconButton2'));
         await testExistAnyWidgets(
             find.byValueKey('AddEffectDialogSearchBar'), driver!);
         await driver!.tap(find.byValueKey('AddEffectDialogSearchBar'));
         await driver!.enterText('いかく');
-        designatedWidget = find.descendant(
-            of: find.byType('ListTile'),
-            matching: find.text('いかく'),
-            //TODO ほんとは1つしかないから不要のはず
-            firstMatchOnly: true);
-        await driver!.tap(designatedWidget);
+        await driver!.tap(find.byValueKey('EffectListTileOpponentいかく'));
+
+        // 次のターンへボタンタップ
+        await driver!.tap(find.byValueKey('RegisterBattleNext'));
+        await testExistAnyWidgets(find.text('ターン4'), driver!);
+        // あいて降参
+        await driver!
+            .tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
       }
     });
   });

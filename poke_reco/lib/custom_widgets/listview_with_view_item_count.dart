@@ -29,9 +29,8 @@ class ListViewWithViewItemCount extends StatelessWidget {
               itemBuilder: (context, index) {
                 if (index < children.length) {
                   return children[index];
-                } else {
-                  null;
                 }
+                return null;
               }),
         );
       },

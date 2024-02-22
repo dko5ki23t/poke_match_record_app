@@ -319,11 +319,17 @@ class TurnEffectIndividualField extends TurnEffect {
       indiFieldEffectID != 0;
 
   /// extraArg等以外同じ、ほぼ同じかどうか
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
   @override
-  bool nearEqual(TurnEffect t) {
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  }) {
     return t.runtimeType == TurnEffectIndividualField &&
         playerType == t.playerType &&
-        timing == t.timing &&
+        (allowTimingDiff || timing == t.timing) &&
         indiFieldEffectID == (t as TurnEffectIndividualField).indiFieldEffectID;
   }
 

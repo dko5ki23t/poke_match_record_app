@@ -1246,7 +1246,13 @@ abstract class TurnEffect extends Equatable implements Copyable {
   }
 
   /// extraArg等以外同じ、ほぼ同じかどうか
-  bool nearEqual(TurnEffect t);
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  });
 
   /// 表示名
   String displayName({

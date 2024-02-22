@@ -1,3 +1,4 @@
+import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
@@ -115,7 +116,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   final ownBattleCommandKey = GlobalKey<BattleCommandState>();
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
   // 処理ビュー(画面真ん中)のスクロールコントローラ
-  final effectViewScrollController = ScrollController();
+  final effectViewScrollController = AutoScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -606,6 +607,201 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         } else {
           nextPressed = null;
         }
+        // 画面中央の処理リスト
+        List<Widget> effectWidgetList = [];
+        final turn = turns[turnNum - 1];
+        int addButtonCount = 0;
+        int widgetIdx = 0;
+        effectWidgetList.add(
+            // スクロール位置を指定しやすくする
+            AutoScrollTag(
+                key: Key('AddIcon$addButtonCount'),
+                controller: effectViewScrollController,
+                index: widgetIdx++,
+                child: GestureDetector(
+                  onLongPress: () {}, // 移動禁止
+                  child: IconButton(
+                    key: Key(
+                        'RegisterBattleEffectAddIconButton${addButtonCount++}'),
+                    icon: Icon(Icons.add_circle),
+                    onPressed: () {
+                      final effectList = turn.getEffectCandidatesWithPhaseIdx(
+                        null,
+                        null,
+                        ownParty,
+                        opponentParty,
+                        turn.copyInitialState(),
+                        loc,
+                        turnNum,
+                        0,
+                      );
+                      // 自身の効果->相手の効果->全体の効果の順に並べ替え
+                      effectList.sort((e1, e2) =>
+                          e1.playerType.number.compareTo(e2.playerType.number));
+                      // タイミングのみ違う効果は最後を除いて削除
+                      int i = effectList.length - 1;
+                      while (i >= 0) {
+                        if (i >= effectList.length) {
+                          i = effectList.length - 1;
+                        }
+                        effectList.removeWhere((element) =>
+                            element.nearEqual(effectList[i],
+                                allowTimingDiff: true) &&
+                            element != effectList[i]);
+                        i--;
+                      }
+                      showDialog(
+                          context: context,
+                          builder: (_) {
+                            return AddEffectDialog(
+                              (effect) {
+                                turns[turnNum - 1].phases.insert(0, effect);
+                                setState(() {});
+                              },
+                              loc.battleAddProcess,
+                              effectList,
+                              '${turn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                              '${turn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                            );
+                          });
+                    },
+                  ),
+                )));
+        for (final effect
+            in turn.phases.where((element) => element.isValid())) {
+          final phaseIdx = turns[turnNum - 1].phases.indexOf(effect);
+          final phaseState =
+              turn.getProcessedStates(phaseIdx, ownParty, opponentParty, loc);
+          final myState = phaseState.getPokemonState(effect.playerType, null);
+          final yourState =
+              phaseState.getPokemonState(effect.playerType.opposite, null);
+
+          effectWidgetList.add(AutoScrollTag(
+              key: Key('TurnEffect${effect.hashCode}${keyNum++}'),
+              controller: effectViewScrollController,
+              index: widgetIdx++,
+              child: GestureDetector(
+                onTap: () => showDialog(
+                  context: context,
+                  builder: (_) {
+                    return EditEffectDialog(
+                      () => setState(() {
+                        turns[turnNum - 1].phases.remove(effect);
+                      }),
+                      (newEffect) {
+                        setState(() {
+                          int findIdx =
+                              turns[turnNum - 1].phases.indexOf(effect);
+                          turns[turnNum - 1].phases[findIdx] = newEffect;
+                          // スクロール位置変更
+                          effectViewScrollController
+                              .scrollToIndex(widgetIdx + 1);
+                        });
+                      },
+                      effect.displayName(
+                        loc: loc,
+                      ),
+                      effect,
+                      myState,
+                      yourState,
+                      ownParty,
+                      opponentParty,
+                      phaseState,
+                    );
+                  },
+                ),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 5),
+                  child: Container(
+                    key: Key('EffectContainer'),
+                    decoration: ShapeDecoration(
+                      color: Colors.green[200],
+                      shape: BubbleBorder(
+                          nipInBottom: effect.playerType == PlayerType.opponent
+                              ? true
+                              : effect.playerType == PlayerType.me
+                                  ? false
+                                  : null),
+                    ),
+                    alignment: Alignment.center,
+                    padding: EdgeInsets.all(4),
+                    child: Text(effect.displayName(loc: loc)),
+                  ),
+                  /*Align(
+                alignment: Alignment.topRight,
+                child: GestureDetector(
+                  child: Icon(Icons.remove_circle),
+                  onTap: () {
+                    setState(() {
+                      turns[turnNum - 1]
+                          .phases
+                          .remove(effect);
+                    });
+                  },
+                ),
+              ),*/
+                ),
+              )));
+          // 処理追加ボタン
+          effectWidgetList.add(AutoScrollTag(
+              key: Key('AddIcon$addButtonCount'),
+              controller: effectViewScrollController,
+              index: widgetIdx++,
+              child: GestureDetector(
+                onLongPress: () {}, // 移動禁止
+                child: IconButton(
+                  key: Key(
+                      'RegisterBattleEffectAddIconButton${addButtonCount++}'),
+                  icon: Icon(Icons.add_circle),
+                  onPressed: () {
+                    final effectList = turn.getEffectCandidatesWithPhaseIdx(
+                      null,
+                      null,
+                      ownParty,
+                      opponentParty,
+                      phaseState,
+                      loc,
+                      turnNum,
+                      phaseIdx + 1,
+                    );
+                    // 自身の効果->相手の効果->全体の効果の順に並べ替え
+                    effectList.sort((e1, e2) =>
+                        e1.playerType.number.compareTo(e2.playerType.number));
+                    // タイミングのみ違う効果は最後を除いて削除
+                    int i = effectList.length - 1;
+                    while (i >= 0) {
+                      if (i >= effectList.length) {
+                        i = effectList.length - 1;
+                      }
+                      effectList.removeWhere((element) =>
+                          element.nearEqual(effectList[i],
+                              allowTimingDiff: true) &&
+                          element != effectList[i]);
+                      i--;
+                    }
+                    showDialog(
+                        context: context,
+                        builder: (_) {
+                          return AddEffectDialog(
+                            (effect) {
+                              turns[turnNum - 1]
+                                  .phases
+                                  .insert(phaseIdx + 1, effect);
+                              // スクロール位置変更
+                              effectViewScrollController
+                                  .scrollToIndex(widgetIdx + 1);
+                              setState(() {});
+                            },
+                            loc.battleAddProcess,
+                            effectList,
+                            '${phaseState.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                            '${phaseState.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                          );
+                        });
+                  },
+                ),
+              )));
+        }
         lists = Column(
           children: [
             Expanded(
@@ -735,147 +931,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         });
                       },
                       padding: EdgeInsets.symmetric(horizontal: 10),
-                      children: [
-                        for (final effect in turns[turnNum - 1]
-                            .phases
-                            .where((element) => element.isValid()))
-                          GestureDetector(
-                            key: Key('TurnEffect${effect.hashCode}${keyNum++}'),
-                            onTap: () => showDialog(
-                              context: context,
-                              builder: (_) {
-                                // TODO: さすがに長い、変数用意するかなんかしたい
-                                return EditEffectDialog(
-                                  () => setState(() {
-                                    turns[turnNum - 1].phases.remove(effect);
-                                  }),
-                                  (newEffect) {
-                                    setState(() {
-                                      int findIdx = turns[turnNum - 1]
-                                          .phases
-                                          .indexOf(effect);
-                                      turns[turnNum - 1].phases[findIdx] =
-                                          newEffect;
-                                    });
-                                  },
-                                  effect.displayName(
-                                    loc: loc,
-                                  ),
-                                  effect,
-                                  effect.playerType == PlayerType.me
-                                      ? turns[turnNum - 1]
-                                          .getProcessedStates(
-                                              turns[turnNum - 1]
-                                                  .phases
-                                                  .indexOf(effect),
-                                              ownParty,
-                                              opponentParty,
-                                              loc)
-                                          .getPokemonState(PlayerType.me, null)
-                                      : turns[turnNum - 1]
-                                          .getProcessedStates(
-                                              turns[turnNum - 1]
-                                                  .phases
-                                                  .indexOf(effect),
-                                              ownParty,
-                                              opponentParty,
-                                              loc)
-                                          .getPokemonState(
-                                              PlayerType.opponent, null),
-                                  effect.playerType == PlayerType.me
-                                      ? turns[turnNum - 1]
-                                          .getProcessedStates(
-                                              turns[turnNum - 1]
-                                                  .phases
-                                                  .indexOf(effect),
-                                              ownParty,
-                                              opponentParty,
-                                              loc)
-                                          .getPokemonState(
-                                              PlayerType.opponent, null)
-                                      : turns[turnNum - 1]
-                                          .getProcessedStates(
-                                              turns[turnNum - 1]
-                                                  .phases
-                                                  .indexOf(effect),
-                                              ownParty,
-                                              opponentParty,
-                                              loc)
-                                          .getPokemonState(PlayerType.me, null),
-                                  ownParty,
-                                  opponentParty,
-                                  turns[turnNum - 1].getProcessedStates(
-                                      turns[turnNum - 1].phases.indexOf(effect),
-                                      ownParty,
-                                      opponentParty,
-                                      loc),
-                                );
-                              },
-                            ),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 5),
-                              child: Container(
-                                key: Key('EffectContainer'),
-                                decoration: ShapeDecoration(
-                                  color: Colors.green[200],
-                                  shape: BubbleBorder(
-                                      nipInBottom: effect.playerType ==
-                                              PlayerType.opponent
-                                          ? true
-                                          : effect.playerType == PlayerType.me
-                                              ? false
-                                              : null),
-                                ),
-                                alignment: Alignment.center,
-                                padding: EdgeInsets.all(4),
-                                child: Text(effect.displayName(loc: loc)),
-                              ),
-                              /*Align(
-                                    alignment: Alignment.topRight,
-                                    child: GestureDetector(
-                                      child: Icon(Icons.remove_circle),
-                                      onTap: () {
-                                        setState(() {
-                                          turns[turnNum - 1]
-                                              .phases
-                                              .remove(effect);
-                                        });
-                                      },
-                                    ),
-                                  ),*/
-                            ),
-                          ),
-                        // 処理追加ボタン
-                        GestureDetector(
-                          key: Key('AddIcon'),
-                          onLongPress: () {}, // 移動禁止
-                          child: IconButton(
-                            key: Key('RegisterBattleEffectAddIconButton'),
-                            icon: Icon(Icons.add_circle),
-                            onPressed: () {
-                              final effectInsertIdxMap = turns[turnNum - 1]
-                                  .getEffectCandidates(null, null, ownParty,
-                                      opponentParty, loc, turnNum);
-                              final effectList =
-                                  effectInsertIdxMap.keys.toList();
-                              showDialog(
-                                  context: context,
-                                  builder: (_) {
-                                    return AddEffectDialog(
-                                      (effect) {
-                                        turns[turnNum - 1].phases.insert(
-                                            effectInsertIdxMap[effect]!.last,
-                                            effect);
-                                        setState(() {});
-                                      },
-                                      loc.battleAddProcess,
-                                      effectList,
-                                    );
-                                  });
-                            },
-                          ),
-                        ),
-                      ],
+                      children: effectWidgetList,
                     ),
                   ),
                 ),

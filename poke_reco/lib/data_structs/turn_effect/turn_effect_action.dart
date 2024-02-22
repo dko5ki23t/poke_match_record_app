@@ -686,6 +686,7 @@ class TurnEffectAction extends TurnEffect {
         pokeState.remainHPPercent = 0;
         pokeState.isFainting = true;
       }
+      super.afterProcessEffect(ownState, opponentState, state);
       return ret;
     }
 
@@ -713,6 +714,7 @@ class TurnEffectAction extends TurnEffect {
           .getPokemonState(playerType, null)
           .hiddenBuffs
           .add(BuffDebuff(BuffDebuff.changedThisTurn));
+      super.afterProcessEffect(ownState, opponentState, state);
       return ret;
     }
 
@@ -7932,8 +7934,14 @@ class TurnEffectAction extends TurnEffect {
   }
 
   /// extraArg等以外同じ、ほぼ同じかどうか
+  /// ```
+  /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// ```
   @override
-  bool nearEqual(TurnEffect t) {
+  bool nearEqual(
+    TurnEffect t, {
+    bool allowTimingDiff = false,
+  }) {
     return this == t;
   }
 
@@ -8214,6 +8222,9 @@ class TurnEffectAction extends TurnEffect {
   /// 有効かどうか
   @override
   bool isValid() {
+    if (type == TurnActionType.surrender) {
+      return true;
+    }
     if (!_isValid) {
       return false;
     }
@@ -8225,8 +8236,6 @@ class TurnEffectAction extends TurnEffect {
         return playerType != PlayerType.none && move.id != 0;
       case TurnActionType.change:
         return getChangePokemonIndex(playerType) != null;
-      case TurnActionType.surrender:
-        return true;
       default:
         return false;
     }
