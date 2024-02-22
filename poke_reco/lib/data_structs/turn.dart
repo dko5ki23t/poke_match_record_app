@@ -662,6 +662,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     int maxTerastal = 0;
     if (!currentTurn.initialOwnHasTerastal) maxTerastal++;
     if (!currentTurn.initialOpponentHasTerastal) maxTerastal++;
+    bool isOwnFainting = false;
+    bool isOpponentFainting = false;
+    bool isMyWin = false;
+    //bool isYourWin = false;
+    bool changeOwn = turnNum == 1;
+    bool changeOpponent = turnNum == 1;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -687,8 +693,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     };
     Timing currentTiming = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
     bool changingState = false; // 効果によってポケモン交代した状態
-    bool isOwnFainting = false;
-    bool isOpponentFainting = false;
 
     while (s1 != end) {
       currentTiming = changingState
@@ -1017,6 +1021,42 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             break;
         }
       }
+
+      if (s1 != end &&
+          i < l.length &&
+          toNext &&
+          (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
+      {
+        isMyWin = l[i].isMyWin;
+        //isYourWin = l[i].isYourWin;
+        s2 = 0;
+        s1 = 9; // 試合終了状態へ
+      } else {
+        if (s1 != end &&
+            i < l.length &&
+            toNext &&
+            (l[i].isOwnFainting || l[i].isOpponentFainting)) {
+          // どちらかがひんしになる場合
+          if (l[i].isOwnFainting) isOwnFainting = true;
+          if (l[i].isOpponentFainting) isOpponentFainting = true;
+          if (s2 == 1 || l[i].timing == Timing.action) {
+            if ((isOwnFainting &&
+                    !isOpponentFainting &&
+                    l[i].playerType == PlayerType.me) ||
+                (isOpponentFainting &&
+                    !isOwnFainting &&
+                    l[i].playerType == PlayerType.opponent)) {
+            } else {
+              // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
+              actionCount = 2;
+            }
+            s2 = 1; // わざでひんし状態へ
+          } else {
+            s2 = 4; // わざ以外でひんし状態へ
+          }
+        }
+      }
+
       if (toNext) {
         if (i == index) {
           return ret.toList();

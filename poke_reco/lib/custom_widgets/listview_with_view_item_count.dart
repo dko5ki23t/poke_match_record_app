@@ -14,10 +14,25 @@ class ListViewWithViewItemCount extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Scrollbar(
-          child: ListView(
-            itemExtent: constraints.maxHeight / viewItemCount,
-            children: children,
-          ),
+          child: ListView.builder(
+              itemExtent: constraints.maxHeight / viewItemCount,
+              findChildIndexCallback: (Key key) {
+                final index =
+                    children.indexWhere((element) => element.key == key);
+
+                if (index > 0) {
+                  return index;
+                } else {
+                  return null;
+                }
+              },
+              itemBuilder: (context, index) {
+                if (index < children.length) {
+                  return children[index];
+                } else {
+                  null;
+                }
+              }),
         );
       },
     );

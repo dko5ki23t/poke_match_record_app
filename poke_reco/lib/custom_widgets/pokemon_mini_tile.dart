@@ -17,7 +17,9 @@ class PokemonMiniTile extends ListTile {
     tileColor,
     bool showLevel = true,
     bool showSex = true,
+    Key? key,
   }) : super(
+          key: key,
           selected: selected,
           enabled: enabled,
           isThreeLine: true,

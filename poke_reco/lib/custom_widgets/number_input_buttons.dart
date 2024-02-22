@@ -190,6 +190,7 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
                   }),
                 ),
                 _NumberInputButton(
+                  key: Key('EnterButton'),
                   size: buttonSize,
                   pressed: confirmed,
                   child: Icon(Icons.subdirectory_arrow_left, size: 50),

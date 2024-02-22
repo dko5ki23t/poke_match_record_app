@@ -42,6 +42,7 @@ class AddEffectDialogState extends State<AddEffectDialog> {
         children: [
           Flexible(
             child: TextField(
+              key: Key('AddEffectDialogSearchBar'),
               controller: nameController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),

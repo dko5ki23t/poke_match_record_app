@@ -53,7 +53,9 @@ final _navigatorKeys = {
   TabItem.settings: GlobalKey<NavigatorState>(debugLabel: 'settings'),
 };
 
-void main() async {
+void main({
+  bool testMode = false,
+}) async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
   final directory = await getApplicationDocumentsDirectory();
@@ -62,6 +64,10 @@ void main() async {
   String configText;
   dynamic configJson;
   Locale? locale;
+  // テストモードに設定
+  if (testMode) {
+    PokeDB().setTestMode();
+  }
   try {
     configText = await saveDataFile.readAsString();
     configJson = jsonDecode(configText);

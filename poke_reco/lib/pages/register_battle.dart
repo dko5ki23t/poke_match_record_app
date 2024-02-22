@@ -114,23 +114,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 
   final ownBattleCommandKey = GlobalKey<BattleCommandState>();
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
-  bool deleteEffectMode = false;
-  //PlayerType? firstActionPlayer;
-
-/*
-  TurnEffect? _getPrevTimingEffect(int index) {
-    TurnEffect? ret;
-    var currentTurn = widget.battle.turns[turnNum - 1];
-    Timing nowTiming = currentTurn.phases[index].timing;
-    for (int i = index - 1; i >= 0; i--) {
-      if (currentTurn.phases[i].timing != nowTiming) {
-        ret = currentTurn.phases[i];
-        break;
-      }
-    }
-    return ret;
-  }
-*/
+  // 処理ビュー(画面真ん中)のスクロールコントローラ
+  final effectViewScrollController = ScrollController();
 
   @override
   Widget build(BuildContext context) {
@@ -563,6 +548,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     }
 */
 
+    int keyNum = 0;
     switch (pageType) {
       case RegisterBattlePageType.basePage:
         title = Text(loc.battlesTabTitleBattleBase);
@@ -723,6 +709,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     height: 50,
                     child: ReorderableListView(
                       scrollDirection: Axis.horizontal,
+                      scrollController: effectViewScrollController,
                       onReorder: (oldIndex, newIndex) {
                         if (oldIndex == turns[turnNum - 1].phases.length ||
                             newIndex == turns[turnNum - 1].phases.length) {
@@ -747,18 +734,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           }
                         });
                       },
-                      onReorderStart: (index) {
-                        setState(() {
-                          deleteEffectMode = true;
-                        });
-                      },
                       padding: EdgeInsets.symmetric(horizontal: 10),
                       children: [
                         for (final effect in turns[turnNum - 1]
                             .phases
                             .where((element) => element.isValid()))
                           GestureDetector(
-                            key: Key('TurnEffect${effect.hashCode}'),
+                            key: Key('TurnEffect${effect.hashCode}${keyNum++}'),
                             onTap: () => showDialog(
                               context: context,
                               builder: (_) {
@@ -833,6 +815,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             child: Padding(
                               padding: EdgeInsets.symmetric(horizontal: 5),
                               child: Container(
+                                key: Key('EffectContainer'),
                                 decoration: ShapeDecoration(
                                   color: Colors.green[200],
                                   shape: BubbleBorder(
@@ -864,9 +847,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           ),
                         // 処理追加ボタン
                         GestureDetector(
-                          key: Key('addIcon'),
+                          key: Key('AddIcon'),
                           onLongPress: () {}, // 移動禁止
                           child: IconButton(
+                            key: Key('RegisterBattleEffectAddIconButton'),
                             icon: Icon(Icons.add_circle),
                             onPressed: () {
                               final effectInsertIdxMap = turns[turnNum - 1]
@@ -1032,48 +1016,42 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           navigator.pop();
         }
       },
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            deleteEffectMode = false;
-          });
-        },
-        child: Scaffold(
-          appBar: AppBar(
-            title: title,
-            actions: [
-              MyIconButton(
-                theme: theme,
-                onPressed: backPressed,
-                tooltip: loc.battlesTabToolTipPrev,
-                icon: Icon(Icons.navigate_before),
+      child: Scaffold(
+        appBar: AppBar(
+          title: title,
+          actions: [
+            MyIconButton(
+              theme: theme,
+              onPressed: backPressed,
+              tooltip: loc.battlesTabToolTipPrev,
+              icon: Icon(Icons.navigate_before),
+            ),
+            MyIconButton(
+              key: Key('RegisterBattleNext'), // テストでの識別用
+              theme: theme,
+              onPressed: nextPressed,
+              tooltip: loc.battlesTabToolTipNext,
+              icon: Icon(Icons.navigate_next),
+            ),
+            SizedBox(
+              height: 20,
+              child: VerticalDivider(
+                thickness: 1,
               ),
-              MyIconButton(
-                theme: theme,
-                onPressed: nextPressed,
-                tooltip: loc.battlesTabToolTipNext,
-                icon: Icon(Icons.navigate_next),
-              ),
-              SizedBox(
-                height: 20,
-                child: VerticalDivider(
-                  thickness: 1,
-                ),
-              ),
-              MyIconButton(
-                theme: theme,
-                onPressed: (pageType == RegisterBattlePageType.turnPage &&
-                        getSelectedNum(appState.editingPhase) == 0 &&
-                        widget.battle != pokeData.battles[widget.battle.id])
-                    ? () => onComplete()
-                    : null,
-                tooltip: loc.registerSave,
-                icon: Icon(Icons.save),
-              ),
-            ],
-          ),
-          body: lists,
+            ),
+            MyIconButton(
+              theme: theme,
+              onPressed: (pageType == RegisterBattlePageType.turnPage &&
+                      getSelectedNum(appState.editingPhase) == 0 &&
+                      widget.battle != pokeData.battles[widget.battle.id])
+                  ? () => onComplete()
+                  : null,
+              tooltip: loc.registerSave,
+              icon: Icon(Icons.save),
+            ),
+          ],
         ),
+        body: lists,
       ),
     );
   }

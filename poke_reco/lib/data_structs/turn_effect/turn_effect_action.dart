@@ -6752,6 +6752,8 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 6,
               child: NumberInputButtons(
+                key: Key(
+                    'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 initialNum: 0, // TODO?
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {

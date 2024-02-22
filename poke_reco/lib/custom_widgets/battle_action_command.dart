@@ -127,6 +127,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
         moveTiles.add(
           ListTile(
+            key: Key(
+                'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
             horizontalTitleGap: 8.0,
             dense: true,
             leading: turnMove
@@ -280,6 +282,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         child: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: TextField(
+                            key: Key(
+                                'BattleActionCommandMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                             controller: moveSearchTextController,
                             decoration: InputDecoration(
                               prefixIcon: const Icon(Icons.search),

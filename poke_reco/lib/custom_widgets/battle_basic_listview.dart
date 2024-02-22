@@ -43,6 +43,7 @@ class BattleBasicListView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
+      key: Key('BattleBasicListView'), // テストでの識別用
       children: [
         Container(
           padding: const EdgeInsets.all(10),
@@ -56,6 +57,8 @@ class BattleBasicListView extends StatelessWidget {
                   Flexible(
                     child: isInput
                         ? TextFormField(
+                            key: Key(
+                                'BattleBasicListViewBattleName'), // テストでの識別用
                             controller: battleNameController,
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
@@ -167,6 +170,8 @@ class BattleBasicListView extends StatelessWidget {
                   Flexible(
                     child: isInput
                         ? TextFormField(
+                            key:
+                                Key('BattleBasicListViewYourParty'), // テストでの識別用
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: loc.battlesTabYourParty,
@@ -275,6 +280,8 @@ class BattleBasicListView extends StatelessWidget {
                   Flexible(
                     child: isInput
                         ? TextFormField(
+                            key: Key(
+                                'BattleBasicListViewOpponentName'), // テストでの識別用
                             controller: opponentNameController,
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
@@ -466,7 +473,7 @@ class BattleBasicListView extends StatelessWidget {
                   showNetworkImage: showNetworkImage,
                   isInput: isInput,
                 ),
-              SizedBox(height: 10),
+              SizedBox(height: 20),
               SizedBox(height: 10),
             ],
           ),
