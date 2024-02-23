@@ -1096,6 +1096,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               ),
             ),
             MyIconButton(
+              key: Key('RegisterBattleSave'), // テストでの識別用
               theme: theme,
               onPressed: (pageType == RegisterBattlePageType.turnPage &&
                       getSelectedNum(appState.editingPhase) == 0 &&

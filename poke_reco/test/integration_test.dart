@@ -41,7 +41,7 @@ void main() {
         // 基本情報を入力
         // 対戦名
         await driver!.tap(find.byValueKey('BattleBasicListViewBattleName'));
-        await driver!.enterText('もこうパーモット戦');
+        await driver!.enterText('もこうパーモット戦1');
         // あなたのパーティ
         await driver!.tap(find.byValueKey('BattleBasicListViewYourParty'));
         await testExistAnyWidgets(find.byType('PartyTile'), driver!);
@@ -249,6 +249,9 @@ void main() {
         // あいて降参
         await driver!
             .tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
+
+        // 内容保存
+        await driver!.tap(find.byValueKey('RegisterBattleSave'));
       }
     });
   });
