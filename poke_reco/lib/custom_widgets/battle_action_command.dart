@@ -214,6 +214,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   TextButton(
+                    key: Key(
+                        'BattleActionCommandMove${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnActionType.move;
                       // TODO: typeを変えたら他も変える？class継承とかでどうにか
@@ -226,6 +228,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   ),
                   SizedBox(width: 10),
                   TextButton(
+                    key: Key(
+                        'BattleActionCommandChange${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnActionType.change;
                     }),
@@ -268,6 +272,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           ? Expanded(
                               flex: 2,
                               child: IconButton(
+                                key: Key(
+                                    'BattleActionCommandTerastal${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                                 icon: myState.isTerastaling
                                     ? myState.teraType1.displayIcon
                                     : Icon(
@@ -403,7 +409,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   state = CommandState.selectCommand;
                   widget.onUnConfirm();
                 }),
-            onConfirm: () => parentSetState(() => widget.onConfirm),
+            onConfirm: () => parentSetState(() {
+                  widget.onConfirm();
+                }),
             onUpdate: () => parentSetState(() {}),
             myParty: myParty,
             yourParty: yourParty,

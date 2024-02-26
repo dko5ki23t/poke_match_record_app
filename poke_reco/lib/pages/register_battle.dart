@@ -609,7 +609,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         }
         // 画面中央の処理リスト
         List<Widget> effectWidgetList = [];
-        final turn = turns[turnNum - 1];
+        final currentTurn = turns[turnNum - 1];
         int addButtonCount = 0;
         int widgetIdx = 0;
         effectWidgetList.add(
@@ -625,12 +625,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         'RegisterBattleEffectAddIconButton${addButtonCount++}'),
                     icon: Icon(Icons.add_circle),
                     onPressed: () {
-                      final effectList = turn.getEffectCandidatesWithPhaseIdx(
+                      final effectList =
+                          currentTurn.getEffectCandidatesWithPhaseIdx(
                         null,
                         null,
                         ownParty,
                         opponentParty,
-                        turn.copyInitialState(),
+                        currentTurn.copyInitialState(),
                         loc,
                         turnNum,
                         0,
@@ -655,23 +656,23 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           builder: (_) {
                             return AddEffectDialog(
                               (effect) {
-                                turns[turnNum - 1].phases.insert(0, effect);
+                                currentTurn.phases.insert(0, effect);
                                 setState(() {});
                               },
                               loc.battleAddProcess,
                               effectList,
-                              '${turn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
-                              '${turn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                              '${currentTurn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                              '${currentTurn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
                             );
                           });
                     },
                   ),
                 )));
         for (final effect
-            in turn.phases.where((element) => element.isValid())) {
-          final phaseIdx = turns[turnNum - 1].phases.indexOf(effect);
-          final phaseState =
-              turn.getProcessedStates(phaseIdx, ownParty, opponentParty, loc);
+            in currentTurn.phases.where((element) => element.isValid())) {
+          final phaseIdx = currentTurn.phases.indexOf(effect);
+          final phaseState = currentTurn.getProcessedStates(
+              phaseIdx, ownParty, opponentParty, loc);
           final myState = phaseState.getPokemonState(effect.playerType, null);
           final yourState =
               phaseState.getPokemonState(effect.playerType.opposite, null);
@@ -686,13 +687,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                   builder: (_) {
                     return EditEffectDialog(
                       () => setState(() {
-                        turns[turnNum - 1].phases.remove(effect);
+                        currentTurn.phases.remove(effect);
                       }),
                       (newEffect) {
                         setState(() {
-                          int findIdx =
-                              turns[turnNum - 1].phases.indexOf(effect);
-                          turns[turnNum - 1].phases[findIdx] = newEffect;
+                          int findIdx = currentTurn.phases.indexOf(effect);
+                          currentTurn.phases[findIdx] = newEffect;
                           // スクロール位置変更
                           effectViewScrollController
                               .scrollToIndex(widgetIdx + 1);
@@ -754,7 +754,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       'RegisterBattleEffectAddIconButton${addButtonCount++}'),
                   icon: Icon(Icons.add_circle),
                   onPressed: () {
-                    final effectList = turn.getEffectCandidatesWithPhaseIdx(
+                    final effectList =
+                        currentTurn.getEffectCandidatesWithPhaseIdx(
                       null,
                       null,
                       ownParty,
@@ -784,9 +785,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         builder: (_) {
                           return AddEffectDialog(
                             (effect) {
-                              turns[turnNum - 1]
-                                  .phases
-                                  .insert(phaseIdx + 1, effect);
+                              currentTurn.phases.insert(phaseIdx + 1, effect);
                               // スクロール位置変更
                               effectViewScrollController
                                   .scrollToIndex(widgetIdx + 1);
@@ -831,7 +830,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           userEdit.add(
                               UserEdit(PlayerType.me, UserEdit.hp, remainHP));
                         }
-                        turns[turnNum - 1].phases.addNextToLastValid(userEdit);
+                        currentTurn.phases.addNextToLastValid(userEdit);
+                        effectViewScrollController.scrollToIndex((currentTurn
+                                        .phases
+                                        .where((element) => element.isValid())
+                                        .length -
+                                    1) *
+                                2 +
+                            1);
                         setState(() {});
                       },
                     ),
@@ -846,41 +852,55 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: ownBattleCommandKey,
                             playerType: PlayerType.me,
                             turnMove: ownLastAction,
-                            phaseState: turns[turnNum - 1].getBeforeActionState(
+                            phaseState: currentTurn.getBeforeActionState(
                                 PlayerType.me, ownParty, opponentParty, loc),
                             myParty: ownParty,
                             yourParty: opponentParty,
                             parentSetState: setState,
-                            onConfirm: () => setState(() =>
-                                turns[turnNum - 1].phases.updateActionOrder()),
-                            onUnConfirm: () => setState(() =>
-                                turns[turnNum - 1].phases.updateActionOrder()),
+                            onConfirm: () => setState(() {
+                              currentTurn.phases.updateActionOrder();
+                              effectViewScrollController.scrollToIndex(
+                                  currentTurn.phases.getLatestActionIndex(
+                                              PlayerType.me,
+                                              onlyValids: true) *
+                                          2 +
+                                      1);
+                            }),
+                            onUnConfirm: () => setState(
+                                () => currentTurn.phases.updateActionOrder()),
                             updateActionOrder: () =>
-                                turns[turnNum - 1].phases.updateActionOrder(),
+                                currentTurn.phases.updateActionOrder(),
                             playerCanTerastal:
-                                !turns[turnNum - 1].initialOwnHasTerastal,
+                                !currentTurn.initialOwnHasTerastal,
                             onRequestTerastal: () => setState(() =>
-                                turns[turnNum - 1].phases.turnOnOffTerastal(
+                                currentTurn.phases.turnOnOffTerastal(
                                     PlayerType.me,
                                     focusState!
                                         .getPokemonState(PlayerType.me, null)
                                         .pokemon
                                         .teraType,
                                     turnNum,
-                                    turns[turnNum - 1])),
+                                    currentTurn)),
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.me,
                                 turnEffect: ownLastAction,
-                                phaseState: turns[turnNum - 1]
-                                    .getBeforeActionState(PlayerType.me,
-                                        ownParty, opponentParty, loc),
+                                phaseState: currentTurn.getBeforeActionState(
+                                    PlayerType.me,
+                                    ownParty,
+                                    opponentParty,
+                                    loc),
                                 myParty: ownParty,
                                 yourParty: opponentParty,
                                 parentSetState: setState,
                                 onConfirm: () {
-                                  //TODO
+                                  effectViewScrollController.scrollToIndex(
+                                      currentTurn.phases.getLatestActionIndex(
+                                                  PlayerType.me,
+                                                  onlyValids: true) *
+                                              2 +
+                                          1);
                                 },
                                 onUnConfirm: () {})
                             : Container(),
@@ -907,8 +927,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       scrollDirection: Axis.horizontal,
                       scrollController: effectViewScrollController,
                       onReorder: (oldIndex, newIndex) {
-                        if (oldIndex == turns[turnNum - 1].phases.length ||
-                            newIndex == turns[turnNum - 1].phases.length) {
+                        if (oldIndex == currentTurn.phases.length ||
+                            newIndex == currentTurn.phases.length) {
                           // 処理追加ボタンの入れ替えや処理追加ボタンの後ろへの移動は無効
                           return;
                         }
@@ -916,17 +936,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           if (oldIndex < newIndex) {
                             newIndex -= 1;
                           }
-                          final item =
-                              turns[turnNum - 1].phases.removeAt(oldIndex);
-                          if (turns[turnNum - 1]
-                              .phases
-                              .insertableTimings(
-                                  newIndex, turnNum, turns[turnNum - 1])
+                          final item = currentTurn.phases.removeAt(oldIndex);
+                          if (currentTurn.phases
+                              .insertableTimings(newIndex, turnNum, currentTurn)
                               .contains(item.timing)) {
-                            turns[turnNum - 1].phases.insert(newIndex, item);
+                            currentTurn.phases.insert(newIndex, item);
                           } else {
                             // 入れ替えない
-                            turns[turnNum - 1].phases.insert(oldIndex, item);
+                            currentTurn.phases.insert(oldIndex, item);
                           }
                         });
                       },
@@ -966,7 +983,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           userEdit.add(UserEdit(
                               PlayerType.opponent, UserEdit.hp, remainHP));
                         }
-                        turns[turnNum - 1].phases.addNextToLastValid(userEdit);
+                        currentTurn.phases.addNextToLastValid(userEdit);
+                        effectViewScrollController.scrollToIndex((currentTurn
+                                        .phases
+                                        .where((element) => element.isValid())
+                                        .length -
+                                    1) *
+                                2 +
+                            1);
                         setState(() {});
                       },
                     ),
@@ -981,7 +1005,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: opponentBattleCommandKey,
                             playerType: PlayerType.opponent,
                             turnMove: opponentLastAction,
-                            phaseState: turns[turnNum - 1].getBeforeActionState(
+                            phaseState: currentTurn.getBeforeActionState(
                                 PlayerType.opponent,
                                 ownParty,
                                 opponentParty,
@@ -989,41 +1013,47 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             myParty: opponentParty,
                             yourParty: ownParty,
                             parentSetState: setState,
-                            onConfirm: () => setState(() =>
-                                turns[turnNum - 1].phases.updateActionOrder()),
-                            onUnConfirm: () => setState(() =>
-                                turns[turnNum - 1].phases.updateActionOrder()),
+                            onConfirm: () => setState(() {
+                              currentTurn.phases.updateActionOrder();
+                              effectViewScrollController.scrollToIndex(
+                                  currentTurn.phases.getLatestActionIndex(
+                                              PlayerType.opponent,
+                                              onlyValids: true) *
+                                          2 +
+                                      1);
+                            }),
+                            onUnConfirm: () => setState(
+                                () => currentTurn.phases.updateActionOrder()),
                             updateActionOrder: () =>
-                                turns[turnNum - 1].phases.updateActionOrder(),
+                                currentTurn.phases.updateActionOrder(),
                             playerCanTerastal:
-                                !turns[turnNum - 1].initialOpponentHasTerastal,
+                                !currentTurn.initialOpponentHasTerastal,
                             // 相手のテラスタイプ選択ダイアログ表示
                             onRequestTerastal: () {
-                              if (turns[turnNum - 1]
+                              if (currentTurn
                                   .getBeforeActionState(PlayerType.opponent,
                                       ownParty, opponentParty, loc)
                                   .getPokemonState(PlayerType.opponent, null)
                                   .isTerastaling) {
                                 setState(() {
-                                  turns[turnNum - 1].phases.turnOnOffTerastal(
+                                  currentTurn.phases.turnOnOffTerastal(
                                       PlayerType.opponent,
                                       PokeType.unknown,
                                       turnNum,
-                                      turns[turnNum - 1]);
+                                      currentTurn);
                                 });
                               } else {
                                 showDialog(
                                     context: context,
                                     builder: (_) {
                                       return SelectTypeDialog(
-                                          (type) => setState(() =>
-                                              turns[turnNum - 1]
-                                                  .phases
-                                                  .turnOnOffTerastal(
-                                                      PlayerType.opponent,
-                                                      type,
-                                                      turnNum,
-                                                      turns[turnNum - 1])),
+                                          (type) => setState(() => currentTurn
+                                              .phases
+                                              .turnOnOffTerastal(
+                                                  PlayerType.opponent,
+                                                  type,
+                                                  turnNum,
+                                                  currentTurn)),
                                           loc.commonTeraType);
                                     });
                               }
@@ -1033,14 +1063,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.opponent,
                                 turnEffect: opponentLastAction,
-                                phaseState: turns[turnNum - 1]
-                                    .getBeforeActionState(PlayerType.opponent,
-                                        ownParty, opponentParty, loc),
+                                phaseState: currentTurn.getBeforeActionState(
+                                    PlayerType.opponent,
+                                    ownParty,
+                                    opponentParty,
+                                    loc),
                                 myParty: opponentParty,
                                 yourParty: ownParty,
                                 parentSetState: setState,
                                 onConfirm: () {
-                                  //TODO
+                                  effectViewScrollController.scrollToIndex(
+                                      currentTurn.phases.getLatestActionIndex(
+                                                  PlayerType.opponent,
+                                                  onlyValids: true) *
+                                              2 +
+                                          1);
                                 },
                                 onUnConfirm: () {})
                             : Container(),

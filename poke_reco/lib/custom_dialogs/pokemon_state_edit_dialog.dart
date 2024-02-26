@@ -104,6 +104,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                 Text('${loc.commonAbility} : '),
                 Expanded(
                   child: TypeAheadField(
+                    key: Key('PokemonStateEditDialogAbility'),
                     textFieldConfiguration: TextFieldConfiguration(
                       controller: abilityController,
                       decoration: InputDecoration(
@@ -150,6 +151,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                 Text('${loc.commonItem} : '),
                 Expanded(
                   child: TypeAheadField(
+                    key: Key('PokemonStateEditDialogItem'),
                     textFieldConfiguration: TextFieldConfiguration(
                       controller: itemController,
                       decoration: InputDecoration(

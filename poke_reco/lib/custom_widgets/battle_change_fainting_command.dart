@@ -97,6 +97,7 @@ class BattleChangeFaintingCommandState
             theme,
             onTap: () => parentSetState(() {
               turnEffect.changePokemonIndex = i + 1;
+              widget.onConfirm();
             }),
             selected: turnEffect.changePokemonIndex == i + 1,
             showNetworkImage: PokeDB().getPokeAPI,

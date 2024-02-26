@@ -88,6 +88,8 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
               ? Row(
                   children: [
                     Checkbox(
+                        key: Key(
+                            'HitInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         value: turnMove.hitCount > 0,
                         onChanged: (change) {
                           if (change != null) {
@@ -109,6 +111,8 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                     Text(MoveHit.hit.displayName),
                     Expanded(
                       child: NumberInputWithIncrementDecrement(
+                        key: Key(
+                            'HitInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         controller: hitController,
                         numberFieldDecoration: const InputDecoration(
                           border: UnderlineInputBorder(),
@@ -133,6 +137,8 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
               ? Row(
                   children: [
                     Checkbox(
+                        key: Key(
+                            'CriticalInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         value: turnMove.criticalCount > 0,
                         onChanged: (change) {
                           if (change != null) {
@@ -154,6 +160,8 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                     Text(MoveHit.critical.displayName),
                     Expanded(
                       child: NumberInputWithIncrementDecrement(
+                        key: Key(
+                            'CriticalInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         controller: criticalController,
                         numberFieldDecoration: const InputDecoration(
                           border: UnderlineInputBorder(),

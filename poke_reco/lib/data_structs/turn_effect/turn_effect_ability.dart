@@ -539,6 +539,7 @@ class TurnEffectAbility extends TurnEffect {
       case 209: // ばけのかわ
         {
           myState.buffDebuffs.removeAllByID(BuffDebuff.transedForm);
+          myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.revealedForm);
           if (playerType == PlayerType.me) {
             myState.remainHP -= extraArg1;
           } else {

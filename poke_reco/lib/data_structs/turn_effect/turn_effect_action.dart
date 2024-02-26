@@ -810,7 +810,9 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    if (!isSuccess || hitCount == 0) return ret;
+    if (!isSuccess || hitCount == 0) {
+      return ret;
+    }
 
     List<IndividualField> myFields = state.getIndiFields(playerType);
     List<IndividualField> yourFields = state.getIndiFields(playerType.opposite);
@@ -7055,6 +7057,7 @@ class TurnEffectAction extends TurnEffect {
                   } else {
                     moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
+                  onUpdate();
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
@@ -7087,6 +7090,7 @@ class TurnEffectAction extends TurnEffect {
                   } else {
                     moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
+                  onUpdate();
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {
@@ -7119,6 +7123,7 @@ class TurnEffectAction extends TurnEffect {
                   } else {
                     moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
+                  onUpdate();
                 },
                 itemText: extra[2] as String,
                 onItemSelected: (item) {

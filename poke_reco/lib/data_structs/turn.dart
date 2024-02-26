@@ -125,10 +125,27 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
   /// 対象行動主の最後の行動のインデックスを返す
   /// ```
   /// playerType: 行動主
+  /// onlyValids: 有効なフェーズに限定して探すか
   /// ```
-  int getLatestActionIndex(PlayerType playerType) => l.lastIndexWhere((e) =>
-      (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
-      e.playerType == playerType);
+  int getLatestActionIndex(
+    PlayerType playerType, {
+    bool onlyValids = false,
+  }) {
+    if (onlyValids) {
+      return l
+          .where(
+            (element) => element.isValid(),
+          )
+          .toList()
+          .lastIndexWhere((e) =>
+              (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
+              e.playerType == playerType);
+    } else {
+      return l.lastIndexWhere((e) =>
+          (e is TurnEffectAction || e is TurnEffectChangeFaintingPokemon) &&
+          e.playerType == playerType);
+    }
+  }
 
   /// 最後に有効な行動をした行動主
   PlayerType? get firstActionPlayer {
@@ -318,7 +335,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         return i;
       }
       bool toNext = false;
-      if (changingState) {
+      if (i < l.length && l[i] is TurnEffectUserEdit) {
+        // パラメータ編集は無視して次へ
+        toNext = true;
+      } else if (changingState) {
         // ポケモン交代後状態
         if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
           changingState = false;
@@ -702,7 +722,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               : s2TimingMap[s2]!;
       ret.add(currentTiming);
       bool toNext = false;
-      if (changingState) {
+      if (i < l.length && l[i] is TurnEffectUserEdit) {
+        // パラメータ編集は無視して次へ
+        toNext = true;
+      } else if (changingState) {
         // ポケモン交代後状態
         if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
           changingState = false;
