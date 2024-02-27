@@ -243,9 +243,6 @@ const String sqlSplit6 = '}';
 const String sqlSplit7 = '{';
 const String sqlSplit8 = '|';
 
-/// 事前準備したデータを使うかどうか
-bool replacePrepared = false;
-
 /// せいべつ
 enum Sex {
   none(0, 'なし', 'Unknown', Icon(Icons.remove, color: Colors.grey)),
@@ -540,6 +537,9 @@ class PokeDB {
 
   /// 広告を表示するかどうか
   bool showAd = true;
+
+  /// 事前準備したデータを使うかどうか
+  bool replacePrepared = false;
 
   /// 読み込みが完了したか
   bool isLoaded = false;

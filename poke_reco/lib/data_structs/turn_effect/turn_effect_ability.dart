@@ -936,7 +936,7 @@ class TurnEffectAbility extends TurnEffect {
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
-    // とくせいによる効果
+    final dropdownMenuKey = Key('AbilityEffectDropDownMenu');
     switch (abilityID) {
       case 10: // ちくでん
       case 11: // ちょすい
@@ -1368,6 +1368,7 @@ class TurnEffectAbility extends TurnEffect {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
+                key: dropdownMenuKey,
                 isExpanded: true,
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(),

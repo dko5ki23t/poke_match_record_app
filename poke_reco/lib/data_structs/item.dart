@@ -734,11 +734,12 @@ class Item extends Equatable implements Copyable {
     int? changePokemonIndex,
     void Function(int) extraArg1ChangeFunc,
     void Function(int) extraArg2ChangeFunc,
-    void Function(int?) changePokemonIndexChangeFunc,
+    void Function(PlayerType, int?) changePokemonIndexChangeFunc,
     bool isInput, {
     bool showNetworkImage = false,
     required AppLocalizations loc,
   }) {
+    final pokeSelectKey = Key('ItemEffectSelectPokemon');
     switch (id) {
       case 184: // スターのみ
         return Row(
@@ -906,6 +907,7 @@ class Item extends Equatable implements Copyable {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
+                key: pokeSelectKey,
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
@@ -926,7 +928,8 @@ class Item extends Equatable implements Copyable {
                     ),
                 ],
                 value: changePokemonIndex,
-                onChanged: (value) => changePokemonIndexChangeFunc(value),
+                onChanged: (value) =>
+                    changePokemonIndexChangeFunc(playerType.opposite, value),
                 textValue: isInput
                     ? null
                     : yourParty.pokemons[changePokemonIndex ?? 1 - 1]!.name,
@@ -1197,6 +1200,7 @@ class Item extends Equatable implements Copyable {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
+                key: pokeSelectKey,
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
@@ -1214,7 +1218,8 @@ class Item extends Equatable implements Copyable {
                     ),
                 ],
                 value: changePokemonIndex,
-                onChanged: (value) => changePokemonIndexChangeFunc(value),
+                onChanged: (value) =>
+                    changePokemonIndexChangeFunc(playerType, value),
                 textValue: isInput
                     ? null
                     : myParty.pokemons[changePokemonIndex ?? 1 - 1]!.name,

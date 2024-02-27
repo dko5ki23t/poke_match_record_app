@@ -115,7 +115,7 @@ class TurnEffectItem extends TurnEffect {
           getChangePokemonIndex(playerType),
           (value) => extraArg1 = value,
           (value) => extraArg2 = value,
-          (value) => setChangePokemonIndex(playerType, value),
+          (player, value) => setChangePokemonIndex(player, value),
           true,
           showNetworkImage: PokeDB().getPokeAPI,
           loc: loc,

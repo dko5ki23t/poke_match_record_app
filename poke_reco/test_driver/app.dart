@@ -6,5 +6,5 @@ void main() {
   enableFlutterDriverExtension();
 
   // runAppに好きなWidgetを渡しても良い
-  app.main();
+  app.main(usePrepared: true);
 }

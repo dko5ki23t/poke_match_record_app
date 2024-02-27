@@ -194,6 +194,9 @@ class ActionFailure extends Equatable {
 
 /// ダメージの情報を管理するclass
 class DamageGetter {
+  /// ダメージを表示するかどうか
+  bool showDamage = true;
+
   /// 最小ダメージ
   int minDamage = 0;
 
@@ -834,8 +837,8 @@ class TurnEffectAction extends TurnEffect {
     PlayerType yourPlayerType =
         playerType == PlayerType.me ? PlayerType.opponent : PlayerType.me;
 
-    // ダメージ計算式を表示するかどうか
-    bool showDamageCalc = false;
+    // ダメージを表示するかどうか
+    damageGetter?.showDamage = false;
 
     /// わざの威力(連続わざの場合はそれぞれの威力)
     Map<int, int> movePower = {0: 0};
@@ -973,7 +976,7 @@ class TurnEffectAction extends TurnEffect {
       myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
 
       // ダメージ計算式を表示するかどうか
-      showDamageCalc = false;
+      damageGetter?.showDamage = false;
       for (int i = 0; i < replacedMove.maxMoveCount(); i++) {
         movePower[i] = replacedMove.power;
       }
@@ -995,7 +998,7 @@ class TurnEffectAction extends TurnEffect {
           break;
         case 2: // ぶつり
         case 3: // とくしゅ
-          showDamageCalc = true;
+          damageGetter?.showDamage = true;
           break;
         default:
           break;
@@ -1221,7 +1224,7 @@ class TurnEffectAction extends TurnEffect {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -1393,7 +1396,7 @@ class TurnEffectAction extends TurnEffect {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -1455,7 +1458,7 @@ class TurnEffectAction extends TurnEffect {
           case 90: // 低優先度。ターンで最後に受けた物理わざによるダメージの2倍を与える
           case 92: // 使用者と相手のHPを足して半々に分ける
           case 145: // 低優先度。ターンで最後に受けた特殊わざによるダメージの2倍を与える
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 91: // アンコール状態にする
             if (targetState.lastMove != null) {
@@ -1624,14 +1627,14 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 122: // なつき度によって威力が変わる
             // なつき度(0~255)×10/25
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 123: // ランダムに威力が変わる/相手を回復する
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 124: // なつき度が低いほど威力があがる
             // (255-なつき度(0~255))×10/25
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 125: // 場に「しんぴのまもり」を発生させる
             if (targetIndiField
@@ -1647,7 +1650,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 127: // 威力がランダムで10,30,50,70,90,110,150のいずれかになる。あなをほる状態の対象にも当たり、ダメージ2倍。グラスフィールドの影響を受ける相手には威力半減
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
             if (getChangePokemonIndex(myPlayerType) != null) {
@@ -1693,7 +1696,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 129: // そのターンに相手が交代しようとした場合、威力2倍で交代前のポケモンにこうげき
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 130: // バインド・やどりぎのタネ・まきびし・どくびし・とがった岩・ねばねばネット除去。使用者のすばやさを1段階上げる
             myState.ailmentsRemoveWhere((e) =>
@@ -1761,7 +1764,7 @@ class TurnEffectAction extends TurnEffect {
                   ..extraArg1 = replacedMove.id);
                 myState.addStatChanges(true, 1, 1, targetState,
                     moveId: replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -1813,7 +1816,7 @@ class TurnEffectAction extends TurnEffect {
                 if (state.weather.id != Weather.sunny) {
                   myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                     ..extraArg1 = replacedMove.id);
-                  showDamageCalc = false;
+                  damageGetter?.showDamage = false;
                 }
               } else {
                 // こうげきする
@@ -1839,7 +1842,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 155: // 手持ちポケモン(ひんし、状態異常除く)の数だけ連続でこうげきする
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 156: // 使用者はそらをとぶ状態になり、次のターンにこうげきする
             {
@@ -1847,7 +1850,7 @@ class TurnEffectAction extends TurnEffect {
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
@@ -2028,7 +2031,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 186: // このターンに、対象からダメージを受けていた場合は威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 187: // 対象の場のリフレクター・ひかりのかべ・オーロラベールを解除してからこうげき
             targetIndiField.removeWhere((e) =>
@@ -2057,7 +2060,7 @@ class TurnEffectAction extends TurnEffect {
             movePower[0] = movePower[0]! * 2;
             break;
           case 190: // 相手の残りHP-使用者の残りHP(負数なら失敗)分の固定ダメージを与える
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 191: // 威力=150×使用者の残りHP/最大HP
             if (myPlayerType == PlayerType.me) {
@@ -2250,7 +2253,7 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 220: // 使用者のすばやさが相手と比べて低いほど威力が大きくなる(25×相手のすばやさ/使用者のすばやさ+1)(max150)
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 221: // 使用者はひんしになる。場にいやしのねがいを発生させる
             myFields.add(IndividualField(IndividualField.healingWish));
@@ -2299,7 +2302,7 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 228: // そのターンで最後に相手から受けたこうげきわざのダメージを1.5倍にして返す
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 230: // 使用者のぼうぎょ・とくぼうを1段階ずつ下げる
             myState.addStatChanges(true, 1, -1, targetState,
@@ -2308,10 +2311,10 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 231: // 相手がそのターン既に行動していると威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 232: // 相手がそのターン既にダメージを受けていると威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 233: // さしおさえ状態にする
             targetState.ailmentsAdd(Ailment(Ailment.embargo), state);
@@ -2345,7 +2348,7 @@ class TurnEffectAction extends TurnEffect {
             myState.ailmentsRemoveAt(myIdx);
             break;
           case 236: // わざの残りPPが少ないほどわざの威力が上がる。必中
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 237: // かいふくふうじ状態にする
             targetState.ailmentsAdd(
@@ -2448,7 +2451,7 @@ class TurnEffectAction extends TurnEffect {
                 myState.ailmentsAdd(Ailment(Ailment.diving), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.diving);
@@ -2477,7 +2480,7 @@ class TurnEffectAction extends TurnEffect {
                 myState.ailmentsAdd(Ailment(Ailment.digging), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.digging);
@@ -2558,7 +2561,7 @@ class TurnEffectAction extends TurnEffect {
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.ailmentsRemoveWhere((e) => e.id == Ailment.flying);
@@ -2658,7 +2661,7 @@ class TurnEffectAction extends TurnEffect {
                 myState.ailmentsAdd(Ailment(Ailment.shadowForcing), state);
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState
@@ -2839,7 +2842,7 @@ class TurnEffectAction extends TurnEffect {
           case 293: // 使用者と同じタイプを持つポケモンに対してのみ有効
             break;
           case 294: // 相手よりすばやさが速いほど威力が大きくなる
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 295: // 相手のタイプをみず単体に変更する
             if (!targetState.isTerastaling) {
@@ -2870,7 +2873,7 @@ class TurnEffectAction extends TurnEffect {
           case 302: // 同じターンにこのわざを複数が使用すると、1体目が使用した直後に2体目がこのわざを使う。後で使った方は威力120
             break;
           case 303: // 毎ターン場の誰かが使用し続けた場合(当たらなくてもよい)、40ずつ威力が高くなる。max200。
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 304: // 相手のランク補正を無視してダメージを与える
             ignoreTargetRank = true;
@@ -2966,13 +2969,13 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 320: // 味方がひんしになった次のターンに使った場合威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 321: // 使用者の残りHP分の固定ダメージを与える。使用者はひんしになる
             if (myPlayerType == PlayerType.me) {
               damageCalc = loc.battleDamageFixed6(myState.remainHP);
             } else {
-              showDamageCalc = false;
+              damageGetter?.showDamage = false;
             }
             myState.remainHP = 0;
             myState.remainHPPercent = 0;
@@ -3071,7 +3074,7 @@ class TurnEffectAction extends TurnEffect {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -3087,7 +3090,7 @@ class TurnEffectAction extends TurnEffect {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -3257,7 +3260,7 @@ class TurnEffectAction extends TurnEffect {
                 // 溜め状態にする
                 myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                   ..extraArg1 = replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -3420,7 +3423,7 @@ class TurnEffectAction extends TurnEffect {
           case 408: // このターンでこのわざを使用する前に物理技を受けた場合のみこうげき可能
             break;
           case 409: // 使用者が前のターンで動けなかった/使用したわざが失敗したとき威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 410: // 相手のランク補正のうち、ランク+1以上をすべて使用者に移し替えてからこうげきする。みがわり状態を無視する
             for (int i = 0; i < 7; i++) {
@@ -3448,7 +3451,7 @@ class TurnEffectAction extends TurnEffect {
             break;
           // このへんからZわざ
           case 413: // 相手の残りHP3/4の固定ダメージ
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 414: // 使用者のこうげき・ぼうぎょ・とくこう・とくぼう・すばやさがそれぞれ2段階ずつ上がる
             myState.addStatChanges(true, 0, 2, targetState,
@@ -3545,7 +3548,7 @@ class TurnEffectAction extends TurnEffect {
             }
             break;
           case 431: // まだ行動していないポケモンに対して使うと威力2倍
-            showDamageCalc = false;
+            damageGetter?.showDamage = false;
             break;
           case 432: // 使用者と相手の場の状態を入れ替える
             // いやしのねがい・みかづきのまい・みらいにこうげき・ねがいごとは入れ替えない
@@ -3717,7 +3720,7 @@ class TurnEffectAction extends TurnEffect {
                   ..extraArg1 = replacedMove.id);
                 myState.addStatChanges(true, 2, 1, targetState,
                     moveId: replacedMove.id);
-                showDamageCalc = false;
+                damageGetter?.showDamage = false;
               } else {
                 // こうげきする
                 myState.hiddenBuffs.removeAllByID(BuffDebuff.chargingMove);
@@ -3739,7 +3742,7 @@ class TurnEffectAction extends TurnEffect {
                 moveDamageClassID = 2; // ぶつりわざに変更
               }
             } else {
-              showDamageCalc = false;
+              damageGetter?.showDamage = false;
             }
             if (extraArg1 != 0) {
               targetState.ailmentsAdd(Ailment(Ailment.poison), state);
@@ -4149,7 +4152,7 @@ class TurnEffectAction extends TurnEffect {
                 if (state.weather.id != Weather.rainy) {
                   myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
                     ..extraArg1 = replacedMove.id);
-                  showDamageCalc = false;
+                  damageGetter?.showDamage = false;
                 }
               } else {
                 // こうげきする
@@ -4224,7 +4227,7 @@ class TurnEffectAction extends TurnEffect {
       var tmpState = myState;
 
       // ダメージ計算式
-      if (showDamageCalc) {
+      if (damageGetter != null && damageGetter.showDamage) {
         var damage = calcDamage(
           myState,
           targetStates[0],
@@ -4250,11 +4253,11 @@ class TurnEffectAction extends TurnEffect {
           loc: loc,
         );
         damageCalc ??= damage.item1;
-        damageGetter?.maxDamage = damage.item2;
-        damageGetter?.minDamage = damage.item3;
-        damageGetter?.maxDamagePercent =
+        damageGetter.maxDamage = damage.item2;
+        damageGetter.minDamage = damage.item3;
+        damageGetter.maxDamagePercent =
             (damage.item2 * 100 / targetStates[0].minStats.h.real).floor();
-        damageGetter?.minDamagePercent =
+        damageGetter.minDamagePercent =
             (damage.item3 * 100 / targetStates[0].maxStats.h.real).floor();
         isTeraStellarHosei = damage.item4;
 
@@ -6035,6 +6038,7 @@ class TurnEffectAction extends TurnEffect {
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
+    required DamageGetter damageGetter,
     required CommandPagesController controller,
     required AppLocalizations loc,
   }) {
@@ -6517,6 +6521,7 @@ class TurnEffectAction extends TurnEffect {
         myState: myState,
         yourState: yourState,
         state: state,
+        damageGetter: damageGetter,
         controller: controller,
         loc: loc,
         extra: templateTitles[index].item3,
@@ -6610,6 +6615,7 @@ class TurnEffectAction extends TurnEffect {
     required PokemonState myState,
     required PokemonState yourState,
     required PhaseState state,
+    required DamageGetter damageGetter,
     required CommandPagesController controller,
     required AppLocalizations loc,
     required dynamic extra,
@@ -6671,6 +6677,8 @@ class TurnEffectAction extends TurnEffect {
             );
           }
           return ListViewWithViewItemCount(
+            key: Key(
+                'ChangePokemonListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
             viewItemCount: 4,
             children: myPokemonTiles,
           );
@@ -6767,8 +6775,16 @@ class TurnEffectAction extends TurnEffect {
                   onUpdate: onUpdate,
                   maxMoveCount: extra[0] as int,
                 )),
+            // 推定ダメージ
             Expanded(
-              flex: 6,
+              flex: 1,
+              child: damageGetter.showDamage
+                  ? Text(
+                      '${damageGetter.rangeString} (${damageGetter.rangePercentString})')
+                  : Text(' - '),
+            ),
+            Expanded(
+              flex: 5,
               child: NumberInputButtons(
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
@@ -6797,6 +6813,8 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 6,
               child: NumberInputButtons(
+                key: Key(
+                    'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 initialNum: 0, // TODO?
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {

@@ -70,6 +70,17 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     final yourParty = widget.yourParty;
     final myState = prevState.getPokemonState(playerType, null);
     final yourState = prevState.getPokemonState(playerType.opposite, null);
+    final selectingMoveDamageGetter = DamageGetter();
+    turnMove.copy().processEffect(
+          playerType == PlayerType.me ? myParty.copy() : yourParty.copy(),
+          playerType == PlayerType.me ? myState.copy() : yourState.copy(),
+          playerType == PlayerType.me ? yourParty.copy() : myParty.copy(),
+          playerType == PlayerType.me ? yourState.copy() : myState.copy(),
+          prevState.copy(),
+          null,
+          damageGetter: selectingMoveDamageGetter,
+          loc: loc,
+        );
     // TODO: 他にも考慮すべきことがいろいろ
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
@@ -156,8 +167,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     ),
                   ]))
                 : Text(myMove.displayName),
-            subtitle:
-                Text('${getter.rangeString} (${getter.rangePercentString})'),
+            subtitle: getter.showDamage
+                ? Text('${getter.rangeString} (${getter.rangePercentString})')
+                : Text(' - '),
             onTap: () {
               parentSetState(() {
                 turnMove.move = myMove;
@@ -192,6 +204,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     myState: myState,
                     yourState: yourState,
                     state: prevState,
+                    damageGetter: getter,
                     controller: commandPagesController,
                     loc: loc);
                 // 表示Widgetのコントローラリセット
@@ -376,6 +389,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 Expanded(
                   flex: 6,
                   child: ListViewWithViewItemCount(
+                    key: Key(
+                        'ChangePokemonListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     viewItemCount: 4,
                     children: pokemonTiles,
                   ),
@@ -421,6 +436,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             myState: myState,
             yourState: yourState,
             state: prevState,
+            damageGetter: selectingMoveDamageGetter,
             controller: commandPagesController,
             loc: loc);
         // 選択するだけでvalidになるmoveがあるため、行動順をupdate

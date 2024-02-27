@@ -126,6 +126,8 @@ class BattleChangeFaintingCommandState
       Expanded(
         flex: 6,
         child: ListViewWithViewItemCount(
+          key: Key(
+              'ChangePokemonListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
           viewItemCount: 4,
           children: pokemonTiles,
         ),

@@ -55,6 +55,7 @@ final _navigatorKeys = {
 
 void main({
   bool testMode = false,
+  bool usePrepared = false,
 }) async {
   WidgetsFlutterBinding.ensureInitialized();
   MobileAds.instance.initialize();
@@ -67,6 +68,10 @@ void main({
   // テストモードに設定
   if (testMode) {
     PokeDB().setTestMode();
+  }
+  // 事前準備したデータを使う
+  if (usePrepared) {
+    PokeDB().replacePrepared = true;
   }
   try {
     configText = await saveDataFile.readAsString();

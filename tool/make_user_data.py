@@ -207,12 +207,16 @@ myPokemons = [
     Pokemon(11, 11, 470, "もこフィア", PokeType.fire, 50, Sex.male, Temper.ganbariya, 34, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [851, 348, 98, 14], [10, 15, 30, 20], Owner.mine).toSet(),
     Pokemon(12, 12, 966, "もこロローム", PokeType.normal, 50, Sex.male, Temper.ganbariya, 142, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [259, None, None, None], [15, 0, 0, 0], Owner.mine).toSet(),
     Pokemon(13, 13, 373, "もこいかくマンダ", PokeType.dragon, 50, Sex.male, Temper.ganbariya, 22, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [814, 89, 349, 200], [10, 10, 20, 10], Owner.mine).toSet(),
-    Pokemon(14, 14, 184, "もこルリ", PokeType.steel, 50, Sex.female, Temper.ganbariya, 37, 0, [31, 204], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [453, 583, 710, 276], [20, 10, 10, 5], Owner.mine).toSet()
+    Pokemon(14, 14, 184, "もこルリ", PokeType.steel, 50, Sex.female, Temper.ganbariya, 37, 0, [31, 204], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [453, 583, 710, 276], [20, 10, 10, 5], Owner.mine).toSet(),
+    Pokemon(15, 15, 964, "もこイルカ", PokeType.fly, 75, Sex.female, Temper.ijippari, 278, 0, [31, 252], [31, 252], [31, 0], [31, 0], [31, 0], [31, 4], [812, 512, 857, 834], [20, 15, 15, 10], Owner.mine).toSet(),
+    Pokemon(16, 16, 700, "もこニンフィア", PokeType.fairy, 50, Sex.male, Temper.zubutoi, 182, 0, [31, 252], [31, 0], [31, 252], [31, 0], [31, 0], [31, 4], [98, 304, 204, 281], [30, 10, 20, 10], Owner.mine).toSet(),
+    Pokemon(17, 17, 229, "もこヘル", PokeType.fairy, 50, Sex.male, Temper.ganbariya, 127, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [53, 885, 894, 851], [15, 20, 10, 10], Owner.mine).toSet()
 ]
 
 parties = [
     Party(1, 1, "ブイズ", 1, 211, 2, 250, 3, 245, 4, 135, 5, 247, 6, 127, Owner.mine).toSet(),
-    Party(2, 2, "1もこパーモット", 9, 252, 10, 135, 11, 247, 12, 134, 13, 1698, 14, 683, Owner.mine).toSet()
+    Party(2, 2, "1もこパーモット", 9, 252, 10, 135, 11, 247, 12, 134, 13, 1698, 14, 683, Owner.mine).toSet(),
+    Party(3, 3, "2もこイルカマン", 11, 247, 12, 134, 13, 1698, 15, 135, 16, 190, 17, 252, Owner.mine).toSet()
 ]
 
 def main():

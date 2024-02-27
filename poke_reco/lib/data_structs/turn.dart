@@ -2448,6 +2448,21 @@ class Turn extends Equatable implements Copyable {
   ) {
     List<TurnEffect> effectList = [];
 
+    /// 対象プレイヤーのポケモンが登場したときかどうか
+    /// (Timing.pokemonAppearであってもどちらのポケモン登場時かわからないため、判定する)
+    bool isAppearingPokemon(PlayerType player, PhaseState state, int num) {
+      // 1ターン目の最初ならtrue
+      if (num == 1 && phaseIdx == 0) {
+        return true;
+      }
+      // ターン最初と違うポケモンならtrue
+      if (state.getPokemonIndex(player, null) !=
+          getInitialPokemonIndex(player)) {
+        return true;
+      }
+      return false;
+    }
+
     final timingList = phases.insertableTimings(phaseIdx, turnNum, this);
     for (final timing in timingList) {
       if (playerType != null) {
@@ -2458,21 +2473,28 @@ class Turn extends Equatable implements Copyable {
           effectType,
           phaseState,
         ));
+        // プレイヤーの指定がない場合は、すべてのプレイヤーを対象に効果を追加する
       } else {
-        effectList.addAll(_getEffectCandidates(
-          timing,
-          phaseIdx,
-          PlayerType.me,
-          effectType,
-          phaseState,
-        ));
-        effectList.addAll(_getEffectCandidates(
-          timing,
-          phaseIdx,
-          PlayerType.opponent,
-          effectType,
-          phaseState,
-        ));
+        if (timing != Timing.pokemonAppear ||
+            isAppearingPokemon(PlayerType.me, phaseState, turnNum)) {
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            phaseIdx,
+            PlayerType.me,
+            effectType,
+            phaseState,
+          ));
+        }
+        if (timing != Timing.pokemonAppear ||
+            isAppearingPokemon(PlayerType.opponent, phaseState, turnNum)) {
+          effectList.addAll(_getEffectCandidates(
+            timing,
+            phaseIdx,
+            PlayerType.opponent,
+            effectType,
+            phaseState,
+          ));
+        }
         effectList.addAll(_getEffectCandidates(
           timing,
           phaseIdx,
