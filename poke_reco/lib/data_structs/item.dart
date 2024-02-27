@@ -131,6 +131,14 @@ class Item extends Equatable implements Copyable {
     }
   }
 
+  /// 表示名(不明の場合？を返す)
+  String get displayNameWithUnknown {
+    if (id == 0) {
+      return '?';
+    }
+    return displayName;
+  }
+
   /// なげつけたときの処理を行う
   /// ```
   /// playerType: 行動主

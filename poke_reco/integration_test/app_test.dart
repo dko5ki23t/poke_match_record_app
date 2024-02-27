@@ -1,3 +1,5 @@
+/// info: 現在使用していない
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -41,7 +43,6 @@ void main() async {
     testWidgets('パーモット戦', (tester) async {
       await tester.pumpWidget(MyApp(initialLocale: locale));
       //await tester.pump(Duration(seconds: 5));
-      // TODO
       // ポケモンタブボタンタップ
       //await tester.tap(find.text('ポケモン'));
       //await tester.pumpAndSettle();

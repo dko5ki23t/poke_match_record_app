@@ -1122,6 +1122,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     int end = 100;
     int i = 0;
     int actionCount = 0;
+    int validActionCount = 0;
     int terastalCount = 0;
     int maxTerastal = 0;
     if (!currentTurn.initialOwnHasTerastal) maxTerastal++;
@@ -1191,6 +1192,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       bool skipInc = false;
       if (i < l.length && l[i] is TurnEffectUserEdit) {
         // 何も変化させず、processEffect()
+        // currentTimingを無効にすることで自動入力を再作成させる
+        currentTiming = Timing.none;
       } else if (changingState) {
         // ポケモン交代後状態
         if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
@@ -1633,6 +1636,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                     }*/
                   } else {
                     final action = l[i] as TurnEffectAction;
+                    if (action.isValid()) {
+                      validActionCount++;
+                    }
                     if (!action.isValid() ||
                         action.type == TurnActionType.surrender) {
                       if (actionCount == 2) {
@@ -1787,18 +1793,27 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         }
       }
 
-      if (i >= l.length || skipInc) continue;
+      //if (i >= l.length || skipInc) continue;
 
-      /*final guides = */ l[i].processEffect(
-        ownParty,
-        currentState.getPokemonState(PlayerType.me, null),
-        opponentParty,
-        currentState.getPokemonState(PlayerType.opponent, null),
-        currentState,
-        lastAction,
-        loc: loc,
-      );
-      /*
+      if (i < l.length && !skipInc) {
+        // 効果を処理する
+        final guides = l[i].processEffect(
+          ownParty,
+          currentState.getPokemonState(PlayerType.me, null),
+          opponentParty,
+          currentState.getPokemonState(PlayerType.opponent, null),
+          currentState,
+          lastAction,
+          loc: loc,
+        );
+        // 効果により確定する事項を反映させる
+        for (final guide in guides) {
+          guide.processEffect(
+              currentState.getPokemonState(PlayerType.me, null),
+              currentState.getPokemonState(PlayerType.opponent, null),
+              currentState);
+        }
+        /*
       turnEffectAndStateAndGuides.add(TurnEffectAndStateAndGuide()
         ..phaseIdx = i
         ..turnEffect = l[i]
@@ -1820,42 +1835,43 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       }
       */
 
-      if (s1 != end &&
-          (!isInserted || isAssisting) &&
-          i < l.length &&
-          (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
-      {
-        isMyWin = l[i].isMyWin;
-        //isYourWin = l[i].isYourWin;
-        s2 = 0;
-        s1 = 9; // 試合終了状態へ
-      } else {
         if (s1 != end &&
             (!isInserted || isAssisting) &&
             i < l.length &&
-            (l[i].isOwnFainting || l[i].isOpponentFainting)) {
-          // どちらかがひんしになる場合
-          if (l[i].isOwnFainting) isOwnFainting = true;
-          if (l[i].isOpponentFainting) isOpponentFainting = true;
-          if (s2 == 1 || l[i].timing == Timing.action) {
-            if ((isOwnFainting &&
-                    !isOpponentFainting &&
-                    l[i].playerType == PlayerType.me) ||
-                (isOpponentFainting &&
-                    !isOwnFainting &&
-                    l[i].playerType == PlayerType.opponent)) {
+            (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
+        {
+          isMyWin = l[i].isMyWin;
+          //isYourWin = l[i].isYourWin;
+          s2 = 0;
+          s1 = 9; // 試合終了状態へ
+        } else {
+          if (s1 != end &&
+              (!isInserted || isAssisting) &&
+              i < l.length &&
+              (l[i].isOwnFainting || l[i].isOpponentFainting)) {
+            // どちらかがひんしになる場合
+            if (l[i].isOwnFainting) isOwnFainting = true;
+            if (l[i].isOpponentFainting) isOpponentFainting = true;
+            if (s2 == 1 || l[i].timing == Timing.action) {
+              if ((isOwnFainting &&
+                      !isOpponentFainting &&
+                      l[i].playerType == PlayerType.me) ||
+                  (isOpponentFainting &&
+                      !isOwnFainting &&
+                      l[i].playerType == PlayerType.opponent)) {
+              } else {
+                // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
+                actionCount = 2;
+              }
+              s2 = 1; // わざでひんし状態へ
             } else {
-              // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
-              actionCount = 2;
+              s2 = 4; // わざ以外でひんし状態へ
             }
-            s2 = 1; // わざでひんし状態へ
-          } else {
-            s2 = 4; // わざ以外でひんし状態へ
           }
         }
-      }
 
-      if (i < l.length) i++;
+        if (i < l.length) i++;
+      }
 
       // 自動入力効果を作成
       // 前回までと違うタイミング、かつ更新要求インデックス以降のとき作成
@@ -1888,14 +1904,18 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               }
             }
           }
-          assistList = currentState.getDefaultEffectList(
-            currentTurn,
-            nextTiming,
-            changeOwn,
-            changeOpponent,
-            currentState,
-            tmpAction,
-          );
+          // ターン終了時処理は、両者の行動が確定している場合のみ自動挿入を行う
+          if (nextTiming != Timing.everyTurnEnd ||
+              validActionCount == actionCount) {
+            assistList = currentState.getDefaultEffectList(
+              currentTurn,
+              nextTiming,
+              changeOwn,
+              changeOpponent,
+              currentState,
+              tmpAction,
+            );
+          }
           for (final effect in currentTurn.noAutoAddEffect) {
             assistList.removeWhere((e) => effect.nearEqual(e));
           }
@@ -2296,7 +2316,8 @@ class Turn extends Equatable implements Copyable {
       //  continousCount = 0;
       //}
       if (phase is TurnEffectAction) lastAction = phase;
-      phase.processEffect(
+      // 効果を処理する
+      final guides = phase.processEffect(
         ownParty,
         _endingState.getPokemonState(PlayerType.me,
             /*phase.timing == Timing.afterMove ? lastAction :*/ null),
@@ -2307,55 +2328,17 @@ class Turn extends Equatable implements Copyable {
         lastAction,
         loc: loc,
       );
+      // 効果によって確定できる事項をstate等に反映する
+      for (final guide in guides) {
+        guide.processEffect(
+            _endingState.getPokemonState(PlayerType.me, null),
+            _endingState.getPokemonState(PlayerType.opponent, null),
+            _endingState);
+      }
+
       if (phase is TurnEffectAction) {
         alreadyActioned[phase.playerType] = true;
       }
-      // ポケモンがひんしになっている場合、無ければひんし交代phaseを追加
-      /*final ownState = _endingState.getPokemonState(PlayerType.me, null);
-      final opponentState =
-          _endingState.getPokemonState(PlayerType.opponent, null);
-      if (ownState.remainHP <= 0) {
-        ownState.remainHP = 0;
-        ownState.isFainting = true;
-        _endingState.incFaintingCount(PlayerType.me, 1);
-        needChangeFaintingPlayer = PlayerType.me;
-      } else {
-        ownState.isFainting = false;
-      }
-      if (opponentState.remainHPPercent <= 0) {
-        opponentState.remainHPPercent = 0;
-        opponentState.isFainting = true;
-        _endingState.incFaintingCount(PlayerType.opponent, 1);
-        needChangeFaintingPlayer = PlayerType.opponent;
-      } else {
-        opponentState.isFainting = false;
-      }
-      if (needChangeFaintingPlayer != null) {
-        if (phase is! TurnEffectChangeFaintingPokemon) {
-          // ひんし対象がまだ行動していないとき
-          if (!alreadyActioned[needChangeFaintingPlayer]!) {
-            final target =
-                phases.getLatestActionIndex(needChangeFaintingPlayer);
-            if (phases[target] is! TurnEffectChangeFaintingPokemon) {
-              phases[target] = TurnEffectChangeFaintingPokemon(
-                  player: needChangeFaintingPlayer, timing: Timing.afterMove);
-            }
-          }
-          // ひんし対象が行動済みのとき
-          else {
-            if (i == phases.length - 1 ||
-                phases[i + 1] is! TurnEffectChangeFaintingPokemon) {
-              phases.insert(
-                  i + 1,
-                  // TODO
-                  TurnEffectChangeFaintingPokemon(
-                      player: needChangeFaintingPlayer,
-                      timing: Timing.afterMove));
-            }
-          }
-          needChangeFaintingPlayer = null;
-        }
-      }*/
       i++;
     }
     return _endingState.copy();

@@ -49,7 +49,7 @@ class Ability extends Equatable implements Copyable {
   @override
   Ability copy() => Ability(id, _displayName, _displayNameEn, timing, target);
 
-  /// 名前
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.english:
@@ -58,6 +58,14 @@ class Ability extends Equatable implements Copyable {
       default:
         return _displayName;
     }
+  }
+
+  /// 表示名(不明の場合は？を返す)
+  String get displayNameWithUnknown {
+    if (id == 0) {
+      return '?';
+    }
+    return displayName;
   }
 
   /// SQLite保存用Mapを返す

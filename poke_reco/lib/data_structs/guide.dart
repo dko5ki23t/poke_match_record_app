@@ -3,7 +3,7 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
-// わざや処理の入力に対して表示する情報や、そこから推定できる相手ポケモンのパラメータなど
+/// わざや処理の入力に対して表示する情報や、そこから推定できる相手ポケモンのパラメータなど
 class Guide {
   // 値はconfirm_status.csvのNoと一致させてる
   static const int none = 0;

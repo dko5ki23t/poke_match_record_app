@@ -468,7 +468,11 @@ class TurnEffectAction extends TurnEffect {
   String displayName({required AppLocalizations loc}) {
     switch (type) {
       case TurnActionType.move:
-        return move.displayName;
+        if (isSuccess) {
+          return move.displayName;
+        } else {
+          return actionFailure.displayName;
+        }
       case TurnActionType.change:
         return loc.battlePokemonChange;
       case TurnActionType.surrender:
@@ -733,6 +737,16 @@ class TurnEffectAction extends TurnEffect {
       myState.remainHP -= extraArg1;
       myState.remainHPPercent -= extraArg2;
       return ret;
+    }
+
+    // TODO: この処理はここじゃない？
+    // ひるみによる失敗
+    if (myState.ailmentsWhere((e) => e.id == Ailment.flinch).isNotEmpty) {
+      isSuccess = false;
+      actionFailure = ActionFailure(ActionFailure.flinch);
+    } else {
+      // TODO: ここでこうはしたくない
+      isSuccess = true;
     }
 
     if (move.id == 0) return ret;
@@ -6852,8 +6866,12 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  moveAdditionalEffects =
-                      MoveEffect((extra[1] as Move).effect.id);
+                  if (change) {
+                    moveAdditionalEffects =
+                        MoveEffect((extra[1] as Move).effect.id);
+                  } else {
+                    moveAdditionalEffects = MoveEffect(0);
+                  }
                   onUpdate();
                 },
                 initialValue: moveAdditionalEffects ==
@@ -6874,7 +6892,11 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  extraArg1 = (extra[1] as Move).effect.id;
+                  if (change) {
+                    extraArg1 = (extra[1] as Move).effect.id;
+                  } else {
+                    extraArg1 = 0;
+                  }
                   onUpdate();
                 },
                 initialValue: extraArg1 == (extra[1] as Move).effect.id,
@@ -6894,7 +6916,11 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[0] as String),
                 onChanged: (change) {
-                  extraArg1 = 1;
+                  if (change) {
+                    extraArg1 = 1;
+                  } else {
+                    extraArg1 = 0;
+                  }
                   onUpdate();
                 },
                 initialValue: extraArg1 == 1,
@@ -6905,7 +6931,11 @@ class TurnEffectAction extends TurnEffect {
               child: StandAloneSwitchList(
                 title: Text(extra[1] as String),
                 onChanged: (change) {
-                  extraArg2 = 1;
+                  if (change) {
+                    extraArg2 = 1;
+                  } else {
+                    extraArg2 = 0;
+                  }
                   onUpdate();
                 },
                 initialValue: extraArg2 == 1,
@@ -8230,11 +8260,11 @@ class TurnEffectAction extends TurnEffect {
     if (type == TurnActionType.surrender) {
       return true;
     }
-    if (!_isValid) {
-      return false;
-    }
     if (!isSuccess) {
       return playerType != PlayerType.none /* && actionFailure.id != 0*/;
+    }
+    if (!_isValid) {
+      return false;
     }
     switch (type) {
       case TurnActionType.move:

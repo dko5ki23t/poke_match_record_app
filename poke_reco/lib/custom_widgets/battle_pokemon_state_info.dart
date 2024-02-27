@@ -86,6 +86,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                               remainHP) =>
                           widget.onStatusEdit(abilityChanged, ability,
                               itemChanged, item, hpChanged, remainHP),
+                      loc: loc,
                     );
                   });
             },

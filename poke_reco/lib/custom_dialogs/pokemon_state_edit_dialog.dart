@@ -6,6 +6,7 @@ import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
 
 class PokemonStateEditDialog extends StatefulWidget {
@@ -17,7 +18,10 @@ class PokemonStateEditDialog extends StatefulWidget {
     this.pokemonState,
     this.onApply, {
     Key? key,
+    required this.loc,
   }) : super(key: key);
+
+  final AppLocalizations loc;
 
   @override
   PokemonStateEditDialogState createState() => PokemonStateEditDialogState();
@@ -41,10 +45,10 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
     super.initState();
     pokemonState = widget.pokemonState;
     playerType = pokemonState.playerType;
-    abilityController.text = pokemonState.currentAbility.displayName;
+    abilityController.text = pokemonState.currentAbility.displayNameWithUnknown;
     itemController.text = pokemonState.holdingItem != null
-        ? pokemonState.holdingItem!.displayName
-        : '';
+        ? pokemonState.holdingItem!.displayNameWithUnknown
+        : widget.loc.commonNone;
     initialAbility = editingAbility = pokemonState.currentAbility;
     initialHoldingItem = editingItem = pokemonState.holdingItem;
     initialRemainHP = editingRemainHP = playerType == PlayerType.me
@@ -125,19 +129,26 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                       List<Ability> matches = [
                         ...PokeDB().pokeBase[pokemonState.pokemon.no]!.ability
                       ];
+                      // 候補が2つ以上あるなら不明（？）も追加する
+                      if (pokemonState.playerType == PlayerType.opponent &&
+                          matches.length > 1) {
+                        matches.add(PokeDB().abilities[0]!);
+                      }
                       matches.retainWhere((s) {
-                        return toKatakana50(s.displayName.toLowerCase())
+                        return toKatakana50(
+                                s.displayNameWithUnknown.toLowerCase())
                             .contains(toKatakana50(pattern.toLowerCase()));
                       });
                       return matches;
                     },
                     itemBuilder: (context, suggestion) {
                       return ListTile(
-                        title: Text(suggestion.displayName),
+                        title: Text(suggestion.displayNameWithUnknown),
                       );
                     },
                     onSuggestionSelected: (suggestion) {
-                      abilityController.text = suggestion.displayName;
+                      abilityController.text =
+                          suggestion.displayNameWithUnknown;
                       editingAbility = suggestion;
                       setState(() {});
                     },
@@ -170,20 +181,35 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                     },
                     suggestionsCallback: (pattern) async {
                       List<Item> matches = [...PokeDB().items.values];
+                      // もちものなしも追加
+                      matches.add(Item(
+                          id: -1,
+                          displayName: loc.commonNone,
+                          displayNameEn: loc.commonNone,
+                          flingPower: 0,
+                          flingEffectId: 0,
+                          timing: Timing.none,
+                          isBerry: false,
+                          imageUrl: ''));
                       matches.retainWhere((s) {
-                        return toKatakana50(s.displayName.toLowerCase())
+                        return toKatakana50(
+                                s.displayNameWithUnknown.toLowerCase())
                             .contains(toKatakana50(pattern.toLowerCase()));
                       });
                       return matches;
                     },
                     itemBuilder: (context, suggestion) {
                       return ListTile(
-                        title: Text(suggestion.displayName),
+                        title: Text(suggestion.displayNameWithUnknown),
                       );
                     },
                     onSuggestionSelected: (suggestion) {
-                      itemController.text = suggestion.displayName;
-                      editingItem = suggestion;
+                      itemController.text = suggestion.displayNameWithUnknown;
+                      if (suggestion.id >= 0) {
+                        editingItem = suggestion;
+                      } else {
+                        editingItem = null;
+                      }
                       setState(() {});
                     },
                   ),

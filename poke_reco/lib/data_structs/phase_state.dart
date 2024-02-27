@@ -931,9 +931,19 @@ class PhaseState extends Equatable implements Copyable {
           var weatherEffectIDs = [];
           if (weather.id == Weather.sandStorm) {
             // すなあらしによるダメージ
-            if (getPokemonState(PlayerType.me, null).isSandstormDamaged() ||
-                getPokemonState(PlayerType.opponent, null)
-                    .isSandstormDamaged()) {
+            bool occurSandStromDamage = false;
+            for (final player in [PlayerType.me, PlayerType.opponent]) {
+              occurSandStromDamage = occurSandStromDamage ||
+                  (
+                      // ポケモンがすなあらしダメージを受ける対象か
+                      getPokemonState(player, null).isSandstormDamaged() &&
+                          // 死に出しによる登場でないか
+                          !getPokemonStates(player)[
+                                  currentTurn.getInitialPokemonIndex(player) -
+                                      1]
+                              .isFainting);
+            }
+            if (occurSandStromDamage) {
               weatherEffectIDs.add(WeatherEffect.sandStormDamage);
             }
           }

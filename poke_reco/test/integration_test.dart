@@ -26,12 +26,6 @@ void main() {
 
   group('統合テスト(もこうの実況を記録)', () {
     test('パーモット戦', timeout: Timeout(Duration(minutes: 5)), () async {
-      //await tester.pumpWidget(MyApp(initialLocale: locale));
-      // TODO
-      // ポケモンタブボタンタップ
-      //await tester.tap(find.text('ポケモン'));
-      //await tester.pumpAndSettle();
-      //expect(find.text('もこパモ'), findsWidgets);
       if (doTest) {
         //await test1_1(driver!);
         //await test1_2(driver!);
@@ -280,21 +274,20 @@ Future<void> test1_1(
   await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
   await driver.enterText('クォーク');
   designatedWidget = find.descendant(
-      of: find.byType('ListTile'),
-      matching: find.text('クォークチャージ'),
-      //TODO ほんとは1つしかないから不要のはず
-      firstMatchOnly: true);
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-    of: find.byValueKey('EffectContainer'),
+    of: find.byType('ListTile'),
     matching: find.text('クォークチャージ'),
   );
-  // クォークチャージの内容編集
   await driver.tap(designatedWidget);
+  // クォークチャージの内容編集
   // TODO? 「効果が切れた」は期待通りか・・・？
   await driver.tap(find.text('効果が切れた'));
   await driver.tap(find.text('とくこう'));
   await driver.tap(find.text('OK'));
+  designatedWidget = find.descendant(
+    of: find.byValueKey('EffectContainer'),
+    matching: find.text('クォークチャージ'),
+  );
+  await testExistAnyWidgets(designatedWidget, driver);
 
   // 次のターンへボタンタップ
   await driver.tap(find.byValueKey('RegisterBattleNext'));
@@ -323,6 +316,7 @@ Future<void> test1_1(
   await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
   await driver.enterText('いかく');
   await driver.tap(find.byValueKey('EffectListTileOpponentいかく'));
+  await driver.tap(find.text('OK'));
 
   // 次のターンへボタンタップ
   await driver.tap(find.byValueKey('RegisterBattleNext'));
@@ -430,6 +424,7 @@ Future<void> test1_2(
   var designatedWidget = find.descendant(
       of: find.byType('ListTile'), matching: find.text('こだいかっせい'));
   await driver.tap(designatedWidget);
+  await driver.tap(find.text('OK'));
   designatedWidget = find.descendant(
     of: find.byValueKey('EffectContainer'),
     matching: find.text('こだいかっせい'),
@@ -646,6 +641,7 @@ Future<void> test1_2(
   designatedWidget = find.descendant(
       of: find.byType('ListTile'), matching: find.text('きあいのタスキ'));
   await driver.tap(designatedWidget);
+  await driver.tap(find.text('OK'));
   designatedWidget = find.descendant(
     of: find.byValueKey('EffectContainer'),
     matching: find.text('きあいのタスキ'),
@@ -873,6 +869,7 @@ Future<void> test1_3(
   designatedWidget = find.descendant(
       of: find.byType('ListTile'), matching: find.text('こだいかっせい'));
   await driver.tap(designatedWidget);
+  await driver.tap(find.text('OK'));
   designatedWidget = find.descendant(
     of: find.byValueKey('EffectContainer'),
     matching: find.text('こだいかっせい'),
@@ -944,12 +941,12 @@ Future<void> test1_3(
   await testExistAnyWidgets(find.text('バンギラス'), driver);
   await driver.tap(find.text('バンギラス'));
   // バンギラスのとくせいがすなおこしと判明
-  await driver.tap(find.text('バンギラス/Daikon'));
-  await driver.tap(find.byValueKey('PokemonStateEditDialogAbility'));
-  await driver.tap(find.text('すなおこし'));
-  await driver.tap(find.text('適用'));
+  //await driver.tap(find.text('バンギラス/Daikon'));
+  //await driver.tap(find.byValueKey('PokemonStateEditDialogAbility'));
+  //await driver.tap(find.text('すなおこし'));
+  //await driver.tap(find.text('適用'));
   // バンギラスのすなおこし
-  await driver.tap(find.byValueKey('RegisterBattleEffectAddIconButton4'));
+  await driver.tap(find.byValueKey('RegisterBattleEffectAddIconButton3'));
   await testExistAnyWidgets(
       find.byValueKey('AddEffectDialogSearchBar'), driver);
   await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
@@ -957,6 +954,7 @@ Future<void> test1_3(
   designatedWidget = find.descendant(
       of: find.byType('ListTile'), matching: find.text('すなおこし'));
   await driver.tap(designatedWidget);
+  await driver.tap(find.text('OK'));
   designatedWidget = find.descendant(
     of: find.byValueKey('EffectContainer'),
     matching: find.text('すなおこし'),
@@ -991,57 +989,21 @@ Future<void> test1_3(
   await testExistAnyWidgets(find.text('マリルリはひるんで技がだせない'), driver);
   await driver.tap(find.text('マリルリはひるんで技がだせない'));
 
-/*
-  // チヲハウハネのこだいかっせい
-  await driver.tap(find.byValueKey('RegisterBattleEffectAddIconButton1'));
-  await testExistAnyWidgets(
-      find.byValueKey('AddEffectDialogSearchBar'), driver);
-  await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
-  await driver.enterText('こだい');
-  var designatedWidget = find.descendant(
-      of: find.byType('ListTile'), matching: find.text('こだいかっせい'));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-    of: find.byValueKey('EffectContainer'),
-    matching: find.text('こだいかっせい'),
-  );
-  await testExistAnyWidgets(designatedWidget, driver);
-  // ボーマンダのダブルウイング
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnダブルウイング');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // チヲハウハネ->ミミッキュに交代
-  await driver.tap(find.byValueKey('BattleActionCommandChangeOpponent'));
-  await testExistAnyWidgets(find.text('ミミッキュ'), driver);
-  await driver.tap(find.text('ミミッキュ'));
-  // ボーマンダのダブルウイングが外れる
-  designatedWidget = find.descendant(
-      matching: find.byType('TextFormField'),
-      of: find.byValueKey('HitInputOwn'));
-  await driver.tap(designatedWidget);
-  await driver.enterText('0');
-  // 以下のように再度タップする等しないと反映されない
-  await driver.tap(designatedWidget);
-  await Future<void>.delayed(const Duration(milliseconds: 500));
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-
   // 次へボタンタップ
   await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン2'), driver);
-  // ボーマンダのダブルウイング
+  await testExistAnyWidgets(find.text('ターン6'), driver);
+  // マリルリのアクアジェット
   designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnダブルウイング');
+      find.byValueKey('BattleActionCommandMoveListTileOwnアクアジェット');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  // ミミッキュの残りHP70
+  // きゅうしょ命中
+  await driver.tap(find.byValueKey('CriticalInputOwn'));
+  // バンギラスの残りHP30
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOwn'),
       matching: find.ancestor(
-          of: find.text('7'), matching: find.byType('_NumberInputButton')));
+          of: find.text('3'), matching: find.byType('_NumberInputButton')));
   await driver.tap(designatedWidget);
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOwn'),
@@ -1052,14 +1014,14 @@ Future<void> test1_3(
       of: find.byValueKey('NumberInputButtonsOwn'),
       matching: find.byValueKey('EnterButton'));
   await driver.tap(designatedWidget);
-  // ミミッキュのじゃれつく
+  // バンギラスのじだんだ
   await driver.tap(find.byValueKey('BattleActionCommandMoveSearchOpponent'));
-  await driver.enterText('しやれ');
+  await driver.enterText('したん');
   designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOpponentじゃれつく');
+      find.byValueKey('BattleActionCommandMoveListTileOpponentじだんだ');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  // ボーマンダの残りHP0
+  // マリルリの残りHP0
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOpponent'),
       matching: find.ancestor(
@@ -1069,136 +1031,26 @@ Future<void> test1_3(
       of: find.byValueKey('NumberInputButtonsOpponent'),
       matching: find.byValueKey('EnterButton'));
   await driver.tap(designatedWidget);
-  // ミミッキュのもちものがいのちのたまと判明
-  await driver.tap(find.text('ミミッキュ/k.k'));
-  await driver.tap(find.byValueKey('PokemonStateEditDialogItem'));
-  await driver.enterText('いのちの');
-  await driver.tap(find.text('いのちのたま'));
-  await driver.tap(find.text('適用'));
-  // ボーマンダひんし→リーフィアに交代
-  await testExistAnyWidgets(find.text('リーフィア'), driver);
-  await driver.tap(find.text('リーフィア'));
-
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン3'), driver);
-  // リーフィアテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOwn'));
-  // 相手ミミッキュ→チヲハウハネに交代
-  await driver.tap(find.byValueKey('BattleActionCommandChangeOpponent'));
-  await testExistAnyWidgets(find.text('チヲハウハネ'), driver);
-  await driver.tap(find.text('チヲハウハネ'));
-  // リーフィアのリーフブレード
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnリーフブレード');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // チヲハウハネの残りHP70
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.ancestor(
-          of: find.text('7'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.ancestor(
-          of: find.text('0'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン4'), driver);
-  // リーフィアのテラバースト
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnテラバースト');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // チヲハウハネの残りHP0
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.ancestor(
-          of: find.text('0'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-  // チヲハウハネひんし→サザンドラに交代
-  await testExistAnyWidgets(find.text('サザンドラ'), driver);
-  await driver.tap(find.text('サザンドラ'));
-
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン5'), driver);
-  // リーフィアのでんこうせっか
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnでんこうせっか');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // サザンドラの残りHP90
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.ancestor(
-          of: find.text('9'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.ancestor(
-          of: find.text('0'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOwn'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-  // サザンドラのあくのはどう
-  await driver.tap(find.byValueKey('BattleActionCommandMoveSearchOpponent'));
-  await driver.enterText('あくのは');
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOpponentあくのはどう');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // リーフィアの残りHP0
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOpponent'),
-      matching: find.ancestor(
-          of: find.text('0'), matching: find.byType('_NumberInputButton')));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOpponent'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-  // リーフィアひんし→パーモットに交代
+  // マリルリひんし→パーモットに交代
   await testExistAnyWidgets(find.text('パーモット'), driver);
   await driver.tap(find.text('パーモット'));
 
   // 次へボタンタップ
   await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン6'), driver);
-  // 相手サザンドラ→ミミッキュに交代
-  await driver.tap(find.byValueKey('BattleActionCommandChangeOpponent'));
-  await testExistAnyWidgets(find.text('ミミッキュ'), driver);
-  await driver.tap(find.text('ミミッキュ'));
+  await testExistAnyWidgets(find.text('ターン7'), driver);
   // パーモットのさいきのいのりでボーマンダ復活
   designatedWidget =
       find.byValueKey('BattleActionCommandMoveListTileOwnさいきのいのり');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  await testExistAnyWidgets(find.text('ボーマンダ'), driver);
-  await driver.tap(find.text('ボーマンダ'));
-
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン7'), driver);
-  // ミミッキュのじゃれつく
+  await testExistAnyWidgets(find.text('マリルリ'), driver);
+  await driver.tap(find.text('マリルリ'));
+  // バンギラスのじだんだ
   designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOpponentじゃれつく');
+      find.byValueKey('BattleActionCommandMoveListTileOpponentじだんだ');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  // パーモットの残りHP1
+  // パーモットの残りHP12
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOpponent'),
       matching: find.ancestor(
@@ -1206,28 +1058,27 @@ Future<void> test1_3(
   await driver.tap(designatedWidget);
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOpponent'),
+      matching: find.ancestor(
+          of: find.text('2'), matching: find.byType('_NumberInputButton')));
+  await driver.tap(designatedWidget);
+  designatedWidget = find.descendant(
+      of: find.byValueKey('NumberInputButtonsOpponent'),
       matching: find.byValueKey('EnterButton'));
   await driver.tap(designatedWidget);
-  // きあいのタスキ発動
-  await driver.tap(find.byValueKey('RegisterBattleEffectAddIconButton1'));
-  await testExistAnyWidgets(
-      find.byValueKey('AddEffectDialogSearchBar'), driver);
-  await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
-  await driver.enterText('きあいの');
-  designatedWidget = find.descendant(
-      of: find.byType('ListTile'), matching: find.text('きあいのタスキ'));
-  await driver.tap(designatedWidget);
-  designatedWidget = find.descendant(
-    of: find.byValueKey('EffectContainer'),
-    matching: find.text('きあいのタスキ'),
-  );
-  await testExistAnyWidgets(designatedWidget, driver);
-  // パーモットのでんこうそうげき
+
+  // 次へボタンタップ
+  await driver.tap(find.byValueKey('RegisterBattleNext'));
+  await testExistAnyWidgets(find.text('ターン8'), driver);
+  // 相手バンギラス→ウルガモスに交代
+  await driver.tap(find.byValueKey('BattleActionCommandChangeOpponent'));
+  await testExistAnyWidgets(find.text('ウルガモス'), driver);
+  await driver.tap(find.text('ウルガモス'));
+  // パーモットのインファイト
   designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnでんこうそうげき');
+      find.byValueKey('BattleActionCommandMoveListTileOwnインファイト');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  // ミミッキュの残りHP0
+  // ウルガモスの残りHP0
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOwn'),
       matching: find.ancestor(
@@ -1237,32 +1088,22 @@ Future<void> test1_3(
       of: find.byValueKey('NumberInputButtonsOwn'),
       matching: find.byValueKey('EnterButton'));
   await driver.tap(designatedWidget);
-  // ミミッキュひんし→サザンドラに交代
-  await testExistAnyWidgets(find.text('サザンドラ'), driver);
-  await driver.tap(find.text('サザンドラ'));
+  // ウルガモスひんし→バンギラスに交代
+  await testExistAnyWidgets(find.text('バンギラス'), driver);
+  await driver.tap(find.text('バンギラス'));
+  // パーモットひんし→マリルリに交代
+  await testExistAnyWidgets(find.text('マリルリ'), driver);
+  await driver.tap(find.text('マリルリ'));
 
   // 次へボタンタップ
   await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン8'), driver);
-  // サザンドラのりゅうせいぐん
-  await driver.tap(find.byValueKey('BattleActionCommandMoveSearchOpponent'));
-  await driver.enterText('りゅうせい');
+  await testExistAnyWidgets(find.text('ターン9'), driver);
+  // マリルリのアクアジェット
   designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOpponentりゅうせいぐん');
+      find.byValueKey('BattleActionCommandMoveListTileOwnアクアジェット');
   await testExistAnyWidgets(designatedWidget, driver);
   await driver.tap(designatedWidget);
-  // サザンドラのりゅうせいぐんが外れる
-  await driver.tap(find.byValueKey('HitInputOpponent'));
-  designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtonsOpponent'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-  // パーモットのインファイト
-  designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTileOwnインファイト');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-  // サザンドラの残りHP0
+  // バンギラスの残りHP0
   designatedWidget = find.descendant(
       of: find.byValueKey('NumberInputButtonsOwn'),
       matching: find.ancestor(
@@ -1281,7 +1122,6 @@ Future<void> test1_3(
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
-*/
 }
 
 /// パーモット戦4
@@ -1414,6 +1254,7 @@ Future<void> test1_4(
   designatedWidget = find.descendant(
       of: find.byType('ListTile'), matching: find.text('レッドカード'));
   await driver.tap(designatedWidget);
+  // TODO
   designatedWidget = find.descendant(
     of: find.byValueKey('EffectContainer'),
     matching: find.text('レッドカード'),

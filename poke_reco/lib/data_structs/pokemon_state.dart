@@ -652,8 +652,9 @@ class PokemonState extends Equatable implements Copyable {
         }
       }
     }
-    // ちゅうもくのまと/まもる状態/そうでんは解除
+    // ひるみ/ちゅうもくのまと/まもる状態/そうでんは解除
     ailmentsRemoveWhere((e) =>
+        e.id == Ailment.flinch ||
         e.id == Ailment.attention ||
         e.id == Ailment.protect ||
         e.id == Ailment.electrify);

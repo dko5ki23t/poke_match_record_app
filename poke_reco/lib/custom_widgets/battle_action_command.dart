@@ -70,6 +70,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     final yourParty = widget.yourParty;
     final myState = prevState.getPokemonState(playerType, null);
     final yourState = prevState.getPokemonState(playerType.opposite, null);
+    // TODO: 他にも考慮すべきことがいろいろ
+    bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
     List<ListTile> moveTiles = [];
     if (turnMove.type == TurnActionType.move &&
@@ -131,6 +133,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
             horizontalTitleGap: 8.0,
             dense: true,
+            enabled: canSelect,
             leading: turnMove
                 .getReplacedMoveType(myMove, myState, prevState)
                 .displayIcon,

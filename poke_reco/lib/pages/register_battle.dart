@@ -657,7 +657,44 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             return AddEffectDialog(
                               (effect) {
                                 currentTurn.phases.insert(0, effect);
-                                setState(() {});
+                                //setState(() {});
+                                // 続けて効果の編集ダイアログ表示
+                                showDialog(
+                                  context: context,
+                                  builder: (_) {
+                                    return EditEffectDialog(
+                                      () => setState(() {
+                                        currentTurn.phases.remove(effect);
+                                      }),
+                                      (newEffect) {
+                                        setState(() {
+                                          int findIdx = currentTurn.phases
+                                              .indexOf(effect);
+                                          currentTurn.phases[findIdx] =
+                                              newEffect;
+                                          // スクロール位置変更
+                                          effectViewScrollController
+                                              .scrollToIndex(widgetIdx + 1);
+                                        });
+                                      },
+                                      effect.displayName(
+                                        loc: loc,
+                                      ),
+                                      effect,
+                                      currentTurn
+                                          .copyInitialState()
+                                          .getPokemonState(
+                                              effect.playerType, null),
+                                      currentTurn
+                                          .copyInitialState()
+                                          .getPokemonState(
+                                              effect.playerType.opposite, null),
+                                      ownParty,
+                                      opponentParty,
+                                      currentTurn.copyInitialState(),
+                                    );
+                                  },
+                                );
                               },
                               loc.battleAddProcess,
                               effectList,
@@ -789,7 +826,43 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               // スクロール位置変更
                               effectViewScrollController
                                   .scrollToIndex(widgetIdx + 1);
-                              setState(() {});
+                              //setState(() {});
+                              // 続けて効果の編集ダイアログ表示
+                              showDialog(
+                                context: context,
+                                builder: (_) {
+                                  return EditEffectDialog(
+                                    () => setState(() {
+                                      currentTurn.phases.remove(effect);
+                                    }),
+                                    (newEffect) {
+                                      setState(() {
+                                        int findIdx =
+                                            currentTurn.phases.indexOf(effect);
+                                        currentTurn.phases[findIdx] = newEffect;
+                                        // スクロール位置変更
+                                        effectViewScrollController
+                                            .scrollToIndex(widgetIdx + 1);
+                                      });
+                                    },
+                                    effect.displayName(
+                                      loc: loc,
+                                    ),
+                                    effect,
+                                    currentTurn
+                                        .copyInitialState()
+                                        .getPokemonState(
+                                            effect.playerType, null),
+                                    currentTurn
+                                        .copyInitialState()
+                                        .getPokemonState(
+                                            effect.playerType.opposite, null),
+                                    ownParty,
+                                    opponentParty,
+                                    currentTurn.copyInitialState(),
+                                  );
+                                },
+                              );
                             },
                             loc.battleAddProcess,
                             effectList,
