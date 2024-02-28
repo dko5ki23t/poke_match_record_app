@@ -26,6 +26,7 @@ class SelectTypeDialogState extends State<SelectTypeDialog> {
     return AlertDialog(
       title: Text(widget.title),
       content: SingleChildScrollView(
+        key: Key('SelectTypeDialogScrollView'),
         child: Column(
           children: [
             for (final type

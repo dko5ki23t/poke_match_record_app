@@ -141,7 +141,9 @@ class IndiFieldEffect {
 class TurnEffectIndividualField extends TurnEffect {
   TurnEffectIndividualField(
       {required player, required this.timing, required this.indiFieldEffectID})
-      : super(EffectType.individualField);
+      : super(EffectType.individualField) {
+    _playerType = player;
+  }
 
   PlayerType _playerType = PlayerType.none;
   @override

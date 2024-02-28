@@ -28,11 +28,13 @@ void main() {
   group('統合テスト(もこうの実況を記録)', () {
     test('パーモット戦', timeout: Timeout(Duration(minutes: 5)), () async {
       if (doTest) {
-        await test1_1(driver!);
+        //await test1_1(driver!);
         //await test1_2(driver!);
-        //await test1_3(driver!);
+        await test1_3(driver!);
         //await test1_4(driver!);
         //await test2_1(driver!);
+        //await test2_2(driver!);
+        //await test2_3(driver!);
       }
     });
   });
@@ -271,12 +273,21 @@ Future<void> testExistEffect(FlutterDriver driver, String effectName) async {
   await testExistAnyWidgets(designatedWidget, driver);
 }
 
-/// ポケモンを交代する(ひんし交代含む)
+/// 効果を示す吹き出しをタップする(編集用)
+Future<void> tapEffect(FlutterDriver driver, String effectName) async {
+  final designatedWidget = find.descendant(
+    of: find.byValueKey('EffectContainer'),
+    matching: find.text(effectName),
+  );
+  await driver.tap(designatedWidget);
+}
+
+/// ポケモンを交代する(ひんし交代やわざ等での交代含む)
 Future<void> changePokemon(FlutterDriver driver, PlayerType playerType,
-    String pokemonName, bool isFainting) async {
+    String pokemonName, bool needChangeButtonTap) async {
   String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
 
-  if (!isFainting) {
+  if (needChangeButtonTap) {
     await driver
         .tap(find.byValueKey('BattleActionCommandChange$ownOrOpponent'));
   }
@@ -330,6 +341,24 @@ Future<void> setCriticalCount(
   // 以下のように再度タップする等しないと反映されない
   await driver.tap(designatedWidget);
   await Future<void>.delayed(const Duration(milliseconds: 500));
+}
+
+/// テラスタルする
+Future<void> inputTerastal(
+    FlutterDriver driver, PlayerType playerType, String typeName) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  await driver
+      .tap(find.byValueKey('BattleActionCommandTerastal$ownOrOpponent'));
+  if (playerType == PlayerType.opponent) {
+    await testExistAnyWidgets(find.text('テラスタイプ'), driver);
+    if (!await isPresent(find.text(typeName), driver)) {
+      await scrollUntilTappable(driver,
+          find.byValueKey('SelectTypeDialogScrollView'), find.text(typeName),
+          dyScroll: -100);
+    }
+    await driver.tap(find.text(typeName));
+  }
 }
 
 /// ポケモンのパラメータを編集する
@@ -436,7 +465,7 @@ Future<void> test1_1(
   // デカヌチャンの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // デカヌチャンひんし→テツノツツミに交代
-  await changePokemon(driver, PlayerType.opponent, 'テツノツツミ', true);
+  await changePokemon(driver, PlayerType.opponent, 'テツノツツミ', false);
   // クォークチャージ発動
   await addEffect(driver, 2, 'クォークチャージ');
   // クォークチャージの内容編集
@@ -453,7 +482,7 @@ Future<void> test1_1(
   // テツノツツミの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // テツノツツミひんし→ギャラドスに交代
-  await changePokemon(driver, PlayerType.opponent, 'ギャラドス', true);
+  await changePokemon(driver, PlayerType.opponent, 'ギャラドス', false);
   // いかく発動
   await addEffect(driver, 2, 'いかく');
   await driver.tap(find.text('OK'));
@@ -506,7 +535,7 @@ Future<void> test1_2(
   // ボーマンダのダブルウイング
   await tapMove(driver, PlayerType.me, 'ダブルウイング', false);
   // チヲハウハネ->ミミッキュに交代
-  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', false);
+  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', true);
   // ボーマンダのダブルウイングが外れる
   await setHitCount(driver, PlayerType.me, 0);
   await inputRemainHP(driver, PlayerType.me, '');
@@ -524,14 +553,14 @@ Future<void> test1_2(
   // ミミッキュのもちものがいのちのたまと判明
   await editPokemonState(driver, 'ミミッキュ/k.k', null, null, 'いのちのたま');
   // ボーマンダひんし→リーフィアに交代
-  await changePokemon(driver, PlayerType.me, 'リーフィア', true);
+  await changePokemon(driver, PlayerType.me, 'リーフィア', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // リーフィアテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOwn'));
+  await inputTerastal(driver, PlayerType.me, '');
   // 相手ミミッキュ→チヲハウハネに交代
-  await changePokemon(driver, PlayerType.opponent, 'チヲハウハネ', false);
+  await changePokemon(driver, PlayerType.opponent, 'チヲハウハネ', true);
   // リーフィアのリーフブレード
   await tapMove(driver, PlayerType.me, 'リーフブレード', false);
   // チヲハウハネの残りHP70
@@ -544,7 +573,7 @@ Future<void> test1_2(
   // チヲハウハネの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // チヲハウハネひんし→サザンドラに交代
-  await changePokemon(driver, PlayerType.opponent, 'サザンドラ', true);
+  await changePokemon(driver, PlayerType.opponent, 'サザンドラ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -557,12 +586,12 @@ Future<void> test1_2(
   // リーフィアの残りHP0
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // リーフィアひんし→パーモットに交代
-  await changePokemon(driver, PlayerType.me, 'パーモット', true);
+  await changePokemon(driver, PlayerType.me, 'パーモット', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // 相手サザンドラ→ミミッキュに交代
-  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', false);
+  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', true);
   // パーモットのさいきのいのりでボーマンダ復活
   await tapMove(driver, PlayerType.me, 'さいきのいのり', false);
   await testExistAnyWidgets(find.text('ボーマンダ'), driver);
@@ -583,7 +612,7 @@ Future<void> test1_2(
   // ミミッキュの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // ミミッキュひんし→サザンドラに交代
-  await changePokemon(driver, PlayerType.opponent, 'サザンドラ', true);
+  await changePokemon(driver, PlayerType.opponent, 'サザンドラ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -635,9 +664,7 @@ Future<void> test1_3(
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
   // ウルガモスのテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOpponent'));
-  await testExistAnyWidgets(find.text('テラスタイプ'), driver);
-  await driver.tap(find.text('いわ'));
+  await inputTerastal(driver, PlayerType.opponent, 'いわ');
   // ウルガモスのちょうのまい
   await tapMove(driver, PlayerType.opponent, 'ちょうのまい', true);
   // ボーマンダのダブルウイング
@@ -652,14 +679,14 @@ Future<void> test1_3(
   // ボーマンダの残りHP70
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // ボーマンダひんし→マリルリに交代
-  await changePokemon(driver, PlayerType.me, 'マリルリ', true);
+  await changePokemon(driver, PlayerType.me, 'マリルリ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // マリルリテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOwn'));
+  await inputTerastal(driver, PlayerType.me, '');
   // 相手ウルガモス→トドロクツキに交代
-  await changePokemon(driver, PlayerType.opponent, 'トドロクツキ', false);
+  await changePokemon(driver, PlayerType.opponent, 'トドロクツキ', true);
   // トドロクツキのこだいかっせい
   await addEffect(driver, 2, 'こだいかっせい');
   await driver.tap(find.text('OK'));
@@ -682,7 +709,7 @@ Future<void> test1_3(
   // トドロクツキの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // トドロクツキひんし→バンギラスに交代
-  await changePokemon(driver, PlayerType.opponent, 'バンギラス', true);
+  await changePokemon(driver, PlayerType.opponent, 'バンギラス', false);
   // バンギラスのとくせいがすなおこしと判明
   //await editPokemonState(driver, 'バンギラス/Daikon', null, 'すなおこし', null);
   // バンギラスのすなおこし
@@ -712,7 +739,7 @@ Future<void> test1_3(
   // マリルリの残りHP0
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // マリルリひんし→パーモットに交代
-  await changePokemon(driver, PlayerType.me, 'パーモット', true);
+  await changePokemon(driver, PlayerType.me, 'パーモット', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -728,15 +755,15 @@ Future<void> test1_3(
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // 相手バンギラス→ウルガモスに交代
-  await changePokemon(driver, PlayerType.opponent, 'ウルガモス', false);
+  await changePokemon(driver, PlayerType.opponent, 'ウルガモス', true);
   // パーモットのインファイト
   await tapMove(driver, PlayerType.me, 'インファイト', false);
   // ウルガモスの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // ウルガモスひんし→バンギラスに交代
-  await changePokemon(driver, PlayerType.opponent, 'バンギラス', true);
+  await changePokemon(driver, PlayerType.opponent, 'バンギラス', false);
   // パーモットひんし→マリルリに交代
-  await changePokemon(driver, PlayerType.me, 'マリルリ', true);
+  await changePokemon(driver, PlayerType.me, 'マリルリ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -803,7 +830,7 @@ Future<void> test1_4(
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // パーモット->マリルリに交代
-  await changePokemon(driver, PlayerType.me, 'マリルリ', false);
+  await changePokemon(driver, PlayerType.me, 'マリルリ', true);
   // ソウブレイズのむねんのつるぎ
   await tapMove(driver, PlayerType.opponent, 'むねんのつるぎ', true);
   // マリルリの残りHP90
@@ -822,7 +849,7 @@ Future<void> test1_4(
   // ソウブレイズのHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // ソウブレイズひんし→セグレイブに交代
-  await changePokemon(driver, PlayerType.opponent, 'セグレイブ', true);
+  await changePokemon(driver, PlayerType.opponent, 'セグレイブ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -831,7 +858,7 @@ Future<void> test1_4(
   // マリルリの残りHP0
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // マリルリひんし→パーモットに交代
-  await changePokemon(driver, PlayerType.me, 'パーモット', true);
+  await changePokemon(driver, PlayerType.me, 'パーモット', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -854,12 +881,12 @@ Future<void> test1_4(
   // パーモットの残りHP0
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // パーモットひんし→マリルリに交代
-  await changePokemon(driver, PlayerType.me, 'マリルリ', true);
+  await changePokemon(driver, PlayerType.me, 'マリルリ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // 相手セグレイブ->ドドゲザンに交代
-  await changePokemon(driver, PlayerType.opponent, 'ドドゲザン', false);
+  await changePokemon(driver, PlayerType.opponent, 'ドドゲザン', true);
   // ドドゲザンのプレッシャー
   await addEffect(driver, 1, 'プレッシャー');
   await driver.tap(find.text('OK'));
@@ -871,9 +898,7 @@ Future<void> test1_4(
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // ドドゲザンのテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOpponent'));
-  await testExistAnyWidgets(find.text('テラスタイプ'), driver);
-  await driver.tap(find.text('ゴースト'));
+  await inputTerastal(driver, PlayerType.opponent, 'ゴースト');
   // マリルリのアクアジェット
   await tapMove(driver, PlayerType.me, 'アクアジェット', false);
   // ドドゲザンの残りHP35
@@ -885,12 +910,12 @@ Future<void> test1_4(
   // マリルリの残りHP0
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // マリルリひんし→リキキリンに交代
-  await changePokemon(driver, PlayerType.me, 'リキキリン', true);
+  await changePokemon(driver, PlayerType.me, 'リキキリン', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // リキキリンテラスタル
-  await driver.tap(find.byValueKey('BattleActionCommandTerastalOwn'));
+  await inputTerastal(driver, PlayerType.me, '');
   // リキキリンのこうそくいどう
   await tapMove(driver, PlayerType.me, 'こうそくいどう', false);
   // ドドゲザンのドゲザン
@@ -916,7 +941,7 @@ Future<void> test1_4(
   // ドドゲザンの残りHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // ドドゲザンひんし→セグレイブに交代
-  await changePokemon(driver, PlayerType.opponent, 'セグレイブ', true);
+  await changePokemon(driver, PlayerType.opponent, 'セグレイブ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -970,7 +995,7 @@ Future<void> test2_1(
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
   // イルカマン->ニンフィアに交代
-  await changePokemon(driver, PlayerType.me, 'ニンフィア', false);
+  await changePokemon(driver, PlayerType.me, 'ニンフィア', true);
   // ロトムのボルトチェンジ
   await tapMove(driver, PlayerType.opponent, 'ボルトチェンジ', true);
   // 外れる
@@ -980,7 +1005,7 @@ Future<void> test2_1(
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
   // ロトムのボルトチェンジ
-  await tapMove(driver, PlayerType.opponent, 'ボルトチェンジ', true);
+  await tapMove(driver, PlayerType.opponent, 'ボルトチェンジ', false);
   // ニンフィアのHP157
   await inputRemainHP(driver, PlayerType.opponent, '157');
   // キラフロルに交代
@@ -990,6 +1015,335 @@ Future<void> test2_1(
   // キラフロルのHP80
   await inputRemainHP(driver, PlayerType.me, '80');
 
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // キラフロルのステルスロック
+  await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
+  // ニンフィアのあくび
+  await tapMove(driver, PlayerType.me, 'あくび', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンに交代
+  await changePokemon(driver, PlayerType.me, 'イルカマン', true);
+  // キラフロルのヘドロウェーブ
+  await tapMove(driver, PlayerType.opponent, 'ヘドロウェーブ', true);
+  // イルカマンのHP71
+  await inputRemainHP(driver, PlayerType.opponent, '71');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // キラフロルはねむっている
+  await driver.tap(
+      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
+  // イルカマンのウェーブタックル
+  await tapMove(driver, PlayerType.me, 'ウェーブタックル', false);
+  // キラフロルのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // イルカマンのHP83
+  await inputRemainHP(driver, PlayerType.me, '83');
+  // どくげしょう発動
+  await addEffect(driver, 2, 'どくげしょう');
+  await driver.tap(find.text('OK'));
+  // キラフロルひんし→パオジアンに交代
+  await changePokemon(driver, PlayerType.opponent, 'パオジアン', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのジェットパンチ
+  await tapMove(driver, PlayerType.me, 'ジェットパンチ', false);
+  // パオジアンのHP45
+  await inputRemainHP(driver, PlayerType.me, '45');
+  // パオジアンのつるぎのまい
+  await tapMove(driver, PlayerType.opponent, 'つるぎのまい', true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // パオジアンのテラスタル
+  await inputTerastal(driver, PlayerType.opponent, 'こおり');
+  // イルカマンのジェットパンチ
+  await tapMove(driver, PlayerType.me, 'ジェットパンチ', false);
+  // パオジアンのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // パオジアンひんし→ロトムに交代
+  await changePokemon(driver, PlayerType.opponent, 'ロトム(ウォッシュロトム)', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ロトムの１０まんボルト
+  await tapMove(driver, PlayerType.opponent, '１０まんボルト', true);
+  // イルカマンのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // イルカマンひんし→リーフィアに交代
+  await changePokemon(driver, PlayerType.me, 'リーフィア', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ロトムの１０まんボルト
+  await tapMove(driver, PlayerType.opponent, '１０まんボルト', false);
+  // 急所に命中
+  await tapCritical(driver, PlayerType.opponent);
+  // リーフィアのHP39
+  await inputRemainHP(driver, PlayerType.opponent, '39');
+  // リーフィアのリーフブレード
+  await tapMove(driver, PlayerType.me, 'リーフブレード', false);
+  // ロトムの残りHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
   // 内容保存
-  //await driver.tap(find.byValueKey('RegisterBattleSave'));
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// イルカマン戦2
+Future<void> test2_2(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(driver,
+      battleName: 'もこうイルカマン戦2',
+      ownPartyname: '2もこイルカマン',
+      opponentName: '雪見櫻',
+      pokemon1: 'コータス',
+      pokemon2: 'ハバタクカミ',
+      pokemon3: 'ラウドボーン',
+      pokemon4: 'ラッキー',
+      pokemon5: 'トドロクツキ',
+      pokemon6: 'スコヴィラン');
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこイルカ/',
+      ownPokemon2: 'もこニンフィア/',
+      ownPokemon3: 'もこフィア/',
+      opponentPokemon: 'コータス');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // コータスのひでり
+  await addEffect(driver, 0, 'ひでり');
+  await driver.tap(find.text('OK'));
+  // イルカマンのクイックターン
+  await tapMove(driver, PlayerType.me, 'クイックターン', false);
+  // コータスのHP90
+  await inputRemainHP(driver, PlayerType.me, '90');
+  // ニンフィアに交代
+  await changePokemon(driver, PlayerType.me, 'ニンフィア', false);
+  // コータスのステルスロック
+  await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ニンフィアのあくび
+  await tapMove(driver, PlayerType.me, 'あくび', false);
+  // コータスのかえんほうしゃ
+  await tapMove(driver, PlayerType.opponent, 'かえんほうしゃ', true);
+  // ニンフィアのHP115
+  await inputRemainHP(driver, PlayerType.opponent, '115');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ニンフィア->イルカマンに交代
+  await changePokemon(driver, PlayerType.me, 'イルカマン', true);
+  // 相手コータス->ハバタクカミに交代
+  await changePokemon(driver, PlayerType.opponent, 'ハバタクカミ', true);
+  // こだいかっせい編集
+  await tapEffect(driver, 'こだいかっせい');
+  await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
+  await driver.tap(find.text('とくこう'));
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // ハバタクカミのムーンフォース
+  await tapMove(driver, PlayerType.opponent, 'ムーンフォース', true);
+  // イルカマンのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // イルカマンひんし→リーフィアに交代
+  await changePokemon(driver, PlayerType.me, 'リーフィア', false);
+  // ハバタクカミのいのちのたま
+  await addEffect(driver, 2, 'いのちのたま');
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // リーフィアのリーフブレード
+  await tapMove(driver, PlayerType.me, 'リーフブレード', false);
+  // ハバタクカミのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ハバタクカミひんし→スコヴィランに交代
+  await changePokemon(driver, PlayerType.opponent, 'スコヴィラン', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // リーフィアのテラバースト
+  await tapMove(driver, PlayerType.me, 'テラバースト', false);
+  // スコヴィランのHP90
+  await inputRemainHP(driver, PlayerType.me, '90');
+  // スコヴィランのかえんほうしゃ
+  await tapMove(driver, PlayerType.opponent, 'かえんほうしゃ', true);
+  // リーフィアのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // リーフィアひんし→ニンフィアに交代
+  await changePokemon(driver, PlayerType.me, 'ニンフィア', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // スコヴィランのオーバーヒート
+  await tapMove(driver, PlayerType.opponent, 'オーバーヒート', true);
+  // ニンフィアのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // 相手の勝利
+  await testExistEffect(driver, '雪見櫻の勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// イルカマン戦3
+Future<void> test2_3(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(driver,
+      battleName: 'もこうイルカマン戦3',
+      ownPartyname: '2もこイルカマン',
+      opponentName: 'ズイ',
+      pokemon1: 'ガブリアス',
+      pokemon2: 'ドドゲザン',
+      pokemon3: 'ギャラドス',
+      pokemon4: 'ミミッキュ',
+      pokemon5: 'テツノブジン',
+      pokemon6: 'テツノツツミ');
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこイルカ/',
+      ownPokemon2: 'もこヘル/',
+      ownPokemon3: 'もこニンフィア/',
+      opponentPokemon: 'ガブリアス');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // ガブリアスのステルスロック
+  await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
+  // イルカマンのクイックターン
+  await tapMove(driver, PlayerType.me, 'クイックターン', false);
+  // コータスのHP90
+  await inputRemainHP(driver, PlayerType.me, '90');
+  // ニンフィアに交代
+  await changePokemon(driver, PlayerType.me, 'ニンフィア', false);
+  // ガブリアスのさめはだ
+  await addEffect(driver, 2, 'さめはだ');
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ガブリアスのじしん
+  await tapMove(driver, PlayerType.opponent, 'じしん', true);
+  // ニンフィアのHP86
+  await inputRemainHP(driver, PlayerType.opponent, '86');
+  // ニンフィアのハイパーボイス
+  await tapMove(driver, PlayerType.me, 'ハイパーボイス', false);
+  // ガブリアスのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ガブリアスひんし→テツノツツミに交代
+  await changePokemon(driver, PlayerType.opponent, 'テツノツツミ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ニンフィアのでんこうせっか
+  await tapMove(driver, PlayerType.me, 'でんこうせっか', false);
+  // テツノツツミのHP95
+  await inputRemainHP(driver, PlayerType.me, '95');
+  // テツノツツミのゆきげしき
+  await tapMove(driver, PlayerType.opponent, 'ゆきげしき', true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // テツノツツミのフリーズドライ
+  await tapMove(driver, PlayerType.opponent, 'フリーズドライ', true);
+  // ニンフィアのHP37
+  await inputRemainHP(driver, PlayerType.opponent, '37');
+  // ニンフィアのあくび
+  await tapMove(driver, PlayerType.me, 'あくび', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // テツノツツミのエレキフィールド
+  await tapMove(driver, PlayerType.opponent, 'エレキフィールド', true);
+  // クォークチャージ編集
+  await tapEffect(driver, 'クォークチャージ');
+  await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
+  await driver.tap(find.text('すばやさ'));
+  await driver.tap(find.text('OK'));
+  // ニンフィアのハイパーボイス
+  await tapMove(driver, PlayerType.me, 'ハイパーボイス', false);
+  // テツノツツミのHP20
+  await inputRemainHP(driver, PlayerType.me, '20');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ニンフィアのでんこうせっか
+  await tapMove(driver, PlayerType.me, 'でんこうせっか', false);
+  // テツノツツミのHP15
+  await inputRemainHP(driver, PlayerType.me, '15');
+  // テツノツツミのオーロラベール
+  await tapMove(driver, PlayerType.opponent, 'オーロラベール', true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // テツノツツミのフリーズドライ
+  await tapMove(driver, PlayerType.opponent, 'フリーズドライ', false);
+  // ニンフィアのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // ニンフィアひんし→イルカマンに交代
+  await changePokemon(driver, PlayerType.me, 'イルカマン', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのジェットパンチ
+  await tapMove(driver, PlayerType.me, 'ジェットパンチ', false);
+  // テツノツツミのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // テツノツツミひんし→テツノブジンに交代
+  await changePokemon(driver, PlayerType.opponent, 'テツノブジン', false);
+  // クォークチャージ編集
+  await tapEffect(driver, 'クォークチャージ');
+  await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
+  await driver.tap(find.text('すばやさ'));
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // テツノブジンのインファイト
+  await tapMove(driver, PlayerType.opponent, 'インファイト', true);
+  // イルカマンのHP99
+  await inputRemainHP(driver, PlayerType.opponent, '99');
+  // イルカマンのアクロバット
+  await tapMove(driver, PlayerType.me, 'アクロバット', false);
+  // テツノブジンのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
 }

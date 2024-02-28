@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
@@ -205,6 +206,28 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     final opponentLastAction = turns.isNotEmpty
         ? turns[turnNum - 1].phases.getLatestAction(PlayerType.opponent)
         : null;
+    final ownBeforeLastActionState = turns.isNotEmpty
+        ? turns[turnNum - 1]
+            .getBeforeActionState(PlayerType.me, ownParty, opponentParty, loc)
+        : PhaseState();
+    final opponentBeforeLastActionState = turns.isNotEmpty
+        ? turns[turnNum - 1].getBeforeActionState(
+            PlayerType.opponent, ownParty, opponentParty, loc)
+        : PhaseState();
+    // ひるみによる失敗判定
+    if (ownLastAction is TurnEffectAction &&
+        ownBeforeLastActionState
+            .getPokemonState(PlayerType.me, null)
+            .ailmentsWhere((element) => element.id == Ailment.flinch)
+            .isNotEmpty) {
+      ownLastAction.isSuccess = false;
+      ownLastAction.actionFailure = ActionFailure(ActionFailure.flinch);
+    } else if (ownLastAction is TurnEffectAction &&
+        !ownLastAction.isSuccess &&
+        ownLastAction.actionFailure.id == ActionFailure.flinch) {
+      ownLastAction.isSuccess = true;
+      ownLastAction.actionFailure = ActionFailure(ActionFailure.none);
+    }
 //    final prevState =
 //        turns.isNotEmpty ? turns[turnNum - 1].copyInitialState() : null;
 
@@ -826,7 +849,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               // スクロール位置変更
                               effectViewScrollController
                                   .scrollToIndex(widgetIdx + 1);
-                              //setState(() {});
                               // 続けて効果の編集ダイアログ表示
                               showDialog(
                                 context: context,
@@ -925,8 +947,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: ownBattleCommandKey,
                             playerType: PlayerType.me,
                             turnMove: ownLastAction,
-                            phaseState: currentTurn.getBeforeActionState(
-                                PlayerType.me, ownParty, opponentParty, loc),
+                            phaseState: ownBeforeLastActionState,
                             myParty: ownParty,
                             yourParty: opponentParty,
                             parentSetState: setState,
@@ -959,11 +980,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.me,
                                 turnEffect: ownLastAction,
-                                phaseState: currentTurn.getBeforeActionState(
-                                    PlayerType.me,
-                                    ownParty,
-                                    opponentParty,
-                                    loc),
+                                phaseState: ownBeforeLastActionState,
                                 myParty: ownParty,
                                 yourParty: opponentParty,
                                 parentSetState: setState,
@@ -1078,11 +1095,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             key: opponentBattleCommandKey,
                             playerType: PlayerType.opponent,
                             turnMove: opponentLastAction,
-                            phaseState: currentTurn.getBeforeActionState(
-                                PlayerType.opponent,
-                                ownParty,
-                                opponentParty,
-                                loc),
+                            phaseState: opponentBeforeLastActionState,
                             myParty: opponentParty,
                             yourParty: ownParty,
                             parentSetState: setState,
@@ -1136,11 +1149,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             ? BattleChangeFaintingCommand(
                                 playerType: PlayerType.opponent,
                                 turnEffect: opponentLastAction,
-                                phaseState: currentTurn.getBeforeActionState(
-                                    PlayerType.opponent,
-                                    ownParty,
-                                    opponentParty,
-                                    loc),
+                                phaseState: opponentBeforeLastActionState,
                                 myParty: opponentParty,
                                 yourParty: ownParty,
                                 parentSetState: setState,

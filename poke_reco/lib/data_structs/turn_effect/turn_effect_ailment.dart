@@ -200,7 +200,9 @@ class AilmentEffect {
 class TurnEffectAilment extends TurnEffect {
   TurnEffectAilment(
       {required player, required this.timing, required this.ailmentEffectID})
-      : super(EffectType.ailment);
+      : super(EffectType.ailment) {
+    _playerType = player;
+  }
 
   PlayerType _playerType = PlayerType.none;
   @override

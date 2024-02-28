@@ -1184,6 +1184,11 @@ class PokeDB {
             addParty(party, false, () {});
           }
         }
+
+        ///////// 登録した対戦
+        {
+          await deleteDatabase(battleDBPath);
+        }
       }
     }
 

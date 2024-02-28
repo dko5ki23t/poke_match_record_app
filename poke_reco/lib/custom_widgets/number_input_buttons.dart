@@ -10,6 +10,7 @@ class NumberInputButtons extends StatefulWidget {
     this.maxDigits = 4,
     this.prefixText,
     this.suffixText,
+    this.enabled = true,
   }) : super(key: key);
 
   final int initialNum;
@@ -17,6 +18,7 @@ class NumberInputButtons extends StatefulWidget {
   final int maxDigits;
   final String? prefixText;
   final String? suffixText;
+  final bool enabled;
 
   @override
   State<NumberInputButtons> createState() => _NumberInputButtonsState();
@@ -25,6 +27,7 @@ class NumberInputButtons extends StatefulWidget {
 class _NumberInputButtonsState extends State<NumberInputButtons> {
   int _number = 0;
   bool confirmed = false;
+  bool firstInput = true;
   TextEditingController controller = TextEditingController();
 
   @override
@@ -50,8 +53,9 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
     }
 
     void inputNum(int n) {
-      if (confirmed) {
+      if (confirmed || firstInput) {
         confirmed = false;
+        firstInput = false;
         changeNum(() {
           _number = n;
         });
@@ -94,35 +98,35 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
               children: [
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(1) : null,
                   child: Text(
                     '1',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(1),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(2) : null,
                   child: Text(
                     '2',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(2),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(3) : null,
                   child: Text(
                     '3',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(3),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(4) : null,
                   child: Text(
                     '4',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(4),
                 ),
               ],
             ),
@@ -131,35 +135,35 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
               children: [
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(5) : null,
                   child: Text(
                     '5',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(5),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(6) : null,
                   child: Text(
                     '6',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(6),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(7) : null,
                   child: Text(
                     '7',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(7),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(8) : null,
                   child: Text(
                     '8',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(8),
                 ),
               ],
             ),
@@ -168,26 +172,28 @@ class _NumberInputButtonsState extends State<NumberInputButtons> {
               children: [
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(9) : null,
                   child: Text(
                     '9',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(9),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled ? () => inputNum(0) : null,
                   child: Text(
                     '0',
                     style: TextStyle(fontSize: 50),
                   ),
-                  onPressed: () => inputNum(0),
                 ),
                 _NumberInputButton(
                   size: buttonSize,
+                  onPressed: widget.enabled
+                      ? () => changeNum(() {
+                            _number = (_number / 10).floor();
+                          })
+                      : null,
                   child: Icon(Icons.backspace, size: 50),
-                  onPressed: () => changeNum(() {
-                    _number = (_number / 10).floor();
-                  }),
                 ),
                 _NumberInputButton(
                   key: Key('EnterButton'),
@@ -219,7 +225,7 @@ class _NumberInputButton extends StatelessWidget {
 
   final Widget child;
   final Size size;
-  final void Function() onPressed;
+  final void Function()? onPressed;
   final bool pressed;
 
   @override

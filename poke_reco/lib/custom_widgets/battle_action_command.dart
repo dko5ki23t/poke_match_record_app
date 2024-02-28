@@ -81,10 +81,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           damageGetter: selectingMoveDamageGetter,
           loc: loc,
         );
-    // TODO: 他にも考慮すべきことがいろいろ
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
-    List<ListTile> moveTiles = [];
+    List<Widget> moveTiles = [];
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       var myPokemon = myState.pokemon;
@@ -106,6 +105,28 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           return toKatakana50(s.displayName.toLowerCase())
               .contains(toKatakana50(pattern.toLowerCase()));
         });
+      }
+      // ねむり状態の場合
+      if (myState
+          .ailmentsWhere((element) => element.id == Ailment.sleep)
+          .isNotEmpty) {
+        moveTiles.add(SwitchListTile(
+          title: Text(ActionFailure(ActionFailure.sleep).displayName),
+          onChanged: (value) {
+            if (value) {
+              parentSetState(() {
+                turnMove.isSuccess = false;
+                turnMove.actionFailure = ActionFailure(ActionFailure.sleep);
+              });
+            } else {
+              parentSetState(() {
+                turnMove.isSuccess = true;
+                turnMove.actionFailure = ActionFailure(ActionFailure.none);
+              });
+            }
+          },
+          value: !turnMove.isSuccess,
+        ));
       }
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];

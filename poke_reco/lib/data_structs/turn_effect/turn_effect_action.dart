@@ -742,16 +742,6 @@ class TurnEffectAction extends TurnEffect {
       return ret;
     }
 
-    // TODO: この処理はここじゃない？
-    // ひるみによる失敗
-    if (myState.ailmentsWhere((e) => e.id == Ailment.flinch).isNotEmpty) {
-      isSuccess = false;
-      actionFailure = ActionFailure(ActionFailure.flinch);
-    } else {
-      // TODO: ここでこうはしたくない
-      isSuccess = true;
-    }
-
     if (move.id == 0) return ret;
 
     // ゾロアーク判定
@@ -6501,7 +6491,8 @@ class TurnEffectAction extends TurnEffect {
         theme: theme,
         onConfirm: onConfirm,
         onUpdate: onUpdate,
-        onNext: index == templateTitles.length - 1
+        // 想定している入力の最後、もしくはわざ失敗/外したときならばonNext=>onConfirm
+        onNext: (index == templateTitles.length - 1 || !isNormallyHit())
             ? () {
                 _isValid = true;
                 onConfirm();
@@ -6788,7 +6779,9 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
-                initialNum: 0, // TODO?
+                initialNum: playerType == PlayerType.me
+                    ? yourState.remainHPPercent
+                    : yourState.remainHP,
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {
                     percentDamage = yourState.remainHPPercent - remain;
@@ -6799,6 +6792,7 @@ class TurnEffectAction extends TurnEffect {
                 },
                 prefixText: loc.battleRemainHP(yourState.pokemon.name),
                 suffixText: playerType == PlayerType.me ? '%' : null,
+                enabled: isNormallyHit(),
               ),
             ),
           ],
@@ -6815,7 +6809,9 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
-                initialNum: 0, // TODO?
+                initialNum: playerType == PlayerType.me
+                    ? yourState.remainHP
+                    : yourState.remainHPPercent,
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {
                     extraArg1 = myState.remainHP - remain;
@@ -6826,6 +6822,7 @@ class TurnEffectAction extends TurnEffect {
                 },
                 prefixText: loc.battleRemainHP(myState.pokemon.name),
                 suffixText: playerType == PlayerType.opponent ? '%' : null,
+                enabled: isNormallyHit(),
               ),
             ),
           ],
