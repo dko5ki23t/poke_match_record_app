@@ -390,6 +390,9 @@ class TurnEffectAction extends TurnEffect {
   /// わざによって与えたダメージ（概算値、割合）
   int percentDamage = 0;
 
+  /// みがわりを破壊したかどうか
+  bool breakSubstitute = false;
+
   /// 追加効果
   MoveEffect moveAdditionalEffects = MoveEffect(MoveEffect.none);
 
@@ -435,6 +438,7 @@ class TurnEffectAction extends TurnEffect {
         moveEffectivenesses,
         realDamage,
         percentDamage,
+        breakSubstitute,
         moveAdditionalEffects,
         extraArg1,
         extraArg2,
@@ -457,6 +461,7 @@ class TurnEffectAction extends TurnEffect {
     ..moveEffectivenesses = moveEffectivenesses
     ..realDamage = realDamage
     ..percentDamage = percentDamage
+    ..breakSubstitute = breakSubstitute
     ..moveAdditionalEffects = moveAdditionalEffects
     ..extraArg1 = extraArg1
     ..extraArg2 = extraArg2
@@ -4286,86 +4291,85 @@ class TurnEffectAction extends TurnEffect {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              if (!targetState.buffDebuffs
+              // みがわりなし/貫通わざかどうかの判定(現在は不要)
+              /*if (!targetState.buffDebuffs
                       .containsByID(BuffDebuff.substitute) ||
                   replacedMove.isSound ||
-                  myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall)) {
-                targetState.remainHP -= realDamage;
-                targetState.remainHPPercent -= percentDamage;
-                // こうげきを受けた数をカウント
-                final findIdx = targetState.hiddenBuffs.list.indexWhere(
-                    (element) => element.id == BuffDebuff.attackedCount);
-                if (findIdx >= 0) {
-                  targetState.hiddenBuffs.list[findIdx].extraArg1++;
-                } else {
-                  targetState.hiddenBuffs
-                      .add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
-                }
-                // あいてポケモンのステータス確定
-                if (playerType == PlayerType.opponent &&
-                    realDamage > 0 &&
-                    targetState.remainHP > 0) {
-                  var reals = calcRealFromDamage(
-                    realDamage,
-                    myState,
-                    targetStates[0],
-                    state,
-                    playerType,
-                    replacedMove,
-                    moveType,
-                    movePower,
-                    moveDamageClassID,
-                    beforeChangeMyState,
-                    isNormalized1_2,
-                    isCritical,
-                    isFoulPlay,
-                    defenseAltAttack,
-                    ignoreTargetRank,
-                    invDeffense,
-                    isSunny1_5,
-                    ignoreAbility,
-                    mTwice,
-                    additionalMoveType,
-                    halvedBerry,
-                    isTeraStellarHosei,
-                    loc: loc,
-                  );
-                  if (reals.item1.index > StatIndex.H.index) {
-                    // もともとある範囲より狭まるようにのみ上書き
-                    int minS = opponentPokemonState
-                        .minStats[StatIndex.values[reals.item1.index]].real;
-                    int maxS = opponentPokemonState
-                        .maxStats[StatIndex.values[reals.item1.index]].real;
-                    bool addGuide = false;
-                    if (minS < reals.item3) {
-                      minS = reals.item3;
-                      addGuide = true;
-                    }
-                    if (maxS > reals.item2) {
-                      maxS = reals.item2;
-                      addGuide = true;
-                    }
-                    if (addGuide) {
-                      ret.add(Guide()
-                        ..guideId = Guide.moveDamagedToStatus
-                        ..guideStr = loc.battleGuideMoveDamagedToStatus(
-                            maxS,
-                            minS,
-                            opponentPokemonState.pokemon.omittedName,
-                            reals.item1.name)
-                        ..args = [
-                          reals.item1.index,
-                          minS,
+                  myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall)) {*/
+              targetState.remainHP -= realDamage;
+              targetState.remainHPPercent -= percentDamage;
+              // こうげきを受けた数をカウント
+              final findIdx = targetState.hiddenBuffs.list.indexWhere(
+                  (element) => element.id == BuffDebuff.attackedCount);
+              if (findIdx >= 0) {
+                targetState.hiddenBuffs.list[findIdx].extraArg1++;
+              } else {
+                targetState.hiddenBuffs
+                    .add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
+              }
+              // あいてポケモンのステータス確定
+              if (playerType == PlayerType.opponent &&
+                  realDamage > 0 &&
+                  targetState.remainHP > 0) {
+                var reals = calcRealFromDamage(
+                  realDamage,
+                  myState,
+                  targetStates[0],
+                  state,
+                  playerType,
+                  replacedMove,
+                  moveType,
+                  movePower,
+                  moveDamageClassID,
+                  beforeChangeMyState,
+                  isNormalized1_2,
+                  isCritical,
+                  isFoulPlay,
+                  defenseAltAttack,
+                  ignoreTargetRank,
+                  invDeffense,
+                  isSunny1_5,
+                  ignoreAbility,
+                  mTwice,
+                  additionalMoveType,
+                  halvedBerry,
+                  isTeraStellarHosei,
+                  loc: loc,
+                );
+                if (reals.item1.index > StatIndex.H.index) {
+                  // もともとある範囲より狭まるようにのみ上書き
+                  int minS = opponentPokemonState
+                      .minStats[StatIndex.values[reals.item1.index]].real;
+                  int maxS = opponentPokemonState
+                      .maxStats[StatIndex.values[reals.item1.index]].real;
+                  bool addGuide = false;
+                  if (minS < reals.item3) {
+                    minS = reals.item3;
+                    addGuide = true;
+                  }
+                  if (maxS > reals.item2) {
+                    maxS = reals.item2;
+                    addGuide = true;
+                  }
+                  if (addGuide) {
+                    ret.add(Guide()
+                      ..guideId = Guide.moveDamagedToStatus
+                      ..guideStr = loc.battleGuideMoveDamagedToStatus(
                           maxS,
-                        ]
-                        ..canDelete = true);
-                    }
+                          minS,
+                          opponentPokemonState.pokemon.omittedName,
+                          reals.item1.name)
+                      ..args = [
+                        reals.item1.index,
+                        minS,
+                        maxS,
+                      ]
+                      ..canDelete = true);
                   }
                 }
-              } else {
-                if (realDamage > 0) {
-                  targetState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
-                }
+              }
+              if (breakSubstitute) {
+                targetState.buffDebuffs.removeAllByID(BuffDebuff.substitute);
               }
             }
           }
@@ -6097,7 +6101,6 @@ class TurnEffectAction extends TurnEffect {
               fixTemplates = true;
               break;
             default: // その他が対象のへんかわざ
-              _isValid = true;
               templateTitles.add(Tuple3(CommandWidgetTemplate.successOrFail,
                   loc.battleSuccessFailure, null));
               break;
@@ -6465,7 +6468,7 @@ class TurnEffectAction extends TurnEffect {
                 null));
             break;
           case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
-            _isValid = false;
+            //_isValid = false;
             templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP,
                 replacedMove.displayName, null));
             templateTitles.add(Tuple3(CommandWidgetTemplate.selectMyPokemons,
@@ -6481,6 +6484,13 @@ class TurnEffectAction extends TurnEffect {
           default:
             break;
         }
+      }
+
+      // へんかわざ＆対象がひんしポケモンでない＆入力内容が成否しかない場合はそのわざを有効に
+      if (replacedMove.damageClass.id == 1 &&
+          replacedMove.target != Target.faintingPokemon &&
+          templateTitles.length <= 1) {
+        _isValid = true;
       }
     }
 
@@ -6796,6 +6806,14 @@ class TurnEffectAction extends TurnEffect {
                       '${damageGetter.rangeString} (${damageGetter.rangePercentString})')
                   : Text(' - '),
             ),
+            yourState.buffDebuffs.containsByID(BuffDebuff.substitute)
+                ? Expanded(
+                    flex: 1,
+                    child: SubstituteBreakInput(
+                      turnMove: this,
+                      onUpdate: onUpdate,
+                    ))
+                : Container(),
             Expanded(
               flex: 5,
               child: NumberInputButtons(
@@ -6814,7 +6832,10 @@ class TurnEffectAction extends TurnEffect {
                 },
                 prefixText: loc.battleRemainHP(yourState.pokemon.omittedName),
                 suffixText: playerType == PlayerType.me ? '%' : null,
-                enabled: isNormallyHit(),
+                enabled: isNormallyHit() &&
+                    (!yourState.buffDebuffs
+                            .containsByID(BuffDebuff.substitute) ||
+                        breakSubstitute),
               ),
             ),
           ],
@@ -8146,6 +8167,9 @@ class TurnEffectAction extends TurnEffect {
     turnEffectAction.realDamage = int.parse(turnMoveElements.removeAt(0));
     // percentDamage
     turnEffectAction.percentDamage = int.parse(turnMoveElements.removeAt(0));
+    // breakSubstitute
+    turnEffectAction.breakSubstitute =
+        int.parse(turnMoveElements.removeAt(0)) != 0;
     // moveAdditionalEffect
     turnEffectAction.moveAdditionalEffects =
         MoveEffect(int.parse(turnMoveElements.removeAt(0)));
@@ -8259,6 +8283,9 @@ class TurnEffectAction extends TurnEffect {
     ret += split1;
     // percentDamage
     ret += percentDamage.toString();
+    ret += split1;
+    // breakSubstitute
+    ret += breakSubstitute ? '1' : '0';
     ret += split1;
     // moveAdditionalEffects
     ret += moveAdditionalEffects.id.toString();

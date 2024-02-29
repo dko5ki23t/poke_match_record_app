@@ -12,6 +12,7 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class StandAloneCheckBox extends StatefulWidget {
   const StandAloneCheckBox({
@@ -182,6 +183,55 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                   ],
                 ),
         ),
+      ],
+    );
+  }
+}
+
+class SubstituteBreakInput extends StatefulWidget {
+  const SubstituteBreakInput({
+    Key? key,
+    required this.turnMove,
+    required this.onUpdate,
+  }) : super(key: key);
+
+  final TurnEffectAction turnMove;
+  final void Function() onUpdate;
+
+  @override
+  State<SubstituteBreakInput> createState() => _SubstituteBreakInputState();
+}
+
+class _SubstituteBreakInputState extends State<SubstituteBreakInput> {
+  late final TurnEffectAction turnMove;
+
+  @override
+  void initState() {
+    super.initState();
+    turnMove = widget.turnMove;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final loc = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Checkbox(
+            key: Key(
+                'SubstituteInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+            value: turnMove.breakSubstitute,
+            onChanged: (change) {
+              if (change != null) {
+                turnMove.breakSubstitute = change;
+                if (!change) {
+                  turnMove.realDamage = 0;
+                  turnMove.percentDamage = 0;
+                }
+                widget.onUpdate();
+                setState(() {});
+              }
+            }),
+        Text(loc.battleSubstituteBroke),
       ],
     );
   }

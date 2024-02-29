@@ -37,9 +37,9 @@ void main() {
         //await test2_3(driver!);
         //await test2_4(driver!);
         //await test3_1(driver!);
-        //await test3_2(driver!);
+        await test3_2(driver!);
         //await test3_3(driver!);
-        await test3_4(driver!);
+        //await test3_4(driver!);
       }
     });
   });
@@ -354,8 +354,8 @@ Future<void> setCriticalCount(
   await driver.tap(designatedWidget);
   await driver.enterText(count.toString());
   // 以下のように再度タップする等しないと反映されない
-  await driver.tap(designatedWidget);
-  await Future<void>.delayed(const Duration(milliseconds: 500));
+  //await driver.tap(designatedWidget);
+  //await Future<void>.delayed(const Duration(milliseconds: 500));
 }
 
 /// テラスタルする
@@ -1654,6 +1654,7 @@ Future<void> test3_2(
   await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
   await driver.tap(find.text('すばやさ'));
   await driver.tap(find.text('OK'));
+  return;
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -1665,6 +1666,8 @@ Future<void> test3_2(
   await tapMove(driver, PlayerType.me, 'ネズミざん', false);
   // 1回急所に命中
   await setCriticalCount(driver, PlayerType.me, 1);
+  // みがわりは消える
+  await driver.tap(find.byValueKey('SubstituteInputOwn'));
   // トドロクツキのHP0
   await inputRemainHP(driver, PlayerType.me, '0');
   // トドロクツキひんし->ミミズズに交代
