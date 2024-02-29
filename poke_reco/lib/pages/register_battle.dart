@@ -770,36 +770,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     );
                   },
                 ),
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5),
-                  child: Container(
-                    key: Key('EffectContainer'),
-                    decoration: ShapeDecoration(
-                      color: Colors.green[200],
-                      shape: BubbleBorder(
-                          nipInBottom: effect.playerType == PlayerType.opponent
-                              ? true
-                              : effect.playerType == PlayerType.me
-                                  ? false
-                                  : null),
-                    ),
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.all(4),
-                    child: Text(effect.displayName(loc: loc)),
+                child: Container(
+                  key: Key('EffectContainer'),
+                  decoration: ShapeDecoration(
+                    color: Colors.green[200],
+                    shape: BubbleBorder(
+                        nipInBottom: effect.playerType == PlayerType.opponent
+                            ? true
+                            : effect.playerType == PlayerType.me
+                                ? false
+                                : null),
                   ),
-                  /*Align(
-                alignment: Alignment.topRight,
-                child: GestureDetector(
-                  child: Icon(Icons.remove_circle),
-                  onTap: () {
-                    setState(() {
-                      turns[turnNum - 1]
-                          .phases
-                          .remove(effect);
-                    });
-                  },
-                ),
-              ),*/
+                  alignment: Alignment.center,
+                  padding: EdgeInsets.symmetric(horizontal: 4),
+                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 5),
+                  child: Text(effect.displayName(loc: loc)),
                 ),
               )));
           // 処理追加ボタン

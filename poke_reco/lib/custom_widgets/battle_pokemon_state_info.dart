@@ -14,6 +14,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/weather.dart';
+import 'package:poke_reco/tool.dart';
 
 class BattlePokemonStateInfo extends StatefulWidget {
   const BattlePokemonStateInfo({
@@ -251,9 +252,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                         Text(loc.commonStatusCondition),
                         SizedBox(
                           width: theme.iconTheme.size ?? 24.0 * 7,
-                          height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                              (theme.primaryTextTheme.bodyMedium!.height ??
-                                  1.0) *
+                          height: getTextHeight(
+                                  theme.primaryTextTheme.bodyMedium!) *
                               7,
                           child: ListViewWithViewItemCount(
                             viewItemCount: 7,
@@ -270,9 +270,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                         Text(loc.commonFields),
                         SizedBox(
                           width: theme.iconTheme.size ?? 24.0 * 7,
-                          height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                              (theme.primaryTextTheme.bodyMedium!.height ??
-                                  1.0) *
+                          height: getTextHeight(
+                                  theme.primaryTextTheme.bodyMedium!) *
                               7,
                           child: ListViewWithViewItemCount(
                             viewItemCount: 7,
@@ -290,9 +289,9 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   child: Column(
                     children: [
                       SizedBox(
-                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
-                            4,
+                        height:
+                            getTextHeight(theme.primaryTextTheme.bodyMedium!) *
+                                4,
                       ),
                       IconButton(
                         icon: Icon(
@@ -306,9 +305,9 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                         },
                       ),
                       SizedBox(
-                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
-                            4,
+                        height:
+                            getTextHeight(theme.primaryTextTheme.bodyMedium!) *
+                                4,
                       ),
                     ],
                   ),
@@ -320,9 +319,9 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   child: Column(
                     children: [
                       SizedBox(
-                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
-                            4,
+                        height:
+                            getTextHeight(theme.primaryTextTheme.bodyMedium!) *
+                                4,
                       ),
                       IconButton(
                         icon: Icon(
@@ -336,9 +335,9 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                         },
                       ),
                       SizedBox(
-                        height: theme.primaryTextTheme.bodyMedium!.fontSize! *
-                            (theme.primaryTextTheme.bodyMedium!.height ?? 1.0) *
-                            4,
+                        height:
+                            getTextHeight(theme.primaryTextTheme.bodyMedium!) *
+                                4,
                       ),
                     ],
                   ),

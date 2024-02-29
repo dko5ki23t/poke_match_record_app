@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
@@ -178,3 +179,7 @@ bool equals(List? list1, List? list2) {
   }
   return true;
 }
+
+/// テキストの高さを返す
+double getTextHeight(TextStyle style) =>
+    style.fontSize! * (style.height ?? 1.0);

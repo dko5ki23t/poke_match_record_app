@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:poke_reco/data_structs/ability.dart';
@@ -31,6 +32,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
   late final PokemonState pokemonState;
   TextEditingController abilityController = TextEditingController();
   TextEditingController itemController = TextEditingController();
+  TextEditingController remainHPController = TextEditingController();
   late final PlayerType playerType;
   late final Ability initialAbility;
   late final Item? initialHoldingItem;
@@ -54,6 +56,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
     initialRemainHP = editingRemainHP = playerType == PlayerType.me
         ? pokemonState.remainHP
         : pokemonState.remainHPPercent;
+    remainHPController.text = editingRemainHP.toString();
     maxHP = playerType == PlayerType.me ? pokemonState.pokemon.h.real : 100;
   }
 
@@ -220,16 +223,44 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
             Row(
               children: [
                 Text('HP : '),
-                Slider(
-                  value: editingRemainHP.toDouble(),
-                  max: maxHP.toDouble(),
-                  divisions: maxHP,
-                  //label: editingRemainHP.toString(),
-                  onChanged: (val) => setState(() {
-                    editingRemainHP = val.round();
-                  }),
+                Flexible(
+                  flex: 8,
+                  child: Slider(
+                    value: editingRemainHP.toDouble(),
+                    max: maxHP.toDouble(),
+                    divisions: maxHP,
+                    //label: editingRemainHP.toString(),
+                    onChanged: (val) => setState(() {
+                      editingRemainHP = val.round();
+                    }),
+                  ),
                 ),
-                Text(editingRemainHP.toString()),
+                Flexible(
+                  flex: 2,
+                  child: TextFormField(
+                    key: Key('PokemonStateEditDialogRemainHP'), // テストでの識別用
+                    controller: remainHPController,
+                    textAlign: TextAlign.center,
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                    ),
+                    onChanged: (value) {
+                      setState(() {
+                        int changedVal = int.tryParse(value) ?? 0;
+                        editingRemainHP = changedVal.clamp(0, maxHP);
+                        remainHPController.text = editingRemainHP.toString();
+                      });
+                    },
+                    onTap: () {
+                      // 全選択
+                      remainHPController.selection = TextSelection(
+                          baseOffset: 0,
+                          extentOffset: remainHPController.value.text.length);
+                    },
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  ),
+                ),
               ],
             ),
           ],

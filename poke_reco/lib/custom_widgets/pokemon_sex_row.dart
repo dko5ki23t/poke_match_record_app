@@ -110,10 +110,12 @@ class PokemonSexRow extends Row {
                       items: <DropdownMenuItem<Sex>>[
                         for (var type in sexList)
                           DropdownMenuItem<Sex>(
-                            key: Key(
-                                'PokemonSexRow$labelSexText${type.displayName}'), // テストでの識別用
                             value: type,
-                            child: type.displayIcon,
+                            child: Container(
+                              key: Key(
+                                  'PokemonSexRow$labelSexText${type.displayName}'), // テストでの識別用
+                              child: type.displayIcon,
+                            ),
                           ),
                       ],
                       value: sexValue,

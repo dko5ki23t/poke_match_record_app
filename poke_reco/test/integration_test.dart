@@ -28,7 +28,7 @@ void main() {
   group('統合テスト(もこうの実況を記録)', () {
     test('パーモット戦', timeout: Timeout(Duration(minutes: 5)), () async {
       if (doTest) {
-        //await test1_1(driver!);
+        await test1_1(driver!);
         //await test1_2(driver!);
         //await test1_3(driver!);
         //await test1_4(driver!);
@@ -37,9 +37,10 @@ void main() {
         //await test2_3(driver!);
         //await test2_4(driver!);
         //await test3_1(driver!);
-        await test3_2(driver!);
+        //await test3_2(driver!);
         //await test3_3(driver!);
         //await test3_4(driver!);
+        //await test4_1(driver!);
       }
     });
   });
@@ -76,11 +77,17 @@ Future<void> inputBattleBasicInfo(
   required String ownPartyname,
   required String opponentName,
   required String pokemon1,
+  Sex? sex1,
   required String pokemon2,
+  Sex? sex2,
   required String pokemon3,
+  Sex? sex3,
   required String pokemon4,
+  Sex? sex4,
   required String pokemon5,
+  Sex? sex5,
   required String pokemon6,
+  Sex? sex6,
 }) async {
   // 対戦名
   await driver.tap(find.byValueKey('BattleBasicListViewBattleName'));
@@ -102,45 +109,65 @@ Future<void> inputBattleBasicInfo(
       inputText: pokemon1,
       selectText: pokemon1);
   // せいべつ1
-  // TODO:DropDownMenuItemをタップできないため、無視
-  // https://github.com/flutter/flutter/issues/89905
-  //await driver.tap(find.byValueKey('PokemonSexRowせいべつ1'));
-  //final menu = find.descendant(
-  //    of: find.byValueKey('PokemonSexRowせいべつ1'),
-  //    matching: find.byValueKey('PokemonSexRowせいべつ1オス'),
-  //    firstMatchOnly: true);
-  //await driver.getBottomLeft(menu);
-  //await driver.tap(menu);
+  if (sex1 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1${sex1.displayName}'));
+  }
   // ポケモン2
   await inputPokemonInBattleBasic(driver,
       listViewKey: 'BattleBasicListView',
       fieldKey: 'PokemonSexRowポケモン2',
       inputText: pokemon2,
       selectText: pokemon2);
+  // せいべつ2
+  if (sex2 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2${sex2.displayName}'));
+  }
   // ポケモン3
   await inputPokemonInBattleBasic(driver,
       listViewKey: 'BattleBasicListView',
       fieldKey: 'PokemonSexRowポケモン3',
       inputText: pokemon3,
       selectText: pokemon3);
+  // せいべつ3
+  if (sex3 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3${sex3.displayName}'));
+  }
   // ポケモン4
   await inputPokemonInBattleBasic(driver,
       listViewKey: 'BattleBasicListView',
       fieldKey: 'PokemonSexRowポケモン4',
       inputText: pokemon4,
       selectText: pokemon4);
+  // せいべつ4
+  if (sex4 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4${sex4.displayName}'));
+  }
   // ポケモン5
   await inputPokemonInBattleBasic(driver,
       listViewKey: 'BattleBasicListView',
       fieldKey: 'PokemonSexRowポケモン5',
       inputText: pokemon5,
       selectText: pokemon5);
+  // せいべつ5
+  if (sex5 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5${sex5.displayName}'));
+  }
   // ポケモン6
   await inputPokemonInBattleBasic(driver,
       listViewKey: 'BattleBasicListView',
       fieldKey: 'PokemonSexRowポケモン6',
       inputText: pokemon6,
       selectText: pokemon6);
+// せいべつ6
+  if (sex6 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6${sex6.displayName}'));
+  }
 }
 
 /// 基本情報入力のあいてのポケモンを入力する
@@ -444,16 +471,20 @@ Future<void> test1_1(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうパーモット戦1',
-      ownPartyname: '1もこパーモット',
-      opponentName: 'メリタマ',
-      pokemon1: 'ギャラドス',
-      pokemon2: 'セグレイブ',
-      pokemon3: 'テツノツツミ',
-      pokemon4: 'デカヌチャン',
-      pokemon5: 'テツノコウベ',
-      pokemon6: 'カバルドン');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうパーモット戦1',
+    ownPartyname: '1もこパーモット',
+    opponentName: 'メリタマ',
+    pokemon1: 'ギャラドス',
+    pokemon2: 'セグレイブ',
+    pokemon3: 'テツノツツミ',
+    pokemon4: 'デカヌチャン',
+    pokemon5: 'テツノコウベ',
+    pokemon6: 'カバルドン',
+    sex2: Sex.female,
+    sex6: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -467,6 +498,7 @@ Future<void> test1_1(
   // ボーマンダのりゅうのまい
   await tapMove(driver, PlayerType.me, 'りゅうのまい', false);
   await testExistAnyWidgets(find.text('成功'), driver);
+  return;
   // デカヌチャンのがんせきふうじ
   await tapMove(driver, PlayerType.opponent, 'がんせきふうじ', true);
   // ボーマンダの残りHP127
@@ -522,16 +554,21 @@ Future<void> test1_2(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうパーモット戦2',
-      ownPartyname: '1もこパーモット',
-      opponentName: 'k.k',
-      pokemon1: 'チヲハウハネ',
-      pokemon2: 'デカヌチャン',
-      pokemon3: 'キラフロル',
-      pokemon4: 'ミミッキュ',
-      pokemon5: 'サザンドラ',
-      pokemon6: 'キノガッサ');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうパーモット戦2',
+    ownPartyname: '1もこパーモット',
+    opponentName: 'k.k',
+    pokemon1: 'チヲハウハネ',
+    pokemon2: 'デカヌチャン',
+    pokemon3: 'キラフロル',
+    pokemon4: 'ミミッキュ',
+    pokemon5: 'サザンドラ',
+    pokemon6: 'キノガッサ',
+    sex3: Sex.female,
+    sex5: Sex.female,
+    sex6: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -658,16 +695,20 @@ Future<void> test1_3(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうパーモット戦3',
-      ownPartyname: '1もこパーモット',
-      opponentName: 'Daikon',
-      pokemon1: 'トドロクツキ',
-      pokemon2: 'バンギラス',
-      pokemon3: 'ウルガモス',
-      pokemon4: 'カイリュー',
-      pokemon5: 'ブロロローム',
-      pokemon6: 'ギャラドス');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうパーモット戦3',
+    ownPartyname: '1もこパーモット',
+    opponentName: 'Daikon',
+    pokemon1: 'トドロクツキ',
+    pokemon2: 'バンギラス',
+    pokemon3: 'ウルガモス',
+    pokemon4: 'カイリュー',
+    pokemon5: 'ブロロローム',
+    pokemon6: 'ギャラドス',
+    sex3: Sex.female,
+    sex5: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -804,16 +845,19 @@ Future<void> test1_4(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうパーモット戦4',
-      ownPartyname: '1もこパーモット',
-      opponentName: 'アイアムあむ',
-      pokemon1: 'ソウブレイズ',
-      pokemon2: 'グレンアルマ',
-      pokemon3: 'ドドゲザン',
-      pokemon4: 'キラフロル',
-      pokemon5: 'ウルガモス',
-      pokemon6: 'セグレイブ');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうパーモット戦4',
+    ownPartyname: '1もこパーモット',
+    opponentName: 'アイアムあむ',
+    pokemon1: 'ソウブレイズ',
+    pokemon2: 'グレンアルマ',
+    pokemon3: 'ドドゲザン',
+    pokemon4: 'キラフロル',
+    pokemon5: 'ウルガモス',
+    pokemon6: 'セグレイブ',
+    sex5: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -989,16 +1033,20 @@ Future<void> test2_1(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイルカマン戦1',
-      ownPartyname: '2もこイルカマン',
-      opponentName: 'ぜんれつなに',
-      pokemon1: 'ミミッキュ',
-      pokemon2: 'カバルドン',
-      pokemon3: 'キラフロル',
-      pokemon4: 'パオジアン',
-      pokemon5: 'ロトム(ウォッシュロトム)',
-      pokemon6: 'ドラパルト');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイルカマン戦1',
+    ownPartyname: '2もこイルカマン',
+    opponentName: 'ぜんれつなに',
+    pokemon1: 'ミミッキュ',
+    pokemon2: 'カバルドン',
+    pokemon3: 'キラフロル',
+    pokemon4: 'パオジアン',
+    pokemon5: 'ロトム(ウォッシュロトム)',
+    pokemon6: 'ドラパルト',
+    sex1: Sex.female,
+    sex3: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1122,16 +1170,19 @@ Future<void> test2_2(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイルカマン戦2',
-      ownPartyname: '2もこイルカマン',
-      opponentName: '雪見櫻',
-      pokemon1: 'コータス',
-      pokemon2: 'ハバタクカミ',
-      pokemon3: 'ラウドボーン',
-      pokemon4: 'ラッキー',
-      pokemon5: 'トドロクツキ',
-      pokemon6: 'スコヴィラン');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイルカマン戦2',
+    ownPartyname: '2もこイルカマン',
+    opponentName: '雪見櫻',
+    pokemon1: 'コータス',
+    pokemon2: 'ハバタクカミ',
+    pokemon3: 'ラウドボーン',
+    pokemon4: 'ラッキー',
+    pokemon5: 'トドロクツキ',
+    pokemon6: 'スコヴィラン',
+    sex6: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1235,16 +1286,20 @@ Future<void> test2_3(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイルカマン戦3',
-      ownPartyname: '2もこイルカマン',
-      opponentName: 'ズイ',
-      pokemon1: 'ガブリアス',
-      pokemon2: 'ドドゲザン',
-      pokemon3: 'ギャラドス',
-      pokemon4: 'ミミッキュ',
-      pokemon5: 'テツノブジン',
-      pokemon6: 'テツノツツミ');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイルカマン戦3',
+    ownPartyname: '2もこイルカマン',
+    opponentName: 'ズイ',
+    pokemon1: 'ガブリアス',
+    pokemon2: 'ドドゲザン',
+    pokemon3: 'ギャラドス',
+    pokemon4: 'ミミッキュ',
+    pokemon5: 'テツノブジン',
+    pokemon6: 'テツノツツミ',
+    sex3: Sex.female,
+    sex4: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1374,16 +1429,21 @@ Future<void> test2_4(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイルカマン戦4',
-      ownPartyname: '2もこイルカマン',
-      opponentName: 'ABCNOW',
-      pokemon1: 'モロバレル',
-      pokemon2: 'オーロンゲ',
-      pokemon3: 'イルカマン',
-      pokemon4: 'ミミッキュ',
-      pokemon5: 'テツノドクガ',
-      pokemon6: 'セグレイブ');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイルカマン戦4',
+    ownPartyname: '2もこイルカマン',
+    opponentName: 'ABCNOW',
+    pokemon1: 'モロバレル',
+    pokemon2: 'オーロンゲ',
+    pokemon3: 'イルカマン',
+    pokemon4: 'ミミッキュ',
+    pokemon5: 'テツノドクガ',
+    pokemon6: 'セグレイブ',
+    sex1: Sex.female,
+    sex4: Sex.female,
+    sex6: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1530,16 +1590,20 @@ Future<void> test3_1(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイッカネズミ戦1',
-      ownPartyname: '3もこネズミ',
-      opponentName: 'モルス',
-      pokemon1: 'ウルガモス',
-      pokemon2: 'テツノドクガ',
-      pokemon3: 'チヲハウハネ',
-      pokemon4: 'エクスレッグ',
-      pokemon5: 'ハッサム',
-      pokemon6: 'ワナイダー');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイッカネズミ戦1',
+    ownPartyname: '3もこネズミ',
+    opponentName: 'モルス',
+    pokemon1: 'ウルガモス',
+    pokemon2: 'テツノドクガ',
+    pokemon3: 'チヲハウハネ',
+    pokemon4: 'エクスレッグ',
+    pokemon5: 'ハッサム',
+    pokemon6: 'ワナイダー',
+    sex4: Sex.female,
+    sex5: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1606,16 +1670,19 @@ Future<void> test3_2(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイッカネズミ戦2',
-      ownPartyname: '3もこネズミ',
-      opponentName: 'ユシア',
-      pokemon1: 'イダイナキバ',
-      pokemon2: 'ミミッキュ',
-      pokemon3: 'グレンアルマ',
-      pokemon4: 'トドロクツキ',
-      pokemon5: 'ミミズズ',
-      pokemon6: 'ロトム(ウォッシュロトム)');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイッカネズミ戦2',
+    ownPartyname: '3もこネズミ',
+    opponentName: 'ユシア',
+    pokemon1: 'イダイナキバ',
+    pokemon2: 'ミミッキュ',
+    pokemon3: 'グレンアルマ',
+    pokemon4: 'トドロクツキ',
+    pokemon5: 'ミミズズ',
+    pokemon6: 'ロトム(ウォッシュロトム)',
+    sex2: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1654,7 +1721,6 @@ Future<void> test3_2(
   await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
   await driver.tap(find.text('すばやさ'));
   await driver.tap(find.text('OK'));
-  return;
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -1693,16 +1759,18 @@ Future<void> test3_3(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイッカネズミ戦3',
-      ownPartyname: '3もこネズミ',
-      opponentName: 'DinerooGzz',
-      pokemon1: 'ガブリアス',
-      pokemon2: 'ソウブレイズ',
-      pokemon3: 'ルガルガン(たそがれのすがた)',
-      pokemon4: 'コノヨザル',
-      pokemon5: 'ギャラドス',
-      pokemon6: 'ドドゲザン');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイッカネズミ戦3',
+    ownPartyname: '3もこネズミ',
+    opponentName: 'DinerooGzz',
+    pokemon1: 'ガブリアス',
+    pokemon2: 'ソウブレイズ',
+    pokemon3: 'ルガルガン(たそがれのすがた)',
+    pokemon4: 'コノヨザル',
+    pokemon5: 'ギャラドス',
+    pokemon6: 'ドドゲザン',
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1817,16 +1885,21 @@ Future<void> test3_4(
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
   // 基本情報を入力
-  await inputBattleBasicInfo(driver,
-      battleName: 'もこうイッカネズミ戦4',
-      ownPartyname: '3もこネズミ',
-      opponentName: 'セジュン',
-      pokemon1: 'オーロンゲ',
-      pokemon2: 'サーフゴー',
-      pokemon3: 'ミミッキュ',
-      pokemon4: 'カイリュー',
-      pokemon5: 'ギャラドス',
-      pokemon6: 'カバルドン');
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうイッカネズミ戦4',
+    ownPartyname: '3もこネズミ',
+    opponentName: 'セジュン',
+    pokemon1: 'オーロンゲ',
+    pokemon2: 'サーフゴー',
+    pokemon3: 'ミミッキュ',
+    pokemon4: 'カイリュー',
+    pokemon5: 'ギャラドス',
+    pokemon6: 'カバルドン',
+    sex3: Sex.female,
+    sex4: Sex.female,
+    sex6: Sex.female,
+  );
   // 選出ポケモン選択ページへ
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
@@ -1872,6 +1945,147 @@ Future<void> test3_4(
   await goTurnPage(driver, turnNum++);
   // サーフゴーのゴールドラッシュ
   await tapMove(driver, PlayerType.opponent, 'ゴールドラッシュ', true);
+  // マリルリのHP74
+  await inputRemainHP(driver, PlayerType.opponent, '74');
+  // マリルリのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // サーフゴーのHP50
+  await inputRemainHP(driver, PlayerType.me, '50');
+  // サーフゴーのゴツゴツメット
+  await addEffect(driver, 2, 'ゴツゴツメット');
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // マリルリのアクアジェット
+  await tapMove(driver, PlayerType.me, 'アクアジェット', false);
+  // サーフゴーのHP30
+  await inputRemainHP(driver, PlayerType.me, '30');
+  // サーフゴーのシャドーボール空打ち
+  await tapMove(driver, PlayerType.opponent, 'シャドーボール', true);
+  await tapHit(driver, PlayerType.opponent);
+  await inputRemainHP(driver, PlayerType.opponent, '');
+  // マリルリひんし->イッカネズミに交代
+  await changePokemon(driver, PlayerType.me, 'イッカネズミ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミのおかたづけ
+  await tapMove(driver, PlayerType.me, 'おかたづけ', false);
+  // サーフゴーのゴールドラッシュ
+  await tapMove(driver, PlayerType.opponent, 'ゴールドラッシュ', false);
+  // イッカネズミのHP26
+  await inputRemainHP(driver, PlayerType.opponent, '26');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミのかみつく
+  await tapMove(driver, PlayerType.me, 'かみつく', false);
+  // サーフゴーのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // サーフゴーひんし->ミミッキュに交代
+  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミのタネマシンガン
+  await tapMove(driver, PlayerType.me, 'タネマシンガン', false);
+  // 2回命中
+  await setHitCount(driver, PlayerType.me, 2);
+  // ミミッキュのHP80
+  await inputRemainHP(driver, PlayerType.me, '80');
+  // ミミッキュのドレインパンチ
+  await tapMove(driver, PlayerType.opponent, 'ドレインパンチ', true);
+  // イッカネズミのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // ミミッキュのHP75
+  await inputRemainHP(driver, PlayerType.opponent, '75');
+  // ミミッキュのいのちのたま
+  await addEffect(driver, 3, 'いのちのたま');
+  await driver.tap(find.text('OK'));
+  // イッカネズミひんし->パーモットに交代
+  await changePokemon(driver, PlayerType.me, 'パーモット', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // パーモットのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // あいて降参
+  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ミミズズ戦1
+Future<void> test4_1(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうミミズズ戦1',
+    ownPartyname: '4もこミミズ',
+    opponentName: 'あまいなつ',
+    pokemon1: 'ウェーニバル',
+    pokemon2: 'イーユイ',
+    pokemon3: 'ミミズズ',
+    pokemon4: 'ドヒドイデ',
+    pokemon5: 'トドロクツキ',
+    pokemon6: 'デカヌチャン',
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこミミズ/',
+      ownPokemon2: 'もこヘル/',
+      ownPokemon3: 'もこリガメ/',
+      opponentPokemon: 'ミミズズ');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  return;
+  // 相手のミミズズのステルスロック
+  await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
+  // こちらのミミズズのしっぽきり
+  await tapMove(driver, PlayerType.me, 'しっぽきり', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // ミミズズのHP88
+  await inputRemainHP(driver, PlayerType.me, '88');
+  // ミミズズ->カジリガメに交代
+  await changePokemon(driver, PlayerType.me, 'カジリガメ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ミミズズのじならし
+  await tapMove(driver, PlayerType.opponent, 'じならし', true);
+  // みがわりは壊れない
+  await inputRemainHP(driver, PlayerType.opponent, '');
+  // カジリガメのからをやぶる
+  await tapMove(driver, PlayerType.me, 'からをやぶる', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // ミミズズのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ミミズズひんし->ドヒドイデに交代
+  await changePokemon(driver, PlayerType.opponent, 'ドヒドイデ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ドヒドイデのトーチカ
+  await tapMove(driver, PlayerType.opponent, 'トーチカ', true);
+  return;
   // マリルリのHP74
   await inputRemainHP(driver, PlayerType.opponent, '74');
   // マリルリのアクアブレイク
