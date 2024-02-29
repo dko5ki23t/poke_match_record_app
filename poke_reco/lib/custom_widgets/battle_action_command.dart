@@ -125,7 +125,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               });
             }
           },
-          value: !turnMove.isSuccess,
+          value: !turnMove.isSuccess &&
+              turnMove.actionFailure.id == ActionFailure.sleep,
         ));
       }
       for (int i = 0; i < moves.length; i++) {

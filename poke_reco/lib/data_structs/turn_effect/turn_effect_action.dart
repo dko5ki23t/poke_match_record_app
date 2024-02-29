@@ -6465,6 +6465,7 @@ class TurnEffectAction extends TurnEffect {
                 null));
             break;
           case 492: // 使用者の最大HP1/2(小数点以下切り捨て)を消費してみがわり作成、みがわりを引き継いで控えと交代
+            _isValid = false;
             templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP,
                 replacedMove.displayName, null));
             templateTitles.add(Tuple3(CommandWidgetTemplate.selectMyPokemons,
@@ -6536,6 +6537,27 @@ class TurnEffectAction extends TurnEffect {
                     Expanded(
                       child: Text(templateTitles[index].item2),
                     ),
+                    templateTitles[index].item1 ==
+                                CommandWidgetTemplate.successOrFail &&
+                            templateTitles.length > 1
+                        ? IconButton(
+                            key: Key(
+                                'StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                            onPressed: () {
+                              controller.pageIndex++;
+                              if (templateTitles[index + 1]
+                                  .item1
+                                  .isImmediatelyValid) {
+                                _isValid = true;
+                                onConfirm();
+                                // TODO:戻るボタン押したとき無効に戻す処理
+                              } else {
+                                onUpdate();
+                              }
+                            },
+                            icon: Icon(Icons.arrow_forward),
+                          )
+                        : Container(),
                   ],
                 ),
               ),
@@ -6790,7 +6812,7 @@ class TurnEffectAction extends TurnEffect {
                   }
                   onNext();
                 },
-                prefixText: loc.battleRemainHP(yourState.pokemon.name),
+                prefixText: loc.battleRemainHP(yourState.pokemon.omittedName),
                 suffixText: playerType == PlayerType.me ? '%' : null,
                 enabled: isNormallyHit(),
               ),
@@ -6810,8 +6832,8 @@ class TurnEffectAction extends TurnEffect {
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 initialNum: playerType == PlayerType.me
-                    ? yourState.remainHP
-                    : yourState.remainHPPercent,
+                    ? myState.remainHP
+                    : myState.remainHPPercent,
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {
                     extraArg1 = myState.remainHP - remain;
@@ -6820,7 +6842,7 @@ class TurnEffectAction extends TurnEffect {
                   }
                   onNext();
                 },
-                prefixText: loc.battleRemainHP(myState.pokemon.name),
+                prefixText: loc.battleRemainHP(myState.pokemon.omittedName),
                 suffixText: playerType == PlayerType.opponent ? '%' : null,
                 enabled: isNormallyHit(),
               ),

@@ -1014,6 +1014,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     //    theme.textTheme.bodyMedium!.height!,
                     height: 50,
                     child: ReorderableListView(
+                      key: Key('EffectListView'),
                       scrollDirection: Axis.horizontal,
                       scrollController: effectViewScrollController,
                       onReorder: (oldIndex, newIndex) {

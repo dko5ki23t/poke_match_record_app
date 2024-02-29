@@ -210,13 +210,15 @@ myPokemons = [
     Pokemon(14, 14, 184, "もこルリ", PokeType.steel, 50, Sex.female, Temper.ganbariya, 37, 0, [31, 204], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [453, 583, 710, 276], [20, 10, 10, 5], Owner.mine).toSet(),
     Pokemon(15, 15, 964, "もこイルカ", PokeType.fly, 75, Sex.female, Temper.ijippari, 278, 0, [31, 252], [31, 252], [31, 0], [31, 0], [31, 0], [31, 4], [812, 512, 857, 834], [20, 15, 15, 10], Owner.mine).toSet(),
     Pokemon(16, 16, 700, "もこニンフィア", PokeType.fairy, 50, Sex.male, Temper.zubutoi, 182, 0, [31, 252], [31, 0], [31, 252], [31, 0], [31, 0], [31, 4], [98, 304, 204, 281], [30, 10, 20, 10], Owner.mine).toSet(),
-    Pokemon(17, 17, 229, "もこヘル", PokeType.fairy, 50, Sex.male, Temper.ganbariya, 127, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [53, 885, 894, 851], [15, 20, 10, 10], Owner.mine).toSet()
+    Pokemon(17, 17, 229, "もこヘル", PokeType.fairy, 50, Sex.male, Temper.ganbariya, 127, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [53, 885, 894, 851], [15, 20, 10, 10], Owner.mine).toSet(),
+    Pokemon(18, 18, 925, "もこネズミ", PokeType.normal, 54, Sex.none, Temper.yoki, 101, 0, [31, 4], [31, 252], [31, 0], [17, 0], [31, 0], [31, 252], [882, 860, 331, 44], [10, 10, 30, 25], Owner.mine).toSet()
 ]
 
 parties = [
     Party(1, 1, "ブイズ", 1, 211, 2, 250, 3, 245, 4, 135, 5, 247, 6, 127, Owner.mine).toSet(),
     Party(2, 2, "1もこパーモット", 9, 252, 10, 135, 11, 247, 12, 134, 13, 1698, 14, 683, Owner.mine).toSet(),
-    Party(3, 3, "2もこイルカマン", 11, 247, 12, 134, 13, 1698, 15, 135, 16, 190, 17, 252, Owner.mine).toSet()
+    Party(3, 3, "2もこイルカマン", 11, 247, 12, 134, 13, 1698, 15, 135, 16, 190, 17, 252, Owner.mine).toSet(),
+    Party(4, 4, "3もこネズミ", 13, 1698, 14, 683, 9, 252, 16, 190, 10, 135, 18, 242, Owner.mine).toSet()
 ]
 
 def main():

@@ -1299,6 +1299,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   isOpponentFainting = false;
                 }
                 if (l[i].isValid()) {
+                  validActionCount++;
                   s2++; // わざでひんし交代後状態へ
                   if (l[i].playerType == PlayerType.me) {
                     changeOwn = true;
@@ -1400,6 +1401,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   isOpponentFainting = false;
                 }
                 if (l[i].isValid()) {
+                  validActionCount++;
                   s2++; // わざ以外でひんし交代後状態へ
                   if (l[i].playerType == PlayerType.me) {
                     changeOwn = true;
@@ -1464,6 +1466,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   isOpponentFainting = false;
                 }
                 if (l[i].isValid()) {
+                  validActionCount++;
                   s2 = 3; // わざでひんし交代後状態へ
                   if (l[i].playerType == PlayerType.me) {
                     changeOwn = true;
@@ -1503,6 +1506,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   isOpponentFainting = false;
                 }
                 if (l[i].isValid()) {
+                  validActionCount++;
                   s2 = 5; // わざ以外でひんし交代後状態へ
                   if (l[i].playerType == PlayerType.me) {
                     changeOwn = true;
@@ -1792,8 +1796,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             break;
         }
       }
-
-      //if (i >= l.length || skipInc) continue;
 
       if (i < l.length && !skipInc) {
         // 効果を処理する

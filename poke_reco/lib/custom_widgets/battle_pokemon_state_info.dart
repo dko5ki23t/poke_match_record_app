@@ -105,7 +105,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                       : const Icon(Icons.catching_pokemon),
                   // ポケモン名
                   Text(
-                    '${focusingPokemon.name}/${widget.playerName}',
+                    '${focusingPokemon.omittedName}/${widget.playerName}',
                     overflow: TextOverflow.ellipsis,
                   ),
                   Row(
