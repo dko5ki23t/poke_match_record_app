@@ -280,113 +280,138 @@ class TurnEffectAilment extends TurnEffect {
       case AilmentEffect.saltCure: // しおづけ
       case AilmentEffect.curse: // のろい
       case AilmentEffect.ingrain: // ねをはる
-        return DamageIndicateRow(
-          myState.pokemon,
-          controller,
-          playerType == PlayerType.me,
-          (value) {
-            if (playerType == PlayerType.me) {
-              extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
-            } else {
-              extraArg1 = myState.remainHPPercent - (int.tryParse(value) ?? 0);
-            }
-          },
-          extraArg1,
-          true,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return DamageIndicateRow(
+            myState.pokemon,
+            controller,
+            playerType == PlayerType.me,
+            (value) {
+              if (playerType == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+              } else {
+                extraArg1 =
+                    myState.remainHPPercent - (int.tryParse(value) ?? 0);
+              }
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
       case AilmentEffect.leechSeed: // やどりぎのタネ
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DamageIndicateRow(
-              myState.pokemon,
-              controller,
-              playerType == PlayerType.me,
-              (value) {
-                if (playerType == PlayerType.me) {
-                  extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
-                } else {
-                  extraArg1 =
-                      myState.remainHPPercent - (int.tryParse(value) ?? 0);
-                }
-              },
-              extraArg1,
-              true,
-              loc: loc,
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            DamageIndicateRow(
-              yourState.pokemon,
-              controller2,
-              playerType != PlayerType.me,
-              (value) {
-                if (playerType == PlayerType.me) {
-                  extraArg2 =
-                      yourState.remainHPPercent - (int.tryParse(value) ?? 0);
-                } else {
-                  extraArg2 = yourState.remainHP - (int.tryParse(value) ?? 0);
-                }
-              },
-              extraArg2,
-              true,
-              loc: loc,
-            ),
-          ],
-        );
-      case AilmentEffect.partiallyTrapped: // バインド
-        return Column(
-          children: [
-            _myDropdownButtonFormField(
-              isExpanded: true,
-              decoration: InputDecoration(
-                border: UnderlineInputBorder(),
-                labelText: loc.battleEffect,
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+            controller2.text = yourState.remainHPPercent.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+            controller2.text = yourState.remainHP.toString();
+          }
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DamageIndicateRow(
+                myState.pokemon,
+                controller,
+                playerType == PlayerType.me,
+                (value) {
+                  if (playerType == PlayerType.me) {
+                    extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+                  } else {
+                    extraArg1 =
+                        myState.remainHPPercent - (int.tryParse(value) ?? 0);
+                  }
+                },
+                extraArg1,
+                true,
+                loc: loc,
               ),
-              items: <DropdownMenuItem>[
-                DropdownMenuItem(
-                  value: 0,
-                  child: Text(loc.battleDamaged),
+              SizedBox(
+                height: 10,
+              ),
+              DamageIndicateRow(
+                yourState.pokemon,
+                controller2,
+                playerType != PlayerType.me,
+                (value) {
+                  if (playerType == PlayerType.me) {
+                    extraArg2 =
+                        yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+                  } else {
+                    extraArg2 = yourState.remainHP - (int.tryParse(value) ?? 0);
+                  }
+                },
+                extraArg2,
+                true,
+                loc: loc,
+              ),
+            ],
+          );
+        }
+      case AilmentEffect.partiallyTrapped: // バインド
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return Column(
+            children: [
+              _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: loc.battleEffect,
                 ),
-                DropdownMenuItem(
-                  value: 1,
-                  child: Text(loc.battleEffectExpired),
-                ),
-              ],
-              value: extraArg2,
-              onChanged: (value) {
-                extraArg2 = value;
-              },
-              isInput: true,
-              textValue:
-                  extraArg2 == 1 ? loc.battleEffectExpired : loc.battleDamaged,
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            extraArg2 == 0
-                ? DamageIndicateRow(
-                    myState.pokemon,
-                    controller,
-                    playerType == PlayerType.me,
-                    (value) {
-                      if (playerType == PlayerType.me) {
-                        extraArg1 =
-                            myState.remainHP - (int.tryParse(value) ?? 0);
-                      } else {
-                        extraArg1 = myState.remainHPPercent -
-                            (int.tryParse(value) ?? 0);
-                      }
-                    },
-                    extraArg1,
-                    true,
-                    loc: loc,
-                  )
-                : Container(),
-          ],
-        );
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text(loc.battleDamaged),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text(loc.battleEffectExpired),
+                  ),
+                ],
+                value: extraArg2,
+                onChanged: (value) {
+                  extraArg2 = value;
+                },
+                isInput: true,
+                textValue: extraArg2 == 1
+                    ? loc.battleEffectExpired
+                    : loc.battleDamaged,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              extraArg2 == 0
+                  ? DamageIndicateRow(
+                      myState.pokemon,
+                      controller,
+                      playerType == PlayerType.me,
+                      (value) {
+                        if (playerType == PlayerType.me) {
+                          extraArg1 =
+                              myState.remainHP - (int.tryParse(value) ?? 0);
+                        } else {
+                          extraArg1 = myState.remainHPPercent -
+                              (int.tryParse(value) ?? 0);
+                        }
+                      },
+                      extraArg1,
+                      true,
+                      loc: loc,
+                    )
+                  : Container(),
+            ],
+          );
+        }
       case AilmentEffect.candyCandy: // あめまみれ
         return Row(
           children: [

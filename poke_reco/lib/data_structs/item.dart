@@ -683,41 +683,6 @@ class Item extends Equatable implements Copyable {
     }
   }
 
-  /// TODO:削除対象？
-  String getEditingControllerText2(
-      PlayerType playerType, PokemonState myState, PokemonState yourState) {
-    switch (id) {
-      case 247: // いのちのたま
-      case 265: // くっつきバリ
-      case 258: // くろいヘドロ
-      case 211: // たべのこし
-      case 132: // オレンのみ
-      case 135: // オボンのみ
-      case 136: // フィラのみ
-      case 137: // ウイのみ
-      case 138: // マゴのみ
-      case 139: // バンジのみ
-      case 140: // イアのみ
-      case 185: // ナゾのみ
-      case 230: // かいがらのすず
-      case 43: // きのみジュース
-        if (playerType == PlayerType.me) {
-          return myState.remainHP.toString();
-        } else {
-          return myState.remainHPPercent.toString();
-        }
-      case 583: // ゴツゴツメット
-      case 188: // ジャポのみ
-      case 189: // レンブのみ
-        if (playerType == PlayerType.me) {
-          return yourState.remainHPPercent.toString();
-        } else {
-          return yourState.remainHP.toString();
-        }
-    }
-    return '';
-  }
-
   Widget extraWidget(
     ThemeData theme,
     PlayerType playerType,
@@ -775,100 +740,121 @@ class Item extends Equatable implements Copyable {
       case 185: // ナゾのみ
       case 230: // かいがらのすず
       case 43: // きのみジュース
-        return DamageIndicateRow(
-          myState.pokemon,
-          controller,
-          playerType == PlayerType.me,
-          (value) {
-            int val = myState.remainHP - (int.tryParse(value) ?? 0);
-            if (playerType == PlayerType.opponent) {
-              val = myState.remainHPPercent - (int.tryParse(value) ?? 0);
-            }
-            extraArg1ChangeFunc(val);
-          },
-          extraArg1,
-          isInput,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return DamageIndicateRow(
+            myState.pokemon,
+            controller,
+            playerType == PlayerType.me,
+            (value) {
+              int val = myState.remainHP - (int.tryParse(value) ?? 0);
+              if (playerType == PlayerType.opponent) {
+                val = myState.remainHPPercent - (int.tryParse(value) ?? 0);
+              }
+              extraArg1ChangeFunc(val);
+            },
+            extraArg1,
+            isInput,
+            loc: loc,
+          );
+        }
       case 136: // フィラのみ
       case 137: // ウイのみ
       case 138: // マゴのみ
       case 139: // バンジのみ
       case 140: // イアのみ
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(children: [
-              Flexible(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(children: [
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text(loc.battleHPRecovery),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text(loc.battleConfused2),
+                      ),
+                    ],
+                    value: extraArg2,
+                    onChanged: (value) => extraArg2ChangeFunc(value),
+                    textValue: extraArg2 == 0
+                        ? loc.battleHPRecovery
+                        : extraArg1 == 1
+                            ? loc.battleConfused2
+                            : '',
+                    isInput: isInput,
                   ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.battleHPRecovery),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(loc.battleConfused2),
-                    ),
-                  ],
-                  value: extraArg2,
-                  onChanged: (value) => extraArg2ChangeFunc(value),
-                  textValue: extraArg2 == 0
-                      ? loc.battleHPRecovery
-                      : extraArg1 == 1
-                          ? loc.battleConfused2
-                          : '',
-                  isInput: isInput,
                 ),
-              ),
-            ]),
-            extraArg2 == 0
-                ? SizedBox(
-                    height: 10,
-                  )
-                : Container(),
-            extraArg2 == 0
-                ? DamageIndicateRow(
-                    myPokemon,
-                    controller,
-                    playerType == PlayerType.me,
-                    (value) {
-                      int val = myState.remainHP - (int.tryParse(value) ?? 0);
-                      if (playerType == PlayerType.opponent) {
-                        val = myState.remainHPPercent -
-                            (int.tryParse(value) ?? 0);
-                      }
-                      extraArg1ChangeFunc(val);
-                    },
-                    extraArg1,
-                    isInput,
-                    loc: loc,
-                  )
-                : Container(),
-          ],
-        );
+              ]),
+              extraArg2 == 0
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : Container(),
+              extraArg2 == 0
+                  ? DamageIndicateRow(
+                      myPokemon,
+                      controller,
+                      playerType == PlayerType.me,
+                      (value) {
+                        int val = myState.remainHP - (int.tryParse(value) ?? 0);
+                        if (playerType == PlayerType.opponent) {
+                          val = myState.remainHPPercent -
+                              (int.tryParse(value) ?? 0);
+                        }
+                        extraArg1ChangeFunc(val);
+                      },
+                      extraArg1,
+                      isInput,
+                      loc: loc,
+                    )
+                  : Container(),
+            ],
+          );
+        }
       case 583: // ゴツゴツメット
       case 188: // ジャポのみ
       case 189: // レンブのみ
-        return DamageIndicateRow(
-          yourPokemon,
-          controller,
-          playerType != PlayerType.me,
-          (value) {
-            int val = yourState.remainHPPercent - (int.tryParse(value) ?? 0);
-            if (playerType == PlayerType.opponent) {
-              val = yourState.remainHP - (int.tryParse(value) ?? 0);
-            }
-            extraArg1ChangeFunc(val);
-          },
-          extraArg1,
-          isInput,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = yourState.remainHPPercent.toString();
+          } else {
+            controller.text = yourState.remainHP.toString();
+          }
+          return DamageIndicateRow(
+            yourPokemon,
+            controller,
+            playerType != PlayerType.me,
+            (value) {
+              int val = yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+              if (playerType == PlayerType.opponent) {
+                val = yourState.remainHP - (int.tryParse(value) ?? 0);
+              }
+              extraArg1ChangeFunc(val);
+            },
+            extraArg1,
+            isInput,
+            loc: loc,
+          );
+        }
       case 584: // ふうせん
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,

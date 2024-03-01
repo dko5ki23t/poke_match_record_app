@@ -2268,10 +2268,10 @@ class Turn extends Equatable implements Copyable {
       phase.processEffect(
         ownParty,
         ret.getPokemonState(PlayerType.me,
-            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
         ret.getPokemonState(PlayerType.opponent,
-            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         ret,
         lastAction,
         loc: loc,

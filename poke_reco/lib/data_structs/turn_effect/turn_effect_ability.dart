@@ -937,6 +937,7 @@ class TurnEffectAbility extends TurnEffect {
     required ThemeData theme,
   }) {
     final dropdownMenuKey = Key('AbilityEffectDropDownMenu');
+    final pokeData = PokeDB();
     switch (abilityID) {
       case 10: // ちくでん
       case 11: // ちょすい
@@ -948,21 +949,29 @@ class TurnEffectAbility extends TurnEffect {
       case 209: // ばけのかわ
       case 211: // スワームチェンジ
       case 297: // どしょく
-        return DamageIndicateRow(
-          myState.pokemon,
-          controller,
-          playerType == PlayerType.me,
-          (value) {
-            if (playerType == PlayerType.me) {
-              extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
-            } else {
-              extraArg1 = myState.remainHPPercent - (int.tryParse(value) ?? 0);
-            }
-          },
-          extraArg1,
-          true,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return DamageIndicateRow(
+            myState.pokemon,
+            controller,
+            playerType == PlayerType.me,
+            (value) {
+              if (playerType == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+              } else {
+                extraArg1 =
+                    myState.remainHPPercent - (int.tryParse(value) ?? 0);
+              }
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
       case 16: // へんしょく
       case 168: // へんげんじざい
       case 236: // リベロ
@@ -985,22 +994,29 @@ class TurnEffectAbility extends TurnEffect {
       case 123: // ナイトメア
       case 160: // てつのトゲ
       case 215: // とびだすなかみ
-        return DamageIndicateRow(
-          yourState.pokemon,
-          controller,
-          playerType != PlayerType.me,
-          (value) {
-            if (playerType == PlayerType.me) {
-              extraArg1 =
-                  yourState.remainHPPercent - (int.tryParse(value) ?? 0);
-            } else {
-              extraArg1 = yourState.remainHP - (int.tryParse(value) ?? 0);
-            }
-          },
-          extraArg1,
-          true,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = yourState.remainHPPercent.toString();
+          } else {
+            controller.text = yourState.remainHP.toString();
+          }
+          return DamageIndicateRow(
+            yourState.pokemon,
+            controller,
+            playerType != PlayerType.me,
+            (value) {
+              if (playerType == PlayerType.me) {
+                extraArg1 =
+                    yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+              } else {
+                extraArg1 = yourState.remainHP - (int.tryParse(value) ?? 0);
+              }
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
       case 27: // ほうし
         return Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1037,95 +1053,111 @@ class TurnEffectAbility extends TurnEffect {
           ],
         );
       case 36: // トレース
-        return Row(
-          children: [
-            Expanded(
-              child: _myTypeAheadField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.battleAbilityTraced,
-                  ),
-                ),
-                autoFlipDirection: true,
-                suggestionsCallback: (pattern) async {
-                  List<Ability> matches = [];
-                  if (playerType == PlayerType.me) {
-                    if (yourState.getCurrentAbility().id != 0) {
-                      matches.add(yourState.getCurrentAbility());
-                    } else {
-                      matches.addAll(yourState.possibleAbilities);
-                    }
-                    if (state.canAnyZoroark) {
-                      matches.add(PokeDB().abilities[149]!);
-                    }
-                  } else {
-                    matches.add(yourState.getCurrentAbility());
-                  }
-                  matches.retainWhere((s) {
-                    return toKatakana50(s.displayName.toLowerCase())
-                        .contains(toKatakana50(pattern.toLowerCase()));
-                  });
-                  return matches;
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(
-                      suggestion.displayName,
-                      overflow: TextOverflow.ellipsis,
+        {
+          if (playerType == PlayerType.me) {
+            if (yourState.getCurrentAbility().id != 0) {
+              extraArg1 = yourState.getCurrentAbility().id;
+              controller.text = yourState.getCurrentAbility().displayName;
+            } else {
+              controller.text = '';
+            }
+          } else {
+            extraArg1 = myState.getCurrentAbility().id;
+            controller.text = myState.getCurrentAbility().displayName;
+          }
+          return Row(
+            children: [
+              Expanded(
+                child: _myTypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: loc.battleAbilityTraced,
                     ),
-                  );
-                },
-                onSuggestionSelected: (suggestion) {
-                  controller.text = suggestion.displayName;
-                  extraArg1 = suggestion.id;
-                },
-                isInput: true,
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Ability> matches = [];
+                    if (playerType == PlayerType.me) {
+                      if (yourState.getCurrentAbility().id != 0) {
+                        matches.add(yourState.getCurrentAbility());
+                      } else {
+                        matches.addAll(yourState.possibleAbilities);
+                      }
+                      if (state.canAnyZoroark) {
+                        matches.add(PokeDB().abilities[149]!);
+                      }
+                    } else {
+                      matches.add(yourState.getCurrentAbility());
+                    }
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                  },
+                  isInput: true,
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
       case 53: // ものひろい
       case 139: // しゅうかく
-        return Row(
-          children: [
-            Expanded(
-              child: _myTypeAheadField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.commonItem,
-                  ),
-                ),
-                autoFlipDirection: true,
-                suggestionsCallback: (pattern) async {
-                  List<Item> matches = PokeDB().items.values.toList();
-                  matches.removeWhere((e) => e.id == 0);
-                  matches.retainWhere((s) {
-                    return toKatakana50(s.displayName.toLowerCase())
-                        .contains(toKatakana50(pattern.toLowerCase()));
-                  });
-                  return matches;
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(
-                      suggestion.displayName,
-                      overflow: TextOverflow.ellipsis,
+        {
+          controller.text = pokeData.items[extraArg1]!.displayName;
+          return Row(
+            children: [
+              Expanded(
+                child: _myTypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: loc.commonItem,
                     ),
-                  );
-                },
-                onSuggestionSelected: (suggestion) {
-                  controller.text = suggestion.displayName;
-                  extraArg1 = suggestion.id;
-                },
-                isInput: true,
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Item> matches = PokeDB().items.values.toList();
+                    matches.removeWhere((e) => e.id == 0);
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                  },
+                  isInput: true,
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
       case 88: // ダウンロード
         return Row(
           children: [
@@ -1159,110 +1191,117 @@ class TurnEffectAbility extends TurnEffect {
         );
       case 108: // よちむ
       case 130: // のろわれボディ
-        return Row(
-          children: [
-            Expanded(
-              child: _myTypeAheadField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.commonMove,
-                  ),
-                ),
-                autoFlipDirection: true,
-                suggestionsCallback: (pattern) async {
-                  List<Move> matches = [];
-                  if (playerType == PlayerType.me) {
-                    matches.addAll(yourState.moves);
-                  } else {
-                    matches.add(yourState.pokemon.move1);
-                    if (yourState.pokemon.move2 != null) {
-                      matches.add(yourState.pokemon.move2!);
-                    }
-                    if (yourState.pokemon.move3 != null) {
-                      matches.add(yourState.pokemon.move3!);
-                    }
-                    if (yourState.pokemon.move4 != null) {
-                      matches.add(yourState.pokemon.move4!);
-                    }
-                  }
-                  matches.retainWhere((s) {
-                    return toKatakana50(s.displayName.toLowerCase())
-                        .contains(toKatakana50(pattern.toLowerCase()));
-                  });
-                  return matches;
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(
-                      suggestion.displayName,
-                      overflow: TextOverflow.ellipsis,
+        {
+          controller.text = pokeData.moves[extraArg1]!.displayName;
+          return Row(
+            children: [
+              Expanded(
+                child: _myTypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: loc.commonMove,
                     ),
-                  );
-                },
-                onSuggestionSelected: (suggestion) {
-                  controller.text = suggestion.displayName;
-                  extraArg1 = suggestion.id;
-                },
-                isInput: true,
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Move> matches = [];
+                    if (playerType == PlayerType.me) {
+                      matches.addAll(yourState.moves);
+                    } else {
+                      matches.add(yourState.pokemon.move1);
+                      if (yourState.pokemon.move2 != null) {
+                        matches.add(yourState.pokemon.move2!);
+                      }
+                      if (yourState.pokemon.move3 != null) {
+                        matches.add(yourState.pokemon.move3!);
+                      }
+                      if (yourState.pokemon.move4 != null) {
+                        matches.add(yourState.pokemon.move4!);
+                      }
+                    }
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                  },
+                  isInput: true,
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
       case 119: // おみとおし
       case 124: // わるいてぐせ
       case 170: // マジシャン
-        return Row(
-          children: [
-            Expanded(
-              child: _myTypeAheadField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.commonItem,
-                  ),
-                ),
-                autoFlipDirection: true,
-                suggestionsCallback: (pattern) async {
-                  List<Item> matches = [];
-                  if (playerType == PlayerType.me) {
-                    if (yourState.holdingItem != null &&
-                        yourState.holdingItem!.id != 0) {
-                      matches.add(yourState.holdingItem!);
-                    } else {
-                      matches = PokeDB().items.values.toList();
-                      for (var item in yourState.impossibleItems) {
-                        matches.removeWhere((element) => element.id == item.id);
-                      }
-                    }
-                  } else if (yourState.holdingItem != null) {
-                    matches = [yourState.holdingItem!];
-                  }
-                  matches.retainWhere((s) {
-                    return toKatakana50(s.displayName.toLowerCase())
-                        .contains(toKatakana50(pattern.toLowerCase()));
-                  });
-                  return matches;
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(
-                      suggestion.displayName,
-                      overflow: TextOverflow.ellipsis,
+        {
+          controller.text = pokeData.items[extraArg1]!.displayName;
+          return Row(
+            children: [
+              Expanded(
+                child: _myTypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: loc.commonItem,
                     ),
-                  );
-                },
-                onSuggestionSelected: (suggestion) {
-                  controller.text = suggestion.displayName;
-                  extraArg1 = suggestion.id;
-                },
-                isInput: true,
+                  ),
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<Item> matches = [];
+                    if (playerType == PlayerType.me) {
+                      if (yourState.holdingItem != null &&
+                          yourState.holdingItem!.id != 0) {
+                        matches.add(yourState.holdingItem!);
+                      } else {
+                        matches = PokeDB().items.values.toList();
+                        for (var item in yourState.impossibleItems) {
+                          matches
+                              .removeWhere((element) => element.id == item.id);
+                        }
+                      }
+                    } else if (yourState.holdingItem != null) {
+                      matches = [yourState.holdingItem!];
+                    }
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                  },
+                  isInput: true,
+                ),
               ),
-            ),
-          ],
-        );
+            ],
+          );
+        }
       case 141: // ムラっけ
         return Column(
           children: [
@@ -1466,139 +1505,142 @@ class TurnEffectAbility extends TurnEffect {
           ],
         );
       case 216: // おどりこ
-        return Column(
-          children: [
-            Expanded(
-              child: _myTypeAheadField(
-                textFieldConfiguration: TextFieldConfiguration(
-                  controller: controller,
-                  decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
-                    labelText: loc.commonMove,
+        {
+          controller.text = pokeData.moves[extraArg1 % 10000]!.displayName;
+          return Column(
+            children: [
+              Expanded(
+                child: _myTypeAheadField(
+                  textFieldConfiguration: TextFieldConfiguration(
+                    controller: controller,
+                    decoration: InputDecoration(
+                      border: UnderlineInputBorder(),
+                      labelText: loc.commonMove,
+                    ),
                   ),
-                ),
-                autoFlipDirection: true,
-                suggestionsCallback: (pattern) async {
-                  List<int> ids = [
-                    872,
-                    837,
-                    775,
-                    483,
-                    14,
-                    80,
-                    297,
-                    298,
-                    552,
-                    461,
-                    686,
-                    349,
-                  ];
-                  List<Move> matches = [];
-                  for (var i in ids) {
-                    matches.add(PokeDB().moves[i]!);
-                  }
-                  matches.retainWhere((s) {
-                    return toKatakana50(s.displayName.toLowerCase())
-                        .contains(toKatakana50(pattern.toLowerCase()));
-                  });
-                  return matches;
-                },
-                itemBuilder: (context, suggestion) {
-                  return ListTile(
-                    title: Text(
-                      suggestion.displayName,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                },
-                onSuggestionSelected: (suggestion) {
-                  controller.text = suggestion.displayName;
-                  extraArg1 = suggestion.id;
-                },
-                isInput: true,
-              ),
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            extraArg1 == 872 ||
-                    extraArg1 == 80 ||
-                    extraArg1 == 552 ||
-                    extraArg1 == 10552 ||
-                    extraArg1 == 686
-                ? DamageIndicateRow(
-                    yourState.pokemon,
-                    controller,
-                    playerType != PlayerType.me,
-                    (value) {
-                      if (playerType == PlayerType.me) {
-                        extraArg2 = yourState.remainHPPercent -
-                            (int.tryParse(value) ?? 0);
-                      } else {
-                        extraArg2 =
-                            yourState.remainHP - (int.tryParse(value) ?? 0);
-                      }
-                    },
-                    extraArg2,
-                    true,
-                    loc: loc,
-                  )
-                : extraArg1 == 775
-                    ? DamageIndicateRow(
-                        myState.pokemon,
-                        controller,
-                        playerType == PlayerType.me,
-                        (value) {
-                          if (playerType == PlayerType.me) {
-                            extraArg2 =
-                                myState.remainHP - (int.tryParse(value) ?? 0);
-                          } else {
-                            extraArg2 = myState.remainHPPercent -
-                                (int.tryParse(value) ?? 0);
-                          }
-                        },
-                        extraArg2,
-                        true,
-                        loc: loc,
-                      )
-                    : Container(),
-            extraArg1 == 552 || extraArg1 == 10552
-                ? SizedBox(
-                    height: 10,
-                  )
-                : Container(),
-            extraArg1 == 552 || extraArg1 == 10552
-                ? Expanded(
-                    child: _myDropdownButtonFormField(
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
-                        labelText: loc.battleAdditionalEffect,
+                  autoFlipDirection: true,
+                  suggestionsCallback: (pattern) async {
+                    List<int> ids = [
+                      872,
+                      837,
+                      775,
+                      483,
+                      14,
+                      80,
+                      297,
+                      298,
+                      552,
+                      461,
+                      686,
+                      349,
+                    ];
+                    List<Move> matches = [];
+                    for (var i in ids) {
+                      matches.add(PokeDB().moves[i]!);
+                    }
+                    matches.retainWhere((s) {
+                      return toKatakana50(s.displayName.toLowerCase())
+                          .contains(toKatakana50(pattern.toLowerCase()));
+                    });
+                    return matches;
+                  },
+                  itemBuilder: (context, suggestion) {
+                    return ListTile(
+                      title: Text(
+                        suggestion.displayName,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      items: <DropdownMenuItem>[
-                        DropdownMenuItem(
-                          value: 552,
-                          child: Text(loc.commonNone),
-                        ),
-                        DropdownMenuItem(
-                          value: 10552,
-                          child: Text(loc
-                              .battleSAttackUp1(myState.pokemon.omittedName)),
-                        ),
-                      ],
-                      value: extraArg1,
-                      onChanged: (value) {
-                        extraArg1 = value;
+                    );
+                  },
+                  onSuggestionSelected: (suggestion) {
+                    controller.text = suggestion.displayName;
+                    extraArg1 = suggestion.id;
+                  },
+                  isInput: true,
+                ),
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              extraArg1 == 872 ||
+                      extraArg1 == 80 ||
+                      extraArg1 == 552 ||
+                      extraArg1 == 10552 ||
+                      extraArg1 == 686
+                  ? DamageIndicateRow(
+                      yourState.pokemon,
+                      controller,
+                      playerType != PlayerType.me,
+                      (value) {
+                        if (playerType == PlayerType.me) {
+                          extraArg2 = yourState.remainHPPercent -
+                              (int.tryParse(value) ?? 0);
+                        } else {
+                          extraArg2 =
+                              yourState.remainHP - (int.tryParse(value) ?? 0);
+                        }
                       },
-                      isInput: true,
-                      textValue: extraArg1 == 552
-                          ? loc.commonNone
-                          : loc.battleSAttackUp1(myState.pokemon.omittedName),
-                    ),
-                  )
-                : Container(),
-          ],
-        );
+                      extraArg2,
+                      true,
+                      loc: loc,
+                    )
+                  : extraArg1 == 775
+                      ? DamageIndicateRow(
+                          myState.pokemon,
+                          controller,
+                          playerType == PlayerType.me,
+                          (value) {
+                            if (playerType == PlayerType.me) {
+                              extraArg2 =
+                                  myState.remainHP - (int.tryParse(value) ?? 0);
+                            } else {
+                              extraArg2 = myState.remainHPPercent -
+                                  (int.tryParse(value) ?? 0);
+                            }
+                          },
+                          extraArg2,
+                          true,
+                          loc: loc,
+                        )
+                      : Container(),
+              extraArg1 == 552 || extraArg1 == 10552
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : Container(),
+              extraArg1 == 552 || extraArg1 == 10552
+                  ? Expanded(
+                      child: _myDropdownButtonFormField(
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          border: UnderlineInputBorder(),
+                          labelText: loc.battleAdditionalEffect,
+                        ),
+                        items: <DropdownMenuItem>[
+                          DropdownMenuItem(
+                            value: 552,
+                            child: Text(loc.commonNone),
+                          ),
+                          DropdownMenuItem(
+                            value: 10552,
+                            child: Text(loc
+                                .battleSAttackUp1(myState.pokemon.omittedName)),
+                          ),
+                        ],
+                        value: extraArg1,
+                        onChanged: (value) {
+                          extraArg1 = value;
+                        },
+                        isInput: true,
+                        textValue: extraArg1 == 552
+                            ? loc.commonNone
+                            : loc.battleSAttackUp1(myState.pokemon.omittedName),
+                      ),
+                    )
+                  : Container(),
+            ],
+          );
+        }
       default:
         break;
     }

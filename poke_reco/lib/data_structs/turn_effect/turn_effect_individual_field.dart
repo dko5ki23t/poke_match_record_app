@@ -216,21 +216,29 @@ class TurnEffectIndividualField extends TurnEffect {
       case IndiFieldEffect.futureAttack: // みらいにこうげき
       case IndiFieldEffect.stealthRock: // ステルスロック
       case IndiFieldEffect.wish: // ねがいごと
-        return DamageIndicateRow(
-          myState.pokemon,
-          controller,
-          playerType == PlayerType.me,
-          (value) {
-            if (playerType == PlayerType.me) {
-              extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
-            } else {
-              extraArg1 = myState.remainHPPercent - (int.tryParse(value) ?? 0);
-            }
-          },
-          extraArg1,
-          true,
-          loc: loc,
-        );
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = myState.remainHP.toString();
+          } else {
+            controller.text = myState.remainHPPercent.toString();
+          }
+          return DamageIndicateRow(
+            myState.pokemon,
+            controller,
+            playerType == PlayerType.me,
+            (value) {
+              if (playerType == PlayerType.me) {
+                extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+              } else {
+                extraArg1 =
+                    myState.remainHPPercent - (int.tryParse(value) ?? 0);
+              }
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
     }
     return Container();
   }

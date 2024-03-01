@@ -498,7 +498,6 @@ Future<void> test1_1(
   // ボーマンダのりゅうのまい
   await tapMove(driver, PlayerType.me, 'りゅうのまい', false);
   await testExistAnyWidgets(find.text('成功'), driver);
-  return;
   // デカヌチャンのがんせきふうじ
   await tapMove(driver, PlayerType.opponent, 'がんせきふうじ', true);
   // ボーマンダの残りHP127
@@ -2050,7 +2049,6 @@ Future<void> test4_1(
       opponentPokemon: 'ミミズズ');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
-  return;
   // 相手のミミズズのステルスロック
   await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
   // こちらのミミズズのしっぽきり
@@ -2085,7 +2083,6 @@ Future<void> test4_1(
   await goTurnPage(driver, turnNum++);
   // ドヒドイデのトーチカ
   await tapMove(driver, PlayerType.opponent, 'トーチカ', true);
-  return;
   // マリルリのHP74
   await inputRemainHP(driver, PlayerType.opponent, '74');
   // マリルリのアクアブレイク

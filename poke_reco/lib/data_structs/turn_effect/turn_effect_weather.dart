@@ -137,38 +137,46 @@ class TurnEffectWeather extends TurnEffect {
     var opponentPokemon = opponentPokemonState.pokemon;
     switch (weatherEffectID) {
       case WeatherEffect.sandStormDamage: // すなあらしによるダメージ
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DamageIndicateRow(
-              ownPokemon,
-              controller,
-              true,
-              (value) {
-                extraArg1 =
-                    ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
-              },
-              extraArg1,
-              true,
-              loc: loc,
-            ),
-            SizedBox(
-              height: 10,
-            ),
-            DamageIndicateRow(
-              opponentPokemon,
-              controller2,
-              false,
-              (value) {
-                extraArg2 = opponentPokemonState.remainHPPercent -
-                    (int.tryParse(value) ?? 0);
-              },
-              extraArg2,
-              true,
-              loc: loc,
-            ),
-          ],
-        );
+        {
+          controller.text =
+              state.getPokemonState(PlayerType.me, null).remainHP.toString();
+          controller2.text = state
+              .getPokemonState(PlayerType.opponent, null)
+              .remainHPPercent
+              .toString();
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              DamageIndicateRow(
+                ownPokemon,
+                controller,
+                true,
+                (value) {
+                  extraArg1 =
+                      ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
+                },
+                extraArg1,
+                true,
+                loc: loc,
+              ),
+              SizedBox(
+                height: 10,
+              ),
+              DamageIndicateRow(
+                opponentPokemon,
+                controller2,
+                false,
+                (value) {
+                  extraArg2 = opponentPokemonState.remainHPPercent -
+                      (int.tryParse(value) ?? 0);
+                },
+                extraArg2,
+                true,
+                loc: loc,
+              ),
+            ],
+          );
+        }
     }
     return Container();
   }
