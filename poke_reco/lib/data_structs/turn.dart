@@ -147,6 +147,21 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     }
   }
 
+  /// 指定したインデックスの効果タイミングがわざ使用後の場合、
+  /// その直前の行動を返す。
+  /// そうでない場合はnullを返す
+  /// ```
+  /// phaseIdx: 対象効果のインデックス
+  /// ```
+  TurnEffectAction? getPrevAction(int phaseIdx) {
+    if (l[phaseIdx].timing == Timing.afterMove) {
+      for (int i = phaseIdx - 1; i >= 0; i--) {
+        if (l[i] is TurnEffectAction) return l[i] as TurnEffectAction;
+      }
+    }
+    return null;
+  }
+
   /// 最後に有効な行動をした行動主
   PlayerType? get firstActionPlayer {
     int ownPlayerActionIndex = l.indexWhere((e) =>
@@ -297,6 +312,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     int maxTerastal = 0;
     if (!currentTurn.initialOwnHasTerastal) maxTerastal++;
     if (!currentTurn.initialOpponentHasTerastal) maxTerastal++;
+
+    /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
+    bool alreadyTurnEnd = false;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -644,8 +662,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 8: // ターン終了状態
-                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
+                if (alreadyTurnEnd) {
                   s1 = end;
+                } else if (i >= l.length ||
+                    l[i].timing != Timing.everyTurnEnd) {
+                  s1 = end;
+                  alreadyTurnEnd = true;
                 } else {
                   toNext = true;
                 }
@@ -688,6 +710,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     //bool isYourWin = false;
     //bool changeOwn = turnNum == 1;
     //bool changeOpponent = turnNum == 1;
+    /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
+    bool alreadyTurnEnd = false;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -1031,8 +1055,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 8: // ターン終了状態
-                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
+                if (alreadyTurnEnd) {
                   s1 = end;
+                } else if (i >= l.length ||
+                    l[i].timing != Timing.everyTurnEnd) {
+                  s1 = end;
+                  alreadyTurnEnd = true;
                 } else {
                   toNext = true;
                 }
@@ -1131,6 +1159,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     bool isOpponentFainting = false;
     bool isMyWin = false;
     //bool isYourWin = false;
+    /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
+    bool alreadyTurnEnd = false;
     bool changeOwn = turnNum == 1;
     bool changeOpponent = turnNum == 1;
     const Map<int, Timing> s1TimingMap = {
@@ -1759,7 +1789,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 8: // ターン終了状態
-                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
+                if (alreadyTurnEnd) {
+                  s1 = end;
+                } else if (i >= l.length ||
+                    l[i].timing != Timing.everyTurnEnd) {
                   // 自動追加
                   if (assistList.isNotEmpty) {
                     l.insert(i, assistList.removeAt(0));
@@ -1772,10 +1805,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                     // TODO?
                     //l.removeRange(i + 1, l.length);
                     s1 = end;
+                    alreadyTurnEnd = true;
                   }
-                } else {
-                  isAssisting = true;
-                }
+                } else {}
                 break;
               case 9: // 試合終了状態
                 l.insert(
@@ -2203,31 +2235,32 @@ class Turn extends Equatable implements Copyable {
     AppLocalizations loc,
   ) {
     PhaseState ret = copyInitialState();
-    TurnEffectAction? lastAction;
+    TurnEffectAction? prevAction;
 
     for (int i = 0; i < phaseIdx + 1; i++) {
       final effect = phases[i];
       //if (effect.isAdding) continue;
       //if (effect.timing == Timing.continuousMove) {
-      //  lastAction = effect;
+      //  prevAction = effect;
       //  continousCount++;
       //} else if (effect.timing == Timing.action) {
-      //  lastAction = effect;
+      //  prevAction = effect;
       //  continousCount = 0;
       //}
-      if (effect is TurnEffectAction) lastAction = effect;
+      if (effect is TurnEffectAction) prevAction = effect;
       effect.processEffect(
         ownParty,
         ret.getPokemonState(PlayerType.me,
-            /*effect.timing == Timing.afterMove ? lastAction :*/ null),
+            effect.timing == Timing.afterMove ? prevAction : null),
         opponentParty,
         ret.getPokemonState(PlayerType.opponent,
-            /*effect.timing == Timing.afterMove ? lastAction :*/ null),
+            effect.timing == Timing.afterMove ? prevAction : null),
         ret,
-        lastAction,
+        prevAction,
         loc: loc,
       );
     }
+
     return ret;
   }
 
@@ -2322,10 +2355,10 @@ class Turn extends Equatable implements Copyable {
       final guides = phase.processEffect(
         ownParty,
         _endingState.getPokemonState(PlayerType.me,
-            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
         _endingState.getPokemonState(PlayerType.opponent,
-            /*phase.timing == Timing.afterMove ? lastAction :*/ null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         _endingState,
         lastAction,
         loc: loc,

@@ -180,6 +180,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                     showNone: true,
                     loc: loc,
                   ),
+                  // HP
                   hpBarRow(
                     playerType,
                     playerType == PlayerType.me
@@ -359,6 +360,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     String suffix = playerType != PlayerType.me ? '%' : '';
 
     return Row(
+      key: Key(
+          'PokemonStateInfoHP${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       mainAxisSize: MainAxisSize.min,
       children: [
         Flexible(

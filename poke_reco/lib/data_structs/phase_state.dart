@@ -113,15 +113,14 @@ class PhaseState extends Equatable implements Copyable {
   }
 
   PokemonState getPokemonState(PlayerType player, TurnEffect? prevAction) {
-    // TODO
-//    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
-//      int idx = prevAction.getPrevPokemonIndex(player);
-//      if (player == PlayerType.me) {
-//        return _pokemonStates[0][idx - 1];
-//      } else {
-//        return _pokemonStates[1][idx - 1];
-//      }
-//    }
+    int? idx = prevAction?.getPrevPokemonIndex(player);
+    if (idx != null) {
+      if (player == PlayerType.me) {
+        return _pokemonStates[0][idx - 1];
+      } else {
+        return _pokemonStates[1][idx - 1];
+      }
+    }
     if (player == PlayerType.me) {
       return _pokemonStates[0][_pokemonIndexes[0] - 1];
     } else {

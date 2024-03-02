@@ -408,6 +408,9 @@ class TurnEffectAction extends TurnEffect {
   /// 自身・相手の(あるなら)交換先ポケモンのパーティ内インデックス(1始まり)
   List<int?> _changePokemonIndexes = [null, null];
 
+  /// 自身・相手の(あるなら)交換前ポケモンのパーティ内インデックス(1始まり)
+  List<int?> _prevPokemonIndexes = [null, null];
+
   /// わざのタイプ
   PokeType moveType = PokeType.unknown;
 
@@ -444,6 +447,7 @@ class TurnEffectAction extends TurnEffect {
         extraArg2,
         extraArg3,
         _changePokemonIndexes,
+        _prevPokemonIndexes,
         moveType,
         isFirst,
         _isValid,
@@ -467,6 +471,7 @@ class TurnEffectAction extends TurnEffect {
     ..extraArg2 = extraArg2
     ..extraArg3 = extraArg3
     .._changePokemonIndexes = [..._changePokemonIndexes]
+    .._prevPokemonIndexes = [..._prevPokemonIndexes]
     ..moveType = moveType
     ..isFirst = isFirst
     .._isValid = _isValid;
@@ -515,18 +520,32 @@ class TurnEffectAction extends TurnEffect {
   /// nullを設定すると交換していないことを表す
   /// ```
   /// player: 行動主
+  /// prev: 交換前ポケモンのパーティ内インデックス(1始まり)
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
   @override
-  void setChangePokemonIndex(PlayerType player, int? val) {
+  void setChangePokemonIndex(PlayerType player, int? prev, int? val) {
     if (player == PlayerType.me) {
       _changePokemonIndexes[0] = val;
+      _prevPokemonIndexes[0] = prev;
     } else {
       _changePokemonIndexes[1] = val;
+      _prevPokemonIndexes[1] = prev;
     }
     if (val != null && type == TurnActionType.change) {
       _isValid = true;
     }
+  }
+
+  /// 交換前ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getPrevPokemonIndex(PlayerType player) {
+    if (player == PlayerType.me) return _prevPokemonIndexes[0];
+    return _prevPokemonIndexes[1];
   }
 
   /// わざが成功＆ヒットしたかどうか
@@ -6677,7 +6696,8 @@ class TurnEffectAction extends TurnEffect {
                   myParty.pokemons[i]!,
                   theme,
                   onTap: () {
-                    setChangePokemonIndex(playerType, i + 1);
+                    setChangePokemonIndex(playerType,
+                        state.getPokemonIndex(playerType, null), i + 1);
                     //onUpdate();
                     onNext();
                   },
@@ -6719,7 +6739,10 @@ class TurnEffectAction extends TurnEffect {
                   yourParty.pokemons[i]!,
                   theme,
                   onTap: () {
-                    setChangePokemonIndex(playerType.opposite, i + 1);
+                    setChangePokemonIndex(
+                        playerType.opposite,
+                        state.getPokemonIndex(playerType.opposite, null),
+                        i + 1);
                     //onUpdate();
                     onNext();
                   },
@@ -8051,11 +8074,13 @@ class TurnEffectAction extends TurnEffect {
     moveEffectivenesses = MoveEffectiveness.normal;
     realDamage = 0;
     percentDamage = 0;
+    breakSubstitute = false;
     moveAdditionalEffects = MoveEffect(MoveEffect.none);
     extraArg1 = 0;
     extraArg2 = 0;
     extraArg3 = 0;
     _changePokemonIndexes = [null, null];
+    _prevPokemonIndexes = [null, null];
     moveType = PokeType.unknown;
     isFirst = null;
     _isValid = false;
@@ -8072,11 +8097,13 @@ class TurnEffectAction extends TurnEffect {
     moveEffectivenesses = MoveEffectiveness.normal;
     realDamage = 0;
     percentDamage = 0;
+    breakSubstitute = false;
     moveAdditionalEffects = MoveEffect(MoveEffect.none);
     extraArg1 = 0;
     extraArg2 = 0;
     extraArg3 = 0;
     _changePokemonIndexes = [null, null];
+    _prevPokemonIndexes = [null, null];
     moveType = PokeType.unknown;
     isFirst = null;
     _isValid = false;
@@ -8187,6 +8214,16 @@ class TurnEffectAction extends TurnEffect {
       } else {
         turnEffectAction._changePokemonIndexes[i] =
             int.parse(changePokemonIndexes[i]);
+      }
+    }
+    // _prevPokemonIndexes
+    var prevPokemonIndexes = turnMoveElements.removeAt(0).split(split2);
+    for (int i = 0; i < 2; i++) {
+      if (prevPokemonIndexes[i] == '') {
+        turnEffectAction._prevPokemonIndexes[i] = null;
+      } else {
+        turnEffectAction._prevPokemonIndexes[i] =
+            int.parse(prevPokemonIndexes[i]);
       }
     }
     // moveType
@@ -8303,6 +8340,14 @@ class TurnEffectAction extends TurnEffect {
     for (int i = 0; i < 2; i++) {
       if (_changePokemonIndexes[i] != null) {
         ret += _changePokemonIndexes[i].toString();
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // _prevPokemonIndex
+    for (int i = 0; i < 2; i++) {
+      if (_prevPokemonIndexes[i] != null) {
+        ret += _prevPokemonIndexes[i].toString();
       }
       ret += split2;
     }

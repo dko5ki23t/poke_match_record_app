@@ -26,21 +26,21 @@ void main() {
   });
 
   group('統合テスト(もこうの実況を記録)', () {
-    test('パーモット戦', timeout: Timeout(Duration(minutes: 5)), () async {
+    test('パーモット戦', timeout: Timeout(Duration(minutes: 30)), () async {
       if (doTest) {
-        await test1_1(driver!);
-        //await test1_2(driver!);
-        //await test1_3(driver!);
-        //await test1_4(driver!);
-        //await test2_1(driver!);
-        //await test2_2(driver!);
-        //await test2_3(driver!);
-        //await test2_4(driver!);
-        //await test3_1(driver!);
-        //await test3_2(driver!);
-        //await test3_3(driver!);
-        //await test3_4(driver!);
-        //await test4_1(driver!);
+        /*await test1_1(driver!);
+        await test1_2(driver!);
+        await test1_3(driver!);
+        await test1_4(driver!);*/
+        await test2_1(driver!);
+        await test2_2(driver!);
+        await test2_3(driver!);
+        await test2_4(driver!);
+        await test3_1(driver!);
+        await test3_2(driver!);
+        await test3_3(driver!);
+        await test3_4(driver!);
+        await test4_1(driver!);
       }
     });
   });
@@ -433,6 +433,17 @@ Future<void> editPokemonState(
     await driver.tap(selectListTile);
   }
   await driver.tap(find.text('適用'));
+}
+
+/// HPが正しいかテストする
+Future<void> testHP(
+    FlutterDriver driver, PlayerType playerType, String hpText) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  final designatedWidget = find.descendant(
+    of: find.byValueKey('PokemonStateInfoHP$ownOrOpponent'),
+    matching: find.text(hpText),
+  );
+  await testExistAnyWidgets(designatedWidget, driver);
 }
 
 Future<void> scrollUntilTappable(
@@ -1320,6 +1331,8 @@ Future<void> test2_3(
   // ガブリアスのさめはだ
   await addEffect(driver, 2, 'さめはだ');
   await driver.tap(find.text('OK'));
+  // 交換先のニンフィアにさめはだダメージが入っていないことを確認
+  await testHP(driver, PlayerType.me, '202/202');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -1383,6 +1396,8 @@ Future<void> test2_3(
   await inputRemainHP(driver, PlayerType.opponent, '0');
   // ニンフィアひんし→イルカマンに交代
   await changePokemon(driver, PlayerType.me, 'イルカマン', false);
+  // イルカマンにさめはだダメージ＆ステロダメージが入っていること確認
+  await testHP(driver, PlayerType.me, '157/207');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);

@@ -26,17 +26,28 @@ class TurnEffectItem extends TurnEffect {
 
   /// 自身・相手の(あるなら)交換先ポケモンのパーティ内インデックス(1始まり)
   List<int?> _changePokemonIndexes = [null, null];
+
+  /// 自身・相手の(あるなら)交換前ポケモンのパーティ内インデックス(1始まり)
+  List<int?> _prevPokemonIndexes = [null, null];
   int extraArg1 = 0;
   int extraArg2 = 0;
 
   @override
-  List<Object?> get props =>
-      [playerType, timing, itemID, _changePokemonIndexes, extraArg1, extraArg2];
+  List<Object?> get props => [
+        playerType,
+        timing,
+        itemID,
+        _changePokemonIndexes,
+        _prevPokemonIndexes,
+        extraArg1,
+        extraArg2
+      ];
 
   @override
   TurnEffectItem copy() =>
       TurnEffectItem(player: playerType, timing: timing, itemID: itemID)
         .._changePokemonIndexes = [..._changePokemonIndexes]
+        .._prevPokemonIndexes = [..._prevPokemonIndexes]
         ..extraArg1 = extraArg1
         ..extraArg2 = extraArg2;
 
@@ -67,15 +78,31 @@ class TurnEffectItem extends TurnEffect {
   /// nullを設定すると交換していないことを表す
   /// ```
   /// player: 行動主
+  /// prev: 交換前ポケモンのパーティ内インデックス(1始まり)
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
   @override
-  void setChangePokemonIndex(PlayerType player, int? val) {
+  void setChangePokemonIndex(PlayerType player, int? prev, int? val) {
     if (player == PlayerType.me) {
       _changePokemonIndexes[0] = val;
+      _prevPokemonIndexes[0] = prev;
     } else {
       _changePokemonIndexes[1] = val;
+      _prevPokemonIndexes[1] = prev;
     }
+  }
+
+  /// 交換前ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getPrevPokemonIndex(PlayerType player) {
+    if (player == PlayerType.me) {
+      return _prevPokemonIndexes[0];
+    }
+    return _prevPokemonIndexes[1];
   }
 
   /// 効果のextraArg等を編集するWidgetを返す
@@ -115,7 +142,8 @@ class TurnEffectItem extends TurnEffect {
           getChangePokemonIndex(playerType),
           (value) => extraArg1 = value,
           (value) => extraArg2 = value,
-          (player, value) => setChangePokemonIndex(player, value),
+          (player, value) => setChangePokemonIndex(
+              player, state.getPokemonIndex(player, null), value),
           true,
           showNetworkImage: PokeDB().getPokeAPI,
           loc: loc,
@@ -578,6 +606,15 @@ class TurnEffectItem extends TurnEffect {
             int.parse(changePokemonIndexes[i]);
       }
     }
+    // _prevPokemonIndexes
+    var prevPokemonIndexes = turnEffectElements.removeAt(0).split(split2);
+    for (int i = 0; i < 2; i++) {
+      if (prevPokemonIndexes[i] == '') {
+        turnEffect._prevPokemonIndexes[i] = null;
+      } else {
+        turnEffect._prevPokemonIndexes[i] = int.parse(prevPokemonIndexes[i]);
+      }
+    }
     // extraArg1
     turnEffect.extraArg1 = int.parse(turnEffectElements.removeAt(0));
     // extraArg2
@@ -610,6 +647,14 @@ class TurnEffectItem extends TurnEffect {
     for (int i = 0; i < 2; i++) {
       if (_changePokemonIndexes[i] != null) {
         ret += _changePokemonIndexes[i].toString();
+      }
+      ret += split2;
+    }
+    ret += split1;
+    // _prevPokemonIndex
+    for (int i = 0; i < 2; i++) {
+      if (_prevPokemonIndexes[i] != null) {
+        ret += _prevPokemonIndexes[i].toString();
       }
       ret += split2;
     }

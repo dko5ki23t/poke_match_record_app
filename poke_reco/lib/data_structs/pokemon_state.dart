@@ -451,6 +451,8 @@ class PokemonState extends Equatable implements Copyable {
 
   /// すなあらしダメージを受けるか判定
   bool isSandstormDamaged() {
+    // ひんし(交代しようとしている状態)なら受けない
+    if (isFainting) return false;
     if (isTypeContain(PokeType.ground) ||
         isTypeContain(PokeType.rock) ||
         isTypeContain(PokeType.steel)) return false;

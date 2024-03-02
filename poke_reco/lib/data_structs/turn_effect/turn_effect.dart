@@ -513,9 +513,17 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// nullを設定すると交換していないことを表す
   /// ```
   /// player: 行動主
+  /// prev: 交換前ポケモンのパーティ内インデックス(1始まり)
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
-  void setChangePokemonIndex(PlayerType player, int? val);
+  void setChangePokemonIndex(PlayerType player, int? prev, int? val);
+
+  /// 交換前ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  int? getPrevPokemonIndex(PlayerType player);
 
   /// 効果のextraArg等を編集するWidgetを返す
   /// ```

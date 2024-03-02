@@ -257,7 +257,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnActionType.move;
                       // TODO: typeを変えたら他も変える？class継承とかでどうにか
-                      turnMove.setChangePokemonIndex(playerType, null);
+                      turnMove.setChangePokemonIndex(playerType, null, null);
                     }),
                     style: turnMove.type == TurnActionType.move
                         ? pressedStyle
@@ -284,7 +284,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         'BattleActionCommandSurrender${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     onPressed: () => parentSetState(() {
                       turnMove.type = TurnActionType.surrender;
-                      turnMove.setChangePokemonIndex(playerType, null);
+                      turnMove.setChangePokemonIndex(playerType, null, null);
                     }),
                     style: turnMove.type == TurnActionType.surrender
                         ? pressedStyle
@@ -376,10 +376,14 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                       onTap: () => parentSetState(() {
                         if (turnMove.getChangePokemonIndex(playerType) ==
                             i + 1) {
-                          turnMove.setChangePokemonIndex(playerType, null);
+                          turnMove.setChangePokemonIndex(
+                              playerType, null, null);
                           widget.onUnConfirm();
                         } else {
-                          turnMove.setChangePokemonIndex(playerType, i + 1);
+                          turnMove.setChangePokemonIndex(
+                              playerType,
+                              prevState.getPokemonIndex(playerType, null),
+                              i + 1);
                           widget.onConfirm();
                         }
                       }),

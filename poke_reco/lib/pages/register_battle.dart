@@ -731,11 +731,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         for (final effect
             in currentTurn.phases.where((element) => element.isValid())) {
           final phaseIdx = currentTurn.phases.indexOf(effect);
+          TurnEffectAction? prevAction =
+              currentTurn.phases.getPrevAction(phaseIdx);
           final phaseState = currentTurn.getProcessedStates(
               phaseIdx, ownParty, opponentParty, loc);
-          final myState = phaseState.getPokemonState(effect.playerType, null);
-          final yourState =
-              phaseState.getPokemonState(effect.playerType.opposite, null);
+          final myState =
+              phaseState.getPokemonState(effect.playerType, prevAction);
+          final yourState = phaseState.getPokemonState(
+              effect.playerType.opposite, prevAction);
 
           effectWidgetList.add(AutoScrollTag(
               key: Key('TurnEffect${effect.hashCode}${keyNum++}'),
@@ -829,44 +832,54 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                         context: context,
                         builder: (_) {
                           return AddEffectDialog(
-                            (effect) {
-                              currentTurn.phases.insert(phaseIdx + 1, effect);
+                            (eff) {
+                              currentTurn.phases.insert(phaseIdx + 1, eff);
                               // スクロール位置変更
                               effectViewScrollController
                                   .scrollToIndex(widgetIdx + 1);
                               // 続けて効果の編集ダイアログ表示
+                              TurnEffectAction? prevA = currentTurn.phases
+                                  .getPrevAction(phaseIdx + 1);
+                              final phaseS = currentTurn.getProcessedStates(
+                                  phaseIdx + 1, ownParty, opponentParty, loc);
+                              final myS =
+                                  phaseS.getPokemonState(eff.playerType, prevA);
+                              final yourS = phaseS.getPokemonState(
+                                  eff.playerType.opposite, prevA);
                               showDialog(
                                 context: context,
                                 builder: (_) {
                                   return EditEffectDialog(
                                     () => setState(() {
-                                      currentTurn.phases.remove(effect);
+                                      currentTurn.phases.remove(eff);
                                     }),
                                     (newEffect) {
                                       setState(() {
                                         int findIdx =
-                                            currentTurn.phases.indexOf(effect);
+                                            currentTurn.phases.indexOf(eff);
                                         currentTurn.phases[findIdx] = newEffect;
                                         // スクロール位置変更
                                         effectViewScrollController
                                             .scrollToIndex(widgetIdx + 1);
                                       });
                                     },
-                                    effect.displayName(
+                                    eff.displayName(
                                       loc: loc,
                                     ),
-                                    effect,
-                                    currentTurn
+                                    eff,
+                                    /*currentTurn
                                         .copyInitialState()
                                         .getPokemonState(
                                             effect.playerType, null),
                                     currentTurn
                                         .copyInitialState()
                                         .getPokemonState(
-                                            effect.playerType.opposite, null),
+                                            effect.playerType.opposite, null),*/
+                                    myS,
+                                    yourS,
                                     ownParty,
                                     opponentParty,
-                                    currentTurn.copyInitialState(),
+                                    phaseS,
                                   );
                                 },
                               );

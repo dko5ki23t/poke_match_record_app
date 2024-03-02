@@ -99,10 +99,21 @@ class TurnEffectUserEdit extends TurnEffect {
   /// nullを設定すると交換していないことを表す
   /// ```
   /// player: 行動主
+  /// prev: 交換前ポケモンのパーティ内インデックス(1始まり)
   /// val: 交換先ポケモンのパーティ内インデックス(1始まり)
   /// ```
   @override
-  void setChangePokemonIndex(PlayerType player, int? val) {}
+  void setChangePokemonIndex(PlayerType player, int? prev, int? val) {}
+
+  /// 交換前ポケモンのパーティ内インデックス(1始まり)を返す。
+  /// 交換していなければnullを返す
+  /// ```
+  /// player: 行動主
+  /// ```
+  @override
+  int? getPrevPokemonIndex(PlayerType player) {
+    return null;
+  }
 
   /// 効果のextraArg等を編集するWidgetを返す
   /// ```
