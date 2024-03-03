@@ -129,6 +129,29 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
               turnMove.actionFailure.id == ActionFailure.sleep,
         ));
       }
+      // まひ状態の場合
+      if (myState
+          .ailmentsWhere((element) => element.id == Ailment.paralysis)
+          .isNotEmpty) {
+        moveTiles.add(SwitchListTile(
+          title: Text(ActionFailure(ActionFailure.paralysis).displayName),
+          onChanged: (value) {
+            if (value) {
+              parentSetState(() {
+                turnMove.isSuccess = false;
+                turnMove.actionFailure = ActionFailure(ActionFailure.paralysis);
+              });
+            } else {
+              parentSetState(() {
+                turnMove.isSuccess = true;
+                turnMove.actionFailure = ActionFailure(ActionFailure.none);
+              });
+            }
+          },
+          value: !turnMove.isSuccess &&
+              turnMove.actionFailure.id == ActionFailure.paralysis,
+        ));
+      }
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];
         DamageGetter getter = DamageGetter();
@@ -345,6 +368,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     Expanded(
                       flex: 10,
                       child: ListViewWithViewItemCount(
+                        key: Key(
+                            'BattleActionCommandMoveListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         viewItemCount: 4,
                         children: moveTiles,
                       ),

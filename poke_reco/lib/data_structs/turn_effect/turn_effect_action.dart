@@ -137,7 +137,7 @@ class ActionFailure extends Equatable {
   /// ひるみ
   static const int flinch = 4;
 
-  /// ちょうはつ
+  /// ちょうはつ (実質不要？)
   static const int taunt = 5;
 
   /// こんらんにより自傷
@@ -159,7 +159,7 @@ class ActionFailure extends Equatable {
   static const int size = 11;
 
   static const Map<int, Tuple2<String, String>> _displayNameMap = {
-    0: Tuple2('', ''),
+    0: Tuple2('うまく決まらなかった', 'Move is failed'),
     1: Tuple2('わざの反動', 'Need recharge of move'),
     2: Tuple2('ねむり', 'Sleep'),
     3: Tuple2('こおり', 'Freeze'),
@@ -551,8 +551,9 @@ class TurnEffectAction extends TurnEffect {
   /// わざが成功＆ヒットしたかどうか
   /// へんかわざなら成功したかどうか、こうげきわざならヒットしたかどうか
   bool isNormallyHit() {
-    return isSuccess && (move.damageClass.id >= 2 && hitCount > 0) ||
-        (move.damageClass.id == 1);
+    return isSuccess &&
+        ((move.damageClass.id >= 2 && hitCount > 0) ||
+            (move.damageClass.id == 1));
   }
 
   /// 追加効果に対応する文字列を返す
@@ -586,6 +587,7 @@ class TurnEffectAction extends TurnEffect {
       case 500:
         return loc.battleBurned(name);
       case 6:
+      case 275:
         return loc.battleFrozen(name);
       case 7:
       case 153:
@@ -6568,7 +6570,8 @@ class TurnEffectAction extends TurnEffect {
                     ),
                     templateTitles[index].item1 ==
                                 CommandWidgetTemplate.successOrFail &&
-                            templateTitles.length > 1
+                            templateTitles.length > 1 &&
+                            isNormallyHit()
                         ? IconButton(
                             key: Key(
                                 'StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
@@ -6669,6 +6672,8 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 1,
               child: StandAloneSwitchList(
+                key: Key(
+                    'SuccessSwitch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 title: Text(loc.battleSucceeded),
                 onChanged: (change) {
                   isSuccess = change;
@@ -7814,6 +7819,7 @@ class TurnEffectAction extends TurnEffect {
   /// ```
   /// state: フェーズの状態
   /// onlyValid: 有効な行動の場合のみ失敗を設定する
+  /// update: isSuccessとactionFailureを更新するかどうか
   /// ```
   bool failWithProtect(
     PhaseState state, {
@@ -7834,6 +7840,33 @@ class TurnEffectAction extends TurnEffect {
       }
       return true;
     } else if (!isSuccess && actionFailure.id == ActionFailure.protected) {
+      if (update) {
+        isSuccess = true;
+        actionFailure = ActionFailure(ActionFailure.none);
+      }
+    }
+    return false;
+  }
+
+  /// ひるみによって失敗するかどうかを返す
+  /// ```
+  /// state: フェーズの状態
+  /// update: isSuccessとactionFailureを更新するかどうか
+  /// ```
+  bool failWithFlinch(
+    PhaseState state, {
+    bool update = false,
+  }) {
+    if (state
+        .getPokemonState(playerType, null)
+        .ailmentsWhere((element) => element.id == Ailment.flinch)
+        .isNotEmpty) {
+      if (update) {
+        isSuccess = false;
+        actionFailure = ActionFailure(ActionFailure.flinch);
+      }
+      return true;
+    } else if (!isSuccess && actionFailure.id == ActionFailure.flinch) {
       if (update) {
         isSuccess = true;
         actionFailure = ActionFailure(ActionFailure.none);

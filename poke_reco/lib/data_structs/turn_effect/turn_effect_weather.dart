@@ -150,10 +150,12 @@ class TurnEffectWeather extends TurnEffect {
       case WeatherEffect.sandStormDamage: // すなあらしによるダメージ
         {
           controller.text =
-              state.getPokemonState(PlayerType.me, null).remainHP.toString();
-          controller2.text = state
-              .getPokemonState(PlayerType.opponent, null)
-              .remainHPPercent
+              (state.getPokemonState(PlayerType.me, null).remainHP - extraArg1)
+                  .toString();
+          controller2.text = (state
+                      .getPokemonState(PlayerType.opponent, null)
+                      .remainHPPercent -
+                  extraArg2)
               .toString();
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -165,6 +167,7 @@ class TurnEffectWeather extends TurnEffect {
                 (value) {
                   extraArg1 =
                       ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
+                  return extraArg1;
                 },
                 extraArg1,
                 true,
@@ -180,6 +183,7 @@ class TurnEffectWeather extends TurnEffect {
                 (value) {
                   extraArg2 = opponentPokemonState.remainHPPercent -
                       (int.tryParse(value) ?? 0);
+                  return extraArg2;
                 },
                 extraArg2,
                 true,

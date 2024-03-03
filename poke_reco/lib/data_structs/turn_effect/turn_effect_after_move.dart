@@ -101,9 +101,9 @@ class TurnEffectAfterMove extends TurnEffect {
       case 596: // ニードルガード
         {
           if (playerType == PlayerType.me) {
-            controller.text = myState.remainHP.toString();
+            controller.text = (myState.remainHP - extraArg1).toString();
           } else {
-            controller.text = myState.remainHPPercent.toString();
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
           }
           return DamageIndicateRow(
             myState.pokemon,
@@ -116,6 +116,7 @@ class TurnEffectAfterMove extends TurnEffect {
                 extraArg1 =
                     myState.remainHPPercent - (int.tryParse(value) ?? 0);
               }
+              return extraArg1;
             },
             extraArg1,
             true,

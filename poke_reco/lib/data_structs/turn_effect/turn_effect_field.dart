@@ -150,7 +150,13 @@ class TurnEffectField extends TurnEffect {
       case FieldEffect.grassHeal: // グラスフィールドによる回復
         {
           controller.text =
-              state.getPokemonState(PlayerType.me, null).remainHP.toString();
+              (state.getPokemonState(PlayerType.me, null).remainHP - extraArg1)
+                  .toString();
+          controller2.text = (state
+                      .getPokemonState(PlayerType.opponent, null)
+                      .remainHPPercent -
+                  extraArg2)
+              .toString();
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -161,6 +167,7 @@ class TurnEffectField extends TurnEffect {
                 (value) {
                   extraArg1 =
                       ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
+                  return extraArg1;
                 },
                 extraArg1,
                 true,
@@ -176,6 +183,7 @@ class TurnEffectField extends TurnEffect {
                 (value) {
                   extraArg2 = opponentPokemonState.remainHPPercent -
                       (int.tryParse(value) ?? 0);
+                  return extraArg2;
                 },
                 extraArg2,
                 true,

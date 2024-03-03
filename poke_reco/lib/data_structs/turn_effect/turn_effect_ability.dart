@@ -962,9 +962,9 @@ class TurnEffectAbility extends TurnEffect {
       case 297: // どしょく
         {
           if (playerType == PlayerType.me) {
-            controller.text = myState.remainHP.toString();
+            controller.text = (myState.remainHP - extraArg1).toString();
           } else {
-            controller.text = myState.remainHPPercent.toString();
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
           }
           return DamageIndicateRow(
             myState.pokemon,
@@ -977,6 +977,7 @@ class TurnEffectAbility extends TurnEffect {
                 extraArg1 =
                     myState.remainHPPercent - (int.tryParse(value) ?? 0);
               }
+              return extraArg1;
             },
             extraArg1,
             true,
@@ -1007,9 +1008,10 @@ class TurnEffectAbility extends TurnEffect {
       case 215: // とびだすなかみ
         {
           if (playerType == PlayerType.me) {
-            controller.text = yourState.remainHPPercent.toString();
+            controller.text =
+                (yourState.remainHPPercent - extraArg1).toString();
           } else {
-            controller.text = yourState.remainHP.toString();
+            controller.text = (yourState.remainHP - extraArg1).toString();
           }
           return DamageIndicateRow(
             yourState.pokemon,
@@ -1022,6 +1024,7 @@ class TurnEffectAbility extends TurnEffect {
               } else {
                 extraArg1 = yourState.remainHP - (int.tryParse(value) ?? 0);
               }
+              return extraArg1;
             },
             extraArg1,
             true,
@@ -1590,6 +1593,7 @@ class TurnEffectAbility extends TurnEffect {
                           extraArg2 =
                               yourState.remainHP - (int.tryParse(value) ?? 0);
                         }
+                        return extraArg2;
                       },
                       extraArg2,
                       true,
@@ -1608,6 +1612,7 @@ class TurnEffectAbility extends TurnEffect {
                               extraArg2 = myState.remainHPPercent -
                                   (int.tryParse(value) ?? 0);
                             }
+                            return extraArg2;
                           },
                           extraArg2,
                           true,
@@ -1683,6 +1688,7 @@ class TurnEffectAbility extends TurnEffect {
     switch (abilityID) {
       case 10: // ちくでん
       case 11: // ちょすい
+      case 297: // どしょく
         extraArg1 = isMe ? -((myState.pokemon.h.real / 4).floor()) : -25;
         return;
       case 87: // かんそうはだ

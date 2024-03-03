@@ -1,4 +1,3 @@
-import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
@@ -214,39 +213,18 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
         ? turns[turnNum - 1].getBeforeActionState(
             PlayerType.opponent, ownParty, opponentParty, loc)
         : PhaseState();
-    // ひるみによる失敗判定
-    if (ownLastAction is TurnEffectAction &&
-        ownBeforeLastActionState
-            .getPokemonState(PlayerType.me, null)
-            .ailmentsWhere((element) => element.id == Ailment.flinch)
-            .isNotEmpty) {
-      ownLastAction.isSuccess = false;
-      ownLastAction.actionFailure = ActionFailure(ActionFailure.flinch);
-    } else if (ownLastAction is TurnEffectAction &&
-        !ownLastAction.isSuccess &&
-        ownLastAction.actionFailure.id == ActionFailure.flinch) {
-      ownLastAction.isSuccess = true;
-      ownLastAction.actionFailure = ActionFailure(ActionFailure.none);
-    }
-    if (opponentLastAction is TurnEffectAction &&
-        opponentBeforeLastActionState
-            .getPokemonState(PlayerType.opponent, null)
-            .ailmentsWhere((element) => element.id == Ailment.flinch)
-            .isNotEmpty) {
-      opponentLastAction.isSuccess = false;
-      opponentLastAction.actionFailure = ActionFailure(ActionFailure.flinch);
-    } else if (opponentLastAction is TurnEffectAction &&
-        !opponentLastAction.isSuccess &&
-        opponentLastAction.actionFailure.id == ActionFailure.flinch) {
-      opponentLastAction.isSuccess = true;
-      opponentLastAction.actionFailure = ActionFailure(ActionFailure.none);
-    }
-    // まもるによる失敗判定
     if (ownLastAction is TurnEffectAction) {
+      // ひるみによる失敗判定
+      ownLastAction.failWithFlinch(ownBeforeLastActionState, update: true);
+      // まもるによる失敗判定
       ownLastAction.failWithProtect(ownBeforeLastActionState, update: true);
     }
     if (opponentLastAction is TurnEffectAction) {
-      opponentLastAction.failWithProtect(ownBeforeLastActionState,
+      // ひるみによる失敗判定
+      opponentLastAction.failWithFlinch(opponentBeforeLastActionState,
+          update: true);
+      // まもるによる失敗判定
+      opponentLastAction.failWithProtect(opponentBeforeLastActionState,
           update: true);
     }
 //    final prevState =
@@ -701,7 +679,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             return AddEffectDialog(
                               (effect) {
                                 currentTurn.phases.insert(0, effect);
-                                //setState(() {});
                                 // 続けて効果の編集ダイアログ表示
                                 showDialog(
                                   context: context,
@@ -755,11 +732,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           TurnEffectAction? prevAction =
               currentTurn.phases.getPrevAction(phaseIdx);
           final phaseState = currentTurn.getProcessedStates(
-              phaseIdx, ownParty, opponentParty, loc);
+              phaseIdx - 1, ownParty, opponentParty, loc);
           final myState =
               phaseState.getPokemonState(effect.playerType, prevAction);
           final yourState = phaseState.getPokemonState(
               effect.playerType.opposite, prevAction);
+          final phaseStateForAdd = currentTurn.getProcessedStates(
+              phaseIdx, ownParty, opponentParty, loc);
 
           effectWidgetList.add(AutoScrollTag(
               key: Key('TurnEffect${effect.hashCode}${keyNum++}'),
@@ -829,7 +808,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                       null,
                       ownParty,
                       opponentParty,
-                      phaseState,
+                      phaseStateForAdd,
                       loc,
                       turnNum,
                       phaseIdx + 1,
@@ -862,7 +841,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                               TurnEffectAction? prevA = currentTurn.phases
                                   .getPrevAction(phaseIdx + 1);
                               final phaseS = currentTurn.getProcessedStates(
-                                  phaseIdx + 1, ownParty, opponentParty, loc);
+                                  phaseIdx, ownParty, opponentParty, loc);
                               final myS =
                                   phaseS.getPokemonState(eff.playerType, prevA);
                               final yourS = phaseS.getPokemonState(
@@ -907,8 +886,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             },
                             loc.battleAddProcess,
                             effectList,
-                            '${phaseState.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
-                            '${phaseState.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                            '${phaseStateForAdd.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                            '${phaseStateForAdd.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
                           );
                         });
                   },

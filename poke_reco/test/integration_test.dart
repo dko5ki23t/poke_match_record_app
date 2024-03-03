@@ -1,5 +1,4 @@
 import 'package:flutter_driver/flutter_driver.dart';
-import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:test/test.dart';
 
@@ -27,455 +26,92 @@ void main() {
   });
 
   group('統合テスト(もこうの実況を記録)', () {
-    test('パーモット戦', timeout: Timeout(Duration(minutes: 30)), () async {
+    int minutesPerTest = 3;
+    test('パーモット戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
       if (doTest) {
-        /*await test1_1(driver!);
+        await test1_1(driver!);
+      }
+    });
+    test('パーモット戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test1_2(driver!);
+      }
+    });
+    test('パーモット戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test1_3(driver!);
+      }
+    });
+    test('パーモット戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test1_4(driver!);
+      }
+    });
+    test('イルカマン戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test2_1(driver!);
+      }
+    });
+    test('イルカマン戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test2_2(driver!);
+      }
+    });
+    test('イルカマン戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test2_3(driver!);
+      }
+    });
+    test('イルカマン戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test2_4(driver!);
+      }
+    });
+    test('イッカネズミ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test3_1(driver!);
+      }
+    });
+    test('イッカネズミ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test3_2(driver!);
-        await test3_3(driver!);*/
-        //await test3_4(driver!);
+      }
+    });
+    test('イッカネズミ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test3_3(driver!);
+      }
+    });
+    test('イッカネズミ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test3_4(driver!);
+      }
+    });
+    test('ミミズズ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
         await test4_1(driver!);
       }
     });
+    test('ミミズズ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test4_2(driver!);
+      }
+    });
   });
-}
-
-/// 検索対象Widgetが1つ以上あるかをテストする
-/// ```
-/// finder: 検索
-/// driver: FlutterDriver
-/// timeout: 検索のタイムアウト
-/// ```
-Future<void> testExistAnyWidgets(
-    SerializableFinder finder, FlutterDriver driver,
-    {Duration timeout = const Duration(seconds: 1)}) async {
-  bool test = await isPresent(finder, driver);
-  expect(test, true);
-}
-
-// https://stackoverflow.com/questions/49442872/how-to-check-if-an-element-exists-or-not-in-flutter-driverqa-environment
-Future<bool> isPresent(SerializableFinder finder, FlutterDriver driver,
-    {Duration timeout = const Duration(seconds: 1)}) async {
-  try {
-    await driver.waitForTappable(finder, timeout: timeout);
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-/// 基本情報を入力する
-Future<void> inputBattleBasicInfo(
-  FlutterDriver driver, {
-  required String battleName,
-  required String ownPartyname,
-  required String opponentName,
-  required String pokemon1,
-  Sex? sex1,
-  required String pokemon2,
-  Sex? sex2,
-  required String pokemon3,
-  Sex? sex3,
-  required String pokemon4,
-  Sex? sex4,
-  required String pokemon5,
-  Sex? sex5,
-  required String pokemon6,
-  Sex? sex6,
-}) async {
-  // 対戦名
-  await driver.tap(find.byValueKey('BattleBasicListViewBattleName'));
-  await driver.enterText(battleName);
-  // あなたのパーティ
-  await driver.tap(find.byValueKey('BattleBasicListViewYourParty'));
-  await testExistAnyWidgets(find.byType('PartyTile'), driver);
-  await driver.tap(find.text(ownPartyname));
-  // 元の画面に戻るのを待つ
-  await driver
-      .waitForTappable(find.byValueKey('BattleBasicListViewOpponentName'));
-  // あいての名前
-  await driver.tap(find.byValueKey('BattleBasicListViewOpponentName'));
-  await driver.enterText(opponentName);
-  // ポケモン1
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン1',
-      inputText: pokemon1,
-      selectText: pokemon1);
-  // せいべつ1
-  if (sex1 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1${sex1.displayName}'));
-  }
-  // ポケモン2
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン2',
-      inputText: pokemon2,
-      selectText: pokemon2);
-  // せいべつ2
-  if (sex2 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2${sex2.displayName}'));
-  }
-  // ポケモン3
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン3',
-      inputText: pokemon3,
-      selectText: pokemon3);
-  // せいべつ3
-  if (sex3 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3${sex3.displayName}'));
-  }
-  // ポケモン4
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン4',
-      inputText: pokemon4,
-      selectText: pokemon4);
-  // せいべつ4
-  if (sex4 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4${sex4.displayName}'));
-  }
-  // ポケモン5
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン5',
-      inputText: pokemon5,
-      selectText: pokemon5);
-  // せいべつ5
-  if (sex5 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5${sex5.displayName}'));
-  }
-  // ポケモン6
-  await inputPokemonInBattleBasic(driver,
-      listViewKey: 'BattleBasicListView',
-      fieldKey: 'PokemonSexRowポケモン6',
-      inputText: pokemon6,
-      selectText: pokemon6);
-// せいべつ6
-  if (sex6 != null) {
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6'));
-    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6${sex6.displayName}'));
-  }
-}
-
-/// 基本情報入力のあいてのポケモンを入力する
-Future<void> inputPokemonInBattleBasic(FlutterDriver driver,
-    {required String fieldKey,
-    required String listViewKey,
-    required String inputText,
-    required String selectText}) async {
-  if (!await isPresent(find.byValueKey(fieldKey), driver)) {
-    // 入力フィールドまでスクロール
-    await scrollUntilTappable(
-        driver, find.byValueKey(listViewKey), find.byValueKey(fieldKey),
-        dyScroll: -100);
-  }
-  await driver.tap(find.byValueKey(fieldKey));
-  await driver.enterText(inputText);
-  final selectListTile = find.ancestor(
-    matching: find.byType('ListTile'),
-    of: find.text(selectText),
-    firstMatchOnly: true,
-  );
-  if (!await isPresent(selectListTile, driver)) {
-    // 入力候補までスクロール
-    await scrollUntilTappable(
-        driver, find.byValueKey(listViewKey), selectListTile,
-        dyScroll: -100);
-  }
-  await testExistAnyWidgets(selectListTile, driver);
-  await driver.tap(selectListTile);
-}
-
-/// 基本情報入力後、選出ポケモン選択画面へ進む
-Future<void> goSelectPokemonPage(FlutterDriver driver) async {
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(
-      find.text('あなたの選出ポケモン3匹と相手の先頭ポケモンを選んでください。'), driver);
-}
-
-/// 選出ポケモンを選択する
-Future<void> selectPokemons(
-  FlutterDriver driver, {
-  required String ownPokemon1,
-  required String ownPokemon2,
-  required String ownPokemon3,
-  required String opponentPokemon,
-}) async {
-  await driver.tap(find.ancestor(
-    matching: find.byType('PokemonMiniTile'),
-    of: find.text(ownPokemon1),
-    firstMatchOnly: true,
-  ));
-  await driver.tap(find.ancestor(
-    matching: find.byType('PokemonMiniTile'),
-    of: find.text(ownPokemon2),
-    firstMatchOnly: true,
-  ));
-  await driver.tap(find.ancestor(
-    matching: find.byType('PokemonMiniTile'),
-    of: find.text(ownPokemon3),
-    firstMatchOnly: true,
-  ));
-  await driver.tap(find.ancestor(
-    matching: find.byType('PokemonMiniTile'),
-    of: find.text(opponentPokemon),
-    firstMatchOnly: true,
-  ));
-}
-
-/// 選出ポケモン入力後、各ターン入力画面へ進む
-Future<void> goTurnPage(FlutterDriver driver, int currentTurnNum) async {
-  // 次へボタンタップ
-  await driver.tap(find.byValueKey('RegisterBattleNext'));
-  await testExistAnyWidgets(find.text('ターン${currentTurnNum + 1}'), driver);
-}
-
-/// わざを選択する
-Future<void> tapMove(FlutterDriver driver, PlayerType playerType,
-    String moveName, bool search) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-  if (search) {
-    // わざ名検索
-    await driver
-        .tap(find.byValueKey('BattleActionCommandMoveSearch$ownOrOpponent'));
-    await driver.enterText(moveName);
-  }
-  // (これキー指定するのは不本意。find.textがうまく動作しない・・・)
-  final designatedWidget =
-      find.byValueKey('BattleActionCommandMoveListTile$ownOrOpponent$moveName');
-  await testExistAnyWidgets(designatedWidget, driver);
-  await driver.tap(designatedWidget);
-}
-
-/// 相手の残りHPを入力する
-Future<void> inputRemainHP(
-    FlutterDriver driver, PlayerType playerType, String remainHP) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-
-  for (int i = 0; i < remainHP.length; i++) {
-    final designatedWidget = find.descendant(
-        of: find.byValueKey('NumberInputButtons$ownOrOpponent'),
-        matching: find.ancestor(
-            of: find.text(remainHP[i]),
-            matching: find.byType('_NumberInputButton')));
-    await driver.tap(designatedWidget);
-  }
-  final designatedWidget = find.descendant(
-      of: find.byValueKey('NumberInputButtons$ownOrOpponent'),
-      matching: find.byValueKey('EnterButton'));
-  await driver.tap(designatedWidget);
-}
-
-/// 効果を追加する
-Future<void> addEffect(
-    FlutterDriver driver, int addButtonNo, String effectName) async {
-  var designatedWidget =
-      find.byValueKey('RegisterBattleEffectAddIconButton$addButtonNo');
-  if (!await isPresent(designatedWidget, driver)) {
-    await scrollUntilTappable(
-        driver, find.byValueKey('EffectListView'), designatedWidget,
-        dxScroll: -100);
-  }
-  await driver.tap(designatedWidget);
-  await testExistAnyWidgets(
-      find.byValueKey('AddEffectDialogSearchBar'), driver);
-  await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
-  await driver.enterText(effectName);
-  designatedWidget = find.descendant(
-    of: find.byType('ListTile'),
-    matching: find.text(effectName),
-  );
-  await driver.tap(designatedWidget);
-}
-
-/// 効果を示す吹き出しが存在するかチェックする
-Future<void> testExistEffect(FlutterDriver driver, String effectName) async {
-  final designatedWidget = find.descendant(
-    of: find.byValueKey('EffectContainer'),
-    matching: find.text(effectName),
-  );
-  if (!await isPresent(designatedWidget, driver)) {
-    await scrollUntilTappable(
-        driver, find.byValueKey('EffectListView'), designatedWidget,
-        dxScroll: -100);
-  }
-  await testExistAnyWidgets(designatedWidget, driver);
-}
-
-/// 効果を示す吹き出しをタップする(編集用)
-Future<void> tapEffect(FlutterDriver driver, String effectName) async {
-  final designatedWidget = find.descendant(
-    of: find.byValueKey('EffectContainer'),
-    matching: find.text(effectName),
-  );
-  if (!await isPresent(designatedWidget, driver)) {
-    await scrollUntilTappable(
-        driver, find.byValueKey('EffectListView'), designatedWidget,
-        dxScroll: -100);
-  }
-  await driver.tap(designatedWidget);
-}
-
-/// ポケモンを交代する(ひんし交代やわざ等での交代含む)
-Future<void> changePokemon(FlutterDriver driver, PlayerType playerType,
-    String pokemonName, bool needChangeButtonTap) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-
-  if (needChangeButtonTap) {
-    await driver
-        .tap(find.byValueKey('BattleActionCommandChange$ownOrOpponent'));
-  }
-  if (!await isPresent(find.text(pokemonName), driver)) {
-    await scrollUntilTappable(
-        driver,
-        find.byValueKey('ChangePokemonListView$ownOrOpponent'),
-        find.text(pokemonName),
-        dyScroll: -100);
-  }
-  await driver.tap(find.text(pokemonName));
-}
-
-/// 命中のチェックを付ける/外す
-Future<void> tapHit(FlutterDriver driver, PlayerType playerType) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-  await driver.tap(find.byValueKey('HitInput$ownOrOpponent'));
-}
-
-/// 急所のチェックを付ける/外す
-Future<void> tapCritical(FlutterDriver driver, PlayerType playerType) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-  await driver.tap(find.byValueKey('CriticalInput$ownOrOpponent'));
-}
-
-/// 命中回数を入力する
-Future<void> setHitCount(
-    FlutterDriver driver, PlayerType playerType, int count) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-
-  var designatedWidget = find.descendant(
-      matching: find.byType('TextFormField'),
-      of: find.byValueKey('HitInput$ownOrOpponent'));
-  await driver.tap(designatedWidget);
-  await driver.enterText(count.toString());
-  // 以下のように再度タップする等しないと反映されない
-  await driver.tap(designatedWidget);
-  await Future<void>.delayed(const Duration(milliseconds: 500));
-}
-
-/// 急所回数を入力する
-Future<void> setCriticalCount(
-    FlutterDriver driver, PlayerType playerType, int count) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-
-  var designatedWidget = find.descendant(
-      matching: find.byType('TextFormField'),
-      of: find.byValueKey('CriticalInput$ownOrOpponent'));
-  await driver.tap(designatedWidget);
-  await driver.enterText(count.toString());
-  // 以下のように再度タップする等しないと反映されない
-  //await driver.tap(designatedWidget);
-  //await Future<void>.delayed(const Duration(milliseconds: 500));
-}
-
-/// テラスタルする
-Future<void> inputTerastal(
-    FlutterDriver driver, PlayerType playerType, String typeName) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-
-  await driver
-      .tap(find.byValueKey('BattleActionCommandTerastal$ownOrOpponent'));
-  if (playerType == PlayerType.opponent) {
-    await testExistAnyWidgets(find.text('テラスタイプ'), driver);
-    if (!await isPresent(find.text(typeName), driver)) {
-      await scrollUntilTappable(driver,
-          find.byValueKey('SelectTypeDialogScrollView'), find.text(typeName),
-          dyScroll: -100);
-    }
-    await driver.tap(find.text(typeName));
-  }
-}
-
-/// ポケモンのパラメータを編集する
-Future<void> editPokemonState(
-  FlutterDriver driver,
-  String tapString,
-  String? remainHP,
-  String? ability,
-  String? item,
-) async {
-  await driver.tap(find.text(tapString));
-  if (ability != null) {
-    await driver.tap(find.byValueKey('PokemonStateEditDialogAbility'));
-    await driver.enterText(ability);
-    final selectListTile = find.ancestor(
-      matching: find.byType('ListTile'),
-      of: find.text(ability),
-      firstMatchOnly: true,
-    );
-    await driver.tap(selectListTile);
-  }
-  if (item != null) {
-    await driver.tap(find.byValueKey('PokemonStateEditDialogItem'));
-    await driver.enterText(item);
-    final selectListTile = find.ancestor(
-      matching: find.byType('ListTile'),
-      of: find.text(item),
-      firstMatchOnly: true,
-    );
-    await driver.tap(selectListTile);
-  }
-  await driver.tap(find.text('適用'));
-}
-
-/// HPが正しいかテストする
-Future<void> testHP(
-    FlutterDriver driver, PlayerType playerType, String hpText) async {
-  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
-  final designatedWidget = find.descendant(
-    of: find.byValueKey('PokemonStateInfoHP$ownOrOpponent'),
-    matching: find.text(hpText),
-  );
-  await testExistAnyWidgets(designatedWidget, driver);
-}
-
-Future<void> scrollUntilTappable(
-  FlutterDriver driver,
-  SerializableFinder scrollable,
-  SerializableFinder item, {
-  double alignment = 0.0,
-  double dxScroll = 0.0,
-  double dyScroll = 0.0,
-  Duration? timeout,
-}) async {
-  assert(dxScroll != 0.0 || dyScroll != 0.0);
-
-  bool isTappale = false;
-  driver.waitForTappable(item, timeout: timeout).then<void>((_) {
-    isTappale = true;
-  });
-  await Future<void>.delayed(const Duration(milliseconds: 500));
-  while (!isTappale) {
-    await driver.scroll(
-        scrollable, dxScroll, dyScroll, const Duration(milliseconds: 100));
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-  }
-
-  return driver.scrollIntoView(item, alignment: alignment);
 }
 
 /// パーモット戦1
@@ -2166,4 +1802,627 @@ Future<void> test4_1(
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ミミズズ戦2
+Future<void> test4_2(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうミミズズ戦2',
+    ownPartyname: '4もこミミズ',
+    opponentName: 'あああああ',
+    pokemon1: 'マスカーニャ',
+    pokemon2: 'バンギラス',
+    pokemon3: 'キラフロル',
+    pokemon4: 'ギャラドス',
+    pokemon5: 'ロトム(ヒートロトム)',
+    pokemon6: 'ミミッキュ',
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこミミズ/',
+      ownPokemon2: 'もこリガメ/',
+      ownPokemon3: 'もこいかくマンダ/',
+      opponentPokemon: 'ギャラドス');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // ギャラドスのいかく
+  await addEffect(driver, 0, 'いかく');
+  await driver.tap(find.text('OK'));
+  // ギャラドスのちょうはつ
+  await tapMove(driver, PlayerType.opponent, 'ちょうはつ', true);
+  // ミミズズのしっぽきり失敗
+  await tapMove(driver, PlayerType.me, 'しっぽきり', false);
+  await tapSuccess(driver, PlayerType.me);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ミミズズ->ボーマンダに交代
+  await changePokemon(driver, PlayerType.me, 'ボーマンダ', true);
+  // ギャラドスのでんじは
+  await tapMove(driver, PlayerType.opponent, 'でんじは', true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // 相手ギャラドス->バンギラスに交代
+  await changePokemon(driver, PlayerType.opponent, 'バンギラス', true);
+  // バンギラスのすなおこし
+  await addEffect(driver, 1, 'すなおこし');
+  await driver.tap(find.text('OK'));
+  // ボーマンダのダブルウイング
+  await tapMove(driver, PlayerType.me, 'ダブルウイング', false);
+  // バンギラスのHP90
+  await inputRemainHP(driver, PlayerType.me, '90');
+  // すなあらしダメージでHP161になっていることを確認
+  await testHP(driver, PlayerType.me, '161/171');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ボーマンダ->ミミズズに交代
+  await changePokemon(driver, PlayerType.me, 'ミミズズ', true);
+  // バンギラスのかみくだく
+  await tapMove(driver, PlayerType.opponent, 'かみくだく', true);
+  // ミミズズのHP120
+  await inputRemainHP(driver, PlayerType.opponent, '120');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // バンギラスのじしん
+  await tapMove(driver, PlayerType.opponent, 'じしん', true);
+  // ミミズズのどしょくが発動するのでダメージ変動なし
+  await inputRemainHP(driver, PlayerType.opponent, '');
+  // どしょくが発動していることを確認
+  await testExistEffect(driver, 'どしょく');
+  await testHP(driver, PlayerType.me, '164/177');
+  // ミミズズのしっぽきり
+  await tapMove(driver, PlayerType.me, 'しっぽきり', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // ミミズズのHP75
+  await inputRemainHP(driver, PlayerType.me, '75');
+  // ミミズズ->カジリガメに交代
+  await changePokemon(driver, PlayerType.me, 'カジリガメ', false);
+  // カジリガメにすなあらしダメージが入らないことを確認
+  await testHP(driver, PlayerType.me, '166/166');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのからをやぶる
+  await tapMove(driver, PlayerType.me, 'からをやぶる', false);
+  // バンギラスのじしん
+  await tapMove(driver, PlayerType.opponent, 'じしん', false);
+  // みがわりは消える
+  await driver.tap(find.byValueKey('SubstituteInputOpponent'));
+  // カジリガメは無傷
+  await inputRemainHP(driver, PlayerType.opponent, '');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // バンギラスのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // バンギラスひんし->ギャラドス
+  await changePokemon(driver, PlayerType.opponent, 'ギャラドス', false);
+  // すなあらしが終了するか確認
+  await testExistEffect(driver, 'すなあらし終了');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ギャラドス->ヒートロトムに交代
+  await changePokemon(driver, PlayerType.opponent, 'ロトム(ヒートロトム)', true);
+  // カジリガメのロックブラスト
+  await tapMove(driver, PlayerType.me, 'ロックブラスト', false);
+  // 2回命中
+  await setHitCount(driver, PlayerType.me, 2);
+  // ロトムのHP10
+  await inputRemainHP(driver, PlayerType.me, '10');
+  // ロトムのオボンのみ
+  await addEffect(driver, 2, 'オボンのみ');
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('10');
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // ロトムのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ひんしロトム->ギャラドスに交代
+  await changePokemon(driver, PlayerType.opponent, 'ギャラドス', false);
+  // カジリガメのHP確認
+  await testHP(driver, PlayerType.me, '118/166');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのロックブラスト
+  await tapMove(driver, PlayerType.me, 'ロックブラスト', false);
+  // 2回命中
+  await setHitCount(driver, PlayerType.me, 2);
+  // 1回急所
+  await setCriticalCount(driver, PlayerType.me, 1);
+  // ギャラドスのHP40
+  await inputRemainHP(driver, PlayerType.me, '40');
+  // ギャラドスのたきのぼり
+  await tapMove(driver, PlayerType.opponent, 'たきのぼり', true);
+  // カジリガメのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // ひんしカジリガメ->ボーマンダに交代
+  await changePokemon(driver, PlayerType.opponent, 'ボーマンダ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ボーマンダのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // ギャラドスのこおりのキバ
+  await tapMove(driver, PlayerType.opponent, 'こおりのキバ', true);
+  // ボーマンダのHP107
+  await inputRemainHP(driver, PlayerType.opponent, '107');
+  // ボーマンダのげきりん
+  await tapMove(driver, PlayerType.me, 'げきりん', false);
+  // ギャラドスのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ギャラドスのゴツゴツメット
+  await addEffect(driver, 3, 'ゴツゴツメット');
+  await driver.tap(find.text('OK'));
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// 検索対象Widgetが1つ以上あるかをテストする
+/// ```
+/// finder: 検索
+/// driver: FlutterDriver
+/// timeout: 検索のタイムアウト
+/// ```
+Future<void> testExistAnyWidgets(
+    SerializableFinder finder, FlutterDriver driver,
+    {Duration timeout = const Duration(seconds: 1)}) async {
+  bool test = await isPresent(finder, driver);
+  expect(test, true);
+}
+
+// https://stackoverflow.com/questions/49442872/how-to-check-if-an-element-exists-or-not-in-flutter-driverqa-environment
+Future<bool> isPresent(SerializableFinder finder, FlutterDriver driver,
+    {Duration timeout = const Duration(seconds: 1)}) async {
+  try {
+    await driver.waitForTappable(finder, timeout: timeout);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/// 基本情報を入力する
+Future<void> inputBattleBasicInfo(
+  FlutterDriver driver, {
+  required String battleName,
+  required String ownPartyname,
+  required String opponentName,
+  required String pokemon1,
+  Sex? sex1,
+  required String pokemon2,
+  Sex? sex2,
+  required String pokemon3,
+  Sex? sex3,
+  required String pokemon4,
+  Sex? sex4,
+  required String pokemon5,
+  Sex? sex5,
+  required String pokemon6,
+  Sex? sex6,
+}) async {
+  // 対戦名
+  await driver.tap(find.byValueKey('BattleBasicListViewBattleName'));
+  await driver.enterText(battleName);
+  // あなたのパーティ
+  await driver.tap(find.byValueKey('BattleBasicListViewYourParty'));
+  await testExistAnyWidgets(find.byType('PartyTile'), driver);
+  await driver.tap(find.text(ownPartyname));
+  // 元の画面に戻るのを待つ
+  await driver
+      .waitForTappable(find.byValueKey('BattleBasicListViewOpponentName'));
+  // あいての名前
+  await driver.tap(find.byValueKey('BattleBasicListViewOpponentName'));
+  await driver.enterText(opponentName);
+  // ポケモン1
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン1',
+      inputText: pokemon1,
+      selectText: pokemon1);
+  // せいべつ1
+  if (sex1 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ1${sex1.displayName}'));
+  }
+  // ポケモン2
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン2',
+      inputText: pokemon2,
+      selectText: pokemon2);
+  // せいべつ2
+  if (sex2 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ2${sex2.displayName}'));
+  }
+  // ポケモン3
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン3',
+      inputText: pokemon3,
+      selectText: pokemon3);
+  // せいべつ3
+  if (sex3 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ3${sex3.displayName}'));
+  }
+  // ポケモン4
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン4',
+      inputText: pokemon4,
+      selectText: pokemon4);
+  // せいべつ4
+  if (sex4 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ4${sex4.displayName}'));
+  }
+  // ポケモン5
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン5',
+      inputText: pokemon5,
+      selectText: pokemon5);
+  // せいべつ5
+  if (sex5 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ5${sex5.displayName}'));
+  }
+  // ポケモン6
+  await inputPokemonInBattleBasic(driver,
+      listViewKey: 'BattleBasicListView',
+      fieldKey: 'PokemonSexRowポケモン6',
+      inputText: pokemon6,
+      selectText: pokemon6);
+// せいべつ6
+  if (sex6 != null) {
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6'));
+    await driver.tap(find.byValueKey('PokemonSexRowせいべつ6${sex6.displayName}'));
+  }
+}
+
+/// 基本情報入力のあいてのポケモンを入力する
+Future<void> inputPokemonInBattleBasic(FlutterDriver driver,
+    {required String fieldKey,
+    required String listViewKey,
+    required String inputText,
+    required String selectText}) async {
+  if (!await isPresent(find.byValueKey(fieldKey), driver)) {
+    // 入力フィールドまでスクロール
+    await scrollUntilTappable(
+        driver, find.byValueKey(listViewKey), find.byValueKey(fieldKey),
+        dyScroll: -100);
+  }
+  await driver.tap(find.byValueKey(fieldKey));
+  await driver.enterText(inputText);
+  final selectListTile = find.ancestor(
+    matching: find.byType('ListTile'),
+    of: find.text(selectText),
+    firstMatchOnly: true,
+  );
+  if (!await isPresent(selectListTile, driver)) {
+    // 入力候補までスクロール
+    await scrollUntilTappable(
+        driver, find.byValueKey(listViewKey), selectListTile,
+        dyScroll: -100);
+  }
+  await testExistAnyWidgets(selectListTile, driver);
+  await driver.tap(selectListTile);
+}
+
+/// 基本情報入力後、選出ポケモン選択画面へ進む
+Future<void> goSelectPokemonPage(FlutterDriver driver) async {
+  // 次へボタンタップ
+  await driver.tap(find.byValueKey('RegisterBattleNext'));
+  await testExistAnyWidgets(
+      find.text('あなたの選出ポケモン3匹と相手の先頭ポケモンを選んでください。'), driver);
+}
+
+/// 選出ポケモンを選択する
+Future<void> selectPokemons(
+  FlutterDriver driver, {
+  required String ownPokemon1,
+  required String ownPokemon2,
+  required String ownPokemon3,
+  required String opponentPokemon,
+}) async {
+  await driver.tap(find.ancestor(
+    matching: find.byType('PokemonMiniTile'),
+    of: find.text(ownPokemon1),
+    firstMatchOnly: true,
+  ));
+  await driver.tap(find.ancestor(
+    matching: find.byType('PokemonMiniTile'),
+    of: find.text(ownPokemon2),
+    firstMatchOnly: true,
+  ));
+  await driver.tap(find.ancestor(
+    matching: find.byType('PokemonMiniTile'),
+    of: find.text(ownPokemon3),
+    firstMatchOnly: true,
+  ));
+  await driver.tap(find.ancestor(
+    matching: find.byType('PokemonMiniTile'),
+    of: find.text(opponentPokemon),
+    firstMatchOnly: true,
+  ));
+}
+
+/// 選出ポケモン入力後、各ターン入力画面へ進む
+Future<void> goTurnPage(FlutterDriver driver, int currentTurnNum) async {
+  // 次へボタンタップ
+  await driver.tap(find.byValueKey('RegisterBattleNext'));
+  await testExistAnyWidgets(find.text('ターン${currentTurnNum + 1}'), driver);
+}
+
+/// わざを選択する
+Future<void> tapMove(FlutterDriver driver, PlayerType playerType,
+    String moveName, bool search) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  if (search) {
+    // わざ名検索
+    await driver
+        .tap(find.byValueKey('BattleActionCommandMoveSearch$ownOrOpponent'));
+    await driver.enterText(moveName);
+  }
+  // (これキー指定するのは不本意。find.textがうまく動作しない・・・)
+  final designatedWidget =
+      find.byValueKey('BattleActionCommandMoveListTile$ownOrOpponent$moveName');
+  if (!await isPresent(designatedWidget, driver)) {
+    await scrollUntilTappable(
+        driver,
+        find.byValueKey('BattleActionCommandMoveListView$ownOrOpponent'),
+        designatedWidget,
+        dyScroll: -50);
+  }
+  await testExistAnyWidgets(designatedWidget, driver);
+  await driver.tap(designatedWidget);
+}
+
+/// 相手の残りHPを入力する
+Future<void> inputRemainHP(
+    FlutterDriver driver, PlayerType playerType, String remainHP) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  for (int i = 0; i < remainHP.length; i++) {
+    final designatedWidget = find.descendant(
+        of: find.byValueKey('NumberInputButtons$ownOrOpponent'),
+        matching: find.ancestor(
+            of: find.text(remainHP[i]),
+            matching: find.byType('_NumberInputButton')));
+    await driver.tap(designatedWidget);
+  }
+  final designatedWidget = find.descendant(
+      of: find.byValueKey('NumberInputButtons$ownOrOpponent'),
+      matching: find.byValueKey('EnterButton'));
+  await driver.tap(designatedWidget);
+}
+
+/// 効果を追加する
+Future<void> addEffect(
+    FlutterDriver driver, int addButtonNo, String effectName) async {
+  var designatedWidget =
+      find.byValueKey('RegisterBattleEffectAddIconButton$addButtonNo');
+  if (!await isPresent(designatedWidget, driver)) {
+    await scrollUntilTappable(
+        driver, find.byValueKey('EffectListView'), designatedWidget,
+        dxScroll: -100);
+  }
+  await driver.tap(designatedWidget);
+  await testExistAnyWidgets(
+      find.byValueKey('AddEffectDialogSearchBar'), driver);
+  await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
+  await driver.enterText(effectName);
+  designatedWidget = find.descendant(
+    of: find.byType('ListTile'),
+    matching: find.text(effectName),
+  );
+  await driver.tap(designatedWidget);
+}
+
+/// 効果を示す吹き出しが存在するかチェックする
+Future<void> testExistEffect(FlutterDriver driver, String effectName) async {
+  final designatedWidget = find.descendant(
+    of: find.byValueKey('EffectContainer'),
+    matching: find.text(effectName),
+  );
+  if (!await isPresent(designatedWidget, driver)) {
+    await scrollUntilTappable(
+        driver, find.byValueKey('EffectListView'), designatedWidget,
+        dxScroll: -100);
+  }
+  await testExistAnyWidgets(designatedWidget, driver);
+}
+
+/// 効果を示す吹き出しをタップする(編集用)
+Future<void> tapEffect(FlutterDriver driver, String effectName) async {
+  final designatedWidget = find.descendant(
+    of: find.byValueKey('EffectContainer'),
+    matching: find.text(effectName),
+  );
+  if (!await isPresent(designatedWidget, driver)) {
+    await scrollUntilTappable(
+        driver, find.byValueKey('EffectListView'), designatedWidget,
+        dxScroll: -100);
+  }
+  await driver.tap(designatedWidget);
+}
+
+/// ポケモンを交代する(ひんし交代やわざ等での交代含む)
+Future<void> changePokemon(FlutterDriver driver, PlayerType playerType,
+    String pokemonName, bool needChangeButtonTap) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  if (needChangeButtonTap) {
+    await driver
+        .tap(find.byValueKey('BattleActionCommandChange$ownOrOpponent'));
+  }
+  if (!await isPresent(find.text(pokemonName), driver)) {
+    await scrollUntilTappable(
+        driver,
+        find.byValueKey('ChangePokemonListView$ownOrOpponent'),
+        find.text(pokemonName),
+        dyScroll: -100);
+  }
+  await driver.tap(find.text(pokemonName));
+}
+
+/// 命中のチェックを付ける/外す
+Future<void> tapHit(FlutterDriver driver, PlayerType playerType) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  await driver.tap(find.byValueKey('HitInput$ownOrOpponent'));
+}
+
+/// 急所のチェックを付ける/外す
+Future<void> tapCritical(FlutterDriver driver, PlayerType playerType) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  await driver.tap(find.byValueKey('CriticalInput$ownOrOpponent'));
+}
+
+/// 命中回数を入力する
+Future<void> setHitCount(
+    FlutterDriver driver, PlayerType playerType, int count) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  var designatedWidget = find.descendant(
+      matching: find.byType('TextFormField'),
+      of: find.byValueKey('HitInput$ownOrOpponent'));
+  await driver.tap(designatedWidget);
+  await driver.enterText(count.toString());
+  // 以下のように再度タップする等しないと反映されない
+  await driver.tap(designatedWidget);
+  await Future<void>.delayed(const Duration(milliseconds: 500));
+}
+
+/// 急所回数を入力する
+Future<void> setCriticalCount(
+    FlutterDriver driver, PlayerType playerType, int count) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  var designatedWidget = find.descendant(
+      matching: find.byType('TextFormField'),
+      of: find.byValueKey('CriticalInput$ownOrOpponent'));
+  await driver.tap(designatedWidget);
+  await driver.enterText(count.toString());
+  // 以下のように再度タップする等しないと反映されない
+  //await driver.tap(designatedWidget);
+  //await Future<void>.delayed(const Duration(milliseconds: 500));
+}
+
+/// 成功のオンオフを切り替える
+Future<void> tapSuccess(FlutterDriver driver, PlayerType playerType) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  await driver.tap(find.byValueKey('SuccessSwitch$ownOrOpponent'));
+}
+
+/// テラスタルする
+Future<void> inputTerastal(
+    FlutterDriver driver, PlayerType playerType, String typeName) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+
+  await driver
+      .tap(find.byValueKey('BattleActionCommandTerastal$ownOrOpponent'));
+  if (playerType == PlayerType.opponent) {
+    await testExistAnyWidgets(find.text('テラスタイプ'), driver);
+    if (!await isPresent(find.text(typeName), driver)) {
+      await scrollUntilTappable(driver,
+          find.byValueKey('SelectTypeDialogScrollView'), find.text(typeName),
+          dyScroll: -100);
+    }
+    await driver.tap(find.text(typeName));
+  }
+}
+
+/// ポケモンのパラメータを編集する
+Future<void> editPokemonState(
+  FlutterDriver driver,
+  String tapString,
+  String? remainHP,
+  String? ability,
+  String? item,
+) async {
+  await driver.tap(find.text(tapString));
+  if (ability != null) {
+    await driver.tap(find.byValueKey('PokemonStateEditDialogAbility'));
+    await driver.enterText(ability);
+    final selectListTile = find.ancestor(
+      matching: find.byType('ListTile'),
+      of: find.text(ability),
+      firstMatchOnly: true,
+    );
+    await driver.tap(selectListTile);
+  }
+  if (item != null) {
+    await driver.tap(find.byValueKey('PokemonStateEditDialogItem'));
+    await driver.enterText(item);
+    final selectListTile = find.ancestor(
+      matching: find.byType('ListTile'),
+      of: find.text(item),
+      firstMatchOnly: true,
+    );
+    await driver.tap(selectListTile);
+  }
+  await driver.tap(find.text('適用'));
+}
+
+/// HPが正しいかテストする
+Future<void> testHP(
+    FlutterDriver driver, PlayerType playerType, String hpText) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  final designatedWidget = find.descendant(
+    of: find.byValueKey('PokemonStateInfoHP$ownOrOpponent'),
+    matching: find.text(hpText),
+  );
+  await testExistAnyWidgets(designatedWidget, driver);
+}
+
+Future<void> scrollUntilTappable(
+  FlutterDriver driver,
+  SerializableFinder scrollable,
+  SerializableFinder item, {
+  double alignment = 0.0,
+  double dxScroll = 0.0,
+  double dyScroll = 0.0,
+  Duration? timeout,
+}) async {
+  assert(dxScroll != 0.0 || dyScroll != 0.0);
+
+  bool isTappale = false;
+  driver.waitForTappable(item, timeout: timeout).then<void>((_) {
+    isTappale = true;
+  });
+  await Future<void>.delayed(const Duration(milliseconds: 500));
+  while (!isTappale) {
+    await driver.scroll(
+        scrollable, dxScroll, dyScroll, const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+  }
+
+  return driver.scrollIntoView(item, alignment: alignment);
 }

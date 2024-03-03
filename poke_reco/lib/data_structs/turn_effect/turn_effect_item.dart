@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
+import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
@@ -126,28 +130,514 @@ class TurnEffectItem extends TurnEffect {
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
-    return PokeDB().items[itemID]!.extraWidget(
-          theme,
-          playerType,
-          myState.pokemon,
-          yourState.pokemon,
-          myState,
-          yourState,
-          playerType == PlayerType.me ? ownParty : opponentParty,
-          playerType == PlayerType.me ? opponentParty : ownParty,
-          state,
-          controller,
-          extraArg1,
-          extraArg2,
-          getChangePokemonIndex(playerType),
-          (value) => extraArg1 = value,
-          (value) => extraArg2 = value,
-          (player, value) => setChangePokemonIndex(
-              player, state.getPokemonIndex(player, null), value),
-          true,
-          showNetworkImage: PokeDB().getPokeAPI,
-          loc: loc,
+    final myParty = playerType == PlayerType.me ? ownParty : opponentParty;
+    final yourParty = playerType == PlayerType.me ? opponentParty : ownParty;
+    final pokeSelectKey = Key('ItemEffectSelectPokemon');
+    switch (itemID) {
+      case 184: // スターのみ
+        return Row(
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  for (final statIndex in StatIndexList.listAtoS)
+                    DropdownMenuItem(
+                      value: statIndex.index - 1,
+                      child: Text(statIndex.name),
+                    ),
+                ],
+                value: extraArg1,
+                onChanged: (value) => extraArg1 = value,
+                textValue: StatIndex.values[extraArg1 + 1].name,
+                isInput: true,
+              ),
+            ),
+            Text(loc.battleRankUp1),
+          ],
         );
+      case 247: // いのちのたま
+      case 265: // くっつきバリ
+      case 258: // くろいヘドロ
+      case 211: // たべのこし
+      case 132: // オレンのみ
+      case 135: // オボンのみ
+      case 185: // ナゾのみ
+      case 230: // かいがらのすず
+      case 43: // きのみジュース
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = (myState.remainHP - extraArg1).toString();
+          } else {
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
+          }
+          return DamageIndicateRow(
+            myState.pokemon,
+            controller,
+            playerType == PlayerType.me,
+            (value) {
+              int val = myState.remainHP - (int.tryParse(value) ?? 0);
+              if (playerType == PlayerType.opponent) {
+                val = myState.remainHPPercent - (int.tryParse(value) ?? 0);
+              }
+              extraArg1 = val;
+              return extraArg1;
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
+      case 136: // フィラのみ
+      case 137: // ウイのみ
+      case 138: // マゴのみ
+      case 139: // バンジのみ
+      case 140: // イアのみ
+        {
+          if (playerType == PlayerType.me) {
+            controller.text = (myState.remainHP - extraArg1).toString();
+          } else {
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
+          }
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(children: [
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      DropdownMenuItem(
+                        value: 0,
+                        child: Text(loc.battleHPRecovery),
+                      ),
+                      DropdownMenuItem(
+                        value: 1,
+                        child: Text(loc.battleConfused2),
+                      ),
+                    ],
+                    value: extraArg2,
+                    onChanged: (value) => extraArg2 = value,
+                    textValue: extraArg2 == 0
+                        ? loc.battleHPRecovery
+                        : extraArg1 == 1
+                            ? loc.battleConfused2
+                            : '',
+                    isInput: true,
+                  ),
+                ),
+              ]),
+              extraArg2 == 0
+                  ? SizedBox(
+                      height: 10,
+                    )
+                  : Container(),
+              extraArg2 == 0
+                  ? DamageIndicateRow(
+                      myState.pokemon,
+                      controller,
+                      playerType == PlayerType.me,
+                      (value) {
+                        int val = myState.remainHP - (int.tryParse(value) ?? 0);
+                        if (playerType == PlayerType.opponent) {
+                          val = myState.remainHPPercent -
+                              (int.tryParse(value) ?? 0);
+                        }
+                        extraArg1 = val;
+                        return extraArg1;
+                      },
+                      extraArg1,
+                      true,
+                      loc: loc,
+                    )
+                  : Container(),
+            ],
+          );
+        }
+      case 583: // ゴツゴツメット
+      case 188: // ジャポのみ
+      case 189: // レンブのみ
+        {
+          if (playerType == PlayerType.me) {
+            controller.text =
+                (yourState.remainHPPercent - extraArg1).toString();
+          } else {
+            controller.text = (yourState.remainHP - extraArg1).toString();
+          }
+          return DamageIndicateRow(
+            yourState.pokemon,
+            controller,
+            playerType != PlayerType.me,
+            (value) {
+              int val = yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+              if (playerType == PlayerType.opponent) {
+                val = yourState.remainHP - (int.tryParse(value) ?? 0);
+              }
+              extraArg1 = val;
+              return extraArg1;
+            },
+            extraArg1,
+            true,
+            loc: loc,
+          );
+        }
+      case 584: // ふうせん
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                isExpanded: true,
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(),
+                ),
+                items: <DropdownMenuItem>[
+                  DropdownMenuItem(
+                    value: 0,
+                    child: Text(loc.battleBalloonFloat),
+                  ),
+                  DropdownMenuItem(
+                    value: 1,
+                    child: Text(loc.battleBalloonBurst),
+                  ),
+                ],
+                value: extraArg1,
+                onChanged: (value) => extraArg1 = value,
+                textValue: extraArg1 == 0
+                    ? loc.battleBalloonFloat
+                    : extraArg1 == 1
+                        ? loc.battleBalloonBurst
+                        : '',
+                isInput: true,
+              ),
+            ),
+          ],
+        );
+      case 585: // レッドカード
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                key: pokeSelectKey,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: loc.battlePokemonToChange,
+                ),
+                items: <DropdownMenuItem>[
+                  for (int i = 0; i < yourParty.pokemonNum; i++)
+                    PokemonDropdownMenuItem(
+                      value: i + 1,
+                      enabled:
+                          state.isPossibleBattling(playerType.opposite, i) &&
+                              !state
+                                  .getPokemonStates(playerType.opposite)[i]
+                                  .isFainting,
+                      theme: theme,
+                      pokemon: yourParty.pokemons[i]!,
+                      showNetworkImage: PokeDB().getPokeAPI,
+                    ),
+                ],
+                value: getChangePokemonIndex(playerType),
+                onChanged: (value) => setChangePokemonIndex(playerType.opposite,
+                    state.getPokemonIndex(playerType.opposite, null), value),
+                textValue: null,
+                isInput: true,
+                prefixIconPokemon: null,
+                showNetworkImage: PokeDB().getPokeAPI,
+                theme: theme,
+              ),
+            ),
+          ],
+        );
+      case 1699: // ものまねハーブ
+        return Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${loc.commonAttack}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[0] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[0],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[0] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[0] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[0])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+                Text('${loc.commonDefense}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[1] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[1],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[1] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[1] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[1])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+                Text('${loc.commonSAttack}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[2] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[2],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[2] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[2] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[2])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${loc.commonSDefense}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[3] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[3],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[3] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[3] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[3])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text('${loc.commonSpeed}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[4] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[4],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[4] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[4] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[4])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('${loc.commonAccuracy}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[5] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[5],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[5] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[5] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[5])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                Text('${loc.commonEvasiveness}:'),
+                Flexible(
+                  child: _myDropdownButtonFormField(
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      border: UnderlineInputBorder(),
+                    ),
+                    items: <DropdownMenuItem>[
+                      for (int i = 0; i <= 6; i++)
+                        DropdownMenuItem(
+                          value: i,
+                          enabled: true,
+                          child: Center(child: Text('+$i')),
+                        ),
+                    ],
+                    value: PokemonState.unpackStatChanges(extraArg1)[6] < 0
+                        ? 0
+                        : PokemonState.unpackStatChanges(extraArg1)[6],
+                    onChanged: (value) {
+                      var statChanges =
+                          PokemonState.unpackStatChanges(extraArg1);
+                      statChanges[6] = value;
+                      extraArg1 = PokemonState.packStatChanges(statChanges);
+                    },
+                    textValue: (PokemonState.unpackStatChanges(extraArg1)[6] < 0
+                            ? 0
+                            : PokemonState.unpackStatChanges(extraArg1)[6])
+                        .toString(),
+                    isInput: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      case 1177: // だっしゅつパック
+      case 590: // だっしゅつボタン
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: _myDropdownButtonFormField(
+                key: pokeSelectKey,
+                isExpanded: true,
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  labelText: loc.battlePokemonToChange,
+                ),
+                items: <DropdownMenuItem>[
+                  for (int i = 0; i < myParty.pokemonNum; i++)
+                    PokemonDropdownMenuItem(
+                      value: i + 1,
+                      enabled: state.isPossibleBattling(playerType, i) &&
+                          !state.getPokemonStates(playerType)[i].isFainting,
+                      theme: theme,
+                      pokemon: myParty.pokemons[i]!,
+                      showNetworkImage: PokeDB().getPokeAPI,
+                    ),
+                ],
+                value: getChangePokemonIndex(playerType),
+                onChanged: (value) => setChangePokemonIndex(
+                    playerType, state.getPokemonIndex(playerType, null), value),
+                textValue: null,
+                isInput: true,
+                prefixIconPokemon: null,
+                showNetworkImage: PokeDB().getPokeAPI,
+                theme: theme,
+              ),
+            ),
+          ],
+        );
+    }
+    return Container();
   }
 
   @override
@@ -666,5 +1156,108 @@ class TurnEffectItem extends TurnEffect {
     ret += extraArg2.toString();
 
     return ret;
+  }
+
+  /// カスタムしたDropdownButtonFormField
+  /// ```
+  /// onFocus: フォーカスされたとき(タップされたとき)に呼ぶコールバック
+  /// isInput: 入力モードかどうか
+  /// textValue: 出力文字列(isInput==falseのとき必須)
+  /// prefixIconPokemon: フィールド前に配置するアイコンのポケモン
+  /// showNetworkImage: インターネットから取得したポケモンの画像を使うかどうか
+  /// ```
+  Widget _myDropdownButtonFormField<T>({
+    Key? key,
+    required List<DropdownMenuItem<T>>? items,
+    DropdownButtonBuilder? selectedItemBuilder,
+    T? value,
+    Widget? hint,
+    Widget? disabledHint,
+    required ValueChanged<T?>? onChanged,
+    VoidCallback? onTap,
+    int elevation = 8,
+    TextStyle? style,
+    Widget? icon,
+    Color? iconDisabledColor,
+    Color? iconEnabledColor,
+    double iconSize = 24.0,
+    bool isDense = true,
+    bool isExpanded = false,
+    double? itemHeight,
+    Color? focusColor,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    Color? dropdownColor,
+    InputDecoration? decoration,
+    void Function(T?)? onSaved,
+    String? Function(T?)? validator,
+    AutovalidateMode? autovalidateMode,
+    double? menuMaxHeight,
+    bool? enableFeedback,
+    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    BorderRadius? borderRadius,
+    EdgeInsetsGeometry? padding,
+    required bool isInput,
+    required String? textValue,
+    Pokemon? prefixIconPokemon,
+    bool showNetworkImage = false,
+    ThemeData? theme,
+  }) {
+    if (isInput) {
+      return DropdownButtonFormField(
+        key: key,
+        items: items,
+        selectedItemBuilder: selectedItemBuilder,
+        value: value,
+        hint: hint,
+        disabledHint: disabledHint,
+        onChanged: onChanged,
+        onTap: onTap,
+        elevation: elevation,
+        style: style,
+        icon: icon,
+        iconDisabledColor: iconDisabledColor,
+        iconEnabledColor: iconEnabledColor,
+        iconSize: iconSize,
+        isDense: isDense,
+        isExpanded: isExpanded,
+        itemHeight: itemHeight,
+        focusColor: focusColor,
+        focusNode: focusNode,
+        autofocus: autofocus,
+        dropdownColor: dropdownColor,
+        decoration: decoration,
+        onSaved: onSaved,
+        validator: validator,
+        autovalidateMode: autovalidateMode,
+        menuMaxHeight: menuMaxHeight,
+        enableFeedback: enableFeedback,
+        alignment: alignment,
+        borderRadius: borderRadius,
+        padding: padding,
+      );
+    } else {
+      return TextField(
+        decoration: InputDecoration(
+          border: UnderlineInputBorder(),
+          labelText: decoration?.labelText,
+          prefixIcon: prefixIconPokemon != null
+              ? showNetworkImage
+                  ? Image.network(
+                      PokeDB().pokeBase[prefixIconPokemon.no]!.imageUrl,
+                      height: theme?.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    )
+                  : const Icon(Icons.catching_pokemon)
+              : null,
+        ),
+        controller: TextEditingController(
+          text: textValue,
+        ),
+        readOnly: true,
+      );
+    }
   }
 }

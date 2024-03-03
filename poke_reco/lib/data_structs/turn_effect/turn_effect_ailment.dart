@@ -293,9 +293,9 @@ class TurnEffectAilment extends TurnEffect {
       case AilmentEffect.ingrain: // ねをはる
         {
           if (playerType == PlayerType.me) {
-            controller.text = myState.remainHP.toString();
+            controller.text = (myState.remainHP - extraArg1).toString();
           } else {
-            controller.text = myState.remainHPPercent.toString();
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
           }
           return DamageIndicateRow(
             myState.pokemon,
@@ -308,6 +308,7 @@ class TurnEffectAilment extends TurnEffect {
                 extraArg1 =
                     myState.remainHPPercent - (int.tryParse(value) ?? 0);
               }
+              return extraArg1;
             },
             extraArg1,
             true,
@@ -317,11 +318,12 @@ class TurnEffectAilment extends TurnEffect {
       case AilmentEffect.leechSeed: // やどりぎのタネ
         {
           if (playerType == PlayerType.me) {
-            controller.text = myState.remainHP.toString();
-            controller2.text = yourState.remainHPPercent.toString();
+            controller.text = (myState.remainHP - extraArg1).toString();
+            controller2.text =
+                (yourState.remainHPPercent - extraArg2).toString();
           } else {
-            controller.text = myState.remainHPPercent.toString();
-            controller2.text = yourState.remainHP.toString();
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
+            controller2.text = (yourState.remainHP - extraArg2).toString();
           }
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -337,6 +339,7 @@ class TurnEffectAilment extends TurnEffect {
                     extraArg1 =
                         myState.remainHPPercent - (int.tryParse(value) ?? 0);
                   }
+                  return extraArg1;
                 },
                 extraArg1,
                 true,
@@ -356,6 +359,7 @@ class TurnEffectAilment extends TurnEffect {
                   } else {
                     extraArg2 = yourState.remainHP - (int.tryParse(value) ?? 0);
                   }
+                  return extraArg2;
                 },
                 extraArg2,
                 true,
@@ -367,9 +371,9 @@ class TurnEffectAilment extends TurnEffect {
       case AilmentEffect.partiallyTrapped: // バインド
         {
           if (playerType == PlayerType.me) {
-            controller.text = myState.remainHP.toString();
+            controller.text = (myState.remainHP - extraArg1).toString();
           } else {
-            controller.text = myState.remainHPPercent.toString();
+            controller.text = (myState.remainHPPercent - extraArg1).toString();
           }
           return Column(
             children: [
@@ -414,6 +418,7 @@ class TurnEffectAilment extends TurnEffect {
                           extraArg1 = myState.remainHPPercent -
                               (int.tryParse(value) ?? 0);
                         }
+                        return extraArg1;
                       },
                       extraArg1,
                       true,
