@@ -690,6 +690,71 @@ class Move extends Equatable implements Copyable {
     return bulletMoveIDs.contains(id);
   }
 
+  /// 相手がまもる状態だと失敗するか
+  bool get failWithProtect {
+    const ignorable = [
+      171,
+      215,
+      169,
+      212,
+      244,
+      166,
+      176,
+      174,
+      18,
+      144,
+      46,
+      195,
+      248,
+      312,
+      335,
+      336,
+      272,
+      353,
+      467,
+      367,
+      364,
+      516,
+      597,
+      593,
+      621,
+      566,
+      602,
+      563,
+      607,
+      590,
+      589,
+      579,
+      674,
+      715,
+      791,
+      752,
+      811,
+      816,
+      777,
+      849,
+      867,
+      887,
+      910,
+      913,
+    ];
+
+    switch (target) {
+      case Target.entireField:
+      case Target.allAllies:
+      case Target.ally:
+      case Target.faintingPokemon:
+      case Target.opponentsField:
+      case Target.user:
+      case Target.userAndAllies:
+      case Target.userOrAlly:
+      case Target.usersField:
+        return false;
+      default:
+        return !ignorable.contains(id);
+    }
+  }
+
   @override
   Move copy() => Move(
         id,

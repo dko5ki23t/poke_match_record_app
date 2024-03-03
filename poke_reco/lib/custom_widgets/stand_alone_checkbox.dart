@@ -237,6 +237,25 @@ class _SubstituteBreakInputState extends State<SubstituteBreakInput> {
   }
 }
 
+class ProtectedInput extends StatelessWidget {
+  const ProtectedInput({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Checkbox(
+          value: true,
+          onChanged: null,
+        ),
+        Text(ActionFailure(ActionFailure.protected).displayName),
+      ],
+    );
+  }
+}
+
 class SelectMoveInput extends StatefulWidget {
   const SelectMoveInput({
     Key? key,

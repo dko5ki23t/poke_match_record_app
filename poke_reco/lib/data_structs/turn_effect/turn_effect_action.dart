@@ -120,7 +120,7 @@ class MoveAdditionalEffect {
   final int id;
 }
 
-/// 行動失敗の原因(削除候補)
+/// 行動失敗の原因
 class ActionFailure extends Equatable {
   /// なし、無効
   static const int none = 0;
@@ -6829,14 +6829,16 @@ class TurnEffectAction extends TurnEffect {
                       '${damageGetter.rangeString} (${damageGetter.rangePercentString})')
                   : Text(' - '),
             ),
-            yourState.buffDebuffs.containsByID(BuffDebuff.substitute)
-                ? Expanded(
-                    flex: 1,
-                    child: SubstituteBreakInput(
-                      turnMove: this,
-                      onUpdate: onUpdate,
-                    ))
-                : Container(),
+            failWithProtect(state, onlyValid: false)
+                ? Expanded(flex: 1, child: ProtectedInput())
+                : yourState.buffDebuffs.containsByID(BuffDebuff.substitute)
+                    ? Expanded(
+                        flex: 1,
+                        child: SubstituteBreakInput(
+                          turnMove: this,
+                          onUpdate: onUpdate,
+                        ))
+                    : Container(),
             Expanded(
               flex: 5,
               child: NumberInputButtons(
@@ -6858,7 +6860,11 @@ class TurnEffectAction extends TurnEffect {
                 enabled: isNormallyHit() &&
                     (!yourState.buffDebuffs
                             .containsByID(BuffDebuff.substitute) ||
-                        breakSubstitute),
+                        breakSubstitute) &&
+                    yourState
+                        .ailmentsWhere(
+                            (element) => element.id == Ailment.protect)
+                        .isEmpty,
               ),
             ),
           ],
@@ -6918,9 +6924,7 @@ class TurnEffectAction extends TurnEffect {
           state: state,
           onSelect: (move) {
             extraArg3 = move.id;
-            moveAdditionalEffects = move.isSurelyEffect()
-                ? MoveEffect(move.effect.id)
-                : MoveEffect(0);
+            fillAutoAdditionalEffect(state);
             onNext();
           },
         );
@@ -6932,9 +6936,7 @@ class TurnEffectAction extends TurnEffect {
           state: state,
           onSelect: (move) {
             extraArg3 = move.id;
-            moveAdditionalEffects = move.isSurelyEffect()
-                ? MoveEffect(move.effect.id)
-                : MoveEffect(0);
+            fillAutoAdditionalEffect(state);
             onNext();
           },
           onlyAcquiring: true,
@@ -7616,8 +7618,7 @@ class TurnEffectAction extends TurnEffect {
     }
 
     if (isMoveChanged) {
-      moveAdditionalEffects =
-          move.isSurelyEffect() ? MoveEffect(move.effect.id) : MoveEffect(0);
+      fillAutoAdditionalEffect(state);
       moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
           myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
           yourState.holdingItem?.id == 586,
@@ -7807,6 +7808,95 @@ class TurnEffectAction extends TurnEffect {
       default:
         break;
     }
+  }
+
+  /// 相手がまもる系統の状態にある場合、それによって失敗するかどうかを返す
+  /// ```
+  /// state: フェーズの状態
+  /// onlyValid: 有効な行動の場合のみ失敗を設定する
+  /// ```
+  bool failWithProtect(
+    PhaseState state, {
+    bool onlyValid = true,
+    bool update = false,
+  }) {
+    if (state
+            .getPokemonState(playerType.opposite, null)
+            .ailmentsWhere((element) => element.id == Ailment.protect)
+            .isNotEmpty &&
+        (onlyValid && isValid()) &&
+        move.failWithProtect &&
+        !(state.getPokemonState(playerType, null).currentAbility.id == 260 &&
+            move.isDirect)) {
+      if (update) {
+        isSuccess = false;
+        actionFailure = ActionFailure(ActionFailure.protected);
+      }
+      return true;
+    } else if (!isSuccess && actionFailure.id == ActionFailure.protected) {
+      if (update) {
+        isSuccess = true;
+        actionFailure = ActionFailure(ActionFailure.none);
+      }
+    }
+    return false;
+  }
+
+  /// 必ず追加効果が起こる場合は自動でそれを設定する
+  /// ```
+  /// state: フェーズの状態
+  /// ```
+  void fillAutoAdditionalEffect(PhaseState state) {
+    final replacedMove =
+        getReplacedMove(move, state.getPokemonState(playerType, null));
+    if ((!state
+                .getPokemonState(playerType.opposite, null)
+                .buffDebuffs
+                .containsByID(BuffDebuff.substitute) ||
+            ignoreSubstitute(state)) &&
+        replacedMove.isSurelyEffect()) {
+      moveAdditionalEffects = MoveEffect(replacedMove.effect.id);
+    } else {
+      moveAdditionalEffects = MoveEffect(0);
+    }
+  }
+
+  /// こうげきが相手のみがわりを無視するかどうかを返す
+  /// ```
+  /// state: フェーズの状態
+  /// ```
+  bool ignoreSubstitute(PhaseState state) {
+    final myState = state.getPokemonState(playerType, null);
+    final replacedMove = getReplacedMove(move, myState);
+    // 対象が相手でない
+    if (!replacedMove.isTargetYou) {
+      return true;
+    }
+    // とくしゅなこうげき
+    switch (replacedMove.effect.id) {
+      case 357:
+      case 360:
+      case 410:
+        return true;
+    }
+    // 場を対象とする変化技
+    switch (replacedMove.target) {
+      case Target.entireField:
+      case Target.opponentsField:
+      case Target.usersField:
+        return true;
+      default:
+        break;
+    }
+    // 使用者がとくせい「すりぬけ」の場合
+    if (myState.currentAbility.id == 151) {
+      return true;
+    }
+    // 音技
+    if (replacedMove.isSound) {
+      return true;
+    }
+    return false;
   }
 
   /// 置き換わるわざは置き換え後のわざを返す。それ以外の場合は元のわざをそのまま返す

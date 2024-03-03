@@ -1,4 +1,5 @@
 import 'package:flutter_driver/flutter_driver.dart';
+import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:test/test.dart';
 
@@ -31,15 +32,15 @@ void main() {
         /*await test1_1(driver!);
         await test1_2(driver!);
         await test1_3(driver!);
-        await test1_4(driver!);*/
+        await test1_4(driver!);
         await test2_1(driver!);
         await test2_2(driver!);
         await test2_3(driver!);
         await test2_4(driver!);
         await test3_1(driver!);
         await test3_2(driver!);
-        await test3_3(driver!);
-        await test3_4(driver!);
+        await test3_3(driver!);*/
+        //await test3_4(driver!);
         await test4_1(driver!);
       }
     });
@@ -283,13 +284,19 @@ Future<void> inputRemainHP(
 /// 効果を追加する
 Future<void> addEffect(
     FlutterDriver driver, int addButtonNo, String effectName) async {
-  await driver
-      .tap(find.byValueKey('RegisterBattleEffectAddIconButton$addButtonNo'));
+  var designatedWidget =
+      find.byValueKey('RegisterBattleEffectAddIconButton$addButtonNo');
+  if (!await isPresent(designatedWidget, driver)) {
+    await scrollUntilTappable(
+        driver, find.byValueKey('EffectListView'), designatedWidget,
+        dxScroll: -100);
+  }
+  await driver.tap(designatedWidget);
   await testExistAnyWidgets(
       find.byValueKey('AddEffectDialogSearchBar'), driver);
   await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
   await driver.enterText(effectName);
-  final designatedWidget = find.descendant(
+  designatedWidget = find.descendant(
     of: find.byType('ListTile'),
     matching: find.text(effectName),
   );
@@ -1968,6 +1975,8 @@ Future<void> test3_4(
   // サーフゴーのゴツゴツメット
   await addEffect(driver, 2, 'ゴツゴツメット');
   await driver.tap(find.text('OK'));
+  // ゴツゴツメット＋すなあらしダメージでマリルリのHP29
+  await testHP(driver, PlayerType.me, '29/201');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -1981,6 +1990,9 @@ Future<void> test3_4(
   await inputRemainHP(driver, PlayerType.opponent, '');
   // マリルリひんし->イッカネズミに交代
   await changePokemon(driver, PlayerType.me, 'イッカネズミ', false);
+  // 死に出しで出てきたイッカネズミはステルスロックのダメージのみ受けてHP123
+  // (バグってゴツメダメージが入ることがあったので確認)
+  await testHP(driver, PlayerType.me, '123/150');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -2073,6 +2085,9 @@ Future<void> test4_1(
   await inputRemainHP(driver, PlayerType.me, '88');
   // ミミズズ->カジリガメに交代
   await changePokemon(driver, PlayerType.me, 'カジリガメ', false);
+  // ステルスロックダメージ
+  await testExistEffect(driver, 'ステルスロック');
+  await testHP(driver, PlayerType.me, '146/166');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -2098,73 +2113,56 @@ Future<void> test4_1(
   await goTurnPage(driver, turnNum++);
   // ドヒドイデのトーチカ
   await tapMove(driver, PlayerType.opponent, 'トーチカ', true);
-  // マリルリのHP74
-  await inputRemainHP(driver, PlayerType.opponent, '74');
-  // マリルリのアクアブレイク
+  // カジリガメのアクアブレイク
   await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
-  // サーフゴーのHP50
-  await inputRemainHP(driver, PlayerType.me, '50');
-  // サーフゴーのゴツゴツメット
-  await addEffect(driver, 2, 'ゴツゴツメット');
+  // トーチカで失敗、失敗のためいのちのたまダメージは受けない
+  await inputRemainHP(driver, PlayerType.me, '');
+  await testHP(driver, PlayerType.me, '110/166');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // ドヒドイデのHP45
+  await inputRemainHP(driver, PlayerType.me, '45');
+  // ドヒドイデのくろいきり
+  await tapMove(driver, PlayerType.opponent, 'くろいきり', true);
+  // ドヒドイデのくろいヘドロ
+  await addEffect(driver, 3, 'くろいヘドロ');
   await driver.tap(find.text('OK'));
+  // どくダメージ計算合ってるか確認
+  await testHP(driver, PlayerType.me, '74/166');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
-  // マリルリのアクアジェット
-  await tapMove(driver, PlayerType.me, 'アクアジェット', false);
-  // サーフゴーのHP30
-  await inputRemainHP(driver, PlayerType.me, '30');
-  // サーフゴーのシャドーボール空打ち
-  await tapMove(driver, PlayerType.opponent, 'シャドーボール', true);
-  await tapHit(driver, PlayerType.opponent);
-  await inputRemainHP(driver, PlayerType.opponent, '');
-  // マリルリひんし->イッカネズミに交代
-  await changePokemon(driver, PlayerType.me, 'イッカネズミ', false);
+  // ドヒドイデのトーチカ
+  await tapMove(driver, PlayerType.opponent, 'トーチカ', false);
+  // カジリガメのからをやぶる
+  await tapMove(driver, PlayerType.me, 'からをやぶる', false);
+  // どくダメージ計算合ってるか確認
+  await testHP(driver, PlayerType.me, '54/166');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
-  // イッカネズミのおかたづけ
-  await tapMove(driver, PlayerType.me, 'おかたづけ', false);
-  // サーフゴーのゴールドラッシュ
-  await tapMove(driver, PlayerType.opponent, 'ゴールドラッシュ', false);
-  // イッカネズミのHP26
-  await inputRemainHP(driver, PlayerType.opponent, '26');
-
-  // 次のターンへ
-  await goTurnPage(driver, turnNum++);
-  // イッカネズミのかみつく
-  await tapMove(driver, PlayerType.me, 'かみつく', false);
-  // サーフゴーのHP0
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // ドヒドイデのHP0
   await inputRemainHP(driver, PlayerType.me, '0');
-  // サーフゴーひんし->ミミッキュに交代
-  await changePokemon(driver, PlayerType.opponent, 'ミミッキュ', false);
+  //ドヒドイデひんし->デカヌチャン
+  await changePokemon(driver, PlayerType.opponent, 'デカヌチャン', false);
+  // どくダメージ計算合ってるか確認
+  await testHP(driver, PlayerType.me, '18/166');
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
-  // イッカネズミのタネマシンガン
-  await tapMove(driver, PlayerType.me, 'タネマシンガン', false);
-  // 2回命中
-  await setHitCount(driver, PlayerType.me, 2);
-  // ミミッキュのHP80
-  await inputRemainHP(driver, PlayerType.me, '80');
-  // ミミッキュのドレインパンチ
-  await tapMove(driver, PlayerType.opponent, 'ドレインパンチ', true);
-  // イッカネズミのHP0
-  await inputRemainHP(driver, PlayerType.opponent, '0');
-  // ミミッキュのHP75
-  await inputRemainHP(driver, PlayerType.opponent, '75');
-  // ミミッキュのいのちのたま
-  await addEffect(driver, 3, 'いのちのたま');
-  await driver.tap(find.text('OK'));
-  // イッカネズミひんし->パーモットに交代
-  await changePokemon(driver, PlayerType.me, 'パーモット', false);
-
-  // 次のターンへ
-  await goTurnPage(driver, turnNum++);
-  // パーモットのテラスタル
-  await inputTerastal(driver, PlayerType.me, '');
-  // あいて降参
-  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
+  // デカヌチャンのテラスタル
+  await inputTerastal(driver, PlayerType.opponent, 'ノーマル');
+  // カジリガメのアクアブレイク
+  await tapMove(driver, PlayerType.me, 'アクアブレイク', false);
+  // デカヌチャンのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));

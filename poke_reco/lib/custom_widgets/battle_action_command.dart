@@ -138,9 +138,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             myMove, myState, yourState, yourFields)) {
           tmp.criticalCount = 1;
         }
-        tmp.moveAdditionalEffects = tmp.move.isSurelyEffect()
-            ? MoveEffect(tmp.move.effect.id)
-            : MoveEffect(0);
+        tmp.fillAutoAdditionalEffect(prevState);
         tmp.moveEffectivenesses = PokeTypeEffectiveness.effectiveness(
             myState.currentAbility.id == 113 ||
                 myState.currentAbility.id == 299,
@@ -200,9 +198,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     myMove, myState, yourState, yourFields)) {
                   turnMove.criticalCount = turnMove.hitCount;
                 }
-                turnMove.moveAdditionalEffects = myMove.isSurelyEffect()
-                    ? MoveEffect(myMove.effect.id)
-                    : MoveEffect(0);
+                turnMove.fillAutoAdditionalEffect(prevState);
                 turnMove.moveEffectivenesses =
                     PokeTypeEffectiveness.effectiveness(
                         myState.currentAbility.id == 113 ||

@@ -228,6 +228,27 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       ownLastAction.isSuccess = true;
       ownLastAction.actionFailure = ActionFailure(ActionFailure.none);
     }
+    if (opponentLastAction is TurnEffectAction &&
+        opponentBeforeLastActionState
+            .getPokemonState(PlayerType.opponent, null)
+            .ailmentsWhere((element) => element.id == Ailment.flinch)
+            .isNotEmpty) {
+      opponentLastAction.isSuccess = false;
+      opponentLastAction.actionFailure = ActionFailure(ActionFailure.flinch);
+    } else if (opponentLastAction is TurnEffectAction &&
+        !opponentLastAction.isSuccess &&
+        opponentLastAction.actionFailure.id == ActionFailure.flinch) {
+      opponentLastAction.isSuccess = true;
+      opponentLastAction.actionFailure = ActionFailure(ActionFailure.none);
+    }
+    // まもるによる失敗判定
+    if (ownLastAction is TurnEffectAction) {
+      ownLastAction.failWithProtect(ownBeforeLastActionState, update: true);
+    }
+    if (opponentLastAction is TurnEffectAction) {
+      opponentLastAction.failWithProtect(ownBeforeLastActionState,
+          update: true);
+    }
 //    final prevState =
 //        turns.isNotEmpty ? turns[turnNum - 1].copyInitialState() : null;
 
@@ -951,6 +972,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             parentSetState: setState,
                             onConfirm: () => setState(() {
                               currentTurn.phases.updateActionOrder();
+                              ownLastAction.failWithProtect(
+                                  currentTurn.getBeforeActionState(
+                                      PlayerType.me,
+                                      ownParty,
+                                      opponentParty,
+                                      loc),
+                                  update: true);
                               effectViewScrollController.scrollToIndex(
                                   currentTurn.phases.getLatestActionIndex(
                                               PlayerType.me,
@@ -1100,6 +1128,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             parentSetState: setState,
                             onConfirm: () => setState(() {
                               currentTurn.phases.updateActionOrder();
+                              opponentLastAction.failWithProtect(
+                                  currentTurn.getBeforeActionState(
+                                      PlayerType.opponent,
+                                      ownParty,
+                                      opponentParty,
+                                      loc),
+                                  update: true);
                               effectViewScrollController.scrollToIndex(
                                   currentTurn.phases.getLatestActionIndex(
                                               PlayerType.opponent,

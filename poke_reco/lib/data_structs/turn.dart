@@ -712,6 +712,13 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     //bool changeOpponent = turnNum == 1;
     /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
     bool alreadyTurnEnd = false;
+
+    /// s2が0以外に遷移(ひんしによる変化)することが決定した際、
+    /// 1. s2の遷移先をstackedS2に保存
+    /// 2. s1が別の値に変わるまでループ継続(<-ひんしによる処理をする前に、今のシーケンスでやる処理は終わらせる)
+    /// 3. s1が別の値に変わるとき、s1を変えた後s2の値をstackedS2に保存された値に変更
+    int beforeS1 = 0;
+    int? stackedS2;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -739,6 +746,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     bool changingState = false; // 効果によってポケモン交代した状態
 
     while (s1 != end) {
+      beforeS1 = s1;
       currentTiming = changingState
           ? Timing.pokemonAppear
           : s2 == 0
@@ -1101,11 +1109,17 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
               actionCount = 2;
             }
-            s2 = 1; // わざでひんし状態へ
+            stackedS2 = 1; // わざでひんし状態へ
           } else {
-            s2 = 4; // わざ以外でひんし状態へ
+            stackedS2 = 4; // わざ以外でひんし状態へ
           }
         }
+      }
+
+      // スタックしていたひんし後処理に遷移するかどうか(詳しくはbeforeS1変数のコメントにて)
+      if (stackedS2 != null && s1 != beforeS1) {
+        s2 = stackedS2;
+        stackedS2 = null;
       }
 
       if (toNext) {
@@ -1161,6 +1175,13 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     //bool isYourWin = false;
     /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
     bool alreadyTurnEnd = false;
+
+    /// s2が0以外に遷移(ひんしによる変化)することが決定した際、
+    /// 1. s2の遷移先をstackedS2に保存
+    /// 2. s1が別の値に変わるまでループ継続(<-ひんしによる処理をする前に、今のシーケンスでやる処理は終わらせる)
+    /// 3. s1が別の値に変わるとき、s1を変えた後s2の値をstackedS2に保存された値に変更
+    int beforeS1 = 0;
+    int? stackedS2;
     bool changeOwn = turnNum == 1;
     bool changeOpponent = turnNum == 1;
     const Map<int, Timing> s1TimingMap = {
@@ -1213,6 +1234,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     }
 
     while (s1 != end) {
+      beforeS1 = s1;
       currentTiming = changingState
           ? Timing.pokemonAppear
           : s2 == 0
@@ -1789,12 +1811,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 8: // ターン終了状態
-                if (alreadyTurnEnd) {
-                  s1 = end;
-                } else if (i >= l.length ||
-                    l[i].timing != Timing.everyTurnEnd) {
+                if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
                   // 自動追加
-                  if (assistList.isNotEmpty) {
+                  if (assistList.isNotEmpty && !alreadyTurnEnd) {
                     l.insert(i, assistList.removeAt(0));
                     isAssisting = true;
                     isInserted = true;
@@ -1897,14 +1916,20 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
                 actionCount = 2;
               }
-              s2 = 1; // わざでひんし状態へ
+              stackedS2 = 1; // わざでひんし状態へ
             } else {
-              s2 = 4; // わざ以外でひんし状態へ
+              stackedS2 = 4; // わざ以外でひんし状態へ
             }
           }
         }
 
         if (i < l.length) i++;
+      }
+
+      // スタックしていたひんし後処理に遷移するかどうか(詳しくはbeforeS1変数のコメントにて)
+      if (stackedS2 != null && s1 != beforeS1) {
+        s2 = stackedS2;
+        stackedS2 = null;
       }
 
       // 自動入力効果を作成
@@ -1981,8 +2006,10 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             }
           }
 */
-          changeOwn = false;
-          changeOpponent = false;
+          if (currentTiming == Timing.pokemonAppear) {
+            changeOwn = false;
+            changeOpponent = false;
+          }
         } else if (currentTiming != nextTiming) {
           assistList.clear();
           //delAssistList.clear();
