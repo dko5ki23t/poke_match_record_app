@@ -235,6 +235,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   // 3. 各ステータス(ABCDSAcEv)のランク変化
                   FittedBox(
                     child: Column(
+                      key: Key(
+                          'BattlePokemonStateInfoRank${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                       children: [
                         Text(loc.battlesTabStatusModeRank),
                         for (int i = 0; i < 7; i++)
@@ -242,6 +244,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                             statAlphabets[i],
                             focusingPokemonState.statChanges(i),
                             (idx) {},
+                            keyString:
+                                'Rank${statAlphabets[i]}${playerType == PlayerType.me ? 'Own' : 'Opponent'}',
                           ),
                       ],
                     ),
@@ -249,6 +253,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   // 4. 状態変化
                   FittedBox(
                     child: Column(
+                      key: Key(
+                          'BattlePokemonStateInfoAilment${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                       children: [
                         Text(loc.commonStatusCondition),
                         SizedBox(
@@ -295,6 +301,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                                 4,
                       ),
                       IconButton(
+                        key: Key(
+                            'BattlePokemonStateInfoPrevButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         icon: Icon(
                           Icons.arrow_back_ios,
                           color: Color(0x80000000),
@@ -325,6 +333,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                                 4,
                       ),
                       IconButton(
+                        key: Key(
+                            'BattlePokemonStateInfoNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         icon: Icon(
                           Icons.arrow_forward_ios,
                           color: Color(0x80000000),
@@ -406,8 +416,9 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
   Widget statChangeViewRow(
     String label,
     int statChange,
-    void Function(int idx) onOwnPressed,
-  ) {
+    void Function(int idx) onOwnPressed, {
+    String? keyString,
+  }) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -419,13 +430,16 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
               for (int i = 0; i < statChange.abs(); i++)
                 statChange > 0
                     ? GestureDetector(
+                        key: Key('${keyString ?? ''}Up$i'),
                         onTap: () => onOwnPressed(i),
                         child: Icon(Icons.arrow_drop_up, color: Colors.red))
                     : GestureDetector(
+                        key: Key('${keyString ?? ''}Down$i'),
                         onTap: () => onOwnPressed(i),
                         child: Icon(Icons.arrow_drop_down, color: Colors.blue)),
               for (int i = statChange.abs(); i < 6; i++)
                 GestureDetector(
+                    key: Key('${keyString ?? ''}Zero$i'),
                     onTap: () => onOwnPressed(i),
                     child: Icon(Icons.remove, color: Colors.grey)),
             ],

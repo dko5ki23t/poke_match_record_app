@@ -385,6 +385,7 @@ class SwitchSelectItemInput extends StatefulWidget {
     required this.initialSwitchValue,
     required this.onSwitchChanged,
     required this.itemText,
+    required this.initialItemText,
     required this.onItemSelected,
     required this.playerType,
     required this.pokemonState,
@@ -397,6 +398,7 @@ class SwitchSelectItemInput extends StatefulWidget {
   final bool initialSwitchValue;
   final void Function(bool) onSwitchChanged;
   final String itemText;
+  final String initialItemText;
   final void Function(Item) onItemSelected;
   final PlayerType playerType;
   final PokemonState pokemonState;

@@ -7178,6 +7178,7 @@ class TurnEffectAction extends TurnEffect {
                   onUpdate();
                 },
                 itemText: extra[2] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
@@ -7211,6 +7212,7 @@ class TurnEffectAction extends TurnEffect {
                   onUpdate();
                 },
                 itemText: extra[2] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
@@ -7221,7 +7223,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 5,
+              flex: 2,
               child: Container(),
             ),
           ],
@@ -7244,6 +7246,7 @@ class TurnEffectAction extends TurnEffect {
                   onUpdate();
                 },
                 itemText: extra[2] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();

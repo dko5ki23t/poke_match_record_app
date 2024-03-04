@@ -1176,6 +1176,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
     bool alreadyTurnEnd = false;
 
+    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
+    bool alreadyGameset = false;
+
     /// s2が0以外に遷移(ひんしによる変化)することが決定した際、
     /// 1. s2の遷移先をstackedS2に保存
     /// 2. s1が別の値に変わるまでループ継続(<-ひんしによる処理をする前に、今のシーケンスでやる処理は終わらせる)
@@ -1233,7 +1236,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 */
     }
 
-    while (s1 != end) {
+    while (!alreadyGameset && (s1 != end || s2 != 0)) {
       beforeS1 = s1;
       currentTiming = changingState
           ? Timing.pokemonAppear
@@ -1841,6 +1844,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 } else if (getLatestActionIndex(PlayerType.opponent) < 0) {
                   l.add(TurnEffectAction(player: PlayerType.opponent));
                 }
+                alreadyGameset = true;
                 s1 = end;
                 break;
             }
@@ -1850,21 +1854,23 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
       if (i < l.length && !skipInc) {
         // 効果を処理する
-        final guides = l[i].processEffect(
-          ownParty,
-          currentState.getPokemonState(PlayerType.me, null),
-          opponentParty,
-          currentState.getPokemonState(PlayerType.opponent, null),
-          currentState,
-          lastAction,
-          loc: loc,
-        );
-        // 効果により確定する事項を反映させる
-        for (final guide in guides) {
-          guide.processEffect(
-              currentState.getPokemonState(PlayerType.me, null),
-              currentState.getPokemonState(PlayerType.opponent, null),
-              currentState);
+        if (l[i].isValid()) {
+          final guides = l[i].processEffect(
+            ownParty,
+            currentState.getPokemonState(PlayerType.me, null),
+            opponentParty,
+            currentState.getPokemonState(PlayerType.opponent, null),
+            currentState,
+            lastAction,
+            loc: loc,
+          );
+          // 効果により確定する事項を反映させる
+          for (final guide in guides) {
+            guide.processEffect(
+                currentState.getPokemonState(PlayerType.me, null),
+                currentState.getPokemonState(PlayerType.opponent, null),
+                currentState);
+          }
         }
         /*
       turnEffectAndStateAndGuides.add(TurnEffectAndStateAndGuide()

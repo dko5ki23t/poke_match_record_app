@@ -111,6 +111,30 @@ void main() {
         await test4_2(driver!);
       }
     });
+    test('ミミズズ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test4_3(driver!);
+      }
+    });
+    test('ミミズズ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test4_4(driver!);
+      }
+    });
+    test('グレンアルマ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test5_1(driver!);
+      }
+    });
+    test('グレンアルマ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test5_2(driver!);
+      }
+    });
   });
 }
 
@@ -1983,6 +2007,462 @@ Future<void> test4_2(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
+/// ミミズズ戦3
+Future<void> test4_3(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうミミズズ戦3',
+    ownPartyname: '4もこミミズ',
+    opponentName: 'るちあ',
+    pokemon1: 'ミミッキュ',
+    pokemon2: 'デカヌチャン',
+    pokemon3: 'ハッサム',
+    pokemon4: 'カイリュー',
+    pokemon5: 'ビビヨン',
+    pokemon6: 'イルカマン',
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこミミズ/',
+      ownPokemon2: 'もこリガメ/',
+      ownPokemon3: 'もこルリ/',
+      opponentPokemon: 'デカヌチャン');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // デカヌチャンのかたやぶり
+  await addEffect(driver, 0, 'かたやぶり');
+  await driver.tap(find.text('OK'));
+  // デカヌチャンのステルスロック
+  await tapMove(driver, PlayerType.opponent, 'ステルスロック', true);
+  // ミミズズのしっぽきり
+  await tapMove(driver, PlayerType.me, 'しっぽきり', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // ミミズズのHP88
+  await inputRemainHP(driver, PlayerType.me, '88');
+  // ミミズズ->カジリガメに交代
+  await changePokemon(driver, PlayerType.me, 'カジリガメ', false);
+  // カジリガメにステロダメージが入っていることを確認
+  await testHP(driver, PlayerType.me, '146/166');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カジリガメのからをやぶる
+  await tapMove(driver, PlayerType.me, 'からをやぶる', false);
+  // デカヌチャンのデカハンマー
+  await tapMove(driver, PlayerType.opponent, 'デカハンマー', true);
+  // みがわりは消える
+  await driver.tap(find.byValueKey('SubstituteInputOpponent'));
+  // カジリガメは無傷
+  await inputRemainHP(driver, PlayerType.opponent, '');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // あいて降参
+  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ミミズズ戦4
+Future<void> test4_4(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうミミズズ戦4',
+    ownPartyname: '4もこミミズ2',
+    opponentName: 'りる',
+    pokemon1: 'カイリュー',
+    pokemon2: 'イルカマン',
+    pokemon3: 'ミミッキュ',
+    pokemon4: 'ウインディ',
+    pokemon5: 'チオンジェン',
+    pokemon6: 'パオジアン',
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこミミズ/',
+      ownPokemon2: 'もこルリ2/',
+      ownPokemon3: 'もこヘル/',
+      opponentPokemon: 'イルカマン');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのインファイト
+  await tapMove(driver, PlayerType.opponent, 'インファイト', true);
+  // ミミズズのHP103
+  await inputRemainHP(driver, PlayerType.opponent, '103');
+  // ミミズズのしっぽきり
+  await tapMove(driver, PlayerType.me, 'しっぽきり', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // ミミズズのHP14
+  await inputRemainHP(driver, PlayerType.me, '14');
+  // マリルリに交代
+  await changePokemon(driver, PlayerType.me, 'マリルリ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマン->ウインディに交代
+  await changePokemon(driver, PlayerType.opponent, 'ウインディ', true);
+  // ウインディのいかく
+  await addEffect(driver, 1, 'いかく');
+  await driver.tap(find.text('OK'));
+  // いかくの効果がないことの確認
+  await testRank(driver, PlayerType.me, 'A', 'Zero0');
+  // マリルリのはらだいこ
+  await tapMove(driver, PlayerType.me, 'はらだいこ', false);
+  // マリルリのHPが101であることを確認
+  await testHP(driver, PlayerType.me, '101/201');
+  await testRank(driver, PlayerType.me, 'A', 'Up5');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ウインディのしんそく
+  await tapMove(driver, PlayerType.opponent, 'しんそく', true);
+  // みがわりは消える
+  await driver.tap(find.byValueKey('SubstituteInputOpponent'));
+  // マリルリは無傷
+  await inputRemainHP(driver, PlayerType.opponent, '');
+  // マリルリのアクアジェット
+  await tapMove(driver, PlayerType.me, 'アクアジェット', false);
+  // ウインディのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ひんしウインディ->カイリューに交代
+  await changePokemon(driver, PlayerType.opponent, 'カイリュー', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // カイリューのでんきテラスタル
+  await inputTerastal(driver, PlayerType.opponent, 'でんき');
+  // マリルリのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // カイリューのテラバースト
+  await tapMove(driver, PlayerType.opponent, 'テラバースト', true);
+  // マリルリのHP11
+  await inputRemainHP(driver, PlayerType.opponent, '11');
+  // マリルリのじゃれつく
+  await tapMove(driver, PlayerType.me, 'じゃれつく', false);
+  // マリルリのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ひんしカイリュー->イルカマンに交代
+  await changePokemon(driver, PlayerType.opponent, 'イルカマン', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのウェーブタックル
+  await tapMove(driver, PlayerType.opponent, 'ウェーブタックル', true);
+  // マリルリのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // イルカマンのHP99
+  await inputRemainHP(driver, PlayerType.opponent, '99');
+  // ひんしマリルリ->ヘルガーに交代
+  await changePokemon(driver, PlayerType.me, 'ヘルガー', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イルカマンのウェーブタックル
+  await tapMove(driver, PlayerType.opponent, 'ウェーブタックル', false);
+  // ヘルガーのHP1
+  await inputRemainHP(driver, PlayerType.opponent, '1');
+  // イルカマンのHP75
+  await inputRemainHP(driver, PlayerType.opponent, '75');
+  // ヘルガーのきあいのタスキ
+  await addEffect(driver, 1, 'きあいのタスキ');
+  await driver.tap(find.text('OK'));
+  // ヘルガーのほうふく
+  await tapMove(driver, PlayerType.me, 'ほうふく', false);
+  // イルカマンのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// グレンアルマ戦1
+Future<void> test5_1(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうグレンアルマ戦1',
+    ownPartyname: '5もこアルマ',
+    opponentName: 'ラン',
+    pokemon1: 'イッカネズミ',
+    pokemon2: 'ハラバリー',
+    pokemon3: 'マスカーニャ',
+    pokemon4: 'ブロロローム',
+    pokemon5: 'イルカマン',
+    pokemon6: 'キョジオーン',
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこアルマ/',
+      ownPokemon2: 'もこネズミ/',
+      ownPokemon3: 'もこフィア/',
+      opponentPokemon: 'マスカーニャ');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // マスカーニャのはたきおとす
+  await tapMove(driver, PlayerType.opponent, 'はたきおとす', true);
+  // グレンアルマのHP1
+  await inputRemainHP(driver, PlayerType.opponent, '1');
+  // グレンアルマのくだけるよろいが発動しているか確認
+  await testExistEffect(driver, 'くだけるよろい');
+  // グレンアルマのアーマーキャノン
+  await tapMove(driver, PlayerType.me, 'アーマーキャノン', false);
+  // マスカーニャのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // マスカーニャひんし->ハラバリーに交代
+  await changePokemon(driver, PlayerType.opponent, 'ハラバリー', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ハラバリーのふいうち
+  await tapMove(driver, PlayerType.opponent, 'ふいうち', true);
+  // 不発に終わる
+  // TODO: 外れたことにするが、本当は成否のボタンをつけた方がいいかも？
+  await tapHit(driver, PlayerType.opponent);
+  await inputRemainHP(driver, PlayerType.opponent, '');
+  // グレンアルマのみちづれ
+  await tapMove(driver, PlayerType.me, 'みちづれ', false);
+  // みちづれ状態であることを確認する
+  bool test = await isExistAilment(driver, PlayerType.me, 'みちづれ');
+  expect(test, true);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // グレンアルマのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // グレンアルマのアーマーキャノン
+  await tapMove(driver, PlayerType.me, 'アーマーキャノン', false);
+  // ハラバリーのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // みちづれ状態が解除されていることを確認する
+  test = await isExistAilment(driver, PlayerType.me, 'みちづれ');
+  expect(test, false);
+  // ひんしハラバリー->イッカネズミに交代
+  await changePokemon(driver, PlayerType.opponent, 'イッカネズミ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // グレンアルマのみちづれ
+  await tapMove(driver, PlayerType.me, 'みちづれ', false);
+  // イッカネズミのじゃれつく
+  await tapMove(driver, PlayerType.opponent, 'じゃれつく', true);
+  // グレンアルマのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// グレンアルマ戦2
+Future<void> test5_2(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  await testExistAnyWidgets(
+      find.byValueKey('BattleBasicListViewBattleName'), driver);
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうグレンアルマ戦2',
+    ownPartyname: '5もこアルマ',
+    opponentName: 'ダイチ',
+    pokemon1: 'ドヒドイデ',
+    pokemon2: 'キノガッサ',
+    pokemon3: 'テツノツツミ',
+    pokemon4: 'ミミッキュ',
+    pokemon5: 'トドロクツキ',
+    pokemon6: 'キョジオーン',
+    sex6: Sex.female,
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこネズミ/',
+      ownPokemon2: 'もこアルマ/',
+      ownPokemon3: 'もこいかくマンダ/',
+      opponentPokemon: 'キョジオーン');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミタネマシンガン
+  await tapMove(driver, PlayerType.me, 'タネマシンガン', false);
+  // 3回命中
+  await setHitCount(driver, PlayerType.me, 3);
+  // キョジオーンのHP65
+  await inputRemainHP(driver, PlayerType.me, '65');
+  // キョジオーンのしおづけ
+  await tapMove(driver, PlayerType.opponent, 'しおづけ', true);
+  // イッカネズミのHP116
+  await inputRemainHP(driver, PlayerType.opponent, '116');
+  // イッカネズミのHPが98になっていることを確認する
+  await testHP(driver, PlayerType.me, '98/150');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミのおかたづけ
+  await tapMove(driver, PlayerType.me, 'おかたづけ', false);
+  // キョジオーンのものまねハーブ発動
+  await addEffect(driver, 1, 'ものまねハーブ');
+  // こうげきとすばやさが1段階上がる
+  await driver.tap(find.byValueKey('ItemEffectRankAMenu'));
+  //var designatedWidget = find.descendant(
+  //    of: find.byValueKey('ItemEffectRankAMenu'), matching: find.text('+1'));
+  await driver.tap(find.text('+1'));
+  await driver.tap(find.byValueKey('ItemEffectRankSMenu'));
+  //designatedWidget = find.descendant(
+  //    of: find.byValueKey('ItemEffectRankSMenu'), matching: find.text('+1'));
+  await driver.tap(find.text('+1'));
+  await driver.tap(find.text('OK'));
+  // キョジオーンのロックブラスト
+  await tapMove(driver, PlayerType.opponent, 'ロックブラスト', true);
+  // 2回命中
+  await setHitCount(driver, PlayerType.opponent, 2);
+  // イッカネズミのHP28
+  await inputRemainHP(driver, PlayerType.opponent, '28');
+  // しおづけによってイッカネズミのHPが10になることを確認
+  await testHP(driver, PlayerType.me, '10/150');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // イッカネズミのタネマシンガン
+  await tapMove(driver, PlayerType.me, 'タネマシンガン', false);
+  // 3回命中
+  await setHitCount(driver, PlayerType.me, 3);
+  // 1回急所
+  await setCriticalCount(driver, PlayerType.me, 1);
+  // キョジオーンのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ひんしキョジオーン->ドヒドイデに交代
+  await changePokemon(driver, PlayerType.opponent, 'ドヒドイデ', false);
+  // ひんしイッカネズミ->グレンアルマに交代
+  await changePokemon(driver, PlayerType.me, 'グレンアルマ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // グレンアルマのサイコショック
+  await tapMove(driver, PlayerType.me, 'サイコショック', false);
+  // ドヒドイデのHP45
+  await inputRemainHP(driver, PlayerType.me, '45');
+  // ドヒドイデのどくどく
+  await tapMove(driver, PlayerType.opponent, 'どくどく', true);
+  // ドヒドイデのくろいヘドロ
+  await addEffect(driver, 2, 'くろいヘドロ');
+  await driver.tap(find.text('OK'));
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ドヒドイデ->トドロクツキに交代
+  await changePokemon(driver, PlayerType.opponent, 'トドロクツキ', true);
+  // トドロクツキのこだいかっせい
+  await addEffect(driver, 1, 'こだいかっせい');
+  await driver.tap(find.text('OK'));
+  // グレンアルマのサイコショック
+  await tapMove(driver, PlayerType.me, 'サイコショック', false);
+  // 効果がない
+  await inputRemainHP(driver, PlayerType.me, '');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // トドロクツキのかみくだく
+  await tapMove(driver, PlayerType.opponent, 'かみくだく', true);
+  // 急所に命中
+  await tapCritical(driver, PlayerType.opponent);
+  // グレンアルマのHP0
+  await inputRemainHP(driver, PlayerType.opponent, '0');
+  // ひんしグレンアルマ->ボーマンダに交代
+  await changePokemon(driver, PlayerType.me, 'ボーマンダ', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // トドロクツキのテラスタル
+  await inputTerastal(driver, PlayerType.opponent, 'はがね');
+  // ボーマンダのテラスタル
+  await inputTerastal(driver, PlayerType.me, '');
+  // トドロクツキのりゅうのまい
+  await tapMove(driver, PlayerType.opponent, 'りゅうのまい', true);
+  // ボーマンダのりゅうのまい
+  await tapMove(driver, PlayerType.me, 'りゅうのまい', false);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // トドロクツキのアイアンヘッド
+  await tapMove(driver, PlayerType.opponent, 'アイアンヘッド', true);
+  // ボーマンダのHP45
+  await inputRemainHP(driver, PlayerType.opponent, '45');
+  // ボーマンダのじしん
+  await tapMove(driver, PlayerType.me, 'じしん', false);
+  // トドロクツキのHP0
+  await inputRemainHP(driver, PlayerType.me, '0');
+  // ひんしトドロクツキ->ドヒドイデに交代
+  await changePokemon(driver, PlayerType.opponent, 'ドヒドイデ', false);
+  // ドヒドイデはさいせいりょくだったためHP回復している
+  await editPokemonState(driver, 'ドヒドイデ/ダイチ', '80', 'さいせいりょく', null);
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ドヒドイデのトーチカ
+  await tapMove(driver, PlayerType.opponent, 'トーチカ', true);
+  // ボーマンダのげきりん
+  await tapMove(driver, PlayerType.me, 'げきりん', false);
+  // トーチカで失敗
+  await inputRemainHP(driver, PlayerType.me, '');
+
+  // 次のターンへ
+  await goTurnPage(driver, turnNum++);
+  // ボーマンダのげきりん
+  await tapMove(driver, PlayerType.me, 'げきりん', false);
+  // ドヒドイデのHP5
+  await inputRemainHP(driver, PlayerType.me, '5');
+  // ドヒドイデのひやみず
+  await tapMove(driver, PlayerType.opponent, 'ひやみず', true);
+  // ボーマンダのHP13
+  await inputRemainHP(driver, PlayerType.opponent, '13');
+  // 相手の勝利
+  await testExistEffect(driver, 'ダイチの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
 /// 検索対象Widgetが1つ以上あるかをテストする
 /// ```
 /// finder: 検索
@@ -2032,6 +2512,12 @@ Future<void> inputBattleBasicInfo(
   // あなたのパーティ
   await driver.tap(find.byValueKey('BattleBasicListViewYourParty'));
   await testExistAnyWidgets(find.byType('PartyTile'), driver);
+  if (!await isPresent(find.text(ownPartyname), driver)) {
+    // 入力候補までスクロール
+    await scrollUntilTappable(
+        driver, find.byValueKey('PartiesListView'), find.text(ownPartyname),
+        dyScroll: -100);
+  }
   await driver.tap(find.text(ownPartyname));
   // 元の画面に戻るのを待つ
   await driver
@@ -2130,7 +2616,7 @@ Future<void> inputPokemonInBattleBasic(FlutterDriver driver,
     // 入力候補までスクロール
     await scrollUntilTappable(
         driver, find.byValueKey(listViewKey), selectListTile,
-        dyScroll: -100);
+        dyScroll: -50);
   }
   await testExistAnyWidgets(selectListTile, driver);
   await driver.tap(selectListTile);
@@ -2388,6 +2874,10 @@ Future<void> editPokemonState(
     );
     await driver.tap(selectListTile);
   }
+  if (remainHP != null) {
+    await driver.tap(find.byValueKey('PokemonStateEditDialogRemainHP'));
+    await driver.enterText(remainHP);
+  }
   await driver.tap(find.text('適用'));
 }
 
@@ -2400,6 +2890,70 @@ Future<void> testHP(
     matching: find.text(hpText),
   );
   await testExistAnyWidgets(designatedWidget, driver);
+}
+
+/// 対象のランク変化が正しいかテストする。
+/// ```
+/// [ex.]C+1かどうか調べる
+/// rankAlphabet = 'C'
+/// rankStr = 'Up1'
+/// [ex.]A-2かどうか調べる
+/// rankAlphabet = 'A'
+/// rankStr = 'Down1'
+/// [ex.]S+0かどうか調べる
+/// rankAlphabet = 'S'
+/// rankStr = 'Zero0'
+/// ```
+Future<void> testRank(FlutterDriver driver, PlayerType playerType,
+    String rankAlphabet, String rankStr) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  final designatedWidget =
+      find.byValueKey('BattlePokemonStateInfoRank$ownOrOpponent');
+  if (!await isPresent(designatedWidget, driver)) {
+    // ランク変化のページまで移動
+    for (int i = 0; i < 5; i++) {
+      // 右のページへ
+      await driver.tap(
+          find.byValueKey('BattlePokemonStateInfoNextButton$ownOrOpponent'));
+      if (await isPresent(designatedWidget, driver)) break;
+    }
+    if (!await isPresent(designatedWidget, driver)) {
+      for (int i = 0; i < 5; i++) {
+        // 左のページへ
+        await driver.tap(
+            find.byValueKey('BattlePokemonStateInfoPrevButton$ownOrOpponent'));
+        if (await isPresent(designatedWidget, driver)) break;
+      }
+    }
+  }
+  await testExistAnyWidgets(
+      find.byValueKey('Rank$rankAlphabet $ownOrOpponent$rankStr'), driver);
+}
+
+/// 対象の状態変化の有無をチェックする。
+Future<bool> isExistAilment(
+    FlutterDriver driver, PlayerType playerType, String ailmentStr) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  final designatedWidget =
+      find.byValueKey('BattlePokemonStateInfoAilment$ownOrOpponent');
+  if (!await isPresent(designatedWidget, driver)) {
+    // ランク変化のページまで移動
+    for (int i = 0; i < 5; i++) {
+      // 右のページへ
+      await driver.tap(
+          find.byValueKey('BattlePokemonStateInfoNextButton$ownOrOpponent'));
+      if (await isPresent(designatedWidget, driver)) break;
+    }
+    if (!await isPresent(designatedWidget, driver)) {
+      for (int i = 0; i < 5; i++) {
+        // 左のページへ
+        await driver.tap(
+            find.byValueKey('BattlePokemonStateInfoPrevButton$ownOrOpponent'));
+        if (await isPresent(designatedWidget, driver)) break;
+      }
+    }
+  }
+  return isPresent(find.text(ailmentStr), driver);
 }
 
 Future<void> scrollUntilTappable(

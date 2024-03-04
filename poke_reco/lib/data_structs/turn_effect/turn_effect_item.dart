@@ -366,6 +366,7 @@ class TurnEffectItem extends TurnEffect {
                 Text('${loc.commonAttack}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankAMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -394,9 +395,15 @@ class TurnEffectItem extends TurnEffect {
                     isInput: true,
                   ),
                 ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text('${loc.commonDefense}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankBMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -425,9 +432,15 @@ class TurnEffectItem extends TurnEffect {
                     isInput: true,
                   ),
                 ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text('${loc.commonSAttack}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankCMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -464,6 +477,7 @@ class TurnEffectItem extends TurnEffect {
                 Text('${loc.commonSDefense}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankDMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -492,12 +506,15 @@ class TurnEffectItem extends TurnEffect {
                     isInput: true,
                   ),
                 ),
-                SizedBox(
-                  width: 10,
-                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text('${loc.commonSpeed}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankSMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -534,6 +551,7 @@ class TurnEffectItem extends TurnEffect {
                 Text('${loc.commonAccuracy}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankAcMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),
@@ -562,12 +580,15 @@ class TurnEffectItem extends TurnEffect {
                     isInput: true,
                   ),
                 ),
-                SizedBox(
-                  width: 10,
-                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Text('${loc.commonEvasiveness}:'),
                 Flexible(
                   child: _myDropdownButtonFormField(
+                    key: Key('ItemEffectRankEvMenu'),
                     isExpanded: true,
                     decoration: const InputDecoration(
                       border: UnderlineInputBorder(),

@@ -103,6 +103,7 @@ class PartiesPageState extends State<PartiesPage> {
       if (isEditMode) {
         lists = Scrollbar(
           child: ReorderableListView(
+            key: Key('PartiesListView'),
             onReorder: (int oldIndex, int newIndex) {
               setState(() {
                 if (oldIndex < newIndex) {
@@ -139,6 +140,7 @@ class PartiesPageState extends State<PartiesPage> {
       } else {
         lists = Scrollbar(
           child: ListView(
+            key: Key('PartiesListView'),
             children: [
               for (int i = 0; i < sortedParties.length; i++)
                 PartyTile(

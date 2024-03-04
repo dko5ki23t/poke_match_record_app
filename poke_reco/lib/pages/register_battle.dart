@@ -867,14 +867,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                       loc: loc,
                                     ),
                                     eff,
-                                    /*currentTurn
-                                        .copyInitialState()
-                                        .getPokemonState(
-                                            effect.playerType, null),
-                                    currentTurn
-                                        .copyInitialState()
-                                        .getPokemonState(
-                                            effect.playerType.opposite, null),*/
                                     myS,
                                     yourS,
                                     ownParty,
