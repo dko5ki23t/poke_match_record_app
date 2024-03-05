@@ -1096,8 +1096,18 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       {
         //isMyWin = l[i].isMyWin;
         //isYourWin = l[i].isYourWin;
+        if (i == index) {
+          return ret.toList();
+        }
+        ret.clear();
+        // わざ使用後のタイミングは追加する
+        if (s1TimingMap[s1]! == Timing.afterMove) {
+          ret.add(Timing.afterMove);
+        }
+        i++;
         s2 = 0;
         s1 = 9; // 試合終了状態へ
+        continue;
       } else {
         if (s1 != end &&
             i < l.length &&
@@ -1186,6 +1196,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
     /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
     bool alreadyGameset = false;
+
+    /// 試合終了処理を行うことが決定されているが、わざ使用後処理のみ残っている場合
+    bool isReservedGameset = false;
 
     /// s2が0以外に遷移(ひんしによる変化)することが決定した際、
     /// 1. s2の遷移先をstackedS2に保存
@@ -1910,7 +1923,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           isMyWin = l[i].isMyWin;
           //isYourWin = l[i].isYourWin;
           s2 = 0;
-          s1 = 9; // 試合終了状態へ
+          if (s1TimingMap[s1]! == Timing.afterMove) {
+            // わざ使用後の場合は、その処理が終わるまで試合終了処理をスタック
+            isReservedGameset = true;
+          } else {
+            s1 = 9; // 試合終了状態へ
+          }
         } else {
           if (s1 != end &&
               (!isInserted || isAssisting) &&
@@ -1940,6 +1958,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         if (i < l.length) i++;
       }
 
+      if (s1 != end &&
+          isReservedGameset &&
+          s1TimingMap[s1]! != Timing.afterMove) {
+        s2 = 0;
+        s1 = 9; // 試合終了状態へ
+      }
       // スタックしていたひんし後処理に遷移するかどうか(詳しくはbeforeS1変数のコメントにて)
       if (stackedS2 != null && s1 != beforeS1) {
         s2 = stackedS2;

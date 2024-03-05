@@ -825,7 +825,9 @@ Future<void> test7_1(
   await tapMove(driver, me, 'ダブルウイング', false);
   // キノガッサのHP0
   await inputRemainHP(driver, me, '0');
-  // TODO: キノガッサのきあいのタスキ
+  // キノガッサのきあいのタスキ
+  await addEffect(driver, 1, op, 'きあいのタスキ');
+  await driver.tap(find.text('OK'));
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
