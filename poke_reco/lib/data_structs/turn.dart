@@ -315,6 +315,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
     /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
     bool alreadyTurnEnd = false;
+
+    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
+    bool alreadyGameset = false;
     const Map<int, Timing> s1TimingMap = {
       0: Timing.pokemonAppear,
       1: Timing.afterActionDecision,
@@ -343,7 +346,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     bool isOwnFainting = false;
     bool isOpponentFainting = false;
 
-    while (s1 != end) {
+    while (!alreadyGameset && (s1 != end || s2 != 0)) {
       currentTiming = changingState
           ? Timing.pokemonAppear
           : s2 == 0
@@ -673,6 +676,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 9: // 試合終了状態
+                alreadyGameset = true;
                 s1 = end;
                 break;
             }
@@ -713,6 +717,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// ターン終了時処理を終えたかどうか(ターン終了時処理でひんし→ひんし処理→ターン終了時処理と遷移しないように)
     bool alreadyTurnEnd = false;
 
+    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
+    bool alreadyGameset = false;
+
     /// s2が0以外に遷移(ひんしによる変化)することが決定した際、
     /// 1. s2の遷移先をstackedS2に保存
     /// 2. s1が別の値に変わるまでループ継続(<-ひんしによる処理をする前に、今のシーケンスでやる処理は終わらせる)
@@ -745,7 +752,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     Timing currentTiming = s2 == 0 ? s1TimingMap[s1]! : s2TimingMap[s2]!;
     bool changingState = false; // 効果によってポケモン交代した状態
 
-    while (s1 != end) {
+    while (!alreadyGameset && (s1 != end || s2 != 0)) {
       beforeS1 = s1;
       currentTiming = changingState
           ? Timing.pokemonAppear
@@ -1074,6 +1081,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 break;
               case 9: // 試合終了状態
+                alreadyGameset = true;
                 s1 = end;
                 break;
             }

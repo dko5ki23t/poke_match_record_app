@@ -83,15 +83,18 @@ class AddEffectDialogState extends State<AddEffectDialog> {
           thickness: 1,
         ));
       }
-      widgetList.add(ListTile(
-        key: Key(
-            'EffectListTile${keyName(effect.playerType)}${effect.displayName(loc: loc)}'),
-        title: Text(effect.displayName(loc: loc)),
-        onTap: () {
-          Navigator.pop(context);
-          widget.onSelect(effect);
-        },
-      ));
+      widgetList.add(
+        Semantics(
+          label: 'EffectListTile${keyName(effect.playerType)}',
+          child: ListTile(
+            title: Text(effect.displayName(loc: loc)),
+            onTap: () {
+              Navigator.pop(context);
+              widget.onSelect(effect);
+            },
+          ),
+        ),
+      );
     }
 
     return AlertDialog(

@@ -81,6 +81,22 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
 
   @override
   Widget build(BuildContext context) {
+    void setHitCount(num val) {
+      int count = val as int;
+      turnMove.hitCount = count;
+      // 統合テスト作成用
+      print("// $count回命中\n"
+          "await setHitCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
+    }
+
+    void setCriticalCount(num val) {
+      int count = val as int;
+      turnMove.criticalCount = count;
+      // 統合テスト作成用
+      print("// $count回急所\n"
+          "await setCriticalCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
+    }
+
     return Row(
       children: [
         Expanded(
@@ -102,6 +118,9 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                             }
                             widget.onUpdate();
                             setState(() {});
+                            // 統合テスト作成用
+                            print("// 外れる\n"
+                                "await tapHit(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"});");
                           }
                         }),
                     Text(MoveHit.hit.displayName),
@@ -124,9 +143,9 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                         min: 0,
                         max: widget.maxMoveCount,
                         initialValue: turnMove.hitCount,
-                        onIncrement: (val) => turnMove.hitCount = val as int,
-                        onDecrement: (val) => turnMove.hitCount = val as int,
-                        onChanged: (val) => turnMove.hitCount = val as int,
+                        onIncrement: setHitCount,
+                        onDecrement: setHitCount,
+                        onChanged: setHitCount,
                       ),
                     ),
                   ],
@@ -151,6 +170,9 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                             }
                             widget.onUpdate();
                             setState(() {});
+                            // 統合テスト作成用
+                            print("// 急所に命中\n"
+                                "await tapCritical(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"});");
                           }
                         }),
                     Text(MoveHit.critical.displayName),
@@ -173,11 +195,9 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
                         min: 0,
                         max: widget.maxMoveCount,
                         initialValue: turnMove.criticalCount,
-                        onIncrement: (val) =>
-                            turnMove.criticalCount = val as int,
-                        onDecrement: (val) =>
-                            turnMove.criticalCount = val as int,
-                        onChanged: (val) => turnMove.criticalCount = val as int,
+                        onIncrement: setCriticalCount,
+                        onDecrement: setCriticalCount,
+                        onChanged: (val) => setCriticalCount,
                       ),
                     ),
                   ],

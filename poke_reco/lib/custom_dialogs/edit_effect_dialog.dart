@@ -82,6 +82,8 @@ class EditEffectDialogState extends State<EditEffectDialog> {
           onPressed: () {
             Navigator.pop(context);
             widget.onEdit(editingEffect);
+            // 統合テスト作成用
+            print("await driver.tap(find.text('OK'));");
           },
         ),
       ],

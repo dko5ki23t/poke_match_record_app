@@ -95,10 +95,18 @@ class BattleChangeFaintingCommandState
           ChangePokemonCommandTile(
             myParty.pokemons[i]!,
             theme,
-            onTap: () => parentSetState(() {
-              turnEffect.changePokemonIndex = i + 1;
-              widget.onConfirm();
-            }),
+            onTap: () {
+              parentSetState(() {
+                turnEffect.changePokemonIndex = i + 1;
+                widget.onConfirm();
+              });
+              // 統合テスト作成用
+              final prePoke =
+                  prevState.getPokemonState(playerType, null).pokemon;
+              final poke = prevState.getPokemonStates(playerType)[i].pokemon;
+              print("// ${prePoke.omittedName}ひんし->${poke.omittedName}に交代\n"
+                  "await changePokemon(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${poke.name}', false);");
+            },
             selected: turnEffect.changePokemonIndex == i + 1,
             showNetworkImage: PokeDB().getPokeAPI,
           ),

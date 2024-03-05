@@ -37,6 +37,9 @@ class SelectTypeDialogState extends State<SelectTypeDialog> {
                 onTap: () {
                   Navigator.pop(context);
                   widget.onSelect(type);
+                  // 統合テスト作成用
+                  print(
+                      "await inputTerastal(driver, op, '${type.displayName}');");
                 },
               ),
           ],

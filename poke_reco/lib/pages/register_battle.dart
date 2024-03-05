@@ -359,6 +359,28 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           }
           opponentFilters = List.generate(
               opponentParty.pokemonNum, (index) => Color(0x00ffffff));
+          // 統合テスト作成用
+          print("// 基本情報を入力\n"
+              "await inputBattleBasicInfo(\n"
+              "  driver,\n"
+              "  battleName: '${widget.battle.name}',\n"
+              "  ownPartyname: '${widget.battle.getParty(PlayerType.me).name}',\n"
+              "  opponentName: '${widget.battle.opponentName}',\n"
+              "  pokemon1: '${widget.battle.getParty(PlayerType.opponent).pokemons[0]!.name}',\n"
+              "  pokemon2: '${widget.battle.getParty(PlayerType.opponent).pokemons[1]!.name}',\n"
+              "  pokemon3: '${widget.battle.getParty(PlayerType.opponent).pokemons[2]!.name}',\n"
+              "  pokemon4: '${widget.battle.getParty(PlayerType.opponent).pokemons[3]!.name}',\n"
+              "  pokemon5: '${widget.battle.getParty(PlayerType.opponent).pokemons[4]!.name}',\n"
+              "  pokemon6: '${widget.battle.getParty(PlayerType.opponent).pokemons[5]!.name}',\n"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[0]?.sex == Sex.female ? "  sex1: Sex.female,\n" : ""}"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[1]?.sex == Sex.female ? "  sex2: Sex.female,\n" : ""}"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[2]?.sex == Sex.female ? "  sex3: Sex.female,\n" : ""}"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[3]?.sex == Sex.female ? "  sex4: Sex.female,\n" : ""}"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[4]?.sex == Sex.female ? "  sex5: Sex.female,\n" : ""}"
+              "${widget.battle.getParty(PlayerType.opponent).pokemons[5]?.sex == Sex.female ? "  sex6: Sex.female,\n" : ""}"
+              ");\n");
+          print("// 選出ポケモン選択ページへ\n"
+              "  await goSelectPokemonPage(driver);\n");
           setState(() {});
           break;
         case RegisterBattlePageType.firstPokemonPage:
@@ -424,6 +446,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                           index, ownParty, opponentParty, loc))));
 */
           pageType = RegisterBattlePageType.turnPage;
+          // 統合テスト作成用
+          print("// 選出ポケモンを選ぶ\n"
+              "  await selectPokemons(driver,\n"
+              "      ownPokemon1: '${ownParty.pokemons[checkedPokemons.own[0] - 1]?.nickname}/',\n"
+              "      ownPokemon2: '${ownParty.pokemons[checkedPokemons.own[1] - 1]?.nickname}/',\n"
+              "      ownPokemon3: '${ownParty.pokemons[checkedPokemons.own[2] - 1]?.nickname}/',\n"
+              "      opponentPokemon: '${opponentParty.pokemons[checkedPokemons.opponent - 1]?.name}');\n");
+          print("// 各ターン入力画面へ\n"
+              "  await goTurnPage(driver, turnNum++);\n");
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
@@ -483,6 +514,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           // 行動入力画面を初期化
           ownBattleCommandKey.currentState?.reset();
           opponentBattleCommandKey.currentState?.reset();
+          // 統合テスト作成用
+          print("\n// 次のターンへ\n"
+              "await goTurnPage(driver, turnNum++);");
           setState(() {});
           break;
         default:
@@ -716,6 +750,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                     );
                                   },
                                 );
+                                // 統合テスト作成用
+                                final playerName = effect.playerType !=
+                                        PlayerType.entireField
+                                    ? '${currentTurn.copyInitialState().getPokemonState(effect.playerType, null).pokemon.omittedName}の'
+                                    : '';
+                                final effectName = effect.displayName(loc: loc);
+                                print("// $playerName$effectName\n"
+                                    "await addEffect(driver, ${addButtonCount - 1}, ${effect.playerType}, '$effectName');\n"
+                                    "await driver.tap(find.text('OK'));");
                               },
                               loc.battleAddProcess,
                               effectList,
@@ -846,6 +889,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   phaseS.getPokemonState(eff.playerType, prevA);
                               final yourS = phaseS.getPokemonState(
                                   eff.playerType.opposite, prevA);
+                              // 統合テスト作成用
+                              final playerName = eff.playerType !=
+                                      PlayerType.entireField
+                                  ? '${currentTurn.copyInitialState().getPokemonState(eff.playerType, null).pokemon.omittedName}の'
+                                  : '';
+                              final effectName = effect.displayName(loc: loc);
+                              print("// $playerName$effectName\n"
+                                  "await addEffect(driver, ${addButtonCount - 1}, ${eff.playerType}, '$effectName');\n");
                               showDialog(
                                 context: context,
                                 builder: (_) {

@@ -215,7 +215,11 @@ myPokemons = [
     Pokemon(19, 19, 968, "もこミミズ", PokeType.steel, 52, Sex.female, Temper.namaiki, 297, 0, [31, 252], [31, 0], [31, 4], [17, 0], [31, 252], [0, 0], [446, 880, 317, 89], [20, 10, 15, 10], Owner.mine).toSet(),
     Pokemon(20, 20, 834, "もこリガメ", PokeType.water, 50, Sex.male, Temper.ijippari, 75, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [861, 710, 350, 504], [15, 10, 10, 15], Owner.mine).toSet(),
     Pokemon(21, 21, 184, "もこルリ2", PokeType.steel, 50, Sex.female, Temper.ganbariya, 37, 0, [31, 204], [31, 252], [31, 0], [31, 0], [31, 0], [31, 0], [453, 583, 710, 187], [20, 10, 10, 10], Owner.mine).toSet(),
-    Pokemon(22, 22, 936, "もこアルマ", PokeType.fire, 62, Sex.female, Temper.hikaeme, 133, 0, [31, 0], [4, 0], [31, 4], [31, 252], [31, 0], [31, 252], [412, 890, 473, 194], [10, 5, 10, 5], Owner.mine).toSet()
+    Pokemon(22, 22, 936, "もこアルマ", PokeType.fire, 62, Sex.female, Temper.hikaeme, 133, 0, [31, 0], [4, 0], [31, 4], [31, 252], [31, 0], [31, 252], [412, 890, 473, 194], [10, 5, 10, 5], Owner.mine).toSet(),
+    Pokemon(23, 23, 982, "もこコッチ", PokeType.normal, 62, Sex.male, Temper.hikaeme, 32, 0, [31, 4], [5, 0], [31, 0], [31, 252], [31, 0], [31, 252], [137, 355, 586, 403], [30, 10, 10, 15], Owner.mine).toSet(),
+    Pokemon(24, 24, 961, "もこウミトリオ", PokeType.water, 50, Sex.female, Temper.otonashi, 183, 0, [31, 4], [31, 252], [31, 0], [8, 0], [31, 0], [31, 252], [865, 453, 389, 262], [10, 20, 5, 10], Owner.mine).toSet(),
+    Pokemon(25, 25, 10008, "もこヒートロトム", PokeType.normal, 50, Sex.none, Temper.ganbariya, 26, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [129, None, None, None], [20, 0, 0, 0], Owner.mine).toSet(),
+    Pokemon(26, 26, 934, "もこオーン", PokeType.ghost, 50, Sex.male, Temper.wanpaku, 272, 0, [31, 252], [31, 4], [31, 252], [10, 0], [31, 0], [31, 0], [174, 864, 335, 105], [10, 15, 5, 10], Owner.mine).toSet()
 ]
 
 parties = [
@@ -225,7 +229,11 @@ parties = [
     Party(4, 4, "3もこネズミ", 13, 1698, 14, 683, 9, 252, 16, 190, 10, 135, 18, 242, Owner.mine).toSet(),
     Party(5, 5, "4もこミミズ", 13, 1698, 14, 683, 16, 190, 19, 135, 20, 247, 17, 252, Owner.mine).toSet(),
     Party(6, 6, "4もこミミズ2", 13, 1698, 16, 190, 19, 135, 20, 247, 17, 252, 21, 243, Owner.mine).toSet(),
-    Party(7, 7, "5もこアルマ", 13, 1698, 16, 190, 11, 247, 22, 252, 15, 135, 18, 242, Owner.mine).toSet()
+    Party(7, 7, "5もこアルマ", 13, 1698, 16, 190, 11, 247, 22, 252, 15, 135, 18, 242, Owner.mine).toSet(),
+    Party(8, 8, "6もこコッチ", 23, 1699, 15, 135, 11, 247, 9, 252, 13, 1698, 16, 190, Owner.mine).toSet(),
+    Party(9, 9, "7もこウミトリオ", 12, 134, 13, 1698, 16, 190, 25, 274, 24, 252, 18, 242, Owner.mine).toSet(),
+    Party(10, 10, "7もこウミトリオ2", 13, 1698, 16, 190, 25, 274, 24, 252, 18, 242, 20, 134, Owner.mine).toSet(),
+    Party(11, 11, "8もこオーン", 13, 1698, 16, 190, 22, 252, 26, 211, 21, 220, 18, 242, Owner.mine).toSet()
 ]
 
 def main():

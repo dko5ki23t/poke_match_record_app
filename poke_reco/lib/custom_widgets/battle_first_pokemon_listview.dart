@@ -123,7 +123,7 @@ class BattleFirstPokemonListView extends ListView {
                                     selectedTileColor: Colors.black26,
                                     showLevel: false,
                                     showSex: false,
-                                    key: Key('BattleFirstPokemonListviewOwn$i'),
+                                    key: Key('BattleFirstPokemonListviewOwn'),
                                   ),
                                 )
                               : Text(''),
@@ -177,7 +177,7 @@ class BattleFirstPokemonListView extends ListView {
                                       showLevel: false,
                                       showSex: false,
                                       key: Key(
-                                          'BattleFirstPokemonListviewOpponent$i'),
+                                          'BattleFirstPokemonListviewOpponent'),
                                     ),
                                     /*Opacity(
                                         opacity: 1.0,

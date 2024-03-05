@@ -124,6 +124,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 turnMove.actionFailure = ActionFailure(ActionFailure.none);
               });
             }
+            // 統合テスト作成用
+            print("await driver.tap(\n"
+                "      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));\n");
           },
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.sleep,
@@ -147,6 +150,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 turnMove.actionFailure = ActionFailure(ActionFailure.none);
               });
             }
+            // 統合テスト作成用
+            print("await driver.tap(\n"
+                "      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));\n");
           },
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.paralysis,
@@ -252,6 +258,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 commandPagesController = CommandPagesController();
                 state = CommandState.extraInput;
               });
+              // 統合テスト作成用
+              print("// ${myState.pokemon.omittedName}の${myMove.displayName}\n"
+                  "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${myMove.displayName}', ${myState.moves.contains(myMove) ? "false" : "true"});");
             },
           ),
         );
@@ -301,10 +310,16 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   TextButton(
                     key: Key(
                         'BattleActionCommandSurrender${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
-                    onPressed: () => parentSetState(() {
-                      turnMove.type = TurnActionType.surrender;
-                      turnMove.setChangePokemonIndex(playerType, null, null);
-                    }),
+                    onPressed: () {
+                      parentSetState(() {
+                        turnMove.type = TurnActionType.surrender;
+                        turnMove.setChangePokemonIndex(playerType, null, null);
+                      });
+                      // 統合テスト作成用
+                      print(
+                          "// ${turnMove.playerType == PlayerType.me ? 'あなた' : 'あいて'}降参\n"
+                          "await driver.tap(find.byValueKey('BattleActionCommandSurrender${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
+                    },
                     style: turnMove.type == TurnActionType.surrender
                         ? pressedStyle
                         : null,
@@ -337,7 +352,16 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                         Icons.diamond,
                                         color: Color(0x80000000),
                                       ),
-                                onPressed: () => widget.onRequestTerastal(),
+                                onPressed: () {
+                                  widget.onRequestTerastal();
+                                  // 統合テスト作成用
+                                  print(
+                                      "// ${myState.pokemon.omittedName}のテラスタル");
+                                  if (playerType == PlayerType.me) {
+                                    print(
+                                        "await inputTerastal(driver, me, '');");
+                                  }
+                                },
                                 isSelected: myState.isTerastaling,
                               ),
                             )
@@ -394,20 +418,30 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                     ChangePokemonCommandTile(
                       myParty.pokemons[i]!,
                       theme,
-                      onTap: () => parentSetState(() {
-                        if (turnMove.getChangePokemonIndex(playerType) ==
-                            i + 1) {
-                          turnMove.setChangePokemonIndex(
-                              playerType, null, null);
-                          widget.onUnConfirm();
-                        } else {
-                          turnMove.setChangePokemonIndex(
-                              playerType,
-                              prevState.getPokemonIndex(playerType, null),
-                              i + 1);
-                          widget.onConfirm();
-                        }
-                      }),
+                      onTap: () {
+                        parentSetState(() {
+                          if (turnMove.getChangePokemonIndex(playerType) ==
+                              i + 1) {
+                            turnMove.setChangePokemonIndex(
+                                playerType, null, null);
+                            widget.onUnConfirm();
+                          } else {
+                            turnMove.setChangePokemonIndex(
+                                playerType,
+                                prevState.getPokemonIndex(playerType, null),
+                                i + 1);
+                            widget.onConfirm();
+                          }
+                        });
+                        // 統合テスト作成用
+                        final prePoke =
+                            prevState.getPokemonState(playerType, null).pokemon;
+                        final poke =
+                            prevState.getPokemonStates(playerType)[i].pokemon;
+                        print(
+                            "// ${prePoke.omittedName}->${poke.omittedName}に交代\n"
+                            "await changePokemon(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${poke.name}', true);");
+                      },
                       selected:
                           turnMove.getChangePokemonIndex(playerType) == i + 1,
                       showNetworkImage: PokeDB().getPokeAPI,

@@ -273,6 +273,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   // 5. 場
                   FittedBox(
                     child: Column(
+                      key: Key(
+                          'BattlePokemonStateInfoField${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                       children: [
                         Text(loc.commonFields),
                         SizedBox(

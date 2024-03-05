@@ -6586,6 +6586,9 @@ class TurnEffectAction extends TurnEffect {
                               } else {
                                 onUpdate();
                               }
+                              // 統合テスト作成用
+                              print(
+                                  "await driver.tap(find.byValueKey('StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
                             },
                             icon: Icon(Icons.arrow_forward),
                           )
@@ -6678,6 +6681,9 @@ class TurnEffectAction extends TurnEffect {
                 onChanged: (change) {
                   isSuccess = change;
                   onUpdate();
+                  // 統合テスト作成用
+                  print(
+                      "await tapSuccess(driver, ${playerType == PlayerType.me ? 'me' : 'op'});");
                 },
                 initialValue: isSuccess,
               ),
@@ -6705,6 +6711,10 @@ class TurnEffectAction extends TurnEffect {
                         state.getPokemonIndex(playerType, null), i + 1);
                     //onUpdate();
                     onNext();
+                    // 統合テスト作成用
+                    final poke = state.getPokemonStates(playerType)[i].pokemon;
+                    print("// ${poke.omittedName}に交代\n"
+                        "await changePokemon(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${poke.name}', false);");
                   },
                   selected: getChangePokemonIndex(playerType) == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6750,6 +6760,11 @@ class TurnEffectAction extends TurnEffect {
                         i + 1);
                     //onUpdate();
                     onNext();
+                    // 統合テスト作成用
+                    final poke =
+                        state.getPokemonStates(playerType.opposite)[i].pokemon;
+                    print("// ${poke.omittedName}に交代\n"
+                        "await changePokemon(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${poke.name}', false);");
                   },
                   selected: getChangePokemonIndex(playerType.opposite) == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6816,6 +6831,9 @@ class TurnEffectAction extends TurnEffect {
           );
         }
       case CommandWidgetTemplate.inputYourHP:
+        int initialNum = playerType == PlayerType.me
+            ? yourState.remainHPPercent
+            : yourState.remainHP;
         return Column(
           children: [
             // 命中・急所(ON/OFF)。連続わざの場合はそれぞれの回数を入力
@@ -6849,9 +6867,7 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
-                initialNum: playerType == PlayerType.me
-                    ? yourState.remainHPPercent
-                    : yourState.remainHP,
+                initialNum: initialNum,
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {
                     percentDamage = yourState.remainHPPercent - remain;
@@ -6859,6 +6875,9 @@ class TurnEffectAction extends TurnEffect {
                     realDamage = yourState.remainHP - remain;
                   }
                   onNext();
+                  // 統合テスト作成用
+                  print("// ${yourState.pokemon.omittedName}のHP$remain\n"
+                      "await inputRemainHP(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${initialNum != remain ? remain : ""}');\n");
                 },
                 prefixText: loc.battleRemainHP(yourState.pokemon.omittedName),
                 suffixText: playerType == PlayerType.me ? '%' : null,
@@ -6875,6 +6894,9 @@ class TurnEffectAction extends TurnEffect {
           ],
         );
       case CommandWidgetTemplate.inputMyHP:
+        int initialNum = playerType == PlayerType.me
+            ? myState.remainHP
+            : myState.remainHPPercent;
         return Column(
           children: [
             Expanded(
@@ -6886,9 +6908,7 @@ class TurnEffectAction extends TurnEffect {
               child: NumberInputButtons(
                 key: Key(
                     'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
-                initialNum: playerType == PlayerType.me
-                    ? myState.remainHP
-                    : myState.remainHPPercent,
+                initialNum: initialNum,
                 onConfirm: (remain) {
                   if (playerType == PlayerType.me) {
                     extraArg1 = myState.remainHP - remain;
@@ -6896,6 +6916,9 @@ class TurnEffectAction extends TurnEffect {
                     extraArg2 = myState.remainHPPercent - remain;
                   }
                   onNext();
+                  // 統合テスト作成用
+                  print("// ${myState.pokemon.omittedName}のHP$remain\n"
+                      "await inputRemainHP(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${initialNum != remain ? remain : ""}');\n");
                 },
                 prefixText: loc.battleRemainHP(myState.pokemon.omittedName),
                 suffixText: playerType == PlayerType.opponent ? '%' : null,
