@@ -1440,6 +1440,17 @@ class TurnEffectAbility extends TurnEffect {
                 value: extraArg1,
                 onChanged: (value) {
                   extraArg1 = value;
+                  // 統合テスト作成用
+                  final text = value == -1
+                      ? loc.battleEffectExpired
+                      : (StatIndex.values[value + 1].name +
+                          loc.battleStatIncrease);
+                  final text2 = value == -1
+                      ? loc.battleEffectExpired
+                      : StatIndex.values[value + 1].name;
+                  print("// $text\n"
+                      "await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));\n"
+                      "await driver.tap(find.text('$text2'));");
                 },
                 isInput: true,
                 textValue: extraArg1 == -1

@@ -6984,6 +6984,9 @@ class TurnEffectAction extends TurnEffect {
                     moveAdditionalEffects = MoveEffect(0);
                   }
                   onUpdate();
+                  // 統合テスト作成用
+                  print("// ${extra[0] as String}\n"
+                      "await driver.tap(find.text('${extra[0] as String}'));");
                 },
                 initialValue: moveAdditionalEffects ==
                     MoveEffect((extra[1] as Move).effect.id),
@@ -7009,6 +7012,9 @@ class TurnEffectAction extends TurnEffect {
                     extraArg1 = 0;
                   }
                   onUpdate();
+                  // 統合テスト作成用
+                  print("// ${extra[0] as String}\n"
+                      "await driver.tap(find.text('${extra[0] as String}'));");
                 },
                 initialValue: extraArg1 == (extra[1] as Move).effect.id,
               ),

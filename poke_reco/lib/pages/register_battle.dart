@@ -454,7 +454,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               "      ownPokemon3: '${ownParty.pokemons[checkedPokemons.own[2] - 1]?.nickname}/',\n"
               "      opponentPokemon: '${opponentParty.pokemons[checkedPokemons.opponent - 1]?.name}');\n");
           print("// 各ターン入力画面へ\n"
-              "  await goTurnPage(driver, turnNum++);\n");
+              "  await goTurnPage(driver, turnNum++);\n\n");
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
@@ -515,8 +515,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ownBattleCommandKey.currentState?.reset();
           opponentBattleCommandKey.currentState?.reset();
           // 統合テスト作成用
-          print("\n// 次のターンへ\n"
-              "await goTurnPage(driver, turnNum++);");
+          print("\n// ターン${turnNum + 1}へ\n"
+              "await goTurnPage(driver, turnNum++);\n\n");
           setState(() {});
           break;
         default:
@@ -757,7 +757,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                     : '';
                                 final effectName = effect.displayName(loc: loc);
                                 print("// $playerName$effectName\n"
-                                    "await addEffect(driver, ${addButtonCount - 1}, ${effect.playerType}, '$effectName');\n"
+                                    "await addEffect(driver, ${addButtonCount - 1}, ${effect.playerType == PlayerType.me ? 'me' : effect.playerType == PlayerType.opponent ? 'op' : 'PlayerType.entireField'}, '$effectName');\n"
                                     "await driver.tap(find.text('OK'));");
                               },
                               loc.battleAddProcess,
@@ -788,34 +788,39 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
               controller: effectViewScrollController,
               index: widgetIdx++,
               child: GestureDetector(
-                onTap: () => showDialog(
-                  context: context,
-                  builder: (_) {
-                    return EditEffectDialog(
-                      () => setState(() {
-                        currentTurn.phases.remove(effect);
-                      }),
-                      (newEffect) {
-                        setState(() {
-                          int findIdx = currentTurn.phases.indexOf(effect);
-                          currentTurn.phases[findIdx] = newEffect;
-                          // スクロール位置変更
-                          effectViewScrollController
-                              .scrollToIndex(widgetIdx + 1);
-                        });
-                      },
-                      effect.displayName(
-                        loc: loc,
-                      ),
-                      effect,
-                      myState,
-                      yourState,
-                      ownParty,
-                      opponentParty,
-                      phaseState,
-                    );
-                  },
-                ),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) {
+                      return EditEffectDialog(
+                        () => setState(() {
+                          currentTurn.phases.remove(effect);
+                        }),
+                        (newEffect) {
+                          setState(() {
+                            int findIdx = currentTurn.phases.indexOf(effect);
+                            currentTurn.phases[findIdx] = newEffect;
+                            // スクロール位置変更
+                            effectViewScrollController
+                                .scrollToIndex(widgetIdx + 1);
+                          });
+                        },
+                        effect.displayName(
+                          loc: loc,
+                        ),
+                        effect,
+                        myState,
+                        yourState,
+                        ownParty,
+                        opponentParty,
+                        phaseState,
+                      );
+                    },
+                  );
+                  // 統合テスト作成用
+                  print("// ${effect.displayName(loc: loc)}編集\n"
+                      "await tapEffect(driver, '${effect.displayName(loc: loc)}');");
+                },
                 child: Container(
                   key: Key('EffectContainer'),
                   decoration: ShapeDecoration(
@@ -889,14 +894,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                   phaseS.getPokemonState(eff.playerType, prevA);
                               final yourS = phaseS.getPokemonState(
                                   eff.playerType.opposite, prevA);
-                              // 統合テスト作成用
-                              final playerName = eff.playerType !=
-                                      PlayerType.entireField
-                                  ? '${currentTurn.copyInitialState().getPokemonState(eff.playerType, null).pokemon.omittedName}の'
-                                  : '';
-                              final effectName = effect.displayName(loc: loc);
-                              print("// $playerName$effectName\n"
-                                  "await addEffect(driver, ${addButtonCount - 1}, ${eff.playerType}, '$effectName');\n");
                               showDialog(
                                 context: context,
                                 builder: (_) {
@@ -913,6 +910,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                                         effectViewScrollController
                                             .scrollToIndex(widgetIdx + 1);
                                       });
+                                      // 統合テスト作成用
+                                      final playerName = newEffect.playerType !=
+                                              PlayerType.entireField
+                                          ? '${currentTurn.copyInitialState().getPokemonState(newEffect.playerType, null).pokemon.omittedName}の'
+                                          : '';
+                                      final effectName =
+                                          newEffect.displayName(loc: loc);
+                                      print("// $playerName$effectName\n"
+                                          "await addEffect(driver, ${addButtonCount - 1}, ${newEffect.playerType == PlayerType.me ? 'me' : newEffect.playerType == PlayerType.opponent ? 'op' : 'PlayerType.entireField'}, '$effectName');\n");
                                     },
                                     eff.displayName(
                                       loc: loc,

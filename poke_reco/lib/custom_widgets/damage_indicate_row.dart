@@ -12,9 +12,11 @@ class DamageIndicateRow extends StatefulWidget {
     this.initialDamage,
     this.isInput, {
     bool enable = true,
+    String? keyStr,
     required this.loc,
   }) {
     enabled = enable;
+    keySubString = keyStr;
   }
 
   final Pokemon pokemon;
@@ -27,6 +29,7 @@ class DamageIndicateRow extends StatefulWidget {
   final bool isInput;
   late final bool enabled;
   final AppLocalizations loc;
+  late final String? keySubString;
 
   @override
   State<DamageIndicateRow> createState() => _DamageIndicateRowState();
@@ -54,7 +57,8 @@ class _DamageIndicateRowState extends State<DamageIndicateRow> {
         Flexible(
           child: widget.isInput
               ? TextFormField(
-                  key: Key('DamageIndicateTextField'),
+                  key: Key(
+                      'DamageIndicateTextField${widget.keySubString ?? ''}'),
                   controller: controller,
                   textAlign: TextAlign.center,
                   decoration: InputDecoration(
@@ -69,6 +73,10 @@ class _DamageIndicateRowState extends State<DamageIndicateRow> {
                           setState(() {
                             damage = widget.onChanged!(val);
                           });
+                          // 統合テスト作成用
+                          print(
+                              "await driver.tap(find.byValueKey('DamageIndicateTextField${widget.keySubString ?? ''}'));\n"
+                              "await driver.enterText('$val');");
                         }
                       : null,
                 )

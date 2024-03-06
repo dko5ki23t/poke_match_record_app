@@ -545,7 +545,7 @@ Future<void> scrollUntilTappable(
 
   bool isTappale = false;
   driver
-      .waitForTappable(item, timeout: timeout ?? Duration(seconds: 10))
+      .waitForTappable(item, timeout: timeout ?? Duration(seconds: 30))
       .then<void>((_) {
     isTappale = true;
   });

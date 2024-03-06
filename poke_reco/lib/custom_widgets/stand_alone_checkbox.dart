@@ -249,6 +249,9 @@ class _SubstituteBreakInputState extends State<SubstituteBreakInput> {
                 }
                 widget.onUpdate();
                 setState(() {});
+                // 統合テスト作成用
+                print(
+                    "await driver.tap(find.byValueKey('SubstituteInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
               }
             }),
         Text(loc.battleSubstituteBroke),
@@ -598,6 +601,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
   @override
   Widget build(BuildContext context) {
     return TypeAheadField(
+      key: Key('SelectItemTextField'),
       textFieldConfiguration: TextFieldConfiguration(
         controller: itemSearchTextController,
         decoration: InputDecoration(

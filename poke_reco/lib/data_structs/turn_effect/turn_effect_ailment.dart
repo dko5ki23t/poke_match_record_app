@@ -363,6 +363,7 @@ class TurnEffectAilment extends TurnEffect {
                 },
                 extraArg2,
                 true,
+                keyStr: '2',
                 loc: loc,
               ),
             ],

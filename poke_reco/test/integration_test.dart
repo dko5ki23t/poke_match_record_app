@@ -2,6 +2,7 @@ import 'package:flutter_driver/flutter_driver.dart';
 import 'package:test/test.dart';
 import 'integration_test_core/integration_test_1_5.dart';
 import 'integration_test_core/integration_test_6_10.dart';
+import 'integration_test_core/integration_test_11_15.dart';
 
 /// 量が多いのでVSCodeでは「Ctrl+k」「Ctrl+0」で一度すべて折りたたむこと推奨
 
@@ -208,6 +209,96 @@ void main() {
         () async {
       if (doTest) {
         await test8_1(driver!);
+      }
+    });
+    test('キョジオーン戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test8_2(driver!);
+      }
+    });
+    test('キョジオーン戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test8_3(driver!);
+      }
+    });
+    test('キョジオーン戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test8_4(driver!);
+      }
+    });
+    test('ミガルーサ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test9_1(driver!);
+      }
+    });
+    test('ミガルーサ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test9_2(driver!);
+      }
+    });
+    test('ミガルーサ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test9_3(driver!);
+      }
+    });
+    test('ミガルーサ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test9_4(driver!);
+      }
+    });
+    test('リククラゲ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test10_1(driver!);
+      }
+    });
+    test('リククラゲ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test10_2(driver!);
+      }
+    });
+    test('リククラゲ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test10_3(driver!);
+      }
+    });
+    test('セグレイブ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test11_1(driver!);
+      }
+    });
+    test('セグレイブ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test11_2(driver!);
+      }
+    });
+    test('セグレイブ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test11_3(driver!);
+      }
+    });
+    test('セグレイブ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test11_4(driver!);
+      }
+    });
+    test('セグレイブ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test11_5(driver!);
       }
     });
   });
