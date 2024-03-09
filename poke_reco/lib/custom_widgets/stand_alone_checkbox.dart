@@ -452,6 +452,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
         Expanded(
           flex: 1,
           child: SwitchListTile(
+            key: Key("SwitchSelectItemInputSwitch"),
             title: Text(widget.switchText),
             onChanged: (value) {
               switchOn = value;
@@ -463,6 +464,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
         Expanded(
           flex: 1,
           child: TypeAheadField(
+            key: Key("SwitchSelectItemInputTextField"),
             textFieldConfiguration: TextFieldConfiguration(
               controller: itemSearchTextController,
               decoration: InputDecoration(

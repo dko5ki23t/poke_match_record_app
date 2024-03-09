@@ -33,6 +33,7 @@ class PartiesPageState extends State<PartiesPage> {
   bool isEditMode = false;
   Map<int, bool>? checkList;
   Party? selectedParty;
+  TextEditingController searchTextController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +57,14 @@ class PartiesPageState extends State<PartiesPage> {
           if (pokemonNoFilter.contains(pokemon?.no)) return true;
         }
         return false;
+      });
+    }
+    // 検索窓の入力でフィルタリング
+    final pattern = searchTextController.text;
+    if (pattern != '') {
+      filteredParties = filteredParties.where((s) {
+        return toKatakana50(s.value.name.toLowerCase())
+            .contains(toKatakana50(pattern.toLowerCase()));
       });
     }
     // 通常の表示ではvalidでないパーティも表示するが、
@@ -95,73 +104,111 @@ class PartiesPageState extends State<PartiesPage> {
       }
     }
 
+    final searchBar = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 20),
+      child: TextField(
+        key: Key('PartiesSearch'),
+        controller: searchTextController,
+        autofocus: widget.selectMode && filteredParties.length >= 10,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(30))),
+          contentPadding: EdgeInsets.all(1),
+        ),
+        onChanged: (value) => setState(() {}),
+      ),
+    );
+
     if (sortedParties.isEmpty) {
-      lists = Center(
-        child: Text(loc.partiesTabNoParty),
+      lists = Column(
+        children: [
+          searchBar,
+          Expanded(
+            child: Center(
+              child: Text(loc.partiesTabNoParty),
+            ),
+          ),
+        ],
       );
     } else {
       if (isEditMode) {
-        lists = Scrollbar(
-          child: ReorderableListView(
-            key: Key('PartiesListView'),
-            onReorder: (int oldIndex, int newIndex) {
-              setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                final item = sortedParties.removeAt(oldIndex);
-                sortedParties.insert(newIndex, item);
-                for (int i = 0; i < sortedParties.length; i++) {
-                  var party = parties[sortedParties[i].key]!;
-                  party.viewOrder = i + 1;
-                }
-              });
-            },
-            children: [
-              for (final e in sortedParties)
-                PartyTile(
-                  e.value,
-                  theme,
-                  leading: Icon(Icons.drag_handle),
-                  trailing: Checkbox(
-                    value: checkList![e.key],
-                    onChanged: (isCheck) {
-                      setState(() {
-                        checkList![e.key] = isCheck ?? false;
-                      });
-                    },
-                  ),
-                  showNetworkImage: PokeDB().getPokeAPI,
-                  loc: loc,
-                )
-            ],
-          ),
+        lists = Column(
+          children: [
+            searchBar,
+            Expanded(
+              child: Scrollbar(
+                child: ReorderableListView(
+                  key: Key('PartiesListView'),
+                  onReorder: (int oldIndex, int newIndex) {
+                    setState(() {
+                      if (oldIndex < newIndex) {
+                        newIndex -= 1;
+                      }
+                      final item = sortedParties.removeAt(oldIndex);
+                      sortedParties.insert(newIndex, item);
+                      for (int i = 0; i < sortedParties.length; i++) {
+                        var party = parties[sortedParties[i].key]!;
+                        party.viewOrder = i + 1;
+                      }
+                    });
+                  },
+                  children: [
+                    for (final e in sortedParties)
+                      PartyTile(
+                        e.value,
+                        theme,
+                        leading: Icon(Icons.drag_handle),
+                        trailing: Checkbox(
+                          value: checkList![e.key],
+                          onChanged: (isCheck) {
+                            setState(() {
+                              checkList![e.key] = isCheck ?? false;
+                            });
+                          },
+                        ),
+                        showNetworkImage: PokeDB().getPokeAPI,
+                        loc: loc,
+                      )
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       } else {
-        lists = Scrollbar(
-          child: ListView(
-            key: Key('PartiesListView'),
-            children: [
-              for (int i = 0; i < sortedParties.length; i++)
-                PartyTile(
-                  sortedParties[i].value,
-                  theme,
-                  leading: Icon(Icons.group),
-                  onLongPress: !widget.selectMode
-                      ? () => widget.onAdd(sortedParties[i].value.copy(), false)
-                      : null,
-                  onTap: widget.selectMode
-                      ? () {
-                          selectedParty = sortedParties[i].value;
-                          widget.onSelect!(sortedParties[i].value);
-                        }
-                      : () => widget
-                          .onView([for (final e in sortedParties) e.value], i),
-                  showNetworkImage: PokeDB().getPokeAPI,
-                  loc: loc,
-                )
-            ],
-          ),
+        lists = Column(
+          children: [
+            searchBar,
+            Expanded(
+              child: Scrollbar(
+                child: ListView(
+                  key: Key('PartiesListView'),
+                  children: [
+                    for (int i = 0; i < sortedParties.length; i++)
+                      PartyTile(
+                        sortedParties[i].value,
+                        theme,
+                        leading: Icon(Icons.group),
+                        onLongPress: !widget.selectMode
+                            ? () => widget.onAdd(
+                                sortedParties[i].value.copy(), false)
+                            : null,
+                        onTap: widget.selectMode
+                            ? () {
+                                selectedParty = sortedParties[i].value;
+                                widget.onSelect!(sortedParties[i].value);
+                              }
+                            : () => widget.onView(
+                                [for (final e in sortedParties) e.value], i),
+                        showNetworkImage: PokeDB().getPokeAPI,
+                        loc: loc,
+                      )
+                  ],
+                ),
+              ),
+            ),
+          ],
         );
       }
     }

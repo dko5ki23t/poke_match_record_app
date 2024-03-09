@@ -39,6 +39,7 @@ class PokemonsPageState extends State<PokemonsPage> {
   bool isEditMode = false;
   Map<int, bool>? checkList;
   Pokemon? selectedPokemon;
+  TextEditingController searchTextController = TextEditingController();
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -90,6 +91,16 @@ class PokemonsPageState extends State<PokemonsPage> {
       filteredPokemons = filteredPokemons
           .where((element) => temperFilter.contains(element.value.temper.id));
     }
+    // 検索窓の入力でフィルタリング
+    final pattern = searchTextController.text;
+    if (pattern != '') {
+      filteredPokemons = filteredPokemons.where((s) {
+        return toKatakana50(s.value.name.toLowerCase())
+                .contains(toKatakana50(pattern.toLowerCase())) ||
+            toKatakana50(s.value.nickname.toLowerCase())
+                .contains(toKatakana50(pattern.toLowerCase()));
+      });
+    }
     // 通常の表示ではvalidでないポケモンも表示するが、
     // パーティ編集での表示ではvalidでないポケモンは表示しない
     if (widget.selectMode) {
@@ -134,80 +145,117 @@ class PokemonsPageState extends State<PokemonsPage> {
             : null,
     ];
 
+    final searchBar = Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 20),
+      child: TextField(
+        key: Key('PartiesSearch'),
+        controller: searchTextController,
+        autofocus: widget.selectMode && filteredPokemons.length >= 10,
+        decoration: InputDecoration(
+          prefixIcon: const Icon(Icons.search),
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(30))),
+          contentPadding: EdgeInsets.all(1),
+        ),
+        onChanged: (value) => setState(() {}),
+      ),
+    );
+
     if (sortedPokemons.isEmpty) {
-      lists = Center(
-        child: Text(loc.pokemonsTabNoPokemon),
+      lists = Column(
+        children: [
+          searchBar,
+          Expanded(
+            child: Center(
+              child: Text(loc.pokemonsTabNoPokemon),
+            ),
+          ),
+        ],
       );
     } else {
       if (isEditMode) {
-        lists = Scrollbar(
-          child: ReorderableListView(
-            onReorder: (int oldIndex, int newIndex) {
-              setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                final item = sortedPokemons.removeAt(oldIndex);
-                sortedPokemons.insert(newIndex, item);
-                for (int i = 0; i < sortedPokemons.length; i++) {
-                  var pokemon = pokemons[sortedPokemons[i].key]!;
-                  pokemon.viewOrder = i + 1;
-                }
-              });
-            },
-            children: [
-              for (final e in sortedPokemons)
-                PokemonTile(
-                  e.value,
-                  theme,
-                  leading: Icon(Icons.drag_handle),
-                  trailing: Checkbox(
-                    value: checkList![e.key],
-                    onChanged: (isCheck) {
-                      setState(() {
-                        checkList![e.key] = isCheck ?? false;
-                      });
-                    },
-                  ),
-                  showWarning: true,
+        lists = Column(
+          children: [
+            searchBar,
+            Expanded(
+              child: Scrollbar(
+                child: ReorderableListView(
+                  onReorder: (int oldIndex, int newIndex) {
+                    setState(() {
+                      if (oldIndex < newIndex) {
+                        newIndex -= 1;
+                      }
+                      final item = sortedPokemons.removeAt(oldIndex);
+                      sortedPokemons.insert(newIndex, item);
+                      for (int i = 0; i < sortedPokemons.length; i++) {
+                        var pokemon = pokemons[sortedPokemons[i].key]!;
+                        pokemon.viewOrder = i + 1;
+                      }
+                    });
+                  },
+                  children: [
+                    for (final e in sortedPokemons)
+                      PokemonTile(
+                        e.value,
+                        theme,
+                        leading: Icon(Icons.drag_handle),
+                        trailing: Checkbox(
+                          value: checkList![e.key],
+                          onChanged: (isCheck) {
+                            setState(() {
+                              checkList![e.key] = isCheck ?? false;
+                            });
+                          },
+                        ),
+                        showWarning: true,
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         );
       } else {
-        lists = Scrollbar(
-          child: ListView(
-            children: [
-              for (int i = 0; i < sortedPokemons.length; i++)
-                PokemonTile(
-                  sortedPokemons[i].value,
-                  theme,
-                  enabled:
-                      !partyPokemonsNo.contains(sortedPokemons[i].value.no),
-                  leading: pokeData.getPokeAPI
-                      ? Image.network(
-                          pokeData
-                              .pokeBase[sortedPokemons[i].value.no]!.imageUrl,
-                          height: theme.buttonTheme.height,
-                          errorBuilder: (c, o, s) {
-                            return const Icon(Icons.catching_pokemon);
-                          },
-                        )
-                      : const Icon(Icons.catching_pokemon),
-                  onLongPress: !widget.selectMode
-                      ? () =>
-                          widget.onAdd(sortedPokemons[i].value.copy(), false)
-                      : null,
-                  onTap: widget.selectMode
-                      ? () {
-                          selectedPokemon = sortedPokemons[i].value;
-                          widget.onSelect!(sortedPokemons[i].value);
-                        }
-                      : () => widget
-                          .onView([for (final e in sortedPokemons) e.value], i),
+        lists = Column(
+          children: [
+            searchBar,
+            Expanded(
+              child: Scrollbar(
+                child: ListView(
+                  children: [
+                    for (int i = 0; i < sortedPokemons.length; i++)
+                      PokemonTile(
+                        sortedPokemons[i].value,
+                        theme,
+                        enabled: !partyPokemonsNo
+                            .contains(sortedPokemons[i].value.no),
+                        leading: pokeData.getPokeAPI
+                            ? Image.network(
+                                pokeData.pokeBase[sortedPokemons[i].value.no]!
+                                    .imageUrl,
+                                height: theme.buttonTheme.height,
+                                errorBuilder: (c, o, s) {
+                                  return const Icon(Icons.catching_pokemon);
+                                },
+                              )
+                            : const Icon(Icons.catching_pokemon),
+                        onLongPress: !widget.selectMode
+                            ? () => widget.onAdd(
+                                sortedPokemons[i].value.copy(), false)
+                            : null,
+                        onTap: widget.selectMode
+                            ? () {
+                                selectedPokemon = sortedPokemons[i].value;
+                                widget.onSelect!(sortedPokemons[i].value);
+                              }
+                            : () => widget.onView(
+                                [for (final e in sortedPokemons) e.value], i),
+                      ),
+                  ],
                 ),
-            ],
-          ),
+              ),
+            ),
+          ],
         );
       }
     }

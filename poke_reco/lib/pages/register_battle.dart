@@ -515,7 +515,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ownBattleCommandKey.currentState?.reset();
           opponentBattleCommandKey.currentState?.reset();
           // 統合テスト作成用
-          print("\n// ターン${turnNum + 1}へ\n"
+          print("\n// ターン$turnNumへ\n"
               "await goTurnPage(driver, turnNum++);\n\n");
           setState(() {});
           break;

@@ -206,7 +206,7 @@ myPokemons = [
     Pokemon(10, 10, 981, "もこキリン", PokeType.fight, 50, Sex.female, Temper.ganbariya, 291, 0, [31, 252], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [888, 304, 97, 851], [10, 10, 30, 10], Owner.mine).toSet(),
     Pokemon(11, 11, 470, "もこフィア", PokeType.fire, 50, Sex.male, Temper.ganbariya, 34, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [851, 348, 98, 14], [10, 15, 30, 20], Owner.mine).toSet(),
     Pokemon(12, 12, 966, "もこロローム", PokeType.normal, 50, Sex.male, Temper.ganbariya, 142, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [259, None, None, None], [15, 0, 0, 0], Owner.mine).toSet(),
-    Pokemon(13, 13, 373, "もこいかくマンダ", PokeType.dragon, 50, Sex.male, Temper.ganbariya, 22, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [814, 89, 349, 200], [10, 10, 20, 10], Owner.mine).toSet(),
+    Pokemon(13, 13, 373, "もこいかくマンダ", PokeType.dragon, 50, Sex.male, Temper.yoki, 22, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [814, 89, 349, 200], [10, 10, 20, 10], Owner.mine).toSet(),
     Pokemon(14, 14, 184, "もこルリ", PokeType.steel, 50, Sex.female, Temper.ganbariya, 37, 0, [31, 204], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [453, 583, 710, 276], [20, 10, 10, 5], Owner.mine).toSet(),
     Pokemon(15, 15, 964, "もこイルカ", PokeType.fly, 75, Sex.female, Temper.ijippari, 278, 0, [31, 252], [31, 252], [31, 0], [31, 0], [31, 0], [31, 4], [812, 512, 857, 834], [20, 15, 15, 10], Owner.mine).toSet(),
     Pokemon(16, 16, 700, "もこニンフィア", PokeType.fairy, 50, Sex.male, Temper.zubutoi, 182, 0, [31, 252], [31, 0], [31, 252], [31, 0], [31, 0], [31, 4], [98, 304, 204, 281], [30, 10, 20, 10], Owner.mine).toSet(),
@@ -218,11 +218,26 @@ myPokemons = [
     Pokemon(22, 22, 936, "もこアルマ", PokeType.fire, 62, Sex.female, Temper.hikaeme, 133, 0, [31, 0], [4, 0], [31, 4], [31, 252], [31, 0], [31, 252], [412, 890, 473, 194], [10, 5, 10, 5], Owner.mine).toSet(),
     Pokemon(23, 23, 982, "もこコッチ", PokeType.normal, 62, Sex.male, Temper.hikaeme, 32, 0, [31, 4], [5, 0], [31, 0], [31, 252], [31, 0], [31, 252], [137, 355, 586, 403], [30, 10, 10, 15], Owner.mine).toSet(),
     Pokemon(24, 24, 961, "もこウミトリオ", PokeType.water, 50, Sex.female, Temper.otonashi, 183, 0, [31, 4], [31, 252], [31, 0], [8, 0], [31, 0], [31, 252], [865, 453, 389, 262], [10, 20, 5, 10], Owner.mine).toSet(),
-    Pokemon(25, 25, 10008, "もこヒートロトム", PokeType.normal, 50, Sex.none, Temper.ganbariya, 26, 0, [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [129, None, None, None], [20, 0, 0, 0], Owner.mine).toSet(),
+    Pokemon(25, 25, 10008, "もこヒートロトム", PokeType.evil, 50, Sex.none, Temper.hikaeme, 26, 0, [31, 252], [14, 0], [31, 0], [31, 252], [31, 0], [31, 4], [521, 315, 435, 271], [20, 5, 15, 10], Owner.mine).toSet(),
     Pokemon(26, 26, 934, "もこオーン", PokeType.ghost, 50, Sex.male, Temper.wanpaku, 272, 0, [31, 252], [31, 4], [31, 252], [10, 0], [31, 0], [31, 0], [174, 864, 335, 105], [10, 15, 5, 10], Owner.mine).toSet(),
     Pokemon(27, 27, 976, "もこルーサ", PokeType.evil, 50, Sex.female, Temper.yoki, 292, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [895, 427, 400, 868], [20, 20, 15, 10], Owner.mine).toSet(),
     Pokemon(28, 28, 949, "もこリククラゲ", PokeType.water, 75, Sex.female, Temper.okubyou, 298, 0, [31, 252], [31, 0], [31, 0], [31, 4], [31, 0], [31, 252], [147, 414, 202, 73], [15, 10, 10, 10], Owner.mine).toSet(),
-    Pokemon(29, 29, 998, "もこレイブ", PokeType.steel, 75, Sex.female, Temper.yoki, 270, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [333, 862, 442, 349], [30, 5, 15, 20], Owner.mine).toSet()
+    Pokemon(29, 29, 998, "もこレイブ", PokeType.steel, 75, Sex.female, Temper.yoki, 270, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [333, 862, 442, 349], [30, 5, 15, 20], Owner.mine).toSet(),
+    Pokemon(30, 30, 918, "もこイダー", PokeType.ghost, 50, Sex.female, Temper.wanpaku, 15, 0, [31, 252], [31, 0], [31, 252], [14, 0], [31, 4], [31, 0], [564, 852, 389, 262], [20, 10, 5, 10], Owner.mine).toSet(),
+    Pokemon(31, 31, 964, "もこイルカ2", PokeType.fly, 75, Sex.female, Temper.ijippari, 278, 0, [31, 252], [31, 252], [31, 0], [31, 0], [31, 0], [31, 4], [370, 512, 857, 834], [5, 15, 15, 10], Owner.mine).toSet(),
+    Pokemon(32, 32, 1005, "もこロクツキ", PokeType.evil, 77, Sex.none, Temper.ijippari, 281, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [512, 675, 200, 349], [15, 15, 10, 20], Owner.mine).toSet(),
+    Pokemon(33, 33, 978, "もこシャリ", PokeType.fairy, 75, Sex.male, Temper.okubyou, 114, 0, [31, 4], [31, 0], [31, 0], [31, 252], [31, 0], [31, 252], [417, 406, 56, 851], [20, 10, 5, 10], Owner.mine).toSet(),
+    Pokemon(34, 34, 475, "もこレイド", PokeType.fight, 50, Sex.male, Temper.yoki, 292, 0, [31, 4], [31, 252], [31, 0], [0, 0], [31, 0], [31, 252], [533, 348, 400, 427], [15, 15, 15, 20], Owner.mine).toSet(),
+    Pokemon(35, 35, 229, "もこヘル2", PokeType.fairy, 50, Sex.male, Temper.ganbariya, 127, 0, [31, 4], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [53, 885, 399, 851], [15, 20, 15, 10], Owner.mine).toSet(),
+    Pokemon(36, 36, 956, "もこパトラ", PokeType.normal, 50, Sex.male, Temper.okubyou, 3, 0, [31, 56], [31, 0], [31, 100], [31, 0], [31, 100], [31, 252], [855, 226, 347, 297], [10, 40, 20, 15], Owner.mine).toSet(),
+    Pokemon(37, 37, 373, "もこ特殊マンダ", PokeType.steel, 50, Sex.female, Temper.ganbariya, 22, 0, [31, 60], [31, 0], [31, 0], [31, 0], [31, 0], [31, 252], [851, 403, 126, 434], [10, 15, 5, 8], Owner.mine).toSet(),
+    Pokemon(38, 38, 930, "もこーヴァ", PokeType.fire, 75, Sex.female, Temper.hikaeme, 139, 0, [31, 252], [25, 0], [31, 4], [31, 252], [31, 0], [31, 0], [412, 605, 851, 668], [10, 10, 10, 10], Owner.mine).toSet(),
+    Pokemon(39, 39, 324, "もコータス", PokeType.fire, 50, Sex.male, Temper.ganbariya, 70, 0, [31, 252], [31, 0], [31, 0], [31, 0], [31, 0], [31, 0], [446, 281, 499, 315], [20, 10, 15, 5], Owner.mine).toSet(),
+    Pokemon(40, 40, 908, "もこカーニャ", PokeType.grass, 52, Sex.female, Temper.yoki, 168, 0, [31, 4], [31, 252], [31, 0], [13, 0], [31, 0], [31, 252], [369, 870, 583, 282], [20, 10, 10, 20], Owner.mine).toSet(),
+    Pokemon(41, 41, 918, "もこイダー2", PokeType.ghost, 50, Sex.female, Temper.wanpaku, 15, 0, [31, 252], [31, 0], [31, 252], [14, 0], [31, 4], [31, 0], [564, 806, 509, 262], [20, 10, 10, 10], Owner.mine).toSet(),
+    Pokemon(42, 42, 229, "ねつじょう", PokeType.evil, 50, Sex.male, Temper.hikaeme, 18, 0, [31, 4], [31, 0], [31, 0], [31, 252], [31, 0], [31, 252], [53, 399, 389, 194], [15, 15, 5, 5], Owner.mine).toSet(),
+    Pokemon(43, 43, 914, "もこニバル", PokeType.dragon, 50, Sex.female, Temper.yoki, 153, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [339, 370, 861, 872], [20, 5, 15, 10], Owner.mine).toSet(),
+    Pokemon(44, 44, 973, "もこミンゴ", PokeType.fight, 54, Sex.male, Temper.yoki, 113, 0, [31, 0], [31, 252], [31, 4], [15, 0], [31, 0], [31, 252], [370, 413, 14, 269], [5, 15, 20, 20], Owner.mine).toSet()
 ]
 
 parties = [
@@ -241,7 +256,19 @@ parties = [
     Party(13, 13, "9もこルーサ2", 16, 190, 18, 242, 27, 209, 19, 135, 13, 1698, 12, 134, Owner.mine).toSet(),
     Party(14, 14, "9もこルーサ3", 16, 190, 18, 242, 27, 135, 19, 196, 13, 1698, 17, 252, Owner.mine).toSet(),
     Party(15, 15, "10もこリククラゲ", 21, 220, 25, 274, 28, 135, 12, 134, 11, 247, 26, 211, Owner.mine).toSet(),
-    Party(16, 16, "11もこレイブ", 21, 220, 25, 274, 29, 134, 9, 252, 19, 135, 11, 247, Owner.mine).toSet()
+    Party(16, 16, "11もこレイブ", 21, 220, 25, 274, 29, 134, 9, 252, 19, 135, 11, 247, Owner.mine).toSet(),
+    Party(17, 17, "12もこイダー", 29, 134, 18, 242, 31, 1177, 30, 196, 11, 247, 17, 252, Owner.mine).toSet(),
+    Party(18, 18, "13もこロクツキ", 32, 1696, 13, 134, 25, 274, 30, 196, 19, 135, 28, 273, Owner.mine).toSet(),
+    Party(19, 19, "14もこシャリ", 25, 274, 28, 273, 30, 196, 33, 247, 13, 134, 26, 211, Owner.mine).toSet(),
+    Party(20, 20, "14もこシャリ2", 28, 273, 33, 247, 13, 134, 26, 211, 30, 196, 18, 242, Owner.mine).toSet(),
+    Party(21, 21, "15もこレイド", 13, 134, 34, 264, 28, 273, 35, 252, 14, 683, 26, 211, Owner.mine).toSet(),
+    Party(22, 22, "16もこパトラ", 37, 191, 33, 247, 14, 683, 26, 211, 36, 196, 28, 273, Owner.mine).toSet(),
+    Party(23, 23, "17もこーヴァ", 39, 1177, 11, 247, 29, 1698, 14, 683, 38, 135, 34, 264, Owner.mine).toSet(),
+    Party(24, 24, "17もこーヴァ2", 39, 1177, 11, 247, 29, 1698, 14, 683, 38, 135, 35, 252, Owner.mine).toSet(),
+    Party(25, 25, "18もこカーニャ", 37, 191, 42, 252, 41, 196, 26, 211, 14, 683, 40, 197, Owner.mine).toSet(),
+    Party(26, 26, "19もこニバル", 42, 252, 43, 134, 26, 211, 38, 135, 13, 1698, 16, 190, Owner.mine).toSet(),
+    Party(27, 27, "19もこニバル2", 26, 211, 13, 1698, 42, 252, 43, 134, 19, 135, 16, 190, Owner.mine).toSet(),
+    Party(28, 28, "20もこミンゴ", 37, 264, 14, 683, 26, 211, 44, 247, 16, 190, 38, 135, Owner.mine).toSet()
 ]
 
 def main():

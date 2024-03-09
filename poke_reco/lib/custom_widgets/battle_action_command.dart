@@ -133,7 +133,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         ));
       }
       // まひ状態の場合
-      if (myState
+      else if (myState
           .ailmentsWhere((element) => element.id == Ailment.paralysis)
           .isNotEmpty) {
         moveTiles.add(SwitchListTile(
@@ -157,6 +157,33 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.paralysis,
         ));
+      }
+      // こんらん状態の場合
+      else if (myState
+          .ailmentsWhere((element) => element.id == Ailment.confusion)
+          .isNotEmpty) {
+        moveTiles.add(SwitchListTile(
+          title: Text(ActionFailure(ActionFailure.confusion).displayName),
+          onChanged: (value) {
+            if (value) {
+              parentSetState(() {
+                turnMove.isSuccess = false;
+                turnMove.actionFailure = ActionFailure(ActionFailure.confusion);
+              });
+            } else {
+              parentSetState(() {
+                turnMove.isSuccess = true;
+                turnMove.actionFailure = ActionFailure(ActionFailure.none);
+              });
+            }
+            // 統合テスト作成用
+            print("await driver.tap(\n"
+                "      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));\n");
+          },
+          value: !turnMove.isSuccess &&
+              turnMove.actionFailure.id == ActionFailure.confusion,
+        ));
+        // TODO: extraArg1,extraArg2の値を入力
       }
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];

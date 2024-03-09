@@ -51,13 +51,17 @@ Future<void> inputBattleBasicInfo(
   // あなたのパーティ
   await driver.tap(find.byValueKey('BattleBasicListViewYourParty'));
   await testExistAnyWidgets(find.byType('PartyTile'), driver);
-  if (!await isPresent(find.text(ownPartyname), driver)) {
+  // わざ名検索
+  await driver.tap(find.byValueKey('PartiesSearch'));
+  await driver.enterText(ownPartyname);
+  /*if (!await isPresent(find.text(ownPartyname), driver)) {
     // 入力候補までスクロール
     await scrollUntilTappable(
         driver, find.byValueKey('PartiesListView'), find.text(ownPartyname),
         dyScroll: -100);
-  }
-  await driver.tap(find.text(ownPartyname));
+  }*/
+  await driver.tap(find.descendant(
+      of: find.byType('PartyTile'), matching: find.text(ownPartyname)));
   // 元の画面に戻るのを待つ
   await driver
       .waitForTappable(find.byValueKey('BattleBasicListViewOpponentName'));

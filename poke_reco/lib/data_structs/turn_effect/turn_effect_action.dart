@@ -7239,12 +7239,21 @@ class TurnEffectAction extends TurnEffect {
                     moveAdditionalEffects = MoveEffect(MoveEffect.none);
                   }
                   onUpdate();
+                  // 統合テスト作成用
+                  print(
+                      "await driver.tap(find.text('SwitchSelectItemInputSwitch'));");
                 },
                 itemText: extra[2] as String,
                 initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
+                  // 統合テスト作成用
+                  print(
+                      "await driver.tap(find.text('SwitchSelectItemInputTextField'));\n"
+                      "await driver.enterText('${item.displayName}');\n"
+                      "await driver.tap(find.descendant(\n"
+                      "    of: find.byType('ListTile'), matching: find.text('${item.displayName}')));");
                 },
                 playerType: playerType.opposite,
                 pokemonState: yourState,

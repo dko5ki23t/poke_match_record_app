@@ -3,6 +3,7 @@ import 'package:test/test.dart';
 import 'integration_test_core/integration_test_1_5.dart';
 import 'integration_test_core/integration_test_6_10.dart';
 import 'integration_test_core/integration_test_11_15.dart';
+import 'integration_test_core/integration_test_16_20.dart';
 
 /// 量が多いのでVSCodeでは「Ctrl+k」「Ctrl+0」で一度すべて折りたたむこと推奨
 
@@ -299,6 +300,120 @@ void main() {
         () async {
       if (doTest) {
         await test11_5(driver!);
+      }
+    });
+    test('ワナイダー戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test12_1(driver!);
+      }
+    });
+    test('ワナイダー戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test12_2(driver!);
+      }
+    });
+    test('ワナイダー戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test12_3(driver!);
+      }
+    });
+    test('ワナイダー戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test12_4(driver!);
+      }
+    });
+    test('トドロクツキ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test13_1(driver!);
+      }
+    });
+    test('トドロクツキ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test13_2(driver!);
+      }
+    });
+    test('トドロクツキ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test13_3(driver!);
+      }
+    });
+    test('トドロクツキ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test13_4(driver!);
+      }
+    });
+    test('シャリタツ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test14_1(driver!);
+      }
+    });
+    test('シャリタツ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test14_2(driver!);
+      }
+    });
+    test('シャリタツ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test14_3(driver!);
+      }
+    });
+    test('シャリタツ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test14_4(driver!);
+      }
+    });
+    test('エルレイド戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test15_1(driver!);
+      }
+    });
+    test('エルレイド戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test15_2(driver!);
+      }
+    });
+    test('エルレイド戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test15_3(driver!);
+      }
+    });
+    test('エルレイド戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test15_4(driver!);
+      }
+    });
+    test('クエスパトラ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test16_1(driver!);
+      }
+    });
+    test('クエスパトラ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test16_2(driver!);
+      }
+    });
+    test('クエスパトラ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test16_3(driver!);
       }
     });
   });
