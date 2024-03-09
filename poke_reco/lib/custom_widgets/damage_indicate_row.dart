@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
+/// 現在のポケモンのHPの入力フィールドと、その入力に基づいたダメージor回復量を表示するWidget
+/// controllerの値およびonChangedによって渡される値は、0～対象ポケモンの最大HPの範囲内に自動で収める
 class DamageIndicateRow extends StatefulWidget {
   DamageIndicateRow(
     this.pokemon,
@@ -24,7 +26,7 @@ class DamageIndicateRow extends StatefulWidget {
   final bool isMe;
 
   /// 戻り値に新たなダメージを返してもらう
-  final int Function(String)? onChanged;
+  final int Function(int)? onChanged;
   final int initialDamage;
   final bool isInput;
   late final bool enabled;
@@ -37,11 +39,19 @@ class DamageIndicateRow extends StatefulWidget {
 
 class _DamageIndicateRowState extends State<DamageIndicateRow> {
   int damage = 0;
+  static const int minHP = 0;
+  late final int maxHP;
 
   @override
   void initState() {
     super.initState();
     damage = widget.initialDamage;
+    maxHP = widget.isMe ? widget.pokemon.h.real : 100;
+    final controller = widget.controller;
+    if (controller.text != '') {
+      int initialHP = int.tryParse(controller.text) ?? 0;
+      controller.text = initialHP.clamp(minHP, maxHP).toString();
+    }
   }
 
   @override
@@ -70,13 +80,15 @@ class _DamageIndicateRowState extends State<DamageIndicateRow> {
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   onChanged: widget.onChanged != null
                       ? (val) {
+                          int remainHP =
+                              (int.tryParse(val) ?? 0).clamp(minHP, maxHP);
                           setState(() {
-                            damage = widget.onChanged!(val);
+                            damage = widget.onChanged!(remainHP);
                           });
                           // 統合テスト作成用
                           print(
                               "await driver.tap(find.byValueKey('DamageIndicateTextField${widget.keySubString ?? ''}'));\n"
-                              "await driver.enterText('$val');");
+                              "await driver.enterText('$remainHP');");
                         }
                       : null,
                 )

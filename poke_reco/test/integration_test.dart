@@ -416,5 +416,107 @@ void main() {
         await test16_3(driver!);
       }
     });
+    test('オリーヴァ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test17_1(driver!);
+      }
+    });
+    test('オリーヴァ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test17_2(driver!);
+      }
+    });
+    test('オリーヴァ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test17_3(driver!);
+      }
+    });
+    test('オリーヴァ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test17_4(driver!);
+      }
+    });
+    test('マスカーニャ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test18_1(driver!);
+      }
+    });
+    test('マスカーニャ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test18_2(driver!);
+      }
+    });
+    test('マスカーニャ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test18_3(driver!);
+      }
+    });
+    test('マスカーニャ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test18_4(driver!);
+      }
+    });
+    test('ウェーニバル戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test19_1(driver!);
+      }
+    });
+    test('ウェーニバル戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test19_2(driver!);
+      }
+    });
+    test('ウェーニバル戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test19_3(driver!);
+      }
+    });
+    test('ウェーニバル戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test19_4(driver!);
+      }
+    });
+    test('ウェーニバル戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test19_5(driver!);
+      }
+    });
+    test('カラミンゴ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test20_1(driver!);
+      }
+    });
+    test('カラミンゴ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test20_2(driver!);
+      }
+    });
+    test('カラミンゴ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test20_3(driver!);
+      }
+    });
+    test('カラミンゴ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test20_4(driver!);
+      }
+    });
   });
 }

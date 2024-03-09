@@ -179,9 +179,9 @@ class TurnEffectItem extends TurnEffect {
             controller,
             playerType == PlayerType.me,
             (value) {
-              int val = myState.remainHP - (int.tryParse(value) ?? 0);
+              int val = myState.remainHP - value;
               if (playerType == PlayerType.opponent) {
-                val = myState.remainHPPercent - (int.tryParse(value) ?? 0);
+                val = myState.remainHPPercent - value;
               }
               extraArg1 = val;
               return extraArg1;
@@ -244,10 +244,9 @@ class TurnEffectItem extends TurnEffect {
                       controller,
                       playerType == PlayerType.me,
                       (value) {
-                        int val = myState.remainHP - (int.tryParse(value) ?? 0);
+                        int val = myState.remainHP - value;
                         if (playerType == PlayerType.opponent) {
-                          val = myState.remainHPPercent -
-                              (int.tryParse(value) ?? 0);
+                          val = myState.remainHPPercent - value;
                         }
                         extraArg1 = val;
                         return extraArg1;
@@ -275,9 +274,9 @@ class TurnEffectItem extends TurnEffect {
             controller,
             playerType != PlayerType.me,
             (value) {
-              int val = yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+              int val = yourState.remainHPPercent - value;
               if (playerType == PlayerType.opponent) {
-                val = yourState.remainHP - (int.tryParse(value) ?? 0);
+                val = yourState.remainHP - value;
               }
               extraArg1 = val;
               return extraArg1;

@@ -972,10 +972,9 @@ class TurnEffectAbility extends TurnEffect {
             playerType == PlayerType.me,
             (value) {
               if (playerType == PlayerType.me) {
-                extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+                extraArg1 = myState.remainHP - value;
               } else {
-                extraArg1 =
-                    myState.remainHPPercent - (int.tryParse(value) ?? 0);
+                extraArg1 = myState.remainHPPercent - value;
               }
               return extraArg1;
             },
@@ -1019,10 +1018,9 @@ class TurnEffectAbility extends TurnEffect {
             playerType != PlayerType.me,
             (value) {
               if (playerType == PlayerType.me) {
-                extraArg1 =
-                    yourState.remainHPPercent - (int.tryParse(value) ?? 0);
+                extraArg1 = yourState.remainHPPercent - value;
               } else {
-                extraArg1 = yourState.remainHP - (int.tryParse(value) ?? 0);
+                extraArg1 = yourState.remainHP - value;
               }
               return extraArg1;
             },
@@ -1598,11 +1596,9 @@ class TurnEffectAbility extends TurnEffect {
                       playerType != PlayerType.me,
                       (value) {
                         if (playerType == PlayerType.me) {
-                          extraArg2 = yourState.remainHPPercent -
-                              (int.tryParse(value) ?? 0);
+                          extraArg2 = yourState.remainHPPercent - value;
                         } else {
-                          extraArg2 =
-                              yourState.remainHP - (int.tryParse(value) ?? 0);
+                          extraArg2 = yourState.remainHP - value;
                         }
                         return extraArg2;
                       },
@@ -1617,11 +1613,9 @@ class TurnEffectAbility extends TurnEffect {
                           playerType == PlayerType.me,
                           (value) {
                             if (playerType == PlayerType.me) {
-                              extraArg2 =
-                                  myState.remainHP - (int.tryParse(value) ?? 0);
+                              extraArg2 = myState.remainHP - value;
                             } else {
-                              extraArg2 = myState.remainHPPercent -
-                                  (int.tryParse(value) ?? 0);
+                              extraArg2 = myState.remainHPPercent - value;
                             }
                             return extraArg2;
                           },

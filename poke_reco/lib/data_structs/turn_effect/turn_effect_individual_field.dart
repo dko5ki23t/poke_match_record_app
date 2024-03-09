@@ -239,10 +239,9 @@ class TurnEffectIndividualField extends TurnEffect {
             playerType == PlayerType.me,
             (value) {
               if (playerType == PlayerType.me) {
-                extraArg1 = myState.remainHP - (int.tryParse(value) ?? 0);
+                extraArg1 = myState.remainHP - value;
               } else {
-                extraArg1 =
-                    myState.remainHPPercent - (int.tryParse(value) ?? 0);
+                extraArg1 = myState.remainHPPercent - value;
               }
               return extraArg1;
             },

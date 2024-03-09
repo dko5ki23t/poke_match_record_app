@@ -165,8 +165,7 @@ class TurnEffectWeather extends TurnEffect {
                 controller,
                 true,
                 (value) {
-                  extraArg1 =
-                      ownPokemonState.remainHP - (int.tryParse(value) ?? 0);
+                  extraArg1 = ownPokemonState.remainHP - value;
                   return extraArg1;
                 },
                 extraArg1,
@@ -181,8 +180,7 @@ class TurnEffectWeather extends TurnEffect {
                 controller2,
                 false,
                 (value) {
-                  extraArg2 = opponentPokemonState.remainHPPercent -
-                      (int.tryParse(value) ?? 0);
+                  extraArg2 = opponentPokemonState.remainHPPercent - value;
                   return extraArg2;
                 },
                 extraArg2,
