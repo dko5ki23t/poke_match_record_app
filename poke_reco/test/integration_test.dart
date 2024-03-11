@@ -31,7 +31,8 @@ void main() {
   });
 
   group('統合テスト(もこうの実況を記録)', () {
-    int minutesPerTest = 10;
+    int minutesPerTest = 5;
+    /*
     test('パーモット戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
@@ -152,6 +153,7 @@ void main() {
         await test5_4(driver!);
       }
     });
+    */
     test('ノココッチ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {

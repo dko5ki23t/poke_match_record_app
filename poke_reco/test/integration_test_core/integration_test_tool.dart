@@ -26,6 +26,22 @@ Future<bool> isPresent(SerializableFinder finder, FlutterDriver driver,
   }
 }
 
+/// 対戦登録中ページにいるならそこから戻る(対戦のトップページに移動する)
+Future<void> backBattleTopPage(
+  FlutterDriver driver,
+) async {
+  // 前テストの結果保存中の場合があるため、2秒待つ
+  await Future.delayed(Duration(seconds: 2));
+  // 編集ダイアログが表示されている場合はキャンセルを押す
+  if (await isPresent(find.text('キャンセル'), driver)) {
+    await driver.tap(find.text('キャンセル'));
+  }
+  if (await isPresent(find.byTooltip('戻る'), driver)) {
+    await driver.tap(find.byTooltip('戻る'));
+    await driver.tap(find.text('はい'));
+  }
+}
+
 /// 基本情報を入力する
 Future<void> inputBattleBasicInfo(
   FlutterDriver driver, {
