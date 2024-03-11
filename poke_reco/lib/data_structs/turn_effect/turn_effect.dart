@@ -533,6 +533,8 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// opponentParty: 対戦相手のパーティ
   /// state: フェーズの状態
   /// controller: テキスト入力コントローラ
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// (ダイアログで、効果が有効かどうかでOKボタンの有効無効を切り替えるために使う)
   /// ```
   Widget editArgWidget(
     PokemonState myState,
@@ -542,6 +544,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
+    required Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   });

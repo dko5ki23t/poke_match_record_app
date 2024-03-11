@@ -127,6 +127,8 @@ class TurnEffectWeather extends TurnEffect {
   /// opponentParty: 対戦相手のパーティ
   /// state: フェーズの状態
   /// controller: テキスト入力コントローラ
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// (ダイアログで、効果が有効かどうかでOKボタンの有効無効を切り替えるために使う)
   /// ```
   @override
   Widget editArgWidget(
@@ -137,6 +139,7 @@ class TurnEffectWeather extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
+    required Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -166,6 +169,7 @@ class TurnEffectWeather extends TurnEffect {
                 true,
                 (value) {
                   extraArg1 = ownPokemonState.remainHP - value;
+                  onEdit();
                   return extraArg1;
                 },
                 extraArg1,
@@ -181,6 +185,7 @@ class TurnEffectWeather extends TurnEffect {
                 false,
                 (value) {
                   extraArg2 = opponentPokemonState.remainHPPercent - value;
+                  onEdit();
                   return extraArg2;
                 },
                 extraArg2,

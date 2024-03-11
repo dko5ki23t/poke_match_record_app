@@ -1448,8 +1448,6 @@ Future<void> test8_1(
   await tapMove(driver, op, 'かげうち', true);
   // キョジオーンのHP0
   await inputRemainHP(driver, op, '0');
-  // キョジオーンひんし->ボーマンダに交代
-  await changePokemon(driver, me, 'ボーマンダ', false);
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -1527,13 +1525,71 @@ Future<void> test8_2(
   await inputRemainHP(driver, op, '151');
   // コータスのだっしゅつパック
   await addEffect(driver, 1, PlayerType.opponent, 'だっしゅつパック');
-  // TODO:だっしゅつパックバグってる
-  // TODO:ハバタクカミ選択
+  // ハバタクカミに交代
+  await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
+  await driver.tap(find.text('ハバタクカミ'));
   await driver.tap(find.text('OK'));
+  // こだいかっせい編集
+  await tapEffect(driver, 'こだいかっせい');
+  // すばやさが高まった
+  await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
+  await driver.tap(find.text('すばやさ'));
+  await driver.tap(find.text('OK'));
+  // キョジオーンののろい
+  await tapMove(driver, me, 'のろい', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
 
-  return;
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // ハバタクカミのムーンフォース
+  await tapMove(driver, op, 'ムーンフォース', true);
+  // キョジオーンのHP70
+  await inputRemainHP(driver, op, '70');
+  // キョジオーンのじこさいせい
+  await tapMove(driver, me, 'じこさいせい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP174
+  await inputRemainHP(driver, me, '174');
+  // こだいかっせいの効果が切れる
+  await testExistEffect(driver, 'こだいかっせい');
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // ハバタクカミのテラスタル
+  await inputTerastal(driver, op, 'ゴースト');
+  // ハバタクカミのシャドーボール
+  await tapMove(driver, op, 'シャドーボール', true);
+  // キョジオーンのHP130
+  await inputRemainHP(driver, op, '130');
+  // キョジオーンのしおづけ
+  await tapMove(driver, me, 'しおづけ', false);
+  // ハバタクカミのHP26
+  await inputRemainHP(driver, me, '26');
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // ハバタクカミのムーンフォース
+  await tapMove(driver, op, 'ムーンフォース', false);
+  // キョジオーンのHP39
+  await inputRemainHP(driver, op, '39');
+  // キョジオーンのじこさいせい
+  await tapMove(driver, me, 'じこさいせい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP143
+  await inputRemainHP(driver, me, '143');
+  // しおづけ編集
+  await tapEffect(driver, 'しおづけ');
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('0');
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('0');
+  await driver.tap(find.text('OK'));
+  // ハバタクカミひんし->アーマーガアに交代
+  await changePokemon(driver, op, 'アーマーガア', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // あいて降参
+  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -2390,9 +2446,8 @@ Future<void> test9_4(
   // ガブリアスのHP0
   await inputRemainHP(driver, me, '0');
   // ガブリアスのさめはだ
-  await addEffect(driver, 5, op, 'さめはだ');
+  await addEffect(driver, 4, op, 'さめはだ');
   await driver.tap(find.text('OK'));
-  // TODO: 相手の勝利になってしまう
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 

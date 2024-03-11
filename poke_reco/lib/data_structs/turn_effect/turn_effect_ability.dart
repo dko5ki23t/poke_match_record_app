@@ -934,6 +934,8 @@ class TurnEffectAbility extends TurnEffect {
   /// opponentParty: 対戦相手のパーティ
   /// state: フェーズの状態
   /// controller: テキスト入力コントローラ
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// (ダイアログで、効果が有効かどうかでOKボタンの有効無効を切り替えるために使う)
   /// ```
   @override
   Widget editArgWidget(
@@ -944,6 +946,7 @@ class TurnEffectAbility extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
+    required Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -976,6 +979,7 @@ class TurnEffectAbility extends TurnEffect {
               } else {
                 extraArg1 = myState.remainHPPercent - value;
               }
+              onEdit();
               return extraArg1;
             },
             extraArg1,
@@ -994,6 +998,7 @@ class TurnEffectAbility extends TurnEffect {
                 loc.battleTypeToChange,
                 (value) {
                   extraArg1 = value;
+                  onEdit();
                 },
                 extraArg1 == 0 ? null : PokeType.values[extraArg1],
               ),
@@ -1022,6 +1027,7 @@ class TurnEffectAbility extends TurnEffect {
               } else {
                 extraArg1 = yourState.remainHP - value;
               }
+              onEdit();
               return extraArg1;
             },
             extraArg1,
@@ -1057,6 +1063,7 @@ class TurnEffectAbility extends TurnEffect {
                 value: extraArg1 == 0 ? null : extraArg1,
                 onChanged: (value) {
                   extraArg1 = value;
+                  onEdit();
                 },
                 isInput: true,
                 textValue: Ailment(extraArg1).displayName,
@@ -1120,6 +1127,7 @@ class TurnEffectAbility extends TurnEffect {
                   onSuggestionSelected: (suggestion) {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
+                    onEdit();
                   },
                   isInput: true,
                 ),
@@ -1163,6 +1171,7 @@ class TurnEffectAbility extends TurnEffect {
                   onSuggestionSelected: (suggestion) {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
+                    onEdit();
                   },
                   isInput: true,
                 ),
@@ -1192,6 +1201,7 @@ class TurnEffectAbility extends TurnEffect {
                 value: extraArg1,
                 onChanged: (value) {
                   extraArg1 = value;
+                  onEdit();
                 },
                 isInput: true,
                 textValue:
@@ -1250,6 +1260,7 @@ class TurnEffectAbility extends TurnEffect {
                   onSuggestionSelected: (suggestion) {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
+                    onEdit();
                   },
                   isInput: true,
                 ),
@@ -1307,6 +1318,7 @@ class TurnEffectAbility extends TurnEffect {
                   onSuggestionSelected: (suggestion) {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
+                    onEdit();
                   },
                   isInput: true,
                 ),
@@ -1335,6 +1347,7 @@ class TurnEffectAbility extends TurnEffect {
                     value: extraArg1,
                     onChanged: (value) {
                       extraArg1 = value;
+                      onEdit();
                     },
                     isInput: true,
                     textValue: StatIndex.values[extraArg1 + 1].name,
@@ -1364,6 +1377,7 @@ class TurnEffectAbility extends TurnEffect {
                     value: extraArg2,
                     onChanged: (value) {
                       extraArg2 = value;
+                      onEdit();
                     },
                     isInput: true,
                     textValue: StatIndex.values[extraArg2 + 1].name,
@@ -1401,6 +1415,7 @@ class TurnEffectAbility extends TurnEffect {
                   value: extraArg1 <= 0 ? null : extraArg1,
                   onChanged: (value) {
                     extraArg1 = value;
+                    onEdit();
                   },
                   isInput: true,
                   textValue: extraArg1 > 0
@@ -1438,6 +1453,7 @@ class TurnEffectAbility extends TurnEffect {
                 value: extraArg1,
                 onChanged: (value) {
                   extraArg1 = value;
+                  onEdit();
                   // 統合テスト作成用
                   final text = value == -1
                       ? loc.battleEffectExpired
@@ -1477,6 +1493,7 @@ class TurnEffectAbility extends TurnEffect {
                 ],
                 value: extraArg1,
                 onChanged: (value) {
+                  onEdit();
                   extraArg1 = value;
                 },
                 isInput: true,
@@ -1519,6 +1536,7 @@ class TurnEffectAbility extends TurnEffect {
                 value: extraArg2 == 0 ? null : extraArg2,
                 onChanged: (value) {
                   extraArg2 = value;
+                  onEdit();
                 },
                 isInput: true,
                 textValue: extraArg2.toString(),
@@ -1578,6 +1596,7 @@ class TurnEffectAbility extends TurnEffect {
                   onSuggestionSelected: (suggestion) {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
+                    onEdit();
                   },
                   isInput: true,
                 ),
@@ -1600,6 +1619,7 @@ class TurnEffectAbility extends TurnEffect {
                         } else {
                           extraArg2 = yourState.remainHP - value;
                         }
+                        onEdit();
                         return extraArg2;
                       },
                       extraArg2,
@@ -1617,6 +1637,7 @@ class TurnEffectAbility extends TurnEffect {
                             } else {
                               extraArg2 = myState.remainHPPercent - value;
                             }
+                            onEdit();
                             return extraArg2;
                           },
                           extraArg2,
@@ -1651,6 +1672,7 @@ class TurnEffectAbility extends TurnEffect {
                         value: extraArg1,
                         onChanged: (value) {
                           extraArg1 = value;
+                          onEdit();
                         },
                         isInput: true,
                         textValue: extraArg1 == 552

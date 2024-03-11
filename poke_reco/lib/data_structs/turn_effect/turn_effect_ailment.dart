@@ -271,6 +271,8 @@ class TurnEffectAilment extends TurnEffect {
   /// opponentParty: 対戦相手のパーティ
   /// state: フェーズの状態
   /// controller: テキスト入力コントローラ
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// (ダイアログで、効果が有効かどうかでOKボタンの有効無効を切り替えるために使う)
   /// ```
   @override
   Widget editArgWidget(
@@ -281,6 +283,7 @@ class TurnEffectAilment extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
+    required Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -307,6 +310,7 @@ class TurnEffectAilment extends TurnEffect {
               } else {
                 extraArg1 = myState.remainHPPercent - value;
               }
+              onEdit();
               return extraArg1;
             },
             extraArg1,
@@ -337,6 +341,7 @@ class TurnEffectAilment extends TurnEffect {
                   } else {
                     extraArg1 = myState.remainHPPercent - value;
                   }
+                  onEdit();
                   return extraArg1;
                 },
                 extraArg1,
@@ -356,6 +361,7 @@ class TurnEffectAilment extends TurnEffect {
                   } else {
                     extraArg2 = yourState.remainHP - value;
                   }
+                  onEdit();
                   return extraArg2;
                 },
                 extraArg2,
@@ -394,6 +400,7 @@ class TurnEffectAilment extends TurnEffect {
                 value: extraArg2,
                 onChanged: (value) {
                   extraArg2 = value;
+                  onEdit();
                 },
                 isInput: true,
                 textValue: extraArg2 == 1
@@ -414,6 +421,7 @@ class TurnEffectAilment extends TurnEffect {
                         } else {
                           extraArg1 = myState.remainHPPercent - value;
                         }
+                        onEdit();
                         return extraArg1;
                       },
                       extraArg1,
@@ -448,6 +456,7 @@ class TurnEffectAilment extends TurnEffect {
                 value: extraArg2,
                 onChanged: (value) {
                   extraArg2 = value;
+                  onEdit();
                 },
                 isInput: true,
                 textValue: extraArg2 == 1

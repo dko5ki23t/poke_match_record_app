@@ -117,6 +117,8 @@ class TurnEffectItem extends TurnEffect {
   /// opponentParty: 対戦相手のパーティ
   /// state: フェーズの状態
   /// controller: テキスト入力コントローラ
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// (ダイアログで、効果が有効かどうかでOKボタンの有効無効を切り替えるために使う)
   /// ```
   @override
   Widget editArgWidget(
@@ -127,6 +129,7 @@ class TurnEffectItem extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
+    required Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -151,7 +154,10 @@ class TurnEffectItem extends TurnEffect {
                     ),
                 ],
                 value: extraArg1,
-                onChanged: (value) => extraArg1 = value,
+                onChanged: (value) {
+                  extraArg1 = value;
+                  onEdit();
+                },
                 textValue: StatIndex.values[extraArg1 + 1].name,
                 isInput: true,
               ),
@@ -184,6 +190,7 @@ class TurnEffectItem extends TurnEffect {
                 val = myState.remainHPPercent - value;
               }
               extraArg1 = val;
+              onEdit();
               return extraArg1;
             },
             extraArg1,
@@ -223,7 +230,10 @@ class TurnEffectItem extends TurnEffect {
                       ),
                     ],
                     value: extraArg2,
-                    onChanged: (value) => extraArg2 = value,
+                    onChanged: (value) {
+                      extraArg2 = value;
+                      onEdit();
+                    },
                     textValue: extraArg2 == 0
                         ? loc.battleHPRecovery
                         : extraArg1 == 1
@@ -249,6 +259,7 @@ class TurnEffectItem extends TurnEffect {
                           val = myState.remainHPPercent - value;
                         }
                         extraArg1 = val;
+                        onEdit();
                         return extraArg1;
                       },
                       extraArg1,
@@ -279,6 +290,7 @@ class TurnEffectItem extends TurnEffect {
                 val = yourState.remainHP - value;
               }
               extraArg1 = val;
+              onEdit();
               return extraArg1;
             },
             extraArg1,
@@ -307,7 +319,10 @@ class TurnEffectItem extends TurnEffect {
                   ),
                 ],
                 value: extraArg1,
-                onChanged: (value) => extraArg1 = value,
+                onChanged: (value) {
+                  extraArg1 = value;
+                  onEdit();
+                },
                 textValue: extraArg1 == 0
                     ? loc.battleBalloonFloat
                     : extraArg1 == 1
@@ -345,8 +360,15 @@ class TurnEffectItem extends TurnEffect {
                     ),
                 ],
                 value: getChangePokemonIndex(playerType),
-                onChanged: (value) => setChangePokemonIndex(playerType.opposite,
-                    state.getPokemonIndex(playerType.opposite, null), value),
+                onChanged: (value) {
+                  setChangePokemonIndex(playerType.opposite,
+                      state.getPokemonIndex(playerType.opposite, null), value);
+                  onEdit();
+                  // 統合テスト作成用
+                  print("// ${yourParty.pokemons[value - 1]!.name}に交代\n"
+                      "await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));\n"
+                      "await driver.tap(find.text('${yourParty.pokemons[value - 1]!.name}'));");
+                },
                 textValue: null,
                 isInput: true,
                 prefixIconPokemon: null,
@@ -386,6 +408,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[0] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[0] < 0
                             ? 0
@@ -423,6 +446,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[1] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[1] < 0
                             ? 0
@@ -460,6 +484,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[2] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[2] < 0
                             ? 0
@@ -497,6 +522,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[3] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[3] < 0
                             ? 0
@@ -534,6 +560,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[4] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[4] < 0
                             ? 0
@@ -571,6 +598,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[5] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[5] < 0
                             ? 0
@@ -608,6 +636,7 @@ class TurnEffectItem extends TurnEffect {
                           PokemonState.unpackStatChanges(extraArg1);
                       statChanges[6] = value;
                       extraArg1 = PokemonState.packStatChanges(statChanges);
+                      onEdit();
                     },
                     textValue: (PokemonState.unpackStatChanges(extraArg1)[6] < 0
                             ? 0
@@ -645,8 +674,15 @@ class TurnEffectItem extends TurnEffect {
                     ),
                 ],
                 value: getChangePokemonIndex(playerType),
-                onChanged: (value) => setChangePokemonIndex(
-                    playerType, state.getPokemonIndex(playerType, null), value),
+                onChanged: (value) {
+                  setChangePokemonIndex(playerType,
+                      state.getPokemonIndex(playerType, null), value);
+                  onEdit();
+                  // 統合テスト作成用
+                  print("// ${myParty.pokemons[value - 1]!.name}に交代\n"
+                      "await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));\n"
+                      "await driver.tap(find.text('${myParty.pokemons[value - 1]!.name}'));");
+                },
                 textValue: null,
                 isInput: true,
                 prefixIconPokemon: null,
@@ -955,7 +991,7 @@ class TurnEffectItem extends TurnEffect {
         break;
       case 1177: // だっしゅつパック
       case 590: // だっしゅつボタン
-        int? val = getChangePokemonIndex(playerType.opposite);
+        int? val = getChangePokemonIndex(playerType);
         if (val != null && val != 0) {
           myState.processExitEffect(yourState, state);
           state.setPokemonIndex(playerType, val);
@@ -992,7 +1028,13 @@ class TurnEffectItem extends TurnEffect {
 
   @override
   bool isValid() =>
-      playerType != PlayerType.none && timing != Timing.none && itemID != 0;
+      playerType != PlayerType.none &&
+      timing != Timing.none &&
+      itemID != 0 &&
+      ((itemID != 1177 && itemID != 590) || // だっしゅつパック・だっしゅつボタンは交代先を決定しておく必要あり
+          getChangePokemonIndex(playerType) != null) &&
+      (itemID != 585 || // レッドカードは交代先を決定しておく必要あり
+          getChangePokemonIndex(playerType.opposite) != null);
 
   /// 現在のポケモンの状態等から決定できる引数を自動で設定
   /// ```

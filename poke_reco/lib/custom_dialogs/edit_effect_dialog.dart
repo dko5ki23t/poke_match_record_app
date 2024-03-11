@@ -59,6 +59,7 @@ class EditEffectDialogState extends State<EditEffectDialog> {
               widget.state,
               controller,
               controller2,
+              onEdit: () => setState(() {}),
               loc: loc,
               theme: theme)),
       actions: <Widget>[
@@ -78,13 +79,15 @@ class EditEffectDialogState extends State<EditEffectDialog> {
           },
         ),
         TextButton(
+          onPressed: editingEffect.isValid()
+              ? () {
+                  Navigator.pop(context);
+                  widget.onEdit(editingEffect);
+                  // 統合テスト作成用
+                  print("await driver.tap(find.text('OK'));");
+                }
+              : null,
           child: Text('OK'),
-          onPressed: () {
-            Navigator.pop(context);
-            widget.onEdit(editingEffect);
-            // 統合テスト作成用
-            print("await driver.tap(find.text('OK'));");
-          },
         ),
       ],
     );
