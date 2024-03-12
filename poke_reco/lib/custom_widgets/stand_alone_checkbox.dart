@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
-import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -77,26 +76,12 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
   void initState() {
     super.initState();
     turnMove = widget.turnMove;
+    hitController.text = turnMove.hitCount.toString();
+    criticalController.text = turnMove.criticalCount.toString();
   }
 
   @override
   Widget build(BuildContext context) {
-    void setHitCount(num val) {
-      int count = val as int;
-      turnMove.hitCount = count;
-      // 統合テスト作成用
-      print("// $count回命中\n"
-          "await setHitCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
-    }
-
-    void setCriticalCount(num val) {
-      int count = val as int;
-      turnMove.criticalCount = count;
-      // 統合テスト作成用
-      print("// $count回急所\n"
-          "await setCriticalCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
-    }
-
     return Row(
       children: [
         Expanded(
@@ -129,23 +114,54 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
               : Row(
                   children: [
                     Text(MoveHit.hit.displayName),
+                    GestureDetector(
+                      onTap: () {
+                        turnMove.hitCount = (turnMove.hitCount - 1)
+                            .clamp(0, widget.maxMoveCount);
+                        hitController.text = turnMove.hitCount.toString();
+                        // 統合テスト作成用
+                        print("// ${turnMove.hitCount}回命中\n"
+                            "await setHitCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, ${turnMove.hitCount});");
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.remove_circle,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                     Expanded(
-                      child: NumberInputWithIncrementDecrement(
+                      child: TextField(
                         key: Key(
                             'HitInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                        textAlign: TextAlign.center,
                         controller: hitController,
-                        numberFieldDecoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
+                        onChanged: (value) {
+                          int count = (int.tryParse(value) ?? 0)
+                              .clamp(0, widget.maxMoveCount);
+                          turnMove.hitCount = count;
+                          // 統合テスト作成用
+                          print("// $count回命中\n"
+                              "await setHitCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
+                        },
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        turnMove.hitCount = (turnMove.hitCount + 1)
+                            .clamp(0, widget.maxMoveCount);
+                        hitController.text = turnMove.hitCount.toString();
+                        // 統合テスト作成用
+                        print("// ${turnMove.hitCount}回命中\n"
+                            "await setHitCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, ${turnMove.hitCount});");
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.add_circle,
+                          size: 20,
                         ),
-                        widgetContainerDecoration: const BoxDecoration(
-                          border: null,
-                        ),
-                        min: 0,
-                        max: widget.maxMoveCount,
-                        initialValue: turnMove.hitCount,
-                        onIncrement: setHitCount,
-                        onDecrement: setHitCount,
-                        onChanged: setHitCount,
                       ),
                     ),
                   ],
@@ -181,23 +197,56 @@ class _HitCriticalInputRowState extends State<HitCriticalInputRow> {
               : Row(
                   children: [
                     Text(MoveHit.critical.displayName),
+                    GestureDetector(
+                      onTap: () {
+                        turnMove.criticalCount = (turnMove.criticalCount - 1)
+                            .clamp(0, widget.maxMoveCount);
+                        criticalController.text =
+                            turnMove.criticalCount.toString();
+                        // 統合テスト作成用
+                        print("// ${turnMove.criticalCount}回急所\n"
+                            "await setCriticalCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, ${turnMove.criticalCount});");
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.remove_circle,
+                          size: 20,
+                        ),
+                      ),
+                    ),
                     Expanded(
-                      child: NumberInputWithIncrementDecrement(
+                      child: TextField(
                         key: Key(
                             'CriticalInput${turnMove.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                        textAlign: TextAlign.center,
                         controller: criticalController,
-                        numberFieldDecoration: const InputDecoration(
-                          border: UnderlineInputBorder(),
+                        onChanged: (value) {
+                          int count = (int.tryParse(value) ?? 0)
+                              .clamp(0, widget.maxMoveCount);
+                          turnMove.criticalCount = count;
+                          // 統合テスト作成用
+                          print("// $count回急所\n"
+                              "await setCriticalCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, $count);");
+                        },
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        turnMove.criticalCount = (turnMove.criticalCount + 1)
+                            .clamp(0, widget.maxMoveCount);
+                        criticalController.text =
+                            turnMove.criticalCount.toString();
+                        // 統合テスト作成用
+                        print("// ${turnMove.criticalCount}回急所\n"
+                            "await setCriticalCount(driver, ${turnMove.playerType == PlayerType.me ? "me" : "op"}, ${turnMove.criticalCount});");
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(4),
+                        child: Icon(
+                          Icons.add_circle,
+                          size: 20,
                         ),
-                        widgetContainerDecoration: const BoxDecoration(
-                          border: null,
-                        ),
-                        min: 0,
-                        max: widget.maxMoveCount,
-                        initialValue: turnMove.criticalCount,
-                        onIncrement: setCriticalCount,
-                        onDecrement: setCriticalCount,
-                        onChanged: (val) => setCriticalCount,
                       ),
                     ),
                   ],
@@ -603,7 +652,8 @@ class _SelectItemInputState extends State<SelectItemInput> {
   @override
   Widget build(BuildContext context) {
     return TypeAheadField(
-      key: Key('SelectItemTextField'),
+      key: Key(
+          'SelectItemTextField${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
         controller: itemSearchTextController,
         decoration: InputDecoration(
@@ -695,6 +745,12 @@ class _SelectItemInputState extends State<SelectItemInput> {
       onSuggestionSelected: (suggestion) {
         itemSearchTextController.text = suggestion.displayName;
         widget.onItemSelected(suggestion);
+        // 統合テスト作成用
+        print(
+            "await driver.tap(find.byValueKey('SelectItemTextField${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'));\n"
+            "await driver.enterText('${suggestion.displayName}');\n"
+            "await driver.tap(find.descendant(\n"
+            "    of: find.byType('ListTile'), matching: find.text('${suggestion.displayName}')));");
       },
     );
   }

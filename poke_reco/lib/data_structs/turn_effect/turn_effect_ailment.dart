@@ -111,7 +111,7 @@ class AilmentEffect {
     10: Tuple2('ひるみ', 'Flinch'),
     11: Tuple2('みやぶられている', 'Foresighted'),
     12: Tuple2('メロメロ', 'Attracted'),
-    13: Tuple2('やどりぎのタネ', 'Leech Seed'),
+    13: Tuple2('やどりぎのタネダメージ', 'Leech Seed'),
     15: Tuple2('ロックオン終了', 'Lock-On end'),
 //    16: Tuple2('あくむ', 'Nightmare'),
     17: Tuple2('バインド', 'Partially Trapped'),

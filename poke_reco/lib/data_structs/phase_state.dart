@@ -928,7 +928,11 @@ class PhaseState extends Equatable implements Copyable {
 
           // 両者に効果があるもの
           var weatherEffectIDs = [];
-          if (weather.id == Weather.sandStorm) {
+          if (weather.turns >= weather.maxTurns - 1) {
+            // 天気終了
+            int effectId = WeatherEffect.getIdFromWeather(weather);
+            if (effectId > 0) weatherEffectIDs.add(effectId);
+          } else if (weather.id == Weather.sandStorm) {
             // すなあらしによるダメージ
             bool occurSandStromDamage = false;
             for (final player in [PlayerType.me, PlayerType.opponent]) {
@@ -945,11 +949,6 @@ class PhaseState extends Equatable implements Copyable {
             if (occurSandStromDamage) {
               weatherEffectIDs.add(WeatherEffect.sandStormDamage);
             }
-          }
-          if (weather.turns >= weather.maxTurns - 1) {
-            // 天気終了
-            int effectId = WeatherEffect.getIdFromWeather(weather);
-            if (effectId > 0) weatherEffectIDs.add(effectId);
           }
           var fieldEffectIDs = [];
           if (field.id == Field.grassyTerrain) {

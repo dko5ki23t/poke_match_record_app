@@ -366,9 +366,7 @@ Future<void> setHitCount(
     FlutterDriver driver, PlayerType playerType, int count) async {
   String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
 
-  var designatedWidget = find.descendant(
-      matching: find.byType('TextFormField'),
-      of: find.byValueKey('HitInput$ownOrOpponent'));
+  var designatedWidget = find.byValueKey('HitInput$ownOrOpponent');
   await driver.tap(designatedWidget);
   await driver.enterText(count.toString());
   // 以下のように再度タップする等しないと反映されない
@@ -381,9 +379,7 @@ Future<void> setCriticalCount(
     FlutterDriver driver, PlayerType playerType, int count) async {
   String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
 
-  var designatedWidget = find.descendant(
-      matching: find.byType('TextFormField'),
-      of: find.byValueKey('CriticalInput$ownOrOpponent'));
+  var designatedWidget = find.byValueKey('CriticalInput$ownOrOpponent');
   await driver.tap(designatedWidget);
   await driver.enterText(count.toString());
   // 以下のように再度タップする等しないと反映されない

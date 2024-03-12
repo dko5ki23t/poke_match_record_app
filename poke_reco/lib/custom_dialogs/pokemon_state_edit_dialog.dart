@@ -232,6 +232,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                     //label: editingRemainHP.toString(),
                     onChanged: (val) => setState(() {
                       editingRemainHP = val.round();
+                      remainHPController.text = editingRemainHP.toString();
                     }),
                   ),
                 ),

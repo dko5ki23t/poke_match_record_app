@@ -259,7 +259,6 @@ Future<void> test11_4(
   // カバルドンのすなおこし
   await addEffect(driver, 0, op, 'すなおこし');
   await driver.tap(find.text('OK'));
-  await driver.tap(find.text('OK'));
   // セグレイブのりゅうのまい
   await tapMove(driver, me, 'りゅうのまい', false);
   // カバルドンのあくび
@@ -322,12 +321,43 @@ Future<void> test11_4(
   await inputRemainHP(driver, op, '0');
   // セグレイブひんし->パーモットに交代
   await changePokemon(driver, me, 'パーモット', false);
-  // TODO:すなあらしが収まるターンにすなあらしダメージが入らないようにする。
-  // TODO: 本来死なないカバルドンが死んじゃったのでここまでで一旦終わっているが、続きも必要
-  return;
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
 
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // パーモットのほっぺすりすり
+  await tapMove(driver, me, 'ほっぺすりすり', false);
+  // カバルドンのHP0
+  await inputRemainHP(driver, me, '0');
+  // カバルドンひんし->グレンアルマに交代
+  await changePokemon(driver, op, 'グレンアルマ', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // パーモットのほっぺすりすり
+  await tapMove(driver, me, 'ほっぺすりすり', false);
+  // グレンアルマのHP90
+  await inputRemainHP(driver, me, '90');
+  // グレンアルマのくだけるよろい
+  await addEffect(driver, 1, op, 'くだけるよろい');
+  await driver.tap(find.text('OK'));
+  // グレンアルマのサイコショック
+  await tapMove(driver, op, 'サイコショック', true);
+  // パーモットのHP0
+  await inputRemainHP(driver, op, '0');
+  // グレンアルマのいのちのたま
+  await addEffect(driver, 3, op, 'いのちのたま');
+  await driver.tap(find.text('OK'));
+  // パーモットひんし->ミミズズに交代
+  await changePokemon(driver, me, 'ミミズズ', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // グレンアルマのアーマーキャノン
+  await tapMove(driver, op, 'アーマーキャノン', true);
+  // ミミズズのHP0
+  await inputRemainHP(driver, op, '0');
+  // 相手の勝利
+  await testExistEffect(driver, 'カラレスの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -441,11 +471,16 @@ Future<void> test11_5(
   await tapCritical(driver, op);
   // パーモットのHP1
   await inputRemainHP(driver, op, '1');
+  // パーモットのきあいのタスキ
+  await addEffect(driver, 2, me, 'きあいのタスキ');
+  await driver.tap(find.text('OK'));
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
 
   // パーモットのさいきのいのり
   await tapMove(driver, me, 'さいきのいのり', false);
+  // セグレイブを復活
+  await changePokemon(driver, me, 'セグレイブ', false);
   // サーフゴーのシャドーボール
   await tapMove(driver, op, 'シャドーボール', false);
   // パーモットのHP0
@@ -537,7 +572,7 @@ Future<void> test12_1(
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
       ownPokemon1: 'もこイダー/',
-      ownPokemon2: 'もこヘル/',
+      ownPokemon2: 'もこヘル2/',
       ownPokemon3: 'もこフィア/',
       opponentPokemon: 'テツノブジン');
   // 各ターン入力画面へ
@@ -604,8 +639,8 @@ Future<void> test12_2(
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
       ownPokemon1: 'もこイダー/',
-      ownPokemon2: 'もこイルカ/',
-      ownPokemon3: 'もこヘル/',
+      ownPokemon2: 'もこイルカ2/',
+      ownPokemon3: 'もこヘル2/',
       opponentPokemon: 'ロトム(ウォッシュロトム)');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
@@ -613,9 +648,14 @@ Future<void> test12_2(
   // ロトムのトリック
   await tapMove(driver, op, 'トリック', true);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // ワナイダーはこだわりスカーフを入手する
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
+  await driver.enterText('こだわりスカーフ');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('こだわりスカーフ')));
   // ワナイダーのねばねばネット
   await tapMove(driver, me, 'ねばねばネット', false);
-  // ターン3へ
+  // ターン2へ
   await goTurnPage(driver, turnNum++);
 
   // ワナイダー->イルカマンに交代
@@ -626,20 +666,142 @@ Future<void> test12_2(
   await inputRemainHP(driver, op, '45');
   // ウルガモスに交代
   await changePokemon(driver, op, 'ウルガモス', false);
-  // ターン4へ
+  // ターン3へ
   await goTurnPage(driver, turnNum++);
 
   // イルカマンのインファイト
   await tapMove(driver, me, 'インファイト', true);
   // ウルガモスのHP90
   await inputRemainHP(driver, me, '90');
-  // だっしゅつパック編集
-  await tapEffect(driver, 'だっしゅつパック');
+  // イルカマンのだっしゅつパック
+  await addEffect(driver, 1, me, 'だっしゅつパック');
+  // ワナイダーに交代
+  await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
+  await driver.tap(find.text('ワナイダー'));
   await driver.tap(find.text('OK'));
-  // TODO:だっしゅつパックで交代
-  return;
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // ウルガモスのちょうのまい
+  await tapMove(driver, op, 'ちょうのまい', true);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // ウルガモスのちょうのまい
+  await tapMove(driver, op, 'ちょうのまい', false);
+  // ワナイダーのおきみやげ
+  await tapMove(driver, me, 'おきみやげ', false);
+  // ワナイダーひんし->イルカマンに交代
+  await changePokemon(driver, me, 'イルカマン', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // イルカマンのジェットパンチ
+  await tapMove(driver, me, 'ジェットパンチ', false);
+  // ウルガモスのHP20
+  await inputRemainHP(driver, me, '20');
+  // ウルガモスのほのおのからだ
+  await addEffect(driver, 1, op, 'ほのおのからだ');
+  await driver.tap(find.text('OK'));
+  // ウルガモスのむしのさざめき
+  await tapMove(driver, op, 'むしのさざめき', true);
+  // イルカマンのHP0
+  await inputRemainHP(driver, op, '0');
+  // イルカマンひんし->ヘルガーに交代
+  await changePokemon(driver, me, 'ヘルガー', false);
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // ウルガモスのねむる
+  await tapMove(driver, op, 'ねむる', true);
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP85
+  await inputRemainHP(driver, me, '85');
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  await driver.tap(
+      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
+  // ヘルガーのくさわけ
+  await tapMove(driver, me, 'くさわけ', false);
+  // ウルガモスのHP80
+  await inputRemainHP(driver, me, '80');
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP60
+  await inputRemainHP(driver, me, '60');
+  await driver.tap(
+      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP40
+  await inputRemainHP(driver, me, '40');
+  // ウルガモスはひるんで技がだせない
+  await driver.tap(find.text('ウルガモスはひるんで技がだせない'));
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP15
+  await inputRemainHP(driver, me, '15');
+  // ウルガモスのねむる
+  await tapMove(driver, op, 'ねむる', false);
+  // ターン11へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP80
+  await inputRemainHP(driver, me, '80');
+  await driver.tap(
+      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
+  // ターン12へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP65
+  await inputRemainHP(driver, me, '65');
+  // ウルガモスのちょうのまい
+  await tapMove(driver, op, 'ちょうのまい', false);
+  // ターン13へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP45
+  await inputRemainHP(driver, me, '45');
+  // ウルガモスのちょうのまい
+  await tapMove(driver, op, 'ちょうのまい', false);
+  // ターン14へ
+  await goTurnPage(driver, turnNum++);
+
+  // ウルガモスのむしのさざめき
+  await tapMove(driver, op, 'むしのさざめき', false);
+  // ヘルガーのHP30
+  await inputRemainHP(driver, op, '30');
+  // ヘルガーのくさわけ
+  await tapMove(driver, me, 'くさわけ', false);
+  // ウルガモスのHP40
+  await inputRemainHP(driver, me, '40');
+  // ターン15へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', true);
+  // ウルガモスのHP30
+  await inputRemainHP(driver, me, '30');
+  // ウルガモスのむしのさざめき
+  await tapMove(driver, op, 'むしのさざめき', false);
+  // ヘルガーのHP0
+  await inputRemainHP(driver, op, '0');
+  // 相手の勝利
+  await testExistEffect(driver, 'Kazuの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -675,7 +837,7 @@ Future<void> test12_3(
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
       ownPokemon1: 'もこイダー/',
-      ownPokemon2: 'もこイルカ/',
+      ownPokemon2: 'もこイルカ2/',
       ownPokemon3: 'もこレイブ/',
       opponentPokemon: 'ブロロローム');
   // 各ターン入力画面へ
@@ -688,7 +850,7 @@ Future<void> test12_3(
   await changePokemon(driver, op, 'セグレイブ', false);
   // ワナイダーのねばねばネット
   await tapMove(driver, me, 'ねばねばネット', false);
-  // ターン3へ
+  // ターン2へ
   await goTurnPage(driver, turnNum++);
 
   // セグレイブのりゅうのまい
@@ -697,7 +859,7 @@ Future<void> test12_3(
   await tapMove(driver, me, 'おきみやげ', false);
   // ワナイダーひんし->イルカマンに交代
   await changePokemon(driver, me, 'イルカマン', false);
-  // ターン4へ
+  // ターン3へ
   await goTurnPage(driver, turnNum++);
 
   // セグレイブのりゅうのまい
@@ -706,13 +868,107 @@ Future<void> test12_3(
   await tapMove(driver, me, 'インファイト', true);
   // セグレイブのHP35
   await inputRemainHP(driver, me, '35');
-  // だっしゅつパック編集
-  await tapEffect(driver, 'だっしゅつパック');
+  // イルカマンのだっしゅつパック
+  await addEffect(driver, 2, me, 'だっしゅつパック');
+  await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
+  await driver.tap(find.text('セグレイブ'));
   await driver.tap(find.text('OK'));
-  // TODO: だっしゅつパックで交代
-  return;
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // セグレイブのテラスタル
+  await inputTerastal(driver, me, '');
+  // セグレイブのアイアンヘッド
+  await tapMove(driver, op, 'アイアンヘッド', true);
+  // セグレイブのHP159
+  await inputRemainHP(driver, op, '159');
+  // セグレイブのアイアンヘッド
+  await tapMove(driver, me, 'アイアンヘッド', false);
+  // セグレイブのHP0
+  await inputRemainHP(driver, me, '0');
+  // セグレイブひんし->ラウドボーンに交代
+  await changePokemon(driver, op, 'ラウドボーン', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // セグレイブのきょけんとつげき
+  await tapMove(driver, me, 'きょけんとつげき', false);
+  // ラウドボーンのHP65
+  await inputRemainHP(driver, me, '65');
+  // ラウドボーンのあくび
+  await tapMove(driver, op, 'あくび', true);
+  // ラウドボーンのたべのこし
+  await addEffect(driver, 2, op, 'たべのこし');
+  await driver.tap(find.text('OK'));
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // セグレイブ->イルカマンに交代
+  await changePokemon(driver, me, 'イルカマン', true);
+  // ラウドボーンのあくび
+  await tapMove(driver, op, 'あくび', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // イルカマン->セグレイブに交代
+  await changePokemon(driver, me, 'セグレイブ', true);
+  // ラウドボーン->ブロロロームに交代
+  await changePokemon(driver, op, 'ブロロローム', true);
+  // ラウドボーンのしろいハーブ
+  await addEffect(driver, 3, op, 'しろいハーブ');
+  await driver.tap(find.text('OK'));
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ブロロロームのすてゼリフ
+  await tapMove(driver, op, 'すてゼリフ', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // ラウドボーンに交代
+  await changePokemon(driver, op, 'ラウドボーン', false);
+  // セグレイブのりゅうのまい
+  await tapMove(driver, me, 'りゅうのまい', false);
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // セグレイブのきょけんとつげき
+  await tapMove(driver, me, 'きょけんとつげき', false);
+  // ラウドボーンのHP30
+  await inputRemainHP(driver, me, '30');
+  // ラウドボーンのフレアソング
+  await tapMove(driver, op, 'フレアソング', true);
+  // セグレイブのHP0
+  await inputRemainHP(driver, op, '0');
+  // セグレイブひんし->イルカマンに交代
+  await changePokemon(driver, me, 'イルカマン', false);
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // イルカマンのウェーブタックル
+  await tapMove(driver, me, 'ウェーブタックル', false);
+  // ラウドボーンのHP0
+  await inputRemainHP(driver, me, '0');
+  // イルカマンのHP184
+  await inputRemainHP(driver, me, '184');
+  // ラウドボーンひんし->ブロロロームに交代
+  await changePokemon(driver, op, 'ブロロローム', false);
+  // ターン11へ
+  await goTurnPage(driver, turnNum++);
+
+  // イルカマンのウェーブタックル
+  await tapMove(driver, me, 'ウェーブタックル', false);
+  // ブロロロームのHP5
+  await inputRemainHP(driver, me, '5');
+  // イルカマンのHP135
+  await inputRemainHP(driver, me, '135');
+  // ブロロロームのダストシュート
+  await tapMove(driver, op, 'ダストシュート', true);
+  // イルカマンのHP18
+  await inputRemainHP(driver, op, '18');
+  // ターン12へ
+  await goTurnPage(driver, turnNum++);
+
+  // あいて降参
+  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -749,7 +1005,7 @@ Future<void> test12_4(
   await selectPokemons(driver,
       ownPokemon1: 'もこイダー/',
       ownPokemon2: 'もこレイブ/',
-      ownPokemon3: 'もこヘル/',
+      ownPokemon3: 'もこヘル2/',
       opponentPokemon: 'イッカネズミ');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
@@ -1048,8 +1304,8 @@ Future<void> test13_2(
   await inputRemainHP(driver, op, '24');
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('54');
   await driver.tap(find.text('OK'));
@@ -1205,11 +1461,11 @@ Future<void> test13_3(
   await inputRemainHP(driver, me, '0');
   // ミミッキュひんし->トドロクツキに交代
   await changePokemon(driver, op, 'トドロクツキ', false);
+  // トドロクツキのこだいかっせい
+  await addEffect(driver, 5, op, 'こだいかっせい');
   // こうげきが高まった
   await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
   await driver.tap(find.text('こうげき'));
-  // ミミッキュのこだいかっせい
-  await addEffect(driver, 5, op, 'こだいかっせい');
   await driver.tap(find.text('OK'));
   // ターン10へ
   await goTurnPage(driver, turnNum++);
@@ -1392,11 +1648,11 @@ Future<void> test13_4(
   await inputRemainHP(driver, me, '0');
   // シビルドンひんし->トドロクツキに交代
   await changePokemon(driver, op, 'トドロクツキ', false);
+  // シビルドンのこだいかっせい
+  await addEffect(driver, 3, op, 'こだいかっせい');
   // すばやさが高まった
   await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
   await driver.tap(find.text('すばやさ'));
-  // シビルドンのこだいかっせい
-  await addEffect(driver, 3, op, 'こだいかっせい');
   await driver.tap(find.text('OK'));
   // ターン10へ
   await goTurnPage(driver, turnNum++);
@@ -1502,9 +1758,9 @@ Future<void> test14_2(
   // シャリタツのHP33
   await inputRemainHP(driver, op, '33');
   // グレンアルマのいのちのたま
-  await addEffect(driver, 3, op, 'いのちのたま');
+  await addEffect(driver, 4, op, 'いのちのたま');
   await driver.tap(find.text('OK'));
-  // ターン3へ
+  // ターン2へ
   await goTurnPage(driver, turnNum++);
 
   // グレンアルマ->ドラパルトに交代
@@ -1515,7 +1771,7 @@ Future<void> test14_2(
   await inputRemainHP(driver, me, '0');
   // ドラパルトひんし->グレンアルマに交代
   await changePokemon(driver, op, 'グレンアルマ', false);
-  // ターン4へ
+  // ターン3へ
   await goTurnPage(driver, turnNum++);
 
   // シャリタツのりゅうのはどう
@@ -1524,7 +1780,7 @@ Future<void> test14_2(
   await inputRemainHP(driver, me, '0');
   // グレンアルマひんし->サーフゴーに交代
   await changePokemon(driver, op, 'サーフゴー', false);
-  // ターン5へ
+  // ターン4へ
   await goTurnPage(driver, turnNum++);
 
   // シャリタツのハイドロポンプ
@@ -1533,9 +1789,18 @@ Future<void> test14_2(
   await inputRemainHP(driver, me, '30');
   // サーフゴーのわるだくみ
   await tapMove(driver, op, 'わるだくみ', true);
-  // TODO: サーフゴーのたべのこしを効果として追加しようとしたらinsertableTimings()で無限ループした
-  return;
+  // サーフゴーのたべのこし
+  await addEffect(driver, 3, op, 'たべのこし');
+  await driver.tap(find.text('OK'));
+  // シャリタツひんし->リククラゲに交代
+  await changePokemon(driver, me, 'リククラゲ', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
 
+  // リククラゲのだいちのちから
+  await tapMove(driver, me, 'だいちのちから', false);
+  // サーフゴーのHP0
+  await inputRemainHP(driver, me, '0');
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -1713,8 +1978,8 @@ Future<void> test14_4(
   await tapMove(driver, op, 'マジカルフレイム', true);
   // リククラゲのHP89
   await inputRemainHP(driver, op, '89');
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.enterText('115');
   await driver.tap(find.text('OK'));
   // ターン5へ
@@ -1744,13 +2009,13 @@ Future<void> test14_4(
   await inputRemainHP(driver, me, '');
   // リククラゲのHP124
   await inputRemainHP(driver, me, '');
+  // ミミッキュのばけのかわ
+  // TODO:ここ自動発動させたい
+  await addEffect(driver, 1, op, 'ばけのかわ');
+  await driver.tap(find.text('OK'));
   // ミミッキュはねむっている
   await driver.tap(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
-  // ミミッキュのばけのかわ
-  // TODO:ここ自動発動させたい
-  await addEffect(driver, 2, op, 'ばけのかわ');
-  await driver.tap(find.text('OK'));
   // ターン8へ
   await goTurnPage(driver, turnNum++);
 
@@ -1785,8 +2050,8 @@ Future<void> test14_4(
   await driver.tap(find.text('OK'));
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('79');
   await driver.tap(find.text('OK'));
@@ -1886,7 +2151,7 @@ Future<void> test15_1(
   await selectPokemons(driver,
       ownPokemon1: 'もこレイド/',
       ownPokemon2: 'もこリククラゲ/',
-      ownPokemon3: 'もこヘル/',
+      ownPokemon3: 'もこヘル2/',
       opponentPokemon: 'イルカマン');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
@@ -2028,7 +2293,7 @@ Future<void> test15_2(
   await selectPokemons(driver,
       ownPokemon1: 'もこいかくマンダ/',
       ownPokemon2: 'もこレイド/',
-      ownPokemon3: 'もこヘル/',
+      ownPokemon3: 'もこヘル2/',
       opponentPokemon: 'ロトム(ウォッシュロトム)');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);

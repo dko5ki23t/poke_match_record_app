@@ -1935,12 +1935,60 @@ Future<void> test8_4(
   await inputRemainHP(driver, me, '0');
   // キョジオーンひんし->ミミズズに交代
   await changePokemon(driver, op, 'ミミズズ', false);
-  // TODO: 自身のキョジオーンのHPを160に編集
-  // TODO: 位置がおかしくなる、さらに並べ替えると例外発生
+  // パラメータ編集
+  await editPokemonState(driver, 'キョジオーン/あなた', '160', null, null);
+  // ターン15へ
+  await goTurnPage(driver, turnNum++);
 
-  return;
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // ミミズズのしっぽきり
+  await tapMove(driver, op, 'しっぽきり', true);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // ミミズズのHP50
+  await inputRemainHP(driver, op, '50');
+  // ギャラドスに交代
+  await changePokemon(driver, op, 'ギャラドス', false);
+  // ミミズズのオボンのみ
+  // TODO:ミミズズを対象にしたオボンのみが無い
+  await addEffect(driver, 1, op, 'オボンのみ');
+  await driver.tap(find.text('OK'));
+  // ギャラドスのいかく
+  await addEffect(driver, 2, op, 'いかく');
+  await driver.tap(find.text('OK'));
+  // キョジオーンののろい
+  await tapMove(driver, me, 'のろい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP57
+  await inputRemainHP(driver, me, '57');
+  // ターン16へ
+  await goTurnPage(driver, turnNum++);
+
+  // ギャラドスのたきのぼり
+  await tapMove(driver, op, 'たきのぼり', true);
+  // キョジオーンのHP0
+  await inputRemainHP(driver, op, '0');
+  // キョジオーンひんし->ボーマンダに交代
+  await changePokemon(driver, me, 'ボーマンダ', false);
+  // ターン17へ
+  await goTurnPage(driver, turnNum++);
+
+  // ボーマンダのりゅうのまい
+  await tapMove(driver, me, 'りゅうのまい', false);
+  // ギャラドスのこおりのキバ
+  await tapMove(driver, op, 'こおりのキバ', true);
+  // ボーマンダのHP0
+  await inputRemainHP(driver, op, '0');
+  // ボーマンダひんし->グレンアルマに交代
+  await changePokemon(driver, me, 'グレンアルマ', false);
+  // ターン18へ
+  await goTurnPage(driver, turnNum++);
+
+  // ギャラドスのたきのぼり
+  await tapMove(driver, op, 'たきのぼり', false);
+  // グレンアルマのHP0
+  await inputRemainHP(driver, op, '0');
+
+  // 相手の勝利
+  await testExistEffect(driver, 'Pegaの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -1996,7 +2044,6 @@ Future<void> test9_1(
 
   // ウルガモスのむしのさざめき
   await tapMove(driver, op, 'むしのさざめき', true);
-  // TODO:音技で貫通するとき、みがわりは壊さずHPを入力できないといけない
   // ミガルーサのHP0
   await inputRemainHP(driver, op, '0');
   // ミガルーサひんし->ミミズズに交代
@@ -2223,7 +2270,6 @@ Future<void> test9_3(
   await tapMove(driver, me, 'タネマシンガン', false);
   // 3回命中
   await setHitCount(driver, me, 3);
-  await Future<void>.delayed(const Duration(seconds: 2));
   await driver.tap(find.byValueKey('SubstituteInputOwn'));
   // ハバタクカミのHP78
   await inputRemainHP(driver, me, '');
@@ -2466,8 +2512,7 @@ Future<void> test10_1(
   await driver.tap(find.byType('FloatingActionButton'));
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
-  // TODO: トリックの入力、入力欄キツキツ
-  // TODO: シャドーボールでとくぼう下がる
+  // TODO: トリックの入力欄キツキツ
   // 基本情報を入力
   await inputBattleBasicInfo(
     driver,
@@ -2554,8 +2599,8 @@ Future<void> test10_1(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('143');
   await driver.tap(find.text('OK'));
@@ -2576,8 +2621,8 @@ Future<void> test10_1(
   await inputRemainHP(driver, me, '60');
   // リククラゲのHP152
   await inputRemainHP(driver, me, '152');
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('178');
   await driver.tap(find.text('OK'));
@@ -2605,8 +2650,9 @@ Future<void> test10_1(
   await inputRemainHP(driver, op, '158');
   // リククラゲのキノコのほうし
   await tapMove(driver, me, 'キノコのほうし', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  // TODO: たぶんここマイナスの値が入ってる
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('174');
   await driver.tap(find.text('OK'));
@@ -2625,7 +2671,7 @@ Future<void> test10_1(
   await tapMove(driver, op, 'トリック', true);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
   // リククラゲはこだわりメガネを入手する
-  await driver.tap(find.text('SelectItemTextField'));
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
   await driver.enterText('こだわりメガネ');
   await driver.tap(find.descendant(
       of: find.byType('ListTile'), matching: find.text('こだわりメガネ')));
@@ -2638,8 +2684,8 @@ Future<void> test10_1(
   await inputRemainHP(driver, me, '40');
   // サーフゴーのシャドーボール
   await tapMove(driver, op, 'シャドーボール', true);
-  // リククラゲはとくぼうが下がった
-  await driver.tap(find.text('リククラゲはとくぼうが下がった'));
+  // サーフゴーはとくぼうが下がった
+  await driver.tap(find.text('サーフゴーはとくぼうが下がった'));
   // リククラゲのHP90
   await inputRemainHP(driver, op, '90');
   // 次のターンへ
@@ -2692,7 +2738,6 @@ Future<void> test10_2(
   await goTurnPage(driver, turnNum++);
   // テツノドクガのクォークチャージ
   await addEffect(driver, 0, op, 'クォークチャージ');
-  await driver.tap(find.text('OK'));
   // とくこうが高まった
   await driver.tap(find.byValueKey('AbilityEffectDropDownMenu'));
   await driver.tap(find.text('とくこう'));
@@ -2779,8 +2824,8 @@ Future<void> test10_3(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('151');
   await driver.tap(find.text('OK'));
@@ -2795,8 +2840,8 @@ Future<void> test10_3(
   await inputRemainHP(driver, op, '162');
   // ウルガモスはとくこうが上がった
   await driver.tap(find.text('ウルガモスはとくこうが上がった'));
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('182');
   await driver.tap(find.text('OK'));
@@ -2850,8 +2895,8 @@ Future<void> test10_3(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('95');
   await driver.tap(find.text('OK'));
@@ -2869,8 +2914,8 @@ Future<void> test10_3(
   // リキキリンはねむっている
   await driver.tap(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('163');
   await driver.tap(find.text('OK'));
@@ -2902,8 +2947,8 @@ Future<void> test10_3(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
   // リククラゲのやどりぎのタネ
   await tapMove(driver, me, 'やどりぎのタネ', false);
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('72');
   await driver.tap(find.text('OK'));
@@ -2919,8 +2964,8 @@ Future<void> test10_3(
   await tapMove(driver, me, 'だいちのちから', false);
   // ウルガモスのHP30
   await inputRemainHP(driver, me, '30');
-  // やどりぎのタネ編集
-  await tapEffect(driver, 'やどりぎのタネ');
+  // やどりぎのタネダメージ編集
+  await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('92');
   await driver.tap(find.text('OK'));

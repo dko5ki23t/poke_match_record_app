@@ -1061,9 +1061,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               if (l[idx] is TurnEffectAction) {
                 final action = l[idx] as TurnEffectAction;
                 if (action.type == TurnActionType.change) {
+                  remainAction[action.playerType.number] = false;
                   if (action.isValid()) {
                     isChanged[action.playerType.number] = true;
-                    remainAction[action.playerType.number] = false;
                     isValidAction[action.playerType.number] = true;
                   }
                   // 交代後のポケモン登場時処理を含めて移動させる

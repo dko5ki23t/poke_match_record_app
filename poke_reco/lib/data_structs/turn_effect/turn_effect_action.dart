@@ -6785,6 +6785,8 @@ class TurnEffectAction extends TurnEffect {
             );
           }
           return ListViewWithViewItemCount(
+            key: Key(
+                'ChangePokemonListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
             viewItemCount: 4,
             children: yourPokemonTiles,
           );
@@ -6806,6 +6808,9 @@ class TurnEffectAction extends TurnEffect {
                     //_isValid = true;
                     //onConfirm();
                     onNext();
+                    // 統合テスト作成用
+                    print("// ${myParty.pokemons[i]!.name}を復活\n"
+                        "await changePokemon(driver, me, '${myParty.pokemons[i]!.name}', false);");
                   },
                   selected: extraArg1 == i + 1,
                   showNetworkImage: PokeDB().getPokeAPI,
@@ -6826,6 +6831,8 @@ class TurnEffectAction extends TurnEffect {
             );
           }
           return ListViewWithViewItemCount(
+            key: Key(
+                'ChangePokemonListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
             viewItemCount: 4,
             children: pokemonTiles,
           );
@@ -6884,7 +6891,8 @@ class TurnEffectAction extends TurnEffect {
                 enabled: isNormallyHit() &&
                     (!yourState.buffDebuffs
                             .containsByID(BuffDebuff.substitute) ||
-                        breakSubstitute) &&
+                        breakSubstitute ||
+                        ignoreSubstitute(state)) &&
                     yourState
                         .ailmentsWhere(
                             (element) => element.id == Ailment.protect)
