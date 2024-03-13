@@ -7258,7 +7258,7 @@ class TurnEffectAction extends TurnEffect {
                   onNext();
                   // 統合テスト作成用
                   print(
-                      "await driver.tap(find.text('SwitchSelectItemInputTextField'));\n"
+                      "await driver.tap(find.byValueKey('SwitchSelectItemInputTextField'));\n"
                       "await driver.enterText('${item.displayName}');\n"
                       "await driver.tap(find.descendant(\n"
                       "    of: find.byType('ListTile'), matching: find.text('${item.displayName}')));");

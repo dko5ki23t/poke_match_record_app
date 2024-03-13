@@ -4,6 +4,7 @@ import 'integration_test_core/integration_test_1_5.dart';
 import 'integration_test_core/integration_test_6_10.dart';
 import 'integration_test_core/integration_test_11_15.dart';
 import 'integration_test_core/integration_test_16_20.dart';
+import 'integration_test_core/integration_test_21_25.dart';
 
 /// 量が多いのでVSCodeでは「Ctrl+k」「Ctrl+0」で一度すべて折りたたむこと推奨
 
@@ -32,6 +33,7 @@ void main() {
 
   group('統合テスト(もこうの実況を記録)', () {
     int minutesPerTest = 5;
+    /*
     test('パーモット戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
@@ -516,6 +518,69 @@ void main() {
         () async {
       if (doTest) {
         await test20_4(driver!);
+      }
+    });
+    
+    test('ハルクジラ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test21_1(driver!);
+      }
+    });
+    test('ハルクジラ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test21_2(driver!);
+      }
+    });
+    test('ハルクジラ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test21_3(driver!);
+      }
+    });
+  
+    test('ハルクジラ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test21_4(driver!);
+      }
+    });
+    */
+    test('モトトカゲ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_1(driver!);
+      }
+    });
+    test('モトトカゲ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_2(driver!);
+      }
+    });
+    test('モトトカゲ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_3(driver!);
+      }
+    });
+    test('モトトカゲ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_4(driver!);
+      }
+    });
+    test('モトトカゲ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_5(driver!);
+      }
+    });
+    test('モトトカゲ戦6', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test22_6(driver!);
       }
     });
   });

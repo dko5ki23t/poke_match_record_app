@@ -67,6 +67,8 @@ class EditEffectDialogState extends State<EditEffectDialog> {
           child: Text(loc.commonCancel),
           onPressed: () {
             Navigator.pop(context);
+            // 統合テスト作成用
+            print("await driver.tap(find.text('キャンセル'));");
           },
         ),
         TextButton(
@@ -76,6 +78,8 @@ class EditEffectDialogState extends State<EditEffectDialog> {
           onPressed: () {
             Navigator.pop(context);
             widget.onDelete();
+            // 統合テスト作成用
+            print("await driver.tap(find.text('削除'));");
           },
         ),
         TextButton(
