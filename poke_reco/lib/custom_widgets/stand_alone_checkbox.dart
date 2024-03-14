@@ -393,7 +393,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
       }
       moves.add(PokeDB().moves[165]!); // わるあがき
     } else {
-      PokeDB().moves.values.toList();
+      moves = PokeDB().moves.values.toList();
       moves.removeWhere((element) => element.id == 0);
     }
     List<ListTile> moveTiles = [];
@@ -428,6 +428,8 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
           child: Padding(
             padding: const EdgeInsets.all(4.0),
             child: TextField(
+              key: Key(
+                  'SelectMoveSearchField${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
               controller: moveSearchTextController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),

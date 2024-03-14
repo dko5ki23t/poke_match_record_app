@@ -1081,8 +1081,8 @@ class TurnEffectAbility extends TurnEffect {
               controller.text = '';
             }
           } else {
-            extraArg1 = myState.getCurrentAbility().id;
-            controller.text = myState.getCurrentAbility().displayName;
+            extraArg1 = yourState.getCurrentAbility().id;
+            controller.text = yourState.getCurrentAbility().displayName;
           }
           return Row(
             children: [
