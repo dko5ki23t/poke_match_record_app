@@ -6568,8 +6568,14 @@ class TurnEffectAction extends TurnEffect {
                     Expanded(
                       child: Text(templateTitles[index].item2),
                     ),
-                    templateTitles[index].item1 ==
-                                CommandWidgetTemplate.successOrFail &&
+                    (templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.successOrFail ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect1Switch ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect1Switch2 ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect2Switch) &&
                             templateTitles.length > 1 &&
                             isNormallyHit()
                         ? IconButton(
@@ -6622,6 +6628,37 @@ class TurnEffectAction extends TurnEffect {
                     Expanded(
                       child: Text(templateTitles[index].item2),
                     ),
+                    (templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.successOrFail ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect1Switch ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect1Switch2 ||
+                                templateTitles[index].item1 ==
+                                    CommandWidgetTemplate.effect2Switch) &&
+                            templateTitles.length > 1 &&
+                            isNormallyHit()
+                        ? IconButton(
+                            key: Key(
+                                'StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                            onPressed: () {
+                              controller.pageIndex++;
+                              if (templateTitles[index + 1]
+                                  .item1
+                                  .isImmediatelyValid) {
+                                _isValid = true;
+                                onConfirm();
+                                // TODO:戻るボタン押したとき無効に戻す処理
+                              } else {
+                                onUpdate();
+                              }
+                              // 統合テスト作成用
+                              print(
+                                  "await driver.tap(find.byValueKey('StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
+                            },
+                            icon: Icon(Icons.arrow_forward),
+                          )
+                        : Container(),
                   ],
                 ),
               ),

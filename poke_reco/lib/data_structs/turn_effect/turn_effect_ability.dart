@@ -1548,58 +1548,79 @@ class TurnEffectAbility extends TurnEffect {
       case 216: // おどりこ
         {
           controller.text = pokeData.moves[extraArg1 % 10000]!.displayName;
+          if (playerType == PlayerType.me) {
+            if (extraArg1 == 775) {
+              controller2.text = (myState.remainHP - extraArg2).toString();
+            } else {
+              controller2.text =
+                  (yourState.remainHPPercent - extraArg2).toString();
+            }
+          } else {
+            if (extraArg1 == 775) {
+              controller2.text =
+                  (myState.remainHPPercent - extraArg2).toString();
+            } else {
+              controller2.text = (yourState.remainHP - extraArg2).toString();
+            }
+          }
           return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Expanded(
-                child: _myTypeAheadField(
-                  textFieldConfiguration: TextFieldConfiguration(
-                    controller: controller,
-                    decoration: InputDecoration(
-                      border: UnderlineInputBorder(),
-                      labelText: loc.commonMove,
-                    ),
+              _myTypeAheadField(
+                key: Key('DanceTypeAheadField'),
+                textFieldConfiguration: TextFieldConfiguration(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    border: UnderlineInputBorder(),
+                    labelText: loc.commonMove,
                   ),
-                  autoFlipDirection: true,
-                  suggestionsCallback: (pattern) async {
-                    List<int> ids = [
-                      872,
-                      837,
-                      775,
-                      483,
-                      14,
-                      80,
-                      297,
-                      298,
-                      552,
-                      461,
-                      686,
-                      349,
-                    ];
-                    List<Move> matches = [];
-                    for (var i in ids) {
-                      matches.add(PokeDB().moves[i]!);
-                    }
-                    matches.retainWhere((s) {
-                      return toKatakana50(s.displayName.toLowerCase())
-                          .contains(toKatakana50(pattern.toLowerCase()));
-                    });
-                    return matches;
-                  },
-                  itemBuilder: (context, suggestion) {
-                    return ListTile(
-                      title: Text(
-                        suggestion.displayName,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    );
-                  },
-                  onSuggestionSelected: (suggestion) {
-                    controller.text = suggestion.displayName;
-                    extraArg1 = suggestion.id;
-                    onEdit();
-                  },
-                  isInput: true,
                 ),
+                autoFlipDirection: true,
+                suggestionsCallback: (pattern) async {
+                  List<int> ids = [
+                    872,
+                    837,
+                    775,
+                    483,
+                    14,
+                    80,
+                    297,
+                    298,
+                    552,
+                    461,
+                    686,
+                    349,
+                  ];
+                  List<Move> matches = [];
+                  for (var i in ids) {
+                    matches.add(PokeDB().moves[i]!);
+                  }
+                  matches.retainWhere((s) {
+                    return toKatakana50(s.displayName.toLowerCase())
+                        .contains(toKatakana50(pattern.toLowerCase()));
+                  });
+                  return matches;
+                },
+                itemBuilder: (context, suggestion) {
+                  return ListTile(
+                    title: Text(
+                      suggestion.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  );
+                },
+                onSuggestionSelected: (suggestion) {
+                  controller.text = suggestion.displayName;
+                  extraArg1 = suggestion.id;
+                  onEdit();
+                  // 統合テスト作成用
+                  print(
+                      "await driver.tap(find.byValueKey('DanceTypeAheadField'));\n"
+                      "await driver.enterText('${suggestion.displayName}');"
+                      "await driver.tap(find.descendant(\n"
+                      "    of: find.byType('ListTile'), matching: find.text('${suggestion.displayName}')));");
+                },
+                isInput: true,
               ),
               SizedBox(
                 height: 10,
@@ -1611,7 +1632,7 @@ class TurnEffectAbility extends TurnEffect {
                       extraArg1 == 686
                   ? DamageIndicateRow(
                       yourState.pokemon,
-                      controller,
+                      controller2,
                       playerType != PlayerType.me,
                       (value) {
                         if (playerType == PlayerType.me) {
@@ -1629,7 +1650,7 @@ class TurnEffectAbility extends TurnEffect {
                   : extraArg1 == 775
                       ? DamageIndicateRow(
                           myState.pokemon,
-                          controller,
+                          controller2,
                           playerType == PlayerType.me,
                           (value) {
                             if (playerType == PlayerType.me) {
@@ -1651,34 +1672,32 @@ class TurnEffectAbility extends TurnEffect {
                     )
                   : Container(),
               extraArg1 == 552 || extraArg1 == 10552
-                  ? Expanded(
-                      child: _myDropdownButtonFormField(
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          border: UnderlineInputBorder(),
-                          labelText: loc.battleAdditionalEffect,
-                        ),
-                        items: <DropdownMenuItem>[
-                          DropdownMenuItem(
-                            value: 552,
-                            child: Text(loc.commonNone),
-                          ),
-                          DropdownMenuItem(
-                            value: 10552,
-                            child: Text(loc
-                                .battleSAttackUp1(myState.pokemon.omittedName)),
-                          ),
-                        ],
-                        value: extraArg1,
-                        onChanged: (value) {
-                          extraArg1 = value;
-                          onEdit();
-                        },
-                        isInput: true,
-                        textValue: extraArg1 == 552
-                            ? loc.commonNone
-                            : loc.battleSAttackUp1(myState.pokemon.omittedName),
+                  ? _myDropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: loc.battleAdditionalEffect,
                       ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: 552,
+                          child: Text(loc.commonNone),
+                        ),
+                        DropdownMenuItem(
+                          value: 10552,
+                          child: Text(loc
+                              .battleSAttackUp1(myState.pokemon.omittedName)),
+                        ),
+                      ],
+                      value: extraArg1,
+                      onChanged: (value) {
+                        extraArg1 = value;
+                        onEdit();
+                      },
+                      isInput: true,
+                      textValue: extraArg1 == 552
+                          ? loc.commonNone
+                          : loc.battleSAttackUp1(myState.pokemon.omittedName),
                     )
                   : Container(),
             ],

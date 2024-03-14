@@ -2210,8 +2210,115 @@ Future<void> test30_2(
   await changePokemon(driver, me, 'オドリドリ(ぱちぱちスタイル)', true);
   // ウルガモスのちょうのまい
   await tapMove(driver, op, 'ちょうのまい', true);
-  return;
-  // TODO: おどりこの編集画面でレイアウト系の例外が発生する
+  // オドリドリのおどりこ
+  await addEffect(driver, 2, me, 'おどりこ');
+  await driver.tap(find.byValueKey('DanceTypeAheadField'));
+  await driver.enterText('ちょうのまい');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('ちょうのまい')));
+  await driver.tap(find.text('OK'));
+  // C・D・Sが上がっていることを確認
+  await testRank(driver, me, 'C', 'Up0');
+  await testRank(driver, me, 'D', 'Up0');
+  await testRank(driver, me, 'S', 'Up0');
+  // ターン2へ
+  await goTurnPage(driver, turnNum++);
+
+  // オドリドリのちょうのまい
+  await tapMove(driver, me, 'ちょうのまい', false);
+  // ウルガモスのほのおのまい
+  await tapMove(driver, op, 'ほのおのまい', true);
+  // オドリドリのHP82
+  await inputRemainHP(driver, op, '82');
+  // ウルガモスはとくこうが上がった
+  await driver.tap(find.text('ウルガモスはとくこうが上がった'));
+  // オドリドリのおどりこ
+  await addEffect(driver, 2, me, 'おどりこ');
+  await driver.tap(find.byValueKey('DanceTypeAheadField'));
+  await driver.enterText('ほのおのまい');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('ほのおのまい')));
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('70');
+  await driver.tap(find.text('OK'));
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
+
+  // オドリドリのはねやすめ
+  await tapMove(driver, me, 'はねやすめ', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // オドリドリのHP151
+  await inputRemainHP(driver, me, '151');
+  // ウルガモスのおにび
+  await tapMove(driver, op, 'おにび', true);
+  // オドリドリのラムのみ
+  await addEffect(driver, 2, me, 'ラムのみ');
+  await driver.tap(find.text('OK'));
+  // やけど編集
+  await tapEffect(driver, 'やけど');
+  await driver.tap(find.text('削除'));
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // オドリドリのエアスラッシュ
+  await tapMove(driver, me, 'エアスラッシュ', false);
+  // ウルガモスのHP0
+  await inputRemainHP(driver, me, '0');
+  // ウルガモスひんし->カイリューに交代
+  await changePokemon(driver, op, 'カイリュー', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // オドリドリのめざめるダンス
+  await tapMove(driver, me, 'めざめるダンス', false);
+  // カイリューのHP70
+  await inputRemainHP(driver, me, '70');
+  // カイリューのストーンエッジ
+  await tapMove(driver, op, 'ストーンエッジ', true);
+  // 外れる
+  await tapHit(driver, op);
+  // オドリドリのHP151
+  await inputRemainHP(driver, op, '');
+  // カイリューのたべのこし
+  await addEffect(driver, 2, op, 'たべのこし');
+  await driver.tap(find.text('OK'));
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // オドリドリのめざめるダンス
+  await tapMove(driver, me, 'めざめるダンス', false);
+  // カイリューのHP5
+  await inputRemainHP(driver, me, '5');
+  // カイリューのストーンエッジ
+  await tapMove(driver, op, 'ストーンエッジ', false);
+  // オドリドリのHP0
+  await inputRemainHP(driver, op, '0');
+  // オドリドリひんし->マスカーニャに交代
+  await changePokemon(driver, me, 'マスカーニャ', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリュー->マスカーニャに交代
+  await changePokemon(driver, op, 'マスカーニャ', true);
+  // マスカーニャのとんぼがえり
+  await tapMove(driver, me, 'とんぼがえり', false);
+  // マスカーニャのHP0
+  await inputRemainHP(driver, me, '0');
+  // リングマに交代
+  await changePokemon(driver, me, 'リングマ', false);
+  // マスカーニャひんし->カイリューに交代
+  await changePokemon(driver, op, 'カイリュー', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのストーンエッジ
+  await tapMove(driver, op, 'ストーンエッジ', false);
+  // リングマのHP133
+  await inputRemainHP(driver, op, '133');
+  // リングマののしかかり
+  await tapMove(driver, me, 'のしかかり', false);
+  // カイリューのHP0
+  await inputRemainHP(driver, me, '0');
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -2284,9 +2391,11 @@ Future<void> test30_3(
   await inputRemainHP(driver, me, '50');
   // ウインディのフレアドライブ
   await tapMove(driver, op, 'フレアドライブ', true);
-  // TODO: フレアドライブの反動ダメージ入力がない
   // オドリドリのHP0
   await inputRemainHP(driver, op, '0');
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // ウインディのHP20
+  await inputRemainHP(driver, op, '20');
   // ウインディのいのちのたま
   await addEffect(driver, 2, op, 'いのちのたま');
   await driver.tap(find.text('OK'));
