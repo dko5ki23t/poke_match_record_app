@@ -1493,13 +1493,15 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           if (nextTiming == Timing.beforeMove) {
             // わざの先読みをする
             for (int j = i; j < l.length; j++) {
-              if (l[j].timing == Timing.action) {
-                if (l[j].isValid() && l[j].runtimeType == TurnEffectAction) {
-                  tmpAction = l[j] as TurnEffectAction;
-                  break;
-                } else {
-                  break;
+              if (l[j] is TurnEffectAction) {
+                // へんげんじざい等のわざは、ダメージ予測のためには例え有効な入力になっていなくても
+                // 渡してあげるべき
+                tmpAction = (l[j] as TurnEffectAction);
+                if (tmpAction.type != TurnActionType.move ||
+                    tmpAction.move.id == 0) {
+                  tmpAction = null;
                 }
+                break;
               }
             }
           }

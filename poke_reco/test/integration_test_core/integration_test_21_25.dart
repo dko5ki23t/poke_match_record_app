@@ -10,6 +10,7 @@ Future<void> test21_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -157,6 +158,7 @@ Future<void> test21_2(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -250,6 +252,7 @@ Future<void> test21_3(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -339,6 +342,7 @@ Future<void> test21_4(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -480,6 +484,7 @@ Future<void> test22_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -561,6 +566,7 @@ Future<void> test22_2(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -614,6 +620,7 @@ Future<void> test22_3(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -663,6 +670,7 @@ Future<void> test22_4(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -780,6 +788,7 @@ Future<void> test22_5(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -894,6 +903,7 @@ Future<void> test22_6(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1019,6 +1029,7 @@ Future<void> test23_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1181,6 +1192,7 @@ Future<void> test23_2(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1328,6 +1340,7 @@ Future<void> test23_3(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1516,6 +1529,7 @@ Future<void> test23_4(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1650,6 +1664,7 @@ Future<void> test23_5(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1716,6 +1731,7 @@ Future<void> test24_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1827,6 +1843,7 @@ Future<void> test24_2(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -1909,6 +1926,7 @@ Future<void> test24_3(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -2094,6 +2112,7 @@ Future<void> test24_4(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -2306,6 +2325,7 @@ Future<void> test25_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -2444,6 +2464,7 @@ Future<void> test25_2(
   // TODO: かぜのり自動で発動させたい
   // TODO: おいかぜが終了しない
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -2566,6 +2587,7 @@ Future<void> test25_3(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
@@ -2776,6 +2798,7 @@ Future<void> test25_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;
+  await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));

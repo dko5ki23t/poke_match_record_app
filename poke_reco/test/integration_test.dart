@@ -5,6 +5,7 @@ import 'integration_test_core/integration_test_6_10.dart';
 import 'integration_test_core/integration_test_11_15.dart';
 import 'integration_test_core/integration_test_16_20.dart';
 import 'integration_test_core/integration_test_21_25.dart';
+import 'integration_test_core/integration_test_26_30.dart';
 
 /// 量が多いのでVSCodeでは「Ctrl+k」「Ctrl+0」で一度すべて折りたたむこと推奨
 
@@ -579,6 +580,216 @@ void main() {
         () async {
       if (doTest) {
         await test22_6(driver!);
+      }
+    });
+    test('エクスレッグ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test23_1(driver!);
+      }
+    });
+    test('エクスレッグ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test23_2(driver!);
+      }
+    });
+    test('エクスレッグ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test23_3(driver!);
+      }
+    });
+    test('エクスレッグ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test23_4(driver!);
+      }
+    });
+    test('エクスレッグ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test23_5(driver!);
+      }
+    });
+    test('ムクホーク戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test24_1(driver!);
+      }
+    });
+    test('ムクホーク戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test24_2(driver!);
+      }
+    });
+    test('ムクホーク戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test24_3(driver!);
+      }
+    });
+    test('ムクホーク戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test24_4(driver!);
+      }
+    });
+    test('アノホラグサ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test25_1(driver!);
+      }
+    });
+    test('アノホラグサ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test25_2(driver!);
+      }
+    });
+    test('アノホラグサ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test25_3(driver!);
+      }
+    });
+    test('ハラバリー戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test26_1(driver!);
+      }
+    });
+    test('ハラバリー戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test26_2(driver!);
+      }
+    });
+    test('ハラバリー戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test26_3(driver!);
+      }
+    });
+    test('ハラバリー戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test26_4(driver!);
+      }
+    });
+    test('リングマ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test27_1(driver!);
+      }
+    });
+    test('リングマ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test27_2(driver!);
+      }
+    });
+    test('リングマ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test27_3(driver!);
+      }
+    });
+    test('リングマ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test27_4(driver!);
+      }
+    });
+    test('ハカドッグ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_1(driver!);
+      }
+    });
+    test('ハカドッグ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_2(driver!);
+      }
+    });
+    test('ハカドッグ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_3(driver!);
+      }
+    });
+    test('ハカドッグ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_4(driver!);
+      }
+    });
+    test('ハカドッグ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_5(driver!);
+      }
+    });
+    test('ハカドッグ戦6', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test28_6(driver!);
+      }
+    });
+    test('イキリンコ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test29_1(driver!);
+      }
+    });
+    test('イキリンコ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test29_2(driver!);
+      }
+    });
+    test('イキリンコ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test29_3(driver!);
+      }
+    });
+    test('イキリンコ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test29_4(driver!);
+      }
+    });
+    test('イキリンコ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test29_5(driver!);
+      }
+    });
+    test('オドリドリ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test30_1(driver!);
+      }
+    });
+    test('オドリドリ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test30_2(driver!);
+      }
+    });
+    test('オドリドリ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test30_3(driver!);
+      }
+    });
+    test('オドリドリ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test30_4(driver!);
       }
     });
   });
