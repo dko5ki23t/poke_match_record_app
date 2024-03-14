@@ -25,6 +25,7 @@ import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:flutter_sequence_animation/flutter_sequence_animation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 enum RegisterBattlePageType {
@@ -66,7 +67,8 @@ class RegisterBattlePage extends StatefulWidget {
   RegisterBattlePageState createState() => RegisterBattlePageState();
 }
 
-class RegisterBattlePageState extends State<RegisterBattlePage> {
+class RegisterBattlePageState extends State<RegisterBattlePage>
+    with SingleTickerProviderStateMixin {
   RegisterBattlePageType pageType = RegisterBattlePageType.basePage;
   final opponentPokemonController =
       List.generate(6, (i) => TextEditingController());
@@ -95,6 +97,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
       List.generate(6, (index) => TextEditingController());
   List<TextEditingController> opponentStatusMaxControllers =
       List.generate(6, (index) => TextEditingController());
+  PageController ownStatusPageController = PageController();
+  PageController opponentStatusPageController = PageController();
+  late AnimationController animeController;
+  late SequenceAnimation colorAnimation;
 
 //  final turnScrollController = ScrollController();
 
@@ -119,6 +125,43 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
   final effectViewScrollController = AutoScrollController();
 
   @override
+  void initState() {
+    super.initState();
+    animeController = AnimationController(vsync: this);
+    animeController.addListener(() {
+      setState(() {});
+    });
+    colorAnimation = SequenceAnimationBuilder()
+        .addAnimatable(
+            animatable: ColorTween(begin: Colors.black, end: Colors.red),
+            from: Duration.zero,
+            to: const Duration(milliseconds: 500),
+            tag: 'color')
+        .addAnimatable(
+            animatable: ColorTween(begin: Colors.red, end: Colors.black),
+            from: const Duration(milliseconds: 500),
+            to: const Duration(milliseconds: 1000),
+            tag: 'color')
+        .addAnimatable(
+            animatable: ColorTween(begin: Colors.black, end: Colors.red),
+            from: const Duration(milliseconds: 1000),
+            to: const Duration(milliseconds: 1500),
+            tag: 'color')
+        .addAnimatable(
+            animatable: ColorTween(begin: Colors.red, end: Colors.black),
+            from: const Duration(milliseconds: 1600),
+            to: const Duration(milliseconds: 2000),
+            tag: 'color')
+        .animate(animeController);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    animeController.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     var appState = context.watch<MyAppState>();
     var parties = appState.parties;
@@ -126,6 +169,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
     PhaseState? focusState;
+    var pageInfoIndex = StatusInfoPageIndex.none;
 
     // エイリアス
     List<Turn> turns = widget.battle.turns;
@@ -181,8 +225,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
 //      focusState = turns[turnNum-1].
 //                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      turns[turnNum - 1].phases.adjust(isNewTurn, turnNum, turns[turnNum - 1],
-          ownParty, opponentParty, widget.battle.opponentName, loc);
+      pageInfoIndex = turns[turnNum - 1].phases.adjust(
+          isNewTurn,
+          turnNum,
+          turns[turnNum - 1],
+          ownParty,
+          opponentParty,
+          widget.battle.opponentName,
+          loc);
       isNewTurn = false;
       focusState =
           turns[turnNum - 1].updateEndingState(ownParty, opponentParty, loc);
@@ -955,6 +1005,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     child: BattlePokemonStateInfo(
                       playerType: PlayerType.me,
                       focusState: focusState!,
+                      pageController: ownStatusPageController,
                       playerName: loc.battleYou,
                       onStatusEdit: (abilityChanged, ability, itemChanged, item,
                           hpChanged, remainHP) {
@@ -982,6 +1033,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             1);
                         setState(() {});
                       },
+                      animeController: animeController,
+                      colorAnimation: colorAnimation,
                     ),
                   ),
                   SizedBox(
@@ -1111,6 +1164,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                     child: BattlePokemonStateInfo(
                       playerType: PlayerType.opponent,
                       focusState: focusState,
+                      pageController: opponentStatusPageController,
                       playerName: widget.battle.opponentName,
                       onStatusEdit: (abilityChanged, ability, itemChanged, item,
                           hpChanged, remainHP) {
@@ -1138,6 +1192,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
                             1);
                         setState(() {});
                       },
+                      animeController: animeController,
+                      colorAnimation: colorAnimation,
                     ),
                   ),
                   SizedBox(
@@ -1232,6 +1288,19 @@ class RegisterBattlePageState extends State<RegisterBattlePage> {
           ],
         );
         backPressed = () => onturnBack();
+        // ステータス画面下部のページ移動
+        if (pageInfoIndex != StatusInfoPageIndex.none) {
+          int currentPage = opponentStatusPageController.page!.toInt();
+          opponentStatusPageController
+              .animateToPage(pageInfoIndex.index - 1,
+                  duration: Duration(milliseconds: 500), curve: Curves.ease)
+              .then((value) async {
+            await Future.delayed(Duration(seconds: 1));
+            opponentStatusPageController.animateToPage(currentPage,
+                duration: Duration(milliseconds: 500), curve: Curves.ease);
+          });
+          animeController.forward();
+        }
         break;
       default:
         title = Text(loc.battlesTabTitleRegisterBattle);

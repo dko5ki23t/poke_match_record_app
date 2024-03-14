@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_sequence_animation/flutter_sequence_animation.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_state_edit_dialog.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/tooltip.dart';
@@ -16,6 +17,26 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/tool.dart';
 
+/// ステータス画面の下部ページ
+enum StatusInfoPageIndex {
+  none,
+
+  /// 種族値
+  race,
+
+  /// 実数値
+  real,
+
+  /// ランク変化
+  rank,
+
+  /// 状態変化
+  ailments,
+
+  /// 場
+  fields,
+}
+
 class BattlePokemonStateInfo extends StatefulWidget {
   const BattlePokemonStateInfo({
     Key? key,
@@ -23,6 +44,9 @@ class BattlePokemonStateInfo extends StatefulWidget {
     required this.playerType,
     required this.playerName,
     required this.onStatusEdit,
+    required this.pageController,
+    required this.animeController,
+    required this.colorAnimation,
   }) : super(key: key);
 
   final PhaseState focusState;
@@ -30,6 +54,9 @@ class BattlePokemonStateInfo extends StatefulWidget {
   final String playerName;
   final void Function(bool abilityChanged, Ability ability, bool itemChanged,
       Item? item, bool hpChanged, int remainHP) onStatusEdit;
+  final PageController pageController;
+  final AnimationController animeController;
+  final SequenceAnimation colorAnimation;
 
   @override
   BattlePokemonStateInfoState createState() => BattlePokemonStateInfoState();
@@ -47,7 +74,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     final playerType = widget.playerType;
     final focusingPokemonState = focusState.getPokemonState(playerType, null);
     final focusingPokemon = focusingPokemonState.pokemon;
-    final PageController controller = PageController();
+    final controller = widget.pageController;
 
     List<Widget> statusConditions = [
       for (final ailment in focusingPokemonState.ailmentsIterable)
@@ -212,6 +239,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                             stat.alphabet,
                             focusingPokemonState.minStats[stat].race,
                             focusingPokemonState.maxStats[stat].race,
+                            widget.animeController,
+                            widget.colorAnimation,
                           ),
                         Text(' '),
                       ],
@@ -227,6 +256,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                             stat.alphabet,
                             focusingPokemonState.minStats[stat].real,
                             focusingPokemonState.maxStats[stat].real,
+                            widget.animeController,
+                            widget.colorAnimation,
                           ),
                         Text(' '),
                       ],
@@ -455,6 +486,8 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
     String label,
     int statusMin,
     int statusMax,
+    AnimationController animeController,
+    SequenceAnimation colorAnimation,
   ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -464,9 +497,19 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
           child: Row(
             children: [
               Text(label),
-              statusMin == statusMax
-                  ? Text(statusMin.toString())
-                  : Text('$statusMin ~ $statusMax'),
+              AnimatedBuilder(
+                animation: animeController,
+                builder: (context, child) => child!,
+                child: statusMin == statusMax
+                    ? Text(
+                        statusMin.toString(),
+                        style: TextStyle(color: colorAnimation['color'].value),
+                      )
+                    : Text(
+                        '$statusMin ~ $statusMax',
+                        style: TextStyle(color: colorAnimation['color'].value),
+                      ),
+              ),
             ],
           ),
         ),

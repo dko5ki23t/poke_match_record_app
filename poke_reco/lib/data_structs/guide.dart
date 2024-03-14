@@ -1,3 +1,4 @@
+import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -25,8 +26,10 @@ class Guide {
   String guideStr = '';
   bool canDelete = true;
 
-  // (注)他のeffectよりも後に行う
-  void processEffect(
+  /// 効果等の結果からステータスを確定する
+  /// (注)他のeffectよりも後に行う
+  /// 確定させたステータスに対応するページのenumを返す
+  StatusInfoPageIndex processEffect(
     PokemonState ownState,
     PokemonState opponentState,
     PhaseState state,
@@ -52,22 +55,23 @@ class Guide {
         // TODO: この時点で努力値等を反映するのかどうかとか
         opponentState.minStats.h.real = args[0];
         opponentState.maxStats.h.real = args[1];
-        break;
+        return StatusInfoPageIndex.real;
       case sapConfAttack:
         // TODO: この時点で努力値等を反映するのかどうかとか
         opponentState.minStats.a.real = args[0];
         opponentState.maxStats.a.real = args[1];
-        break;
+        return StatusInfoPageIndex.real;
       case moveDamagedToStatus:
         // TODO: この時点で努力値等を反映するのかどうかとか
         opponentState.minStats[StatIndex.values[args[0]]].real = args[1];
         opponentState.maxStats[StatIndex.values[args[0]]].real = args[2];
-        break;
+        return StatusInfoPageIndex.real;
       case moveOrderConfSpeed:
         // TODO: この時点で努力値等を反映するのかどうかとか
         opponentState.minStats.s.real = args[0];
         opponentState.maxStats.s.real = args[1];
-        break;
+        return StatusInfoPageIndex.real;
     }
+    return StatusInfoPageIndex.none;
   }
 }

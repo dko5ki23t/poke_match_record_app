@@ -1,5 +1,6 @@
 import 'dart:collection';
 
+import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -861,7 +862,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
   /// TODO:フェーズを最適化する
   ///
   //List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
-  void adjust(
+  StatusInfoPageIndex adjust(
     bool isNewTurn,
     int turnNum,
     Turn currentTurn,
@@ -870,6 +871,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     String opponentName,
     AppLocalizations loc,
   ) {
+    var ret = StatusInfoPageIndex.none;
     // 試合終了フェーズは一旦削除する
     l.removeWhere(
       (element) => element is TurnEffectGameset,
@@ -1409,10 +1411,13 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           );
           // 効果により確定する事項を反映させる
           for (final guide in guides) {
-            guide.processEffect(
+            var tmp = guide.processEffect(
                 currentState.getPokemonState(PlayerType.me, null),
                 currentState.getPokemonState(PlayerType.opponent, null),
                 currentState);
+            if (tmp != StatusInfoPageIndex.none) {
+              ret = tmp;
+            }
           }
         }
 
@@ -1576,6 +1581,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
     }
     return ret;*/
+    return ret;
   }
 }
 

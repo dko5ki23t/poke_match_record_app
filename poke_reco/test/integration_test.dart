@@ -33,7 +33,6 @@ void main() {
 
   group('統合テスト(もこうの実況を記録)', () {
     int minutesPerTest = 5;
-    /*
     test('パーモット戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
@@ -520,7 +519,7 @@ void main() {
         await test20_4(driver!);
       }
     });
-    
+
     test('ハルクジラ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
@@ -539,14 +538,13 @@ void main() {
         await test21_3(driver!);
       }
     });
-  
+
     test('ハルクジラ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
         await test21_4(driver!);
       }
     });
-    */
     test('モトトカゲ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
