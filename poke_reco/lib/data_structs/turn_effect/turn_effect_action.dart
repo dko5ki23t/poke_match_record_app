@@ -3815,7 +3815,7 @@ class TurnEffectAction extends TurnEffect {
           case 456: // 対象にもちものがあるときのみ成功
             // もちもの確定のため、一度持たせる
             if (targetPlayerType == PlayerType.opponent &&
-                targetState.getHoldingItem()!.id == 0) {
+                targetState.getHoldingItem()?.id == 0) {
               if (extraArg1 != 0) {
                 ret.add(Guide()
                   ..guideId = Guide.confItem

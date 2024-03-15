@@ -370,8 +370,6 @@ class PhaseState extends Equatable implements Copyable {
             defenderTimingIDList.add(168);
           }
           if (effectiveness == MoveEffectiveness.great) {
-            // 効果ばつぐんのわざを受けたとき
-            defenderTimingIDList.addAll([Timing.greatAttacked]);
             final moveType = replacedMoveType;
             switch (moveType) {
               case PokeType.fire:
@@ -656,7 +654,7 @@ class PhaseState extends Equatable implements Copyable {
                     replacedMoveType,
                     defenderState) ==
                 MoveEffectiveness.great) {
-              // 効果ばつぐんのわざを受けたとき
+              // 効果ばつぐんのわざを受けた後
               defenderTimingIDList.addAll([Timing.greatAttacked]);
               final moveType = replacedMoveType;
               switch (moveType) {

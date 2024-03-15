@@ -772,8 +772,6 @@ abstract class TurnEffect extends Equatable implements Copyable {
                     replacedMoveType,
                     pokemonState!) ==
                 MoveEffectiveness.great) {
-              defenderTimings
-                  .add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
               switch (replacedMoveType) {
                 case PokeType.fire:
                   defenderTimings.add(Timing.greatFireAttacked);
@@ -1008,7 +1006,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
                   replacedMoveType,
                   pokemonState!) ==
               MoveEffectiveness.great) {
-            defenderTimings.add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた時
+            defenderTimings.add(Timing.greatAttacked); // 効果ばつぐんのタイプのこうげきざわを受けた後
             switch (replacedMoveType) {
               case PokeType.fire:
                 defenderTimings.add(Timing.greatFireAttacked);

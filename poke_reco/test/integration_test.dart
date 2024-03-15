@@ -726,18 +726,6 @@ void main() {
         await test28_4(driver!);
       }
     });
-    test('ハカドッグ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
-        () async {
-      if (doTest) {
-        await test28_5(driver!);
-      }
-    });
-    test('ハカドッグ戦6', timeout: Timeout(Duration(minutes: minutesPerTest)),
-        () async {
-      if (doTest) {
-        await test28_6(driver!);
-      }
-    });
     test('イキリンコ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {

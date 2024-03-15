@@ -1185,6 +1185,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       s1 = 12; // 行動選択前状態へ
                     }*/
                 state = 11; // ターン終了時処理状態へ
+                isAssisting = false;
+                skipInc = true;
               } else {
                 final action = l[i] as TurnEffectAction;
                 remainAction[action.playerType.number] = false;
