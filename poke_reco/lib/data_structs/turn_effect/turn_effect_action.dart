@@ -962,6 +962,11 @@ class TurnEffectAction extends TurnEffect {
             targetStates[i] = myState;
           }
         }
+        for (int i = 0; i < targetIndiFields.length; i++) {
+          if (targetIndiFields[i] == yourFields) {
+            targetIndiFields[i] = myFields;
+          }
+        }
       }
       // メトロノーム用
       {
@@ -5847,6 +5852,7 @@ class TurnEffectAction extends TurnEffect {
                 ? calcMinSDefense
                 : calcMinDefense;
 
+    // TODO: 0で割り得る
     int attackVmax = ((((tmpMax / 0.85).floor() - 2) * 50 * defenseVmax) /
             ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
         .floor();
@@ -6636,7 +6642,7 @@ class TurnEffectAction extends TurnEffect {
                                     CommandWidgetTemplate.effect1Switch2 ||
                                 templateTitles[index].item1 ==
                                     CommandWidgetTemplate.effect2Switch) &&
-                            templateTitles.length > 1 &&
+                            templateTitles.length - 1 > index &&
                             isNormallyHit()
                         ? IconButton(
                             key: Key(
@@ -7286,7 +7292,7 @@ class TurnEffectAction extends TurnEffect {
                   onUpdate();
                   // 統合テスト作成用
                   print(
-                      "await driver.tap(find.text('SwitchSelectItemInputSwitch'));");
+                      "await driver.tap(find.byValueKey('SwitchSelectItemInputSwitch'));");
                 },
                 itemText: extra[2] as String,
                 initialItemText: PokeDB().items[extraArg1]!.displayName,

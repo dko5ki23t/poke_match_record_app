@@ -270,6 +270,23 @@ class PhaseState extends Equatable implements Copyable {
           if (weather.id != Weather.snowy) {
             timingIDs.add(Timing.pokemonAppearNotSnowed);
           }
+          // ポケモン登場時&フィールドがxxではない
+          if (field.id != Field.electricTerrain) {
+            // ポケモン登場時(エレキフィールドでない)
+            timingIDs.add(Timing.pokemonAppearNotEreciField);
+          }
+          if (field.id != Field.psychicTerrain) {
+            // ポケモン登場時(サイコフィールドでない)
+            timingIDs.add(Timing.pokemonAppearNotPsycoField);
+          }
+          if (field.id != Field.mistyTerrain) {
+            // ポケモン登場時(ミストフィールドでない)
+            timingIDs.add(Timing.pokemonAppearNotMistField);
+          }
+          if (field.id != Field.grassyTerrain) {
+            // ポケモン登場時(グラスフィールドでない)
+            timingIDs.add(Timing.pokemonAppearNotGrassField);
+          }
           for (final player in players) {
             bool changed =
                 player == PlayerType.me ? changedOwn : changedOpponent;

@@ -6,6 +6,8 @@ import 'integration_test_core/integration_test_11_15.dart';
 import 'integration_test_core/integration_test_16_20.dart';
 import 'integration_test_core/integration_test_21_25.dart';
 import 'integration_test_core/integration_test_26_30.dart';
+import 'integration_test_core/integration_test_31_35.dart';
+import 'integration_test_core/integration_test_36_40.dart';
 
 /// 量が多いのでVSCodeでは「Ctrl+k」「Ctrl+0」で一度すべて折りたたむこと推奨
 
@@ -778,6 +780,252 @@ void main() {
         () async {
       if (doTest) {
         await test30_4(driver!);
+      }
+    });
+    test('オノノクス戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test31_1(driver!);
+      }
+    });
+    test('オノノクス戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test31_2(driver!);
+      }
+    });
+    test('オノノクス戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test31_3(driver!);
+      }
+    });
+    test('オノノクス戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test31_4(driver!);
+      }
+    });
+    test('スコヴィラン戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test32_1(driver!);
+      }
+    });
+    test('スコヴィラン戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test32_2(driver!);
+      }
+    });
+    test('スコヴィラン戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test32_3(driver!);
+      }
+    });
+    test('スコヴィラン戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test32_4(driver!);
+      }
+    });
+    test('スコヴィラン戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test32_5(driver!);
+      }
+    });
+    test('オトシドリ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test33_1(driver!);
+      }
+    });
+    test('オトシドリ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test33_2(driver!);
+      }
+    });
+    test('オトシドリ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test33_3(driver!);
+      }
+    });
+    test('エーフィ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test34_1(driver!);
+      }
+    });
+    test('エーフィ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test34_2(driver!);
+      }
+    });
+    test('エーフィ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test34_3(driver!);
+      }
+    });
+    test('エーフィ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test34_4(driver!);
+      }
+    });
+    test('フローゼル戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test35_1(driver!);
+      }
+    });
+    test('フローゼル戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test35_2(driver!);
+      }
+    });
+    test('フローゼル戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test35_3(driver!);
+      }
+    });
+    test('ガケガニ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test36_1(driver!);
+      }
+    });
+    test('ガケガニ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test36_2(driver!);
+      }
+    });
+    test('ガケガニ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test36_3(driver!);
+      }
+    });
+    test('ガケガニ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test36_4(driver!);
+      }
+    });
+    test('ソウブレイズ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test37_1(driver!);
+      }
+    });
+    test('ソウブレイズ戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test37_2(driver!);
+      }
+    });
+    test('ソウブレイズ戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test37_3(driver!);
+      }
+    });
+    test('ソウブレイズ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test37_4(driver!);
+      }
+    });
+    test('ソウブレイズ戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test37_4(driver!);
+      }
+    });
+    test('キラフロル戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test38_1(driver!);
+      }
+    });
+    test('キラフロル戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test38_2(driver!);
+      }
+    });
+    test('キラフロル戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test38_3(driver!);
+      }
+    });
+    test('キラフロル戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test38_4(driver!);
+      }
+    });
+    test('ポットデス戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test39_1(driver!);
+      }
+    });
+    test('ポットデス戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test39_2(driver!);
+      }
+    });
+    test('ポットデス戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test39_3(driver!);
+      }
+    });
+    test('ポットデス戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test39_4(driver!);
+      }
+    });
+    test('ポットデス戦5', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test39_4(driver!);
+      }
+    });
+    test('ゴーゴート戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test40_1(driver!);
+      }
+    });
+    test('ゴーゴート戦2', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test40_2(driver!);
+      }
+    });
+    test('ゴーゴート戦3', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test40_3(driver!);
+      }
+    });
+    test('ゴーゴート戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
+        () async {
+      if (doTest) {
+        await test40_4(driver!);
       }
     });
   });

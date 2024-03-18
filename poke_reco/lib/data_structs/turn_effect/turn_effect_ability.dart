@@ -997,7 +997,7 @@ class TurnEffectAbility extends TurnEffect {
               child: TypeDropdownButton(
                 loc.battleTypeToChange,
                 (value) {
-                  extraArg1 = value;
+                  extraArg1 = value.index;
                   onEdit();
                 },
                 extraArg1 == 0 ? null : PokeType.values[extraArg1],
@@ -1219,6 +1219,7 @@ class TurnEffectAbility extends TurnEffect {
             children: [
               Expanded(
                 child: _myTypeAheadField(
+                  key: Key('EffectMoveField'),
                   textFieldConfiguration: TextFieldConfiguration(
                     controller: controller,
                     decoration: InputDecoration(
@@ -1261,6 +1262,12 @@ class TurnEffectAbility extends TurnEffect {
                     controller.text = suggestion.displayName;
                     extraArg1 = suggestion.id;
                     onEdit();
+                    // 統合テスト作成用
+                    print(
+                        "await driver.tap(find.byValueKey('EffectMoveField'));\n"
+                        "await driver.enterText('${suggestion.displayName}');\n"
+                        "await driver.tap(\n"
+                        "find.ancestor(of: find.text('${suggestion.displayName}'), matching: find.byType('ListTile')));");
                   },
                   isInput: true,
                 ),
