@@ -71,7 +71,7 @@ Future<void> test36_1(
   await tapMove(driver, op, 'シャドーボール', false);
   // ガケガニのHP52
   await inputRemainHP(driver, op, '52');
-  // TODO:自動で入力されてほしい
+  // TODO:自動で入力されてほしいが、条件が複雑で難しいか
   // ガケガニのいかりのこうら
   await addEffect(driver, 1, me, 'いかりのこうら');
   await driver.tap(find.text('OK'));
@@ -89,7 +89,7 @@ Future<void> test36_1(
   // ゲンガーのHP0
   await inputRemainHP(driver, me, '0');
   // ゲンガーののろわれボディ
-  await addEffect(driver, 2, op, 'のろわれボディ');
+  await addEffect(driver, 1, op, 'のろわれボディ');
   await driver.tap(find.text('OK'));
   // ゲンガーひんし->ガブリアスに交代
   await changePokemon(driver, op, 'ガブリアス', false);
@@ -160,7 +160,6 @@ Future<void> test36_2(
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
 
-  await driver.tap(find.text('OK'));
   // イエッサンのサイコキネシス
   await tapMove(driver, me, 'サイコキネシス', false);
   // マリルリのHP80
@@ -1591,7 +1590,8 @@ Future<void> test38_2(
 
   // マスカーニャのへんげんじざい
   await addEffect(driver, 0, op, 'へんげんじざい');
-  await driver.tap(find.text('OK'));
+  await driver.tap(find.byValueKey('TypeDropdownButton'));
+  await driver.tap(find.text('むし'));
   await driver.tap(find.text('OK'));
   // マスカーニャのとんぼがえり
   await tapMove(driver, op, 'とんぼがえり', true);
@@ -2082,8 +2082,8 @@ Future<void> test39_1(
   await addEffect(driver, 2, op, 'のろわれボディ');
   await driver.tap(find.byValueKey('EffectMoveField'));
   await driver.enterText('アシストパワー');
-  await driver.tap(
-      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));
+  await driver.tap(find.ancestor(
+      of: find.text('アシストパワー'), matching: find.byType('ListTile')));
   await driver.tap(find.text('OK'));
   // ゲンガーのヘドロばくだん
   await tapMove(driver, op, 'ヘドロばくだん', true);
@@ -2685,7 +2685,7 @@ Future<void> test40_1(
   await addEffect(driver, 2, op, 'きあいのタスキ');
   await driver.tap(find.text('OK'));
   // ドラパルトののろわれボディ
-  await addEffect(driver, 4, op, 'のろわれボディ');
+  await addEffect(driver, 3, op, 'のろわれボディ');
   await driver.tap(find.byValueKey('EffectMoveField'));
   await driver.enterText('ハイパーボイス');
   await driver.tap(find.ancestor(
@@ -2979,8 +2979,8 @@ Future<void> test40_2(
   await setHitCount(driver, op, 4);
   // ニンフィアのHP0
   await inputRemainHP(driver, op, '0');
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // 相手の勝利
+  await testExistEffect(driver, 'ハスミの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));

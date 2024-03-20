@@ -1063,7 +1063,6 @@ Future<void> test23_1(
   // アーマーガアのプレッシャー
   await addEffect(driver, 0, op, 'プレッシャー');
   await driver.tap(find.text('OK'));
-  await driver.tap(find.text('OK'));
   // エクスレッグのとんぼがえり
   await tapMove(driver, me, 'とんぼがえり', false);
   // アーマーガアのHP90
@@ -1517,6 +1516,14 @@ Future<void> test23_3(
   // ターン14へ
   await goTurnPage(driver, turnNum++);
 
+  // オリーヴァのエナジーボール
+  await tapMove(driver, me, 'エナジーボール', false);
+  // ロトムのハイドロポンプ
+  await tapMove(driver, op, 'ハイドロポンプ', true);
+  // オリーヴァのHP7
+  await inputRemainHP(driver, op, '7');
+  // ロトムのHP0
+  await inputRemainHP(driver, me, '0');
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -1697,7 +1704,6 @@ Future<void> test23_5(
 
   // コータスのひでり
   await addEffect(driver, 0, op, 'ひでり');
-  await driver.tap(find.text('OK'));
   await driver.tap(find.text('OK'));
   // エクスレッグのちょうはつ
   await tapMove(driver, me, 'ちょうはつ', false);
@@ -2363,11 +2369,11 @@ Future<void> test25_1(
   await inputRemainHP(driver, op, '87');
   // イルカマンに交代
   await changePokemon(driver, op, 'イルカマン', false);
+  // ファイアローのだっしゅつボタン
+  await addEffect(driver, 2, me, 'だっしゅつボタン');
   // アノホラグサに交代
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('アノホラグサ'));
-  // ファイアローのだっしゅつボタン
-  await addEffect(driver, 2, me, 'だっしゅつボタン');
   await driver.tap(find.text('OK'));
   // ターン2へ
   await goTurnPage(driver, turnNum++);
@@ -2499,11 +2505,11 @@ Future<void> test25_2(
   await tapMove(driver, op, 'かみなり', true);
   // ファイアローのHP29
   await inputRemainHP(driver, op, '29');
+  // ファイアローのだっしゅつボタン
+  await addEffect(driver, 2, me, 'だっしゅつボタン');
   // アノホラグサに交代
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('アノホラグサ'));
-  // ファイアローのだっしゅつボタン
-  await addEffect(driver, 2, me, 'だっしゅつボタン');
   await driver.tap(find.text('OK'));
   // ファイアローのかぜのり
   await addEffect(driver, 3, me, 'かぜのり');
@@ -2662,8 +2668,7 @@ Future<void> test25_3(
   await inputRemainHP(driver, me, '131');
   // ヘイラッシャのねごと
   await tapMove(driver, op, 'ねごと', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
-  await tapMove(driver, op, 'ねむる', false);
+  await tapMove(driver, op, 'ねむる', true);
   await tapSuccess(driver, op);
   // ターン6へ
   await goTurnPage(driver, turnNum++);
@@ -2674,7 +2679,6 @@ Future<void> test25_3(
   await inputRemainHP(driver, me, '40');
   // ヘイラッシャのねごと
   await tapMove(driver, op, 'ねごと', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   await tapMove(driver, op, 'ウェーブタックル', true);
   // アノホラグサのHP47
   await inputRemainHP(driver, op, '47');
@@ -2750,11 +2754,11 @@ Future<void> test25_3(
   await tapMove(driver, op, 'ドラゴンアロー', false);
   // ファイアローのHP62
   await inputRemainHP(driver, op, '62');
+  // ファイアローのだっしゅつボタン
+  await addEffect(driver, 2, me, 'だっしゅつボタン');
   // アノホラグサに交代
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('アノホラグサ'));
-  // ファイアローのだっしゅつボタン
-  await addEffect(driver, 2, me, 'だっしゅつボタン');
   await driver.tap(find.text('OK'));
   // ターン14へ
   await goTurnPage(driver, turnNum++);
@@ -2777,10 +2781,8 @@ Future<void> test25_3(
   await tapMove(driver, op, 'りゅうせいぐん', true);
   // アノホラグサのHP0
   await inputRemainHP(driver, op, '0');
-  // のろい編集
-  await tapEffect(driver, 'のろい');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('0');
+  // のろいダメージ編集
+  await tapEffect(driver, 'のろいダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField'));
   await driver.enterText('0');
   await driver.tap(find.text('OK'));

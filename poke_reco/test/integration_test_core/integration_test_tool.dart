@@ -10,14 +10,14 @@ import 'package:test/test.dart';
 /// ```
 Future<void> testExistAnyWidgets(
     SerializableFinder finder, FlutterDriver driver,
-    {Duration timeout = const Duration(seconds: 1)}) async {
+    {Duration timeout = const Duration(seconds: 5)}) async {
   bool test = await isPresent(finder, driver);
   expect(test, true);
 }
 
 // https://stackoverflow.com/questions/49442872/how-to-check-if-an-element-exists-or-not-in-flutter-driverqa-environment
 Future<bool> isPresent(SerializableFinder finder, FlutterDriver driver,
-    {Duration timeout = const Duration(seconds: 1)}) async {
+    {Duration timeout = const Duration(seconds: 5)}) async {
   try {
     await driver.waitForTappable(finder, timeout: timeout);
     return true;

@@ -2094,7 +2094,6 @@ Future<void> test14_4(
   await inputRemainHP(driver, me, '0');
   // ミミッキュひんし->コータスに交代
   await changePokemon(driver, op, 'コータス', false);
-  // TODO: ここ、ひんし直後にターン終了処理であるはれ終了が行われ、コータス死に出しで再度はれになるべき
   // ターン15へ
   await goTurnPage(driver, turnNum++);
 
@@ -2455,8 +2454,7 @@ Future<void> test15_3(
   await goTurnPage(driver, turnNum++);
 
   // ギャラドスのいかく
-  // TODO:ボーマンダのあとにいかくを追加したかったが、候補になかった
-  await addEffect(driver, 0, op, 'いかく');
+  await addEffect(driver, 1, op, 'いかく');
   await driver.tap(find.text('OK'));
   // ボーマンダのりゅうのまい
   await tapMove(driver, me, 'りゅうのまい', false);

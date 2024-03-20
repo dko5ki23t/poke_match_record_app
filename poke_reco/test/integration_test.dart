@@ -522,7 +522,6 @@ void main() {
         await test20_4(driver!);
       }
     });
-
     test('ハルクジラ戦1', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {
@@ -541,7 +540,6 @@ void main() {
         await test21_3(driver!);
       }
     });
-
     test('ハルクジラ戦4', timeout: Timeout(Duration(minutes: minutesPerTest)),
         () async {
       if (doTest) {

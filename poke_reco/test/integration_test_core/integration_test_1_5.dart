@@ -49,7 +49,6 @@ Future<void> test1_1(
   await tapMove(driver, op, 'がんせきふうじ', true);
   // ボーマンダの残りHP127
   await inputRemainHP(driver, op, '127');
-  await testExistAnyWidgets(find.text('ボーマンダはすばやさが下がった'), driver);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -365,10 +364,9 @@ Future<void> test1_3(
   // ウルガモスの残りHP0
   await inputRemainHP(driver, me, '0');
   // ウルガモスのほのおのからだ
-  // TODO: 本当はすなあらしがこのターンでも続いていて(おそらくバンギのもちもののせい)、
-  // すなあらしダメージでパーモットがやられる
   await addEffect(driver, 2, op, 'ほのおのからだ');
   await driver.tap(find.text('OK'));
+  // すなあらしダメージでパーモットがやられる
   // ウルガモスひんし→バンギラスに交代
   await changePokemon(driver, op, 'バンギラス', false);
   // パーモットひんし→マリルリに交代

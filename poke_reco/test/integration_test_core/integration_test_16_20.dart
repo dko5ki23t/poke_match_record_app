@@ -218,10 +218,13 @@ Future<void> test16_2(
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
 
-  // TODO: もちもの入力できてない
   // ロトムのトリック
   await tapMove(driver, op, 'トリック', true);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
+  await driver.enterText('こだわりスカーフ');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('こだわりスカーフ')));
   // クエスパトラのめいそう
   await tapMove(driver, me, 'めいそう', false);
   // ターン2へ
@@ -612,9 +615,9 @@ Future<void> test17_1(
   await tapMove(driver, me, 'エナジーボール', false);
   // ミミッキュのHP100
   await inputRemainHP(driver, me, '');
+  // TODO:ちょうはつ終了のタイミングがずれてる。ここで終了するはずが、次ターンで終了する
   // ターン4へ
   await goTurnPage(driver, turnNum++);
-  // TODO:ちょうはつ終了のタイミングがずれてる？
 
   // ミミッキュのシャドークロー
   await tapMove(driver, op, 'シャドークロー', true);
@@ -678,9 +681,11 @@ Future<void> test17_2(
 
   // オリーヴァのテラスタル
   await inputTerastal(driver, me, '');
-  // マスカーニャのとくせいがへんげんじざいと判明
-  // TODO: 効果の追加でへんげんじざいが現れない
-  await editPokemonState(driver, 'マスカーニャ/あらいわ', null, 'へんげんじざい', null);
+  // マスカーニャのへんげんじざい
+  await addEffect(driver, 1, op, 'へんげんじざい');
+  await driver.tap(find.byValueKey('TypeDropdownButton'));
+  await driver.tap(find.text('むし'));
+  await driver.tap(find.text('OK'));
   // マスカーニャのとんぼがえり
   await tapMove(driver, op, 'とんぼがえり', true);
   // オリーヴァのHP129
@@ -1465,6 +1470,7 @@ Future<void> test18_2(
   await changePokemon(driver, me, 'ドヒドイデ', false);
   // TODO: ともえなげのとき、さめはだが自動入力されない＆なんか変なタイミングで出る(たぶんともえなげで登場するとき)
   // ガブリアスのさめはだ
+  // TODO: さめはだ選択できるが、さめはだを持つのがドヒドイデに設定されてしまう
   await addEffect(driver, 2, op, 'さめはだ');
   await driver.tap(find.text('OK'));
   // ターン4へ
@@ -1558,7 +1564,7 @@ Future<void> test18_2(
   await changePokemon(driver, me, 'ニンフィア', false);
   // ガブリアスのさめはだ
   // TODO:選べない
-  await addEffect(driver, 3, op, 'さめはだ');
+  await addEffect(driver, 2, op, 'さめはだ');
   await driver.tap(find.text('OK'));
   // ターン13へ
   await goTurnPage(driver, turnNum++);
@@ -1682,7 +1688,6 @@ Future<void> test18_3(
   await driver.enterText('ゴツゴツメット');
   await driver.tap(find.descendant(
       of: find.byType('ListTile'), matching: find.text('ゴツゴツメット')));
-  // TODO:わざ使用後にもへんげんじざいが自動追加される？
   // キョジオーンのステルスロック
   await tapMove(driver, op, 'ステルスロック', true);
   // ターン2へ

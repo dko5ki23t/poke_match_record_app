@@ -999,6 +999,10 @@ class TurnEffectAbility extends TurnEffect {
                 (value) {
                   extraArg1 = value.index;
                   onEdit();
+                  // 統合テスト作成用
+                  print(
+                      "await driver.tap(find.byValueKey('TypeDropdownButton'));\n"
+                      "await driver.tap(find.text('${value.displayName}'));");
                 },
                 extraArg1 == 0 ? null : PokeType.values[extraArg1],
               ),

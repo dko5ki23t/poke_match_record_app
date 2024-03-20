@@ -2651,7 +2651,6 @@ Future<void> test10_1(
   // リククラゲのキノコのほうし
   await tapMove(driver, me, 'キノコのほうし', false);
   // やどりぎのタネダメージ編集
-  // TODO: たぶんここマイナスの値が入ってる
   await tapEffect(driver, 'やどりぎのタネダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField2'));
   await driver.enterText('174');

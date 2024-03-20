@@ -936,6 +936,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       14: Timing.gameSet, // 試合終了状態
     };
     Timing currentTiming = stateTimingMap[state]!;
+    Timing prevTiming = Timing.none;
     List<TurnEffect> assistList = [];
     //List<TurnEffect> delAssistList = [];
     //PlayerType? firstActionPlayer;
@@ -1423,6 +1424,15 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           }
         }
 
+        // ターン終了時処理(共通)を実施
+        if (prevTiming == Timing.everyTurnEnd &&
+            currentTiming != Timing.none &&
+            currentTiming != Timing.everyTurnEnd &&
+            isValidAction[0] != remainAction[0] &&
+            isValidAction[1] != remainAction[1]) {
+          currentState.processTurnEnd(currentTurn);
+        }
+
         if (state != end &&
             winner == null &&
             (!isInserted || isAssisting) &&
@@ -1469,6 +1479,15 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         }
 
         if (i < l.length) i++;
+      } else {
+        // ターン終了時処理(共通)を実施
+        if (prevTiming == Timing.everyTurnEnd &&
+            currentTiming != Timing.none &&
+            currentTiming != Timing.everyTurnEnd &&
+            isValidAction[0] != remainAction[0] &&
+            isValidAction[1] != remainAction[1]) {
+          currentState.processTurnEnd(currentTurn);
+        }
       }
 
       if (state != end &&
@@ -1482,6 +1501,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
       if (state != end) {
         var nextTiming =
             changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
+        prevTiming = currentTiming;
         if (/*(timingListIdx >= sameTimingList.length ||
             sameTimingList[timingListIdx].first.turnEffect.timing != nextTiming ||*/
             ((currentTiming !=
@@ -1906,6 +1926,7 @@ class Turn extends Equatable implements Copyable {
     };
 
     int i = 0;
+    bool doneProcessTurnEnd = false;
     while (i < phases.length) {
       final phase = phases[i];
 //      if (phase.isAdding) {
@@ -1924,6 +1945,15 @@ class Turn extends Equatable implements Copyable {
       //  continousCount = 0;
       //}
       if (phase is TurnEffectAction) lastAction = phase;
+      // 両者の行動が完了している＆ひんし交代の効果が初めて出現したなら
+      // ターン終了時処理(共通)を実施する
+      if (alreadyActioned[PlayerType.me]! &&
+          alreadyActioned[PlayerType.opponent]! &&
+          phase is TurnEffectChangeFaintingPokemon &&
+          !doneProcessTurnEnd) {
+        _endingState.processTurnEnd(this);
+        doneProcessTurnEnd = true;
+      }
       // 効果を処理する
       final guides = phase.processEffect(
         ownParty,
@@ -1947,7 +1977,20 @@ class Turn extends Equatable implements Copyable {
       if (phase is TurnEffectAction) {
         alreadyActioned[phase.playerType] = true;
       }
+      if (phase.isOwnFainting) {
+        alreadyActioned[PlayerType.me] = true;
+      }
+      if (phase.isOpponentFainting) {
+        alreadyActioned[PlayerType.opponent] = true;
+      }
       i++;
+    }
+    // 両者の行動が完了している＆ひんし交代の効果が無かった場合
+    // ターン終了時処理(共通)を実施する
+    if (alreadyActioned[PlayerType.me]! &&
+        alreadyActioned[PlayerType.opponent]! &&
+        !doneProcessTurnEnd) {
+      _endingState.processTurnEnd(this);
     }
     return _endingState.copy();
   }
@@ -2060,8 +2103,15 @@ class Turn extends Equatable implements Copyable {
     /// (Timing.pokemonAppearであってもどちらのポケモン登場時かわからないため、判定する)
     bool isAppearingPokemon(PlayerType player, PhaseState state, int num) {
       // 1ターン目の最初ならtrue
-      if (num == 1 && phaseIdx == 0) {
-        return true;
+      if (num == 1) {
+        bool isAppear = true;
+        for (int i = 0; i < phaseIdx && i < phases.length; i++) {
+          if (phases[i].timing != Timing.pokemonAppear) {
+            isAppear = false;
+            break;
+          }
+        }
+        if (isAppear) return true;
       }
       // ターン最初と違うポケモンならtrue
       if (state.getPokemonIndex(player, null) !=

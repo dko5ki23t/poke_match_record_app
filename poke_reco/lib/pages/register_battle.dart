@@ -526,7 +526,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           // 前ターンの最終状態を初期状態とする
           PhaseState initialState =
               prevTurn.updateEndingState(ownParty, opponentParty, loc);
-          initialState.processTurnEnd(prevTurn);
           currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
           appState.editingPhase =
@@ -1289,15 +1288,20 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         );
         backPressed = () => onturnBack();
         // ステータス画面下部のページ移動
-        if (pageInfoIndex != StatusInfoPageIndex.none) {
+        if (pageInfoIndex != StatusInfoPageIndex.none &&
+            opponentStatusPageController.hasClients) {
           int currentPage = opponentStatusPageController.page!.toInt();
           opponentStatusPageController
               .animateToPage(pageInfoIndex.index - 1,
                   duration: Duration(milliseconds: 500), curve: Curves.ease)
               .then((value) async {
             await Future.delayed(Duration(seconds: 1));
-            opponentStatusPageController.animateToPage(currentPage,
-                duration: Duration(milliseconds: 500), curve: Curves.ease);
+            // TODO:保存時？にここでバグる
+            // この条件を付けておかないと、対戦保存時にページが遷移したときに例外が起きてしまう
+            if (opponentStatusPageController.hasClients) {
+              opponentStatusPageController.animateToPage(currentPage,
+                  duration: Duration(milliseconds: 500), curve: Curves.ease);
+            }
           });
           animeController.forward();
         }

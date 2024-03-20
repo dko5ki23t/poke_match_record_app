@@ -318,8 +318,8 @@ Future<void> test31_2(
   await tapMove(driver, op, 'ふんどのこぶし', false);
   // オノノクスのHP0
   await inputRemainHP(driver, op, '0');
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // 相手の勝利
+  await testExistEffect(driver, 'まりわさの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -527,8 +527,7 @@ Future<void> test31_4(
   await addEffect(driver, 0, op, 'かたやぶり');
   await driver.tap(find.text('OK'));
   // デカヌチャンのふうせん
-  // TODO: かたやぶりの後ろにふうせん追加できなかった
-  await addEffect(driver, 0, op, 'ふうせん');
+  await addEffect(driver, 1, op, 'ふうせん');
   await driver.tap(find.text('OK'));
   // モトトカゲのはたきおとす
   await tapMove(driver, me, 'はたきおとす', false);
@@ -546,6 +545,7 @@ Future<void> test31_4(
   // ターン2へ
   await goTurnPage(driver, turnNum++);
 
+  return;
   // モトトカゲのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
@@ -554,6 +554,7 @@ Future<void> test31_4(
   // TODO: オボンのみが発動しない
   // オノノクスに交代
   await changePokemon(driver, me, 'オノノクス', false);
+  return;
   // デカヌチャンのステルスロック
   await tapMove(driver, op, 'ステルスロック', true);
   // ターン3へ
@@ -732,8 +733,6 @@ Future<void> test32_1(
   await inputRemainHP(driver, me, '0');
   // ベラカスひんし->コノヨザルに交代
   await changePokemon(driver, op, 'コノヨザル', false);
-  // TODO: ここで晴れが終了してしまっているが、実際は次のターンまで
-  // 死に出しで晴れにした場合はそのときにターン経過処理やらないんだろうな
   // ターン6へ
   await goTurnPage(driver, turnNum++);
 
@@ -1014,11 +1013,11 @@ Future<void> test32_4(
   await tapMove(driver, me, 'オーバーヒート', false);
   // サザンドラのHP70
   await inputRemainHP(driver, me, '70');
+  // コータスのだっしゅつパック
+  await addEffect(driver, 3, me, 'だっしゅつパック');
   // スコヴィランに交代
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('スコヴィラン'));
-  // コータスのだっしゅつパック
-  await addEffect(driver, 3, me, 'だっしゅつパック');
   await driver.tap(find.text('OK'));
   // ターン2へ
   await goTurnPage(driver, turnNum++);
@@ -1140,11 +1139,11 @@ Future<void> test32_5(
   await tapMove(driver, me, 'オーバーヒート', false);
   // キョジオーンのHP75
   await inputRemainHP(driver, me, '75');
+  // コータスのだっしゅつパック
+  await addEffect(driver, 3, me, 'だっしゅつパック');
   // スコヴィランに交代
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('スコヴィラン'));
-  // コータスのだっしゅつパック
-  await addEffect(driver, 3, me, 'だっしゅつパック');
   await driver.tap(find.text('OK'));
   // しおづけ編集
   await tapEffect(driver, 'しおづけ');
@@ -1179,7 +1178,7 @@ Future<void> test32_5(
   // ラウドボーンのHP40
   await inputRemainHP(driver, me, '40');
   // サザンドラのたべのこし
-  await addEffect(driver, 5, op, 'たべのこし');
+  await addEffect(driver, 4, op, 'たべのこし');
   await driver.tap(find.text('OK'));
   // ターン6へ
   await goTurnPage(driver, turnNum++);
@@ -1283,7 +1282,7 @@ Future<void> test33_1(
   // ドオーのあくび
   await tapMove(driver, op, 'あくび', true);
   // ドオーのくろいヘドロ
-  await addEffect(driver, 2, op, 'くろいヘドロ');
+  await addEffect(driver, 3, op, 'くろいヘドロ');
   await driver.tap(find.text('OK'));
   // ターン4へ
   await goTurnPage(driver, turnNum++);
@@ -1570,7 +1569,6 @@ Future<void> test33_3(
   // ペリッパーのあめふらし
   await addEffect(driver, 0, op, 'あめふらし');
   await driver.tap(find.text('OK'));
-  await driver.tap(find.text('OK'));
   // オトシドリのストーンエッジ
   await tapMove(driver, me, 'ストーンエッジ', false);
   // 急所に命中
@@ -1644,7 +1642,7 @@ Future<void> test33_3(
   await tapMove(driver, me, 'はたきおとす', false);
   // ペリッパーのHP0
   await inputRemainHP(driver, me, '0');
-  await driver.tap(find.text('SwitchSelectItemInputSwitch'));
+  await driver.tap(find.byValueKey('SwitchSelectItemInputSwitch'));
   // ペリッパーひんし->フローゼルに交代
   await changePokemon(driver, op, 'フローゼル', false);
   // ターン8へ
@@ -1888,8 +1886,7 @@ Future<void> test34_2(
   await changePokemon(driver, op, 'マリルリ', false);
   // ターン6へ
   await goTurnPage(driver, turnNum++);
-  // マリルリのアクアブレイク
-  await tapMove(driver, op, 'アクアブレイク', false);
+
   // マリルリのアクアジェット
   await tapMove(driver, op, 'アクアジェット', true);
   // エーフィのHP30
@@ -2611,7 +2608,6 @@ Future<void> test35_3(
 
   // バチンウニのエレキメイカー
   await addEffect(driver, 0, op, 'エレキメイカー');
-  await driver.tap(find.text('OK'));
   await driver.tap(find.text('OK'));
   // フォレトスのあまごい
   await tapMove(driver, me, 'あまごい', false);

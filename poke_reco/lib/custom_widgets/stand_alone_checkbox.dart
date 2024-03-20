@@ -410,6 +410,8 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
       final myMove = moves[i];
       moveTiles.add(
         ListTile(
+          key: Key(
+              'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
           dense: true,
           leading: turnMove
               .getReplacedMoveType(myMove, pokemonState, state)
@@ -429,7 +431,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
             padding: const EdgeInsets.all(4.0),
             child: TextField(
               key: Key(
-                  'SelectMoveSearchField${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                  'BattleActionCommandMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
               controller: moveSearchTextController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
@@ -443,6 +445,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
         Expanded(
           flex: 6,
           child: ListViewWithViewItemCount(
+            key: Key('BattleActionCommandMoveListView'),
             viewItemCount: 4,
             children: moveTiles,
           ),
