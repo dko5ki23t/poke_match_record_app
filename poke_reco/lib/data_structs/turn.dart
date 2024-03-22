@@ -1236,6 +1236,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 skipInc = true;
                 if (isChanged[PlayerType.me.number] ||
                     isChanged[PlayerType.opponent.number]) {
+                  // 交代わざ処理実施
+                  lastAction!.processChangeEffect(
+                      currentState.getPokemonState(PlayerType.me, null),
+                      currentState.getPokemonState(PlayerType.opponent, null),
+                      currentState);
                   state = 10; // 交代わざ使用後処理状態へ
                 } else {
                   if (!remainAction[PlayerType.me.number] &&
@@ -1828,30 +1833,84 @@ class Turn extends Equatable implements Copyable {
     AppLocalizations loc,
   ) {
     PhaseState ret = copyInitialState();
-    TurnEffectAction? prevAction;
+    TurnEffectAction? lastAction;
+    Map<PlayerType, bool> alreadyActioned = {
+      PlayerType.me: false,
+      PlayerType.opponent: false,
+    };
+    bool doneProcessTurnEnd = false;
+    bool needChangeActionProcess = false;
 
     for (int i = 0; i < phaseIdx + 1; i++) {
-      final effect = phases[i];
-      //if (effect.isAdding) continue;
-      //if (effect.timing == Timing.continuousMove) {
-      //  prevAction = effect;
+      final phase = phases[i];
+      //if (phase.isAdding) continue;
+      //if (phase.timing == Timing.continuousMove) {
+      //  lastAction = phase;
       //  continousCount++;
-      //} else if (effect.timing == Timing.action) {
-      //  prevAction = effect;
+      //} else if (phase.timing == Timing.action) {
+      //  lastAction = phase;
       //  continousCount = 0;
       //}
-      if (effect is TurnEffectAction) prevAction = effect;
-      effect.processEffect(
+      // 交代を伴うわざ後処理が終わったなら交代処理を行う
+      // ※lastActionを代入する前に処理する
+      if (needChangeActionProcess && phase.timing != Timing.afterMove) {
+        lastAction!.processChangeEffect(
+            ret.getPokemonState(PlayerType.me, null),
+            ret.getPokemonState(PlayerType.opponent, null),
+            ret);
+        needChangeActionProcess = false;
+      }
+      if (phase is TurnEffectAction) lastAction = phase;
+      // 両者の行動が完了している＆ひんし交代の効果が初めて出現したなら
+      // ターン終了時処理(共通)を実施する
+      if (alreadyActioned[PlayerType.me]! &&
+          alreadyActioned[PlayerType.opponent]! &&
+          phase is TurnEffectChangeFaintingPokemon &&
+          !doneProcessTurnEnd) {
+        ret.processTurnEnd(this);
+        doneProcessTurnEnd = true;
+      }
+      // 効果を処理する
+      phase.processEffect(
         ownParty,
         ret.getPokemonState(PlayerType.me,
-            effect.timing == Timing.afterMove ? prevAction : null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         opponentParty,
         ret.getPokemonState(PlayerType.opponent,
-            effect.timing == Timing.afterMove ? prevAction : null),
+            phase.timing == Timing.afterMove ? lastAction : null),
         ret,
-        prevAction,
+        lastAction,
         loc: loc,
       );
+
+      if (phase is TurnEffectAction) {
+        alreadyActioned[phase.playerType] = true;
+        if (phase.type == TurnActionType.move &&
+            (phase.getChangePokemonIndex(PlayerType.me) != null ||
+                phase.getChangePokemonIndex(PlayerType.opponent) != null)) {
+          needChangeActionProcess = true;
+        }
+      }
+      if (phase.isOwnFainting) {
+        alreadyActioned[PlayerType.me] = true;
+      }
+      if (phase.isOpponentFainting) {
+        alreadyActioned[PlayerType.opponent] = true;
+      }
+    }
+
+    // 両者の行動が完了している＆ひんし交代の効果が無かった場合
+    // ターン終了時処理(共通)を実施する
+    if (alreadyActioned[PlayerType.me]! &&
+        alreadyActioned[PlayerType.opponent]! &&
+        !doneProcessTurnEnd) {
+      ret.processTurnEnd(this);
+    }
+    // 交代を伴うわざ後処理が終わったなら交代処理を行う
+    if (needChangeActionProcess) {
+      lastAction!.processChangeEffect(ret.getPokemonState(PlayerType.me, null),
+          ret.getPokemonState(PlayerType.opponent, null), ret);
+      needChangeActionProcess = false;
     }
 
     return ret;
@@ -1873,6 +1932,7 @@ class Turn extends Equatable implements Copyable {
     PhaseState ret = _initialState.copy();
     TurnEffectAction? lastAction;
     int endIndex = phases.getLatestActionIndex(playerType);
+    bool needChangeActionProcess = false;
 
     for (int i = 0; i < endIndex; i++) {
       final phase = phases[i];
@@ -1890,7 +1950,29 @@ class Turn extends Equatable implements Copyable {
       //  lastAction = phase;
       //  continousCount = 0;
       //}
+      // 交代を伴うわざ後処理が終わったなら交代処理を行う
+      // ※lastActionを代入する前に処理する
+      if (needChangeActionProcess && phase.timing != Timing.afterMove) {
+        lastAction!.processChangeEffect(
+            ret.getPokemonState(PlayerType.me, null),
+            ret.getPokemonState(PlayerType.opponent, null),
+            ret);
+        needChangeActionProcess = false;
+      }
       if (phase is TurnEffectAction) lastAction = phase;
+      /*
+      ※どちらかの行動直前のstateを取得するので、これは不要
+      // 両者の行動が完了している＆ひんし交代の効果が初めて出現したなら
+      // ターン終了時処理(共通)を実施する
+      if (alreadyActioned[PlayerType.me]! &&
+          alreadyActioned[PlayerType.opponent]! &&
+          phase is TurnEffectChangeFaintingPokemon &&
+          !doneProcessTurnEnd) {
+        ret.processTurnEnd(this);
+        doneProcessTurnEnd = true;
+      }
+      */
+      // 効果を処理する
       phase.processEffect(
         ownParty,
         ret.getPokemonState(PlayerType.me,
@@ -1902,6 +1984,13 @@ class Turn extends Equatable implements Copyable {
         lastAction,
         loc: loc,
       );
+
+      if (phase is TurnEffectAction &&
+          phase.type == TurnActionType.move &&
+          (phase.getChangePokemonIndex(PlayerType.me) != null ||
+              phase.getChangePokemonIndex(PlayerType.opponent) != null)) {
+        needChangeActionProcess = true;
+      }
     }
     return ret;
   }
@@ -1927,6 +2016,7 @@ class Turn extends Equatable implements Copyable {
 
     int i = 0;
     bool doneProcessTurnEnd = false;
+    bool needChangeActionProcess = false;
     while (i < phases.length) {
       final phase = phases[i];
 //      if (phase.isAdding) {
@@ -1944,6 +2034,15 @@ class Turn extends Equatable implements Copyable {
       //  lastAction = phase;
       //  continousCount = 0;
       //}
+      // 交代を伴うわざ後処理が終わったなら交代処理を行う
+      // ※lastActionを代入する前に処理する
+      if (needChangeActionProcess && phase.timing != Timing.afterMove) {
+        lastAction!.processChangeEffect(
+            _endingState.getPokemonState(PlayerType.me, null),
+            _endingState.getPokemonState(PlayerType.opponent, null),
+            _endingState);
+        needChangeActionProcess = false;
+      }
       if (phase is TurnEffectAction) lastAction = phase;
       // 両者の行動が完了している＆ひんし交代の効果が初めて出現したなら
       // ターン終了時処理(共通)を実施する
@@ -1976,6 +2075,11 @@ class Turn extends Equatable implements Copyable {
 
       if (phase is TurnEffectAction) {
         alreadyActioned[phase.playerType] = true;
+        if (phase.type == TurnActionType.move &&
+            (phase.getChangePokemonIndex(PlayerType.me) != null ||
+                phase.getChangePokemonIndex(PlayerType.opponent) != null)) {
+          needChangeActionProcess = true;
+        }
       }
       if (phase.isOwnFainting) {
         alreadyActioned[PlayerType.me] = true;
@@ -1991,6 +2095,14 @@ class Turn extends Equatable implements Copyable {
         alreadyActioned[PlayerType.opponent]! &&
         !doneProcessTurnEnd) {
       _endingState.processTurnEnd(this);
+    }
+    // 交代を伴うわざ後処理が終わったなら交代処理を行う
+    if (needChangeActionProcess) {
+      lastAction!.processChangeEffect(
+          _endingState.getPokemonState(PlayerType.me, null),
+          _endingState.getPokemonState(PlayerType.opponent, null),
+          _endingState);
+      needChangeActionProcess = false;
     }
     return _endingState.copy();
   }

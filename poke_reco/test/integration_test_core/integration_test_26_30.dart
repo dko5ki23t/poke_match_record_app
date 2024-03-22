@@ -2571,7 +2571,7 @@ Future<void> test29_5(
 
   // イキリンコのまねっこ
   await tapMove(driver, me, 'まねっこ', false);
-  await driver.tap(find.byValueKey('SelectMoveSearchFieldOwn'));
+  await driver.tap(find.byValueKey('BattleActionCommandMoveSearchOwn'));
   await driver.enterText('あくのはどう');
   await driver.tap(find.descendant(
       of: find.byType('ListTile'), matching: find.text('あくのはどう')));

@@ -1182,13 +1182,14 @@ class TurnEffectAction extends TurnEffect {
           case 29: // 相手ポケモンをランダムに交代させる
           case 314: // 相手ポケモンをランダムに交代させる
             if (getChangePokemonIndex(targetPlayerType) != null) {
-              targetState.processExitEffect(myState, state);
-              PokemonState newState;
-              state.setPokemonIndex(playerType.opposite,
-                  getChangePokemonIndex(targetPlayerType)!);
-              newState = state.getPokemonState(playerType.opposite, null);
-              newState.processEnterEffect(myState, state);
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //targetState.processExitEffect(myState, state);
+              //PokemonState newState;
+              //state.setPokemonIndex(playerType.opposite,
+              //    getChangePokemonIndex(targetPlayerType)!);
+              //newState = state.getPokemonState(playerType.opposite, null);
+              //newState.processEnterEffect(myState, state);
+              //newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 30: // 2～5回連続でこうげきする
@@ -1675,45 +1676,46 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
             if (getChangePokemonIndex(myPlayerType) != null) {
-              List<int> statChanges =
-                  List.generate(7, (i) => myState.statChanges(i));
-              var takeOverAilments = [
-                ...myState.ailmentsWhere((e) =>
-                    e.id == Ailment.confusion ||
-                    e.id == Ailment.leechSeed ||
-                    e.id == Ailment.curse ||
-                    e.id == Ailment.perishSong ||
-                    e.id == Ailment.ingrain ||
-                    e.id == Ailment.healBlock ||
-                    e.id == Ailment.embargo ||
-                    e.id == Ailment.magnetRise ||
-                    e.id == Ailment.telekinesis ||
-                    e.id == Ailment.abilityNoEffect ||
-                    e.id == Ailment.aquaRing ||
-                    e.id == Ailment.powerTrick)
-              ];
-              var takeOverBuffDebuffs = [
-                ...myState.buffDebuffs.whereByAnyID([
-                  BuffDebuff.vital1,
-                  BuffDebuff.vital2,
-                  BuffDebuff.vital3,
-                  BuffDebuff.substitute
-                ])
-              ];
-              myState.processExitEffect(yourState, state);
-              PokemonState newState;
-              state.setPokemonIndex(
-                  playerType, getChangePokemonIndex(myPlayerType)!);
-              newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(yourState, state);
-              for (int i = 0; i < 7; i++) {
-                newState.forceSetStatChanges(i, statChanges[i]);
-              }
-              for (var e in takeOverAilments) {
-                newState.ailmentsAdd(e, state);
-              }
-              newState.buffDebuffs.addAll(takeOverBuffDebuffs);
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //List<int> statChanges =
+              //    List.generate(7, (i) => myState.statChanges(i));
+              //var takeOverAilments = [
+              //  ...myState.ailmentsWhere((e) =>
+              //      e.id == Ailment.confusion ||
+              //      e.id == Ailment.leechSeed ||
+              //      e.id == Ailment.curse ||
+              //      e.id == Ailment.perishSong ||
+              //      e.id == Ailment.ingrain ||
+              //      e.id == Ailment.healBlock ||
+              //      e.id == Ailment.embargo ||
+              //      e.id == Ailment.magnetRise ||
+              //      e.id == Ailment.telekinesis ||
+              //      e.id == Ailment.abilityNoEffect ||
+              //      e.id == Ailment.aquaRing ||
+              //      e.id == Ailment.powerTrick)
+              //];
+              //var takeOverBuffDebuffs = [
+              //  ...myState.buffDebuffs.whereByAnyID([
+              //    BuffDebuff.vital1,
+              //    BuffDebuff.vital2,
+              //    BuffDebuff.vital3,
+              //    BuffDebuff.substitute
+              //  ])
+              //];
+              //myState.processExitEffect(yourState, state);
+              //PokemonState newState;
+              //state.setPokemonIndex(
+              //    playerType, getChangePokemonIndex(myPlayerType)!);
+              //newState = state.getPokemonState(playerType, null);
+              //newState.processEnterEffect(yourState, state);
+              //for (int i = 0; i < 7; i++) {
+              //  newState.forceSetStatChanges(i, statChanges[i]);
+              //}
+              //for (var e in takeOverAilments) {
+              //  newState.ailmentsAdd(e, state);
+              //}
+              //newState.buffDebuffs.addAll(takeOverBuffDebuffs);
+              //newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 129: // そのターンに相手が交代しようとした場合、威力2倍で交代前のポケモンにこうげき
@@ -1853,13 +1855,14 @@ class TurnEffectAction extends TurnEffect {
           case 154: // 控えのポケモンと交代する
           case 229: // 控えのポケモンと交代する
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(yourState, state);
-              PokemonState newState;
-              state.setPokemonIndex(
-                  playerType, getChangePokemonIndex(myPlayerType)!);
-              newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(yourState, state);
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //myState.processExitEffect(yourState, state);
+              //PokemonState newState;
+              //state.setPokemonIndex(
+              //    playerType, getChangePokemonIndex(myPlayerType)!);
+              //newState = state.getPokemonState(playerType, null);
+              //newState.processEnterEffect(yourState, state);
+              //newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 155: // 手持ちポケモン(ひんし、状態異常除く)の数だけ連続でこうげきする
@@ -3194,13 +3197,14 @@ class TurnEffectAction extends TurnEffect {
                 yourFields: myFields,
                 moveId: replacedMove.id);
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(yourState, state);
-              PokemonState newState;
-              state.setPokemonIndex(
-                  playerType, getChangePokemonIndex(myPlayerType)!);
-              newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(yourState, state);
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //  myState.processExitEffect(yourState, state);
+              //  PokemonState newState;
+              //  state.setPokemonIndex(
+              //      playerType, getChangePokemonIndex(myPlayerType)!);
+              //  newState = state.getPokemonState(playerType, null);
+              //  newState.processEnterEffect(yourState, state);
+              //  newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 348: // 相手の能力変化を逆にする
@@ -4055,27 +4059,29 @@ class TurnEffectAction extends TurnEffect {
             myState.remainHP -= extraArg1;
             myState.remainHPPercent -= extraArg2;
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(yourState, state);
-              PokemonState newState;
-              state.setPokemonIndex(
-                  playerType, getChangePokemonIndex(myPlayerType)!);
-              newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(yourState, state);
-              newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //myState.processExitEffect(yourState, state);
+              //PokemonState newState;
+              //state.setPokemonIndex(
+              //    playerType, getChangePokemonIndex(myPlayerType)!);
+              //newState = state.getPokemonState(playerType, null);
+              //newState.processEnterEffect(yourState, state);
+              //newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
+              //newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             break;
           case 493: // 天気をゆきにして控えと交代
             state.weather = Weather(Weather.snowy)
               ..extraArg1 = myState.holdingItem?.id == 259 ? 8 : 5;
             if (getChangePokemonIndex(myPlayerType) != null) {
-              myState.processExitEffect(yourState, state);
-              PokemonState newState;
-              state.setPokemonIndex(
-                  playerType, getChangePokemonIndex(myPlayerType)!);
-              newState = state.getPokemonState(playerType, null);
-              newState.processEnterEffect(yourState, state);
-              newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+              // TODO: 上手く動くの確認してから削除
+              //myState.processExitEffect(yourState, state);
+              //PokemonState newState;
+              //state.setPokemonIndex(
+              //    playerType, getChangePokemonIndex(myPlayerType)!);
+              //newState = state.getPokemonState(playerType, null);
+              //newState.processEnterEffect(yourState, state);
+              //newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
             }
             effectOnce = true;
             break;
@@ -4449,6 +4455,133 @@ class TurnEffectAction extends TurnEffect {
     super.afterProcessEffect(ownState, opponentState, state);
 
     return ret;
+  }
+
+  void processChangeEffect(
+    PokemonState ownState,
+    PokemonState opponentState,
+    PhaseState state,
+  ) {
+    var myState = playerType == PlayerType.me ? ownState : opponentState;
+    var yourState = playerType == PlayerType.me ? opponentState : ownState;
+    PlayerType myPlayerType = playerType;
+    PlayerType yourPlayerType =
+        playerType == PlayerType.me ? PlayerType.opponent : PlayerType.me;
+    Move replacedMove = getReplacedMove(move, myState); // 必要に応じてわざの内容変更
+    // わざの対象決定
+    PokemonState targetState = yourState;
+    PlayerType targetPlayerType = yourPlayerType;
+    switch (replacedMove.target) {
+      case Target.specificMove: // TODO:不定、わざによって異なる のろいとかカウンターとか
+        break;
+      case Target.selectedPokemonMeFirst: // 選択した自分以外の場にいるポケモン
+      // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
+      case Target.ally: // 味方(現状のわざはすべて、シングルバトルでは対象がいないため失敗する)
+        break;
+      case Target.usersField: // 使用者の場
+      case Target.user: // 使用者自身
+      case Target.userOrAlly: // 使用者もしくは味方
+      case Target.userAndAllies: // 使用者と味方
+      case Target.allAllies: // すべての味方
+      case Target.faintingPokemon: // ひんしの(味方)ポケモン
+        targetState = myState;
+        targetPlayerType = myPlayerType;
+        break;
+      case Target.opponentsField: // 相手の場
+      case Target.randomOpponent: // ランダムな相手
+      case Target.allOtherPokemon: // 場にいる使用者以外の全ポケモン
+      case Target.selectedPokemon: // 選択した自分以外の場にいるポケモン
+      case Target.allOpponents: // 場にいる相手側の全ポケモン
+      case Target.entireField: // 全体の場
+        break;
+      default:
+        break;
+    }
+    switch (moveAdditionalEffects.id) {
+      case 29: // 相手ポケモンをランダムに交代させる
+      case 314: // 相手ポケモンをランダムに交代させる
+        if (getChangePokemonIndex(targetPlayerType) != null) {
+          targetState.processExitEffect(myState, state);
+          PokemonState newState;
+          state.setPokemonIndex(
+              playerType.opposite, getChangePokemonIndex(targetPlayerType)!);
+          newState = state.getPokemonState(playerType.opposite, null);
+          newState.processEnterEffect(myState, state);
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+        }
+        break;
+      case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
+        if (getChangePokemonIndex(myPlayerType) != null) {
+          List<int> statChanges =
+              List.generate(7, (i) => myState.statChanges(i));
+          var takeOverAilments = [
+            ...myState.ailmentsWhere((e) =>
+                e.id == Ailment.confusion ||
+                e.id == Ailment.leechSeed ||
+                e.id == Ailment.curse ||
+                e.id == Ailment.perishSong ||
+                e.id == Ailment.ingrain ||
+                e.id == Ailment.healBlock ||
+                e.id == Ailment.embargo ||
+                e.id == Ailment.magnetRise ||
+                e.id == Ailment.telekinesis ||
+                e.id == Ailment.abilityNoEffect ||
+                e.id == Ailment.aquaRing ||
+                e.id == Ailment.powerTrick)
+          ];
+          var takeOverBuffDebuffs = [
+            ...myState.buffDebuffs.whereByAnyID([
+              BuffDebuff.vital1,
+              BuffDebuff.vital2,
+              BuffDebuff.vital3,
+              BuffDebuff.substitute
+            ])
+          ];
+          myState.processExitEffect(yourState, state);
+          PokemonState newState;
+          state.setPokemonIndex(
+              playerType, getChangePokemonIndex(myPlayerType)!);
+          newState = state.getPokemonState(playerType, null);
+          newState.processEnterEffect(yourState, state);
+          for (int i = 0; i < 7; i++) {
+            newState.forceSetStatChanges(i, statChanges[i]);
+          }
+          for (var e in takeOverAilments) {
+            newState.ailmentsAdd(e, state);
+          }
+          newState.buffDebuffs.addAll(takeOverBuffDebuffs);
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+        }
+        break;
+      case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
+      case 493: // 天気をゆきにして控えと交代
+      case 154: // 控えのポケモンと交代する
+      case 229: // 控えのポケモンと交代する
+        if (getChangePokemonIndex(myPlayerType) != null) {
+          myState.processExitEffect(yourState, state);
+          PokemonState newState;
+          state.setPokemonIndex(
+              playerType, getChangePokemonIndex(myPlayerType)!);
+          newState = state.getPokemonState(playerType, null);
+          newState.processEnterEffect(yourState, state);
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+        }
+        break;
+      case 492: // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
+        if (getChangePokemonIndex(myPlayerType) != null) {
+          myState.processExitEffect(yourState, state);
+          PokemonState newState;
+          state.setPokemonIndex(
+              playerType, getChangePokemonIndex(myPlayerType)!);
+          newState = state.getPokemonState(playerType, null);
+          newState.processEnterEffect(yourState, state);
+          newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
+          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+        }
+        break;
+      default:
+        break;
+    }
   }
 
   /// わざのダメージを計算する
@@ -7972,13 +8105,22 @@ class TurnEffectAction extends TurnEffect {
   /// state: フェーズの状態
   /// ```
   void fillAutoAdditionalEffect(PhaseState state) {
+    // みがわりに対して使用しても追加効果(的なもの)が発動するIDリスト
+    const effectWithSubstituteIDs = [
+      8,
+      221,
+      271,
+      321,
+      450,
+    ];
     final replacedMove =
         getReplacedMove(move, state.getPokemonState(playerType, null));
     if ((!state
                 .getPokemonState(playerType.opposite, null)
                 .buffDebuffs
                 .containsByID(BuffDebuff.substitute) ||
-            ignoreSubstitute(state)) &&
+            ignoreSubstitute(state) ||
+            effectWithSubstituteIDs.contains(replacedMove.effect.id)) &&
         replacedMove.isSurelyEffect()) {
       moveAdditionalEffects = MoveEffect(replacedMove.effect.id);
     } else {

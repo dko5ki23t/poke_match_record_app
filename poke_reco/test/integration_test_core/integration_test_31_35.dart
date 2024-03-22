@@ -545,16 +545,13 @@ Future<void> test31_4(
   // ターン2へ
   await goTurnPage(driver, turnNum++);
 
-  return;
   // モトトカゲのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   // モトトカゲのHP73
   await inputRemainHP(driver, me, '73');
-  // TODO: オボンのみが発動しない
   // オノノクスに交代
   await changePokemon(driver, me, 'オノノクス', false);
-  return;
   // デカヌチャンのステルスロック
   await tapMove(driver, op, 'ステルスロック', true);
   // ターン3へ
@@ -1145,8 +1142,8 @@ Future<void> test32_5(
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('スコヴィラン'));
   await driver.tap(find.text('OK'));
-  // しおづけ編集
-  await tapEffect(driver, 'しおづけ');
+  // しおづけダメージ編集
+  await tapEffect(driver, 'しおづけダメージ');
   await driver.tap(find.text('削除'));
   // ターン3へ
   await goTurnPage(driver, turnNum++);
@@ -2285,10 +2282,6 @@ Future<void> test35_1(
   await driver.tap(find.byValueKey('SubstituteInputOwn'));
   // ウルガモスのHP75
   await inputRemainHP(driver, me, '');
-  // ターン4へ
-  await goTurnPage(driver, turnNum++);
-  return;
-  // TODO: だいばくはつでひんしにならない
   // フォレトスひんし->フローゼルに交代
   await changePokemon(driver, me, 'フローゼル', false);
   // ターン4へ

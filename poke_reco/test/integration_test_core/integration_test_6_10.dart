@@ -1576,8 +1576,8 @@ Future<void> test8_2(
   await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   // キョジオーンのHP143
   await inputRemainHP(driver, me, '143');
-  // しおづけ編集
-  await tapEffect(driver, 'しおづけ');
+  // しおづけダメージ編集
+  await tapEffect(driver, 'しおづけダメージ');
   await driver.tap(find.byValueKey('DamageIndicateTextField'));
   await driver.enterText('0');
   await driver.tap(find.byValueKey('DamageIndicateTextField'));
