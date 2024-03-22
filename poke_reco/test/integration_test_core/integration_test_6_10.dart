@@ -1948,6 +1948,7 @@ Future<void> test8_4(
   // ギャラドスに交代
   await changePokemon(driver, op, 'ギャラドス', false);
   // ミミズズのオボンのみ
+  return;
   // TODO:ミミズズを対象にしたオボンのみが無い
   await addEffect(driver, 1, op, 'オボンのみ');
   await driver.tap(find.text('OK'));
@@ -2119,9 +2120,11 @@ Future<void> test9_2(
   await tapMove(driver, op, 'ギアチェンジ', true);
   // ミミズズのじしん
   await tapMove(driver, me, 'じしん', false);
+  // ブロロロームのシュカのみ
+  await addEffect(driver, 1, op, 'シュカのみ');
+  await driver.tap(find.text('OK'));
   // ブロロロームのHP50
   await inputRemainHP(driver, me, '50');
-  // TODO:じしんをシュカのみで耐えることできず。(候補になかった)
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
 

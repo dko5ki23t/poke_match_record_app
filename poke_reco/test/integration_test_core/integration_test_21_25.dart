@@ -965,13 +965,15 @@ Future<void> test22_6(
   await tapMove(driver, me, 'でんこうせっか', false);
   // マスカーニャのHP75
   await inputRemainHP(driver, me, '75');
+  // マスカーニャのへんげんじざい
+  await addEffect(driver, 1, op, 'へんげんじざい');
+  await driver.tap(find.text('OK'));
   // マスカーニャのトリックフラワー
   await tapMove(driver, op, 'トリックフラワー', true);
   // ニンフィアのHP0
   await inputRemainHP(driver, op, '0');
   // ニンフィアひんし->モトトカゲに交代
   await changePokemon(driver, me, 'モトトカゲ', false);
-  // TODO:マスカーニャのへんげんじざいを追加できない
   // ターン4へ
   await goTurnPage(driver, turnNum++);
 
@@ -1450,7 +1452,8 @@ Future<void> test23_3(
   // ターン8へ
   await goTurnPage(driver, turnNum++);
 
-  // TODO:ノーマルジュエルを追加できない
+  // TODO:ノーマルジュエルを効果として追加できるようにした方がよい？
+  await editPokemonState(driver, 'カイリュー/ニセ', null, null, 'ノーマルジュエル');
   // カイリューのしんそく
   await tapMove(driver, op, 'しんそく', true);
   // ヘルガーのHP0
@@ -1722,11 +1725,89 @@ Future<void> test23_5(
   await inputRemainHP(driver, me, '80');
   // ボーマンダに交代
   await changePokemon(driver, me, 'ボーマンダ', false);
-  // TODO:いかくでコータスのだっしゅつパックが発動(候補に出ない)
-  // ↑思った位置より左の＋ボタンで選べるが、その場合は威嚇が2回発動してまう
-  return;
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // コータスのだっしゅつパック
+  await addEffect(driver, 3, op, 'だっしゅつパック');
+  // スコヴィランに交代
+  await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
+  await driver.tap(find.text('スコヴィラン'));
+  await driver.tap(find.text('OK'));
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
+
+  // スコヴィランのテラスタル
+  await inputTerastal(driver, op, 'ほのお');
+  // スコヴィランのオーバーヒート
+  await tapMove(driver, op, 'オーバーヒート', true);
+  // ボーマンダのHP0
+  await inputRemainHP(driver, op, '0');
+  // スコヴィランのいのちのたま
+  await addEffect(driver, 2, op, 'いのちのたま');
+  await driver.tap(find.text('OK'));
+  // ボーマンダひんし->エクスレッグに交代
+  await changePokemon(driver, me, 'エクスレッグ', false);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // スコヴィラン->コータスに交代
+  await changePokemon(driver, op, 'コータス', true);
+  // エクスレッグのテラスタル
+  await inputTerastal(driver, me, '');
+  // エクスレッグのであいがしら
+  await tapMove(driver, me, 'であいがしら', false);
+  // コータスのHP30
+  await inputRemainHP(driver, me, '30');
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // エクスレッグのとんぼがえり
+  await tapMove(driver, me, 'とんぼがえり', false);
+  // コータスのHP0
+  await inputRemainHP(driver, me, '0');
+  // オリーヴァに交代
+  await changePokemon(driver, me, 'オリーヴァ', false);
+  // コータスひんし->スコヴィランに交代
+  await changePokemon(driver, op, 'スコヴィラン', false);
+  // TODO:ここで晴れ終了しないといけない
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // スコヴィランのオーバーヒート
+  await tapMove(driver, op, 'オーバーヒート', false);
+  // オリーヴァのHP0
+  await inputRemainHP(driver, op, '0');
+  // オリーヴァひんし->エクスレッグに交代
+  await changePokemon(driver, me, 'エクスレッグ', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // エクスレッグのであいがしら
+  await tapMove(driver, me, 'であいがしら', false);
+  // スコヴィランのHP0
+  await inputRemainHP(driver, me, '0');
+  // スコヴィランひんし->ミミッキュに交代
+  await changePokemon(driver, op, 'ミミッキュ', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ミミッキュのじゃれつく
+  await tapMove(driver, op, 'じゃれつく', true);
+  // エクスレッグのHP26
+  await inputRemainHP(driver, op, '26');
+  // エクスレッグのとんぼがえり
+  await tapMove(driver, me, 'とんぼがえり', false);
+  // ミミッキュのHP100
+  await inputRemainHP(driver, me, '');
+  // エクスレッグに交代
+  await changePokemon(driver, me, 'エクスレッグ', false);
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // ミミッキュのかげうち
+  await tapMove(driver, op, 'かげうち', true);
+  // エクスレッグのHP0
+  await inputRemainHP(driver, op, '0');
+  // 相手の勝利
+  await testExistEffect(driver, 'こいの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -2162,9 +2243,8 @@ Future<void> test24_4(
   await driver.tap(find.text('OK'));
   // オリーヴァひんし->フワライドに交代
   await changePokemon(driver, op, 'フワライド', false);
-  // TODO:グラスフィールドによる回復は起きないが、自動追加されとる
   // オリーヴァのグラスシード
-  await addEffect(driver, 5, op, 'グラスシード');
+  await addEffect(driver, 4, op, 'グラスシード');
   await driver.tap(find.text('OK'));
   // ターン2へ
   await goTurnPage(driver, turnNum++);

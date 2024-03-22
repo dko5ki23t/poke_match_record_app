@@ -745,7 +745,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         break;
       case Timing.beforeMove: // わざ使用前
         {
-          timings.clear();
+          //timings.clear();
           attackerTimings.clear();
           defenderTimings.clear();
           attackerTimings.addAll(beforeMoveAttackerTimings);
@@ -758,6 +758,30 @@ abstract class TurnEffect extends Equatable implements Copyable {
                 phaseState.getPokemonState(attacker.opposite, prevAction);
             var replacedMoveType = turnMove.getReplacedMoveType(
                 turnMove.move, attackerState, phaseState);
+            // 対象のわざがまだ入力されていない場合=type==Type.unknownの場合、
+            // すべてのタイプの可能性を考えて候補に入れる
+            if (replacedMoveType == PokeType.unknown) {
+              defenderTimings.addAll([
+                Timing.normalAttacked,
+                Timing.greatFireAttacked,
+                Timing.greatWaterAttacked,
+                Timing.greatElectricAttacked,
+                Timing.greatgrassAttacked,
+                Timing.greatIceAttacked,
+                Timing.greatFightAttacked,
+                Timing.greatPoisonAttacked,
+                Timing.greatGroundAttacked,
+                Timing.greatFlyAttacked,
+                Timing.greatPsycoAttacked,
+                Timing.greatBugAttacked,
+                Timing.greatRockAttacked,
+                Timing.greatGhostAttacked,
+                Timing.greatDragonAttacked,
+                Timing.greatEvilAttacked,
+                Timing.greatSteelAttacked,
+                Timing.greatFairyAttacked
+              ]);
+            }
             if (replacedMoveType == PokeType.normal) {
               // ノーマルタイプのわざを受けた時
               defenderTimings.addAll([Timing.normalAttacked]);
@@ -840,7 +864,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         break;
       case Timing.afterMove: // わざ使用後
         if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
-          timings.clear(); // atacker/defenderに統合するするため削除
+          //timings.clear(); // atacker/defenderに統合するするため削除
           attackerTimings.addAll(afterMoveAttackerTimings);
           defenderTimings.addAll(afterMoveDefenderTimings);
           var attackerState = phaseState.getPokemonState(attacker, prevAction);
@@ -1092,7 +1116,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         break;
       case Timing.afterTerastal: // テラスタル後
         {
-          timings.clear();
+          //timings.clear();
           attackerTimings.clear();
           defenderTimings.clear();
           if (playerType == PlayerType.me ||

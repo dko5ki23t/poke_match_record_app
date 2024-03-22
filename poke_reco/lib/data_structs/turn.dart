@@ -814,6 +814,29 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         }
       }
 
+      if (i < l.length &&
+          winner == null &&
+          toNext &&
+          l[i].isValid() &&
+          l[i] is! TurnEffectAction &&
+          (l[i].getChangePokemonIndex(PlayerType.me) != null ||
+              l[i].getChangePokemonIndex(PlayerType.opponent) != null)) {
+        // 効果によりポケモン交代が生じた場合
+        changingState = true;
+        if (l[i].getChangePokemonIndex(PlayerType.me) != null) {
+          isChanged[PlayerType.me.number] = true;
+          // 行動も消費
+          remainAction[PlayerType.me.number] = false;
+          isValidAction[PlayerType.me.number] = true;
+        }
+        if (l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
+          isChanged[PlayerType.opponent.number] = true;
+          // 行動も消費
+          remainAction[PlayerType.opponent.number] = false;
+          isValidAction[PlayerType.opponent.number] = true;
+        }
+      }
+
       if (state != end &&
           winner == null &&
           toNext &&
@@ -1256,13 +1279,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               if (l[i].getChangePokemonIndex(PlayerType.me) != null ||
                   l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
                 // 効果によりポケモン交代が生じた場合
-                changingState = true;
-                if (l[i].getChangePokemonIndex(PlayerType.me) != null) {
-                  isChanged[PlayerType.me.number] = true;
-                }
-                if (l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
-                  isChanged[PlayerType.opponent.number] = true;
-                }
                 state = 7; // わざ使用前処理状態へ
               }
             }
@@ -1425,6 +1441,24 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 currentState);
             if (tmp != StatusInfoPageIndex.none) {
               ret = tmp;
+            }
+          }
+          if (l[i] is! TurnEffectAction &&
+              (l[i].getChangePokemonIndex(PlayerType.me) != null ||
+                  l[i].getChangePokemonIndex(PlayerType.opponent) != null)) {
+            // 効果によりポケモン交代が生じた場合
+            changingState = true;
+            if (l[i].getChangePokemonIndex(PlayerType.me) != null) {
+              isChanged[PlayerType.me.number] = true;
+              // 行動も消費
+              remainAction[PlayerType.me.number] = false;
+              isValidAction[PlayerType.me.number] = true;
+            }
+            if (l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
+              isChanged[PlayerType.opponent.number] = true;
+              // 行動も消費
+              remainAction[PlayerType.opponent.number] = false;
+              isValidAction[PlayerType.opponent.number] = true;
             }
           }
         }
@@ -1707,16 +1741,35 @@ class Turn extends Equatable implements Copyable {
 
   /// 有効かどうか
   bool isValid() {
-    int actionCount = 0;
-    int validCount = 0;
+    Map<PlayerType, bool> actioned = {
+      PlayerType.me: false,
+      PlayerType.opponent: false
+    };
+    Map<PlayerType, bool> isValid = {
+      PlayerType.me: false,
+      PlayerType.opponent: false
+    };
     for (final phase in phases) {
       if (phase is TurnEffectAction ||
           phase is TurnEffectChangeFaintingPokemon) {
-        actionCount++;
-        if (phase.isValid()) validCount++;
+        actioned[phase.playerType] = true;
+        if (phase.isValid()) {
+          isValid[phase.playerType] = true;
+        }
+      } else if (phase.getChangePokemonIndex(PlayerType.me) != null) {
+        actioned[PlayerType.me] = true;
+        if (phase.isValid()) {
+          isValid[PlayerType.me] = true;
+        }
+      } else if (phase.getChangePokemonIndex(PlayerType.opponent) != null) {
+        actioned[PlayerType.opponent] = true;
+        if (phase.isValid()) {
+          isValid[PlayerType.opponent] = true;
+        }
       }
     }
-    return actionCount == validCount && actionCount >= 2;
+    return actioned.values.where((element) => !element).isEmpty &&
+        isValid.values.where((element) => !element).isEmpty;
   }
 
   /// ターン終了時、自身(ユーザー)が勝利しているかどうか
@@ -2299,7 +2352,7 @@ class Turn extends Equatable implements Copyable {
         }
       }
     } else if (timing == Timing.beforeMove) {
-      for (int i = phaseIdx + 1; i < phases.length; i++) {
+      for (int i = phaseIdx; i < phases.length; i++) {
         if (phases[i].runtimeType == TurnEffectAction) {
           prevAction = phases[i] as TurnEffectAction;
           break;

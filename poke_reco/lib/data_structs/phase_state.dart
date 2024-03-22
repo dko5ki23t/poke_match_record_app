@@ -968,10 +968,15 @@ class PhaseState extends Equatable implements Copyable {
           var fieldEffectIDs = [];
           if (field.id == Field.grassyTerrain) {
             // グラスフィールドによる回復
-            if (getPokemonState(PlayerType.me, null)
-                    .isGround(state.getIndiFields(PlayerType.me)) ||
-                getPokemonState(PlayerType.opponent, null)
-                    .isGround(state.getIndiFields(PlayerType.opponent))) {
+            final ownState = getPokemonState(PlayerType.me, null);
+            final opponentState = getPokemonState(PlayerType.opponent, null);
+            if ((ownState.isGround(state.getIndiFields(PlayerType.me)) &&
+                    !ownState.isFainting &&
+                    ownState.remainHP < ownState.pokemon.h.real) ||
+                (opponentState
+                        .isGround(state.getIndiFields(PlayerType.opponent)) &&
+                    !opponentState.isFainting &&
+                    opponentState.remainHPPercent < 100)) {
               fieldEffectIDs.add(FieldEffect.grassHeal);
             }
           }

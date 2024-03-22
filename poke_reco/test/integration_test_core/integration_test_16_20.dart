@@ -1468,9 +1468,7 @@ Future<void> test18_2(
   await inputRemainHP(driver, me, '90');
   // ドヒドイデに交代
   await changePokemon(driver, me, 'ドヒドイデ', false);
-  // TODO: ともえなげのとき、さめはだが自動入力されない＆なんか変なタイミングで出る(たぶんともえなげで登場するとき)
   // ガブリアスのさめはだ
-  // TODO: さめはだ選択できるが、さめはだを持つのがドヒドイデに設定されてしまう
   await addEffect(driver, 2, op, 'さめはだ');
   await driver.tap(find.text('OK'));
   // ターン4へ
@@ -1562,10 +1560,6 @@ Future<void> test18_2(
   await inputRemainHP(driver, me, '80');
   // ニンフィアに交代
   await changePokemon(driver, me, 'ニンフィア', false);
-  // ガブリアスのさめはだ
-  // TODO:選べない
-  await addEffect(driver, 2, op, 'さめはだ');
-  await driver.tap(find.text('OK'));
   // ターン13へ
   await goTurnPage(driver, turnNum++);
 

@@ -347,6 +347,9 @@ class Ailment extends Equatable implements Copyable {
   /// ```
   bool isActive(
       bool isMe, Timing timing, PokemonState pokemonState, PhaseState state) {
+    var yourState = isMe
+        ? state.getPokemonState(PlayerType.opponent, null)
+        : state.getPokemonState(PlayerType.me, null);
     switch (timing) {
       case Timing.pokemonAppear: // ポケモン登場時発動する状態変化
         return false;
@@ -361,9 +364,10 @@ class Ailment extends Equatable implements Copyable {
         switch (id) {
           case burn:
           case curse:
-          case leechSeed:
           case saltCure:
             return pokemonState.isNotAttackedDamaged;
+          case leechSeed:
+            return !yourState.isFainting && pokemonState.isNotAttackedDamaged;
           case poison:
           case badPoison:
             return pokemonState.isNotAttackedDamaged &&

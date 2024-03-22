@@ -2005,14 +2005,11 @@ Future<void> test14_4(
 
   // リククラゲのギガドレイン
   await tapMove(driver, me, 'ギガドレイン', false);
+  // TODO: ばけのかわ発動しない・・・
   // ミミッキュのHP100
   await inputRemainHP(driver, me, '');
   // リククラゲのHP124
   await inputRemainHP(driver, me, '');
-  // ミミッキュのばけのかわ
-  // TODO:ここ自動発動させたい
-  await addEffect(driver, 1, op, 'ばけのかわ');
-  await driver.tap(find.text('OK'));
   // ミミッキュはねむっている
   await driver.tap(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
@@ -2068,7 +2065,6 @@ Future<void> test14_4(
   await changePokemon(driver, me, 'イッカネズミ', false);
   // ターン12へ
   await goTurnPage(driver, turnNum++);
-  // TODO:こちらがひんしのとき、やどりぎダメージは入らないようにすべき？
 
   // コータスのふんか
   await tapMove(driver, op, 'ふんか', false);

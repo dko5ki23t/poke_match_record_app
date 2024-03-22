@@ -1008,7 +1008,7 @@ class TurnEffectAction extends TurnEffect {
       // 半減きのみを使用したか
       if (targetStates.isNotEmpty) {
         final founds =
-            targetStates[0].buffDebuffs.whereByID(BuffDebuff.halvedBerry);
+            targetStates[0].hiddenBuffs.whereByID(BuffDebuff.halvedBerry);
         if (founds.isNotEmpty) {
           halvedBerry = founds.first.extraArg1 == 1 ? 0.25 : 0.5;
         }
@@ -5349,7 +5349,7 @@ class TurnEffectAction extends TurnEffect {
           tmpMax *= halvedBerry;
           tmpMin *= halvedBerry;
           ret += loc.battleDamageBerry(halvedBerry);
-          yourState.buffDebuffs.removeAllByID(BuffDebuff.halvedBerry);
+          yourState.hiddenBuffs.removeAllByID(BuffDebuff.halvedBerry);
         }
         // Mtwice
         if (mTwice ||

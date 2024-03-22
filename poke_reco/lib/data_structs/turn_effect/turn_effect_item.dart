@@ -753,7 +753,7 @@ class TurnEffectItem extends TurnEffect {
       case 723: // ロゼルのみ
       case 177: // ホズのみ
         // ダメージ軽減効果はわざのダメージ計算時に使う
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.halvedBerry)
+        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.halvedBerry)
           ..extraArg1 = doubleBerry ? 1 : 0);
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
