@@ -750,10 +750,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                         if (i >= effectList.length) {
                           i = effectList.length - 1;
                         }
-                        effectList.removeWhere((element) =>
-                            element.nearEqual(effectList[i],
-                                allowTimingDiff: true) &&
-                            element != effectList[i]);
+                        List<int> deleteIdx = [];
+                        for (int j = i - 1; j >= 0; j--) {
+                          if (effectList[j].nearEqual(effectList[i],
+                              allowTimingDiff: true)) {
+                            deleteIdx.add(j);
+                          }
+                        }
+                        for (final idx in deleteIdx) {
+                          effectList.removeAt(idx);
+                        }
                         i--;
                       }
                       showDialog(
@@ -919,10 +925,16 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       if (i >= effectList.length) {
                         i = effectList.length - 1;
                       }
-                      effectList.removeWhere((element) =>
-                          element.nearEqual(effectList[i],
-                              allowTimingDiff: true) &&
-                          element != effectList[i]);
+                      List<int> deleteIdx = [];
+                      for (int j = i - 1; j >= 0; j--) {
+                        if (effectList[j]
+                            .nearEqual(effectList[i], allowTimingDiff: true)) {
+                          deleteIdx.add(j);
+                        }
+                      }
+                      for (final idx in deleteIdx) {
+                        effectList.removeAt(idx);
+                      }
                       i--;
                     }
                     showDialog(

@@ -1125,10 +1125,10 @@ class TurnEffectItem extends TurnEffect {
     TurnEffect t, {
     bool allowTimingDiff = false,
   }) {
-    return t.runtimeType == TurnEffectItem &&
+    return t is TurnEffectItem &&
         playerType == t.playerType &&
         (allowTimingDiff || timing == t.timing) &&
-        itemID == (t as TurnEffectItem).itemID;
+        itemID == t.itemID;
   }
 
   // SQLに保存された文字列からTurnEffectItemをパース

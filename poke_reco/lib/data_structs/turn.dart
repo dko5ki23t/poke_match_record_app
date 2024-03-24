@@ -2328,7 +2328,7 @@ class Turn extends Equatable implements Copyable {
       }
     }
 
-    return effectList;
+    return effectList.toSet().toList();
   }
 
   List<TurnEffect> _getEffectCandidates(
@@ -2344,7 +2344,7 @@ class Turn extends Equatable implements Copyable {
     TurnEffectAction? prevAction;
     if (timing == Timing.afterMove) {
       for (int i = phaseIdx - 1; i >= 0; i--) {
-        if (phases[i].runtimeType == TurnEffectAction) {
+        if (phases[i] is TurnEffectAction) {
           prevAction = phases[i] as TurnEffectAction;
           break;
         } else if (phases[i].timing != timing) {
@@ -2353,7 +2353,7 @@ class Turn extends Equatable implements Copyable {
       }
     } else if (timing == Timing.beforeMove) {
       for (int i = phaseIdx; i < phases.length; i++) {
-        if (phases[i].runtimeType == TurnEffectAction) {
+        if (phases[i] is TurnEffectAction) {
           prevAction = phases[i] as TurnEffectAction;
           break;
         } else if (phases[i].timing != timing) {
@@ -2361,8 +2361,9 @@ class Turn extends Equatable implements Copyable {
         }
       }
     }
-    PlayerType attacker =
-        prevAction != null ? prevAction.playerType : PlayerType.none;
+    List<PlayerType> attackers = prevAction != null && prevAction.isValid()
+        ? [prevAction.playerType]
+        : [PlayerType.me, PlayerType.opponent];
     // TODO?
     //TurnMove turnMove =
     //    prevAction?.move != null ? prevAction!.move : TurnMove();
@@ -2370,29 +2371,31 @@ class Turn extends Equatable implements Copyable {
 
     if (playerType == PlayerType.entireField) {
       return _getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.ability, attacker, turnMove, prevAction, phaseState);
+          EffectType.ability, attackers[0], turnMove, prevAction, phaseState);
     }
-    if (effectType == null) {
-      List<TurnEffect> ret = [];
-      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.ability, attacker, turnMove, prevAction, phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.item, attacker, turnMove, prevAction, phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(
-          timing,
-          playerType,
-          EffectType.individualField,
-          attacker,
-          turnMove,
-          prevAction,
-          phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.ailment, attacker, turnMove, prevAction, phaseState));
-      return ret;
-    } else {
-      return _getEffectCandidatesWithEffectType(timing, playerType, effectType,
-          attacker, turnMove, prevAction, phaseState);
+    List<TurnEffect> ret = [];
+    for (final attacker in attackers) {
+      if (effectType == null) {
+        ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+            EffectType.ability, attacker, turnMove, prevAction, phaseState));
+        ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+            EffectType.item, attacker, turnMove, prevAction, phaseState));
+        ret.addAll(_getEffectCandidatesWithEffectType(
+            timing,
+            playerType,
+            EffectType.individualField,
+            attacker,
+            turnMove,
+            prevAction,
+            phaseState));
+        ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+            EffectType.ailment, attacker, turnMove, prevAction, phaseState));
+      } else {
+        ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
+            effectType, attacker, turnMove, prevAction, phaseState));
+      }
     }
+    return ret;
   }
 
   List<TurnEffect> _getEffectCandidatesWithEffectType(

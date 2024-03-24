@@ -77,7 +77,7 @@ extension EffectTypename on EffectType {
 }
 
 /// 共通のタイミング
-const List<Timing> allTimings = [
+const Set<Timing> allTimings = {
   Timing.blasted, // ばくはつ系のわざ、とくせいが発動したとき
   Timing.paralysised, // まひするわざ、とくせいを受けた時
   Timing.attractedTauntedIntimidated, // メロメロ/ゆうわく/ちょうはつ/いかくの効果を受けたとき
@@ -122,7 +122,7 @@ const List<Timing> allTimings = [
   Timing.confused, // こんらんになるとき
   Timing.infatuation, // メロメロになるとき
   Timing.changedIgnoredAbility, // とくせいを変更される、無効化される、無視されるとき
-];
+};
 
 /// ポケモンを繰り出すときのタイミング
 const List<Timing> pokemonAppearTimings = [
@@ -566,9 +566,9 @@ abstract class TurnEffect extends Equatable implements Copyable {
     final pokeData = PokeDB();
     List<TurnEffect> ret = [];
     List<int> retAbilityIDs = [];
-    List<Timing> timings = [...allTimings];
-    List<Timing> attackerTimings = [...allTimings];
-    List<Timing> defenderTimings = [...allTimings];
+    Set<Timing> timings = {...allTimings};
+    Set<Timing> attackerTimings = {...allTimings};
+    Set<Timing> defenderTimings = {...allTimings};
     List<int> indiFieldEffectIDs = [];
     Map<int, int> ailmentEffectIDs = {}; // 効果IDと経過ターン数を入れる
     List<int> weatherEffectIDs = [];
@@ -745,9 +745,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         break;
       case Timing.beforeMove: // わざ使用前
         {
-          //timings.clear();
-          attackerTimings.clear();
-          defenderTimings.clear();
+          timings.clear(); // atacker/defenderに統合するするため削除
           attackerTimings.addAll(beforeMoveAttackerTimings);
           defenderTimings.addAll(beforeMoveDefenderTimings);
           if (playerType == PlayerType.me ||
@@ -864,7 +862,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         break;
       case Timing.afterMove: // わざ使用後
         if (playerType == PlayerType.me || playerType == PlayerType.opponent) {
-          //timings.clear(); // atacker/defenderに統合するするため削除
+          timings.clear(); // atacker/defenderに統合するするため削除
           attackerTimings.addAll(afterMoveAttackerTimings);
           defenderTimings.addAll(afterMoveDefenderTimings);
           var attackerState = phaseState.getPokemonState(attacker, prevAction);
@@ -1109,7 +1107,6 @@ abstract class TurnEffect extends Equatable implements Copyable {
                       .id ==
                   216) {
             attackerTimings.addAll(defenderTimings);
-            attackerTimings = attackerTimings.toSet().toList();
             defenderTimings = attackerTimings;
           }
         }
