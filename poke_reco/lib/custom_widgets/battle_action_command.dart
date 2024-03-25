@@ -5,6 +5,7 @@ import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -86,6 +87,9 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     List<Widget> moveTiles = [];
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
+      //
+      // わざリスト作成
+      //
       var myPokemon = myState.pokemon;
       var yourFields = prevState.getIndiFields(playerType.opposite);
       // 覚えているわざをリストの先頭に
@@ -97,6 +101,35 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 element.isValid &&
                 moves.where((e) => e.id == element.id).isEmpty,
           ));
+      // ゾロア系かもしれない場合
+      if (prevState.canZorua) {
+        moves.addAll(PokeDB().pokeBase[PokeBase.zoruaNo]!.move.where(
+              (element) =>
+                  element.isValid &&
+                  moves.where((e) => e.id == element.id).isEmpty,
+            ));
+      }
+      if (prevState.canZoroark) {
+        moves.addAll(PokeDB().pokeBase[PokeBase.zoroarkNo]!.move.where(
+              (element) =>
+                  element.isValid &&
+                  moves.where((e) => e.id == element.id).isEmpty,
+            ));
+      }
+      if (prevState.canZoruaHisui) {
+        moves.addAll(PokeDB().pokeBase[PokeBase.zoruaHisuiNo]!.move.where(
+              (element) =>
+                  element.isValid &&
+                  moves.where((e) => e.id == element.id).isEmpty,
+            ));
+      }
+      if (prevState.canZoroarkHisui) {
+        moves.addAll(PokeDB().pokeBase[PokeBase.zoroarkHisuiNo]!.move.where(
+              (element) =>
+                  element.isValid &&
+                  moves.where((e) => e.id == element.id).isEmpty,
+            ));
+      }
       moves.add(PokeDB().moves[165]!); // わるあがき
       // 検索窓の入力でフィルタリング
       final pattern = moveSearchTextController.text;

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/six_stats.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -1662,12 +1663,28 @@ class Turn extends Equatable implements Copyable {
   /// 自動追加オフの効果リスト
   List<TurnEffect> noAutoAddEffect = [];
 
+  /// 正体がばれていないゾロアがいる可能性があるかどうか
+  bool canZorua = false;
+
+  /// 正体がばれていないゾロアークがいる可能性があるかどうか
+  bool canZoroark = false;
+
+  /// 正体がばれていないゾロア(ヒスイ)がいる可能性があるかどうか
+  bool canZoruaHisui = false;
+
+  /// 正体がばれていないゾロアーク(ヒスイ)がいる可能性があるかどうか
+  bool canZoroarkHisui = false;
+
   @override
   List<Object?> get props => [
         _initialState,
         phases,
         _endingState,
         noAutoAddEffect,
+        canZorua,
+        canZoroark,
+        canZoruaHisui,
+        canZoroarkHisui,
       ];
 
   /// ターン開始時の自身(ユーザー)のポケモンの状態
@@ -1732,7 +1749,11 @@ class Turn extends Equatable implements Copyable {
     .._initialState = _initialState.copy()
     ..phases = phases.copy()
     .._endingState = _endingState.copy()
-    ..noAutoAddEffect = [for (final effect in noAutoAddEffect) effect.copy()];
+    ..noAutoAddEffect = [for (final effect in noAutoAddEffect) effect.copy()]
+    ..canZorua = canZorua
+    ..canZoroark = canZoroark
+    ..canZoruaHisui = canZoruaHisui
+    ..canZoroarkHisui = canZoroarkHisui;
 
   /// ターン開始時の状態のコピーを返す
   PhaseState copyInitialState() {
@@ -1804,11 +1825,18 @@ class Turn extends Equatable implements Copyable {
 
     setInitialPokemonIndex(PlayerType.me, checkedPokemons.own[0]);
     setInitialPokemonIndex(PlayerType.opponent, checkedPokemons.opponent);
-    // TODO:ゾロア系の設定
-    //canZorua = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaNo).isNotEmpty
-    //canZoroark = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkNo).isNotEmpty
-    //canZoruaHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoruaHisuiNo).isNotEmpty
-    //canZoroarkHisui = opponentParty.pokemons.where((e) => e?.no == PokeBase.zoroarkHisuiNo).isNotEmpty;
+    canZorua = opponentParty.pokemons
+        .where((e) => e?.no == PokeBase.zoruaNo)
+        .isNotEmpty;
+    canZoroark = opponentParty.pokemons
+        .where((e) => e?.no == PokeBase.zoroarkNo)
+        .isNotEmpty;
+    canZoruaHisui = opponentParty.pokemons
+        .where((e) => e?.no == PokeBase.zoruaHisuiNo)
+        .isNotEmpty;
+    canZoroarkHisui = opponentParty.pokemons
+        .where((e) => e?.no == PokeBase.zoroarkHisuiNo)
+        .isNotEmpty;
     // 自身のポケモンの状態の初期設定
     for (int i = 0; i < ownParty.pokemonNum; i++) {
       final poke = ownParty.pokemons[i]!;
@@ -1866,6 +1894,11 @@ class Turn extends Equatable implements Copyable {
       getInitialPokemonStates(PlayerType.opponent).add(state);
       getInitialLastExitedStates(PlayerType.opponent).add(state.copy());
     }
+    // ゾロア関連の情報をphaseStateにコピー
+    _initialState.canZorua = canZorua;
+    _initialState.canZoroark = canZoroark;
+    _initialState.canZoruaHisui = canZoruaHisui;
+    _initialState.canZoroarkHisui = canZoroarkHisui;
     // 登場時処理を行う
     initialOwnPokemonState.processEnterEffect(
         initialOpponentPokemonState, copyInitialState());
@@ -2465,6 +2498,14 @@ class Turn extends Equatable implements Copyable {
           effect, split3, split4, split5,
           version: version));
     }
+    // canZorua
+    ret.canZorua = turnElements.removeAt(0) == '1';
+    // canZoroark
+    ret.canZoroark = turnElements.removeAt(0) == '1';
+    // canZoruaHisui
+    ret.canZoruaHisui = turnElements.removeAt(0) == '1';
+    // canZoroarkHisui
+    ret.canZoroarkHisui = turnElements.removeAt(0) == '1';
 
     return ret;
   }
@@ -2492,6 +2533,18 @@ class Turn extends Equatable implements Copyable {
       ret += effect.serialize(split3, split4, split5);
       ret += split2;
     }
+    ret += split1;
+    // canZorua
+    ret += canZorua ? '1' : '0';
+    ret += split1;
+    // canZoroark
+    ret += canZoroark ? '1' : '0';
+    ret += split1;
+    // canZoruaHisui
+    ret += canZoruaHisui ? '1' : '0';
+    ret += split1;
+    // canZoroarkHisui
+    ret += canZoroarkHisui ? '1' : '0';
 
     return ret;
   }

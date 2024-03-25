@@ -1401,10 +1401,17 @@ class TurnEffectAbility extends TurnEffect {
         );
       case 149: // イリュージョン
         if (playerType == PlayerType.opponent) {
+          final zoruaNos = [
+            PokeBase.zoruaNo,
+            PokeBase.zoroarkNo,
+            PokeBase.zoruaHisuiNo,
+            PokeBase.zoroarkHisuiNo
+          ];
           return Row(
             children: [
               Flexible(
                 child: _myDropdownButtonFormField(
+                  key: Key('PokemonSelectDropdown'),
                   isExpanded: true,
                   decoration: InputDecoration(
                     border: UnderlineInputBorder(),
@@ -1414,12 +1421,18 @@ class TurnEffectAbility extends TurnEffect {
                     for (int i = 0; i < opponentParty.pokemonNum; i++)
                       DropdownMenuItem(
                         value: i + 1,
-                        //enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon),
+                        enabled: zoruaNos.contains(
+                            state.getPokemonStates(playerType)[i].pokemon.no),
                         child: Text(
                           opponentParty.pokemons[i]!.name,
                           overflow: TextOverflow.ellipsis,
-                          /*style: TextStyle(color: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting && i != opponentParty.pokemons.indexWhere((element) => element == opponentPokemon) ?
-                              Colors.black : Colors.grey),*/
+                          style: TextStyle(
+                              color: zoruaNos.contains(state
+                                      .getPokemonStates(playerType)[i]
+                                      .pokemon
+                                      .no)
+                                  ? Colors.black
+                                  : Colors.grey),
                         ),
                       ),
                   ],
@@ -1427,6 +1440,10 @@ class TurnEffectAbility extends TurnEffect {
                   onChanged: (value) {
                     extraArg1 = value;
                     onEdit();
+                    // 統合テスト作成用
+                    print(
+                        "await driver.tap(find.byValueKey('PokemonSelectDropdown'));\n"
+                        "await driver.tap(find.text('${state.getPokemonStates(playerType)[value - 1].pokemon.name}'));");
                   },
                   isInput: true,
                   textValue: extraArg1 > 0

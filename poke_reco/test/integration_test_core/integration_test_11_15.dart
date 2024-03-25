@@ -597,9 +597,89 @@ Future<void> test12_1(
   await tapMove(driver, me, 'ふいうち', false);
   // テツノブジンのHP90
   await inputRemainHP(driver, me, '90');
-  // TODO:ゾロアークだった
-  return;
+  // テツノブジンのイリュージョン
+  await addEffect(driver, 1, op, 'イリュージョン');
+  await driver.tap(find.byValueKey('PokemonSelectDropdown'));
+  await driver.tap(find.text('ゾロアーク'));
+  await driver.tap(find.text('OK'));
+  // ゾロアークのカウンター
+  await tapMove(driver, op, 'カウンター', true);
+  // ワナイダーのHP125
+  await inputRemainHP(driver, op, '125');
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
 
+  // ワナイダーのふいうち
+  await tapMove(driver, me, 'ふいうち', false);
+  // ゾロアークのHP80
+  await inputRemainHP(driver, me, '80');
+  // ゾロアークのカウンター
+  await tapMove(driver, op, 'カウンター', false);
+  // ワナイダーのHP85
+  await inputRemainHP(driver, op, '85');
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // ゾロアーク->テツノブジンに交代
+  await changePokemon(driver, op, 'テツノブジン', true);
+  // ゾロアークのクォークチャージ
+  await addEffect(driver, 2, op, 'クォークチャージ');
+  await driver.tap(find.text('OK'));
+  // ワナイダー->ヘルガーに交代
+  await changePokemon(driver, me, 'ヘルガー', true);
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // ヘルガーのテラスタル
+  await inputTerastal(driver, me, '');
+  // ヘルガーのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // テツノブジンのHP0
+  await inputRemainHP(driver, me, '0');
+  // テツノブジンひんし->ゾロアークに交代
+  await changePokemon(driver, op, 'ゾロアーク', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // ゾロアークのふいうち
+  await tapMove(driver, op, 'ふいうち', true);
+  // ヘルガーのHP112
+  await inputRemainHP(driver, op, '112');
+  // ヘルガーのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // ゾロアークのHP0
+  await inputRemainHP(driver, me, '0');
+  // ゾロアークひんし->ロトムに交代
+  await changePokemon(driver, op, 'ロトム(ウォッシュロトム)', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ロトムのテラスタル
+  await inputTerastal(driver, op, 'でんき');
+  // ロトムのほうでん
+  await tapMove(driver, op, 'ほうでん', true);
+  // ヘルガーのHP2
+  await inputRemainHP(driver, op, '2');
+  // ヘルガーのあくのはどう
+  await tapMove(driver, me, 'あくのはどう', false);
+  // ロトムのHP75
+  await inputRemainHP(driver, me, '75');
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // ロトムのほうでん
+  await tapMove(driver, op, 'ほうでん', false);
+  // ヘルガーのHP0
+  await inputRemainHP(driver, op, '0');
+  // ヘルガーひんし->リーフィアに交代
+  await changePokemon(driver, me, 'リーフィア', false);
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // リーフィアのリーフブレード
+  await tapMove(driver, me, 'リーフブレード', false);
+  // ロトムのHP0
+  await inputRemainHP(driver, me, '0');
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -1679,7 +1759,6 @@ Future<void> test14_1(
   await driver.tap(find.byType('FloatingActionButton'));
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
-  // TODO: ゾロアークが登場する
   // 基本情報を入力
   await inputBattleBasicInfo(
     driver,
@@ -1704,7 +1783,162 @@ Future<void> test14_1(
       opponentPokemon: 'ムクホーク');
   // 各ターン入力画面へ
   await goTurnPage(driver, turnNum++);
-  return;
+
+  // ムクホークのトリック
+  await tapMove(driver, op, 'トリック', true);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
+  await driver.enterText('こだわりメガネ');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('こだわりメガネ')));
+  // ワナイダーのねばねばネット
+  await tapMove(driver, me, 'ねばねばネット', false);
+
+  // ターン2へ
+  await goTurnPage(driver, turnNum++);
+
+  // ワナイダー->キョジオーンに交代
+  await changePokemon(driver, me, 'キョジオーン', true);
+  // ゾロアークのかえんほうしゃ
+  await tapMove(driver, op, 'かえんほうしゃ', true);
+  // キョジオーンのHP179
+  await inputRemainHP(driver, op, '179');
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
+
+  // キョジオーン->ワナイダーに交代
+  await changePokemon(driver, me, 'ワナイダー', true);
+  // ゾロアークのとんぼがえり
+  await tapMove(driver, op, 'とんぼがえり', true);
+  // ワナイダーのHP146
+  await inputRemainHP(driver, op, '146');
+  // キョジオーンに交代
+  await changePokemon(driver, op, 'キョジオーン', false);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // キョジオーンのしおづけ
+  await tapMove(driver, op, 'しおづけ', true);
+  // ワナイダーのHP108
+  await inputRemainHP(driver, op, '108');
+  // ワナイダーのともえなげ
+  await tapMove(driver, me, 'ともえなげ', true);
+  // キョジオーンのHP90
+  await inputRemainHP(driver, me, '90');
+  // ゾロアークに交代
+  await changePokemon(driver, me, 'ゾロアーク', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // ゾロアークのかえんほうしゃ
+  await tapMove(driver, op, 'かえんほうしゃ', false);
+  // ワナイダーのHP0
+  await inputRemainHP(driver, op, '0');
+  // ワナイダーひんし->シャリタツに交代
+  await changePokemon(driver, me, 'シャリタツ', false);
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // シャリタツのテラスタル
+  await inputTerastal(driver, me, '');
+  // シャリタツのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // ゾロアークのHP0
+  await inputRemainHP(driver, me, '0');
+  // ゾロアークひんし->ムクホークに交代
+  await changePokemon(driver, op, 'ムクホーク', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // シャリタツ->キョジオーンに交代
+  await changePokemon(driver, me, 'キョジオーン', true);
+  // ムクホークのブレイブバード
+  await tapMove(driver, op, 'ブレイブバード', true);
+  // キョジオーンのHP151
+  await inputRemainHP(driver, op, '151');
+  // ムクホークのHP95
+  await inputRemainHP(driver, op, '95');
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ムクホーク->キョジオーンに交代
+  await changePokemon(driver, op, 'キョジオーン', true);
+  // キョジオーン->シャリタツに交代
+  await changePokemon(driver, me, 'シャリタツ', true);
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // キョジオーンのテラスタル
+  await inputTerastal(driver, op, 'ひこう');
+  // シャリタツのハイドロポンプ
+  await tapMove(driver, me, 'ハイドロポンプ', false);
+  // キョジオーンのHP20
+  await inputRemainHP(driver, me, '20');
+  // キョジオーンのしおづけ
+  await tapMove(driver, op, 'しおづけ', false);
+  // シャリタツのHP80
+  await inputRemainHP(driver, op, '80');
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // シャリタツのりゅうのはどう
+  await tapMove(driver, me, 'りゅうのはどう', false);
+  // キョジオーンのHP0
+  await inputRemainHP(driver, me, '0');
+  // キョジオーンひんし->ムクホークに交代
+  await changePokemon(driver, op, 'ムクホーク', false);
+  // ターン11へ
+  await goTurnPage(driver, turnNum++);
+
+  // ムクホークのインファイト
+  await tapMove(driver, op, 'インファイト', true);
+  // シャリタツのHP0
+  await inputRemainHP(driver, op, '0');
+  // シャリタツひんし->キョジオーンに交代
+  await changePokemon(driver, me, 'キョジオーン', false);
+  // ターン12へ
+  await goTurnPage(driver, turnNum++);
+
+  // ムクホークのインファイト
+  await tapMove(driver, op, 'インファイト', false);
+  // 急所に命中
+  await tapCritical(driver, op);
+  // キョジオーンのHP13
+  await inputRemainHP(driver, op, '13');
+  // キョジオーンのじこさいせい
+  await tapMove(driver, me, 'じこさいせい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP117
+  await inputRemainHP(driver, me, '117');
+  // ターン13へ
+  await goTurnPage(driver, turnNum++);
+
+  // ムクホークのインファイト
+  await tapMove(driver, op, 'インファイト', false);
+  // キョジオーンのHP37
+  await inputRemainHP(driver, op, '37');
+  // キョジオーンのじこさいせい
+  await tapMove(driver, me, 'じこさいせい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP141
+  await inputRemainHP(driver, me, '141');
+  // ターン14へ
+  await goTurnPage(driver, turnNum++);
+
+  // ムクホークのインファイト
+  await tapMove(driver, op, 'インファイト', false);
+  // キョジオーンのHP61
+  await inputRemainHP(driver, op, '61');
+  // キョジオーンのじこさいせい
+  await tapMove(driver, me, 'じこさいせい', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // キョジオーンのHP165
+  await inputRemainHP(driver, me, '165');
+  // ターン15へ
+  await goTurnPage(driver, turnNum++);
+
+  // あいて降参
+  await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
