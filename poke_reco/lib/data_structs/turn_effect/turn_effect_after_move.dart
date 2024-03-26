@@ -221,10 +221,21 @@ class TurnEffectAfterMove extends TurnEffect {
   bool nearEqual(
     TurnEffect t, {
     bool allowTimingDiff = false,
+    bool isChangeMe = false,
+    bool isChangeOpponent = false,
   }) {
     return t.runtimeType == TurnEffectAfterMove &&
         playerType == t.playerType &&
-        (allowTimingDiff || timing == t.timing) &&
+        (timing == t.timing ||
+            (allowTimingDiff &&
+                !(isChangeMe &&
+                    playerType == PlayerType.me &&
+                    (timing == Timing.afterMove ||
+                        t.timing == Timing.afterMove)) &&
+                !(isChangeOpponent &&
+                    playerType == PlayerType.opponent &&
+                    (timing == Timing.afterMove ||
+                        t.timing == Timing.afterMove)))) &&
         effectID == (t as TurnEffectAfterMove).effectID;
   }
 

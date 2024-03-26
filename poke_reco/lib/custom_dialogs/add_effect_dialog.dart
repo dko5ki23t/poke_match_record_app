@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/tool.dart';
 
@@ -9,14 +10,18 @@ class AddEffectDialog extends StatefulWidget {
   final String title;
   final List<TurnEffect> effectList;
   final String youText;
+  final String? youAfterMoveText; // 交代わざ使用後の場合(交代する前のポケモンの表示)
   final String opponentText;
+  final String? opponentAfterMoveText; // 交代わざ使用後の場合(交代する前のポケモンの表示)
 
   const AddEffectDialog(
     this.onSelect,
     this.title,
     this.effectList,
     this.youText,
-    this.opponentText, {
+    this.youAfterMoveText,
+    this.opponentText,
+    this.opponentAfterMoveText, {
     Key? key,
   }) : super(key: key);
 
@@ -32,12 +37,16 @@ class AddEffectDialogState extends State<AddEffectDialog> {
     final loc = AppLocalizations.of(context)!;
 
     // 効果主の表示名
-    String displayStr(PlayerType player) {
+    String displayStr(PlayerType player, bool isAfterMove) {
       String ret = '';
       if (player == PlayerType.me) {
-        ret = widget.youText;
+        ret = isAfterMove
+            ? widget.youAfterMoveText ?? widget.youText
+            : widget.youText;
       } else if (player == PlayerType.opponent) {
-        ret = widget.opponentText;
+        ret = isAfterMove
+            ? widget.opponentAfterMoveText ?? widget.opponentText
+            : widget.opponentText;
       } else if (player == PlayerType.entireField) {
         ret = loc.battleWeatherField;
       }
@@ -55,6 +64,9 @@ class AddEffectDialogState extends State<AddEffectDialog> {
       return '';
     }
 
+    // 統合テスト作成用
+    List<Map<String, bool>> doubling = [{}, {}, {}];
+
     // 検索窓の入力でフィルタリング
     final pattern = nameController.text;
     final filteredList = [...widget.effectList];
@@ -66,9 +78,11 @@ class AddEffectDialogState extends State<AddEffectDialog> {
     }
     List<Widget> widgetList = [];
     PlayerType currentPlayer = PlayerType.none;
+    bool currentIsAfterMove = false;
     if (filteredList.isNotEmpty) {
       currentPlayer = filteredList.first.playerType;
-      widgetList.add(Text(displayStr(currentPlayer)));
+      currentIsAfterMove = filteredList.first.timing == Timing.afterMove;
+      widgetList.add(Text(displayStr(currentPlayer, currentIsAfterMove)));
       widgetList.add(const Divider(
         height: 10,
         thickness: 1,
@@ -77,15 +91,34 @@ class AddEffectDialogState extends State<AddEffectDialog> {
     for (final effect in filteredList) {
       if (effect.playerType != currentPlayer) {
         currentPlayer = effect.playerType;
-        widgetList.add(Text(displayStr(currentPlayer)));
+        currentIsAfterMove = effect.timing == Timing.afterMove;
+        widgetList.add(Text(displayStr(currentPlayer, currentIsAfterMove)));
         widgetList.add(const Divider(
           height: 10,
           thickness: 1,
         ));
+      } else if ((effect.timing == Timing.afterMove) != currentIsAfterMove) {
+        currentIsAfterMove = effect.timing == Timing.afterMove;
+        if ((currentPlayer == PlayerType.me &&
+                widget.youAfterMoveText != null) ||
+            (currentPlayer == PlayerType.opponent &&
+                widget.opponentAfterMoveText != null)) {
+          widgetList.add(Text(displayStr(currentPlayer, currentIsAfterMove)));
+          widgetList.add(const Divider(
+            height: 10,
+            thickness: 1,
+          ));
+        }
+      }
+      // 統合テスト作成用
+      String labelNo = '1';
+      if (doubling[effect.playerType.number]
+          .containsKey(effect.displayName(loc: loc))) {
+        labelNo = '2';
       }
       widgetList.add(
         Semantics(
-          label: 'EffectListTile${keyName(effect.playerType)}',
+          label: 'EffectListTile${keyName(effect.playerType)}$labelNo',
           child: ListTile(
             title: Text(effect.displayName(loc: loc)),
             onTap: () {
@@ -95,6 +128,10 @@ class AddEffectDialogState extends State<AddEffectDialog> {
           ),
         ),
       );
+      // 統合テスト作成用
+      if (effect.playerType.number >= 0) {
+        doubling[effect.playerType.number][effect.displayName(loc: loc)] = true;
+      }
     }
 
     return AlertDialog(

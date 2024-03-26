@@ -1278,10 +1278,14 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// extraArg等以外同じ、ほぼ同じかどうか
   /// ```
   /// allowTimingDiff: タイミングが異なっていても同じとみなすかどうか
+  /// isChangeMe: 交代わざで「あなた」側が交代したかどうか
+  ///   (trueの場合、タイミングがafterMoveのものは、allowTimingDiffがtrueでも異なる効果とみなす)
   /// ```
   bool nearEqual(
     TurnEffect t, {
     bool allowTimingDiff = false,
+    bool isChangeMe = false,
+    bool isChangeOpponent = false,
   });
 
   /// 表示名

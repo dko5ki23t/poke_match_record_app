@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/timing.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
@@ -818,7 +819,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                               loc.battleAddProcess,
                               effectList,
                               '${currentTurn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                              null, // わざ使用後のタイミングは必ず無いのでここはnull
                               '${currentTurn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                              null,
                             );
                           });
                     },
@@ -916,10 +919,42 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       turnNum,
                       phaseIdx + 1,
                     );
-                    // 自身の効果->相手の効果->全体の効果の順に並べ替え
+                    // 自身の効果->相手の効果->全体の効果(その次にタイミング)の順に並べ替え
+                    effectList.sort(
+                        (e1, e2) => e1.timing.index.compareTo(e2.timing.index));
                     effectList.sort((e1, e2) =>
                         e1.playerType.number.compareTo(e2.playerType.number));
+                    // タイミングにわざ使用後が含まれる＋交代わざの場合、
+                    // 交代前の効果も候補に加える(効果の対象が交代前と交代後の2種類できる)ため、
+                    // 最後に使用されたわざを取得する
+                    TurnEffectAction? prevChangeMove;
+                    bool isChangeMe = false;
+                    bool isChangeOpponent = false;
+                    if (effectList
+                        .where((element) => element.timing == Timing.afterMove)
+                        .isNotEmpty) {
+                      for (int t = phaseIdx; t >= 0; t--) {
+                        if (currentTurn.phases[t] is TurnEffectAction &&
+                            (currentTurn.phases[t] as TurnEffectAction).type ==
+                                TurnActionType.move) {
+                          if (currentTurn.phases[t]
+                                  .getChangePokemonIndex(PlayerType.me) !=
+                              null) {
+                            isChangeMe = true;
+                          }
+                          if (currentTurn.phases[t]
+                                  .getChangePokemonIndex(PlayerType.opponent) !=
+                              null) {
+                            isChangeOpponent = true;
+                          }
+                          prevChangeMove =
+                              currentTurn.phases[t] as TurnEffectAction;
+                          break;
+                        }
+                      }
+                    }
                     // タイミングのみ違う効果は最後を除いて削除
+                    // (交代わざの使用後タイミングは別物としてカウントする(削除しない))
                     int i = effectList.length - 1;
                     while (i >= 0) {
                       if (i >= effectList.length) {
@@ -927,8 +962,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       }
                       List<int> deleteIdx = [];
                       for (int j = i - 1; j >= 0; j--) {
-                        if (effectList[j]
-                            .nearEqual(effectList[i], allowTimingDiff: true)) {
+                        if (effectList[j].nearEqual(effectList[i],
+                            allowTimingDiff: true,
+                            isChangeMe: isChangeMe,
+                            isChangeOpponent: isChangeOpponent)) {
                           deleteIdx.add(j);
                         }
                       }
@@ -997,7 +1034,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                             loc.battleAddProcess,
                             effectList,
                             '${phaseStateForAdd.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                            isChangeMe
+                                ? '${phaseStateForAdd.getPokemonState(PlayerType.me, prevChangeMove).pokemon.omittedName}/${loc.battleYou}'
+                                : null,
                             '${phaseStateForAdd.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                            isChangeOpponent
+                                ? '${phaseStateForAdd.getPokemonState(PlayerType.opponent, prevChangeMove).pokemon.omittedName}/${widget.battle.opponentName}'
+                                : null,
                           );
                         });
                   },

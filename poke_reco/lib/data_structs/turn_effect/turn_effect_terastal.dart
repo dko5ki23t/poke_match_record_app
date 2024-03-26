@@ -208,6 +208,8 @@ class TurnEffectTerastal extends TurnEffect {
   bool nearEqual(
     TurnEffect t, {
     bool allowTimingDiff = false,
+    bool isChangeMe = false,
+    bool isChangeOpponent = false,
   }) {
     return this == t;
   }

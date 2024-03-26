@@ -1948,8 +1948,6 @@ Future<void> test8_4(
   // ギャラドスに交代
   await changePokemon(driver, op, 'ギャラドス', false);
   // ミミズズのオボンのみ
-  return;
-  // TODO:ミミズズを対象にしたオボンのみが無い
   await addEffect(driver, 1, op, 'オボンのみ');
   await driver.tap(find.text('OK'));
   // ギャラドスのいかく

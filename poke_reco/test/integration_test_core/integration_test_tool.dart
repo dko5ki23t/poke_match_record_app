@@ -292,10 +292,10 @@ Future<void> addEffect(FlutterDriver driver, int addButtonNo,
   await driver.tap(find.byValueKey('AddEffectDialogSearchBar'));
   await driver.enterText(effectName);
   await testExistAnyWidgets(
-      find.bySemanticsLabel(RegExp("EffectListTile$ownOrOpponent")), driver);
+      find.bySemanticsLabel(RegExp("EffectListTile${ownOrOpponent}1")), driver);
   designatedWidget = find.descendant(
     of: find.descendant(
-        of: find.bySemanticsLabel(RegExp("EffectListTile$ownOrOpponent")),
+        of: find.bySemanticsLabel(RegExp("EffectListTile${ownOrOpponent}1")),
         matching: find.byType('ListTile')),
     matching: find.text(effectName),
   );
