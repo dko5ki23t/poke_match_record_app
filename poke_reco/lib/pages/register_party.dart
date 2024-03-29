@@ -8,7 +8,13 @@ import 'package:poke_reco/main.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+final GlobalKey<RegisterPartyPageState> _partyNameInputKey =
+    GlobalKey<RegisterPartyPageState>(debugLabel: 'PartyNameInput');
+final GlobalKey<RegisterPartyPageState> _saveButtonKey =
+    GlobalKey<RegisterPartyPageState>(debugLabel: 'SaveButton');
 
 class RegisterPartyPage extends StatefulWidget {
   RegisterPartyPage({
@@ -39,6 +45,10 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
   final partyNameController = TextEditingController();
   final pokemonController = List.generate(6, (i) => TextEditingController());
   final itemController = List.generate(6, (i) => TextEditingController());
+
+  List<TargetFocus> tutorialTargets = [];
+  // TODO: 設定データにでも組み込む
+  bool isFirstAfterLoad = true;
 
   bool firstBuild = true;
 
@@ -89,6 +99,81 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
     void onComplete() async {
       await pokeData.addParty(widget.party, widget.isNew, appState.notify);
       widget.onFinish();
+    }
+
+    void showTutorial() {
+      TutorialCoachMark(
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {},
+      ).show(context: context);
+    }
+
+    if (isFirstAfterLoad) {
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _partyNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterParty,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputPartyInfo,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _saveButtonKey,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterParty2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterPartySave,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial();
+      isFirstAfterLoad = false;
     }
 
     return PopScope(

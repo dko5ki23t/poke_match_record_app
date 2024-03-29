@@ -16,7 +16,15 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+final GlobalKey<RegisterPokemonPageState> _pokemonNameInputKey =
+    GlobalKey<RegisterPokemonPageState>(debugLabel: 'PokemonNameInput');
+final GlobalKey<RegisterPokemonPageState> _teraTypeInputKey =
+    GlobalKey<RegisterPokemonPageState>(debugLabel: 'TeraTypeInput');
+final GlobalKey<RegisterPokemonPageState> _saveButtonKey =
+    GlobalKey<RegisterPokemonPageState>(debugLabel: 'SaveButton');
 
 class RegisterPokemonPage extends StatefulWidget {
   RegisterPokemonPage({
@@ -57,6 +65,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   final pokePPController = List.generate(4, (i) => TextEditingController());
 
   bool canChangeTeraType = true;
+  List<TargetFocus> tutorialTargets = [];
+  // TODO: 設定データにでも組み込む
+  bool isFirstAfterLoad = true;
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
@@ -151,6 +162,112 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       widget.onFinish();
     }
 
+    void showTutorial() {
+      TutorialCoachMark(
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {},
+      ).show(context: context);
+    }
+
+    if (isFirstAfterLoad) {
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _pokemonNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterPokemon,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputPokemonName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _teraTypeInputKey,
+        shape: ShapeLightFocus.RRect,
+        enableOverlayTab: true,
+        radius: 10.0,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterPokemon2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputPokemonInfo,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _saveButtonKey,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterPokemon3,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterPokemonSave,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial();
+      isFirstAfterLoad = false;
+    }
+
     return PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
@@ -170,6 +287,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                 : Text(loc.pokemonsTabEditPokemon),
             actions: [
               TextButton(
+                key: _saveButtonKey,
                 onPressed: (myPokemon.isValid &&
                         myPokemon != pokeData.pokemons[myPokemon.id])
                     ? () => onComplete()
@@ -192,11 +310,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       Expanded(
                         flex: 7,
                         child: TypeAheadField(
+                          key: _pokemonNameInputKey,
                           textFieldConfiguration: TextFieldConfiguration(
                             controller: pokeNameController,
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: loc.pokemonsTabPokemonName,
+                              labelStyle:
+                                  myPokemon.no == 0 ? notAllowedStyle : null,
                             ),
                           ),
                           autoFlipDirection: true,
@@ -322,6 +443,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                       ),
                       SizedBox(width: 10),
                       Flexible(
+                        key: _teraTypeInputKey,
                         child: TypeDropdownButton(
                           loc.commonTeraType,
                           canChangeTeraType
@@ -334,8 +456,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           myPokemon.teraType == PokeType.unknown
                               ? null
                               : myPokemon.teraType,
-                          isError: myPokemon.no != 0 &&
-                              myPokemon.teraType == PokeType.unknown,
+                          isError: myPokemon.teraType == PokeType.unknown,
                           isTeraType: true,
                         ),
                       ),
@@ -430,10 +551,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                             decoration: InputDecoration(
                               border: UnderlineInputBorder(),
                               labelText: loc.commonNature,
-                              labelStyle:
-                                  myPokemon.no != 0 && myPokemon.temper.id == 0
-                                      ? notAllowedStyle
-                                      : null,
+                              labelStyle: myPokemon.temper.id == 0
+                                  ? notAllowedStyle
+                                  : null,
                             ),
                           ),
                           autoFlipDirection: true,
@@ -630,9 +750,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
                           ppEnabled: myPokemon.moves[i] != null &&
                               myPokemon.moves[i]!.id != 0,
                           initialPPValue: myPokemon.pps[i] ?? 0,
-                          isError: i == 0 &&
-                              myPokemon.no != 0 &&
-                              myPokemon.move1.id == 0,
+                          isError: i == 0 && myPokemon.move1.id == 0,
                         ),
                         pokemonState != null
                             ? Row(

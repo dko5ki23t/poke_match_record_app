@@ -10,7 +10,11 @@ import 'package:poke_reco/custom_widgets/party_tile.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+final GlobalKey<PartiesPageState> _addPartyButtonKey =
+    GlobalKey<PartiesPageState>(debugLabel: 'AddPartyButton');
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({
@@ -34,6 +38,11 @@ class PartiesPageState extends State<PartiesPage> {
   Map<int, bool>? checkList;
   Party? selectedParty;
   TextEditingController searchTextController = TextEditingController();
+  List<TargetFocus> tutorialTargets = [];
+  List<TargetFocus> tutorialTargets2 = [];
+  // TODO: 設定データにでも組み込む
+  bool isFirstAfterLoad = true;
+  bool isFirstAfterLoad2 = true;
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +89,38 @@ class PartiesPageState extends State<PartiesPage> {
 
     final theme = Theme.of(context);
 
+    void onPressAddButton() {
+      checkList = null;
+      widget.onAdd(Party(), true);
+    }
+
+    void showTutorial() {
+      TutorialCoachMark(
+          targets: tutorialTargets,
+          alignSkip: Alignment.topRight,
+          textSkip: loc.tutorialSkip,
+          onClickTarget: (target) {
+            onPressAddButton();
+          },
+          onFinish: () {
+            setState(() {
+              isFirstAfterLoad = false;
+            });
+          }).show(context: context);
+    }
+
+    void showTutorial2() {
+      TutorialCoachMark(
+          targets: tutorialTargets2,
+          alignSkip: Alignment.topRight,
+          textSkip: loc.tutorialSkip,
+          onFinish: () {
+            setState(() {
+              isFirstAfterLoad2 = false;
+            });
+          }).show(context: context);
+    }
+
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
       EasyLoading.instance.userInteractions = false; // 操作禁止にする
@@ -87,6 +128,101 @@ class PartiesPageState extends State<PartiesPage> {
       EasyLoading.show(status: loc.commonLoading);
     } else {
       EasyLoading.dismiss();
+      if (isFirstAfterLoad && !widget.selectMode) {
+        tutorialTargets.add(TargetFocus(
+          keyTarget: _addPartyButtonKey,
+          contents: [
+            TargetContent(
+              align: ContentAlign.top,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleAddParty,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialAddParty,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        showTutorial();
+      }
+      if (!isFirstAfterLoad &&
+          isFirstAfterLoad2 &&
+          filteredParties.isNotEmpty &&
+          !widget.selectMode) {
+        tutorialTargets2.add(TargetFocus(
+          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          enableOverlayTab: true,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleCompleteRegisterParty,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialToBattleTab,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        tutorialTargets2.add(TargetFocus(
+          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          enableOverlayTab: true,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleCompleteRegisterParty2,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialToBattleTab2,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        showTutorial2();
+      }
     }
 
     Widget lists;
@@ -577,12 +713,10 @@ class PartiesPageState extends State<PartiesPage> {
                     child: Align(
                       alignment: Alignment.bottomRight,
                       child: FloatingActionButton(
+                        key: _addPartyButtonKey,
                         tooltip: loc.partiesTabRegisterParty,
                         shape: CircleBorder(),
-                        onPressed: () {
-                          checkList = null;
-                          widget.onAdd(Party(), true);
-                        },
+                        onPressed: onPressAddButton,
                         child: Icon(Icons.add),
                       ),
                     ),

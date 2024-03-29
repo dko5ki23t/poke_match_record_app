@@ -10,7 +10,11 @@ import 'package:poke_reco/main.dart';
 import 'package:poke_reco/data_structs/battle.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+final GlobalKey<BattlesPageState> _addBattleButtonKey =
+    GlobalKey<BattlesPageState>(debugLabel: 'AddBattleButton');
 
 class BattlesPage extends StatefulWidget {
   const BattlesPage({
@@ -30,6 +34,12 @@ class BattlesPageState extends State<BattlesPage> {
   Map<int, bool>? checkList;
   List<MapEntry<int, Battle>> sortedBattles = [];
 
+  List<TargetFocus> tutorialTargets = [];
+  List<TargetFocus> tutorialTargets2 = [];
+  // TODO: 設定データにでも組み込む
+  bool isFirstAfterLoad = true;
+  bool isFirstAfterLoad2 = true;
+
   final increaseStateStyle = TextStyle(
     color: Colors.red,
   );
@@ -48,6 +58,38 @@ class BattlesPageState extends State<BattlesPage> {
 
     final theme = Theme.of(context);
 
+    void onPressAddButton() {
+      checkList = null;
+      widget.onAdd(Battle(), true);
+    }
+
+    void showTutorial() {
+      TutorialCoachMark(
+          targets: tutorialTargets,
+          alignSkip: Alignment.topRight,
+          textSkip: loc.tutorialSkip,
+          onClickTarget: (target) {
+            onPressAddButton();
+          },
+          onFinish: () {
+            setState(() {
+              isFirstAfterLoad = false;
+            });
+          }).show(context: context);
+    }
+
+    void showTutorial2() {
+      TutorialCoachMark(
+          targets: tutorialTargets2,
+          alignSkip: Alignment.topRight,
+          textSkip: loc.tutorialSkip,
+          onFinish: () {
+            setState(() {
+              isFirstAfterLoad2 = false;
+            });
+          }).show(context: context);
+    }
+
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
       EasyLoading.instance.userInteractions = false; // 操作禁止にする
@@ -55,6 +97,103 @@ class BattlesPageState extends State<BattlesPage> {
       EasyLoading.show(status: loc.commonLoading);
     } else {
       EasyLoading.dismiss();
+      if (isFirstAfterLoad /* && !widget.selectMode*/) {
+        tutorialTargets.add(TargetFocus(
+          keyTarget: _addBattleButtonKey,
+          contents: [
+            TargetContent(
+              align: ContentAlign.top,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleAddBattle,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialAddBattle,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        showTutorial();
+      }
+      /*
+      if (!isFirstAfterLoad &&
+          isFirstAfterLoad2 &&
+          filteredPokemons.isNotEmpty &&
+          !widget.selectMode) {
+        tutorialTargets2.add(TargetFocus(
+          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          enableOverlayTab: true,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleCompleteRegisterPokemon,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialToPartyTab,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        tutorialTargets2.add(TargetFocus(
+          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          enableOverlayTab: true,
+          contents: [
+            TargetContent(
+              align: ContentAlign.bottom,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text(
+                    loc.tutorialTitleCompleteRegisterPokemon2,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 20.0),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10.0),
+                    child: Text(
+                      loc.tutorialToPartyTab2,
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ));
+        showTutorial2();
+      }
+      */
     }
 
     var filteredBattles =
@@ -365,10 +504,7 @@ class BattlesPageState extends State<BattlesPage> {
                     child: FloatingActionButton(
                       tooltip: loc.battlesTabTitleRegisterBattle,
                       shape: CircleBorder(),
-                      onPressed: () {
-                        checkList = null;
-                        widget.onAdd(Battle(), true);
-                      },
+                      onPressed: onPressAddButton,
                       child: Icon(Icons.add),
                     ),
                   ),

@@ -106,7 +106,7 @@ class MyAppStateForLocale extends State<MyApp> {
 
   final GoRouter _router = GoRouter(
     navigatorKey: _rootNavigatorKey,
-    initialLocation: BattleTabPath.root.fullpath,
+    initialLocation: PokemonTabPath.root.fullpath,
     routes: <RouteBase>[
       StatefulShellRoute.indexedStack(
         builder: (BuildContext context, GoRouterState state,
