@@ -15,6 +15,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final GlobalKey<PartiesPageState> _addPartyButtonKey =
     GlobalKey<PartiesPageState>(debugLabel: 'AddPartyButton');
+final GlobalKey<PartiesPageState> _firstPartyListTileKey =
+    GlobalKey<PartiesPageState>(debugLabel: 'FirstPartyListTile');
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({
@@ -40,9 +42,6 @@ class PartiesPageState extends State<PartiesPage> {
   TextEditingController searchTextController = TextEditingController();
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
-  // TODO: 設定データにでも組み込む
-  bool isFirstAfterLoad = true;
-  bool isFirstAfterLoad2 = true;
 
   @override
   Widget build(BuildContext context) {
@@ -96,29 +95,22 @@ class PartiesPageState extends State<PartiesPage> {
 
     void showTutorial() {
       TutorialCoachMark(
-          targets: tutorialTargets,
-          alignSkip: Alignment.topRight,
-          textSkip: loc.tutorialSkip,
-          onClickTarget: (target) {
-            onPressAddButton();
-          },
-          onFinish: () {
-            setState(() {
-              isFirstAfterLoad = false;
-            });
-          }).show(context: context);
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {
+          onPressAddButton();
+        },
+      ).show(context: context);
     }
 
+    final tutorialCoachMark2 = TutorialCoachMark(
+      targets: tutorialTargets2,
+      alignSkip: Alignment.topRight,
+      textSkip: loc.tutorialSkip,
+    );
     void showTutorial2() {
-      TutorialCoachMark(
-          targets: tutorialTargets2,
-          alignSkip: Alignment.topRight,
-          textSkip: loc.tutorialSkip,
-          onFinish: () {
-            setState(() {
-              isFirstAfterLoad2 = false;
-            });
-          }).show(context: context);
+      tutorialCoachMark2.show(context: context, rootOverlay: true);
     }
 
     // データ読み込みで待つ
@@ -128,7 +120,8 @@ class PartiesPageState extends State<PartiesPage> {
       EasyLoading.show(status: loc.commonLoading);
     } else {
       EasyLoading.dismiss();
-      if (isFirstAfterLoad && !widget.selectMode) {
+      if (appState.tutorialStep == 3 && !widget.selectMode) {
+        appState.inclementTutorialStep();
         tutorialTargets.add(TargetFocus(
           keyTarget: _addPartyButtonKey,
           contents: [
@@ -158,14 +151,15 @@ class PartiesPageState extends State<PartiesPage> {
           ],
         ));
         showTutorial();
-      }
-      if (!isFirstAfterLoad &&
-          isFirstAfterLoad2 &&
+      } else if (appState.tutorialStep == 5 &&
           filteredParties.isNotEmpty &&
           !widget.selectMode) {
+        appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          keyTarget: _firstPartyListTileKey,
           enableOverlayTab: true,
+          shape: ShapeLightFocus.RRect,
+          radius: 10,
           contents: [
             TargetContent(
               align: ContentAlign.bottom,
@@ -193,11 +187,13 @@ class PartiesPageState extends State<PartiesPage> {
           ],
         ));
         tutorialTargets2.add(TargetFocus(
-          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          keyTarget: bottomNavBarAndAdKey,
           enableOverlayTab: true,
+          shape: ShapeLightFocus.RRect,
+          radius: 10,
           contents: [
             TargetContent(
-              align: ContentAlign.bottom,
+              align: ContentAlign.top,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,16 +286,18 @@ class PartiesPageState extends State<PartiesPage> {
                     });
                   },
                   children: [
-                    for (final e in sortedParties)
+                    for (int i = 0; i < sortedParties.length; i++)
                       PartyTile(
-                        e.value,
+                        key: i == 0 ? _firstPartyListTileKey : null,
+                        sortedParties[i].value,
                         theme,
                         leading: Icon(Icons.drag_handle),
                         trailing: Checkbox(
-                          value: checkList![e.key],
+                          value: checkList![sortedParties[i].key],
                           onChanged: (isCheck) {
                             setState(() {
-                              checkList![e.key] = isCheck ?? false;
+                              checkList![sortedParties[i].key] =
+                                  isCheck ?? false;
                             });
                           },
                         ),
@@ -323,6 +321,7 @@ class PartiesPageState extends State<PartiesPage> {
                   children: [
                     for (int i = 0; i < sortedParties.length; i++)
                       PartyTile(
+                        key: i == 0 ? _firstPartyListTileKey : null,
                         sortedParties[i].value,
                         theme,
                         leading: Icon(Icons.group),

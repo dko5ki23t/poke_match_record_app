@@ -43,6 +43,14 @@ const Map<TabItem, IconData> tabIcon = {
   TabItem.parties: Icons.groups,
   TabItem.settings: Icons.settings,
 };
+final bottomNavBarAndAdKey =
+    GlobalKey<NavigatorState>(debugLabel: 'bottomNavBarAndAdKey');
+final bottomTabKeys = {
+  TabItem.battles: GlobalKey<NavigatorState>(debugLabel: 'battlesTabIconKey'),
+  TabItem.pokemons: GlobalKey<NavigatorState>(debugLabel: 'pokemonsTabIconKey'),
+  TabItem.parties: GlobalKey<NavigatorState>(debugLabel: 'partiesTabIconKey'),
+  TabItem.settings: GlobalKey<NavigatorState>(debugLabel: 'settingsTabIconKey'),
+};
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -402,6 +410,9 @@ class MyAppState extends ChangeNotifier {
   // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
   bool adjustPhaseByDelete = false;
 
+  /// チュートリアルの段階(PokeDBと同期させる)
+  int tutorialStep = 0;
+
   MyAppState(BuildContext context, Locale? locale) {
     //changeTab = (func) {
     //  onTabChange(func);
@@ -414,7 +425,19 @@ class MyAppState extends ChangeNotifier {
     pokemons = pokeData.pokemons;
     parties = pokeData.parties;
     battles = pokeData.battles;
+    tutorialStep = pokeData.tutorialStep;
     notifyListeners();
+  }
+
+  /// チュートリアルの段階をインクリメント(設定ファイルにも反映する)
+  /// 最終まで到達したらこの関数内でマイナス値にセットする
+  /// notify()は内部で読んでないので注意
+  Future<void> inclementTutorialStep() async {
+    tutorialStep++;
+    // TODO:マイナス値にする
+    // 設定ファイルに書き込み
+    pokeData.tutorialStep = tutorialStep - 1;
+    pokeData.saveConfig();
   }
 
   void notify() => notifyListeners();
@@ -467,6 +490,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
             ),
           ),
           bottomNavigationBar: Column(
+            key: bottomNavBarAndAdKey,
             mainAxisAlignment: MainAxisAlignment.end,
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -509,7 +533,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 items: <BottomNavigationBarItem>[
                   for (var tab in TabItem.values)
                     BottomNavigationBarItem(
-                      icon: Icon(tabIcon[tab]),
+                      icon: Icon(key: bottomTabKeys[tab], tabIcon[tab]),
                       label: tabName(tab, context),
                     ),
                 ],

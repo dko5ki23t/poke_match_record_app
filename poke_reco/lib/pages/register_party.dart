@@ -47,8 +47,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
   final itemController = List.generate(6, (i) => TextEditingController());
 
   List<TargetFocus> tutorialTargets = [];
-  // TODO: 設定データにでも組み込む
-  bool isFirstAfterLoad = true;
 
   bool firstBuild = true;
 
@@ -110,7 +108,8 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
       ).show(context: context);
     }
 
-    if (isFirstAfterLoad) {
+    if (appState.tutorialStep == 4) {
+      appState.inclementTutorialStep();
       tutorialTargets.add(TargetFocus(
         keyTarget: _partyNameInputKey,
         shape: ShapeLightFocus.RRect,
@@ -173,7 +172,6 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
         ],
       ));
       showTutorial();
-      isFirstAfterLoad = false;
     }
 
     return PopScope(
@@ -186,6 +184,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
         final bool? shouldPop = await showBackDialog();
         if (shouldPop ?? false) {
           navigator.pop();
+          appState.notify(); // tutorialStepの変化を知らせるため
         }
       },
       child: Scaffold(
@@ -195,6 +194,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
               : Text(loc.partiesTabEditParty),
           actions: [
             TextButton(
+              key: _saveButtonKey,
               onPressed: ((widget.isEditPokemon && widget.party.name != '' ||
                       (widget.party.isValid &&
                           widget.party != pokeData.parties[widget.party.id])))
@@ -217,6 +217,7 @@ class RegisterPartyPageState extends State<RegisterPartyPage> {
                     children: [
                       Flexible(
                         child: TextFormField(
+                          key: _partyNameInputKey,
                           decoration: InputDecoration(
                             border: UnderlineInputBorder(),
                             labelText: loc.partiesTabPartyName,

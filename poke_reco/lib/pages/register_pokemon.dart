@@ -66,8 +66,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
 
   bool canChangeTeraType = true;
   List<TargetFocus> tutorialTargets = [];
-  // TODO: 設定データにでも組み込む
-  bool isFirstAfterLoad = true;
 
   // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
@@ -171,7 +169,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
       ).show(context: context);
     }
 
-    if (isFirstAfterLoad) {
+    if (appState.tutorialStep == 1) {
+      appState.inclementTutorialStep();
       tutorialTargets.add(TargetFocus(
         keyTarget: _pokemonNameInputKey,
         shape: ShapeLightFocus.RRect,
@@ -265,7 +264,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
         ],
       ));
       showTutorial();
-      isFirstAfterLoad = false;
     }
 
     return PopScope(
@@ -278,6 +276,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
         final bool? shouldPop = await showBackDialog();
         if (shouldPop ?? false) {
           navigator.pop();
+          appState.notify(); // tutorialStepの変化を知らせるため
         }
       },
       child: Scaffold(

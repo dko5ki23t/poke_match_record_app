@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
 import 'package:flutter_datetime_picker_plus/flutter_datetime_picker_plus.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/pages/register_battle.dart';
 
 class BattleBasicListView extends StatelessWidget {
   BattleBasicListView(
@@ -51,6 +52,7 @@ class BattleBasicListView extends StatelessWidget {
             children: [
               SizedBox(height: 10),
               Row(
+                key: battleNameInputKey,
                 // バトル名
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -168,6 +170,7 @@ class BattleBasicListView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(
+                    key: battleSelectPartyKey,
                     child: isInput
                         ? TextFormField(
                             key:
@@ -278,6 +281,7 @@ class BattleBasicListView extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Flexible(
+                    key: battleOpponentNameInputKey,
                     child: isInput
                         ? TextFormField(
                             key: Key(

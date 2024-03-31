@@ -36,9 +36,6 @@ class BattlesPageState extends State<BattlesPage> {
 
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
-  // TODO: 設定データにでも組み込む
-  bool isFirstAfterLoad = true;
-  bool isFirstAfterLoad2 = true;
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -65,19 +62,16 @@ class BattlesPageState extends State<BattlesPage> {
 
     void showTutorial() {
       TutorialCoachMark(
-          targets: tutorialTargets,
-          alignSkip: Alignment.topRight,
-          textSkip: loc.tutorialSkip,
-          onClickTarget: (target) {
-            onPressAddButton();
-          },
-          onFinish: () {
-            setState(() {
-              isFirstAfterLoad = false;
-            });
-          }).show(context: context);
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {
+          onPressAddButton();
+        },
+      ).show(context: context);
     }
 
+/*
     void showTutorial2() {
       TutorialCoachMark(
           targets: tutorialTargets2,
@@ -89,6 +83,7 @@ class BattlesPageState extends State<BattlesPage> {
             });
           }).show(context: context);
     }
+*/
 
     // データ読み込みで待つ
     if (!pokeData.isLoaded) {
@@ -97,7 +92,8 @@ class BattlesPageState extends State<BattlesPage> {
       EasyLoading.show(status: loc.commonLoading);
     } else {
       EasyLoading.dismiss();
-      if (isFirstAfterLoad /* && !widget.selectMode*/) {
+      if (appState.tutorialStep == 6 /* && !widget.selectMode*/) {
+        appState.inclementTutorialStep();
         tutorialTargets.add(TargetFocus(
           keyTarget: _addBattleButtonKey,
           contents: [
@@ -502,6 +498,7 @@ class BattlesPageState extends State<BattlesPage> {
                   child: Align(
                     alignment: Alignment.bottomRight,
                     child: FloatingActionButton(
+                      key: _addBattleButtonKey,
                       tooltip: loc.battlesTabTitleRegisterBattle,
                       shape: CircleBorder(),
                       onPressed: onPressAddButton,

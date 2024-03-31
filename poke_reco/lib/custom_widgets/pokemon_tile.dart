@@ -24,11 +24,12 @@ class PokemonTile extends ListTile {
     dense = false,
     selected = false,
     selectedTileColor,
+    Key? key,
   }) : super(
           enabled: enabled,
           isThreeLine: true,
           leading: leading,
-          key: Key('${pokemon.id}'),
+          key: key ?? Key('${pokemon.id}'),
           title: Row(
             children: [
               showWarning && pokemon.refs

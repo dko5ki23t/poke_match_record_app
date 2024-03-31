@@ -54,6 +54,8 @@ const String configKeyGetNetworkImage = 'getNetworkImage';
 
 const String configKeyLanguage = 'language';
 
+const String configKeyTutorialStep = 'tutorialStep';
+
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
 const String abilityColumnId = 'id';
@@ -464,6 +466,9 @@ class PokeDB {
   List<int> battlesPartyIDFilter = [];
   BattleSort? battlesSort;
 
+  /// チュートリアルの段階(マイナス値は終了済み)
+  int tutorialStep = 0;
+
   Map<int, Ability> abilities = {0: Ability.none()}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
@@ -581,92 +586,10 @@ class PokeDB {
       _saveDataFile = File('$localPath/poke_reco.json');
       String configText;
       dynamic configJson;
+      bool continueToLoad = true;
       try {
         configText = await _saveDataFile.readAsString();
         configJson = jsonDecode(configText);
-        pokemonsOwnerFilter = [];
-        for (final e in configJson[configKeyPokemonsOwnerFilter]) {
-          switch (e) {
-            case 0:
-              pokemonsOwnerFilter.add(Owner.mine);
-              break;
-            case 1:
-              pokemonsOwnerFilter.add(Owner.fromBattle);
-              break;
-            case 2:
-            default:
-              pokemonsOwnerFilter.add(Owner.hidden);
-              break;
-          }
-        }
-        pokemonsNoFilter = [];
-        for (final e in configJson[configKeyPokemonsNoFilter]) {
-          pokemonsNoFilter.add(e as int);
-        }
-        pokemonsTypeFilter = [];
-        for (final e in configJson[configKeyPokemonsTypeFilter]) {
-          pokemonsTypeFilter.add(PokeType.values[e as int]);
-        }
-        pokemonsTeraTypeFilter = [];
-        for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
-          pokemonsTeraTypeFilter.add(PokeType.values[e as int]);
-        }
-        pokemonsMoveFilter = [];
-        for (final e in configJson[configKeyPokemonsMoveFilter]) {
-          pokemonsMoveFilter.add(e as int);
-        }
-        pokemonsSexFilter = [];
-        for (final e in configJson[configKeyPokemonsSexFilter]) {
-          pokemonsSexFilter.add(e as int);
-        }
-        pokemonsAbilityFilter = [];
-        for (final e in configJson[configKeyPokemonsAbilityFilter]) {
-          pokemonsAbilityFilter.add(e as int);
-        }
-        pokemonsTemperFilter = [];
-        for (final e in configJson[configKeyPokemonsTemperFilter]) {
-          pokemonsTemperFilter.add(e as int);
-        }
-        int sort = configJson[configKeyPokemonsSort] as int;
-        pokemonsSort = sort == 0 ? null : PokemonSort.createFromId(sort);
-
-        partiesOwnerFilter = [];
-        for (final e in configJson[configKeyPartiesOwnerFilter]) {
-          switch (e) {
-            case 0:
-              partiesOwnerFilter.add(Owner.mine);
-              break;
-            case 1:
-              partiesOwnerFilter.add(Owner.fromBattle);
-              break;
-            case 2:
-            default:
-              partiesOwnerFilter.add(Owner.hidden);
-              break;
-          }
-        }
-        partiesWinRateMinFilter =
-            configJson[configKeyPartiesWinRateMinFilter] as int;
-        partiesWinRateMaxFilter =
-            configJson[configKeyPartiesWinRateMaxFilter] as int;
-        partiesPokemonNoFilter = [];
-        for (final e in configJson[configKeyPartiesPokemonNoFilter]) {
-          partiesPokemonNoFilter.add(e as int);
-        }
-        sort = configJson[configKeyPartiesSort] as int;
-        partiesSort = sort == 0 ? null : PartySort.createFromId(sort);
-
-        battlesWinFilter = [];
-        for (final e in configJson[configKeyBattlesWinFilter]) {
-          battlesWinFilter.add(e as int);
-        }
-        battlesPartyIDFilter = [];
-        for (final e in configJson[configKeyBattlesPartyIDFilter]) {
-          battlesPartyIDFilter.add(e as int);
-        }
-        sort = configJson[configKeyBattlesSort] as int;
-        battlesSort = sort == 0 ? null : BattleSort.createFromId(sort);
-        getPokeAPI = (configJson[configKeyGetNetworkImage] as int) != 0;
       } catch (e) {
         pokemonsOwnerFilter = [Owner.mine];
         pokemonsNoFilter = [];
@@ -685,8 +608,176 @@ class PokeDB {
         battlesWinFilter = [for (int i = 1; i < 4; i++) i];
         battlesPartyIDFilter = [];
         battlesSort = null;
+        getPokeAPI = true;
+        tutorialStep = 0;
         await saveConfig();
+        continueToLoad = false;
       }
+      if (continueToLoad) {
+        try {
+          pokemonsOwnerFilter = [];
+          for (final e in configJson[configKeyPokemonsOwnerFilter]) {
+            switch (e) {
+              case 0:
+                pokemonsOwnerFilter.add(Owner.mine);
+                break;
+              case 1:
+                pokemonsOwnerFilter.add(Owner.fromBattle);
+                break;
+              case 2:
+              default:
+                pokemonsOwnerFilter.add(Owner.hidden);
+                break;
+            }
+          }
+        } catch (e) {
+          pokemonsOwnerFilter = [Owner.mine];
+        }
+        try {
+          pokemonsNoFilter = [];
+          for (final e in configJson[configKeyPokemonsNoFilter]) {
+            pokemonsNoFilter.add(e as int);
+          }
+        } catch (e) {
+          pokemonsNoFilter = [];
+        }
+        try {
+          pokemonsTypeFilter = [];
+          for (final e in configJson[configKeyPokemonsTypeFilter]) {
+            pokemonsTypeFilter.add(PokeType.values[e as int]);
+          }
+        } catch (e) {
+          pokemonsTypeFilter =
+              PokeType.values.sublist(1, PokeType.stellar.index);
+        }
+        try {
+          pokemonsTeraTypeFilter = [];
+          for (final e in configJson[configKeyPokemonsTeraTypeFilter]) {
+            pokemonsTeraTypeFilter.add(PokeType.values[e as int]);
+          }
+        } catch (e) {
+          pokemonsTeraTypeFilter = PokeType.values.sublist(1);
+        }
+        try {
+          pokemonsMoveFilter = [];
+          for (final e in configJson[configKeyPokemonsMoveFilter]) {
+            pokemonsMoveFilter.add(e as int);
+          }
+        } catch (e) {
+          pokemonsMoveFilter = [];
+        }
+        try {
+          pokemonsSexFilter = [];
+          for (final e in configJson[configKeyPokemonsSexFilter]) {
+            pokemonsSexFilter.add(e as int);
+          }
+        } catch (e) {
+          pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
+        }
+        try {
+          pokemonsAbilityFilter = [];
+          for (final e in configJson[configKeyPokemonsAbilityFilter]) {
+            pokemonsAbilityFilter.add(e as int);
+          }
+        } catch (e) {
+          pokemonsAbilityFilter = [];
+        }
+        try {
+          pokemonsTemperFilter = [];
+          for (final e in configJson[configKeyPokemonsTemperFilter]) {
+            pokemonsTemperFilter.add(e as int);
+          }
+        } catch (e) {
+          pokemonsTemperFilter = [];
+        }
+        try {
+          int sort = configJson[configKeyPokemonsSort] as int;
+          pokemonsSort = sort == 0 ? null : PokemonSort.createFromId(sort);
+        } catch (e) {
+          pokemonsSort = null;
+        }
+
+        try {
+          partiesOwnerFilter = [];
+          for (final e in configJson[configKeyPartiesOwnerFilter]) {
+            switch (e) {
+              case 0:
+                partiesOwnerFilter.add(Owner.mine);
+                break;
+              case 1:
+                partiesOwnerFilter.add(Owner.fromBattle);
+                break;
+              case 2:
+              default:
+                partiesOwnerFilter.add(Owner.hidden);
+                break;
+            }
+          }
+        } catch (e) {
+          partiesOwnerFilter = [Owner.mine];
+        }
+        try {
+          partiesWinRateMinFilter =
+              configJson[configKeyPartiesWinRateMinFilter] as int;
+        } catch (e) {
+          partiesWinRateMinFilter = 0;
+        }
+        try {
+          partiesWinRateMaxFilter =
+              configJson[configKeyPartiesWinRateMaxFilter] as int;
+        } catch (e) {
+          partiesWinRateMaxFilter = 100;
+        }
+        try {
+          partiesPokemonNoFilter = [];
+          for (final e in configJson[configKeyPartiesPokemonNoFilter]) {
+            partiesPokemonNoFilter.add(e as int);
+          }
+        } catch (e) {
+          partiesPokemonNoFilter = [];
+        }
+        try {
+          int sort = configJson[configKeyPartiesSort] as int;
+          partiesSort = sort == 0 ? null : PartySort.createFromId(sort);
+        } catch (e) {
+          partiesSort = null;
+        }
+
+        try {
+          battlesWinFilter = [];
+          for (final e in configJson[configKeyBattlesWinFilter]) {
+            battlesWinFilter.add(e as int);
+          }
+        } catch (e) {
+          battlesWinFilter = [for (int i = 1; i < 4; i++) i];
+        }
+        try {
+          battlesPartyIDFilter = [];
+          for (final e in configJson[configKeyBattlesPartyIDFilter]) {
+            battlesPartyIDFilter.add(e as int);
+          }
+        } catch (e) {
+          battlesPartyIDFilter = [];
+        }
+        try {
+          int sort = configJson[configKeyBattlesSort] as int;
+          battlesSort = sort == 0 ? null : BattleSort.createFromId(sort);
+        } catch (e) {
+          battlesSort = null;
+        }
+        try {
+          getPokeAPI = (configJson[configKeyGetNetworkImage] as int) != 0;
+        } catch (e) {
+          getPokeAPI = true;
+        }
+        try {
+          tutorialStep = configJson[configKeyTutorialStep] as int;
+        } catch (e) {
+          tutorialStep = 0;
+        }
+      }
+      // TODO:消す
+      tutorialStep = 0;
       switch (locale.languageCode) {
         case 'ja':
           language = Language.japanese;
@@ -1250,6 +1341,7 @@ class PokeDB {
       configKeyBattlesSort: battlesSort == null ? 0 : battlesSort!.id,
       configKeyGetNetworkImage: getPokeAPI ? 1 : 0,
       configKeyLanguage: language.index,
+      configKeyTutorialStep: tutorialStep,
     });
     await _saveDataFile.writeAsString(jsonText);
   }

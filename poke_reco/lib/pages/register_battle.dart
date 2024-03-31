@@ -28,12 +28,23 @@ import 'package:poke_reco/data_structs/turn.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_sequence_animation/flutter_sequence_animation.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:tutorial_coach_mark/tutorial_coach_mark.dart';
 
 enum RegisterBattlePageType {
   basePage,
   firstPokemonPage,
   turnPage,
 }
+
+final GlobalKey<RegisterBattlePageState> battleNameInputKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleNameInputKey');
+final GlobalKey<RegisterBattlePageState> battleSelectPartyKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleSelectPartyKey');
+final GlobalKey<RegisterBattlePageState> battleOpponentNameInputKey =
+    GlobalKey<RegisterBattlePageState>(
+        debugLabel: 'BattleOpponentNameInputKey');
+final GlobalKey<RegisterBattlePageState> _battleNectButtonKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleNextButtonKey');
 
 /// 選出ポケモン
 /// * own: 選出ポケモンのパーティ内インデックス(3匹分)
@@ -124,6 +135,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
   // 処理ビュー(画面真ん中)のスクロールコントローラ
   final effectViewScrollController = AutoScrollController();
+
+  List<TargetFocus> tutorialTargets = [];
+  List<TargetFocus> tutorialTargets2 = [];
 
   @override
   void initState() {
@@ -388,6 +402,270 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               },
             );
           });*/
+    }
+
+    void showTutorial() {
+      TutorialCoachMark(
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {},
+      ).show(context: context);
+    }
+
+    if (appState.tutorialStep == 7) {
+      appState.inclementTutorialStep();
+      tutorialTargets.add(TargetFocus(
+        keyTarget: battleNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputBattleName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: battleSelectPartyKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputYourParty,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: battleOpponentNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic3,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputOpponentName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _battleNectButtonKey,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        alignSkip: Alignment.topLeft,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic4,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleNext,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial();
+    } else if (appState.tutorialStep == 8 &&
+        pageType == RegisterBattlePageType.firstPokemonPage) {
+      appState.inclementTutorialStep();
+      tutorialTargets2.add(TargetFocus(
+        keyTarget: battleNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputBattleName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: battleSelectPartyKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputYourParty,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: battleOpponentNameInputKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic3,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputOpponentName,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _battleNectButtonKey,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        alignSkip: Alignment.topLeft,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleBasic4,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleNext,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial();
     }
 
     void onNext() {
@@ -1396,7 +1674,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               theme: theme,
               onPressed: nextPressed,
               tooltip: loc.battlesTabToolTipNext,
-              icon: Icon(Icons.navigate_next),
+              icon: Icon(key: _battleNectButtonKey, Icons.navigate_next),
             ),
             SizedBox(
               height: 20,

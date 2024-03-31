@@ -17,6 +17,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final GlobalKey<PokemonsPageState> _addPokemonButtonKey =
     GlobalKey<PokemonsPageState>(debugLabel: 'AddPokemonButton');
+final GlobalKey<PokemonsPageState> _firstPokemonListTileKey =
+    GlobalKey<PokemonsPageState>(debugLabel: 'FirstPokemonListTile');
 
 class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
@@ -46,9 +48,6 @@ class PokemonsPageState extends State<PokemonsPage> {
   TextEditingController searchTextController = TextEditingController();
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
-  // TODO: 設定データにでも組み込む
-  bool isFirstAfterLoad = true;
-  bool isFirstAfterLoad2 = true;
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -130,29 +129,22 @@ class PokemonsPageState extends State<PokemonsPage> {
 
     void showTutorial() {
       TutorialCoachMark(
-          targets: tutorialTargets,
-          alignSkip: Alignment.topRight,
-          textSkip: loc.tutorialSkip,
-          onClickTarget: (target) {
-            onPressAddButton();
-          },
-          onFinish: () {
-            setState(() {
-              isFirstAfterLoad = false;
-            });
-          }).show(context: context);
+        targets: tutorialTargets,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {
+          onPressAddButton();
+        },
+      ).show(context: context);
     }
 
+    final tutorialCoachMark2 = TutorialCoachMark(
+      targets: tutorialTargets2,
+      alignSkip: Alignment.topRight,
+      textSkip: loc.tutorialSkip,
+    );
     void showTutorial2() {
-      TutorialCoachMark(
-          targets: tutorialTargets2,
-          alignSkip: Alignment.topRight,
-          textSkip: loc.tutorialSkip,
-          onFinish: () {
-            setState(() {
-              isFirstAfterLoad2 = false;
-            });
-          }).show(context: context);
+      tutorialCoachMark2.show(context: context, rootOverlay: true);
     }
 
     // データ読み込みで待つ
@@ -162,7 +154,8 @@ class PokemonsPageState extends State<PokemonsPage> {
       EasyLoading.show(status: loc.commonLoading);
     } else {
       EasyLoading.dismiss();
-      if (isFirstAfterLoad && !widget.selectMode) {
+      if (appState.tutorialStep == 0 && !widget.selectMode) {
+        appState.inclementTutorialStep();
         tutorialTargets.add(TargetFocus(
           keyTarget: _addPokemonButtonKey,
           contents: [
@@ -192,13 +185,14 @@ class PokemonsPageState extends State<PokemonsPage> {
           ],
         ));
         showTutorial();
-      }
-      if (!isFirstAfterLoad &&
-          isFirstAfterLoad2 &&
-          filteredPokemons.isNotEmpty &&
+      } else if (appState.tutorialStep == 2 &&
+          sortedPokemons.isNotEmpty &&
           !widget.selectMode) {
+        appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          keyTarget: _firstPokemonListTileKey,
+          shape: ShapeLightFocus.RRect,
+          radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
@@ -227,11 +221,13 @@ class PokemonsPageState extends State<PokemonsPage> {
           ],
         ));
         tutorialTargets2.add(TargetFocus(
-          targetPosition: TargetPosition(Size.zero, Offset.zero),
+          keyTarget: bottomNavBarAndAdKey,
+          shape: ShapeLightFocus.RRect,
+          radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
-              align: ContentAlign.bottom,
+              align: ContentAlign.top,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -284,7 +280,7 @@ class PokemonsPageState extends State<PokemonsPage> {
     final searchBar = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 20),
       child: TextField(
-        key: Key('PartiesSearch'),
+        key: Key('PokemonsSearch'),
         controller: searchTextController,
         autofocus: widget.selectMode && filteredPokemons.length >= 10,
         decoration: InputDecoration(
@@ -330,16 +326,18 @@ class PokemonsPageState extends State<PokemonsPage> {
                     });
                   },
                   children: [
-                    for (final e in sortedPokemons)
+                    for (int i = 0; i < sortedPokemons.length; i++)
                       PokemonTile(
-                        e.value,
+                        key: i == 0 ? _firstPokemonListTileKey : null,
+                        sortedPokemons[i].value,
                         theme,
                         leading: Icon(Icons.drag_handle),
                         trailing: Checkbox(
-                          value: checkList![e.key],
+                          value: checkList![sortedPokemons[i].key],
                           onChanged: (isCheck) {
                             setState(() {
-                              checkList![e.key] = isCheck ?? false;
+                              checkList![sortedPokemons[i].key] =
+                                  isCheck ?? false;
                             });
                           },
                         ),
@@ -361,6 +359,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                   children: [
                     for (int i = 0; i < sortedPokemons.length; i++)
                       PokemonTile(
+                        key: i == 0 ? _firstPokemonListTileKey : null,
                         sortedPokemons[i].value,
                         theme,
                         enabled: !partyPokemonsNo
