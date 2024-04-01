@@ -27,7 +27,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
-const String pokeRecoVersion = '1.0.3';
+const String pokeRecoVersion = '2.0.0';
 const int pokeRecoInternalVersion = 3; // SQLのテーブルバージョンに使用
 
 enum TabItem {
@@ -45,12 +45,6 @@ const Map<TabItem, IconData> tabIcon = {
 };
 final bottomNavBarAndAdKey =
     GlobalKey<NavigatorState>(debugLabel: 'bottomNavBarAndAdKey');
-final bottomTabKeys = {
-  TabItem.battles: GlobalKey<NavigatorState>(debugLabel: 'battlesTabIconKey'),
-  TabItem.pokemons: GlobalKey<NavigatorState>(debugLabel: 'pokemonsTabIconKey'),
-  TabItem.parties: GlobalKey<NavigatorState>(debugLabel: 'partiesTabIconKey'),
-  TabItem.settings: GlobalKey<NavigatorState>(debugLabel: 'settingsTabIconKey'),
-};
 
 final GlobalKey<NavigatorState> _rootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -533,7 +527,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
                 items: <BottomNavigationBarItem>[
                   for (var tab in TabItem.values)
                     BottomNavigationBarItem(
-                      icon: Icon(key: bottomTabKeys[tab], tabIcon[tab]),
+                      icon: Icon(tabIcon[tab]),
                       label: tabName(tab, context),
                     ),
                 ],

@@ -32,7 +32,9 @@ class BattleFirstPokemonListView extends ListView {
                             Expanded(
                               child: Align(
                                 alignment: Alignment.center,
-                                child: Text(loc.battleSelectPokemonPrompt),
+                                child: Text(
+                                    key: battleSelectFirstPokemonKey,
+                                    loc.battleSelectPokemonPrompt),
                               ),
                             ),
                           ],

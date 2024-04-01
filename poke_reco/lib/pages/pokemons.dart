@@ -17,8 +17,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final GlobalKey<PokemonsPageState> _addPokemonButtonKey =
     GlobalKey<PokemonsPageState>(debugLabel: 'AddPokemonButton');
-final GlobalKey<PokemonsPageState> _firstPokemonListTileKey =
-    GlobalKey<PokemonsPageState>(debugLabel: 'FirstPokemonListTile');
 
 class PokemonsPage extends StatefulWidget {
   const PokemonsPage({
@@ -138,13 +136,12 @@ class PokemonsPageState extends State<PokemonsPage> {
       ).show(context: context);
     }
 
-    final tutorialCoachMark2 = TutorialCoachMark(
-      targets: tutorialTargets2,
-      alignSkip: Alignment.topRight,
-      textSkip: loc.tutorialSkip,
-    );
     void showTutorial2() {
-      tutorialCoachMark2.show(context: context, rootOverlay: true);
+      TutorialCoachMark(
+        targets: tutorialTargets2,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+      ).show(context: context, rootOverlay: true);
     }
 
     // データ読み込みで待つ
@@ -190,13 +187,13 @@ class PokemonsPageState extends State<PokemonsPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          keyTarget: _firstPokemonListTileKey,
+          keyTarget: bottomNavBarAndAdKey,
           shape: ShapeLightFocus.RRect,
           radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
-              align: ContentAlign.bottom,
+              align: ContentAlign.top,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,38 +211,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                       loc.tutorialToPartyTab,
                       style: TextStyle(color: Colors.white),
                     ),
-                  )
-                ],
-              ),
-            ),
-          ],
-        ));
-        tutorialTargets2.add(TargetFocus(
-          keyTarget: bottomNavBarAndAdKey,
-          shape: ShapeLightFocus.RRect,
-          radius: 10,
-          enableOverlayTab: true,
-          contents: [
-            TargetContent(
-              align: ContentAlign.top,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    loc.tutorialTitleCompleteRegisterPokemon2,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      loc.tutorialToPartyTab2,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
                 ],
               ),
             ),
@@ -328,7 +294,6 @@ class PokemonsPageState extends State<PokemonsPage> {
                   children: [
                     for (int i = 0; i < sortedPokemons.length; i++)
                       PokemonTile(
-                        key: i == 0 ? _firstPokemonListTileKey : null,
                         sortedPokemons[i].value,
                         theme,
                         leading: Icon(Icons.drag_handle),
@@ -359,7 +324,6 @@ class PokemonsPageState extends State<PokemonsPage> {
                   children: [
                     for (int i = 0; i < sortedPokemons.length; i++)
                       PokemonTile(
-                        key: i == 0 ? _firstPokemonListTileKey : null,
                         sortedPokemons[i].value,
                         theme,
                         enabled: !partyPokemonsNo

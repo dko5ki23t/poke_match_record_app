@@ -776,8 +776,6 @@ class PokeDB {
           tutorialStep = 0;
         }
       }
-      // TODO:消す
-      tutorialStep = 0;
       switch (locale.languageCode) {
         case 'ja':
           language = Language.japanese;

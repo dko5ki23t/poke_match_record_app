@@ -4313,19 +4313,20 @@ class TurnEffectAction extends TurnEffect {
                     addGuide = true;
                   }
                   if (addGuide) {
-                    ret.add(Guide()
-                      ..guideId = Guide.moveDamagedToStatus
-                      ..guideStr = loc.battleGuideMoveDamagedToStatus(
-                          maxS,
-                          minS,
-                          opponentPokemonState.pokemon.omittedName,
-                          reals.item1.name)
-                      ..args = [
-                        reals.item1.index,
-                        minS,
-                        maxS,
-                      ]
-                      ..canDelete = true);
+                    // TODO
+//                    ret.add(Guide()
+//                      ..guideId = Guide.moveDamagedToStatus
+//                      ..guideStr = loc.battleGuideMoveDamagedToStatus(
+//                          maxS,
+//                          minS,
+//                          opponentPokemonState.pokemon.omittedName,
+//                          reals.item1.name)
+//                      ..args = [
+//                        reals.item1.index,
+//                        minS,
+//                        maxS,
+//                      ]
+//                      ..canDelete = true);
                   }
                 }
               }

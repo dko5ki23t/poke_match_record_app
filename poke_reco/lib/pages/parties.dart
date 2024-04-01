@@ -15,8 +15,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 final GlobalKey<PartiesPageState> _addPartyButtonKey =
     GlobalKey<PartiesPageState>(debugLabel: 'AddPartyButton');
-final GlobalKey<PartiesPageState> _firstPartyListTileKey =
-    GlobalKey<PartiesPageState>(debugLabel: 'FirstPartyListTile');
 
 class PartiesPage extends StatefulWidget {
   const PartiesPage({
@@ -104,13 +102,12 @@ class PartiesPageState extends State<PartiesPage> {
       ).show(context: context);
     }
 
-    final tutorialCoachMark2 = TutorialCoachMark(
-      targets: tutorialTargets2,
-      alignSkip: Alignment.topRight,
-      textSkip: loc.tutorialSkip,
-    );
     void showTutorial2() {
-      tutorialCoachMark2.show(context: context, rootOverlay: true);
+      TutorialCoachMark(
+        targets: tutorialTargets2,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+      ).show(context: context, rootOverlay: true);
     }
 
     // データ読み込みで待つ
@@ -156,13 +153,13 @@ class PartiesPageState extends State<PartiesPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          keyTarget: _firstPartyListTileKey,
+          keyTarget: bottomNavBarAndAdKey,
           enableOverlayTab: true,
           shape: ShapeLightFocus.RRect,
           radius: 10,
           contents: [
             TargetContent(
-              align: ContentAlign.bottom,
+              align: ContentAlign.top,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,37 +175,6 @@ class PartiesPageState extends State<PartiesPage> {
                     padding: const EdgeInsets.only(top: 10.0),
                     child: Text(
                       loc.tutorialToBattleTab,
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  )
-                ],
-              ),
-            ),
-          ],
-        ));
-        tutorialTargets2.add(TargetFocus(
-          keyTarget: bottomNavBarAndAdKey,
-          enableOverlayTab: true,
-          shape: ShapeLightFocus.RRect,
-          radius: 10,
-          contents: [
-            TargetContent(
-              align: ContentAlign.top,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Text(
-                    loc.tutorialTitleCompleteRegisterParty2,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 20.0),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10.0),
-                    child: Text(
-                      loc.tutorialToBattleTab2,
                       style: TextStyle(color: Colors.white),
                     ),
                   )
@@ -288,7 +254,6 @@ class PartiesPageState extends State<PartiesPage> {
                   children: [
                     for (int i = 0; i < sortedParties.length; i++)
                       PartyTile(
-                        key: i == 0 ? _firstPartyListTileKey : null,
                         sortedParties[i].value,
                         theme,
                         leading: Icon(Icons.drag_handle),
@@ -321,7 +286,6 @@ class PartiesPageState extends State<PartiesPage> {
                   children: [
                     for (int i = 0; i < sortedParties.length; i++)
                       PartyTile(
-                        key: i == 0 ? _firstPartyListTileKey : null,
                         sortedParties[i].value,
                         theme,
                         leading: Icon(Icons.group),
@@ -706,7 +670,7 @@ class PartiesPageState extends State<PartiesPage> {
                       Expanded(child: lists),
                     ],
             ),
-            !isEditMode
+            !isEditMode && !widget.selectMode
                 ? Container(
                     padding: const EdgeInsets.all(20),
                     child: Align(

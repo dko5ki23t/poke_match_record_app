@@ -43,8 +43,24 @@ final GlobalKey<RegisterBattlePageState> battleSelectPartyKey =
 final GlobalKey<RegisterBattlePageState> battleOpponentNameInputKey =
     GlobalKey<RegisterBattlePageState>(
         debugLabel: 'BattleOpponentNameInputKey');
-final GlobalKey<RegisterBattlePageState> _battleNectButtonKey =
+final GlobalKey<RegisterBattlePageState> _battleNextButtonKey =
     GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleNextButtonKey');
+final GlobalKey<RegisterBattlePageState> battleSelectFirstPokemonKey =
+    GlobalKey<RegisterBattlePageState>(
+        debugLabel: 'BattleSelectFirstPokemonKey');
+final GlobalKey<RegisterBattlePageState> _battleOwnStateInfoKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleOwnStateInfoKey');
+final GlobalKey<RegisterBattlePageState> _battleOwnCommandKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleOwnCommandKey');
+final GlobalKey<RegisterBattlePageState> _battleOpponentStateInfoKey =
+    GlobalKey<RegisterBattlePageState>(
+        debugLabel: 'BattleOpponentStateInfoKey');
+final GlobalKey<RegisterBattlePageState> _battleOpponentCommandKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleOpponentCommandKey');
+final GlobalKey<RegisterBattlePageState> _battleEffectListKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleEffectListKey');
+final GlobalKey<RegisterBattlePageState> _battleSaveButtonKey =
+    GlobalKey<RegisterBattlePageState>(debugLabel: 'BattleSaveButtonKey');
 
 /// 選出ポケモン
 /// * own: 選出ポケモンのパーティ内インデックス(3匹分)
@@ -138,6 +154,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
 
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
+  List<TargetFocus> tutorialTargets3 = [];
 
   @override
   void initState() {
@@ -413,6 +430,24 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
       ).show(context: context);
     }
 
+    void showTutorial2() {
+      TutorialCoachMark(
+        targets: tutorialTargets2,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {},
+      ).show(context: context);
+    }
+
+    void showTutorial3() {
+      TutorialCoachMark(
+        targets: tutorialTargets3,
+        alignSkip: Alignment.topRight,
+        textSkip: loc.tutorialSkip,
+        onClickTarget: (target) {},
+      ).show(context: context);
+    }
+
     if (appState.tutorialStep == 7) {
       appState.inclementTutorialStep();
       tutorialTargets.add(TargetFocus(
@@ -509,7 +544,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         ],
       ));
       tutorialTargets.add(TargetFocus(
-        keyTarget: _battleNectButtonKey,
+        keyTarget: _battleNextButtonKey,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
         alignSkip: Alignment.topLeft,
         contents: [
@@ -543,7 +578,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         pageType == RegisterBattlePageType.firstPokemonPage) {
       appState.inclementTutorialStep();
       tutorialTargets2.add(TargetFocus(
-        keyTarget: battleNameInputKey,
+        keyTarget: battleSelectFirstPokemonKey,
         shape: ShapeLightFocus.RRect,
         radius: 10.0,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
@@ -555,7 +590,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  loc.tutorialTitleRegisterBattleBasic,
+                  loc.tutorialTitleRegisterBattleSelectFirstPokemon,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -564,7 +599,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Text(
-                    loc.tutorialInputBattleName,
+                    loc.tutorialRegisterBattleSelectFirstPokemon,
                     style: TextStyle(color: Colors.white),
                   ),
                 )
@@ -573,8 +608,42 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           ),
         ],
       ));
-      tutorialTargets.add(TargetFocus(
-        keyTarget: battleSelectPartyKey,
+      tutorialTargets2.add(TargetFocus(
+        keyTarget: _battleNextButtonKey,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleSelectFirstPokemon2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleNext2,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial2();
+    } else if (appState.tutorialStep == 9 &&
+        pageType == RegisterBattlePageType.turnPage) {
+      appState.inclementTutorialStep();
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleOwnStateInfoKey,
         shape: ShapeLightFocus.RRect,
         radius: 10.0,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
@@ -586,7 +655,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  loc.tutorialTitleRegisterBattleBasic2,
+                  loc.tutorialTitleRegisterBattleTurn,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -595,7 +664,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Text(
-                    loc.tutorialInputYourParty,
+                    loc.tutorialRegisterBattleTurn,
                     style: TextStyle(color: Colors.white),
                   ),
                 )
@@ -604,8 +673,40 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           ),
         ],
       ));
-      tutorialTargets.add(TargetFocus(
-        keyTarget: battleOpponentNameInputKey,
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleOwnCommandKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleTurn2,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleTurn2,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleOpponentStateInfoKey,
         shape: ShapeLightFocus.RRect,
         radius: 10.0,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
@@ -617,7 +718,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  loc.tutorialTitleRegisterBattleBasic3,
+                  loc.tutorialTitleRegisterBattleTurn3,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -626,7 +727,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Text(
-                    loc.tutorialInputOpponentName,
+                    loc.tutorialRegisterBattleTurn3,
                     style: TextStyle(color: Colors.white),
                   ),
                 )
@@ -635,10 +736,72 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           ),
         ],
       ));
-      tutorialTargets.add(TargetFocus(
-        keyTarget: _battleNectButtonKey,
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleOpponentCommandKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleTurn4,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleTurn4,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleEffectListKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleTurn5,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleTurn5,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleNextButtonKey,
         alignSkip: Alignment.topLeft,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
         contents: [
           TargetContent(
             align: ContentAlign.bottom,
@@ -647,7 +810,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
-                  loc.tutorialTitleRegisterBattleBasic4,
+                  loc.tutorialTitleRegisterBattleTurn6,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -656,7 +819,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 Padding(
                   padding: const EdgeInsets.only(top: 10.0),
                   child: Text(
-                    loc.tutorialRegisterBattleNext,
+                    loc.tutorialRegisterBattleTurn6,
                     style: TextStyle(color: Colors.white),
                   ),
                 )
@@ -665,7 +828,68 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           ),
         ],
       ));
-      showTutorial();
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: _battleSaveButtonKey,
+        shape: ShapeLightFocus.RRect,
+        radius: 10.0,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleTurn7,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleTurn7,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets3.add(TargetFocus(
+        keyTarget: bottomNavBarAndAdKey,
+        enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
+        contents: [
+          TargetContent(
+            align: ContentAlign.top,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterBattleTurn8,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialRegisterBattleTurn8,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      showTutorial3();
     }
 
     void onNext() {
@@ -696,11 +920,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               "  ownPartyname: '${widget.battle.getParty(PlayerType.me).name}',\n"
               "  opponentName: '${widget.battle.opponentName}',\n"
               "  pokemon1: '${widget.battle.getParty(PlayerType.opponent).pokemons[0]!.name}',\n"
-              "  pokemon2: '${widget.battle.getParty(PlayerType.opponent).pokemons[1]!.name}',\n"
-              "  pokemon3: '${widget.battle.getParty(PlayerType.opponent).pokemons[2]!.name}',\n"
-              "  pokemon4: '${widget.battle.getParty(PlayerType.opponent).pokemons[3]!.name}',\n"
-              "  pokemon5: '${widget.battle.getParty(PlayerType.opponent).pokemons[4]!.name}',\n"
-              "  pokemon6: '${widget.battle.getParty(PlayerType.opponent).pokemons[5]!.name}',\n"
+              "  pokemon2: '${widget.battle.getParty(PlayerType.opponent).pokemons[1]?.name}',\n"
+              "  pokemon3: '${widget.battle.getParty(PlayerType.opponent).pokemons[2]?.name}',\n"
+              "  pokemon4: '${widget.battle.getParty(PlayerType.opponent).pokemons[3]?.name}',\n"
+              "  pokemon5: '${widget.battle.getParty(PlayerType.opponent).pokemons[4]?.name}',\n"
+              "  pokemon6: '${widget.battle.getParty(PlayerType.opponent).pokemons[5]?.name}',\n"
               "${widget.battle.getParty(PlayerType.opponent).pokemons[0]?.sex == Sex.female ? "  sex1: Sex.female,\n" : ""}"
               "${widget.battle.getParty(PlayerType.opponent).pokemons[1]?.sex == Sex.female ? "  sex2: Sex.female,\n" : ""}"
               "${widget.battle.getParty(PlayerType.opponent).pokemons[2]?.sex == Sex.female ? "  sex3: Sex.female,\n" : ""}"
@@ -779,8 +1003,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           print("// 選出ポケモンを選ぶ\n"
               "  await selectPokemons(driver,\n"
               "      ownPokemon1: '${ownParty.pokemons[checkedPokemons.own[0] - 1]?.nickname}/',\n"
-              "      ownPokemon2: '${ownParty.pokemons[checkedPokemons.own[1] - 1]?.nickname}/',\n"
-              "      ownPokemon3: '${ownParty.pokemons[checkedPokemons.own[2] - 1]?.nickname}/',\n"
+              "      ownPokemon2: '${checkedPokemons.own.length > 1 ? ownParty.pokemons[checkedPokemons.own[1] - 1]?.nickname : ''}/',\n"
+              "      ownPokemon3: '${checkedPokemons.own.length > 2 ? ownParty.pokemons[checkedPokemons.own[2] - 1]?.nickname : ''}/',\n"
               "      opponentPokemon: '${opponentParty.pokemons[checkedPokemons.opponent - 1]?.name}');\n");
           print("// 各ターン入力画面へ\n"
               "  await goTurnPage(driver, turnNum++);\n\n");
@@ -968,8 +1192,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           checkedPokemons,
           opponentFilters,
           onTapOwnPokemon: (index) {
-            opponentFilters =
-                opponentParty.getCompatibilities(ownParty.pokemons[index]!);
+// TODO
+//            opponentFilters =
+//                opponentParty.getCompatibilities(ownParty.pokemons[index]!);
           },
           showNetworkImage: pokeData.getPokeAPI,
           isInput: true,
@@ -1333,6 +1558,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 children: [
                   SizedBox(width: 10),
                   Expanded(
+                    key: _battleOwnStateInfoKey,
                     flex: 4,
                     child: BattlePokemonStateInfo(
                       playerType: PlayerType.me,
@@ -1373,6 +1599,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                     width: 10,
                   ),
                   Expanded(
+                    key: _battleOwnCommandKey,
                     flex: 6,
                     child: ownLastAction is TurnEffectAction
                         ? BattleActionCommand(
@@ -1438,6 +1665,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               ),
             ),
             Stack(
+              key: _battleEffectListKey,
               alignment: Alignment.center,
               children: [
                 const Divider(
@@ -1492,6 +1720,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                     width: 10,
                   ),
                   Expanded(
+                    key: _battleOpponentStateInfoKey,
                     flex: 4,
                     child: BattlePokemonStateInfo(
                       playerType: PlayerType.opponent,
@@ -1532,6 +1761,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                     width: 10,
                   ),
                   Expanded(
+                    key: _battleOpponentCommandKey,
                     flex: 6,
                     child: opponentLastAction is TurnEffectAction
                         ? BattleActionCommand(
@@ -1674,7 +1904,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               theme: theme,
               onPressed: nextPressed,
               tooltip: loc.battlesTabToolTipNext,
-              icon: Icon(key: _battleNectButtonKey, Icons.navigate_next),
+              icon: Icon(key: _battleNextButtonKey, Icons.navigate_next),
             ),
             SizedBox(
               height: 20,
@@ -1691,7 +1921,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                   ? () => onComplete()
                   : null,
               tooltip: loc.registerSave,
-              icon: Icon(Icons.save),
+              icon: Icon(key: _battleSaveButtonKey, Icons.save),
             ),
           ],
         ),
