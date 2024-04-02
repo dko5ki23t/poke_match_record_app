@@ -153,10 +153,11 @@ class PartiesPageState extends State<PartiesPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          keyTarget: bottomNavBarAndAdKey,
+//          keyTarget: bottomNavBarAndAdKey,
+          keyTarget: bottomNavIconKeys[TabItem.battles],
           enableOverlayTab: true,
-          shape: ShapeLightFocus.RRect,
-          radius: 10,
+//          shape: ShapeLightFocus.RRect,
+//          radius: 10,
           contents: [
             TargetContent(
               align: ContentAlign.top,

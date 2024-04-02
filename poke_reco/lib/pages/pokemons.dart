@@ -187,9 +187,10 @@ class PokemonsPageState extends State<PokemonsPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-          keyTarget: bottomNavBarAndAdKey,
-          shape: ShapeLightFocus.RRect,
-          radius: 10,
+//          keyTarget: bottomNavBarAndAdKey,
+          keyTarget: bottomNavIconKeys[TabItem.parties],
+//          shape: ShapeLightFocus.RRect,
+//          radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
