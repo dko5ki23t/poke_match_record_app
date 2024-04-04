@@ -1774,19 +1774,13 @@ class Turn extends Equatable implements Copyable {
       if (phase is TurnEffectAction ||
           phase is TurnEffectChangeFaintingPokemon) {
         actioned[phase.playerType] = true;
-        if (phase.isValid()) {
-          isValid[phase.playerType] = true;
-        }
+        isValid[phase.playerType] = phase.isValid();
       } else if (phase.getChangePokemonIndex(PlayerType.me) != null) {
         actioned[PlayerType.me] = true;
-        if (phase.isValid()) {
-          isValid[PlayerType.me] = true;
-        }
+        isValid[PlayerType.me] = phase.isValid();
       } else if (phase.getChangePokemonIndex(PlayerType.opponent) != null) {
         actioned[PlayerType.opponent] = true;
-        if (phase.isValid()) {
-          isValid[PlayerType.opponent] = true;
-        }
+        isValid[PlayerType.opponent] = phase.isValid();
       }
     }
     return actioned.values.where((element) => !element).isEmpty &&
