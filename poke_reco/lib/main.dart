@@ -434,7 +434,9 @@ class MyAppState extends ChangeNotifier {
   /// notify()は内部で読んでないので注意
   Future<void> inclementTutorialStep() async {
     tutorialStep++;
-    // TODO:マイナス値にする
+    if (tutorialStep > 10) {
+      tutorialStep = -1;
+    }
     // 設定ファイルに書き込み
     pokeData.tutorialStep = tutorialStep - 1;
     pokeData.saveConfig();

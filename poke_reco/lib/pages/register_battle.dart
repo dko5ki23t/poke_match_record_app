@@ -445,6 +445,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         alignSkip: Alignment.topRight,
         textSkip: loc.tutorialSkip,
         onClickTarget: (target) {},
+        onFinish: () => appState.inclementTutorialStep(),
+        onSkip: () {
+          appState.inclementTutorialStep();
+          return true;
+        },
       ).show(context: context);
     }
 
@@ -830,8 +835,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
       ));
       tutorialTargets3.add(TargetFocus(
         keyTarget: _battleSaveButtonKey,
-        shape: ShapeLightFocus.RRect,
-        radius: 10.0,
         alignSkip: Alignment.topLeft,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
         contents: [
@@ -861,11 +864,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         ],
       ));
       tutorialTargets3.add(TargetFocus(
-        keyTarget: bottomNavBarAndAdKey,
+        keyTarget: _battleSaveButtonKey,
+        alignSkip: Alignment.topLeft,
         enableOverlayTab: true, // 暗くなってる部分を押しても次へ進む
         contents: [
           TargetContent(
-            align: ContentAlign.top,
+            align: ContentAlign.bottom,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
