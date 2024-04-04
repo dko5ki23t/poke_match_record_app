@@ -1,43 +1,84 @@
-import 'package:flutter/material.dart';
-import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
-import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
-import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
-import 'package:poke_reco/data_structs/pokemon.dart';
 import 'package:poke_reco/data_structs/timing.dart';
-import 'package:poke_reco/data_structs/poke_effect.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
+import 'package:poke_reco/tool.dart';
 
-// なげつけたときの効果
+/// なげつけたときの効果
 class FlingItemEffect {
-  static const int badPoison = 1;       // もうどくにする
-  static const int burn = 2;            // やけどにする
-  static const int berry = 3;           // きのみの効果を発動
-  static const int herb = 4;            // ハーブの効果を発動
-  static const int paralysis = 5;       // まひにする
-  static const int poison = 6;          // どくにする
-  static const int flinch = 7;          // ひるませる
+  /// もうどくにする
+  static const int badPoison = 1;
+
+  /// やけどにする
+  static const int burn = 2;
+
+  /// きのみの効果を発動
+  static const int berry = 3;
+
+  /// ハーブの効果を発動
+  static const int herb = 4;
+
+  /// まひにする
+  static const int paralysis = 5;
+
+  /// どくにする
+  static const int poison = 6;
+
+  /// ひるませる
+  static const int flinch = 7;
 }
 
-class Item {
+/// もちものの情報を管理するclass
+class Item extends Equatable implements Copyable {
+  /// ID
   final int id;
+
+  /// 名前(日本語)
   late final String _displayName;
+
+  /// 名前(英語)
   late final String _displayNameEn;
+
+  /// なげつけたときの威力
   final int flingPower;
+
+  /// なげつけたときの効果ID
   final int flingEffectId;
+
+  /// 発動タイミング
   final Timing timing;
+
+  /// きのみかどうか
   final bool isBerry;
+
+  /// 画像URL
   final String imageUrl;
 
-  // 特徴的なもちもののNo
-  static int atsuzoko = 1178;       // あつぞこブーツ
-  static int bannougasa = 1181;     // ばんのうがさ
+  @override
+  List<Object?> get props => [
+        id,
+        _displayName,
+        _displayNameEn,
+        flingPower,
+        flingEffectId,
+        timing,
+        isBerry,
+        imageUrl,
+      ];
 
+  // 特徴的なもちもののNo
+  /// あつぞこブーツ
+  static int atsuzoko = 1178;
+
+  /// ばんのうがさ
+  static int bannougasa = 1181;
+
+  /// もちものの情報を管理するclass
   Item({
     required this.id,
     required String displayName,
@@ -52,13 +93,29 @@ class Item {
     _displayNameEn = displayNameEn;
   }
 
-  Item copyWith() =>
-    Item(
-      id: id, displayName: _displayName, displayNameEn: _displayNameEn,
-      flingPower: flingPower, flingEffectId: flingEffectId, timing: timing,
-      isBerry: isBerry, imageUrl: imageUrl
-    );
+  /// 無効なもちもの
+  factory Item.none() => Item(
+      id: 0,
+      displayName: '',
+      displayNameEn: '',
+      flingPower: 0,
+      flingEffectId: 0,
+      timing: Timing.none,
+      isBerry: false,
+      imageUrl: '');
 
+  @override
+  Item copy() => Item(
+      id: id,
+      displayName: _displayName,
+      displayNameEn: _displayNameEn,
+      flingPower: flingPower,
+      flingEffectId: flingEffectId,
+      timing: timing,
+      isBerry: isBerry,
+      imageUrl: imageUrl);
+
+  /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.english:
@@ -69,319 +126,25 @@ class Item {
     }
   }
 
-  static List<Guide> processEffect(
-    int itemID,
-    PlayerType playerType,
-    PokemonState myState,
-    PokemonState yourState,
-    PhaseState state,
-    int extraArg1,
-    int extraArg2,
-    int? changePokemonIndex,
-    {
-      bool autoConsume = true,
-      required AppLocalizations loc,
+  /// 表示名(不明の場合？を返す)
+  String get displayNameWithUnknown {
+    if (id == 0) {
+      return '?';
     }
-//    TurnEffect? prevAction,
-  ) {
-    final pokeData = PokeDB();
-    List<Guide> ret = [];
-    if (playerType == PlayerType.opponent && myState.getHoldingItem()?.id == 0) {
-      ret.add(Guide()
-        ..guideId = Guide.confItem
-        ..args = [itemID]
-        ..guideStr = loc.battleGuideConfItem2(pokeData.items[itemID]!.displayName, myState.pokemon.omittedName)
-      );
-    }
-    // 既にもちものがわかっている場合は代入しない(代入によってbuffを追加してしまうから)
-    if (myState.holdingItem == null || myState.getHoldingItem()?.id != itemID) {
-      myState.holdingItem = pokeData.items[itemID];
-    }
-    bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
-
-    switch (itemID) {
-      case 161:     // オッカのみ
-      case 162:     // イトケのみ
-      case 163:     // ソクノのみ
-      case 164:     // リンドのみ
-      case 165:     // ヤチェのみ
-      case 166:     // ヨプのみ
-      case 167:     // ビアーのみ
-      case 168:     // シュカのみ
-      case 169:     // バコウのみ
-      case 170:     // ウタンのみ
-      case 171:     // タンガのみ
-      case 172:     // ヨロギのみ
-      case 173:     // カシブのみ
-      case 174:     // ハバンのみ
-      case 175:     // ナモのみ
-      case 176:     // リリバのみ
-      case 723:     // ロゼルのみ
-      case 177:     // ホズのみ
-        // ダメージ軽減効果はわざのダメージ計算時に使う
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.halvedBerry)..extraArg1 = doubleBerry ? 1 : 0);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 187:     // イバンのみ
-      case 248:     // パワフルハーブ
-      case 669:     // ノーマルジュエル
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 194:     // せんせいのツメ
-        myState.holdingItem = pokeData.items[itemID];
-        break;
-      case 178:     // チイラのみ
-        myState.addStatChanges(true, 0, doubleBerry ? 2 : 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 589:     // じゅうでんち
-      case 689:     // ゆきだま
-        myState.addStatChanges(true, 0, 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 179:     // リュガのみ
-      case 724:     // アッキのみ
-        myState.addStatChanges(true, 1, doubleBerry ? 2 : 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 898:     // エレキシード
-      case 901:     // グラスシード
-        myState.addStatChanges(true, 1, 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 181:     // ヤタピのみ
-        myState.addStatChanges(true, 2, doubleBerry ? 2 : 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 588:     // きゅうこん
-      case 1176:    // のどスプレー
-        myState.addStatChanges(true, 2, 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 182:     // ズアのみ
-      case 725:     // タラプのみ
-        myState.addStatChanges(true, 3, doubleBerry ? 2 : 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 688:     // ひかりごけ
-      case 899:     // サイコシード
-      case 900:     // ミストシード
-        myState.addStatChanges(true, 3, 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 180:     // カムラのみ
-        myState.addStatChanges(true, 4, doubleBerry ? 2 : 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 883:     // ビビリだま
-        myState.addStatChanges(true, 4, 1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 183:     // サンのみ
-        myState.addVitalRank(doubleBerry ? 2 : 1);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 184:     // スターのみ
-        myState.addStatChanges(true, extraArg1, doubleBerry ? 4 : 2, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 186:     // ミクルのみ
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceAccuracy1_2));
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 188:   // ジャポのみ
-      case 189:   // レンブのみ
-        if (playerType == PlayerType.me) {
-          yourState.remainHPPercent -= extraArg1;
-        }
-        else {
-          yourState.remainHP -= extraArg1;
-        }
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 191:     // しろいハーブ
-        myState.resetDownedStatChanges();
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 682:     // じゃくてんほけん
-        myState.addStatChanges(true, 0, 2, yourState, itemId: itemID);
-        myState.addStatChanges(true, 2, 2, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 247:     // いのちのたま
-      case 265:     // くっつきバリ
-      case 258:     // くろいヘドロ
-      case 211:     // たべのこし
-      case 230:     // かいがらのすず
-        if (playerType == PlayerType.me) {
-          myState.remainHP -= extraArg1;
-        }
-        else {
-          myState.remainHPPercent -= extraArg1;
-        }
-        break;
-      case 132:     // オレンのみ
-      case 43:      // きのみジュース
-      case 135:     // オボンのみ
-      case 185:     // ナゾのみ
-        if (playerType == PlayerType.me) {
-          myState.remainHP -= extraArg1;
-        }
-        else {
-          myState.remainHPPercent -= extraArg1;
-        }
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 136:     // フィラのみ
-      case 137:     // ウイのみ
-      case 138:     // マゴのみ
-      case 139:     // バンジのみ
-      case 140:     // イアのみ
-        if (extraArg2 == 0) {
-          if (playerType == PlayerType.me) {
-            myState.remainHP -= extraArg1;
-          }
-          else {
-            myState.remainHPPercent -= extraArg1;
-          }
-        }
-        else {
-          myState.ailmentsAdd(Ailment(Ailment.confusion), state);
-        }
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 126:   // クラボのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.paralysis);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 127:   // カゴのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.sleep);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 128:   // モモンのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.poison || e.id == Ailment.badPoison);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 129:   // チーゴのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.burn);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 130:   // ナナシのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.freeze);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 133:   // キーのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id == Ailment.confusion);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 134:   // ラムのみ
-        {
-          myState.ailmentsRemoveWhere((e) => e.id <= Ailment.confusion);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 196:   // メンタルハーブ
-        {
-          myState.ailmentsRemoveWhere((e) => 
-            e.id == Ailment.infatuation || e.id == Ailment.encore ||
-            e.id == Ailment.torment || e.id == Ailment.disable ||
-            e.id == Ailment.taunt || e.id == Ailment.healBlock);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 249:   // どくどくだま
-        myState.ailmentsAdd(Ailment(Ailment.badPoison), state);
-        break;
-      case 250:   // かえんだま
-        myState.ailmentsAdd(Ailment(Ailment.burn), state);
-        break;
-      case 257:   // あかいいと
-        yourState.ailmentsAdd(Ailment(Ailment.infatuation), state);
-        break;
-      case 207:   // きあいのハチマキ
-        if (playerType == PlayerType.me) {
-          myState.remainHP == 1;
-        }
-        else {
-          myState.remainHPPercent == 1;
-        }
-        break;
-      case 252:   // きあいのタスキ
-        if (playerType == PlayerType.me) {
-          myState.remainHP == 1;
-        }
-        else {
-          myState.remainHPPercent == 1;
-        }
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 583:   // ゴツゴツメット
-        if (playerType == PlayerType.me) {
-          yourState.remainHPPercent -= extraArg1;
-        }
-        else {
-          yourState.remainHP -= extraArg1;
-        }
-        break;
-      case 584:     // ふうせん
-        if (extraArg1 != 0) {   // ふうせんが割れたとき
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 585:     // レッドカード
-        if (changePokemonIndex != null) {
-          yourState.processExitEffect(playerType.opposite == PlayerType.me, myState, state);
-          state.setPokemonIndex(playerType.opposite, changePokemonIndex);
-          PokemonState newState;
-          newState = state.getPokemonState(playerType.opposite, null);
-          newState.processEnterEffect(playerType.opposite == PlayerType.me, state, myState);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 1177:    // だっしゅつパック
-      case 590:     // だっしゅつボタン
-        if (changePokemonIndex != null) {
-          myState.processExitEffect(playerType == PlayerType.me, yourState, state);
-          state.setPokemonIndex(playerType, changePokemonIndex);
-          PokemonState newState;
-          newState = state.getPokemonState(playerType, null);
-          newState.processEnterEffect(playerType == PlayerType.me, state, yourState);
-          if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        }
-        break;
-      case 1179:  // からぶりほけん
-        myState.addStatChanges(true, 4, 2, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 1180:  // ルームサービス
-        myState.addStatChanges(true, 4, -1, yourState, itemId: itemID);
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      case 1699:      // ものまねハーブ
-        var statChanges = PokemonState.unpackStatChanges(extraArg1);
-        for (int i = 0; i < 7; i++) {
-          myState.addStatChanges(true, i, statChanges[i], yourState, itemId: itemID);
-        }
-        if (autoConsume) myState.holdingItem = null;   // アイテム消費
-        break;
-      default:
-        break;
-    }
-    return ret;
+    return displayName;
   }
 
+  /// なげつけたときの処理を行う
+  /// ```
+  /// playerType: 行動主
+  /// myState: 行動主のポケモンの状態
+  /// yourState: 行動主の相手のポケモンの状態
+  /// state: フェーズの状態
+  /// extraArg1: 引数1
+  /// extraArg2: 引数2
+  /// changePokemonIndex: ポケモン交代する場合は交代するポケモンのパーティ内インデックス、
+  ///                     交代しなければnull
+  /// ```
   void processFlingEffect(
     PlayerType playerType,
     PokemonState myState,
@@ -389,11 +152,9 @@ class Item {
     PhaseState state,
     int extraArg1,
     int extraArg2,
-    int? changePokemonIndex,
-    {
-      required AppLocalizations loc,
-    }
-  ) {
+    int? changePokemonIndex, {
+    required AppLocalizations loc,
+  }) {
     switch (flingEffectId) {
       case FlingItemEffect.badPoison:
         yourState.ailmentsAdd(Ailment(Ailment.badPoison), state);
@@ -403,11 +164,11 @@ class Item {
         break;
       case FlingItemEffect.berry:
       case FlingItemEffect.herb:
-        processEffect(
-          id, playerType, yourState, myState, state,
-          extraArg1, extraArg2, changePokemonIndex,
-          autoConsume: false, loc: loc
-        );
+        final itemEffect =
+            TurnEffectItem(player: playerType, timing: timing, itemID: id);
+        itemEffect.processEffect(
+            Party(), yourState, Party(), myState, state, null,
+            loc: loc, autoConsume: false);
         break;
       case FlingItemEffect.paralysis:
         yourState.ailmentsAdd(Ailment(Ailment.paralysis), state);
@@ -423,1075 +184,501 @@ class Item {
     }
   }
 
+  /// 常時発動する効果を処理
+  /// ```
+  /// myState: もちもの保持者の状態
+  /// processForm: フォルムチェンジを行うかどうか
+  /// ```
   void processPassiveEffect(PokemonState myState, {bool processForm = true}) {
     switch (id) {
-      case 112:   // こんごうだま
-        if (myState.pokemon.no == 483) {    // ディアルガ
+      case 112: // こんごうだま
+        if (myState.pokemon.no == 483) {
+          // ディアルガ
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.steelAttack1_2));
         }
         break;
-      case 113:   // しらたま
-        if (myState.pokemon.no == 484) {    // パルキア
+      case 113: // しらたま
+        if (myState.pokemon.no == 484) {
+          // パルキア
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.waterAttack1_2));
         }
         break;
-      case 442:   // はっきんだま
-        if (myState.pokemon.no == 487) {    // ギラティナ
+      case 442: // はっきんだま
+        if (myState.pokemon.no == 487) {
+          // ギラティナ
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ghostAttack1_2));
         }
         break;
-      case 202:   // こころのしずく
-        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {   // ラティアス/ラティオス
+      case 202: // こころのしずく
+        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {
+          // ラティアス/ラティオス
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.psycoAttack1_2));
         }
         break;
-      case 190:   // ひかりのこな
-      case 232:   // のんきのおこう
+      case 190: // ひかりのこな
+      case 232: // のんきのおこう
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_9));
         break;
-      case 197:   // こだわりハチマキ
+      case 197: // こだわりハチマキ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.gorimuchu));
         break;
-      case 203:   // しんかいのキバ
-        if (myState.pokemon.no == 366) {    // パールル
+      case 203: // しんかいのキバ
+        if (myState.pokemon.no == 366) {
+          // パールル
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialAttack2));
         }
         break;
-      case 204:   // しんかいのウロコ
-        if (myState.pokemon.no == 366) {    // パールル
+      case 204: // しんかいのウロコ
+        if (myState.pokemon.no == 366) {
+          // パールル
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense2));
         }
         break;
-      case 209:   // ピントレンズ
-      case 303:   // するどいツメ
+      case 209: // ピントレンズ
+      case 303: // するどいツメ
         myState.addVitalRank(1);
         break;
-      case 213:   // でんきだま
-        if (myState.pokemon.no == 25) {     // ピカチュウ
+      case 213: // でんきだま
+        if (myState.pokemon.no == 25) {
+          // ピカチュウ
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackMove2));
         }
         break;
-      case 235:   // ふといホネ
-        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {   // カラカラ/ガラガラ
+      case 235: // ふといホネ
+        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {
+          // カラカラ/ガラガラ
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack2));
         }
         break;
-      case 233:   // ラッキーパンチ
-        if (myState.pokemon.no == 113) {   // ラッキー
+      case 233: // ラッキーパンチ
+        if (myState.pokemon.no == 113) {
+          // ラッキー
           myState.addVitalRank(2);
         }
         break;
-      case 236:   // ながねぎ
-        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {   // カモネギ/ネギガナイト
+      case 236: // ながねぎ
+        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {
+          // カモネギ/ネギガナイト
           myState.addVitalRank(2);
         }
         break;
-      case 242:   // こうかくレンズ
+      case 242: // こうかくレンズ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.accuracy1_1));
         break;
-      case 243:   // ちからのハチマキ
+      case 243: // ちからのハチマキ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_1));
         break;
-      case 244:   // ものしりメガネ
+      case 244: // ものしりメガネ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.special1_1));
         break;
-      case 245:   // たつじんのおび
+      case 245: // たつじんのおび
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.greatDamage1_2));
         break;
-      case 247:   // いのちのたま
+      case 247: // いのちのたま
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.lifeOrb));
         break;
-      case 253:   // フォーカスレンズ
+      case 253: // フォーカスレンズ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.movedAccuracy1_2));
         break;
-      case 254:   // メトロノーム
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.continuousMoveDamageInc0_2));
+      case 254: // メトロノーム
+        myState.buffDebuffs
+            .add(BuffDebuff(BuffDebuff.continuousMoveDamageInc0_2));
         break;
-      case 255:   // くろいてっきゅう
-      case 192:   // きょうせいギプス
-      case 266:   // パワーリスト
-      case 267:   // パワーベルト
-      case 268:   // パワーレンズ
-      case 269:   // パワーバンド
-      case 270:   // パワーアンクル
-      case 271:   // パワーウエイト
+      case 255: // くろいてっきゅう
+      case 192: // きょうせいギプス
+      case 266: // パワーリスト
+      case 267: // パワーベルト
+      case 268: // パワーレンズ
+      case 269: // パワーバンド
+      case 270: // パワーアンクル
+      case 271: // パワーウエイト
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed0_5));
         break;
-      case 264:   // こだわりスカーフ
+      case 264: // こだわりスカーフ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.choiceScarf));
         break;
-      case 274:   // こだわりメガネ
+      case 274: // こだわりメガネ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.choiceSpecs));
         break;
-      case 275:   // ひのたまプレート
-      case 226:   // もくたん
+      case 275: // ひのたまプレート
+      case 226: // もくたん
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fireAttack1_2));
         break;
-      case 276:   // しずくプレート
-      case 220:   // しんぴのしずく
-      case 231:   // うしおのおこう
-      case 294:   // さざなみのおこう
+      case 276: // しずくプレート
+      case 220: // しんぴのしずく
+      case 231: // うしおのおこう
+      case 294: // さざなみのおこう
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.waterAttack1_2));
         break;
-      case 277:   // いかずちプレート
-      case 219:   // じしゃく
+      case 277: // いかずちプレート
+      case 219: // じしゃく
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.electricAttack1_2));
         break;
-      case 278:   // みどりのプレート
-      case 216:   // きせきのタネ
-      case 295:   // おはなのおこう
+      case 278: // みどりのプレート
+      case 216: // きせきのタネ
+      case 295: // おはなのおこう
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.grassAttack1_2));
         break;
-      case 279:   // つららのプレート
-      case 223:   // とけないこおり
+      case 279: // つららのプレート
+      case 223: // とけないこおり
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.iceAttack1_2));
         break;
-      case 280:   // こぶしのプレート
-      case 218:   // くろおび
+      case 280: // こぶしのプレート
+      case 218: // くろおび
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fightAttack1_2));
         break;
-      case 281:   // もうどくプレート
-      case 222:   // どくバリ
+      case 281: // もうどくプレート
+      case 222: // どくバリ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.poisonAttack1_2));
         break;
-      case 282:   // だいちのプレート
-      case 214:   // やわらかいすな
+      case 282: // だいちのプレート
+      case 214: // やわらかいすな
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.groundAttack1_2));
         break;
-      case 283:   // あおぞらプレート
-      case 221:   // するどいくちばし
+      case 283: // あおぞらプレート
+      case 221: // するどいくちばし
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.airAttack1_2));
         break;
-      case 284:   // ふしぎのプレート
-      case 225:   // まがったスプーン
-      case 291:   // あやしいおこう
+      case 284: // ふしぎのプレート
+      case 225: // まがったスプーン
+      case 291: // あやしいおこう
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.psycoAttack1_2));
         break;
-      case 285:   // たまむしプレート
-      case 199:   // ぎんのこな
+      case 285: // たまむしプレート
+      case 199: // ぎんのこな
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.bugAttack1_2));
         break;
-      case 286:   // がんせきプレート
-      case 215:   // かたいいし
-      case 292:   // がんせきおこう
+      case 286: // がんせきプレート
+      case 215: // かたいいし
+      case 292: // がんせきおこう
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.rockAttack1_2));
         break;
-      case 287:   // もののけプレート
-      case 224:   // のろいのおふだ
+      case 287: // もののけプレート
+      case 224: // のろいのおふだ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ghostAttack1_2));
         break;
-      case 288:   // りゅうのプレート
-      case 227:   // りゅうのキバ
+      case 288: // りゅうのプレート
+      case 227: // りゅうのキバ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.dragonAttack1_2));
         break;
-      case 289:   // こわもてプレート
-      case 217:   // くろいメガネ
+      case 289: // こわもてプレート
+      case 217: // くろいメガネ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.evilAttack1_2));
         break;
-      case 290:   // こうてつプレート
-      case 210:   // メタルコート
+      case 290: // こうてつプレート
+      case 210: // メタルコート
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.steelAttack1_2));
         break;
-      case 684:   // せいれいプレート
+      case 684: // せいれいプレート
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.fairyAttack1_2));
         break;
-      case 1664:  // レジェンドプレート
+      case 1664: // レジェンドプレート
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.moveAttack1_2));
         break;
-      case 581:   // しんかのきせき
+      case 581: // しんかのきせき
         if (myState.pokemon.isEvolvable) {
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.specialDefense1_5));
         }
         break;
-      case 587:   // しめつけバンド
+      case 587: // しめつけバンド
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.bindDamage1_6));
         break;
-      case 669:   // ノーマルジュエル
+      case 669: // ノーマルジュエル
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceNormalAttack1_3));
         break;
-      case 683:   // とつげきチョッキ
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onlyAttackSpecialDefense1_5));
+      case 683: // とつげきチョッキ
+        myState.buffDebuffs
+            .add(BuffDebuff(BuffDebuff.onlyAttackSpecialDefense1_5));
         break;
-      case 690:   // ぼうじんゴーグル
+      case 690: // ぼうじんゴーグル
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.overcoat));
         break;
-      case 897:   // ぼうごパット
+      case 897: // ぼうごパット
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreDirectAtackEffect));
         break;
-      case 1178:  // あつぞこブーツ
+      case 1178: // あつぞこブーツ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.ignoreInstallingEffect));
         break;
-      case 1662:  // まっさらプレート
-      case 228:   // シルクのスカーフ
+      case 1662: // まっさらプレート
+      case 228: // シルクのスカーフ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.normalAttack1_2));
         break;
-      case 1700:  // パンチグローブ
+      case 1700: // パンチグローブ
         myState.buffDebuffs.add(BuffDebuff(BuffDebuff.punchNotDirect1_1));
         break;
-      case 2106:  // いどのめん
-        if (myState.pokemon.no == 10273) {    // オーガポン
+      case 2106: // いどのめん
+        if (myState.pokemon.no == 10273) {
+          // オーガポン
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
         }
         break;
-      case 2107:  // かまどのめん
-        if (myState.pokemon.no == 10274) {    // オーガポン
+      case 2107: // かまどのめん
+        if (myState.pokemon.no == 10274) {
+          // オーガポン
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
         }
         break;
-      case 2108:  // いしずえのめん
-        if (myState.pokemon.no == 10275) {    // オーガポン
+      case 2108: // いしずえのめん
+        if (myState.pokemon.no == 10275) {
+          // オーガポン
           myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_2));
         }
         break;
     }
   }
 
+  /// 常時発動する効果を消す
+  /// ```
+  /// myState: もちもの保持者の状態
+  /// clearForm: フォルムチェンジを消すかどうか
+  /// ```
   void clearPassiveEffect(PokemonState myState, {bool clearForm = true}) {
     switch (id) {
-      case 112:     // こんごうだま
-        if (myState.pokemon.no == 483) {    // ディアルガ
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steelAttack1_2);
+      case 112: // こんごうだま
+        if (myState.pokemon.no == 483) {
+          // ディアルガ
+          myState.buffDebuffs.removeAllByID(BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeAllByID(BuffDebuff.steelAttack1_2);
         }
         break;
-      case 113:     // しらたま
-        if (myState.pokemon.no == 484) {    // パルキア
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterAttack1_2);
+      case 113: // しらたま
+        if (myState.pokemon.no == 484) {
+          // パルキア
+          myState.buffDebuffs.removeAllByID(BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeAllByID(BuffDebuff.waterAttack1_2);
         }
         break;
-      case 442:     // はっきんだま
-        if (myState.pokemon.no == 487) {    // ギラティナ
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
+      case 442: // はっきんだま
+        if (myState.pokemon.no == 487) {
+          // ギラティナ
+          myState.buffDebuffs.removeAllByID(BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeAllByID(BuffDebuff.ghostAttack1_2);
         }
         break;
-      case 202:     // こころのしずく
-        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {   // ラティアス/ラティオス
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
+      case 202: // こころのしずく
+        if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {
+          // ラティアス/ラティオス
+          myState.buffDebuffs.removeAllByID(BuffDebuff.dragonAttack1_2);
+          myState.buffDebuffs.removeAllByID(BuffDebuff.psycoAttack1_2);
         }
         break;
-      case 190:   // ひかりのこな
-      case 232:   // のんきのおこう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.yourAccuracy0_9);
+      case 190: // ひかりのこな
+      case 232: // のんきのおこう
+        myState.buffDebuffs.removeAllByID(BuffDebuff.yourAccuracy0_9);
         break;
-      case 197:   // こだわりハチマキ
-        int findIdx = myState.buffDebuffs.indexWhere((e) => e.id == BuffDebuff.gorimuchu);
-        if (findIdx >= 0) myState.buffDebuffs.removeAt(findIdx);
+      case 197: // こだわりハチマキ
+        myState.buffDebuffs.removeFirstByID(BuffDebuff.gorimuchu);
         break;
-      case 213:   // でんきだま
-        if (myState.pokemon.no == 25) {     // ピカチュウ
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attackMove2);
+      case 213: // でんきだま
+        if (myState.pokemon.no == 25) {
+          // ピカチュウ
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attackMove2);
         }
         break;
-      case 235:   // ふといホネ
-        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {   // カラカラ/ガラガラ
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack2);
+      case 235: // ふといホネ
+        if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {
+          // カラカラ/ガラガラ
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attack2);
         }
         break;
-      case 233:   // ラッキーパンチ
-        if (myState.pokemon.no == 113) {   // ラッキー
+      case 233: // ラッキーパンチ
+        if (myState.pokemon.no == 113) {
+          // ラッキー
           myState.addVitalRank(-2);
         }
         break;
-      case 236:   // ながねぎ
-        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {   // カモネギ/ネギガナイト
+      case 236: // ながねぎ
+        if (myState.pokemon.no == 83 || myState.pokemon.no == 865) {
+          // カモネギ/ネギガナイト
           myState.addVitalRank(-2);
         }
         break;
-      case 203:   // しんかいのキバ
-        if (myState.pokemon.no == 366) {    // パールル
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialAttack2);
+      case 203: // しんかいのキバ
+        if (myState.pokemon.no == 366) {
+          // パールル
+          myState.buffDebuffs.removeAllByID(BuffDebuff.specialAttack2);
         }
         break;
-      case 204:   // しんかいのウロコ
-        if (myState.pokemon.no == 366) {    // パールル
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialDefense2);
+      case 204: // しんかいのウロコ
+        if (myState.pokemon.no == 366) {
+          // パールル
+          myState.buffDebuffs.removeAllByID(BuffDebuff.specialDefense2);
         }
         break;
-      case 209:   // ピントレンズ
-      case 303:   // するどいツメ
+      case 209: // ピントレンズ
+      case 303: // するどいツメ
         myState.addVitalRank(-1);
         break;
-      case 242:   // こうかくレンズ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.accuracy1_1);
+      case 242: // こうかくレンズ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.accuracy1_1);
         break;
-      case 243:   // ちからのハチマキ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.physical1_1);
+      case 243: // ちからのハチマキ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.physical1_1);
         break;
-      case 244:   // ものしりメガネ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.special1_1);
+      case 244: // ものしりメガネ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.special1_1);
         break;
-      case 245:   // たつじんのおび
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.greatDamage1_2);
+      case 245: // たつじんのおび
+        myState.buffDebuffs.removeAllByID(BuffDebuff.greatDamage1_2);
         break;
-      case 247:   // いのちのたま
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.lifeOrb);
+      case 247: // いのちのたま
+        myState.buffDebuffs.removeAllByID(BuffDebuff.lifeOrb);
         break;
-      case 253:   // フォーカスレンズ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.movedAccuracy1_2);
+      case 253: // フォーカスレンズ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.movedAccuracy1_2);
         break;
-      case 254:   // メトロノーム
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.continuousMoveDamageInc0_2);
+      case 254: // メトロノーム
+        myState.buffDebuffs
+            .removeAllByID(BuffDebuff.continuousMoveDamageInc0_2);
         break;
-      case 255:   // くろいてっきゅう
-      case 192:   // きょうせいギプス
-      case 266:   // パワーリスト
-      case 267:   // パワーベルト
-      case 268:   // パワーレンズ
-      case 269:   // パワーバンド
-      case 270:   // パワーアンクル
-      case 271:   // パワーウエイト
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.speed0_5);
+      case 255: // くろいてっきゅう
+      case 192: // きょうせいギプス
+      case 266: // パワーリスト
+      case 267: // パワーベルト
+      case 268: // パワーレンズ
+      case 269: // パワーバンド
+      case 270: // パワーアンクル
+      case 271: // パワーウエイト
+        myState.buffDebuffs.removeAllByID(BuffDebuff.speed0_5);
         break;
-      case 264:   // こだわりスカーフ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.choiceScarf);
+      case 264: // こだわりスカーフ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.choiceScarf);
         break;
-      case 274:   // こだわりメガネ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.choiceSpecs);
+      case 274: // こだわりメガネ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.choiceSpecs);
         break;
-      case 275:   // ひのたまプレート
-      case 226:   // もくたん
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fireAttack1_2);
+      case 275: // ひのたまプレート
+      case 226: // もくたん
+        myState.buffDebuffs.removeAllByID(BuffDebuff.fireAttack1_2);
         break;
-      case 276:   // しずくプレート
-      case 220:   // しんぴのしずく
-      case 231:   // うしおのおこう
-      case 294:   // さざなみのおこう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.waterAttack1_2);
+      case 276: // しずくプレート
+      case 220: // しんぴのしずく
+      case 231: // うしおのおこう
+      case 294: // さざなみのおこう
+        myState.buffDebuffs.removeAllByID(BuffDebuff.waterAttack1_2);
         break;
-      case 277:   // いかずちプレート
-      case 219:   // じしゃく
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.electricAttack1_2);
+      case 277: // いかずちプレート
+      case 219: // じしゃく
+        myState.buffDebuffs.removeAllByID(BuffDebuff.electricAttack1_2);
         break;
-      case 278:   // みどりのプレート
-      case 216:   // きせきのタネ
-      case 295:   // おはなのおこう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.grassAttack1_2);
+      case 278: // みどりのプレート
+      case 216: // きせきのタネ
+      case 295: // おはなのおこう
+        myState.buffDebuffs.removeAllByID(BuffDebuff.grassAttack1_2);
         break;
-      case 279:   // つららのプレート
-      case 223:   // とけないこおり
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.iceAttack1_2);
+      case 279: // つららのプレート
+      case 223: // とけないこおり
+        myState.buffDebuffs.removeAllByID(BuffDebuff.iceAttack1_2);
         break;
-      case 280:   // こぶしのプレート
-      case 218:   // くろおび
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fightAttack1_2);
+      case 280: // こぶしのプレート
+      case 218: // くろおび
+        myState.buffDebuffs.removeAllByID(BuffDebuff.fightAttack1_2);
         break;
-      case 281:   // もうどくプレート
-      case 222:   // どくバリ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.poisonAttack1_2);
+      case 281: // もうどくプレート
+      case 222: // どくバリ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.poisonAttack1_2);
         break;
-      case 282:   // だいちのプレート
-      case 214:   // やわらかいすな
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.groundAttack1_2);
+      case 282: // だいちのプレート
+      case 214: // やわらかいすな
+        myState.buffDebuffs.removeAllByID(BuffDebuff.groundAttack1_2);
         break;
-      case 283:   // あおぞらプレート
-      case 221:   // するどいくちばし
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.airAttack1_2);
+      case 283: // あおぞらプレート
+      case 221: // するどいくちばし
+        myState.buffDebuffs.removeAllByID(BuffDebuff.airAttack1_2);
         break;
-      case 284:   // ふしぎのプレート
-      case 225:   // まがったスプーン
-      case 291:   // あやしいおこう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.psycoAttack1_2);
+      case 284: // ふしぎのプレート
+      case 225: // まがったスプーン
+      case 291: // あやしいおこう
+        myState.buffDebuffs.removeAllByID(BuffDebuff.psycoAttack1_2);
         break;
-      case 285:   // たまむしプレート
-      case 199:   // ぎんのこな
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bugAttack1_2);
+      case 285: // たまむしプレート
+      case 199: // ぎんのこな
+        myState.buffDebuffs.removeAllByID(BuffDebuff.bugAttack1_2);
         break;
-      case 286:   // がんせきプレート
-      case 215:   // かたいいし
-      case 292:   // がんせきおこう
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.rockAttack1_2);
+      case 286: // がんせきプレート
+      case 215: // かたいいし
+      case 292: // がんせきおこう
+        myState.buffDebuffs.removeAllByID(BuffDebuff.rockAttack1_2);
         break;
-      case 287:   // もののけプレート
-      case 224:   // のろいのおふだ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ghostAttack1_2);
+      case 287: // もののけプレート
+      case 224: // のろいのおふだ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ghostAttack1_2);
         break;
-      case 288:   // りゅうのプレート
-      case 227:   // りゅうのキバ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.dragonAttack1_2);
+      case 288: // りゅうのプレート
+      case 227: // りゅうのキバ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.dragonAttack1_2);
         break;
-      case 289:   // こわもてプレート
-      case 217:   // くろいメガネ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.evilAttack1_2);
+      case 289: // こわもてプレート
+      case 217: // くろいメガネ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.evilAttack1_2);
         break;
-      case 290:   // こうてつプレート
-      case 210:   // メタルコート
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.steelAttack1_2);
+      case 290: // こうてつプレート
+      case 210: // メタルコート
+        myState.buffDebuffs.removeAllByID(BuffDebuff.steelAttack1_2);
         break;
-      case 684:   // せいれいプレート
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.fairyAttack1_2);
+      case 684: // せいれいプレート
+        myState.buffDebuffs.removeAllByID(BuffDebuff.fairyAttack1_2);
         break;
-      case 1664:  // レジェンドプレート
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.moveAttack1_2);
+      case 1664: // レジェンドプレート
+        myState.buffDebuffs.removeAllByID(BuffDebuff.moveAttack1_2);
         break;
-      case 581:   // しんかのきせき
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.defense1_5);
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.specialDefense1_5);
+      case 581: // しんかのきせき
+        myState.buffDebuffs.removeAllByID(BuffDebuff.defense1_5);
+        myState.buffDebuffs.removeAllByID(BuffDebuff.specialDefense1_5);
         break;
-      case 587:   // しめつけバンド
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.bindDamage1_6);
+      case 587: // しめつけバンド
+        myState.buffDebuffs.removeAllByID(BuffDebuff.bindDamage1_6);
         break;
-      case 669:   // ノーマルジュエル
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.onceNormalAttack1_3);
+      case 669: // ノーマルジュエル
+        myState.buffDebuffs.removeAllByID(BuffDebuff.onceNormalAttack1_3);
         break;
-      case 683:   // とつげきチョッキ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.onlyAttackSpecialDefense1_5);
+      case 683: // とつげきチョッキ
+        myState.buffDebuffs
+            .removeAllByID(BuffDebuff.onlyAttackSpecialDefense1_5);
         break;
-      case 690:   // ぼうじんゴーグル
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.overcoat);
+      case 690: // ぼうじんゴーグル
+        myState.buffDebuffs.removeAllByID(BuffDebuff.overcoat);
         break;
-      case 897:   // ぼうごパット
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreDirectAtackEffect);
+      case 897: // ぼうごパット
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ignoreDirectAtackEffect);
         break;
-      case 1178:  // あつぞこブーツ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.ignoreInstallingEffect);
+      case 1178: // あつぞこブーツ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.ignoreInstallingEffect);
         break;
-      case 1662:  // まっさらプレート
-      case 228:   // シルクのスカーフ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.normalAttack1_2);
+      case 1662: // まっさらプレート
+      case 228: // シルクのスカーフ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.normalAttack1_2);
         break;
-      case 1700:  // パンチグローブ
-        myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.punchNotDirect1_1);
+      case 1700: // パンチグローブ
+        myState.buffDebuffs.removeAllByID(BuffDebuff.punchNotDirect1_1);
         break;
-      case 2106:  // いどのめん
-        if (myState.pokemon.no == 10273) {    // オーガポン
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
+      case 2106: // いどのめん
+        if (myState.pokemon.no == 10273) {
+          // オーガポン
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attack1_2);
         }
         break;
-      case 2107:  // かまどのめん
-        if (myState.pokemon.no == 10274) {    // オーガポン
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
+      case 2107: // かまどのめん
+        if (myState.pokemon.no == 10274) {
+          // オーガポン
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attack1_2);
         }
         break;
-      case 2108:  // いしずえのめん
-        if (myState.pokemon.no == 10275) {    // オーガポン
-          myState.buffDebuffs.removeWhere((e) => e.id == BuffDebuff.attack1_2);
+      case 2108: // いしずえのめん
+        if (myState.pokemon.no == 10275) {
+          // オーガポン
+          myState.buffDebuffs.removeAllByID(BuffDebuff.attack1_2);
         }
         break;
     }
   }
 
-  // TurnEffectのarg1が決定できる場合はその値を返す
-  static int getAutoArg1(
-    int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, Timing timing,
-  ) {
-    bool isMe = player == PlayerType.me;
-    bool doubleBerry = myState.buffDebuffs.where((e) => e.id == BuffDebuff.nuts2).isNotEmpty;
-
-    switch (itemID) {
-      case 247:       // いのちのたま
-        return isMe ? (myState.pokemon.h.real / 10).floor() : 10;
-      case 583:       // ゴツゴツメット
-        return !isMe ? (yourState.pokemon.h.real / 6).floor() : 16;
-      case 188:       // ジャポのみ
-      case 189:       // レンブのみ
-        return !isMe ? (yourState.pokemon.h.real / (doubleBerry ? 4 : 8)).floor() : (doubleBerry ? 25 : 12);
-      case 584:       // ふうせん
-        if (timing != Timing.pokemonAppear) {
-          return 1;
-        }
-        break;
-      case 265:     // くっつきバリ
-        return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
-      case 132:     // オレンのみ
-        if (isMe) return doubleBerry ? -20 : -10;
-        break;
-      case 43:      // きのみジュース
-        if (isMe) return -20;
-        break;
-      case 135:     // オボンのみ
-      case 185:     // ナゾのみ
-        return isMe ? -(myState.pokemon.h.real / (doubleBerry ? 2 : 4)).floor() : (doubleBerry ? -50 : -25);
-      case 136:     // フィラのみ
-      case 137:     // ウイのみ
-      case 138:     // マゴのみ
-      case 139:     // バンジのみ
-      case 140:     // イアのみ
-        return isMe ? -(myState.pokemon.h.real * (doubleBerry ? 2 : 1) / 3).floor() : (doubleBerry ? -66 : -33);
-      case 258:     // くろいヘドロ
-        if (myState.isTypeContain(4)) {   // どくタイプか
-          return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
-        }
-        else {
-          return isMe ? (myState.pokemon.h.real / 8).floor() : 12;
-        }
-      case 211:     // たべのこし
-        return isMe ? -(myState.pokemon.h.real / 16).floor() : -6;
-      case 1699:    // ものまねハーブ
-        return 0x06666666;
-      default:
-        break;
-    }
-
-    return 0;
-  }
-
-  // TurnEffectのarg2が決定できる場合はその値を返す
-  static int getAutoArg2(
-    int itemID, PlayerType player, PokemonState myState, PokemonState yourState, PhaseState state,
-    TurnEffect? prevAction, Timing timing,
-  ) {
-    return 0;
-  }
-
-  String getEditingControllerText2(PlayerType playerType, PokemonState myState, PokemonState yourState) {
-    switch (id) {
-      case 247:     // いのちのたま
-      case 265:     // くっつきバリ
-      case 258:     // くろいヘドロ
-      case 211:     // たべのこし
-      case 132:     // オレンのみ
-      case 135:     // オボンのみ
-      case 136:     // フィラのみ
-      case 137:     // ウイのみ
-      case 138:     // マゴのみ
-      case 139:     // バンジのみ
-      case 140:     // イアのみ
-      case 185:     // ナゾのみ
-      case 230:     // かいがらのすず
-      case 43:      // きのみジュース
-        if (playerType == PlayerType.me) {
-          return myState.remainHP.toString();
-        }
-        else {
-          return myState.remainHPPercent.toString();
-        }
-      case 583:     // ゴツゴツメット
-      case 188:     // ジャポのみ
-      case 189:     // レンブのみ
-        if (playerType == PlayerType.me) {
-          return yourState.remainHPPercent.toString();
-        }
-        else {
-          return yourState.remainHP.toString();
-        }
-    }
-    return '';
-  }
-
-  Widget extraWidget(
-    void Function() onFocus,
-    ThemeData theme,
-    PlayerType playerType,
-    Pokemon myPokemon,
-    Pokemon yourPokemon,
-    PokemonState myState,
-    PokemonState yourState,
-    Party myParty,
-    Party yourParty,
-    PhaseState state,
-    TextEditingController controller,
-    int extraArg1, int extraArg2, int? changePokemonIndex,
-    void Function(int) extraArg1ChangeFunc,
-    void Function(int) extraArg2ChangeFunc,
-    void Function(int?) changePokemonIndexChangeFunc,
-    bool isInput,
-    {
-      bool showNetworkImage = false,
-      required AppLocalizations loc,
-    }
-  ) {
-    switch (id) {
-      case 184:     // スターのみ
-        return Row(
-          children: [
-            Flexible(
-              child: _myDropdownButtonFormField(
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  for (final statIndex in StatIndexList.listAtoS)
-                  DropdownMenuItem(
-                    value: statIndex.index-1,
-                    child: Text(statIndex.name),
-                  ),
-                ],
-                value: extraArg1,
-                onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: StatIndexNumber.getStatIndexFromIndex(extraArg1+1).name,
-                isInput: isInput,
-                onFocus: onFocus,
-              ),
-            ),
-            Text(loc.battleRankUp1),
-          ],
-        );
-      case 247:     // いのちのたま
-      case 265:     // くっつきバリ
-      case 258:     // くろいヘドロ
-      case 211:     // たべのこし
-      case 132:     // オレンのみ
-      case 135:     // オボンのみ
-      case 185:     // ナゾのみ
-      case 230:     // かいがらのすず
-      case 43:      // きのみジュース
-        return DamageIndicateRow(
-          myState.pokemon, controller,
-          playerType == PlayerType.me,
-          onFocus,
-          (value) {
-            int val = myState.remainHP - (int.tryParse(value)??0);
-            if (playerType == PlayerType.opponent) {
-              val = myState.remainHPPercent - (int.tryParse(value)??0);
-            }
-            extraArg1ChangeFunc(val);
-          },
-          extraArg1, isInput, loc: loc,);
-      case 136:     // フィラのみ
-      case 137:     // ウイのみ
-      case 138:     // マゴのみ
-      case 139:     // バンジのみ
-      case 140:     // イアのみ
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(children: [
-              Flexible(
-                child: _myDropdownButtonFormField(
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    border: UnderlineInputBorder(),
-                  ),
-                  items: <DropdownMenuItem>[
-                    DropdownMenuItem(
-                      value: 0,
-                      child: Text(loc.battleHPRecovery),
-                    ),
-                    DropdownMenuItem(
-                      value: 1,
-                      child: Text(loc.battleConfused2),
-                    ),
-                  ],
-                  value: extraArg2,
-                  onChanged: (value) => extraArg2ChangeFunc(value),
-                  textValue: extraArg2 == 0 ? loc.battleHPRecovery : extraArg1 == 1 ? loc.battleConfused2 : '',
-                  isInput: isInput,
-                  onFocus: onFocus,
-                ),
-              ),
-            ]),
-            extraArg2 == 0 ? SizedBox(height: 10,) : Container(),
-            extraArg2 == 0 ?
-            DamageIndicateRow(
-              myPokemon, controller,
-              playerType == PlayerType.me,
-              onFocus,
-              (value) {
-                int val = myState.remainHP - (int.tryParse(value)??0);
-                if (playerType == PlayerType.opponent) {
-                  val = myState.remainHPPercent - (int.tryParse(value)??0);
-                }
-                extraArg1ChangeFunc(val);
-              },
-              extraArg1, isInput, loc: loc,
-            ) : Container(),
-          ],
-        );
-      case 583:     // ゴツゴツメット
-      case 188:     // ジャポのみ
-      case 189:     // レンブのみ
-        return DamageIndicateRow(
-          yourPokemon, controller,
-          playerType != PlayerType.me,
-          onFocus,
-          (value) {
-            int val = yourState.remainHPPercent - (int.tryParse(value)??0);
-            if (playerType == PlayerType.opponent) {
-              val = yourState.remainHP - (int.tryParse(value)??0);
-            }
-            extraArg1ChangeFunc(val);
-          },
-          extraArg1, isInput, loc: loc,
-        );
-      case 584:     // ふうせん
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: _myDropdownButtonFormField(
-                isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
-                    value: 0,
-                    child: Text(loc.battleBalloonFloat),
-                  ),
-                  DropdownMenuItem(
-                    value: 1,
-                    child: Text(loc.battleBalloonBurst),
-                  ),
-                ],
-                value: extraArg1,
-                onChanged: (value) => extraArg1ChangeFunc(value),
-                textValue: extraArg1 == 0 ? loc.battleBalloonFloat : extraArg1 == 1 ? loc.battleBalloonBurst : '',
-                isInput: isInput,
-                onFocus: onFocus,
-              ),
-            ),
-          ],
-        );
-      case 585:     // レッドカード
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: _myDropdownButtonFormField(
-                isExpanded: true,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: loc.battlePokemonToChange,
-                ),
-                items: <DropdownMenuItem>[
-                  for (int i = 0; i < yourParty.pokemonNum; i++)
-                    PokemonDropdownMenuItem(
-                      value: i+1,
-                      enabled: state.isPossibleBattling(playerType.opposite, i) && !state.getPokemonStates(playerType.opposite)[i].isFainting,
-                      theme: theme,
-                      pokemon: yourParty.pokemons[i]!,
-                      showNetworkImage: showNetworkImage,
-                    ),
-                ],
-                value: changePokemonIndex,
-                onChanged: (value) => changePokemonIndexChangeFunc(value),
-                textValue: isInput ? null : yourParty.pokemons[changePokemonIndex??1-1]!.name,
-                isInput: isInput,
-                onFocus: onFocus,
-                prefixIconPokemon: isInput ? null : yourParty.pokemons[changePokemonIndex??1-1]!,
-                showNetworkImage: showNetworkImage,
-                theme: theme,
-              ),
-            ),
-          ],
-        );
-      case 1699:      // ものまねハーブ
-        return Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${loc.commonAttack}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[0] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[0],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[0] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[0] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[0]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-                Text('${loc.commonDefense}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[1] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[1],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[1] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[1] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[1]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-                Text('${loc.commonSAttack}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[2] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[2],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[2] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[2] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[2]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${loc.commonSDefense}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[3] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[3],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[3] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[3] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[3]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-                SizedBox(width: 10,),
-                Text('${loc.commonSpeed}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[4] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[4],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[4] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[4] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[4]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text('${loc.commonAccuracy}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[5] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[5],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[5] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[5] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[5]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-                SizedBox(width: 10,),
-                Text('${loc.commonEvasiveness}:'),
-                Flexible(
-                  child: _myDropdownButtonFormField(
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
-                          value: i,
-                          enabled: true,
-                          child: Center(child: Text('+$i')),
-                        ),
-                    ],
-                    value: PokemonState.unpackStatChanges(extraArg1)[6] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[6],
-                    onChanged: (value) {
-                      var statChanges = PokemonState.unpackStatChanges(extraArg1);
-                      statChanges[6] = value;
-                      extraArg1ChangeFunc(PokemonState.packStatChanges(statChanges));
-                    },
-                    textValue: (PokemonState.unpackStatChanges(extraArg1)[6] < 0 ? 0 : PokemonState.unpackStatChanges(extraArg1)[6]).toString(),
-                    isInput: isInput,
-                    onFocus: onFocus,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        );
-      case 1177:    // だっしゅつパック
-      case 590:     // だっしゅつボタン
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Flexible(
-              child: _myDropdownButtonFormField(
-                isExpanded: true,
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: loc.battlePokemonToChange,
-                ),
-                items: <DropdownMenuItem>[
-                  for (int i = 0; i < myParty.pokemonNum; i++)
-                    PokemonDropdownMenuItem(
-                      value: i+1,
-                      enabled: state.isPossibleBattling(playerType, i) && !state.getPokemonStates(playerType)[i].isFainting,
-                      theme: theme,
-                      pokemon: myParty.pokemons[i]!,
-                      showNetworkImage: showNetworkImage,
-                    ),
-                ],
-                value: changePokemonIndex,
-                onChanged: (value) => changePokemonIndexChangeFunc(value),
-                textValue: isInput ? null : myParty.pokemons[changePokemonIndex??1-1]!.name,
-                isInput: isInput,
-                onFocus: onFocus,
-                prefixIconPokemon: isInput ? null : myParty.pokemons[changePokemonIndex??1-1]!,
-                showNetworkImage: showNetworkImage,
-                theme: theme,
-              ),
-            ),
-          ],
-        );
-    }
-    return Container();
-  }
-
-  Widget _myDropdownButtonFormField<T>({
-    Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
-    T? value,
-    Widget? hint,
-    Widget? disabledHint,
-    required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
-    Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
-    double iconSize = 24.0,
-    bool isDense = true,
-    bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
-    InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
-    bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
-    required void Function() onFocus,
-    required bool isInput,
-    required String? textValue,   // isInput==falseのとき、出力する文字列として必須
-    Pokemon? prefixIconPokemon,
-    bool showNetworkImage = false,
-    ThemeData? theme,
-  })
-  {
-    if (isInput) {
-      return DropdownButtonFormField(
-        key: key, items: items, selectedItemBuilder: selectedItemBuilder, value: value,
-        hint: hint, disabledHint: disabledHint, onChanged: onChanged, onTap: onTap,
-        elevation: elevation, style: style, icon: icon, iconDisabledColor: iconDisabledColor,
-        iconEnabledColor: iconEnabledColor, iconSize: iconSize, isDense: isDense,
-        isExpanded: isExpanded, itemHeight: itemHeight, focusColor: focusColor,
-        focusNode: focusNode, autofocus: autofocus, dropdownColor: dropdownColor,
-        decoration: decoration, onSaved: onSaved, validator: validator, autovalidateMode: autovalidateMode,
-        menuMaxHeight: menuMaxHeight, enableFeedback: enableFeedback, alignment: alignment,
-        borderRadius: borderRadius, padding: padding,
-      );
-    }
-    else {
-      return TextField(
-        decoration: InputDecoration(
-          border: UnderlineInputBorder(),
-          labelText: decoration?.labelText,
-          prefixIcon: prefixIconPokemon != null ? showNetworkImage ?
-            Image.network(
-              PokeDB().pokeBase[prefixIconPokemon.no]!.imageUrl,
-              height: theme?.buttonTheme.height,
-              errorBuilder: (c, o, s) {
-                return const Icon(Icons.catching_pokemon);
-              },
-            ) : const Icon(Icons.catching_pokemon) : null,
-        ),
-        controller: TextEditingController(
-          text: textValue,
-        ),
-        readOnly: true,
-        onTap: onFocus,
-      );
-    }
-  }
-
+  /// SQLite保存用Mapを返す
   Map<String, Object?> toMap() {
     var map = <String, Object?>{
       itemColumnId: id,

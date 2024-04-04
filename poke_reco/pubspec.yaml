@@ -2,7 +2,7 @@ name: poke_reco
 description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
-publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
 # The following defines the version and build number for your application.
 # A version number is three numbers separated by dots, like 1.2.43
@@ -16,10 +16,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.3+12
+version: 2.0.1+14
 
 environment:
-  sdk: '>=2.19.6 <4.0.0'
+  sdk: ">=2.19.6 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -32,7 +32,7 @@ dependencies:
     sdk: flutter
   flutter_localizations:
     sdk: flutter
-  
+
   english_words: ^4.0.0
   provider: ^6.1.1
   #flutter_spinbox: ^0.13.1
@@ -49,18 +49,22 @@ dependencies:
   intl: ^0.18.0
   expandable: ^5.0.1
   path_provider: 2.0.15
-  sqflite_common_ffi_web: '>=0.1.0-dev.1'
+  sqflite_common_ffi_web: ">=0.1.0-dev.1"
+  sqflite_common_ffi:
   flutter_launcher_icons:
   badges: ^2.0.3
   url_launcher:
   google_mobile_ads:
+  collection:
+  scroll_to_index: any
+  tutorial_coach_mark:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
 
-  # for test
   go_router: ^13.0.1
+  flutter_sequence_animation: "^4.0.0"
 
 dev_dependencies:
   flutter_test:
@@ -91,7 +95,6 @@ flutter_launcher_icons:
 
 # The following section is specific to Flutter packages.
 flutter:
-
   generate: true
 
   # The following line ensures that the Material Icons font is
@@ -101,18 +104,18 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-     - assets/Abilities.db
-     - assets/Items.db
-     - assets/Tempers.db
-     - assets/Moves.db
-     - assets/PokeBases.db
-     - assets/EggGroup.db
-     - assets/AbilityFlavors.db
-     - assets/ItemFlavors.db
-     - assets/MoveFlavors.db
-     - assets/Prepared.db
-     - assets/licenses/LICENSE
-     - assets/licenses/OFL.txt
+    - assets/Abilities.db
+    - assets/Items.db
+    - assets/Tempers.db
+    - assets/Moves.db
+    - assets/PokeBases.db
+    - assets/EggGroup.db
+    - assets/AbilityFlavors.db
+    - assets/ItemFlavors.db
+    - assets/MoveFlavors.db
+    - assets/Prepared.db
+    - assets/licenses/LICENSE
+    - assets/licenses/OFL.txt
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
@@ -125,29 +128,29 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   fonts:
-     - family: pokemonTypes
-       fonts:
-       - asset: assets/MyFlutterApp.ttf
-     
-     - family: Murecho
-       fonts:
-       - asset: assets/fonts/Murecho/static/Murecho-Thin.ttf
-         weight: 100
-       - asset: assets/fonts/Murecho/static/Murecho-ExtraLight.ttf
-         weight: 200
-       - asset: assets/fonts/Murecho/static/Murecho-Light.ttf
-         weight: 300
-       - asset: assets/fonts/Murecho/static/Murecho-Regular.ttf
-         weight: 400
-       - asset: assets/fonts/Murecho/static/Murecho-Medium.ttf
-         weight: 500
-       - asset: assets/fonts/Murecho/static/Murecho-SemiBold.ttf
-         weight: 600
-       - asset: assets/fonts/Murecho/static/Murecho-Bold.ttf
-         weight: 700
-       - asset: assets/fonts/Murecho/static/Murecho-ExtraBold.ttf
-         weight: 800
-       - asset: assets/fonts/Murecho/static/Murecho-Black.ttf
-         weight: 900
+    - family: pokemonTypes
+      fonts:
+        - asset: assets/MyFlutterApp.ttf
+
+    - family: Murecho
+      fonts:
+        - asset: assets/fonts/Murecho/static/Murecho-Thin.ttf
+          weight: 100
+        - asset: assets/fonts/Murecho/static/Murecho-ExtraLight.ttf
+          weight: 200
+        - asset: assets/fonts/Murecho/static/Murecho-Light.ttf
+          weight: 300
+        - asset: assets/fonts/Murecho/static/Murecho-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Murecho/static/Murecho-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Murecho/static/Murecho-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Murecho/static/Murecho-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Murecho/static/Murecho-ExtraBold.ttf
+          weight: 800
+        - asset: assets/fonts/Murecho/static/Murecho-Black.ttf
+          weight: 900
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages

@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/main.dart';
 import 'package:poke_reco/tool.dart';
-import 'package:provider/provider.dart';
 import 'package:url_launcher/link.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -27,11 +26,7 @@ class SettingsPage extends StatefulWidget {
 class SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = (){};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -99,19 +94,14 @@ class SettingResetPageState extends State<SettingResetPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = (){};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(loc.settingsTabReset),
         actions: [
           TextButton(
-            onPressed: getSelectedNum(checkList) > 0 ?
-              (){} : null,
+            onPressed: getSelectedNum(checkList) > 0 ? () {} : null,
             child: Text(loc.settingsTabResetDone),
           ),
         ],
@@ -172,11 +162,7 @@ class SettingLanguagePage extends StatefulWidget {
 class SettingLanguagePageState extends State<SettingLanguagePage> {
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = (){};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -186,8 +172,9 @@ class SettingLanguagePageState extends State<SettingLanguagePage> {
         children: [
           ListTile(
             title: Text('日本語'),
-            trailing: PokeDB().language == Language.japanese ?
-              Icon(Icons.check) : null,
+            trailing: PokeDB().language == Language.japanese
+                ? Icon(Icons.check)
+                : null,
             onTap: () => setState(() {
               PokeDB().language = Language.japanese;
               PokeDB().saveConfig();
@@ -196,8 +183,9 @@ class SettingLanguagePageState extends State<SettingLanguagePage> {
           ),
           ListTile(
             title: Text('English'),
-            trailing: PokeDB().language == Language.english ?
-              Icon(Icons.check) : null,
+            trailing: PokeDB().language == Language.english
+                ? Icon(Icons.check)
+                : null,
             onTap: () => setState(() {
               PokeDB().language = Language.english;
               PokeDB().saveConfig();
@@ -230,28 +218,22 @@ class SettingLicensePageState extends State<SettingLicensePage> {
   }
 
   void _loadContent() async {
-    rootBundle.loadString('assets/licenses/LICENSE')
-      .then((value) => {
-        setState(() {
-          ossLicense = value;
-        })
-      });
-    rootBundle.loadString('assets/licenses/OFL.txt')
-      .then((value) => {
-        setState(() {
-          fontLicense = value;
-        })
-      });
+    rootBundle.loadString('assets/licenses/LICENSE').then((value) => {
+          setState(() {
+            ossLicense = value;
+          })
+        });
+    rootBundle.loadString('assets/licenses/OFL.txt').then((value) => {
+          setState(() {
+            fontLicense = value;
+          })
+        });
   }
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-
-    appState.onBackKeyPushed = (){};
-    appState.onTabChange = (func) => func();
 
     return Scaffold(
       appBar: AppBar(
@@ -268,37 +250,43 @@ class SettingLicensePageState extends State<SettingLicensePage> {
                 }),
                 child: Stack(
                   children: [
-                    Text(loc.settingsTabOSSLicense, style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
+                    Text(loc.settingsTabOSSLicense,
+                        style: TextStyle(
+                            color: theme.primaryColor,
+                            fontSize: theme.textTheme.headlineSmall?.fontSize)),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: ossExpanded ?
-                        Icon(Icons.keyboard_arrow_up) :
-                        Icon(Icons.keyboard_arrow_down),
+                      child: ossExpanded
+                          ? Icon(Icons.keyboard_arrow_up)
+                          : Icon(Icons.keyboard_arrow_down),
                     ),
                   ],
                 ),
               ),
-              ossExpanded ?
-              Text(ossLicense) : Container(),
-              SizedBox(height: 20,),
+              ossExpanded ? Text(ossLicense) : Container(),
+              SizedBox(
+                height: 20,
+              ),
               GestureDetector(
                 onTap: () => setState(() {
                   fontExpanded = !fontExpanded;
                 }),
                 child: Stack(
                   children: [
-                    Text(loc.settingsTabFontLicense, style: TextStyle(color: theme.primaryColor, fontSize: theme.textTheme.headlineSmall?.fontSize)),
+                    Text(loc.settingsTabFontLicense,
+                        style: TextStyle(
+                            color: theme.primaryColor,
+                            fontSize: theme.textTheme.headlineSmall?.fontSize)),
                     Align(
                       alignment: Alignment.centerRight,
-                      child: fontExpanded ?
-                        Icon(Icons.keyboard_arrow_up) :
-                        Icon(Icons.keyboard_arrow_down),
+                      child: fontExpanded
+                          ? Icon(Icons.keyboard_arrow_up)
+                          : Icon(Icons.keyboard_arrow_down),
                     ),
                   ],
                 ),
               ),
-              fontExpanded ?
-              Text(fontLicense) : Container(),
+              fontExpanded ? Text(fontLicense) : Container(),
             ],
           ),
         ),
@@ -328,7 +316,8 @@ class SettingPolicyPage extends StatelessWidget {
                     onPressed: openLink,
                     child: Text(loc.settingsTabPrivacyPolicyButton),
                   );
-                },),
+                },
+              ),
             ],
           ),
         ),
@@ -336,4 +325,3 @@ class SettingPolicyPage extends StatelessWidget {
     );
   }
 }
-

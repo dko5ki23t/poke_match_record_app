@@ -8,94 +8,118 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class PartyTile extends ListTile {
   PartyTile(
     Party party,
-    ThemeData theme,
-    {
-      leading,
-      trailing,
-      onTap,
-      onLongPress,
-      bool showNetworkImage = false,
-      required AppLocalizations loc,
-    }
-  ) : 
-  super(
-    isThreeLine: true,
-    leading: leading,
-    key: Key('${party.id}'),
-    title: Text(party.name),
-    subtitle: Column(
-      children: [
-        showNetworkImage ?
-        Row(
-          children: [
-            _pokemonWidget(party.pokemons[0], theme),
-            _itemWidget(party.items[0], theme),
-            party.pokemons[1] != null ? Text('/') : Container(),
-            _pokemonWidget(party.pokemons[1], theme),
-            _itemWidget(party.items[1], theme),
-            party.pokemons[2] != null ? Text('/') : Container(),
-            _pokemonWidget(party.pokemons[2], theme),
-            _itemWidget(party.items[2], theme),
-          ],
-        ) :
-        Row(
-          children:[
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
+    ThemeData theme, {
+    leading,
+    trailing,
+    onTap,
+    onLongPress,
+    bool showNetworkImage = false,
+    required AppLocalizations loc,
+    Key? key,
+  }) : super(
+          isThreeLine: true,
+          leading: leading,
+          key: key ?? Key('${party.id}'),
+          title: Text(party.name),
+          subtitle: Column(
+            children: [
+              showNetworkImage
+                  ? Row(
+                      children: [
+                        _pokemonWidget(party.pokemons[0], theme),
+                        _itemWidget(party.items[0], theme),
+                        party.pokemons[1] != null ? Text('/') : Container(),
+                        _pokemonWidget(party.pokemons[1], theme),
+                        _itemWidget(party.items[1], theme),
+                        party.pokemons[2] != null ? Text('/') : Container(),
+                        _pokemonWidget(party.pokemons[2], theme),
+                        _itemWidget(party.items[2], theme),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: theme.textTheme.bodyMedium,
+                            children: [
+                              TextSpan(
+                                  text:
+                                      _removeFormName(party.pokemons[0]!.name)),
+                              party.pokemons[1] != null
+                                  ? TextSpan(
+                                      text:
+                                          '/${_removeFormName(party.pokemons[1]!.name)}')
+                                  : TextSpan(),
+                              party.pokemons[2] != null
+                                  ? TextSpan(
+                                      text:
+                                          '/${_removeFormName(party.pokemons[2]!.name)}')
+                                  : TextSpan(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+              showNetworkImage
+                  ? Row(
+                      children: [
+                        _pokemonWidget(party.pokemons[3], theme),
+                        _itemWidget(party.items[3], theme),
+                        party.pokemons[4] != null ? Text('/') : Container(),
+                        _pokemonWidget(party.pokemons[4], theme),
+                        _itemWidget(party.items[4], theme),
+                        party.pokemons[5] != null ? Text('/') : Container(),
+                        _pokemonWidget(party.pokemons[5], theme),
+                        _itemWidget(party.items[5], theme),
+                      ],
+                    )
+                  : Row(
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            style: theme.textTheme.bodyMedium,
+                            children: [
+                              party.pokemons[3] != null
+                                  ? TextSpan(
+                                      text: _removeFormName(
+                                          party.pokemons[3]!.name))
+                                  : TextSpan(),
+                              party.pokemons[4] != null
+                                  ? TextSpan(
+                                      text:
+                                          '/${_removeFormName(party.pokemons[4]!.name)}')
+                                  : TextSpan(),
+                              party.pokemons[5] != null
+                                  ? TextSpan(
+                                      text:
+                                          '/${_removeFormName(party.pokemons[5]!.name)}')
+                                  : TextSpan(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+              Row(
                 children: [
-                  TextSpan(text: _removeFormName(party.pokemons[0]!.name)),
-                  party.pokemons[1] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[1]!.name)}') : TextSpan(),
-                  party.pokemons[2] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[2]!.name)}') : TextSpan(),
+                  Text(
+                      '${loc.partiesTabWinningRate} : ${party.winRate}% ${party.winCount}/${party.usedCount}')
                 ],
               ),
-            ),
-          ],
-        ),
-        showNetworkImage ?
-        Row(
-          children: [
-            _pokemonWidget(party.pokemons[3], theme),
-            _itemWidget(party.items[3], theme),
-            party.pokemons[4] != null ? Text('/') : Container(),
-            _pokemonWidget(party.pokemons[4], theme),
-            _itemWidget(party.items[4], theme),
-            party.pokemons[5] != null ? Text('/') : Container(),
-            _pokemonWidget(party.pokemons[5], theme),
-            _itemWidget(party.items[5], theme),
-          ],
-        ) :
-        Row(
-          children: [
-            RichText(
-              text: TextSpan(
-                style: theme.textTheme.bodyMedium,
-                children: [
-                  party.pokemons[3] != null ? TextSpan(text: _removeFormName(party.pokemons[3]!.name)) : TextSpan(),
-                  party.pokemons[4] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[4]!.name)}') : TextSpan(),
-                  party.pokemons[5] != null ? TextSpan(text: '/${_removeFormName(party.pokemons[5]!.name)}') : TextSpan(),
-                ],
-              ),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            Text('${loc.partiesTabWinningRate} : ${party.winRate}% ${party.winCount}/${party.usedCount}')
-          ],
-        ),
-      ],
-    ),
-    onTap: onTap,
-    onLongPress: onLongPress,
-    trailing: trailing,
-  );
+            ],
+          ),
+          onTap: onTap,
+          onLongPress: onLongPress,
+          trailing: trailing,
+        );
 
   static String _removeFormName(String name) {
     return name.replaceAll(RegExp(r'\(.*\)'), '');
   }
 
-  static Widget _pokemonWidget(Pokemon? poke, ThemeData theme,) {
+  static Widget _pokemonWidget(
+    Pokemon? poke,
+    ThemeData theme,
+  ) {
     if (poke != null) {
       return Image.network(
         PokeDB().pokeBase[poke.no]!.imageUrl,
@@ -104,13 +128,15 @@ class PartyTile extends ListTile {
           return Text(_removeFormName(poke.name));
         },
       );
-    }
-    else {
+    } else {
       return Container();
     }
   }
 
-  static Widget _itemWidget(Item? item, ThemeData theme,) {
+  static Widget _itemWidget(
+    Item? item,
+    ThemeData theme,
+  ) {
     if (item != null) {
       return Image.network(
         item.imageUrl,
@@ -119,11 +145,8 @@ class PartyTile extends ListTile {
           return const Icon(Icons.category);
         },
       );
-    }
-    else {
+    } else {
       return Container();
     }
   }
-
-              
 }

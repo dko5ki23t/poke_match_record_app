@@ -1,26 +1,28 @@
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 
-class PokeBase {    // 各ポケモンの種族ごとの値
-  late final String _name;             // ポケモン名(日本語)
-  late final String _nameEn;           // ポケモン名(英語)
-  final List<Sex> sex;            // せいべつの種類
-  final int no;                   // 図鑑No.
-  final PokeType type1;           // タイプ1
-  final PokeType? type2;          // タイプ2(null OK)
-  final int h;                    // HP(種族値)
-  final int a;                    // こうげき(種族値)
-  final int b;                    // ぼうぎょ(種族値)
-  final int c;                    // とくこう(種族値)
-  final int d;                    // とくぼう(種族値)
-  final int s;                    // すばやさ(種族値)
-  final List<Ability> ability;    // とくせいの種類
-  final List<Move> move;          // おぼえるわざ
-  final int height;               // たかさ(*10)(m)
-  final int weight;               // おもさ(*10)(kg)
+class PokeBase {
+  // 各ポケモンの種族ごとの値
+  late final String _name; // ポケモン名(日本語)
+  late final String _nameEn; // ポケモン名(英語)
+  final List<Sex> sex; // せいべつの種類
+  final int no; // 図鑑No.
+  final PokeType type1; // タイプ1
+  final PokeType? type2; // タイプ2(null OK)
+  final int h; // HP(種族値)
+  final int a; // こうげき(種族値)
+  final int b; // ぼうぎょ(種族値)
+  final int c; // とくこう(種族値)
+  final int d; // とくぼう(種族値)
+  final int s; // すばやさ(種族値)
+  final List<Ability> ability; // とくせいの種類
+  final List<Move> move; // おぼえるわざ
+  final int height; // たかさ(*10)(m)
+  final int weight; // おもさ(*10)(kg)
   final List<EggGroup> eggGroups; // タマゴグループ
-  final String imageUrl;          // 画像
+  final String imageUrl; // 画像
 
   PokeBase({
     required String name,
@@ -41,8 +43,7 @@ class PokeBase {    // 各ポケモンの種族ごとの値
     required this.weight,
     required this.eggGroups,
     required this.imageUrl,
-  })
-  {
+  }) {
     _name = name;
     _nameEn = nameEn;
   }
@@ -62,48 +63,49 @@ class PokeBase {    // 各ポケモンの種族ごとの値
         return _name;
     }
   }
+
   // TODO:しんかのきせきが適用できるかどうか
   bool get isEvolvable => true;
 
   // テラスタイプが固定ならそのタイプを返す
   PokeType get fixedTeraType {
     switch (no) {
-      case 1017:    // オーガポン(みどりのめん)->くさ
-        return PokeType.createFromId(12);
-      case 10273:   // オーガポン(いどのめん)->みず
-        return PokeType.createFromId(11);
-      case 10274:   // オーガポン(かまどのめん)->ほのお
-        return PokeType.createFromId(10);
-      case 10275:   // オーガポン(いしずえのめん)->いわ
-        return PokeType.createFromId(6);
+      case 1017: // オーガポン(みどりのめん)->くさ
+        return PokeType.grass;
+      case 10273: // オーガポン(いどのめん)->みず
+        return PokeType.water;
+      case 10274: // オーガポン(かまどのめん)->ほのお
+        return PokeType.fire;
+      case 10275: // オーガポン(いしずえのめん)->いわ
+        return PokeType.rock;
     }
-    return PokeType.createFromId(0);    // 固定テラスタイプなし
+    return PokeType.unknown; // 固定テラスタイプなし
   }
 
   // 固定のもちものがあればそのもちもののIDを返す
   int get fixedItemID {
     switch (no) {
-      case 10273:   // オーガポン(いどのめん)->いどのめん
+      case 10273: // オーガポン(いどのめん)->いどのめん
         return 2106;
-      case 10274:   // オーガポン(かまどのめん)->かまどのめん
+      case 10274: // オーガポン(かまどのめん)->かまどのめん
         return 2107;
-      case 10275:   // オーガポン(いしずえのめん)->いしずえのめん
+      case 10275: // オーガポン(いしずえのめん)->いしずえのめん
         return 2108;
     }
-    return 0;     // 固定もちものなし
+    return 0; // 固定もちものなし
   }
 
   // テラスタル後にとくせいが変化する場合はそのとくせいのIDを返す
   int get teraTypedAbilityID {
     switch (no) {
-      case 1017:    // オーガポン(みどりのめん)
-      case 10273:   // オーガポン(いどのめん)
-      case 10274:   // オーガポン(かまどのめん)
-      case 10275:   // オーガポン(いしずえのめん)
+      case 1017: // オーガポン(みどりのめん)
+      case 10273: // オーガポン(いどのめん)
+      case 10274: // オーガポン(かまどのめん)
+      case 10275: // オーガポン(いしずえのめん)
         return 303; // おもかげやどし
-      case 1024:    // テラパゴス
+      case 1024: // テラパゴス
         return 306; // ゼロフォーミング
     }
-    return 0;   // 変化とくせいなし
+    return 0; // 変化とくせいなし
   }
 }

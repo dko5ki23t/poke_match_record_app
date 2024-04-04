@@ -3,8 +3,6 @@ import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/pokemon_item_view_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
-import 'package:poke_reco/main.dart';
-import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
@@ -13,13 +11,13 @@ class ViewPartyPage extends StatefulWidget {
     Key? key,
     required this.onEdit,
     required this.onViewPokemon,
-    required this.partyList,
+    required this.partyIDList,
     required this.listIndex,
   }) : super(key: key);
 
   final void Function(Party) onEdit;
   final void Function(List<Pokemon>, int) onViewPokemon;
-  final List<Party> partyList;
+  final List<int> partyIDList; // IDで受け取ることで、編集画面でパーティ内容を変更してもbuildで更新できる
   final int listIndex;
 
   @override
@@ -36,10 +34,9 @@ class ViewPartyPageState extends State<ViewPartyPage> {
 
   @override
   Widget build(BuildContext context) {
-    var appState = context.watch<MyAppState>();
     final theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
-    var party = widget.partyList[widget.listIndex];
+    var party = PokeDB().parties[widget.partyIDList[widget.listIndex]]!;
 
     if (firstBuild) {
       for (final controller in pokemonController) {
@@ -47,23 +44,21 @@ class ViewPartyPageState extends State<ViewPartyPage> {
       }
       listIndex = widget.listIndex;
       firstBuild = false;
-    }
-    else {
-      party = widget.partyList[listIndex];
+    } else {
+      party = PokeDB().parties[widget.partyIDList[listIndex]]!;
     }
 
-    appState.onBackKeyPushed = (){};
-    appState.onTabChange = (func) => func();
+    //appState.onBackKeyPushed = () {};
+    //appState.onTabChange = (func) => func();
 
     partyNameController.text = party.name;
 
     for (int i = 0; i < 6; i++) {
       final pokemon = party.pokemons[i];
       if (pokemon != null && pokemon.id != 0) {
-        pokemonController[i].text =
-          pokemon.nickname == '' ?
-            '${pokemon.name}/${pokemon.name}' :
-            '${pokemon.nickname}/${pokemon.name}';
+        pokemonController[i].text = pokemon.nickname == ''
+            ? '${pokemon.name}/${pokemon.name}'
+            : '${pokemon.nickname}/${pokemon.name}';
       }
 
       final item = party.items[i];
@@ -77,23 +72,27 @@ class ViewPartyPageState extends State<ViewPartyPage> {
         title: Text(party.name),
         actions: [
           MyIconButton(
-            onPressed: listIndex != 0 ? () => setState(() {
-              listIndex--;
-            }) : null,
+            onPressed: listIndex != 0
+                ? () => setState(() {
+                      listIndex--;
+                    })
+                : null,
             theme: theme,
             icon: Icon(Icons.arrow_upward),
             tooltip: loc.viewToolTipPrev,
           ),
           MyIconButton(
-            onPressed: listIndex + 1 < widget.partyList.length ? () => setState(() {
-              listIndex++;
-            }) : null,
+            onPressed: listIndex + 1 < widget.partyIDList.length
+                ? () => setState(() {
+                      listIndex++;
+                    })
+                : null,
             theme: theme,
             icon: Icon(Icons.arrow_downward),
             tooltip: loc.viewToolTipNext,
           ),
           MyIconButton(
-            onPressed: () => widget.onEdit(party),
+            onPressed: () => widget.onEdit(party.copy()),
             theme: theme,
             icon: Icon(Icons.edit),
             tooltip: loc.viewToolTipEdit,
@@ -107,7 +106,8 @@ class ViewPartyPageState extends State<ViewPartyPage> {
             child: Column(
               children: [
                 SizedBox(height: 10),
-                Row(  // パーティ名
+                Row(
+                  // パーティ名
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Flexible(
@@ -126,22 +126,22 @@ class ViewPartyPageState extends State<ViewPartyPage> {
                 SizedBox(height: 10),
                 for (int i = 0; i < party.pokemonNum; i++)
                   PokemonItemViewRow(
-                    '${loc.commonPokemon}${i+1}',
-                    '${loc.commonItem}${i+1}',
-                    pokemonController[i],
-                    itemController[i],
-                    party.pokemons[i]!,
-                    party.items[i],
-                    theme,
-                    () {
-                      widget.onViewPokemon(
-                        [for (int j = 0; j < party.pokemonNum; j++) party.pokemons[j]!],
-                        i,
-                      );
-                    },
-                    showNetworkImage: PokeDB().getPokeAPI
-                  ),
-                  SizedBox(height: 10),
+                      '${loc.commonPokemon}${i + 1}',
+                      '${loc.commonItem}${i + 1}',
+                      pokemonController[i],
+                      itemController[i],
+                      party.pokemons[i]!,
+                      party.items[i],
+                      theme, () {
+                    widget.onViewPokemon(
+                      [
+                        for (int j = 0; j < party.pokemonNum; j++)
+                          party.pokemons[j]!
+                      ],
+                      i,
+                    );
+                  }, showNetworkImage: PokeDB().getPokeAPI),
+                SizedBox(height: 10),
                 SizedBox(height: 10),
               ],
             ),

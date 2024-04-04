@@ -3,39 +3,37 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class BattleFilterDialog extends StatefulWidget {
-  final Future<void> Function (
-    List<int> winFilter,
-    List<int> partyIDFilter) onOK;
+  final Future<void> Function(List<int> winFilter, List<int> partyIDFilter)
+      onOK;
   final PokeDB pokeData;
   final List<int> winFilter;
   final List<int> partyIDFilter;
 
   const BattleFilterDialog(
-    this.pokeData,
-    this.winFilter,
-    this.partyIDFilter,
-    this.onOK,
-    {Key? key}) : super(key: key);
+      this.pokeData, this.winFilter, this.partyIDFilter, this.onOK,
+      {Key? key})
+      : super(key: key);
 
   @override
   BattleFilterDialogState createState() => BattleFilterDialogState();
 }
 
 class BattleFilterDialogState extends State<BattleFilterDialog> {
-  bool isFirstBuild = true;
   bool winExpanded = true;
   bool partyIDExpanded = true;
   List<int> winFilter = [];
   List<int> partyIDFilter = [];
 
   @override
+  void initState() {
+    super.initState();
+    winFilter = [...widget.winFilter];
+    partyIDFilter = [...widget.partyIDFilter];
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      winFilter = [...widget.winFilter];
-      partyIDFilter = [...widget.partyIDFilter];
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonFilter),
@@ -48,12 +46,14 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
               }),
               child: Stack(
                 children: [
-                  Center(child: Text(loc.filterDialogWinOrLose),),
+                  Center(
+                    child: Text(loc.filterDialogWinOrLose),
+                  ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: winExpanded ?
-                      Icon(Icons.keyboard_arrow_up) :
-                      Icon(Icons.keyboard_arrow_down),
+                    child: winExpanded
+                        ? Icon(Icons.keyboard_arrow_up)
+                        : Icon(Icons.keyboard_arrow_down),
                   ),
                 ],
               ),
@@ -62,72 +62,74 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
               height: 10,
               thickness: 1,
             ),
-            winExpanded ?
-            ListTile(
-              title: Text(loc.filterDialogUndecided),
-              leading: Checkbox(
-                value: winFilter.contains(1),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    if (value == true) {
-                      winFilter.add(1);
-                    }
-                    else {
-                      winFilter.remove(1);
-                    }
-                  });
-                },
-              ),
-            ) : Container(),
-            winExpanded ?
-            ListTile(
-              title: Text(loc.filterDialogWin),
-              leading: Checkbox(
-                value: winFilter.contains(2),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    if (value == true) {
-                      winFilter.add(2);
-                    }
-                    else {
-                      winFilter.remove(2);
-                    }
-                  });
-                },
-              ),
-            ) : Container(),
-            winExpanded ?
-            ListTile(
-              title: Text(loc.filterDialogLose),
-              leading: Checkbox(
-                value: winFilter.contains(3),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() {
-                    if (value == true) {
-                      winFilter.add(3);
-                    }
-                    else {
-                      winFilter.remove(3);
-                    }
-                  });
-                },
-              ),
-            ) : Container(),
+            winExpanded
+                ? ListTile(
+                    title: Text(loc.filterDialogUndecided),
+                    leading: Checkbox(
+                      value: winFilter.contains(1),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          if (value == true) {
+                            winFilter.add(1);
+                          } else {
+                            winFilter.remove(1);
+                          }
+                        });
+                      },
+                    ),
+                  )
+                : Container(),
+            winExpanded
+                ? ListTile(
+                    title: Text(loc.filterDialogWin),
+                    leading: Checkbox(
+                      value: winFilter.contains(2),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          if (value == true) {
+                            winFilter.add(2);
+                          } else {
+                            winFilter.remove(2);
+                          }
+                        });
+                      },
+                    ),
+                  )
+                : Container(),
+            winExpanded
+                ? ListTile(
+                    title: Text(loc.filterDialogLose),
+                    leading: Checkbox(
+                      value: winFilter.contains(3),
+                      onChanged: (value) {
+                        if (value == null) return;
+                        setState(() {
+                          if (value == true) {
+                            winFilter.add(3);
+                          } else {
+                            winFilter.remove(3);
+                          }
+                        });
+                      },
+                    ),
+                  )
+                : Container(),
             GestureDetector(
-              onTap:() => setState(() {
+              onTap: () => setState(() {
                 partyIDExpanded = !partyIDExpanded;
               }),
               child: Stack(
                 children: [
-                  Center(child: Text(loc.filterDialogParty),),
+                  Center(
+                    child: Text(loc.filterDialogParty),
+                  ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: partyIDExpanded ?
-                      Icon(Icons.keyboard_arrow_up) :
-                      Icon(Icons.keyboard_arrow_down),
+                    child: partyIDExpanded
+                        ? Icon(Icons.keyboard_arrow_up)
+                        : Icon(Icons.keyboard_arrow_down),
                   ),
                 ],
               ),
@@ -137,77 +139,88 @@ class BattleFilterDialogState extends State<BattleFilterDialog> {
               thickness: 1,
             ),
             for (var partyID in partyIDFilter)
-              partyIDExpanded ?
-              ListTile(
-                title: Text(widget.pokeData.parties[partyID]!.name),
-                leading: Checkbox(
-                  value: partyIDFilter.contains(partyID),
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() {
-                      if (value == true) {
-                        partyIDFilter.add(partyID);
-                      }
-                      else {
-                        partyIDFilter.remove(partyID);
-                      }
-                    });
-                  },
-                ),
-              ) : Container(),
-            partyIDExpanded ?
-            ListTile(
-              title: DropdownButtonFormField(
-                decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
-                  labelText: loc.filterDialogAddParty,
-                ),
-                selectedItemBuilder: (context) {
-                  return [
-                    for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine && !partyIDFilter.contains(element.id)))
-                      Text(party.name),
-                  ];
-                },
-                items: <DropdownMenuItem>[
-                  for (final party in widget.pokeData.parties.values.where((element) => element.id != 0 && element.owner == Owner.mine && !partyIDFilter.contains(element.id)))
-                    DropdownMenuItem(
-                      value: party.id,
-                      child: Text(party.name),
+              partyIDExpanded
+                  ? ListTile(
+                      title: Text(widget.pokeData.parties[partyID]!.name),
+                      leading: Checkbox(
+                        value: partyIDFilter.contains(partyID),
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() {
+                            if (value == true) {
+                              partyIDFilter.add(partyID);
+                            } else {
+                              partyIDFilter.remove(partyID);
+                            }
+                          });
+                        },
+                      ),
+                    )
+                  : Container(),
+            partyIDExpanded
+                ? ListTile(
+                    title: DropdownButtonFormField(
+                      decoration: InputDecoration(
+                        border: UnderlineInputBorder(),
+                        labelText: loc.filterDialogAddParty,
+                      ),
+                      selectedItemBuilder: (context) {
+                        return [
+                          for (final party in widget.pokeData.parties.values
+                              .where((element) =>
+                                  element.id != 0 &&
+                                  element.owner == Owner.mine &&
+                                  !partyIDFilter.contains(element.id)))
+                            Text(party.name),
+                        ];
+                      },
+                      items: <DropdownMenuItem>[
+                        for (final party in widget.pokeData.parties.values
+                            .where((element) =>
+                                element.id != 0 &&
+                                element.owner == Owner.mine &&
+                                !partyIDFilter.contains(element.id)))
+                          DropdownMenuItem(
+                            value: party.id,
+                            child: Text(party.name),
+                          ),
+                      ],
+                      value: null,
+                      onChanged: (value) {
+                        partyIDFilter.add(value);
+                        setState(() {});
+                      },
                     ),
-                ],
-                value: null,
-                onChanged: (value) {
-                  partyIDFilter.add(value);
-                  setState(() {});
-                },
-              ),
-            ) : Container(),
+                  )
+                : Container(),
           ],
         ),
       ),
-      actions:
-        <Widget>[
-          GestureDetector(
-            child: Text(loc.commonCancel),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          GestureDetector(
-            child: Text(loc.commonReset),
-            onTap: () {
-              winFilter = [for (int i = 1; i < 4; i++) i];
-              partyIDFilter = [];
-            },
-          ),
-          GestureDetector(
-            child: Text('OK'),
-            onTap: () async {
-              Navigator.pop(context);
-              await widget.onOK(winFilter, partyIDFilter,);
-            },
-          ),
-        ],
+      actions: <Widget>[
+        TextButton(
+          child: Text(loc.commonCancel),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text(loc.commonReset),
+          onPressed: () {
+            winFilter = [for (int i = 1; i < 4; i++) i];
+            partyIDFilter = [];
+          },
+        ),
+        TextButton(
+          child: Text('OK'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await widget.onOK(
+              winFilter,
+              partyIDFilter,
+            );
+          },
+        ),
+      ],
     );
   }
 }

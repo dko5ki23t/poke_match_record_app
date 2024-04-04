@@ -12,7 +12,6 @@ abilityColumnName = 'name'
 abilityColumnEnglishName = 'englishName'
 abilityColumnTiming = 'timing'
 abilityColumnTarget = 'target'
-abilityColumnEffect = 'effect'
 
 # CSVファイル(PokeAPI+独自)の列名
 abilitiesLangCSVabilityIDColumn = 'ability_id'
@@ -61,13 +60,13 @@ def main():
             id = row[abilitiesCSVabilityIDIndex]
             timing = row[abilitiesCSVtimingIDIndex]
             target = row[abilitiesCSVtargetIDIndex]
-            effect = row[abilitiesCSVeffectIDIndex]
+            #effect = row[abilitiesCSVeffectIDIndex]
             # 日本語名取得
             names = lang_df[(lang_df[abilitiesLangCSVabilityIDColumn] == id) & (lang_df[abilitiesLangCSVLangIDColumn] == japaneseID)][abilitiesLangCSVNameColumn]
             # 英語名取得
             names_en = lang_df[(lang_df[abilitiesLangCSVabilityIDColumn] == id) & (lang_df[abilitiesLangCSVLangIDColumn] == englishID)][abilitiesLangCSVNameColumn]
             if len(names) > 0:
-                abilities_list.append((id, names.iloc[0], names_en.iloc[0], timing, target, effect))
+                abilities_list.append((id, names.iloc[0], names_en.iloc[0], timing, target))
 
         # 作成(存在してたら作らない)
         try:
@@ -77,8 +76,7 @@ def main():
             f'  {abilityColumnName} text not null,'
             f'  {abilityColumnEnglishName} text not null,'
             f'  {abilityColumnTiming} integer,'
-            f'  {abilityColumnTarget} integer,'
-            f'  {abilityColumnEffect} integer)'
+            f'  {abilityColumnTarget} integer)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -86,7 +84,7 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {abilityDBTable} ({abilityColumnId}, {abilityColumnName}, {abilityColumnEnglishName}, {abilityColumnTiming}, {abilityColumnTarget}, {abilityColumnEffect}) VALUES ( ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {abilityDBTable} ({abilityColumnId}, {abilityColumnName}, {abilityColumnEnglishName}, {abilityColumnTiming}, {abilityColumnTarget}) VALUES ( ?, ?, ?, ?, ? )',
                 abilities_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

@@ -46,30 +46,28 @@ enum PokemonSort {
 }
 
 class PokemonSortDialog extends StatefulWidget {
-  final Future<void> Function (
-    PokemonSort? pokemonSort) onOK;
+  final Future<void> Function(PokemonSort? pokemonSort) onOK;
   final PokemonSort? currentSort;
 
-  const PokemonSortDialog(
-    this.onOK,
-    this.currentSort,
-    {Key? key}) : super(key: key);
+  const PokemonSortDialog(this.onOK, this.currentSort, {Key? key})
+      : super(key: key);
 
   @override
   PokemonSortDialogState createState() => PokemonSortDialogState();
 }
 
 class PokemonSortDialogState extends State<PokemonSortDialog> {
-  bool isFirstBuild = true;
   PokemonSort? _pokemonSort;
 
   @override
+  void initState() {
+    super.initState();
+    _pokemonSort = widget.currentSort;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    var loc = AppLocalizations.of(context)!;
-    if (isFirstBuild) {
-      _pokemonSort = widget.currentSort;
-      isFirstBuild = false;
-    }
+    final loc = AppLocalizations.of(context)!;
 
     return AlertDialog(
       title: Text(loc.commonSort),
@@ -77,37 +75,35 @@ class PokemonSortDialogState extends State<PokemonSortDialog> {
         child: Column(
           children: [
             for (var e in PokemonSort.values)
-            ListTile(
-              title: Text(e.displayName),
-              leading: Radio<PokemonSort>(
-                value: e,
-                groupValue: _pokemonSort,
-                onChanged: (PokemonSort? value) {
-                  setState(() {
-                    _pokemonSort = value;
-                  });
-                }
+              ListTile(
+                title: Text(e.displayName),
+                leading: Radio<PokemonSort>(
+                    value: e,
+                    groupValue: _pokemonSort,
+                    onChanged: (PokemonSort? value) {
+                      setState(() {
+                        _pokemonSort = value;
+                      });
+                    }),
               ),
-            ),
           ],
         ),
       ),
-      actions:
-        <Widget>[
-          GestureDetector(
-            child: Text(loc.commonCancel),
-            onTap: () {
-              Navigator.pop(context);
-            },
-          ),
-          GestureDetector(
-            child: Text('OK'),
-            onTap: () async {
-              Navigator.pop(context);
-              await widget.onOK(_pokemonSort);
-            },
-          ),
-        ],
+      actions: <Widget>[
+        TextButton(
+          child: Text(loc.commonCancel),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
+        TextButton(
+          child: Text('OK'),
+          onPressed: () async {
+            Navigator.pop(context);
+            await widget.onOK(_pokemonSort);
+          },
+        ),
+      ],
     );
   }
 }

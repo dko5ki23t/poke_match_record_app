@@ -4,9 +4,8 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 class BattleDeleteCheckDialog extends StatefulWidget {
   final void Function() onClearPressed;
 
-  const BattleDeleteCheckDialog(
-    this.onClearPressed,
-    {Key? key}) : super(key: key);
+  const BattleDeleteCheckDialog(this.onClearPressed, {Key? key})
+      : super(key: key);
 
   @override
   BattleDeleteCheckDialogState createState() => BattleDeleteCheckDialogState();
@@ -19,15 +18,15 @@ class BattleDeleteCheckDialogState extends State<BattleDeleteCheckDialog> {
     return AlertDialog(
       title: Text(loc.dialogQuestionDeleteChanges),
       actions: <Widget>[
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonNo),
-          onTap: () {
+          onPressed: () {
             Navigator.pop(context);
           },
         ),
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonYes),
-          onTap: () {
+          onPressed: () {
             Navigator.pop(context);
             widget.onClearPressed();
           },

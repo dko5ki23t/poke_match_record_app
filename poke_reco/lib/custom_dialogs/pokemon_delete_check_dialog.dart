@@ -5,13 +5,13 @@ class PokemonDeleteCheckDialog extends StatefulWidget {
   final bool containedParty;
   final void Function() onClearPressed;
 
-  const PokemonDeleteCheckDialog(
-    this.containedParty,
-    this.onClearPressed,
-    {Key? key}) : super(key: key);
+  const PokemonDeleteCheckDialog(this.containedParty, this.onClearPressed,
+      {Key? key})
+      : super(key: key);
 
   @override
-  PokemonDeleteCheckDialogState createState() => PokemonDeleteCheckDialogState();
+  PokemonDeleteCheckDialogState createState() =>
+      PokemonDeleteCheckDialogState();
 }
 
 class PokemonDeleteCheckDialogState extends State<PokemonDeleteCheckDialog> {
@@ -20,18 +20,19 @@ class PokemonDeleteCheckDialogState extends State<PokemonDeleteCheckDialog> {
     var loc = AppLocalizations.of(context)!;
     return AlertDialog(
       title: Text(loc.dialogQuestionDeletePokemons1),
-      content: widget.containedParty ?
-        Text(loc.dialogQuestionDeletePokemons2) : Text(''),
+      content: widget.containedParty
+          ? Text(loc.dialogQuestionDeletePokemons2)
+          : Text(''),
       actions: <Widget>[
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonNo),
-          onTap: () {
+          onPressed: () {
             Navigator.pop(context);
           },
         ),
-        GestureDetector(
+        TextButton(
           child: Text(loc.commonYes),
-          onTap: () {
+          onPressed: () {
             Navigator.pop(context);
             widget.onClearPressed();
           },
