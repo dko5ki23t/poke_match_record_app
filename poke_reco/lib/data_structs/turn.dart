@@ -1998,6 +1998,8 @@ class Turn extends Equatable implements Copyable {
 
   /// 対象プレイヤーの行動直前のフェーズの状態を返す。
   /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
+  /// ※他のphaseState取得系処理とは異なり、交代わざのあとにわざ使用後の効果が無かったとしても交代処理は行う
+  /// （行動「直前」の状態を返す＝交代処理は終わっている）
   /// ```
   /// playerType: プレイヤー
   /// ownParty: 自身(ユーザー)のパーティ
@@ -2071,6 +2073,12 @@ class Turn extends Equatable implements Copyable {
               phase.getChangePokemonIndex(PlayerType.opponent) != null)) {
         needChangeActionProcess = true;
       }
+    }
+    // 交代を伴うわざ後処理が終わったなら交代処理を行う
+    if (needChangeActionProcess) {
+      lastAction!.processChangeEffect(ret.getPokemonState(PlayerType.me, null),
+          ret.getPokemonState(PlayerType.opponent, null), ret);
+      needChangeActionProcess = false;
     }
     return ret;
   }
