@@ -421,7 +421,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   duration: Duration(seconds: 1),
                   width: (remainHP / maxHPRe) * 150,
                   height: 20,
-                  color: (remainHP / maxHPRe) <= 0.25
+                  color: (remainHP / maxHPRe) <= 0.2
                       ? Colors.red
                       : (remainHP / maxHPRe) <= 0.5
                           ? Colors.yellow

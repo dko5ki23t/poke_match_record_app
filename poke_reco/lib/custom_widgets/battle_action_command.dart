@@ -274,6 +274,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         color: Colors.grey,
                       ),
                     ),
+                    TextSpan(
+                        text:
+                            '(${myState.usedPPs[myState.moves.indexOf(myMove)]})',
+                        style: theme.textTheme.bodyMedium),
                   ]))
                 : Text(myMove.displayName),
             subtitle: getter.showDamage
@@ -427,7 +431,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                             )
                           : Container(),
                       Expanded(
-                        flex: 8,
+                        flex: 6,
                         child: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: TextField(
@@ -443,6 +447,27 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           ),
                         ),
                       ),
+                      playerType == PlayerType.opponent
+                          ? Expanded(
+                              flex: 2,
+                              child: PopupMenuButton(
+                                child: Icon(
+                                  Icons.reorder,
+                                ),
+                                onSelected: (value) {},
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(
+                                    value: 0,
+                                    child: Text('ダメージ大きい順'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 1,
+                                    child: Text('採用率高い順'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Container(),
                     ],
                   ),
                 ),

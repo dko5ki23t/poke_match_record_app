@@ -622,7 +622,7 @@ Future<void> test52_1(
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
-      ownPokemon1: 'もこヌチャン/',
+      ownPokemon1: 'カヌぎゃく/',
       ownPokemon2: 'もこパモ/',
       ownPokemon3: 'もこギャラドス/',
       opponentPokemon: 'ロトム(ウォッシュロトム)');
@@ -778,7 +778,7 @@ Future<void> test52_2(
   await goSelectPokemonPage(driver);
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
-      ownPokemon1: 'もこヌチャン/',
+      ownPokemon1: 'カヌぎゃく/',
       ownPokemon2: 'もこギャラドス/',
       ownPokemon3: 'もこパモ/',
       opponentPokemon: 'デカヌチャン');
@@ -810,7 +810,6 @@ Future<void> test52_2(
 
   // マスカーニャのへんげんじざい
   await addEffect(driver, 0, op, 'へんげんじざい');
-  await driver.tap(find.text('OK'));
   await driver.tap(find.byValueKey('TypeDropdownButton'));
   await driver.tap(find.text('くさ'));
   await driver.tap(find.text('OK'));
@@ -904,9 +903,181 @@ Future<void> test52_3(
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうデカヌチャン戦3',
+    ownPartyname: '52もこヌチャン2',
+    opponentName: 'はやさ',
+    pokemon1: 'サーフゴー',
+    pokemon2: 'ロトム(ウォッシュロトム)',
+    pokemon3: 'ガブリアス',
+    pokemon4: 'ウルガモス',
+    pokemon5: 'ドドゲザン',
+    pokemon6: 'カイリュー',
+    sex3: Sex.female,
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'カヌぎゃく/',
+      ownPokemon2: 'もこギャラドス/',
+      ownPokemon3: 'もこヒートロトム/',
+      opponentPokemon: 'ロトム(ウォッシュロトム)');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
 
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // デカヌチャンのテラスタル
+  await inputTerastal(driver, me, '');
+  // ロトムのトリック
+  await tapMove(driver, op, 'トリック', true);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
+  await driver.enterText('こだわりスカーフ');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('こだわりスカーフ')));
+  // デカヌチャンのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // ロトムのHP35
+  await inputRemainHP(driver, me, '35');
+  // ターン2へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャンのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // ロトムのHP0
+  await inputRemainHP(driver, me, '0');
+  // ロトムひんし->カイリューに交代
+  await changePokemon(driver, op, 'カイリュー', false);
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャン->ギャラドスに交代
+  await changePokemon(driver, me, 'ギャラドス', true);
+  // カイリューのりゅうのまい
+  await tapMove(driver, op, 'りゅうのまい', true);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // ギャラドス->デカヌチャンに交代
+  await changePokemon(driver, me, 'デカヌチャン', true);
+  // カイリューのテラスタル
+  await inputTerastal(driver, op, 'ノーマル');
+  // カイリューのりゅうのまい
+  await tapMove(driver, op, 'りゅうのまい', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', true);
+  // デカヌチャンのHP23
+  await inputRemainHP(driver, op, '23');
+  // デカヌチャンのデカハンマー
+  await tapMove(driver, me, 'デカハンマー', false);
+  // カイリューのHP50
+  await inputRemainHP(driver, me, '50');
+  // カイリューのたべのこし
+  await addEffect(driver, 2, op, 'たべのこし');
+  await driver.tap(find.text('OK'));
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャン->ギャラドスに交代
+  await changePokemon(driver, me, 'ギャラドス', true);
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ギャラドスのHP88
+  await inputRemainHP(driver, op, '88');
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのはねやすめ
+  await tapMove(driver, op, 'はねやすめ', true);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // カイリューのHP100
+  await inputRemainHP(driver, op, '100');
+  // ギャラドスのちょうはつ
+  await tapMove(driver, me, 'ちょうはつ', false);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // ギャラドス->デカヌチャンに交代
+  await changePokemon(driver, me, 'デカヌチャン', true);
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // デカヌチャンのHP0
+  await inputRemainHP(driver, op, '0');
+  // デカヌチャンひんし->ロトムに交代
+  await changePokemon(driver, me, 'ロトム(ヒートロトム)', false);
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ロトムのHP82
+  await inputRemainHP(driver, op, '82');
+  // ロトムのほうでん
+  await tapMove(driver, me, 'ほうでん', false);
+  // カイリューのHP80
+  await inputRemainHP(driver, me, '80');
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ロトムのHP4
+  await inputRemainHP(driver, op, '4');
+  // ロトムのほうでん
+  await tapMove(driver, me, 'ほうでん', false);
+  // カイリューのHP25
+  await inputRemainHP(driver, me, '25');
+  // ターン11へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ロトムのHP0
+  await inputRemainHP(driver, op, '0');
+  // ロトムひんし->ギャラドスに交代
+  await changePokemon(driver, me, 'ギャラドス', false);
+  // ターン12へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのはねやすめ
+  await tapMove(driver, op, 'はねやすめ', false);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // カイリューのHP90
+  await inputRemainHP(driver, op, '90');
+  // ギャラドスのちょうはつ
+  await tapMove(driver, me, 'ちょうはつ', false);
+  // ターン13へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ギャラドスのHP71
+  await inputRemainHP(driver, op, '71');
+  // ギャラドスのりゅうのまい
+  await tapMove(driver, me, 'りゅうのまい', false);
+  // ターン14へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ギャラドスのHP10
+  await inputRemainHP(driver, op, '10');
+  // ギャラドスのりゅうのまい
+  await tapMove(driver, me, 'りゅうのまい', false);
+  // ターン15へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのほのおのパンチ
+  await tapMove(driver, op, 'ほのおのパンチ', true);
+  // ギャラドスのHP0
+  await inputRemainHP(driver, op, '0');
+  // 相手の勝利
+  await testExistEffect(driver, 'はやさの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));

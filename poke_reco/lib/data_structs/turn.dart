@@ -1214,6 +1214,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 skipInc = true;
               } else {
                 final action = l[i] as TurnEffectAction;
+                // 効果等で交代が生じていて行動を既に消費している場合、対象の行動は失敗しているとみなす
+                if (!remainAction[action.playerType.number]) {
+                  action.isSuccess = false;
+                } else if (action.actionFailure.id == ActionFailure.none) {
+                  action.isSuccess = true;
+                }
                 remainAction[action.playerType.number] = false;
                 if (action.isValid()) {
                   isValidAction[action.playerType.number] = true;
@@ -1771,10 +1777,17 @@ class Turn extends Equatable implements Copyable {
       PlayerType.opponent: false
     };
     for (final phase in phases) {
-      if (phase is TurnEffectAction ||
-          phase is TurnEffectChangeFaintingPokemon) {
+      if (phase is TurnEffectChangeFaintingPokemon) {
         actioned[phase.playerType] = true;
         isValid[phase.playerType] = phase.isValid();
+      } else if (phase is TurnEffectAction) {
+        if (actioned[phase.playerType]!) {
+          // 効果等の交代で行動を消費されているならば、
+          // isValidは変えない(isValid = falseの行動をありとする)
+        } else {
+          actioned[phase.playerType] = true;
+          isValid[phase.playerType] = phase.isValid();
+        }
       } else if (phase.getChangePokemonIndex(PlayerType.me) != null) {
         actioned[PlayerType.me] = true;
         isValid[PlayerType.me] = phase.isValid();
