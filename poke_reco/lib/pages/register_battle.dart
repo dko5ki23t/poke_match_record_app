@@ -1645,6 +1645,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                         .teraType,
                                     turnNum,
                                     currentTurn)),
+                            moveListOrder: pokeData.battleOwnMoveSort,
+                            onMoveListOrderChange: (val) {
+                              pokeData.battleOwnMoveSort = val;
+                              pokeData.saveConfig();
+                            },
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
@@ -1827,6 +1832,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                           loc.commonTeraType);
                                     });
                               }
+                            },
+                            moveListOrder: pokeData.battleOpponentMoveSort,
+                            onMoveListOrderChange: (val) {
+                              pokeData.battleOpponentMoveSort = val;
+                              pokeData.saveConfig();
                             },
                           )
                         : opponentLastAction is TurnEffectChangeFaintingPokemon

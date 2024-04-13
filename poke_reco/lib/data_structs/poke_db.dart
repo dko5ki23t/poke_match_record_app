@@ -56,6 +56,9 @@ const String configKeyLanguage = 'language';
 
 const String configKeyTutorialStep = 'tutorialStep';
 
+const String configKeyBattleOwnMoveSort = 'battleOwnMoveSort';
+const String configKeyBattleOpponentMoveSort = 'battleOpponentMoveSort';
+
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
 const String abilityColumnId = 'id';
@@ -469,6 +472,12 @@ class PokeDB {
   /// チュートリアルの段階(マイナス値は終了済み)
   int tutorialStep = 0;
 
+  /// 対戦入力画面の相手わざの表示順
+  /// * 0:ダメージ大きい順
+  /// * 1:採用率高い順
+  int battleOwnMoveSort = 0;
+  int battleOpponentMoveSort = 0;
+
   Map<int, Ability> abilities = {0: Ability.none()}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
@@ -610,6 +619,8 @@ class PokeDB {
         battlesSort = null;
         getPokeAPI = true;
         tutorialStep = 0;
+        battleOwnMoveSort = 0;
+        battleOpponentMoveSort = 0;
         await saveConfig();
         continueToLoad = false;
       }
@@ -774,6 +785,17 @@ class PokeDB {
           tutorialStep = configJson[configKeyTutorialStep] as int;
         } catch (e) {
           tutorialStep = 0;
+        }
+        try {
+          battleOwnMoveSort = configJson[configKeyBattleOwnMoveSort] as int;
+        } catch (e) {
+          battleOwnMoveSort = 0;
+        }
+        try {
+          battleOpponentMoveSort =
+              configJson[configKeyBattleOpponentMoveSort] as int;
+        } catch (e) {
+          battleOpponentMoveSort = 0;
         }
       }
       switch (locale.languageCode) {
@@ -1340,6 +1362,8 @@ class PokeDB {
       configKeyGetNetworkImage: getPokeAPI ? 1 : 0,
       configKeyLanguage: language.index,
       configKeyTutorialStep: tutorialStep,
+      configKeyBattleOwnMoveSort: battleOwnMoveSort,
+      configKeyBattleOpponentMoveSort: battleOpponentMoveSort,
     });
     await _saveDataFile.writeAsString(jsonText);
   }

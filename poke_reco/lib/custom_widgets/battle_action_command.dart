@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
@@ -12,6 +14,9 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/tool.dart';
+
+/// わざの並び替えで先頭に来させるための値
+const int topOrderVal = 0x00ffff00;
 
 enum CommandState {
   selectCommand,
@@ -32,6 +37,8 @@ class BattleActionCommand extends StatefulWidget {
     required this.updateActionOrder,
     required this.playerCanTerastal,
     required this.onRequestTerastal,
+    required this.moveListOrder,
+    required this.onMoveListOrderChange,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -45,6 +52,8 @@ class BattleActionCommand extends StatefulWidget {
   final Function() updateActionOrder;
   final bool playerCanTerastal;
   final Function() onRequestTerastal;
+  final int moveListOrder;
+  final Function(int) onMoveListOrderChange;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();
@@ -54,6 +63,13 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
   CommandPagesController commandPagesController = CommandPagesController();
+  int currentMoveListOrder = 0;
+
+  @override
+  void initState() {
+    currentMoveListOrder = widget.moveListOrder;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +100,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
-    List<Widget> moveTiles = [];
+    Map<Widget, int> moveTileVals = {};
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       //
@@ -143,7 +159,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       if (myState
           .ailmentsWhere((element) => element.id == Ailment.sleep)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
+        moveTileVals[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.sleep).displayName),
           onChanged: (value) {
             if (value) {
@@ -163,13 +179,13 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           },
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.sleep,
-        ));
+        )] = topOrderVal + 100;
       }
       // まひ状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.paralysis)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
+        moveTileVals[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.paralysis).displayName),
           onChanged: (value) {
             if (value) {
@@ -189,13 +205,13 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           },
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.paralysis,
-        ));
+        )] = topOrderVal + 100;
       }
       // こんらん状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.confusion)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
+        moveTileVals[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.confusion).displayName),
           onChanged: (value) {
             if (value) {
@@ -215,7 +231,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           },
           value: !turnMove.isSuccess &&
               turnMove.actionFailure.id == ActionFailure.confusion,
-        ));
+        )] = topOrderVal + 100;
         // TODO: extraArg1,extraArg2の値を入力
       }
       for (int i = 0; i < moves.length; i++) {
@@ -247,88 +263,94 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           damageGetter: getter,
           loc: loc,
         );
-        moveTiles.add(
-          ListTile(
-            key: Key(
-                'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
-            horizontalTitleGap: 8.0,
-            dense: true,
-            enabled: canSelect,
-            leading: turnMove
-                .getReplacedMoveType(myMove, myState, prevState)
-                .displayIcon,
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-            ),
-            title: myState.moves.contains(myMove)
-                ? RichText(
-                    text: TextSpan(children: [
-                    TextSpan(
-                        text: myMove.displayName,
-                        style: theme.textTheme.bodyMedium),
-                    WidgetSpan(
-                      child: Icon(
-                        Icons.push_pin,
-                        size: theme.textTheme.bodyMedium!.fontSize,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    TextSpan(
-                        text:
-                            '(${myState.usedPPs[myState.moves.indexOf(myMove)]})',
-                        style: theme.textTheme.bodyMedium),
-                  ]))
-                : Text(myMove.displayName),
-            subtitle: getter.showDamage
-                ? Text('${getter.rangeString} (${getter.rangePercentString})')
-                : Text(' - '),
-            onTap: () {
-              parentSetState(() {
-                turnMove.move = myMove;
-                turnMove.hitCount = myMove.maxMoveCount();
-                if (turnMove.isCriticalFromMove(
-                    myMove, myState, yourState, yourFields)) {
-                  turnMove.criticalCount = turnMove.hitCount;
-                }
-                turnMove.fillAutoAdditionalEffect(prevState);
-                turnMove.moveEffectivenesses =
-                    PokeTypeEffectiveness.effectiveness(
-                        myState.currentAbility.id == 113 ||
-                            myState.currentAbility.id == 299,
-                        yourState.holdingItem?.id == 586,
-                        yourState
-                            .ailmentsWhere((e) => e.id == Ailment.miracleEye)
-                            .isNotEmpty,
-                        turnMove.getReplacedMoveType(
-                            myMove, myState, prevState),
-                        yourState);
-                // わざ選択で即isValid()==trueになるわざのために呼び出す
-                turnMove.extraCommandInputList(
-                    initialKeyNumber: 0,
-                    theme: theme,
-                    onBackPressed: () {},
-                    onConfirm: () {},
-                    onUpdate: () {},
-                    myParty: myParty,
-                    yourParty: yourParty,
-                    myState: myState,
-                    yourState: yourState,
-                    state: prevState,
-                    damageGetter: getter,
-                    controller: commandPagesController,
-                    loc: loc);
-                // 表示Widgetのコントローラリセット
-                commandPagesController = CommandPagesController();
-                state = CommandState.extraInput;
-              });
-              // 統合テスト作成用
-              print("// ${myState.pokemon.omittedName}の${myMove.displayName}\n"
-                  "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${myMove.displayName}', ${myState.moves.contains(myMove) ? "false" : "true"});");
-            },
+        var listTile = ListTile(
+          key: Key(
+              'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
+          horizontalTitleGap: 8.0,
+          dense: true,
+          enabled: canSelect,
+          leading: turnMove
+              .getReplacedMoveType(myMove, myState, prevState)
+              .displayIcon,
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
           ),
+          title: myState.moves.contains(myMove)
+              ? RichText(
+                  text: TextSpan(children: [
+                  TextSpan(
+                      text: myMove.displayName,
+                      style: theme.textTheme.bodyMedium),
+                  WidgetSpan(
+                    child: Icon(
+                      Icons.push_pin,
+                      size: theme.textTheme.bodyMedium!.fontSize,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '(${myState.usedPPs[myState.moves.indexOf(myMove)]})',
+                      style: theme.textTheme.bodyMedium),
+                ]))
+              : Text(myMove.displayName),
+          subtitle: getter.showDamage
+              ? Text('${getter.rangeString} (${getter.rangePercentString})')
+              : Text(' - '),
+          onTap: () {
+            parentSetState(() {
+              turnMove.move = myMove;
+              turnMove.hitCount = myMove.maxMoveCount();
+              if (turnMove.isCriticalFromMove(
+                  myMove, myState, yourState, yourFields)) {
+                turnMove.criticalCount = turnMove.hitCount;
+              }
+              turnMove.fillAutoAdditionalEffect(prevState);
+              turnMove.moveEffectivenesses =
+                  PokeTypeEffectiveness.effectiveness(
+                      myState.currentAbility.id == 113 ||
+                          myState.currentAbility.id == 299,
+                      yourState.holdingItem?.id == 586,
+                      yourState
+                          .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+                          .isNotEmpty,
+                      turnMove.getReplacedMoveType(myMove, myState, prevState),
+                      yourState);
+              // わざ選択で即isValid()==trueになるわざのために呼び出す
+              turnMove.extraCommandInputList(
+                  initialKeyNumber: 0,
+                  theme: theme,
+                  onBackPressed: () {},
+                  onConfirm: () {},
+                  onUpdate: () {},
+                  myParty: myParty,
+                  yourParty: yourParty,
+                  myState: myState,
+                  yourState: yourState,
+                  state: prevState,
+                  damageGetter: getter,
+                  controller: commandPagesController,
+                  loc: loc);
+              // 表示Widgetのコントローラリセット
+              commandPagesController = CommandPagesController();
+              state = CommandState.extraInput;
+            });
+            // 統合テスト作成用
+            print("// ${myState.pokemon.omittedName}の${myMove.displayName}\n"
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${myMove.displayName}', ${myState.moves.contains(myMove) ? "false" : "true"});");
+          },
         );
+        if (myState.moves.contains(myMove)) {
+          moveTileVals[listTile] = topOrderVal + 3 - i;
+        } else {
+          moveTileVals[listTile] = getter.maxDamage;
+        }
       }
+
+      // TODO:ダメージ多い順にソート
+      moveTileVals = SplayTreeMap.from(
+          moveTileVals, (a, b) => moveTileVals[b]!.compareTo(moveTileVals[a]!));
     }
 
     Widget commandColumn;
@@ -451,10 +473,13 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           ? Expanded(
                               flex: 2,
                               child: PopupMenuButton(
+                                initialValue: widget.moveListOrder,
                                 child: Icon(
                                   Icons.reorder,
                                 ),
-                                onSelected: (value) {},
+                                onSelected: (value) => setState(() {
+                                  widget.onMoveListOrderChange(value);
+                                }),
                                 itemBuilder: (context) => [
                                   PopupMenuItem(
                                     value: 0,
@@ -480,7 +505,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         key: Key(
                             'BattleActionCommandMoveListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         viewItemCount: 4,
-                        children: moveTiles,
+                        children: moveTileVals.keys.toList(),
                       ),
                     ),
                   ]),
