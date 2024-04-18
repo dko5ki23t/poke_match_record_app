@@ -32,11 +32,8 @@
             android:name="flutterEmbedding"
             android:value="2" />
         <!-- バナー広告(テスト用) -->
-        <!--<meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>-->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-5298352571661081~6928639305"/>
     </application>
 </manifest>
