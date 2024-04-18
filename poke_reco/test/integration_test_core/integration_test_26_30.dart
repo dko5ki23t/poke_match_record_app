@@ -507,7 +507,7 @@ Future<void> test26_3(
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
-  // TODO: 保存時、引き分けの表示になってしまっている
+  //! TODO: 保存時、引き分けの表示になってしまっている
 }
 
 /// ハラバリー戦4

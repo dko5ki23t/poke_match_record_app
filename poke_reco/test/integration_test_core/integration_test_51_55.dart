@@ -1092,24 +1092,136 @@ Future<void> test52_4(
   await driver.waitForTappable(find.byType('FloatingActionButton'));
   // 追加ボタン(+)タップ
   await driver.tap(find.byType('FloatingActionButton'));
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうデカヌチャン戦4',
+    ownPartyname: '52もこヌチャン',
+    opponentName: 'JIRO',
+    pokemon1: 'ミミッキュ',
+    pokemon2: 'デカヌチャン',
+    pokemon3: 'セグレイブ',
+    pokemon4: 'カイリュー',
+    pokemon5: 'ロトム(ウォッシュロトム)',
+    pokemon6: 'サーフゴー',
+    sex1: Sex.female,
+    sex2: Sex.female,
+    sex3: Sex.female,
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'カヌぎゃく/',
+      ownPokemon2: 'もこパモ/',
+      ownPokemon3: 'もこニンフィア3/',
+      opponentPokemon: 'ロトム(ウォッシュロトム)');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
 
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // デカヌチャンのテラスタル
+  await inputTerastal(driver, me, '');
+  // デカヌチャンのテラバースト
+  await tapMove(driver, me, 'テラバースト', false);
+  // ロトムのHP2
+  await inputRemainHP(driver, me, '2');
+  // ロトムのトリック
+  await tapMove(driver, op, 'トリック', true);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
+  await driver.enterText('こだわりメガネ');
+  await driver.tap(find.descendant(
+      of: find.byType('ListTile'), matching: find.text('こだわりメガネ')));
+  // ターン2へ
+  await goTurnPage(driver, turnNum++);
 
-  // 内容保存
-  await driver.tap(find.byValueKey('RegisterBattleSave'));
-}
+  // ロトム->デカヌチャンに交代
+  await changePokemon(driver, op, 'デカヌチャン', true);
+  // ロトムのかたやぶり
+  await addEffect(driver, 1, op, 'かたやぶり');
+  await driver.tap(find.text('OK'));
+  // デカヌチャンのじゃれつく
+  await tapMove(driver, me, 'じゃれつく', false);
+  // 急所に命中
+  await tapCritical(driver, me);
+  // デカヌチャンのHP80
+  await inputRemainHP(driver, me, '80');
+  // デカヌチャンはこうげきが下がった
+  await driver.tap(find.text('デカヌチャンはこうげきが下がった'));
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
 
-/// デカヌチャン戦5
-Future<void> test52_5(
-  FlutterDriver driver,
-) async {
-  int turnNum = 0;
-  await backBattleTopPage(driver);
-  await driver.waitForTappable(find.byType('FloatingActionButton'));
-  // 追加ボタン(+)タップ
-  await driver.tap(find.byType('FloatingActionButton'));
+  // デカヌチャン->パーモットに交代
+  await changePokemon(driver, me, 'パーモット', true);
+  // デカヌチャンのステルスロック
+  await tapMove(driver, op, 'ステルスロック', true);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
 
+  // パーモットのインファイト
+  await tapMove(driver, me, 'インファイト', false);
+  // デカヌチャンのHP10
+  await inputRemainHP(driver, me, '10');
+  // デカヌチャンのはたきおとす
+  await tapMove(driver, op, 'はたきおとす', true);
+  // パーモットのHP118
+  await inputRemainHP(driver, op, '118');
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // パーモットのインファイト
+  await tapMove(driver, me, 'インファイト', false);
+  // デカヌチャンのHP0
+  await inputRemainHP(driver, me, '0');
+  // デカヌチャンひんし->カイリューに交代
+  await changePokemon(driver, op, 'カイリュー', false);
+  // ターン6へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのテラスタル
+  await inputTerastal(driver, op, 'ノーマル');
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', true);
+  // パーモットのHP0
+  await inputRemainHP(driver, op, '0');
+  // パーモットひんし->デカヌチャンに交代
+  await changePokemon(driver, me, 'デカヌチャン', false);
+  // ターン7へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャンのデカハンマー
+  await tapMove(driver, me, 'デカハンマー', false);
+  // カイリューのHP30
+  await inputRemainHP(driver, me, '30');
+  // カイリューのりゅうのまい
+  await tapMove(driver, op, 'りゅうのまい', true);
+  // ターン8へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャン->ニンフィアに交代
+  await changePokemon(driver, me, 'ニンフィア', true);
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ニンフィアのHP59
+  await inputRemainHP(driver, op, '59');
+  // ターン9へ
+  await goTurnPage(driver, turnNum++);
+
+  // カイリューのしんそく
+  await tapMove(driver, op, 'しんそく', false);
+  // ニンフィアのHP0
+  await inputRemainHP(driver, op, '0');
+  // ニンフィアひんし->デカヌチャンに交代
+  await changePokemon(driver, me, 'デカヌチャン', false);
+  // カイリューひんし->ロトムに交代
+  await changePokemon(driver, op, 'ロトム(ウォッシュロトム)', false);
+  // ターン10へ
+  await goTurnPage(driver, turnNum++);
+
+  // デカヌチャンのデカハンマー
+  await tapMove(driver, me, 'デカハンマー', false);
+  // ロトムのHP0
+  await inputRemainHP(driver, me, '0');
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 

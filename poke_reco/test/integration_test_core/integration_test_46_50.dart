@@ -2026,7 +2026,7 @@ Future<void> test48_4(
   await tapMove(driver, op, 'ボディプレス', false);
   // ケケンカニのHP0
   await inputRemainHP(driver, op, '0');
-  // TODO:上記の順に入力すると例外発生する
+  //! TODO:上記の順に入力すると例外発生する
   // 相手の勝利
   await testExistEffect(driver, 'あきとの勝利！');
 
