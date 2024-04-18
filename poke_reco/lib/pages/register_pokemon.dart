@@ -50,7 +50,8 @@ class RegisterPokemonPage extends StatefulWidget {
   RegisterPokemonPageState createState() => RegisterPokemonPageState();
 }
 
-class RegisterPokemonPageState extends State<RegisterPokemonPage> {
+class RegisterPokemonPageState extends State<RegisterPokemonPage>
+    with WidgetsBindingObserver {
   static const notAllowedStyle = TextStyle(
     color: Colors.red,
   );
@@ -184,13 +185,30 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _stopCamera();
     textRecognizer.close();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
+
+    if (state == AppLifecycleState.inactive) {
+      _stopCamera();
+    } else if (state == AppLifecycleState.resumed &&
+        _cameraController != null &&
+        _cameraController!.value.isInitialized) {
+      _startCamera();
+    }
   }
 
   @override
