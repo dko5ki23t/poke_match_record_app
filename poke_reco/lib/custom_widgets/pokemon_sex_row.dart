@@ -23,15 +23,16 @@ class PokemonSexRow extends Row {
   }) : super(
           mainAxisSize: MainAxisSize.min,
           children: [
-            showNetworkImage
-                ? Image.network(
-                    PokeDB().pokeBase[pokemonNo]!.imageUrl,
-                    height: theme.buttonTheme.height,
-                    errorBuilder: (c, o, s) {
-                      return const Icon(Icons.catching_pokemon);
-                    },
-                  )
-                : const Icon(Icons.catching_pokemon),
+            if (pokemonNo != 0)
+              showNetworkImage
+                  ? Image.network(
+                      PokeDB().pokeBase[pokemonNo]!.imageUrl,
+                      height: theme.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    )
+                  : const Icon(Icons.catching_pokemon),
             SizedBox(
               width: 10,
             ),
@@ -72,6 +73,16 @@ class PokemonSexRow extends Row {
                             },
                             itemBuilder: (context, suggestion) {
                               return ListTile(
+                                leading: showNetworkImage
+                                    ? Image.network(
+                                        suggestion.imageUrl,
+                                        height: theme.buttonTheme.height,
+                                        errorBuilder: (c, o, s) {
+                                          return const Icon(
+                                              Icons.catching_pokemon);
+                                        },
+                                      )
+                                    : const Icon(Icons.catching_pokemon),
                                 title: Text(suggestion.name),
                                 autofocus: true,
                               );

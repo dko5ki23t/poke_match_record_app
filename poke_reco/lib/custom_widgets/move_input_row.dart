@@ -28,6 +28,7 @@ class MoveInputRow extends Row {
     bool ppEnabled = true,
     num initialPPValue = 0,
     bool isError = false,
+    required Widget? moveTypeIcon,
   }) : super(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -40,6 +41,7 @@ class MoveInputRow extends Row {
                     border: UnderlineInputBorder(),
                     labelText: labelMove,
                     labelStyle: isError ? notAllowedStyle : null,
+                    prefixIcon: moveTypeIcon,
                     suffixIcon: moveController.text.isNotEmpty
                         ? IconButton(
                             icon: Icon(Icons.clear),

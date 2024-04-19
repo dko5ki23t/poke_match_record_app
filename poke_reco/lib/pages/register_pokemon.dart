@@ -1140,6 +1140,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                     myPokemon.moves[i]!.id != 0,
                                 initialPPValue: myPokemon.pps[i] ?? 0,
                                 isError: i == 0 && myPokemon.move1.id == 0,
+                                moveTypeIcon: myPokemon.moves[i] != null &&
+                                        myPokemon.moves[i]?.type !=
+                                            PokeType.unknown
+                                    ? myPokemon.moves[i]!.type.displayIcon
+                                    : null,
                               ),
                               pokemonState != null
                                   ? Row(
