@@ -100,7 +100,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
-    Map<Widget, int> moveTileVals = {};
+    SortableMap<Widget, int> moveTileVals = SortableMap({});
+    List<MapEntry<Widget, int>> moveTileEntrys = [];
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       //
@@ -159,7 +160,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       if (myState
           .ailmentsWhere((element) => element.id == Ailment.sleep)
           .isNotEmpty) {
-        moveTileVals[SwitchListTile(
+        moveTileVals.map[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.sleep).displayName),
           onChanged: (value) {
             if (value) {
@@ -185,7 +186,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.paralysis)
           .isNotEmpty) {
-        moveTileVals[SwitchListTile(
+        moveTileVals.map[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.paralysis).displayName),
           onChanged: (value) {
             if (value) {
@@ -211,7 +212,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.confusion)
           .isNotEmpty) {
-        moveTileVals[SwitchListTile(
+        moveTileVals.map[SwitchListTile(
           title: Text(ActionFailure(ActionFailure.confusion).displayName),
           onChanged: (value) {
             if (value) {
@@ -342,15 +343,20 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           },
         );
         if (myState.moves.contains(myMove)) {
-          moveTileVals[listTile] = topOrderVal + 3 - i;
+          moveTileVals.map[listTile] = topOrderVal + 3 - i;
         } else {
-          moveTileVals[listTile] = getter.maxDamage;
+          moveTileVals.map[listTile] = getter.maxDamage;
         }
       }
 
-      // TODO:ダメージ多い順にソート
-      moveTileVals = SplayTreeMap.from(
-          moveTileVals, (a, b) => moveTileVals[b]!.compareTo(moveTileVals[a]!));
+      if (currentMoveListOrder == 0) {
+        // ダメージ多い順にソート
+        moveTileEntrys =
+            moveTileVals.sort((a, b) => b.value.compareTo(a.value));
+      } else {
+        // TODO:採用率高い順にソート
+        moveTileEntrys = moveTileVals.map.entries.toList();
+      }
     }
 
     Widget commandColumn;
@@ -505,7 +511,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         key: Key(
                             'BattleActionCommandMoveListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         viewItemCount: 4,
-                        children: moveTileVals.keys.toList(),
+                        children: [
+                          for (final moveTileEntry in moveTileEntrys)
+                            moveTileEntry.key
+                        ],
                       ),
                     ),
                   ]),

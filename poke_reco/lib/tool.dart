@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -183,3 +184,15 @@ bool equals(List? list1, List? list2) {
 /// テキストの高さを返す
 double getTextHeight(TextStyle style) =>
     style.fontSize! * (style.height ?? 1.0);
+
+/// Mapを並べ替えてList<MapEntry>にして返す
+class SortableMap<K, V> {
+  final Map<K, V> map;
+
+  SortableMap(this.map);
+
+  List<MapEntry<K, V>> sort(
+      int Function(MapEntry<K, V>, MapEntry<K, V>) sorter) {
+    return map.entries.toList()..sort((a, b) => sorter(a, b));
+  }
+}
