@@ -1997,6 +1997,28 @@ class PokeDB {
     }
   }
 
+  /// 指定したNoのポケモンが対象のわざを採用していた数を返す。以下注意：
+  /// * 計算対象は対戦相手のポケモンのみ
+  /// ```
+  /// pokeNo: ポケモンの図鑑No
+  /// moveID: わざID
+  /// ```
+  int getAdoptedMoveCount(int pokeNo, int moveID) {
+    int ret = 0;
+    for (final poke in pokemons.values) {
+      // 対戦相手のポケモンの場合のみカウントする
+      if (poke.owner == Owner.fromBattle && poke.no == pokeNo) {
+        for (int i = 0; i < poke.moveNum; i++) {
+          if (poke.moves[i]?.id == moveID) {
+            ret++;
+            continue;
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
   void setTestMode() {
     _isTestMode = true;
     showAd = false;

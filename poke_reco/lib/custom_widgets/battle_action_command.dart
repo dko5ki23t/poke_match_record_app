@@ -14,11 +14,28 @@ import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/tool.dart';
 
 /// わざの並び替えで先頭に来させるための値
-const int topOrderVal = 0x00ffff00;
+const int topOrderVal = 0xffffff00;
 
 enum CommandState {
   selectCommand,
   extraInput,
+}
+
+/// わざのリストタイル＋並び替え用の値
+class MoveTileWithVal {
+  /// わざのリストタイル等Widget
+  final Widget moveTile;
+
+  /// わざの最大ダメージ
+  final int maxDamage;
+
+  /// わざの採用数
+  final int adoptedCount;
+
+  MoveTileWithVal(
+      {required this.moveTile,
+      required this.maxDamage,
+      required this.adoptedCount});
 }
 
 class BattleActionCommand extends StatefulWidget {
@@ -98,8 +115,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
-    SortableMap<Widget, int> moveTileVals = SortableMap({});
-    List<MapEntry<Widget, int>> moveTileEntrys = [];
+    List<MoveTileWithVal> moveTileVals = [];
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       //
@@ -158,79 +174,93 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       if (myState
           .ailmentsWhere((element) => element.id == Ailment.sleep)
           .isNotEmpty) {
-        moveTileVals.map[SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.sleep).displayName),
-          onChanged: (value) {
-            if (value) {
-              parentSetState(() {
-                turnMove.isSuccess = false;
-                turnMove.actionFailure = ActionFailure(ActionFailure.sleep);
-              });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.sleep,
-        )] = topOrderVal + 100;
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(ActionFailure(ActionFailure.sleep).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  turnMove.isSuccess = false;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.sleep);
+                });
+              } else {
+                parentSetState(() {
+                  turnMove.isSuccess = true;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));\n");
+            },
+            value: !turnMove.isSuccess &&
+                turnMove.actionFailure.id == ActionFailure.sleep,
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
+        ));
       }
       // まひ状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.paralysis)
           .isNotEmpty) {
-        moveTileVals.map[SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.paralysis).displayName),
-          onChanged: (value) {
-            if (value) {
-              parentSetState(() {
-                turnMove.isSuccess = false;
-                turnMove.actionFailure = ActionFailure(ActionFailure.paralysis);
-              });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.paralysis,
-        )] = topOrderVal + 100;
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(ActionFailure(ActionFailure.paralysis).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  turnMove.isSuccess = false;
+                  turnMove.actionFailure =
+                      ActionFailure(ActionFailure.paralysis);
+                });
+              } else {
+                parentSetState(() {
+                  turnMove.isSuccess = true;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));\n");
+            },
+            value: !turnMove.isSuccess &&
+                turnMove.actionFailure.id == ActionFailure.paralysis,
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
+        ));
       }
       // こんらん状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.confusion)
           .isNotEmpty) {
-        moveTileVals.map[SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.confusion).displayName),
-          onChanged: (value) {
-            if (value) {
-              parentSetState(() {
-                turnMove.isSuccess = false;
-                turnMove.actionFailure = ActionFailure(ActionFailure.confusion);
-              });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.confusion,
-        )] = topOrderVal + 100;
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(ActionFailure(ActionFailure.confusion).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  turnMove.isSuccess = false;
+                  turnMove.actionFailure =
+                      ActionFailure(ActionFailure.confusion);
+                });
+              } else {
+                parentSetState(() {
+                  turnMove.isSuccess = true;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));\n");
+            },
+            value: !turnMove.isSuccess &&
+                turnMove.actionFailure.id == ActionFailure.confusion,
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
+        ));
         // TODO: extraArg1,extraArg2の値を入力
       }
       for (int i = 0; i < moves.length; i++) {
@@ -341,19 +371,27 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           },
         );
         if (myState.moves.contains(myMove)) {
-          moveTileVals.map[listTile] = topOrderVal + 3 - i;
+          moveTileVals.add(MoveTileWithVal(
+              moveTile: listTile,
+              maxDamage: topOrderVal + 3 - i,
+              adoptedCount: topOrderVal + 3 - i));
         } else {
-          moveTileVals.map[listTile] = getter.maxDamage;
+          moveTileVals.add(MoveTileWithVal(
+            moveTile: listTile,
+            maxDamage: getter.maxDamage,
+            adoptedCount: PokeDB().getAdoptedMoveCount(myPokemon.no, myMove.id),
+          ));
         }
       }
 
       if (currentMoveListOrder == 0) {
-        // ダメージ多い順にソート
-        moveTileEntrys =
-            moveTileVals.sort((a, b) => b.value.compareTo(a.value));
+        // ダメージ多い順にソート(同順位の場合は採用率大きい方が上)
+        moveTileVals.sort(((a, b) => b.adoptedCount.compareTo(a.adoptedCount)));
+        moveTileVals.sort(((a, b) => b.maxDamage.compareTo(a.maxDamage)));
       } else {
-        // TODO:採用率高い順にソート
-        moveTileEntrys = moveTileVals.map.entries.toList();
+        // 採用率高い順にソート(同順位の場合はダメージ大きい方が上)
+        moveTileVals.sort(((a, b) => b.maxDamage.compareTo(a.maxDamage)));
+        moveTileVals.sort(((a, b) => b.adoptedCount.compareTo(a.adoptedCount)));
       }
     }
 
@@ -477,11 +515,12 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           ? Expanded(
                               flex: 2,
                               child: PopupMenuButton(
-                                initialValue: widget.moveListOrder,
+                                initialValue: currentMoveListOrder,
                                 child: Icon(
                                   Icons.reorder,
                                 ),
                                 onSelected: (value) => setState(() {
+                                  currentMoveListOrder = value;
                                   widget.onMoveListOrderChange(value);
                                 }),
                                 itemBuilder: (context) => [
@@ -510,8 +549,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                             'BattleActionCommandMoveListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         viewItemCount: 4,
                         children: [
-                          for (final moveTileEntry in moveTileEntrys)
-                            moveTileEntry.key
+                          for (final moveTileVal in moveTileVals)
+                            moveTileVal.moveTile
                         ],
                       ),
                     ),
