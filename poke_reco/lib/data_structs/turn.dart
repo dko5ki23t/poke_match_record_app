@@ -1,8 +1,11 @@
 import 'dart:collection';
 
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/six_stats.dart';
@@ -2102,10 +2105,14 @@ class Turn extends Equatable implements Copyable {
   /// ```
   /// ownParty: 自身(ユーザー)のパーティ
   /// opponentParty: 相手のパーティ
+  /// [O]suggestAbilities: 提案されるとくせいのリスト
+  /// [O]suggestItems: 提案されるもちもののリスト
   /// ```
   PhaseState updateEndingState(
     Party ownParty,
     Party opponentParty,
+    List<Ability> suggestAbilities,
+    List<Item?> suggestItems,
     AppLocalizations loc,
   ) {
     _endingState = _initialState.copy();
@@ -2172,6 +2179,12 @@ class Turn extends Equatable implements Copyable {
             _endingState.getPokemonState(PlayerType.me, null),
             _endingState.getPokemonState(PlayerType.opponent, null),
             _endingState);
+        // とくせいやもちものの提案
+        if (guide.guideId == Guide.suggestAbilities) {
+          suggestAbilities.add(PokeDB().abilities[guide.args[0]]!);
+        } else if (guide.guideId == Guide.suggestItems) {
+          suggestItems.add(PokeDB().items[guide.args[0]]!);
+        }
       }
 
       if (phase is TurnEffectAction) {

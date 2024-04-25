@@ -1229,10 +1229,170 @@ Future<void> test52_4(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
+/// ハリテヤマ戦1
+Future<void> test53_1(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await backBattleTopPage(driver);
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+  // 基本情報を入力
+  await inputBattleBasicInfo(
+    driver,
+    battleName: 'もこうハリテヤマ戦1',
+    ownPartyname: '53もこテヤマ',
+    opponentName: 'ひろしやま',
+    pokemon1: 'キラフロル',
+    pokemon2: 'サーフゴー',
+    pokemon3: 'カイリュー',
+    pokemon4: 'コノヨザル',
+    pokemon5: 'ケンタロス(パルデアのすがた(かくとう・ほのお))',
+    pokemon6: 'ドオー',
+    sex1: Sex.female,
+    sex3: Sex.female,
+    sex4: Sex.female,
+  );
+  // 選出ポケモン選択ページへ
+  await goSelectPokemonPage(driver);
+  // 選出ポケモンを選ぶ
+  await selectPokemons(driver,
+      ownPokemon1: 'もこテヤマ/',
+      ownPokemon2: 'もこカス/',
+      ownPokemon3: 'もこアルマ2/',
+      opponentPokemon: 'キラフロル');
+  // 各ターン入力画面へ
+  await goTurnPage(driver, turnNum++);
+
+  // ハリテヤマのねこだまし
+  await tapMove(driver, me, 'ねこだまし', false);
+  // キラフロルのHP95
+  await inputRemainHP(driver, me, '95');
+  // キラフロルのどくげしょう
+  await addEffect(driver, 1, op, 'どくげしょう');
+  await driver.tap(find.text('OK'));
+  // ターン2へ
+  await goTurnPage(driver, turnNum++);
+
+  // キラフロルのステルスロック
+  await tapMove(driver, op, 'ステルスロック', true);
+  // ハリテヤマのドレインパンチ
+  await tapMove(driver, me, 'ドレインパンチ', false);
+  // キラフロルのHP30
+  await inputRemainHP(driver, me, '30');
+  // ハリテヤマのHP221
+  await inputRemainHP(driver, me, '');
+  // ターン3へ
+  await goTurnPage(driver, turnNum++);
+
+  // ハリテヤマのバレットパンチ
+  await tapMove(driver, me, 'バレットパンチ', false);
+  // キラフロルのHP0
+  await inputRemainHP(driver, me, '0');
+  // キラフロルひんし->サーフゴーに交代
+  await changePokemon(driver, op, 'サーフゴー', false);
+  // ターン4へ
+  await goTurnPage(driver, turnNum++);
+
+  // サーフゴーのゴールドラッシュ
+  await tapMove(driver, op, 'ゴールドラッシュ', true);
+  // ハリテヤマのHP32
+  await inputRemainHP(driver, op, '32');
+  // ハリテヤマのぶちかまし
+  await tapMove(driver, me, 'ぶちかまし', false);
+  // サーフゴーのHP0
+  await inputRemainHP(driver, me, '0');
+  // サーフゴーひんし->ドオーに交代
+  await changePokemon(driver, op, 'ドオー', false);
+  // ターン5へ
+  await goTurnPage(driver, turnNum++);
+
+  // ハリテヤマのぶちかまし
+  await tapMove(driver, me, 'ぶちかまし', false);
+  // ドオーのHP0
+  await inputRemainHP(driver, me, '0');
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/*
+/// ハリテヤマ戦2
+Future<void> test53_2(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await backBattleTopPage(driver);
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ハリテヤマ戦3
+Future<void> test53_3(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await backBattleTopPage(driver);
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ハリテヤマ戦4
+Future<void> test53_4(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await backBattleTopPage(driver);
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+
+/// ハリテヤマ戦5
+Future<void> test53_5(
+  FlutterDriver driver,
+) async {
+  int turnNum = 0;
+  await backBattleTopPage(driver);
+  await driver.waitForTappable(find.byType('FloatingActionButton'));
+  // 追加ボタン(+)タップ
+  await driver.tap(find.byType('FloatingActionButton'));
+
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
+
+  // 内容保存
+  await driver.tap(find.byValueKey('RegisterBattleSave'));
+}
+*/
+
 // テンプレ
 /*
-/// デカヌチャン戦1
-Future<void> test52_1(
+/// ハリテヤマ戦1
+Future<void> test53_1(
   FlutterDriver driver,
 ) async {
   int turnNum = 0;

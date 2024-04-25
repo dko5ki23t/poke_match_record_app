@@ -19,6 +19,8 @@ class Guide {
   static const int sapConfAttack = 2; // ちからをすいとるから相手のこうげき確定
   static const int moveDamagedToStatus = 3; // 被ダメージ→相手のこうげき/とくこう実数値範囲確定
   static const int moveOrderConfSpeed = 4; // わざの発生順序から相手のすばやさ範囲確定
+  static const int suggestAbilities = 5; // 被ダメージ→相手のとくせい候補を提案
+  static const int suggestItems = 6; // 被ダメージ→相手のもちもの候補を提案
 
   int guideId = 0;
   int categoryId = 0; // カテゴリ別に表示のON/OFFができるように
@@ -71,6 +73,10 @@ class Guide {
         opponentState.minStats.s.real = args[0];
         opponentState.maxStats.s.real = args[1];
         return StatusInfoPageIndex.real;
+      case suggestAbilities:
+      case suggestItems:
+        // 提案の表示は別の場所で行う
+        break;
     }
     return StatusInfoPageIndex.none;
   }

@@ -4304,11 +4304,29 @@ class TurnEffectAction extends TurnEffect {
                   int maxS = opponentPokemonState
                       .maxStats[StatIndex.values[reals.item1.index]].real;
                   bool addGuide = false;
-                  if (minS < reals.item3) {
+                  // もちもの等の影響で、推定した最小値が現在の最大値より大きくなった場合
+                  if (maxS < reals.item3) {
+                    // TODO: とくせいやもちものの提案
+                    ret.add(Guide()
+                      ..guideId = Guide.suggestAbilities
+                      ..guideStr = ''
+                      ..args = []);
+                    minS = maxS;
+                    addGuide = true;
+                  } else if (minS < reals.item3) {
                     minS = reals.item3;
                     addGuide = true;
                   }
-                  if (maxS > reals.item2) {
+                  // もちもの等の影響で、推定した最大値が現在の最小値より小さくなった場合
+                  if (reals.item2 < minS) {
+                    // TODO: とくせいやもちものの提案
+                    ret.add(Guide()
+                      ..guideId = Guide.suggestAbilities
+                      ..guideStr = ''
+                      ..args = []);
+                    maxS = minS;
+                    addGuide = true;
+                  } else if (maxS > reals.item2) {
                     maxS = reals.item2;
                     addGuide = true;
                   }

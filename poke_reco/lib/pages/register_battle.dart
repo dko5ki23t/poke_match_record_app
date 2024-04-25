@@ -1,3 +1,6 @@
+import 'package:just_the_tooltip/just_the_tooltip.dart';
+import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
@@ -149,8 +152,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
 
   final ownBattleCommandKey = GlobalKey<BattleCommandState>();
   final opponentBattleCommandKey = GlobalKey<BattleCommandState>();
-  // 処理ビュー(画面真ん中)のスクロールコントローラ
+
+  /// 処理ビュー(画面真ん中)のスクロールコントローラ
   final effectViewScrollController = AutoScrollController();
+
+  /// 相手ステータスのとくせいのサジェスト用ToolTipコントローラ
+  final opponentAbilityTooltipController = JustTheController();
+
+  /// 相手ステータスのもちもののサジェスト用ToolTipコントローラ
+  final opponentItemTooltipController = JustTheController();
 
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
@@ -202,6 +212,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
     var loc = AppLocalizations.of(context)!;
     PhaseState? focusState;
     var pageInfoIndex = StatusInfoPageIndex.none;
+
+    /// 提案されたとくせいのリスト
+    final List<Ability> suggestAbilities = [];
+
+    /// 提案されたもちもののリスト
+    final List<Item?> suggestItems = [];
 
     // エイリアス
     List<Turn> turns = widget.battle.turns;
@@ -266,8 +282,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           widget.battle.opponentName,
           loc);
       isNewTurn = false;
-      focusState =
-          turns[turnNum - 1].updateEndingState(ownParty, opponentParty, loc);
+      focusState = turns[turnNum - 1].updateEndingState(
+          ownParty, opponentParty, suggestAbilities, suggestItems, loc);
+      if (suggestAbilities.isNotEmpty) {
+        opponentAbilityTooltipController.showTooltip();
+      }
+      if (suggestItems.isNotEmpty) {
+        opponentItemTooltipController.showTooltip();
+      }
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       /*if (appState.requestActionSwap) {
         _onlySwapActionPhases(loc);
@@ -343,7 +365,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               onYesPressed: () async */
       {
         var lastState = turns.last.phases.isNotEmpty
-            ? turns.last.updateEndingState(ownParty, opponentParty, loc)
+            ? turns.last.updateEndingState(ownParty, opponentParty, [], [], loc)
             : turns.last.copyInitialState();
         var oppPokemonStates = lastState.getPokemonStates(PlayerType.opponent);
         // 現在無効のポケモンを有効化し、DBに保存
@@ -1032,7 +1054,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               prevTurn.phases.length - 1, ownParty, opponentParty, loc);*/
           // 前ターンの最終状態を初期状態とする
           PhaseState initialState =
-              prevTurn.updateEndingState(ownParty, opponentParty, loc);
+              prevTurn.updateEndingState(ownParty, opponentParty, [], [], loc);
           currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
           appState.editingPhase =
@@ -1597,6 +1619,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       },
                       animeController: animeController,
                       colorAnimation: colorAnimation,
+                      suggestAbilities: [],
+                      suggestItems: [],
                     ),
                   ),
                   SizedBox(
@@ -1764,6 +1788,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       },
                       animeController: animeController,
                       colorAnimation: colorAnimation,
+                      suggestAbilities: suggestAbilities,
+                      suggestItems: suggestItems,
+                      abilityTooltipController:
+                          opponentAbilityTooltipController,
+                      itemTooltipController: opponentItemTooltipController,
                     ),
                   ),
                   SizedBox(
