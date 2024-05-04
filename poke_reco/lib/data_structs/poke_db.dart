@@ -23,6 +23,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:tuple/tuple.dart';
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -66,6 +67,7 @@ const String abilityColumnName = 'name';
 const String abilityColumnEnglishName = 'englishName';
 const String abilityColumnTiming = 'timing';
 const String abilityColumnTarget = 'target';
+const String abilityColumnPossiblyChangeStat = 'possiblyChangeStat';
 
 const String abilityFlavorDBFile = 'AbilityFlavors.db';
 const String abilityFlavorDBTable = 'abilityFlavorDB';
@@ -96,6 +98,7 @@ const String itemColumnFlingEffect = 'fling_effect';
 const String itemColumnTiming = 'timing';
 const String itemColumnIsBerry = 'is_berry';
 const String itemColumnImageUrl = 'image_url';
+const String itemColumnPossiblyChangeStat = 'possiblyChangeStat';
 
 const String itemFlavorDBFile = 'ItemFlavors.db';
 const String itemFlavorDBTable = 'itemFlavorDB';
@@ -485,17 +488,7 @@ class PokeDB {
   late Database abilityFlavorDb;
   Map<int, Temper> tempers = {0: Temper.none()}; // 無効なせいかく
   late Database temperDb;
-  Map<int, Item> items = {
-    0: Item(
-        id: 0,
-        displayName: '',
-        displayNameEn: '',
-        flingPower: 0,
-        flingEffectId: 0,
-        timing: Timing.none,
-        isBerry: false,
-        imageUrl: '')
-  }; // 無効なもちもの
+  Map<int, Item> items = {0: Item.none()}; // 無効なもちもの
   late Database itemDb;
   Map<int, String> _itemFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
@@ -579,6 +572,24 @@ class PokeDB {
         continue;
       }
       ret.add(int.parse(c));
+    }
+    return ret;
+  }
+
+  List<Tuple2<int, int>> parseIntTuple2List(dynamic str) {
+    List<Tuple2<int, int>> ret = [];
+    // なぜかintの場合もif文の中に入らないのでtoStringを使う
+    if (str is int) {
+      return [];
+    }
+    final contents = str.split(sqlSplit1);
+    for (var c in contents) {
+      if (c == '') {
+        continue;
+      }
+      final contents2 = c.split(sqlSplit2);
+      ret.add(Tuple2(
+          int.parse(contents2.removeAt(0)), int.parse(contents2.removeAt(0))));
     }
     return ret;
   }
@@ -824,16 +835,23 @@ class PokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget
+        abilityColumnTarget,
+        abilityColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[abilityColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       abilities[map[abilityColumnId]] = Ability(
         map[abilityColumnId],
         map[abilityColumnName],
         map[abilityColumnEnglishName],
         Timing.values[map[abilityColumnTiming]],
         Target.values[map[abilityColumnTarget]],
+        possiblyChangeStat,
       );
     }
 
@@ -905,19 +923,27 @@ class PokeDB {
         itemColumnFlingEffect,
         itemColumnTiming,
         itemColumnIsBerry,
-        itemColumnImageUrl
+        itemColumnImageUrl,
+        itemColumnPossiblyChangeStat,
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[itemColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       items[map[itemColumnId]] = Item(
-          id: map[itemColumnId],
-          displayName: map[itemColumnName],
-          displayNameEn: map[itemColumnEnglishName],
-          flingPower: map[itemColumnFlingPower],
-          flingEffectId: map[itemColumnFlingEffect],
-          timing: Timing.values[map[itemColumnTiming]],
-          isBerry: map[itemColumnIsBerry] == 1,
-          imageUrl: map[itemColumnImageUrl]);
+        id: map[itemColumnId],
+        displayName: map[itemColumnName],
+        displayNameEn: map[itemColumnEnglishName],
+        flingPower: map[itemColumnFlingPower],
+        flingEffectId: map[itemColumnFlingEffect],
+        timing: Timing.values[map[itemColumnTiming]],
+        isBerry: map[itemColumnIsBerry] == 1,
+        imageUrl: map[itemColumnImageUrl],
+        possiblyChangeStat: possiblyChangeStat,
+      );
     }
 
     //////////// もちものの説明

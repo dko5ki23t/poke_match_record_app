@@ -20,6 +20,7 @@ itemColumnFlingEffect = 'fling_effect'
 itemColumnTiming = 'timing'
 itemColumnIsBerry = 'is_berry'
 itemColumnImageUrl = 'image_url'
+itemColumnPossiblyChangeStat = 'possiblyChangeStat'
 
 imageUrlBase = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/'
 
@@ -36,11 +37,19 @@ itemCSVFlingPowerIndex = 5
 itemCSVFlingEffectIDIndex = 6
 itemCSVtimingIDIndex = 7
 itemCSVisBerryIndex = 8
+itemCSVchangeStatIDIndex = 9
+itemCSVchangeStatValIndex = 10
 
 # CSVファイル(PokeAPI)で必要となる各ID
 validItemIDs = [i for i in range(1, 8)]       # バトルでポケモンに持たせられるアイテムの種類
 japaneseID = 1
 englishID = 9
+
+# SQLiteでintの配列をvalueにした場合の変換方法
+# ※注）intの2重配列を対象にしている
+IntIntList = list
+sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(i) for i in ints) for ints in l]))
+sqlite3.register_converter("IntIntList", lambda s: [[int(i) for i in s2.split(':')] for s2 in s.split(';')])
 
 def set_argparse():
     parser = argparse.ArgumentParser(description='もちものの情報をCSVからデータベース化')
@@ -80,6 +89,10 @@ def main():
             fling_effect = row[itemCSVFlingEffectIDIndex]
             timing = row[itemCSVtimingIDIndex]
             is_berry = row[itemCSVisBerryIndex]
+            # 変化するステータス
+            changeStat = []
+            if row[itemCSVchangeStatIDIndex] != -1:
+                changeStat.append([row[itemCSVchangeStatIDIndex], row[itemCSVchangeStatValIndex]])
             # 日本語名取得
             names = lang_df[(lang_df[itemLangCSVItemIDColumn] == id) & (lang_df[itemLangCSVLangIDColumn] == japaneseID)][itemLangCSVNameColumn]
             # 英語名取得
@@ -89,7 +102,7 @@ def main():
                 #att = [a for a in flags_df[flags_df['item_id'] == id]['item_flag_id']]
                 #if len(att) > 0:
                 imageUrl = f'{imageUrlBase}{row[itemCSVIdentifierIndex]}.png'
-                items_list.append((id, names.iloc[0], names_en.iloc[0], fling_power, fling_effect, timing, is_berry, imageUrl))
+                items_list.append((id, names.iloc[0], names_en.iloc[0], fling_power, fling_effect, timing, is_berry, imageUrl, changeStat))
 
         # 作成(存在してたら作らない)
         try:
@@ -102,7 +115,8 @@ def main():
             f'  {itemColumnFlingEffect} integer,'
             f'  {itemColumnTiming} integer,'
             f'  {itemColumnIsBerry} integer, '
-            f'  {itemColumnImageUrl} text not null)'
+            f'  {itemColumnImageUrl} text not null,'
+            f'  {itemColumnPossiblyChangeStat} IntIntList)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -110,8 +124,8 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnEnglishName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}, {itemColumnImageUrl})'
-                f' VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {itemDBTable} ({itemColumnId}, {itemColumnName}, {itemColumnEnglishName}, {itemColumnFlingPower}, {itemColumnFlingEffect}, {itemColumnTiming}, {itemColumnIsBerry}, {itemColumnImageUrl}, {itemColumnPossiblyChangeStat})'
+                f' VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 items_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

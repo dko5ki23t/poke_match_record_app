@@ -1594,7 +1594,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       onStatusEdit: (abilityChanged, ability, itemChanged, item,
                           hpChanged, remainHP) {
                         final TurnEffectUserEdit userEdit =
-                            TurnEffectUserEdit();
+                            TurnEffectUserEdit(player: PlayerType.me);
                         if (abilityChanged) {
                           userEdit.add(UserEdit(
                               PlayerType.me, UserEdit.ability, ability.id));
@@ -1763,7 +1763,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                       onStatusEdit: (abilityChanged, ability, itemChanged, item,
                           hpChanged, remainHP) {
                         final TurnEffectUserEdit userEdit =
-                            TurnEffectUserEdit();
+                            TurnEffectUserEdit(player: PlayerType.opponent);
                         if (abilityChanged) {
                           userEdit.add(UserEdit(PlayerType.opponent,
                               UserEdit.ability, ability.id));

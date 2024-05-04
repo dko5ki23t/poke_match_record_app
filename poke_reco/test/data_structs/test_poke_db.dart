@@ -7,6 +7,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:tuple/tuple.dart';
 
 class TestPokeDB {
   static const String assetRoot = '../../../assets/';
@@ -18,6 +19,24 @@ class TestPokeDB {
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
+
+  List<Tuple2<int, int>> parseIntTuple2List(dynamic str) {
+    List<Tuple2<int, int>> ret = [];
+    // なぜかintの場合もif文の中に入らないのでtoStringを使う
+    if (str is int) {
+      return [];
+    }
+    final contents = str.split(sqlSplit1);
+    for (var c in contents) {
+      if (c == '') {
+        continue;
+      }
+      final contents2 = c.split(sqlSplit2);
+      ret.add(Tuple2(
+          int.parse(contents2.removeAt(0)), int.parse(contents2.removeAt(0))));
+    }
+    return ret;
+  }
 
   // PokeDBのinitializeの代わりに呼ぶことで、単体テストでも使えるDBとなる
   Future<void> initialize() async {
@@ -33,17 +52,23 @@ class TestPokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget
+        abilityColumnTarget,
+        abilityColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[abilityColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       data.abilities[map[abilityColumnId]] = Ability(
-        map[abilityColumnId],
-        map[abilityColumnName],
-        map[abilityColumnEnglishName],
-        Timing.values[map[abilityColumnTiming]],
-        Target.values[map[abilityColumnTarget]],
-      );
+          map[abilityColumnId],
+          map[abilityColumnName],
+          map[abilityColumnEnglishName],
+          Timing.values[map[abilityColumnTiming]],
+          Target.values[map[abilityColumnTarget]],
+          possiblyChangeStat);
     }
 
     //////////// とくせいの説明
@@ -118,6 +143,11 @@ class TestPokeDB {
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[itemColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       data.items[map[itemColumnId]] = Item(
           id: map[itemColumnId],
           displayName: map[itemColumnName],
@@ -126,7 +156,8 @@ class TestPokeDB {
           flingEffectId: map[itemColumnFlingEffect],
           timing: Timing.values[map[itemColumnTiming]],
           isBerry: map[itemColumnIsBerry] == 1,
-          imageUrl: map[itemColumnImageUrl]);
+          imageUrl: map[itemColumnImageUrl],
+          possiblyChangeStat: possiblyChangeStat);
     }
 
     //////////// もちものの説明

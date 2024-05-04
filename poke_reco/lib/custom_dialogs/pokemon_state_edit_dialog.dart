@@ -186,14 +186,16 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
                       List<Item> matches = [...PokeDB().items.values];
                       // もちものなしも追加
                       matches.add(Item(
-                          id: -1,
-                          displayName: loc.commonNone,
-                          displayNameEn: loc.commonNone,
-                          flingPower: 0,
-                          flingEffectId: 0,
-                          timing: Timing.none,
-                          isBerry: false,
-                          imageUrl: ''));
+                        id: -1,
+                        displayName: loc.commonNone,
+                        displayNameEn: loc.commonNone,
+                        flingPower: 0,
+                        flingEffectId: 0,
+                        timing: Timing.none,
+                        isBerry: false,
+                        imageUrl: '',
+                        possiblyChangeStat: [],
+                      ));
                       matches.retainWhere((s) {
                         return toKatakana50(
                                 s.displayNameWithUnknown.toLowerCase())

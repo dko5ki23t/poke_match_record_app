@@ -1,5 +1,6 @@
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
@@ -7,6 +8,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:tuple/tuple.dart';
 
 /// とくせいの情報を管理するclass
 class Ability extends Equatable implements Copyable {
@@ -25,6 +27,9 @@ class Ability extends Equatable implements Copyable {
   /// 対象
   final Target target;
 
+  /// 変化し得るステータスとその倍率(100=1.0倍)
+  final List<Tuple2<StatIndex, int>> possiblyChangeStat;
+
   @override
   List<Object?> get props => [
         id,
@@ -32,6 +37,7 @@ class Ability extends Equatable implements Copyable {
         _displayNameEn,
         timing,
         target,
+        possiblyChangeStat,
       ];
 
   /// とくせい
@@ -41,13 +47,15 @@ class Ability extends Equatable implements Copyable {
     this._displayNameEn,
     this.timing,
     this.target,
+    this.possiblyChangeStat,
   );
 
   /// 無効なとくせいを生成
-  factory Ability.none() => Ability(0, '', '', Timing.none, Target.none);
+  factory Ability.none() => Ability(0, '', '', Timing.none, Target.none, []);
 
   @override
-  Ability copy() => Ability(id, _displayName, _displayNameEn, timing, target);
+  Ability copy() => Ability(
+      id, _displayName, _displayNameEn, timing, target, possiblyChangeStat);
 
   /// 表示名
   String get displayName {
@@ -76,6 +84,7 @@ class Ability extends Equatable implements Copyable {
       abilityColumnEnglishName: _displayNameEn,
       abilityColumnTiming: timing.index,
       abilityColumnTarget: target.index,
+      //abilityColumnPossiblyChangeStat: target.index,
     };
     return map;
   }
@@ -949,23 +958,49 @@ class Ability extends Equatable implements Copyable {
   /// SQLに保存された文字列からabilityをパース
   /// ```
   /// str: SQLに保存された文字列
-  /// split1: 区切り文字
+  /// split1~3: 区切り文字
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
   /// ```
-  static Ability deserialize(dynamic str, String split1) {
+  static Ability deserialize(
+      dynamic str, String split1, String split2, String split3,
+      {int version = -1}) {
     final List elements = str.split(split1);
+    int id = int.parse(elements.removeAt(0));
+    String dispName = elements.removeAt(0);
+    String dispNameEn = elements.removeAt(0);
+    Timing timing = Timing.values[int.parse(elements.removeAt(0))];
+    Target target = Target.values[int.parse(elements.removeAt(0))];
+    List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+    if (version != 1) {
+      final elements2 = elements.removeAt(0).split(split2);
+      for (final e2 in elements2) {
+        if (e2 == '') break;
+        final elements3 = e2.split(split3);
+        possiblyChangeStat.add(
+          Tuple2(StatIndex.values[int.parse(elements3.removeAt(0))],
+              int.parse(elements3.removeAt(0))),
+        );
+      }
+    }
     return Ability(
-        int.parse(elements.removeAt(0)),
-        elements.removeAt(0),
-        elements.removeAt(0),
-        Timing.values[int.parse(elements.removeAt(0))],
-        Target.values[int.parse(elements.removeAt(0))]);
+      id,
+      dispName,
+      dispNameEn,
+      timing,
+      target,
+      possiblyChangeStat,
+    );
   }
 
   /// SQL保存用の文字列に変換
   /// ```
-  /// split1: 区切り文字
+  /// split1~3: 区切り文字
   /// ```
-  String serialize(String split1) {
-    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}';
+  String serialize(String split1, String split2, String split3) {
+    String pcsStr = '';
+    for (final pcs in possiblyChangeStat) {
+      pcsStr += '${pcs.item1.index}$split3${pcs.item2}$split2';
+    }
+    return '$id$split1$_displayName$split1$_displayNameEn$split1${timing.index}$split1${target.index}$split1$pcsStr';
   }
 }

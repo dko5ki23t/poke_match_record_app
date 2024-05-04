@@ -545,6 +545,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                       timing: Timing.none,
                       isBerry: false,
                       imageUrl: '',
+                      possiblyChangeStat: [],
                     ));
                     // 持っているもちものが確定している場合
                   } else if (pokemonState.getHoldingItem() != null &&
@@ -565,6 +566,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                         timing: Timing.none,
                         isBerry: false,
                         imageUrl: '',
+                        possiblyChangeStat: [],
                       ));
                     }
                     for (var item in pokemonState.impossibleItems) {
@@ -586,6 +588,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                       timing: Timing.none,
                       isBerry: false,
                       imageUrl: '',
+                      possiblyChangeStat: [],
                     )
                   ];
                 }
@@ -683,6 +686,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                 timing: Timing.none,
                 isBerry: false,
                 imageUrl: '',
+                possiblyChangeStat: [],
               ));
               // 持っているもちものが確定している場合
             } else if (pokemonState.getHoldingItem() != null &&
@@ -703,6 +707,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                   timing: Timing.none,
                   isBerry: false,
                   imageUrl: '',
+                  possiblyChangeStat: [],
                 ));
               }
               for (var item in pokemonState.impossibleItems) {
@@ -724,6 +729,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                 timing: Timing.none,
                 isBerry: false,
                 imageUrl: '',
+                possiblyChangeStat: [],
               )
             ];
           }

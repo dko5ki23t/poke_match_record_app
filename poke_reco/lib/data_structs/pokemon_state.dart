@@ -1626,7 +1626,7 @@ class PokemonState extends Equatable implements Copyable {
     // currentAbility
     if (version == 1) {
       pokemonState.setCurrentAbilityNoEffect(
-          Ability.deserialize(stateElements[12], split2));
+          Ability.deserialize(stateElements[12], split2, 'none', 'none'));
     } else {
       pokemonState.setCurrentAbilityNoEffect(
           pokeData.abilities[int.parse(stateElements[12])]!);
@@ -1654,7 +1654,7 @@ class PokemonState extends Equatable implements Copyable {
       if (ability == '') break;
       if (version == 1) {
         pokemonState.possibleAbilities
-            .add(Ability.deserialize(ability, split3));
+            .add(Ability.deserialize(ability, split3, 'none', 'none'));
       } else {
         pokemonState.possibleAbilities
             .add(pokeData.abilities[int.parse(ability)]!);

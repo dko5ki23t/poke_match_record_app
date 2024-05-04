@@ -1,3 +1,4 @@
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/timing.dart';
@@ -8,6 +9,7 @@ import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_item.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:tuple/tuple.dart';
 
 /// なげつけたときの効果
 class FlingItemEffect {
@@ -59,6 +61,9 @@ class Item extends Equatable implements Copyable {
   /// 画像URL
   final String imageUrl;
 
+  /// 変化し得るステータスとその倍率(100=1.0倍)
+  final List<Tuple2<StatIndex, int>> possiblyChangeStat;
+
   @override
   List<Object?> get props => [
         id,
@@ -69,6 +74,7 @@ class Item extends Equatable implements Copyable {
         timing,
         isBerry,
         imageUrl,
+        possiblyChangeStat,
       ];
 
   // 特徴的なもちもののNo
@@ -88,6 +94,7 @@ class Item extends Equatable implements Copyable {
     required this.timing,
     required this.isBerry,
     required this.imageUrl,
+    required this.possiblyChangeStat,
   }) {
     _displayName = displayName;
     _displayNameEn = displayNameEn;
@@ -102,18 +109,21 @@ class Item extends Equatable implements Copyable {
       flingEffectId: 0,
       timing: Timing.none,
       isBerry: false,
-      imageUrl: '');
+      imageUrl: '',
+      possiblyChangeStat: []);
 
   @override
   Item copy() => Item(
-      id: id,
-      displayName: _displayName,
-      displayNameEn: _displayNameEn,
-      flingPower: flingPower,
-      flingEffectId: flingEffectId,
-      timing: timing,
-      isBerry: isBerry,
-      imageUrl: imageUrl);
+        id: id,
+        displayName: _displayName,
+        displayNameEn: _displayNameEn,
+        flingPower: flingPower,
+        flingEffectId: flingEffectId,
+        timing: timing,
+        isBerry: isBerry,
+        imageUrl: imageUrl,
+        possiblyChangeStat: possiblyChangeStat,
+      );
 
   /// 表示名
   String get displayName {
@@ -684,6 +694,7 @@ class Item extends Equatable implements Copyable {
       itemColumnId: id,
       itemColumnName: displayName,
       itemColumnTiming: timing,
+      //itemColumnPossiblyChangeStat: target.index,
     };
     return map;
   }

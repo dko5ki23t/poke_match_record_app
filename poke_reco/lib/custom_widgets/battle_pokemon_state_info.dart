@@ -254,8 +254,13 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                       alignment: Alignment.topRight,
                       children: [
                         Padding(
-                          padding: EdgeInsets.all(8.0),
+                          padding: EdgeInsets.only(
+                              left: 8.0,
+                              bottom: 8.0,
+                              right: theme.iconTheme.size ?? 24.0,
+                              top: theme.iconTheme.size ?? 24.0),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               for (final item in widget.suggestItems)
                                 GestureDetector(
@@ -264,18 +269,18 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                                         true, item, false, 0);
                                     widget.itemTooltipController?.hideTooltip();
                                   },
-                                  child: Text(
-                                      item == null ? '' : item.displayName),
+                                  child: Text(item == null
+                                      ? ''
+                                      : '${item.displayName}?'),
                                 ),
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () =>
-                              widget.abilityTooltipController?.hideTooltip(),
-                          child: Icon(
-                            Icons.close,
-                          ),
+                        IconButton(
+                          onPressed: () =>
+                              widget.itemTooltipController?.hideTooltip(),
+                          icon: Icon(Icons.close),
+                          padding: EdgeInsets.all(0.0),
                         ),
                       ],
                     ),

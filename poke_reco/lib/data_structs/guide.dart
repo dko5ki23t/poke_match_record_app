@@ -4,6 +4,16 @@ import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 
+/// とくせいやもちものが持つ効果の分類。
+/// 受けたダメージの大きさ等からとくせいやもちものを推測するときに使う
+// TODO:無くす？
+/*enum SuggestCategory {
+  none,
+  
+  /// 物理技使用時、こうげきを2倍にしてダメージ計算
+  
+}*/
+
 /// わざや処理の入力に対して表示する情報や、そこから推定できる相手ポケモンのパラメータなど
 class Guide {
   // 値はconfirm_status.csvのNoと一致させてる

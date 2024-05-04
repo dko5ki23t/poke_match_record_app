@@ -4307,10 +4307,36 @@ class TurnEffectAction extends TurnEffect {
                   // もちもの等の影響で、推定した最小値が現在の最大値より大きくなった場合
                   if (maxS < reals.item3) {
                     // TODO: とくせいやもちものの提案
-                    ret.add(Guide()
-                      ..guideId = Guide.suggestAbilities
-                      ..guideStr = ''
-                      ..args = []);
+                    // TODO: 判定方法
+                    final sugAList = opponentPokemonState.possibleAbilities
+                        .where((element) => element.possiblyChangeStat
+                            .where((e) =>
+                                e.item1 ==
+                                    StatIndex.values[reals.item1.index] &&
+                                e.item2 > 100)
+                            .isNotEmpty);
+                    if (sugAList.isNotEmpty) {
+                      ret.add(Guide()
+                        ..guideId = Guide.suggestAbilities
+                        ..guideStr = ''
+                        ..args = [for (final sugA in sugAList) sugA.id]);
+                    }
+                    final sugIList = pokeData.items.values.where((element) =>
+                        element.id != 0 &&
+                        !opponentPokemonState.impossibleItems
+                            .contains(element) &&
+                        element.possiblyChangeStat
+                            .where((e) =>
+                                e.item1 ==
+                                    StatIndex.values[reals.item1.index] &&
+                                e.item2 > 100)
+                            .isNotEmpty);
+                    if (sugIList.isNotEmpty) {
+                      ret.add(Guide()
+                        ..guideId = Guide.suggestItems
+                        ..guideStr = ''
+                        ..args = [for (final sugI in sugIList) sugI.id]);
+                    }
                     minS = maxS;
                     addGuide = true;
                   } else if (minS < reals.item3) {
