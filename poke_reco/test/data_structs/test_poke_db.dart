@@ -139,7 +139,8 @@ class TestPokeDB {
         itemColumnFlingEffect,
         itemColumnTiming,
         itemColumnIsBerry,
-        itemColumnImageUrl
+        itemColumnImageUrl,
+        itemColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
