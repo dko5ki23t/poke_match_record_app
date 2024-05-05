@@ -2099,7 +2099,7 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
-  /// ターンの最終状態(_endingState)を更新する。
+  /// 最終状態(_endingState)を更新する。
   /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
   /// また、_endingStateのコピーを返す。
   /// ```
@@ -2108,7 +2108,7 @@ class Turn extends Equatable implements Copyable {
   /// [O]suggestAbilities: 提案されるとくせいのリスト
   /// [O]suggestItems: 提案されるもちもののリスト
   /// ```
-  PhaseState updateEndingState(
+  PhaseState _updateEndingState(
     Party ownParty,
     Party opponentParty,
     List<Ability> suggestAbilities,
@@ -2574,6 +2574,152 @@ class Turn extends Equatable implements Copyable {
     // canZoroarkHisui
     ret += canZoroarkHisui ? '1' : '0';
 
+    return ret;
+  }
+}
+
+/// 対戦中の全ターンを管理するclass
+/// (ユーザ編集によってもちものが変わる->その時点から遡って、
+///  過去のターンでのダメージからパラメータ値を再推定する・・・
+///  といった処理が起こり得るためこのclassを作った)
+class TurnList extends Equatable implements Copyable {
+  List<Turn> list = [];
+
+  @override
+  List<Object?> get props => [list];
+
+  @override
+  TurnList copy() => TurnList()..list.addAll(list);
+
+  bool get isEmpty => list.isEmpty;
+  bool get isNotEmpty => list.isNotEmpty;
+  int get length => list.length;
+  Turn get last => list.last;
+  Turn get first => list.first;
+  Turn operator [](int index) => list[index];
+  void operator []=(int index, Turn value) {
+    list[index] = value;
+  }
+
+  void clear() => list.clear();
+
+  void add(Turn element) {
+    list.add(element);
+  }
+
+  /// 指定したターンの最終状態(_endingState)を更新する。
+  /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
+  /// また、_endingStateのコピーを返す。
+  /// ```
+  /// turnIndex: ターン(0始まり、負値は最後のターン)
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 相手のパーティ
+  /// [O]suggestAbilities: 提案されるとくせいのリスト
+  /// [O]suggestItems: 提案されるもちもののリスト
+  /// ```
+  PhaseState updateEndingState(
+    int turnIndex,
+    Party ownParty,
+    Party opponentParty,
+    List<Ability> suggestAbilities,
+    List<Item?> suggestItems,
+    AppLocalizations loc,
+  ) {
+    Turn target =
+        0 <= turnIndex && turnIndex < length ? list[turnIndex] : list.last;
+    return target._updateEndingState(
+        ownParty, opponentParty, suggestAbilities, suggestItems, loc);
+  }
+
+  /// 全ターンの全phase(ただし有効なphaseのみ)を処理して状態を更新する
+  /// 指定したターンでユーザによるパラメータ編集が行われた/パラメータ編集を削除した場合に呼び出す。
+  /// ```
+  /// turnIndex: ターン(0始まり、負値は最後のターン)
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 相手のパーティ
+  /// opponentPokemonIndex: 相手のポケモンのインデックス(1始まり)
+  /// opponentNewAbility: 相手のとくせい(変化なしなら空のリストを指定)
+  /// opponentNewItem: 相手のもちもの(変化なしなら空のリストを指定)
+  /// ```
+  void updateStatesFromBeginning(
+    int turnIndex,
+    Party ownParty,
+    Party opponentParty,
+    int opponentPokemonIndex,
+    List<Ability> opponentNewAbility,
+    List<Item?> opponentNewItem,
+    AppLocalizations loc,
+  ) {
+    // 対戦開始時のとくせい/もちものを設定する
+    final firstTurn = list.first;
+    final initialOppPokemonState = firstTurn
+        .getInitialPokemonStates(PlayerType.opponent)[opponentPokemonIndex - 1]
+        .copy();
+    if (opponentNewAbility.isNotEmpty) {
+      initialOppPokemonState.setCurrentAbilityNoEffect(opponentNewAbility.last);
+    }
+    if (opponentNewItem.isNotEmpty) {
+      initialOppPokemonState.setHoldingItemNoEffect(opponentNewItem.last);
+    }
+    firstTurn.getInitialPokemonStates(
+        PlayerType.opponent)[opponentPokemonIndex - 1] = initialOppPokemonState;
+    firstTurn.getInitialLastExitedStates(
+            PlayerType.opponent)[opponentPokemonIndex - 1] =
+        initialOppPokemonState.copy();
+    // 設定したポケモンが最初に登場する場合、登場時処理を行う
+    if (firstTurn.getInitialPokemonIndex(PlayerType.opponent) ==
+        opponentPokemonIndex) {
+      firstTurn.initialOpponentPokemonState.processEnterEffect(
+          firstTurn.initialOwnPokemonState, firstTurn.copyInitialState());
+    }
+    // 最初のターンから指定したターンまで_endingState/_initialStateを更新する
+    PhaseState lastTurnState =
+        firstTurn._updateEndingState(ownParty, opponentParty, [], [], loc);
+    for (int i = 1; i <= turnIndex; i++) {
+      // 前ターンの最終状態を初期状態とする
+      list[i].setInitialState(lastTurnState.copy());
+      lastTurnState =
+          list[i]._updateEndingState(ownParty, opponentParty, [], [], loc);
+    }
+  }
+
+  /// SQLに保存された文字列からTurnListをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1 ~ split8: 区切り文字
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
+  static TurnList deserialize(
+      dynamic str,
+      String split1,
+      String split2,
+      String split3,
+      String split4,
+      String split5,
+      String split6,
+      String split7,
+      String split8,
+      {int version = -1}) {
+    TurnList ret = TurnList();
+    final strTurns = str.split(split1);
+    for (final strTurn in strTurns) {
+      if (strTurn == '') break;
+      ret.add(Turn.deserialize(
+          strTurn, split2, split3, split4, split5, split6, split7, split8,
+          version: version));
+    }
+    return ret;
+  }
+
+  /// SQL保存用の文字列に変換
+  String serialize(String split1, String split2, String split3, String split4,
+      String split5, String split6, String split7, String split8) {
+    String ret = '';
+    for (final turn in list) {
+      ret += turn.serialize(
+          split2, split3, split4, split5, split6, split7, split8);
+      ret += split1;
+    }
     return ret;
   }
 }

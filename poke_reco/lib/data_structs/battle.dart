@@ -63,7 +63,7 @@ class Battle extends Equatable implements Copyable {
   String opponentName = '';
 
   /// ターン
-  List<Turn> turns = [];
+  TurnList turns = TurnList();
 
   /// 自身(ユーザー)が勝利したかどうか
   bool isMyWin = false;
@@ -123,13 +123,9 @@ class Battle extends Equatable implements Copyable {
       }
     }
     // turns
-    final strTurns = map[battleColumnTurns].split(sqlSplit1);
-    for (final strTurn in strTurns) {
-      if (strTurn == '') break;
-      turns.add(Turn.deserialize(strTurn, sqlSplit2, sqlSplit3, sqlSplit4,
-          sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8,
-          version: version));
-    }
+    turns = TurnList.deserialize(map[battleColumnTurns], sqlSplit1, sqlSplit2,
+        sqlSplit3, sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8,
+        version: version);
   }
 
   @override
@@ -142,7 +138,7 @@ class Battle extends Equatable implements Copyable {
     .._parties[0] = _parties[0].copy()
     .._parties[1] = _parties[1].copy()
     ..opponentName = opponentName
-    ..turns = [for (final turn in turns) turn.copy()]
+    ..turns = turns.copy()
     ..isMyWin = isMyWin
     ..isYourWin = isYourWin;
 
@@ -161,7 +157,7 @@ class Battle extends Equatable implements Copyable {
     datetime = DateTime.now();
     _parties = [Party(), Party()];
     opponentName = '';
-    turns = [];
+    turns = TurnList();
     isMyWin = false;
     isYourWin = false;
   }
@@ -223,12 +219,6 @@ class Battle extends Equatable implements Copyable {
 
   /// SQLite保存用Mapを返す
   Map<String, dynamic> toMap() {
-    String turnsStr = '';
-    for (final turn in turns) {
-      turnsStr += turn.serialize(sqlSplit2, sqlSplit3, sqlSplit4, sqlSplit5,
-          sqlSplit6, sqlSplit7, sqlSplit8);
-      turnsStr += sqlSplit1;
-    }
     return {
       battleColumnId: id,
       battleColumnViewOrder: viewOrder,
@@ -238,7 +228,8 @@ class Battle extends Equatable implements Copyable {
       battleColumnOwnPartyId: _parties[0].id,
       battleColumnOpponentName: opponentName,
       battleColumnOpponentPartyId: _parties[1].id,
-      battleColumnTurns: turnsStr,
+      battleColumnTurns: turns.serialize(sqlSplit1, sqlSplit2, sqlSplit3,
+          sqlSplit4, sqlSplit5, sqlSplit6, sqlSplit7, sqlSplit8),
       battleColumnIsMyWin: isMyWin ? 1 : 0,
       battleColumnIsYourWin: isYourWin ? 1 : 0,
     };

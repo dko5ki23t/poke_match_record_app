@@ -228,7 +228,7 @@ class FourParams extends Equatable implements Copyable {
     return indi;
   }
 
-  /// 実数値以外の値から実数値を算出済みパラメータを生成
+  /// 実数値以外の値から実数値算出済みパラメータを生成
   /// ```
   /// statIndex: 対象のパラメータ
   /// level: ポケモンのレベル

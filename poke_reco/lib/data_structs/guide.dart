@@ -18,19 +18,40 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 class Guide {
   // 値はconfirm_status.csvのNoと一致させてる
   static const int none = 0;
-  static const int damageCalc = 1001; // ダメージ計算
-  static const int confItem = 1002; // 相手のもちもの確定(当該もちものの使用等、自然にわかる範囲)
-  static const int confMove = 1003; // 相手のわざ確定(当該わざの使用等、自然にわかる範囲)
-  static const int confAbility = 1004; // 相手のとくせい確定(当該わざの使用等、自然にわかる範囲)
-  static const int confZoroark =
-      1005; // 相手が使用したわざから、相手のポケモンがゾロアーク系であること確定(ここではなくprocessMoveで処理)
+
+  /// ダメージ計算
+  static const int damageCalc = 1001;
+
+  /// 相手のもちもの確定(当該もちものの使用等、自然にわかる範囲)
+  static const int confItem = 1002;
+
+  /// 相手のわざ確定(当該わざの使用等、自然にわかる範囲)
+  static const int confMove = 1003;
+
+  /// 相手のとくせい確定(当該わざの使用等、自然にわかる範囲)
+  static const int confAbility = 1004;
+
+  /// 相手が使用したわざから、相手のポケモンがゾロアーク系であること確定(ここではなくprocessMoveで処理)
+  static const int confZoroark = 1005;
+
   // 以下、別CSVに記載のIDと一致させる
-  static const int leechSeedConfHP = 1; // やどりぎのタネから相手のHP範囲確定
-  static const int sapConfAttack = 2; // ちからをすいとるから相手のこうげき確定
-  static const int moveDamagedToStatus = 3; // 被ダメージ→相手のこうげき/とくこう実数値範囲確定
-  static const int moveOrderConfSpeed = 4; // わざの発生順序から相手のすばやさ範囲確定
-  static const int suggestAbilities = 5; // 被ダメージ→相手のとくせい候補を提案
-  static const int suggestItems = 6; // 被ダメージ→相手のもちもの候補を提案
+  /// やどりぎのタネから相手のHP範囲確定
+  static const int leechSeedConfHP = 1;
+
+  /// ちからをすいとるから相手のこうげき確定
+  static const int sapConfAttack = 2;
+
+  /// 被ダメージ→相手のこうげき/とくこう実数値範囲確定
+  static const int moveDamagedToStatus = 3;
+
+  /// わざの発生順序から相手のすばやさ範囲確定
+  static const int moveOrderConfSpeed = 4;
+
+  /// 被ダメージ→相手のとくせい候補を提案
+  static const int suggestAbilities = 5;
+
+  /// 被ダメージ→相手のもちもの候補を提案
+  static const int suggestItems = 6;
 
   int guideId = 0;
   int categoryId = 0; // カテゴリ別に表示のON/OFFができるように
@@ -75,6 +96,7 @@ class Guide {
         return StatusInfoPageIndex.real;
       case moveDamagedToStatus:
         // TODO: この時点で努力値等を反映するのかどうかとか
+        // TODO! せいかく補正込みの値がargsに入っているため、そのまま代入するのは間違い？
         opponentState.minStats[StatIndex.values[args[0]]].real = args[1];
         opponentState.maxStats[StatIndex.values[args[0]]].real = args[2];
         return StatusInfoPageIndex.real;

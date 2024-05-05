@@ -5960,22 +5960,101 @@ class TurnEffectAction extends TurnEffect {
 
     int attackVmax = movePower == 0
         ? 0
-        : ((((tmpMax / 0.85).floor() - 2) * 50 * defenseVmax) /
+        : (((tmpMax - 2) * 50 * defenseVmin) /
                 ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
             .floor();
     int attackVmin = movePower == 0
         ? 0
-        : (((tmpMin - 2) * 50 * defenseVmin) /
+        : (((tmpMin - 2) * 50 * defenseVmax) /
                 ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
             .floor();
 
+    // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
     plusIgnore = yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
     minusIgnore =
         isCritical || yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-
-    StatIndex retStat = StatIndex.H;
     int ret2 = 0;
     int ret3 = 0;
+    // TODO: 一旦放置
+    /*if (useLargerAC) {
+      attackVmax = max(
+          calcMaxAttack,
+          myState.finalizedMaxStat(
+              StatIndex.C, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore));
+      attackVmin = max(
+          calcMinAttack,
+          myState.finalizedMinStat(
+              StatIndex.C, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore));
+    } else*/
+    {
+      if (damageClassID != DamageClass.physical) {
+        ret2 = myState.unfinalizedStat(
+            attackVmax, StatIndex.C, replacedMoveType, yourState, state,
+            plusCut: plusIgnore, minusCut: minusIgnore);
+        ret3 = myState.unfinalizedStat(
+            attackVmin, StatIndex.C, replacedMoveType, yourState, state,
+            plusCut: plusIgnore, minusCut: minusIgnore);
+      } else {
+        ret2 = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+            ? myState.unfinalizedStat(
+                attackVmax, StatIndex.A, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore)
+            : myState.unfinalizedStat(
+                attackVmax, StatIndex.B, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
+        ret3 = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
+            ? myState.unfinalizedStat(
+                attackVmin, StatIndex.A, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore)
+            : myState.unfinalizedStat(
+                attackVmin, StatIndex.B, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
+        // TODO: イカサマって相手のステータス推定に使えないのでは
+        if (isFoulPlay) {
+          ret2 = yourState
+                  .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                  .isEmpty
+              ? yourState.unfinalizedStat(
+                  attackVmax, StatIndex.A, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore)
+              : yourState.unfinalizedStat(
+                  attackVmax, StatIndex.B, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore);
+          ret3 = yourState
+                  .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                  .isEmpty
+              ? yourState.unfinalizedStat(
+                  attackVmin, StatIndex.A, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore)
+              : yourState.unfinalizedStat(
+                  attackVmin, StatIndex.B, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore);
+        } else if (defenseAltAttack) {
+          ret2 = myState
+                  .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                  .isEmpty
+              ? myState.unfinalizedStat(
+                  attackVmax, StatIndex.B, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore)
+              : myState.unfinalizedStat(
+                  attackVmax, StatIndex.A, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore);
+          ret3 = myState
+                  .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                  .isEmpty
+              ? myState.unfinalizedStat(
+                  attackVmin, StatIndex.B, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore)
+              : myState.unfinalizedStat(
+                  attackVmin, StatIndex.A, replacedMoveType, yourState, state,
+                  plusCut: plusIgnore, minusCut: minusIgnore);
+        }
+      }
+    }
+
+    StatIndex retStat = StatIndex.H;
     if (damageClassID == 2) {
       if (defenseAltAttack) {
         if (myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty) {
@@ -5993,14 +6072,7 @@ class TurnEffectAction extends TurnEffect {
     } else {
       retStat = StatIndex.C;
     }
-    if ((plusIgnore && myState.statChanges(retStat.index - 1) > 0) ||
-        (minusIgnore && myState.statChanges(retStat.index - 1) < 0)) {
-      ret2 = attackVmax;
-      ret3 = attackVmin;
-    } else {
-      ret2 = myState.getNotRankedStat(retStat, attackVmax);
-      ret3 = myState.getNotRankedStat(retStat, attackVmin);
-    }
+
     int count = 0; // 誤差20までなら修正
     bool loop = true;
     while (count < 20 && loop) {
