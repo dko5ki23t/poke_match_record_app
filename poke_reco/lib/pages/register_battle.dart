@@ -22,7 +22,6 @@ import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_change_fainting_pokemon.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_user_edit.dart';
 import 'package:poke_reco/main.dart';
-import 'package:poke_reco/tool.dart';
 import 'package:provider/provider.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/battle.dart';
@@ -269,9 +268,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
 
     if (turns.length >= turnNum &&
         pageType == RegisterBattlePageType.turnPage) {
-      // フォーカスしているフェーズの状態を取得
-//      focusState = turns[turnNum-1].
-//                    getProcessedStates(focusPhaseIdx-1, ownParty, opponentParty, loc);
       // 各フェーズを確認して、必要なものがあれば足したり消したりする
       pageInfoIndex = turns[turnNum - 1].phases.adjust(
           isNewTurn,
@@ -295,17 +291,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
       if (suggestItems.isNotEmpty) {
         opponentItemTooltipController.showTooltip();
       }
-      // 各フェーズを確認して、必要なものがあれば足したり消したりする
-      /*if (appState.requestActionSwap) {
-        _onlySwapActionPhases(loc);
-        appState.requestActionSwap = false;
-      }
-      if (getSelectedNum(appState.editingPhase) == 0 || appState.needAdjustPhases >= 0) {
-        sameTimingList = _adjustPhases(appState, isNewTurn, loc);
-        isNewTurn = false;
-        appState.needAdjustPhases = -1;
-        appState.adjustPhaseByDelete = false;
-      }*/
     }
 
     final ownLastAction = turns.isNotEmpty
@@ -997,38 +982,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             isNewTurn = true;
           }
           focusPhaseIdx = 0;
-          var currentTurn = turns[turnNum - 1];
-          appState.editingPhase =
-              List.generate(currentTurn.phases.length, (index) => false);
-          // テキストフィールドの初期値設定
-/*
-          textEditingControllerList1 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                  text: currentTurn.phases[index].getEditingControllerText1()));
-          textEditingControllerList2 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                      text: currentTurn.phases[index].getEditingControllerText2(
-                    currentTurn.getProcessedStates(
-                        index, ownParty, opponentParty, loc),
-                    _getPrevTimingEffect(index),
-                  )));
-          textEditingControllerList3 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                      text: currentTurn.phases[index].getEditingControllerText3(
-                    currentTurn.getProcessedStates(
-                        index, ownParty, opponentParty, loc),
-                    _getPrevTimingEffect(index),
-                  )));
-          textEditingControllerList4 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                  text: currentTurn.phases[index].getEditingControllerText4(
-                      currentTurn.getProcessedStates(
-                          index, ownParty, opponentParty, loc))));
-*/
           pageType = RegisterBattlePageType.turnPage;
           // 統合テスト作成用
           print("// 選出ポケモンを選ぶ\n"
@@ -1054,45 +1007,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum - 1];
-          /*
-          PhaseState initialState = prevTurn.getProcessedStates(
-              prevTurn.phases.length - 1, ownParty, opponentParty, loc);*/
           // 前ターンの最終状態を初期状態とする
           PhaseState initialState = turns.updateEndingState(
               prevTurnIndex, ownParty, opponentParty, [], [], loc);
           currentTurn.setInitialState(initialState);
           focusPhaseIdx = 0;
-          appState.editingPhase =
-              List.generate(currentTurn.phases.length, (index) => false);
-          // テキストフィールドの初期値設定
-          /*
-          textEditingControllerList1 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                  text: currentTurn.phases[index].getEditingControllerText1()));
-          textEditingControllerList2 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                      text: currentTurn.phases[index].getEditingControllerText2(
-                    currentTurn.getProcessedStates(
-                        index, ownParty, opponentParty, loc),
-                    _getPrevTimingEffect(index),
-                  )));
-          textEditingControllerList3 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                      text: currentTurn.phases[index].getEditingControllerText3(
-                    currentTurn.getProcessedStates(
-                        index, ownParty, opponentParty, loc),
-                    _getPrevTimingEffect(index),
-                  )));
-          textEditingControllerList4 = List.generate(
-              currentTurn.phases.length,
-              (index) => TextEditingController(
-                  text: currentTurn.phases[index].getEditingControllerText4(
-                      currentTurn.getProcessedStates(
-                          index, ownParty, opponentParty, loc))));
-                          */
           pageType = RegisterBattlePageType.turnPage;
           // 行動入力画面を初期化
           ownBattleCommandKey.currentState?.reset();
@@ -1127,42 +1046,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             turnNum = 1;
             pageType = RegisterBattlePageType.firstPokemonPage;
           } else {
-            var currentTurn = turns[turnNum - 1];
-            appState.editingPhase =
-                List.generate(currentTurn.phases.length, (index) => false);
-/*
-            textEditingControllerList1 = List.generate(
-                currentTurn.phases.length,
-                (index) => TextEditingController(
-                    text:
-                        currentTurn.phases[index].getEditingControllerText1()));
-            textEditingControllerList2 = List.generate(
-                currentTurn.phases.length,
-                (index) => TextEditingController(
-                        text:
-                            currentTurn.phases[index].getEditingControllerText2(
-                      currentTurn.getProcessedStates(
-                          index, ownParty, opponentParty, loc),
-                      _getPrevTimingEffect(index),
-                    )));
-            textEditingControllerList3 = List.generate(
-                currentTurn.phases.length,
-                (index) => TextEditingController(
-                        text:
-                            currentTurn.phases[index].getEditingControllerText3(
-                      currentTurn.getProcessedStates(
-                          index, ownParty, opponentParty, loc),
-                      _getPrevTimingEffect(index),
-                    )));
-            textEditingControllerList4 = List.generate(
-                currentTurn.phases.length,
-                (index) => TextEditingController(
-                      text: currentTurn.phases[index].getEditingControllerText4(
-                        currentTurn.getProcessedStates(
-                            index, ownParty, opponentParty, loc),
-                      ),
-                    ));
-*/
             pageType = RegisterBattlePageType.turnPage;
           }
           focusPhaseIdx = 0;
@@ -1963,7 +1846,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               key: Key('RegisterBattleSave'), // テストでの識別用
               theme: theme,
               onPressed: (pageType == RegisterBattlePageType.turnPage &&
-                      getSelectedNum(appState.editingPhase) == 0 &&
                       widget.battle != pokeData.battles[widget.battle.id])
                   ? () => onComplete()
                   : null,

@@ -397,26 +397,11 @@ class MyAppState extends ChangeNotifier {
   Map<int, Pokemon> pokemons = {};
   Map<int, Party> parties = {};
   Map<int, Battle> battles = {};
-  //void Function() onBackKeyPushed = () {};
-  //void Function(void Function() func) onTabChange =
-  //    (func) {}; // 各ページで書き換えてもらう関数
-  //void Function(void Function() func) changeTab = (func) {};
-  // 対戦登録画面のわざ選択前後入力で必要なステート
-  List<bool> editingPhase = [];
-  // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
-  int needAdjustPhases = -1;
-  // 行動順入れ替え要求フラグ
-  bool requestActionSwap = false;
-  // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
-  bool adjustPhaseByDelete = false;
 
   /// チュートリアルの段階(PokeDBと同期させる)
   int tutorialStep = 0;
 
   MyAppState(BuildContext context, Locale? locale) {
-    //changeTab = (func) {
-    //  onTabChange(func);
-    //};
     fetchPokeData(locale ?? Locale(Platform.localeName.substring(0, 2), ''));
   }
 

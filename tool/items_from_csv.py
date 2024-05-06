@@ -39,6 +39,8 @@ itemCSVtimingIDIndex = 7
 itemCSVisBerryIndex = 8
 itemCSVchangeStatIDIndex = 9
 itemCSVchangeStatValIndex = 10
+itemCSVchangeStatIDIndex2 = 11
+itemCSVchangeStatValIndex2 = 12
 
 # CSVファイル(PokeAPI)で必要となる各ID
 validItemIDs = [i for i in range(1, 8)]       # バトルでポケモンに持たせられるアイテムの種類
@@ -48,7 +50,7 @@ englishID = 9
 # SQLiteでintの配列をvalueにした場合の変換方法
 # ※注）intの2重配列を対象にしている
 IntIntList = list
-sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(i) for i in ints) for ints in l]))
+sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(int(i)) for i in ints) for ints in l]))
 sqlite3.register_converter("IntIntList", lambda s: [[int(i) for i in s2.split(':')] for s2 in s.split(';')])
 
 def set_argparse():
@@ -93,6 +95,8 @@ def main():
             changeStat = []
             if row[itemCSVchangeStatIDIndex] != -1:
                 changeStat.append([row[itemCSVchangeStatIDIndex], row[itemCSVchangeStatValIndex]])
+            if row[itemCSVchangeStatIDIndex2] != -1:
+                changeStat.append([row[itemCSVchangeStatIDIndex2], row[itemCSVchangeStatValIndex2]])
             # 日本語名取得
             names = lang_df[(lang_df[itemLangCSVItemIDColumn] == id) & (lang_df[itemLangCSVLangIDColumn] == japaneseID)][itemLangCSVNameColumn]
             # 英語名取得

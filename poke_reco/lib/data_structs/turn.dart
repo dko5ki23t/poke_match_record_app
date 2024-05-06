@@ -1551,15 +1551,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         var nextTiming =
             changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
         prevTiming = currentTiming;
-        if (/*(timingListIdx >= sameTimingList.length ||
-            sameTimingList[timingListIdx].first.turnEffect.timing != nextTiming ||*/
-            ((currentTiming !=
-                nextTiming) /*||
-            sameTimingList[timingListIdx].first.needAssist*/
-            ) /*&&
-                appState.needAdjustPhases <= i &&
-                !appState.adjustPhaseByDelete*/
-            ) {
+        if (currentTiming != nextTiming) {
           var tmpAction = lastAction;
           if (nextTiming == Timing.beforeMove) {
             // わざの先読みをする
@@ -2181,9 +2173,13 @@ class Turn extends Equatable implements Copyable {
             _endingState);
         // とくせいやもちものの提案
         if (guide.guideId == Guide.suggestAbilities) {
-          suggestAbilities.add(PokeDB().abilities[guide.args[0]]!);
+          for (final aID in guide.args) {
+            suggestAbilities.add(PokeDB().abilities[aID]!);
+          }
         } else if (guide.guideId == Guide.suggestItems) {
-          suggestItems.add(PokeDB().items[guide.args[0]]!);
+          for (final iID in guide.args) {
+            suggestItems.add(PokeDB().items[iID]!);
+          }
         }
       }
 

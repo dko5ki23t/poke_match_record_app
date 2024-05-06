@@ -210,12 +210,18 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                     barrierDismissible: false,
                     triggerMode: TooltipTriggerMode.manual,
                     isModal: true,
+                    preferredDirection: AxisDirection.up,
                     content: Stack(
                       alignment: Alignment.topRight,
                       children: [
                         Padding(
-                          padding: EdgeInsets.all(8.0),
+                          padding: EdgeInsets.only(
+                              left: 8.0,
+                              bottom: 8.0,
+                              right: theme.iconTheme.size ?? 24.0,
+                              top: theme.iconTheme.size ?? 24.0),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               for (final ability in widget.suggestAbilities)
                                 GestureDetector(
@@ -225,7 +231,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                                     widget.abilityTooltipController
                                         ?.hideTooltip();
                                   },
-                                  child: Text(ability.displayName),
+                                  child: Text('${ability.displayName}?'),
                                 ),
                             ],
                           ),
@@ -250,6 +256,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                     barrierDismissible: false,
                     triggerMode: TooltipTriggerMode.manual,
                     isModal: true,
+                    preferredDirection: AxisDirection.down,
                     content: Stack(
                       alignment: Alignment.topRight,
                       children: [
@@ -270,7 +277,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                                     widget.itemTooltipController?.hideTooltip();
                                   },
                                   child: Text(item == null
-                                      ? ''
+                                      ? '${loc.commonNone}?'
                                       : '${item.displayName}?'),
                                 ),
                             ],

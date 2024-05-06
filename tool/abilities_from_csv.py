@@ -26,6 +26,8 @@ abilitiesCSVtargetIDIndex = 6
 abilitiesCSVeffectIDIndex = 7
 abilitiesCSVchangeStatIDIndex = 8
 abilitiesCSVchangeStatValIndex = 9
+abilitiesCSVchangeStatIDIndex2 = 10
+abilitiesCSVchangeStatValIndex2 = 11
 
 # CSVファイル(PokeAPI+独自)で必要となる各ID
 japaneseID = 1
@@ -34,7 +36,7 @@ englishID = 9
 # SQLiteでintの配列をvalueにした場合の変換方法
 # ※注）intの2重配列を対象にしている
 IntIntList = list
-sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(i) for i in ints) for ints in l]))
+sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(int(i)) for i in ints) for ints in l]))
 sqlite3.register_converter("IntIntList", lambda s: [[int(i) for i in s2.split(':')] for s2 in s.split(';')])
 
 def set_argparse():
@@ -73,6 +75,8 @@ def main():
             changeStat = []
             if row[abilitiesCSVchangeStatIDIndex] != -1:
                 changeStat.append([row[abilitiesCSVchangeStatIDIndex], row[abilitiesCSVchangeStatValIndex]])
+            if row[abilitiesCSVchangeStatIDIndex2] != -1:
+                changeStat.append([row[abilitiesCSVchangeStatIDIndex2], row[abilitiesCSVchangeStatValIndex2]])
             #effect = row[abilitiesCSVeffectIDIndex]
             # 日本語名取得
             names = lang_df[(lang_df[abilitiesLangCSVabilityIDColumn] == id) & (lang_df[abilitiesLangCSVLangIDColumn] == japaneseID)][abilitiesLangCSVNameColumn]
