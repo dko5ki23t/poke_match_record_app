@@ -212,6 +212,21 @@ class TestPokeDB {
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
         map[moveColumnPP],
+        map[moveColumnIsDirect] != '0',
+        map[moveColumnIsSound] != '0',
+        map[moveColumnIsDrain] != '0',
+        map[moveColumnIsPunch] != '0',
+        map[moveColumnIsWave] != '0',
+        map[moveColumnIsDance] != '0',
+        map[moveColumnIsRecoil] != '0',
+        map[moveColumnIsAdditionalEffect] != '0',
+        map[moveColumnIsAdditionalEffect2] != '0',
+        map[moveColumnIsBite] != '0',
+        map[moveColumnIsCut] != '0',
+        map[moveColumnIsWind] != '0',
+        map[moveColumnIsPowder] != '0',
+        map[moveColumnIsBullet] != '0',
+        map[moveColumnSuccessWithProtect] != '0',
       );
     }
 

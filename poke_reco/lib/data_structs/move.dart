@@ -131,6 +131,53 @@ class Move extends Equatable implements Copyable {
   /// 初期最大PP
   final int pp;
 
+  /// 直接攻撃かどうか
+  final bool isDirect;
+
+  /// 音技かどうか
+  final bool isSound;
+
+  /// HP吸収わざかどうか
+  final bool isDrain;
+
+  /// パンチわざかどうか
+  final bool isPunch;
+
+  /// はどうわざかどうか
+  final bool isWave;
+
+  /// おどりわざかどうか
+  final bool isDance;
+
+  /// 反動わざかどうか(とくせい「すてみ」の対象)
+  final bool isRecoil;
+
+  /// 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
+  /// 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はfalse
+  final bool isAdditionalEffect;
+
+  /// 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
+  /// 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はtrue
+  final bool isAdditionalEffect2;
+
+  /// かみつきわざかどうか
+  final bool isBite;
+
+  /// 切るわざかどうか
+  final bool isCut;
+
+  /// 風わざかどうか
+  final bool isWind;
+
+  /// こなやほうしのわざかどうか
+  final bool isPowder;
+
+  /// 弾のわざかどうか
+  final bool isBullet;
+
+  /// 相手がまもる状態でも成功するか
+  final bool successWithProtect;
+
   @override
   List<Object?> get props => [
         id,
@@ -145,6 +192,21 @@ class Move extends Equatable implements Copyable {
         effect,
         effectChance,
         pp,
+        isDirect,
+        isSound,
+        isDrain,
+        isPunch,
+        isWave,
+        isDance,
+        isRecoil,
+        isAdditionalEffect,
+        isAdditionalEffect2,
+        isBite,
+        isCut,
+        isWind,
+        isPowder,
+        isBullet,
+        successWithProtect,
       ];
 
   /// わざ
@@ -161,14 +223,56 @@ class Move extends Equatable implements Copyable {
     this.effect,
     this.effectChance,
     this.pp,
+    this.isDirect,
+    this.isSound,
+    this.isDrain,
+    this.isPunch,
+    this.isWave,
+    this.isDance,
+    this.isRecoil,
+    this.isAdditionalEffect,
+    this.isAdditionalEffect2,
+    this.isBite,
+    this.isCut,
+    this.isWind,
+    this.isPowder,
+    this.isBullet,
+    this.successWithProtect,
   ) {
     _displayName = displayName;
     _displayNameEn = displayNameEn;
   }
 
   /// 無効なわざを生成
-  factory Move.none() => Move(0, '', '', PokeType.unknown, 0, 0, 0, Target.none,
-      DamageClass(0), MoveEffect(0), 0, 0);
+  factory Move.none() => Move(
+        0,
+        '',
+        '',
+        PokeType.unknown,
+        0,
+        0,
+        0,
+        Target.none,
+        DamageClass(0),
+        MoveEffect(0),
+        0,
+        0,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+      );
 
   /// 名前
   String get displayName {
@@ -206,539 +310,8 @@ class Move extends Equatable implements Copyable {
     return pp + (pp / 5).floor() * 3;
   }
 
-  /// 直接攻撃かどうか
-  bool get isDirect {
-    const physicalButNot = [
-      843,
-      788,
-      895,
-      621,
-      856,
-      88,
-      157,
-      479,
-      783,
-      854,
-      780,
-      662,
-      317,
-      439,
-      616,
-      559,
-      454,
-      420,
-      143,
-      614,
-      615,
-      864,
-      89,
-      363,
-      523,
-      120,
-      708,
-      90,
-      799,
-      794,
-      444,
-      328,
-      221,
-      897,
-      153,
-      833,
-      591,
-      441,
-      402,
-      331,
-      41,
-      121,
-      140,
-      619,
-      556,
-      333,
-      893,
-      851,
-      40,
-      839,
-      131,
-      751,
-      778,
-      870,
-      374,
-      6,
-      896,
-      75,
-      572,
-      290,
-      836,
-      899,
-      364,
-      722,
-      251,
-      553,
-      824,
-      217,
-      198,
-      898,
-      809,
-      125,
-      155,
-      900,
-      222,
-      443,
-      42,
-      594,
-      368,
-      350,
-    ];
-    const specialButNot = [
-      879,
-      376,
-      447,
-      378,
-      577,
-      80,
-      611,
-    ];
-    return ((damageClass.id == DamageClass.physical &&
-            !physicalButNot.contains(id)) ||
-        (damageClass.id == DamageClass.special && specialButNot.contains(id)));
-  }
-
-  /// 音技かどうか
-  bool get isSound {
-    const soundMoveIDs = [
-      547,
-      173,
-      215,
-      103,
-      47,
-      664,
-      497,
-      786,
-      448,
-      568,
-      319,
-      320,
-      253,
-      691,
-      575,
-      775,
-      10016,
-      574,
-      48,
-      336,
-      590,
-      45,
-      555,
-      304,
-      586,
-      826,
-      871,
-      728,
-      46,
-      195,
-      405,
-      496,
-      463,
-      914,
-    ];
-    return soundMoveIDs.contains(id);
-  }
-
-  /// HP吸収わざかどうか
-  bool get isDrain {
-    const drainMoveIDs = [
-      202,
-      141,
-      71,
-      72,
-      73,
-      138,
-      409,
-      532,
-      613,
-      577,
-      570,
-      668,
-      891,
-    ];
-    return drainMoveIDs.contains(id);
-  }
-
-  /// パンチわざかどうか
-  bool get isPunch {
-    const punchMoveIDs = [
-      359,
-      665,
-      817,
-      9,
-      264,
-      612,
-      309,
-      857,
-      325,
-      818,
-      327,
-      742,
-      409,
-      223,
-      418,
-      146,
-      838,
-      721,
-      889,
-      7,
-      183,
-      5,
-      8,
-      4,
-    ];
-    return punchMoveIDs.contains(id);
-  }
-
-  /// はどうわざかどうか
-  bool get isWave {
-    const waveMoveIDs = [
-      399,
-      618,
-      805,
-      396,
-      352,
-      406,
-      505,
-    ];
-    return waveMoveIDs.contains(id);
-  }
-
-  /// おどりわざかどうか
-  bool get isDance {
-    const danceMoveIDs = [
-      872,
-      837,
-      775,
-      483,
-      14,
-      80,
-      297,
-      298,
-      552,
-      461,
-      686,
-      349,
-    ];
-    return danceMoveIDs.contains(id);
-  }
-
-  /// 反動わざかどうか(とくせい「すてみ」の対象)
-  bool get isRecoil {
-    const recoilMoveIDs = [
-      543,
-      834,
-      452,
-      853,
-      66,
-      38,
-      36,
-      26,
-      136,
-      617,
-      394,
-      413,
-      344,
-      457,
-      528,
-    ];
-    return recoilMoveIDs.contains(id);
-  }
-
-  /// 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
-  /// 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はfalseを返す
-  bool get isAdditionalEffect {
-    const additionalEffectMoveIDs = [
-      677,
-      664,
-      703,
-      662,
-      830,
-      864,
-      675,
-      845,
-      290,
-      826,
-      903,
-      440,
-      143,
-      843,
-      840,
-      394,
-      344,
-    ];
-    const noAdditionalEffectMoveIDs = [
-      165,
-      720,
-      796,
-      835,
-      276,
-      621,
-      799,
-      691,
-      874,
-      315,
-      354,
-      437,
-      434,
-      705,
-      359,
-      665,
-      859,
-      890,
-      370,
-      838,
-      620,
-      557,
-      130,
-      800,
-      565,
-      499,
-      265,
-      358,
-      479,
-      614,
-      615,
-      746,
-      687,
-      168,
-      343,
-      365,
-      450,
-      282,
-      510,
-      481,
-      99,
-      37,
-      80,
-      200,
-      833,
-      253,
-      682,
-      892,
-      721,
-      727,
-      798,
-      861,
-      364,
-      467,
-      566,
-      593,
-      621,
-      712,
-      280,
-      706,
-      873,
-      6,
-      874,
-      690,
-    ];
-    const noAdditionalEffectIDs = [
-      // 追加効果とみなされない追加効果
-      1, 104, 86, 370, 371, 379, 383, 406, 417, 439, // 追加効果なし
-      4, 9, 33, 49, 133, 199, 255, 270, 346, 349, 382, 387, 420, 441,
-      388, // HP吸収
-      18, 79, 381, // 必中
-      43, 262, // バインド状態にする
-      44, 289, 422, 462, 486, // 急所に当たりやすい/急所確定
-      8, 169, 221, 271, 321, 450, // ひんしになる
-      81, // 次のターン動けない
-      126, 254, 275, 460, 490, 500, // こおりをかいふくする
-      29, 314, 128, 154, 229, 347, 492, 493, // 自分/あいてを交代
-    ];
-    if (damageClass.id == 1) return true;
-    if (additionalEffectMoveIDs.contains(id)) return true;
-    if (noAdditionalEffectMoveIDs.contains(id)) return false;
-    if (isRecoil) return false;
-    return (damageClass.id > 1 && !noAdditionalEffectIDs.contains(effect.id));
-  }
-
-  /// 追加効果があるこうげきわざかどうか(とくせい「ちからずく」の対象)
-  /// 追加効果＋追加効果とみなされない効果(自身のこおりを溶かしつつ相手をやけどにする等)の場合はtrueを返す
-  bool get isAdditionalEffect2 {
-    bool ret = isAdditionalEffect;
-    const additionalEffectIDs = [
-      // 追加効果も含まれている追加効果
-      126, 254, 275, 460, 490, 500, // こおりをかいふくする
-    ];
-    if (additionalEffectIDs.contains(effect.id)) ret = true;
-    return ret;
-  }
-
-  /// かみつきわざかどうか
-  bool get isBite {
-    const biteMoveIDs = [
-      755,
-      242,
-      44,
-      422,
-      746,
-      423,
-      706,
-      305,
-      158,
-      424,
-    ];
-    return biteMoveIDs.contains(id);
-  }
-
-  /// 切るわざかどうか
-  bool get isCut {
-    const cutMoveIDs = [
-      895,
-      15,
-      314,
-      403,
-      830,
-      781,
-      163,
-      440,
-      427,
-      875,
-      534,
-      404,
-      548,
-      533,
-      669,
-      400,
-      332,
-      869,
-      860,
-      75,
-      845,
-      891,
-      348,
-      210,
-      910,
-      911,
-    ];
-    return cutMoveIDs.contains(id);
-  }
-
-  /// 風わざかどうか
-  bool get isWind {
-    const windMoveIDs = [
-      314,
-      16,
-      847,
-      846,
-      196,
-      239,
-      848,
-      257,
-      572,
-      831,
-      18,
-      59,
-      542,
-      584,
-    ];
-    return windMoveIDs.contains(id);
-  }
-
-  /// こなやほうしのわざかどうか
-  bool get isPowder {
-    const powderMoveIDs = [
-      476,
-      147,
-      78,
-      77,
-      79,
-      600,
-      750,
-      178,
-    ];
-    return powderMoveIDs.contains(id);
-  }
-
-  /// 弾のわざかどうか
-  bool get isBullet {
-    const bulletMoveIDs = [
-      301,
-      491,
-      311,
-      412,
-      486,
-      190,
-      545,
-      780,
-      676,
-      439,
-      411,
-      690,
-      360,
-      247,
-      331,
-      402,
-      121,
-      140,
-      192,
-      426,
-      396,
-      188,
-      443,
-      296,
-      903,
-      350,
-    ];
-    return bulletMoveIDs.contains(id);
-  }
-
   /// 相手がまもる状態だと失敗するか
   bool get failWithProtect {
-    const ignorable = [
-      171,
-      215,
-      169,
-      212,
-      244,
-      166,
-      176,
-      174,
-      18,
-      144,
-      46,
-      195,
-      248,
-      312,
-      335,
-      336,
-      272,
-      353,
-      467,
-      367,
-      364,
-      516,
-      597,
-      593,
-      621,
-      566,
-      602,
-      563,
-      607,
-      590,
-      589,
-      579,
-      674,
-      715,
-      791,
-      752,
-      811,
-      816,
-      777,
-      849,
-      867,
-      887,
-      910,
-      913,
-    ];
-
     switch (target) {
       case Target.entireField:
       case Target.allAllies:
@@ -751,7 +324,7 @@ class Move extends Equatable implements Copyable {
       case Target.usersField:
         return false;
       default:
-        return !ignorable.contains(id);
+        return !successWithProtect;
     }
   }
 
@@ -769,6 +342,21 @@ class Move extends Equatable implements Copyable {
         effect,
         effectChance,
         pp,
+        isDirect,
+        isSound,
+        isDrain,
+        isPunch,
+        isWave,
+        isDance,
+        isRecoil,
+        isAdditionalEffect,
+        isAdditionalEffect2,
+        isBite,
+        isCut,
+        isWind,
+        isPowder,
+        isBullet,
+        successWithProtect,
       );
 
   /// 連続こうげきの場合、その最大回数を返す（連続こうげきではない場合は1を返す）
@@ -832,15 +420,4 @@ class Move extends Equatable implements Copyable {
         return true;
     }
   }
-
-/*
-  Map<String, Object?> toMap() {
-    var map = <String, Object?>{
-      moveColumnId: id,
-      moveColumnName: displayName,
-      moveColumnPP: pp,
-    };
-    return map;
-  }
-*/
 }

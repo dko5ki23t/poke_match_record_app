@@ -8570,8 +8570,10 @@ class TurnEffectAction extends TurnEffect {
     // move
     if (version == 1) {
       final List moveElements = turnMoveElements.removeAt(0).split(split2);
+      int moveID = int.parse(moveElements.removeAt(0));
+      final move = PokeDB().moves[moveID]!;
       turnEffectAction.move = Move(
-        int.parse(moveElements.removeAt(0)),
+        moveID,
         moveElements.removeAt(0),
         '',
         PokeType.values[int.parse(moveElements.removeAt(0))],
@@ -8583,6 +8585,21 @@ class TurnEffectAction extends TurnEffect {
         MoveEffect(int.parse(moveElements.removeAt(0))),
         int.parse(moveElements.removeAt(0)),
         int.parse(moveElements.removeAt(0)),
+        move.isDirect,
+        move.isSound,
+        move.isDrain,
+        move.isPunch,
+        move.isWave,
+        move.isDance,
+        move.isRecoil,
+        move.isAdditionalEffect,
+        move.isAdditionalEffect2,
+        move.isBite,
+        move.isCut,
+        move.isWind,
+        move.isPowder,
+        move.isBullet,
+        move.failWithProtect,
       );
     } else {
       turnEffectAction.move =

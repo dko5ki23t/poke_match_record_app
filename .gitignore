@@ -40,6 +40,7 @@ poke_reco/web/
 
 tool/name_to_id.py
 tool/add_csv_row.py
+tool/modify_csv_row.py
 tool/*.txt
 private/*
 /*.png

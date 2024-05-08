@@ -120,6 +120,21 @@ const String moveColumnDamageClass = 'damage_class';
 const String moveColumnEffect = 'effect';
 const String moveColumnEffectChance = 'effect_chance';
 const String moveColumnPP = 'PP';
+const String moveColumnIsDirect = 'is_direct';
+const String moveColumnIsSound = 'is_sound';
+const String moveColumnIsDrain = 'is_drain';
+const String moveColumnIsPunch = 'is_punch';
+const String moveColumnIsWave = 'is_wave';
+const String moveColumnIsDance = 'is_dance';
+const String moveColumnIsRecoil = 'is_recoil';
+const String moveColumnIsAdditionalEffect = 'is_additional_effect';
+const String moveColumnIsAdditionalEffect2 = 'is_additional_effect2';
+const String moveColumnIsBite = 'is_bite';
+const String moveColumnIsCut = 'is_cut';
+const String moveColumnIsWind = 'is_wind';
+const String moveColumnIsPowder = 'is_powder';
+const String moveColumnIsBullet = 'is_bullet';
+const String moveColumnSuccessWithProtect = 'success_with_protect';
 
 const String moveFlavorDBFile = 'MoveFlavors.db';
 const String moveFlavorDBTable = 'moveFlavorDB';
@@ -980,7 +995,22 @@ class PokeDB {
         moveColumnDamageClass,
         moveColumnEffect,
         moveColumnEffectChance,
-        moveColumnPP
+        moveColumnPP,
+        moveColumnIsDirect,
+        moveColumnIsSound,
+        moveColumnIsDrain,
+        moveColumnIsPunch,
+        moveColumnIsWave,
+        moveColumnIsDance,
+        moveColumnIsRecoil,
+        moveColumnIsAdditionalEffect,
+        moveColumnIsAdditionalEffect2,
+        moveColumnIsBite,
+        moveColumnIsCut,
+        moveColumnIsWind,
+        moveColumnIsPowder,
+        moveColumnIsBullet,
+        moveColumnSuccessWithProtect,
       ],
     );
     for (var map in maps) {
@@ -997,6 +1027,21 @@ class PokeDB {
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
         map[moveColumnPP],
+        map[moveColumnIsDirect] != '0',
+        map[moveColumnIsSound] != '0',
+        map[moveColumnIsDrain] != '0',
+        map[moveColumnIsPunch] != '0',
+        map[moveColumnIsWave] != '0',
+        map[moveColumnIsDance] != '0',
+        map[moveColumnIsRecoil] != '0',
+        map[moveColumnIsAdditionalEffect] != '0',
+        map[moveColumnIsAdditionalEffect2] != '0',
+        map[moveColumnIsBite] != '0',
+        map[moveColumnIsCut] != '0',
+        map[moveColumnIsWind] != '0',
+        map[moveColumnIsPowder] != '0',
+        map[moveColumnIsBullet] != '0',
+        map[moveColumnSuccessWithProtect] != '0',
       );
     }
 

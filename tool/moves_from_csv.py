@@ -19,6 +19,21 @@ moveColumnDamageClass = 'damage_class'
 moveColumnEffect = 'effect'
 moveColumnEffectChance = 'effect_chance'
 moveColumnPP = 'PP'
+moveColumnIsDirect = 'is_direct'
+moveColumnIsSound = 'is_sound'
+moveColumnIsDrain = 'is_drain'
+moveColumnIsPunch = 'is_punch'
+moveColumnIsWave = 'is_wave'
+moveColumnIsDance = 'is_dance'
+moveColumnIsRecoil = 'is_recoil'
+moveColumnIsAdditionalEffect = 'is_additional_effect'
+moveColumnIsAdditionalEffect2 = 'is_additional_effect2'
+moveColumnIsBite = 'is_bite'
+moveColumnIsCut = 'is_cut'
+moveColumnIsWind = 'is_wind'
+moveColumnIsPowder = 'is_powder'
+moveColumnIsBullet = 'is_bullet'
+moveColumnSuccessWithProtect = 'success_with_protect'
 
 # CSVファイル(PokeAPI)の列名
 movesLangCSVmoveIDColumn = 'move_id'
@@ -36,6 +51,21 @@ movesCSVdamageClassIDIndex = 10
 movesCSVeffectIDIndex = 11
 movesCSVeffectChanceIndex = 12
 movesCSVPPIndex = 6
+movesCSVisDirect = 16
+movesCSVisSound = 17
+movesCSVisDrain = 18
+movesCSVisPunch = 19
+movesCSVisWave = 20
+movesCSVisDance = 21
+movesCSVisRecoil = 22
+movesCSVisAdditionalEffect = 23
+movesCSVisAdditionalEffect2 = 24
+movesCSVisBite = 25
+movesCSVisCut = 26
+movesCSVisWind = 27
+movesCSVisPowder = 28
+movesCSVisBullet = 29
+movesCSVsuccessWithProtect = 30
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
@@ -82,6 +112,21 @@ def main():
             effect = row[movesCSVeffectIDIndex]
             effect_chance = row[movesCSVeffectChanceIndex]
             pp = row[movesCSVPPIndex]
+            is_direct = row[movesCSVisDirect]
+            is_sound = row[movesCSVisSound]
+            is_drain = row[movesCSVisDrain]
+            is_punch = row[movesCSVisPunch]
+            is_wave = row[movesCSVisWave]
+            is_dance = row[movesCSVisDance]
+            is_recoil = row[movesCSVisRecoil]
+            is_additionalEffect = row[movesCSVisAdditionalEffect]
+            is_additionalEffect2 = row[movesCSVisAdditionalEffect2]
+            is_bite = row[movesCSVisBite]
+            is_cut = row[movesCSVisCut]
+            is_wind = row[movesCSVisWind]
+            is_powder = row[movesCSVisPowder]
+            is_bullet = row[movesCSVisBullet]
+            success_with_protect = row[movesCSVsuccessWithProtect]
 
             if id == 863:
                 print(effect, 'OK')
@@ -94,7 +139,11 @@ def main():
             # 英語名取得
             names_en = lang_df[(lang_df[movesLangCSVmoveIDColumn] == id) & (lang_df[movesLangCSVLangIDColumn] == englishID)][movesLangCSVNameColumn]
             if len(names) > 0:
-                moves_list.append((id, names.iloc[0], names_en.iloc[0], pokeType, power, accuracy, priority, target, damage_class, effect, effect_chance, pp))
+                moves_list.append((
+                    id, names.iloc[0], names_en.iloc[0], pokeType, power, accuracy, priority, target, damage_class, effect, effect_chance, pp,
+                    is_direct, is_sound, is_drain, is_punch, is_wave, is_dance, is_recoil, is_additionalEffect, is_additionalEffect2, is_bite,
+                    is_cut, is_wind, is_powder, is_bullet, success_with_protect
+                ))
 
         # 作成(存在してたら作らない)
         try:
@@ -111,7 +160,22 @@ def main():
             f'  {moveColumnDamageClass} integer not null,'
             f'  {moveColumnEffect} integer not null,'
             f'  {moveColumnEffectChance} integer not null,'
-            f'  {moveColumnPP} integer not null)'
+            f'  {moveColumnPP} integer not null,'
+            f'  {moveColumnIsDirect} integer not null,'
+            f'  {moveColumnIsSound} integer not null,'
+            f'  {moveColumnIsDrain} integer not null,'
+            f'  {moveColumnIsPunch} integer not null,'
+            f'  {moveColumnIsWave} integer not null,'
+            f'  {moveColumnIsDance} integer not null,'
+            f'  {moveColumnIsRecoil} integer not null,'
+            f'  {moveColumnIsAdditionalEffect} integer not null,'
+            f'  {moveColumnIsAdditionalEffect2} integer not null,'
+            f'  {moveColumnIsBite} integer not null,'
+            f'  {moveColumnIsCut} integer not null,'
+            f'  {moveColumnIsWind} integer not null,'
+            f'  {moveColumnIsPowder} integer not null,'
+            f'  {moveColumnIsBullet} integer not null,'
+            f'  {moveColumnSuccessWithProtect} integer not null)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -119,8 +183,17 @@ def main():
         # 挿入
         try:
             con.executemany(
-                f'INSERT INTO {moveDBTable} ({moveColumnId}, {moveColumnName}, {moveColumnEnglishName}, {moveColumnType}, {moveColumnPower}, {moveColumnAccuracy}, {moveColumnPriority}, {moveColumnTarget}, {moveColumnDamageClass}, {moveColumnEffect}, {moveColumnEffectChance}, {moveColumnPP}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'INSERT INTO {moveDBTable} ({moveColumnId}, {moveColumnName}, '
+                f'{moveColumnEnglishName}, {moveColumnType}, {moveColumnPower}, '
+                f'{moveColumnAccuracy}, {moveColumnPriority}, {moveColumnTarget}, '
+                f'{moveColumnDamageClass}, {moveColumnEffect}, {moveColumnEffectChance}, '
+                f'{moveColumnPP}, {moveColumnIsDirect}, {moveColumnIsSound}, '
+                f'{moveColumnIsDrain}, {moveColumnIsPunch}, {moveColumnIsWave}, '
+                f'{moveColumnIsDance}, {moveColumnIsRecoil}, {moveColumnIsAdditionalEffect}, '
+                f'{moveColumnIsAdditionalEffect2}, {moveColumnIsBite}, {moveColumnIsCut}, '
+                f'{moveColumnIsWind}, {moveColumnIsPowder}, {moveColumnIsBullet}, '
+                f'{moveColumnSuccessWithProtect}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 moves_list)
         except sqlite3.OperationalError:
             print('failed to insert table')
