@@ -78,45 +78,45 @@ class PokemonTile extends ListTile {
                           TextSpan(text: '${pokemon.h.real}/'),
                           TextSpan(
                             text: '${pokemon.a.real}',
-                            style: pokemon.temper.increasedStat == StatIndex.A
+                            style: pokemon.nature.increasedStat == StatIndex.A
                                 ? increaseStateStyle
-                                : pokemon.temper.decreasedStat == StatIndex.A
+                                : pokemon.nature.decreasedStat == StatIndex.A
                                     ? decreaseStateStyle
                                     : null,
                           ),
                           TextSpan(text: '/'),
                           TextSpan(
                             text: '${pokemon.b.real}',
-                            style: pokemon.temper.increasedStat == StatIndex.B
+                            style: pokemon.nature.increasedStat == StatIndex.B
                                 ? increaseStateStyle
-                                : pokemon.temper.decreasedStat == StatIndex.B
+                                : pokemon.nature.decreasedStat == StatIndex.B
                                     ? decreaseStateStyle
                                     : null,
                           ),
                           TextSpan(text: '/'),
                           TextSpan(
                             text: '${pokemon.c.real}',
-                            style: pokemon.temper.increasedStat == StatIndex.C
+                            style: pokemon.nature.increasedStat == StatIndex.C
                                 ? increaseStateStyle
-                                : pokemon.temper.decreasedStat == StatIndex.C
+                                : pokemon.nature.decreasedStat == StatIndex.C
                                     ? decreaseStateStyle
                                     : null,
                           ),
                           TextSpan(text: '/'),
                           TextSpan(
                             text: '${pokemon.d.real}',
-                            style: pokemon.temper.increasedStat == StatIndex.D
+                            style: pokemon.nature.increasedStat == StatIndex.D
                                 ? increaseStateStyle
-                                : pokemon.temper.decreasedStat == StatIndex.D
+                                : pokemon.nature.decreasedStat == StatIndex.D
                                     ? decreaseStateStyle
                                     : null,
                           ),
                           TextSpan(text: '/'),
                           TextSpan(
                             text: '${pokemon.s.real}',
-                            style: pokemon.temper.increasedStat == StatIndex.S
+                            style: pokemon.nature.increasedStat == StatIndex.S
                                 ? increaseStateStyle
-                                : pokemon.temper.decreasedStat == StatIndex.S
+                                : pokemon.nature.decreasedStat == StatIndex.S
                                     ? decreaseStateStyle
                                     : null,
                           ),

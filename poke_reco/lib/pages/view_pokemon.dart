@@ -39,7 +39,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   final pokeTeraTypeController = TextEditingController();
   final pokeNoController = TextEditingController();
   final pokeLevelController = TextEditingController();
-  final pokeTemperController = TextEditingController();
+  final pokeNatureController = TextEditingController();
   final pokeAbilityController = TextEditingController();
   final pokeStatRaceController =
       List.generate(StatIndex.size.index, (i) => TextEditingController());
@@ -73,7 +73,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
     pokeTeraTypeController.text = myPokemon.teraType.displayName;
     pokeNoController.text = myPokemon.no.toString();
     pokeLevelController.text = myPokemon.level.toString();
-    pokeTemperController.text = myPokemon.temper.displayName;
+    pokeNatureController.text = myPokemon.nature.displayName;
     pokeAbilityController.text = myPokemon.ability.displayName;
     pokeStatRaceController[0].text =
         myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
@@ -265,7 +265,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                   children: [
                     Flexible(
                       child: TextField(
-                        controller: pokeTemperController,
+                        controller: pokeNatureController,
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: loc.commonNature,
@@ -302,7 +302,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       pokeStatIndiController[i],
                       pokeStatEffortController[i],
                       pokeStatRealController[i],
-                      effectTemper: i != 0,
+                      effectNature: i != 0,
                       statIndex: StatIndex.values[i],
                       loc: loc,
                     ),

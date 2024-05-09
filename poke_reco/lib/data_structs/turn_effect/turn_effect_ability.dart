@@ -688,9 +688,9 @@ class TurnEffectAbility extends TurnEffect {
             myState.minStats[StatIndex.S].race = 130;
             for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
               myState.maxStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.temper);
+                  .updateReal(myState.pokemon.level, myState.pokemon.nature);
               myState.minStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.temper);
+                  .updateReal(myState.pokemon.level, myState.pokemon.nature);
             }
           } else {
             if (myState.buffDebuffs.containsByID(BuffDebuff.niceFace)) {
@@ -705,9 +705,9 @@ class TurnEffectAbility extends TurnEffect {
               myState.minStats[StatIndex.S].race = 50;
               for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
                 myState.maxStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.temper);
+                    .updateReal(myState.pokemon.level, myState.pokemon.nature);
                 myState.minStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.temper);
+                    .updateReal(myState.pokemon.level, myState.pokemon.nature);
               }
             }
           }
@@ -874,9 +874,9 @@ class TurnEffectAbility extends TurnEffect {
         myState.minStats.s.race = 85;
         for (final stat in StatIndexList.listHtoS) {
           myState.maxStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.temper);
+              .updateReal(myState.pokemon.level, myState.pokemon.nature);
           myState.minStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.temper);
+              .updateReal(myState.pokemon.level, myState.pokemon.nature);
         }
         if (playerType == PlayerType.me) {
           myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();

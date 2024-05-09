@@ -160,9 +160,9 @@ class TurnEffectTerastal extends TurnEffect {
       myState.minStats.s.race = 85;
       for (final stat in StatIndexList.listHtoS) {
         myState.maxStats[stat]
-            .updateReal(myState.pokemon.level, myState.pokemon.temper);
+            .updateReal(myState.pokemon.level, myState.pokemon.nature);
         myState.minStats[stat]
-            .updateReal(myState.pokemon.level, myState.pokemon.temper);
+            .updateReal(myState.pokemon.level, myState.pokemon.nature);
       }
       if (playerType == PlayerType.me) {
         myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();

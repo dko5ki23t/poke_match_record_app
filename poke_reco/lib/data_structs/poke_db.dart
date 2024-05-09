@@ -35,7 +35,7 @@ const String configKeyPokemonsTeraTypeFilter = 'pokemonsTeraTypeFilter';
 const String configKeyPokemonsMoveFilter = 'pokemonsMoveFilter';
 const String configKeyPokemonsSexFilter = 'pokemonsSexFilter';
 const String configKeyPokemonsAbilityFilter = 'pokemonsAbilityFilter';
-const String configKeyPokemonsTemperFilter = 'pokemonsTemperFilter';
+const String configKeyPokemonsNatureFilter = 'pokemonsNatureFilter';
 
 const String configKeyPokemonsSort = 'pokemonsSort';
 
@@ -75,13 +75,13 @@ const String abilityFlavorColumnId = 'id';
 const String abilityFlavorColumnFlavor = 'flavor';
 const String abilityFlavorColumnEnglishFlavor = 'englishFlavor';
 
-const String temperDBFile = 'Tempers.db';
-const String temperDBTable = 'temperDB';
-const String temperColumnId = 'id';
-const String temperColumnName = 'name';
-const String temperColumnEnglishName = 'englishName';
-const String temperColumnDe = 'decreased_stat';
-const String temperColumnIn = 'increased_stat';
+const String natureDBFile = 'Natures.db';
+const String natureDBTable = 'natureDB';
+const String natureColumnId = 'id';
+const String natureColumnName = 'name';
+const String natureColumnEnglishName = 'englishName';
+const String natureColumnDe = 'decreased_stat';
+const String natureColumnIn = 'increased_stat';
 
 const String eggGroupDBFile = 'EggGroup.db';
 const String eggGroupDBTable = 'eggGroupDB';
@@ -179,7 +179,7 @@ const String myPokemonColumnNickName = 'nickname';
 const String myPokemonColumnTeraType = 'teratype';
 const String myPokemonColumnLevel = 'level';
 const String myPokemonColumnSex = 'sex';
-const String myPokemonColumnTemper = 'temper';
+const String myPokemonColumnNature = 'nature';
 const String myPokemonColumnAbility = 'ability';
 const String myPokemonColumnItem = 'item';
 const List<String> myPokemonColumnIndividual = [
@@ -359,14 +359,14 @@ extension PlayerTypeNum on PlayerType {
 }
 
 /// せいかく
-class Temper {
+class Nature {
   final int id;
   final String _displayName;
   final String _displayNameEn;
   late final StatIndex decreasedStat;
   late final StatIndex increasedStat;
 
-  Temper(this.id, this._displayName, this._displayNameEn, StatIndex dec,
+  Nature(this.id, this._displayName, this._displayNameEn, StatIndex dec,
       StatIndex inc) {
     if (dec == inc) {
       decreasedStat = StatIndex.none;
@@ -378,8 +378,8 @@ class Temper {
   }
 
   /// 無効なせいかくを返す
-  factory Temper.none() {
-    return Temper(0, '', '', StatIndex.none, StatIndex.none);
+  factory Nature.none() {
+    return Nature(0, '', '', StatIndex.none, StatIndex.none);
   }
 
   /// 名前
@@ -394,15 +394,15 @@ class Temper {
   }
 
   /// ABCDSそれぞれのステータスに対するせいかく補正値をリストにして返す
-  static List<double> getTemperBias(Temper temper) {
+  static List<double> getNatureBias(Nature nature) {
     var ret = [1.0, 1.0, 1.0, 1.0, 1.0]; // A, B, C, D, S
-    if (StatIndex.H.index < temper.increasedStat.index &&
-        temper.increasedStat.index < StatIndex.size.index) {
-      ret[temper.increasedStat.index - 1] = 1.1;
+    if (StatIndex.H.index < nature.increasedStat.index &&
+        nature.increasedStat.index < StatIndex.size.index) {
+      ret[nature.increasedStat.index - 1] = 1.1;
     }
-    if (StatIndex.H.index < temper.decreasedStat.index &&
-        temper.decreasedStat.index < StatIndex.size.index) {
-      ret[temper.decreasedStat.index - 1] = 0.9;
+    if (StatIndex.H.index < nature.decreasedStat.index &&
+        nature.decreasedStat.index < StatIndex.size.index) {
+      ret[nature.decreasedStat.index - 1] = 0.9;
     }
 
     return ret;
@@ -472,7 +472,7 @@ class PokeDB {
   List<int> pokemonsMoveFilter = [];
   List<int> pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
   List<int> pokemonsAbilityFilter = [];
-  List<int> pokemonsTemperFilter = [];
+  List<int> pokemonsNatureFilter = [];
   PokemonSort? pokemonsSort;
 
   List<Owner> partiesOwnerFilter = [Owner.mine];
@@ -501,8 +501,8 @@ class PokeDB {
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''}; // 無効なとくせい
   late Database abilityFlavorDb;
-  Map<int, Temper> tempers = {0: Temper.none()}; // 無効なせいかく
-  late Database temperDb;
+  Map<int, Nature> natures = {0: Nature.none()}; // 無効なせいかく
+  late Database natureDb;
   Map<int, Item> items = {0: Item.none()}; // 無効なもちもの
   late Database itemDb;
   Map<int, String> _itemFlavors = {0: ''}; // 無効なもちもの
@@ -633,7 +633,7 @@ class PokeDB {
         pokemonsMoveFilter = [];
         pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
         pokemonsAbilityFilter = [];
-        pokemonsTemperFilter = [];
+        pokemonsNatureFilter = [];
         pokemonsSort = null;
         partiesOwnerFilter = [Owner.mine];
         partiesWinRateMinFilter = 0;
@@ -720,12 +720,12 @@ class PokeDB {
           pokemonsAbilityFilter = [];
         }
         try {
-          pokemonsTemperFilter = [];
-          for (final e in configJson[configKeyPokemonsTemperFilter]) {
-            pokemonsTemperFilter.add(e as int);
+          pokemonsNatureFilter = [];
+          for (final e in configJson[configKeyPokemonsNatureFilter]) {
+            pokemonsNatureFilter.add(e as int);
           }
         } catch (e) {
-          pokemonsTemperFilter = [];
+          pokemonsNatureFilter = [];
         }
         try {
           int sort = configJson[configKeyPokemonsSort] as int;
@@ -889,25 +889,25 @@ class PokeDB {
     }
 
     //////////// せいかく
-    temperDb = await openAssetDatabase(temperDBFile);
+    natureDb = await openAssetDatabase(natureDBFile);
     // 内部データに変換
-    maps = await temperDb.query(
-      temperDBTable,
+    maps = await natureDb.query(
+      natureDBTable,
       columns: [
-        temperColumnId,
-        temperColumnName,
-        temperColumnEnglishName,
-        temperColumnDe,
-        temperColumnIn
+        natureColumnId,
+        natureColumnName,
+        natureColumnEnglishName,
+        natureColumnDe,
+        natureColumnIn
       ],
     );
     for (var map in maps) {
-      tempers[map[temperColumnId]] = Temper(
-        map[temperColumnId],
-        map[temperColumnName],
-        map[temperColumnEnglishName],
-        StatIndex.values[(map[temperColumnDe] as int) - 1],
-        StatIndex.values[(map[temperColumnIn] as int) - 1],
+      natures[map[natureColumnId]] = Nature(
+        map[natureColumnId],
+        map[natureColumnName],
+        map[natureColumnEnglishName],
+        StatIndex.values[(map[natureColumnDe] as int) - 1],
+        StatIndex.values[(map[natureColumnIn] as int) - 1],
       );
     }
 
@@ -1155,7 +1155,7 @@ class PokeDB {
           myPokemonColumnTeraType,
           myPokemonColumnLevel,
           myPokemonColumnSex,
-          myPokemonColumnTemper,
+          myPokemonColumnNature,
           myPokemonColumnAbility,
           myPokemonColumnItem,
           for (var e in myPokemonColumnIndividual) e,
@@ -1176,7 +1176,7 @@ class PokeDB {
         var pokemon = Pokemon.createFromDBMap(map);
         pokemons[pokemon.id] = pokemon;
         print(
-            'Pokemon(${pokemon.id}, ${pokemon.viewOrder}, ${pokemon.no}, "${pokemon.nickname}", PokeType.${pokemon.teraType.displayName}, ${pokemon.level}, Sex.${pokemon.sex.displayName}, Temper.${pokemon.temper.displayName}, ${pokemon.ability.id}, 0, [${pokemon.h.indi}, ${pokemon.h.effort}], [${pokemon.a.indi}, ${pokemon.a.effort}], [${pokemon.b.indi}, ${pokemon.b.effort}], [${pokemon.c.indi}, ${pokemon.c.effort}], [${pokemon.d.indi}, ${pokemon.d.effort}], [${pokemon.s.indi}, ${pokemon.s.effort}], [${pokemon.move1.id}, ${pokemon.move2?.id}, ${pokemon.move3?.id}, ${pokemon.move4?.id}], [${pokemon.pp1}, ${pokemon.pp2}, ${pokemon.pp3}, ${pokemon.pp4}], Owner.mine).toSet(),');
+            'Pokemon(${pokemon.id}, ${pokemon.viewOrder}, ${pokemon.no}, "${pokemon.nickname}", PokeType.${pokemon.teraType.displayName}, ${pokemon.level}, Sex.${pokemon.sex.displayName}, Nature.${pokemon.nature.displayName}, ${pokemon.ability.id}, 0, [${pokemon.h.indi}, ${pokemon.h.effort}], [${pokemon.a.indi}, ${pokemon.a.effort}], [${pokemon.b.indi}, ${pokemon.b.effort}], [${pokemon.c.indi}, ${pokemon.c.effort}], [${pokemon.d.indi}, ${pokemon.d.effort}], [${pokemon.s.indi}, ${pokemon.s.effort}], [${pokemon.move1.id}, ${pokemon.move2?.id}, ${pokemon.move3?.id}, ${pokemon.move4?.id}], [${pokemon.pp1}, ${pokemon.pp2}, ${pokemon.pp3}, ${pokemon.pp4}], Owner.mine).toSet(),');
       }
     }
 
@@ -1299,7 +1299,7 @@ class PokeDB {
               myPokemonColumnTeraType,
               myPokemonColumnLevel,
               myPokemonColumnSex,
-              myPokemonColumnTemper,
+              myPokemonColumnNature,
               myPokemonColumnAbility,
               myPokemonColumnItem,
               for (var e in myPokemonColumnIndividual) e,
@@ -1416,7 +1416,7 @@ class PokeDB {
       configKeyPokemonsAbilityFilter: [
         for (final e in pokemonsAbilityFilter) e
       ],
-      configKeyPokemonsTemperFilter: [for (final e in pokemonsTemperFilter) e],
+      configKeyPokemonsNatureFilter: [for (final e in pokemonsNatureFilter) e],
       configKeyPokemonsSort: pokemonsSort == null ? 0 : pokemonsSort!.id,
       configKeyPartiesOwnerFilter: [
         for (final e in partiesOwnerFilter) e.index
@@ -1625,7 +1625,13 @@ class PokeDB {
     if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1: // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
-          // バージョン変えるだけでいい
+        case 2:
+        case 3:
+          // 列名をtemper->natureに変更
+          const text =
+              'ALTER TABLE $myPokemonDBTable RENAME COLUMN temper TO $myPokemonColumnNature';
+          database.execute(text);
+          // バージョン変更
           database.setVersion(pokeRecoInternalVersion);
           break;
         default:
@@ -1639,6 +1645,8 @@ class PokeDB {
     if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1: // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
+        case 2:
+        case 3:
           // バージョン変えるだけでいい
           database.setVersion(pokeRecoInternalVersion);
           break;
@@ -1697,6 +1705,11 @@ class PokeDB {
             // バージョン変更
             database.setVersion(pokeRecoInternalVersion);
           }
+          break;
+        case 2:
+        case 3:
+          // バージョン変更
+          database.setVersion(pokeRecoInternalVersion);
           break;
         default:
           break;
@@ -1945,7 +1958,7 @@ class PokeDB {
         '$myPokemonColumnTeraType INTEGER, '
         '$myPokemonColumnLevel INTEGER, '
         '$myPokemonColumnSex INTEGER, '
-        '$myPokemonColumnTemper INTEGER, '
+        '$myPokemonColumnNature INTEGER, '
         '$myPokemonColumnAbility INTEGER, '
         '$myPokemonColumnItem INTEGER, '
         '${myPokemonColumnIndividual[0]} INTEGER, '

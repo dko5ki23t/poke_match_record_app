@@ -90,25 +90,25 @@ class TestPokeDB {
     }
 
     //////////// せいかく
-    final temperDb = await openDatabase(assetRoot + temperDBFile);
+    final natureDb = await openDatabase(assetRoot + natureDBFile);
     // 内部データに変換
-    maps = await temperDb.query(
-      temperDBTable,
+    maps = await natureDb.query(
+      natureDBTable,
       columns: [
-        temperColumnId,
-        temperColumnName,
-        temperColumnEnglishName,
-        temperColumnDe,
-        temperColumnIn
+        natureColumnId,
+        natureColumnName,
+        natureColumnEnglishName,
+        natureColumnDe,
+        natureColumnIn
       ],
     );
     for (var map in maps) {
-      data.tempers[map[temperColumnId]] = Temper(
-        map[temperColumnId],
-        map[temperColumnName],
-        map[temperColumnEnglishName],
-        StatIndex.values[(map[temperColumnDe] as int) - 1],
-        StatIndex.values[(map[temperColumnIn] as int) - 1],
+      data.natures[map[natureColumnId]] = Nature(
+        map[natureColumnId],
+        map[natureColumnName],
+        map[natureColumnEnglishName],
+        StatIndex.values[(map[natureColumnDe] as int) - 1],
+        StatIndex.values[(map[natureColumnIn] as int) - 1],
       );
     }
 

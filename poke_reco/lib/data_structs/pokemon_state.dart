@@ -532,8 +532,8 @@ class PokemonState extends Equatable implements Copyable {
           StatIndex.C,
           StatIndex.D
         ]) {
-          maxStats[stat].updateReal(pokemon.level, pokemon.temper);
-          minStats[stat].updateReal(pokemon.level, pokemon.temper);
+          maxStats[stat].updateReal(pokemon.level, pokemon.nature);
+          minStats[stat].updateReal(pokemon.level, pokemon.nature);
         }
       }
     }
@@ -1743,8 +1743,8 @@ class PokemonState extends Equatable implements Copyable {
   /// ガードシェア等によって変更された実数値を元に戻す
   void resetRealSixParams() {
     for (final stat in StatIndexList.listAtoS) {
-      maxStats[stat].updateReal(pokemon.level, pokemon.temper);
-      minStats[stat].updateReal(pokemon.level, pokemon.temper);
+      maxStats[stat].updateReal(pokemon.level, pokemon.nature);
+      minStats[stat].updateReal(pokemon.level, pokemon.nature);
     }
   }
 

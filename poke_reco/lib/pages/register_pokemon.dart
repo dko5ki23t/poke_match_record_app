@@ -59,7 +59,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
   final pokeNickNameController = TextEditingController();
   final pokeNoController = TextEditingController();
   final pokeLevelController = TextEditingController();
-  final pokeTemperController = TextEditingController();
+  final pokeNatureController = TextEditingController();
   final pokeStatRaceController =
       List.generate(StatIndex.size.index, (i) => TextEditingController());
   final pokeStatIndiController =
@@ -415,7 +415,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
     pokeNickNameController.text = myPokemon.nickname;
     pokeNoController.text = myPokemon.no.toString();
     pokeLevelController.text = myPokemon.level.toString();
-    pokeTemperController.text = myPokemon.temper.displayName;
+    pokeNatureController.text = myPokemon.nature.displayName;
     pokeStatRaceController[0].text =
         myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
     pokeStatRaceController[1].text =
@@ -927,20 +927,20 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                             Flexible(
                               child: TypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
-                                  controller: pokeTemperController,
+                                  controller: pokeNatureController,
                                   decoration: InputDecoration(
                                     border: UnderlineInputBorder(),
                                     labelText: loc.commonNature,
-                                    labelStyle: myPokemon.temper.id == 0
+                                    labelStyle: myPokemon.nature.id == 0
                                         ? notAllowedStyle
                                         : null,
                                   ),
                                 ),
                                 autoFlipDirection: true,
                                 suggestionsCallback: (pattern) async {
-                                  List<Temper> matches = [];
-                                  matches.addAll(pokeData.tempers.values);
-                                  matches.remove(pokeData.tempers[0]);
+                                  List<Nature> matches = [];
+                                  matches.addAll(pokeData.natures.values);
+                                  matches.remove(pokeData.natures[0]);
                                   matches.retainWhere((s) {
                                     return toKatakana50(
                                             s.displayName.toLowerCase())
@@ -981,9 +981,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                   );
                                 },
                                 onSuggestionSelected: (suggestion) {
-                                  pokeTemperController.text =
+                                  pokeNatureController.text =
                                       suggestion.displayName;
-                                  myPokemon.temper = suggestion;
+                                  myPokemon.nature = suggestion;
                                   updateRealStat();
                                 },
                               ),
@@ -1047,7 +1047,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                     value.toInt();
                                 updateStatsRefReal(StatIndex.values[i]);
                               },
-                              effectTemper: i != 0,
+                              effectNature: i != 0,
                               statIndex: StatIndex.values[i],
                               loc: loc,
                             ),

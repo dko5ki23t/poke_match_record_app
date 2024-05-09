@@ -3015,9 +3015,9 @@ class TurnEffectAction extends TurnEffect {
                 myState.minStats.s.race = 128;
                 for (final stat in StatIndexList.listAtoS) {
                   myState.maxStats[stat].updateReal(
-                      myState.pokemon.level, myState.pokemon.temper);
+                      myState.pokemon.level, myState.pokemon.nature);
                   myState.minStats[stat].updateReal(
-                      myState.pokemon.level, myState.pokemon.temper);
+                      myState.pokemon.level, myState.pokemon.nature);
                 }
               } else {
                 myState.buffDebuffs.list[findIdx] =
@@ -3036,9 +3036,9 @@ class TurnEffectAction extends TurnEffect {
                 myState.minStats.s.race = 90;
                 for (final stat in StatIndexList.listAtoS) {
                   myState.maxStats[stat].updateReal(
-                      myState.pokemon.level, myState.pokemon.temper);
+                      myState.pokemon.level, myState.pokemon.nature);
                   myState.minStats[stat].updateReal(
-                      myState.pokemon.level, myState.pokemon.temper);
+                      myState.pokemon.level, myState.pokemon.nature);
                 }
               }
             }

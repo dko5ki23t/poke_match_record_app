@@ -369,8 +369,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           if (poke.ability.id == 0) {
             poke.ability = pokeData.pokeBase[poke.no]!.ability.first;
           }
-          /*if (poke.temper.id == 0) {
-                  poke.temper = pokeData.tempers[1]!;
+          /*if (poke.nature.id == 0) {
+                  poke.nature = pokeData.natures[1]!;
                 }*/
           // TODO
           for (final stat in StatIndexList.listHtoS) {

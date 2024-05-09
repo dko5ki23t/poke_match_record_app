@@ -110,7 +110,7 @@ flutter:
   assets:
     - assets/Abilities.db
     - assets/Items.db
-    - assets/Tempers.db
+    - assets/Natures.db
     - assets/Moves.db
     - assets/PokeBases.db
     - assets/EggGroup.db

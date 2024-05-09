@@ -1873,14 +1873,14 @@ class Turn extends Equatable implements Copyable {
             race: poke.stats.sixParams[j].race,
             indi: 0,
             effort: 0,
-            temper: Temper(0, '', '', StatIndex.values[j], StatIndex.none)))
+            nature: Nature(0, '', '', StatIndex.values[j], StatIndex.none)))
         ..maxStats = SixStats.generate((j) => FourParams.createFromValues(
             statIndex: StatIndex.values[j],
             level: poke.level,
             race: poke.stats.sixParams[j].race,
             indi: pokemonMaxIndividual,
             effort: pokemonMaxEffort,
-            temper: Temper(0, '', '', StatIndex.none, StatIndex.values[j])))
+            nature: Nature(0, '', '', StatIndex.none, StatIndex.values[j])))
         ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
         ..type1 = poke.type1
         ..type2 = poke.type2;
