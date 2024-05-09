@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
 ###### タマゴグループのリストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -24,15 +25,17 @@ eggGroupCSVnameIndex = 3
 japaneseID = 1
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='タマゴグループの情報をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='タマゴグループのリストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('egg_group', help='各タマゴグループの情報が記載されたCSVファイル(egg_group_prose.csv)')
+    parser.add_argument('-o', '--output', required=False, default=eggGroupDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(eggGroupDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み

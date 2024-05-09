@@ -1,11 +1,7 @@
 import argparse
-import csv
 import sqlite3
 import pandas as pd
-import os
-import tqdm
-import time
-import datetime
+from pathlib import Path
 
 ###### もちもののリストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -54,17 +50,19 @@ sqlite3.register_adapter(IntIntList, lambda l: ';'.join([':'.join(str(int(i)) fo
 sqlite3.register_converter("IntIntList", lambda s: [[int(i) for i in s2.split(':')] for s2 in s.split(';')])
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='もちものの情報をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='もちもののリストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('items', help='各アイテムの情報（IDやタイプ）が記載されたCSVファイル')
     parser.add_argument('item_lang', help='各アイテムと各言語での名称の情報が記載されたCSVファイル')
     parser.add_argument('item_flag_map', help='各アイテムとその属性が記載されたCSVファイル')
+    parser.add_argument('-o', '--output', required=False, default=itemDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(itemDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み

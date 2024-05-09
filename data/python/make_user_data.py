@@ -1,5 +1,7 @@
 import sqlite3
 from enum import IntEnum
+import argparse
+from pathlib import Path
 
 ###### ユーザが登録するデータをSQLテーブルとして保存する ######
 
@@ -370,8 +372,17 @@ parties = [
     Party(81, 81, "53もこテヤマ", 58, 264, 79, 252, 98, 250, 69, 683, 93, 135, 40, 197, Owner.mine).toSet()
 ]
 
+def set_argparse():
+    parser = argparse.ArgumentParser(description='ユーザ作成データをsqliteファイルに保存する')
+    parser.add_argument('-o', '--output', required=False, default=preparedDBFile, help='出力先ファイル名')
+    args = parser.parse_args()
+    return args
+
 def main():
-    conn = sqlite3.connect(preparedDBFile)
+    args = set_argparse()
+
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 登録したポケモン

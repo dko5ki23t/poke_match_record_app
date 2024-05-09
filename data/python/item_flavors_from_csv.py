@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
 ###### もちものの説明文リストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -28,15 +29,17 @@ japaneseID = 1
 englishID = 9
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='もちものの説明をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='もちものの説明文リストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('item_flavor_text', help='各アイテムの説明が記載されたCSVファイル(item_flavor_text.csv)')
+    parser.add_argument('-o', '--output', required=False, default=itemFlavorDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(itemFlavorDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み

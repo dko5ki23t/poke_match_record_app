@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
 ###### わざのリストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -72,16 +73,18 @@ japaneseID = 1
 englishID = 9
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='わざの情報をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='わざのリストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('moves', help='各わざの情報（ID等）が記載されたCSVファイル')
     parser.add_argument('move_lang', help='各わざと各言語での名称の情報が記載されたCSVファイル')
+    parser.add_argument('-o', '--output', required=False, default=moveDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(moveDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み
@@ -127,9 +130,6 @@ def main():
             is_powder = row[movesCSVisPowder]
             is_bullet = row[movesCSVisBullet]
             success_with_protect = row[movesCSVsuccessWithProtect]
-
-            if id == 863:
-                print(effect, 'OK')
 
             if pokeType > 10000:    # 特殊なタイプ
                 pokeType = 0

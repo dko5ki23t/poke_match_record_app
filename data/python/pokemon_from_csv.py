@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
 ###### ポケモンのリストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -94,7 +95,7 @@ svVersionID = 25
 svVersionID2 = 26
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='ポケモンの情報をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='ポケモンのリストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('pokemons', help='各ポケモンの情報（ID等）が記載されたCSVファイル(pokemon_species.csv)')
     parser.add_argument('pokemon_lang', help='各ポケモンと各言語での名称の情報が記載されたCSVファイル(pokemon_species_names.csv)')
     parser.add_argument('pokemon_ability', help='各ポケモンのもつとくせいの情報が記載されたCSVファイル(pokemon_abilities.csv)')
@@ -106,13 +107,15 @@ def set_argparse():
     parser.add_argument('pokemon_forms', help='リージョンフォーム等ポケモンのフォームIDと各ポケモンIDの情報が記載されたCSVファイル(pokemon_forms.csv)')
     parser.add_argument('form_lang', help='リージョンフォーム等ポケモンと各言語での名称の情報が記載されたCSVファイル(pokemon_form_names.csv)')
     parser.add_argument('pokemon_egg_group', help='各ポケモンIDとそのタマゴグループが記載されたCSVファイル(pokemon_egg_groups.csv)')
+    parser.add_argument('-o', '--output', required=False, default=pokeBaseDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(pokeBaseDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み

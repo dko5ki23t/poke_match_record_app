@@ -1,6 +1,7 @@
 import argparse
 import sqlite3
 import pandas as pd
+from pathlib import Path
 
 ###### せいかくのリストをcsvファイルから取得してsqliteファイルに保存 ######
 
@@ -29,16 +30,18 @@ japaneseID = 1
 englishID = 9
 
 def set_argparse():
-    parser = argparse.ArgumentParser(description='せいかくの情報をCSVからデータベース化')
+    parser = argparse.ArgumentParser(description='せいかくのリストをcsvファイルから取得してsqliteファイルに保存する')
     parser.add_argument('tempers', help='各せいかくの情報（IDやタイプ）が記載されたCSVファイル')
     parser.add_argument('temper_lang', help='各せいかくと各言語での名称の情報が記載されたCSVファイル')
+    parser.add_argument('-o', '--output', required=False, default=temperDBFile, help='出力先ファイル名')
     args = parser.parse_args()
     return args
 
 def main():
     args = set_argparse()
 
-    conn = sqlite3.connect(temperDBFile)
+    db_path = Path.cwd().joinpath(args.output)
+    conn = sqlite3.connect(db_path)
     con = conn.cursor()
 
     # 読み込み
