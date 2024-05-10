@@ -151,6 +151,14 @@ const String buffDebuffColumnEnglishName = 'englishName';
 const String buffDebuffColumnColor = 'color';
 const String buffDebuffColumnTurns = 'turns';
 const String buffDebuffColumnIsHidden = 'isHidden';
+const String buffDebuffColumnEffectID = 'effectID';
+const String buffDebuffColumnEffectArg1 = 'effectArg1';
+const String buffDebuffColumnEffectArg2 = 'effectArg2';
+const String buffDebuffColumnEffectArg3 = 'effectArg3';
+const String buffDebuffColumnEffectArg4 = 'effectArg4';
+const String buffDebuffColumnEffectArg5 = 'effectArg5';
+const String buffDebuffColumnEffectArg6 = 'effectArg6';
+const String buffDebuffColumnEffectArg7 = 'effectArg7';
 
 const String pokeBaseDBFile = 'PokeBases.db';
 const String pokeBaseDBTable = 'pokeBaseDB';
@@ -1085,7 +1093,15 @@ class PokeDB {
         buffDebuffColumnEnglishName,
         buffDebuffColumnColor,
         buffDebuffColumnTurns,
-        buffDebuffColumnIsHidden
+        buffDebuffColumnIsHidden,
+        buffDebuffColumnEffectID,
+        buffDebuffColumnEffectArg1,
+        buffDebuffColumnEffectArg2,
+        buffDebuffColumnEffectArg3,
+        buffDebuffColumnEffectArg4,
+        buffDebuffColumnEffectArg5,
+        buffDebuffColumnEffectArg6,
+        buffDebuffColumnEffectArg7,
       ],
     );
     for (var map in maps) {
@@ -1096,6 +1112,14 @@ class PokeDB {
         map[buffDebuffColumnColor],
         map[buffDebuffColumnTurns],
         map[buffDebuffColumnIsHidden] != '0',
+        map[buffDebuffColumnEffectID],
+        map[buffDebuffColumnEffectArg1],
+        map[buffDebuffColumnEffectArg2],
+        map[buffDebuffColumnEffectArg3],
+        map[buffDebuffColumnEffectArg4],
+        map[buffDebuffColumnEffectArg5],
+        map[buffDebuffColumnEffectArg6],
+        map[buffDebuffColumnEffectArg7],
       );
     }
 

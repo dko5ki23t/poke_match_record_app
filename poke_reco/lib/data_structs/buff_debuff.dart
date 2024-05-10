@@ -1,4 +1,6 @@
+import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -622,6 +624,18 @@ class BuffDebuff extends Equatable implements Copyable {
   /// 隠しステータスかどうか
   final bool isHidden;
 
+  /// 効果のID
+  final int effectID;
+
+  /// 効果の引数1~7
+  final int effectArg1;
+  final int effectArg2;
+  final int effectArg3;
+  final int effectArg4;
+  final int effectArg5;
+  final int effectArg6;
+  final int effectArg7;
+
   /// 経過ターン
   int turns = 0;
 
@@ -636,20 +650,56 @@ class BuffDebuff extends Equatable implements Copyable {
         _displayColorName,
         maxTurns,
         isHidden,
+        effectID,
+        effectArg1,
+        effectArg2,
+        effectArg3,
+        effectArg4,
+        effectArg5,
+        effectArg6,
+        effectArg7,
         turns,
         extraArg1,
       ];
 
   /// その他の補正(フォルム等)
-  BuffDebuff(this.id, this._displayName, this._displayNameEn,
-      this._displayColorName, this.maxTurns, this.isHidden);
+  BuffDebuff(
+    this.id,
+    this._displayName,
+    this._displayNameEn,
+    this._displayColorName,
+    this.maxTurns,
+    this.isHidden,
+    this.effectID,
+    this.effectArg1,
+    this.effectArg2,
+    this.effectArg3,
+    this.effectArg4,
+    this.effectArg5,
+    this.effectArg6,
+    this.effectArg7,
+  );
 
   /// 無効な補正を生成
-  factory BuffDebuff.none() => BuffDebuff(0, '', '', '', 0, false);
+  factory BuffDebuff.none() =>
+      BuffDebuff(0, '', '', '', 0, false, 0, 0, 0, 0, 0, 0, 0, 0);
 
   @override
   BuffDebuff copy() => BuffDebuff(
-      id, _displayName, _displayNameEn, _displayColorName, maxTurns, isHidden)
+      id,
+      _displayName,
+      _displayNameEn,
+      _displayColorName,
+      maxTurns,
+      isHidden,
+      effectID,
+      effectArg1,
+      effectArg2,
+      effectArg3,
+      effectArg4,
+      effectArg5,
+      effectArg6,
+      effectArg7)
     ..turns = turns
     ..extraArg1 = extraArg1;
 
@@ -684,6 +734,38 @@ class BuffDebuff extends Equatable implements Copyable {
     }
   }
 
+  /// フォルムチェンジを行う(種族値変化等を行う)
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// ```
+  void changeForm(PokemonState pokemonState) {
+    if (effectID == 2) {
+      // フォルムチェンジによるタイプ2の変更
+      pokemonState.type2 = PokeType.values[effectArg7];
+    }
+    if (effectID == 1 || effectID == 2) {
+      // フォルムチェンジによる種族値の変更
+      pokemonState.maxStats.h.race = effectArg1;
+      pokemonState.minStats.h.race = effectArg1;
+      pokemonState.maxStats.a.race = effectArg2;
+      pokemonState.minStats.a.race = effectArg2;
+      pokemonState.maxStats.b.race = effectArg3;
+      pokemonState.minStats.b.race = effectArg3;
+      pokemonState.maxStats.c.race = effectArg4;
+      pokemonState.minStats.c.race = effectArg4;
+      pokemonState.maxStats.d.race = effectArg5;
+      pokemonState.minStats.d.race = effectArg5;
+      pokemonState.maxStats.s.race = effectArg6;
+      pokemonState.minStats.s.race = effectArg6;
+      for (final stat in StatIndexList.listHtoS) {
+        pokemonState.maxStats[stat].updateReal(
+            pokemonState.pokemon.level, pokemonState.pokemon.nature);
+        pokemonState.minStats[stat].updateReal(
+            pokemonState.pokemon.level, pokemonState.pokemon.nature);
+      }
+    }
+  }
+
   /// SQLに保存された文字列からBuffDebuffをパース
   /// ```
   /// str: SQLに保存された文字列
@@ -691,7 +773,7 @@ class BuffDebuff extends Equatable implements Copyable {
   /// ```
   static BuffDebuff deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return PokeDB().buffDebuffs[int.parse(elements[0])]!
+    return PokeDB().buffDebuffs[int.parse(elements[0])]!.copy()
       ..turns = int.parse(elements[1])
       ..extraArg1 = int.parse(elements[2]);
   }
@@ -733,7 +815,7 @@ class BuffDebuffList extends Equatable implements Copyable {
   /// ```
   void addIfNotFoundByID(int id) {
     if (!containsByID(id)) {
-      add(PokeDB().buffDebuffs[id]!);
+      add(PokeDB().buffDebuffs[id]!.copy());
     }
   }
 
@@ -784,7 +866,7 @@ class BuffDebuffList extends Equatable implements Copyable {
     if (findIdx >= 0) {
       list.removeAt(findIdx);
     } else {
-      list.add(PokeDB().buffDebuffs[id]!);
+      list.add(PokeDB().buffDebuffs[id]!.copy());
     }
   }
 
@@ -795,11 +877,11 @@ class BuffDebuffList extends Equatable implements Copyable {
   void switchID(int id1, int id2) {
     int findIdx = list.indexWhere((element) => element.id == id1);
     if (findIdx >= 0) {
-      list[findIdx] = PokeDB().buffDebuffs[id2]!;
+      list[findIdx] = PokeDB().buffDebuffs[id2]!.copy();
     } else {
       findIdx = list.indexWhere((element) => element.id == id2);
       if (findIdx >= 0) {
-        list[findIdx] = PokeDB().buffDebuffs[id1]!;
+        list[findIdx] = PokeDB().buffDebuffs[id1]!.copy();
       }
     }
   }
@@ -808,12 +890,14 @@ class BuffDebuffList extends Equatable implements Copyable {
   /// ```
   /// from: 変更前ID
   /// to: 変更後ID
+  /// 返り値: 変更したBuffDebuffのインデックス(なければ-1)
   /// ```
-  void changeID(int from, int to) {
+  int changeID(int from, int to) {
     int findIdx = list.indexWhere((element) => element.id == from);
     if (findIdx >= 0) {
-      list[findIdx] = PokeDB().buffDebuffs[to]!;
+      list[findIdx] = PokeDB().buffDebuffs[to]!.copy();
     }
+    return findIdx;
   }
 
   /// 要素を追加する

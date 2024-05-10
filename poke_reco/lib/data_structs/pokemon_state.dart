@@ -198,7 +198,7 @@ class PokemonState extends Equatable implements Copyable {
       // 最後に消費したもちもの/きのみ更新
       final lastLostItem = hiddenBuffs.whereByID(BuffDebuff.lastLostItem);
       if (lastLostItem.isEmpty) {
-        hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostItem]!
+        hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostItem]!.copy()
           ..extraArg1 = _holdingItem!.id);
       } else {
         lastLostItem.first.extraArg1 = _holdingItem!.id;
@@ -206,7 +206,7 @@ class PokemonState extends Equatable implements Copyable {
       if (_holdingItem!.isBerry) {
         final lastLostBerry = hiddenBuffs.whereByID(BuffDebuff.lastLostBerry);
         if (lastLostBerry.isEmpty) {
-          hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostBerry]!
+          hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostBerry]!.copy()
             ..extraArg1 = _holdingItem!.id);
         } else {
           lastLostBerry.first.extraArg1 = _holdingItem!.id;
@@ -326,14 +326,14 @@ class PokemonState extends Equatable implements Copyable {
       if (i <= 0) return;
       int vitalRank = (BuffDebuff.vital1 + (i - 1))
           .clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-      buffDebuffs.add(PokeDB().buffDebuffs[vitalRank]!);
+      buffDebuffs.add(PokeDB().buffDebuffs[vitalRank]!.copy());
     } else {
       int newRank = buffDebuffs.list[findIdx].id + i;
       if (newRank < BuffDebuff.vital1) {
         buffDebuffs.list.removeAt(findIdx);
       } else {
         int vitalRank = (newRank).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-        buffDebuffs.list[findIdx] = PokeDB().buffDebuffs[vitalRank]!;
+        buffDebuffs.list[findIdx] = PokeDB().buffDebuffs[vitalRank]!.copy();
       }
     }
   }
@@ -443,7 +443,7 @@ class PokemonState extends Equatable implements Copyable {
     final findIdx = hiddenBuffs.list
         .indexWhere((element) => element.id == BuffDebuff.stellarUsed);
     if (findIdx < 0) {
-      hiddenBuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarUsed]!
+      hiddenBuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarUsed]!.copy()
         ..extraArg1 = 1 << (type.index - 1));
     } else {
       hiddenBuffs.list[findIdx].extraArg1 |= 1 << (type.index - 1);
@@ -517,25 +517,8 @@ class PokemonState extends Equatable implements Copyable {
           .indexWhere((element) => element.id == BuffDebuff.naiveForm);
       if (findIdx >= 0) {
         buffDebuffs.list[findIdx] =
-            PokeDB().buffDebuffs[BuffDebuff.mightyForm]!; // マイティフォルム
-        // TODO この2行csvに移したい
-        maxStats.a.race = 160;
-        maxStats.b.race = 97;
-        maxStats.c.race = 106;
-        maxStats.d.race = 87;
-        minStats.a.race = 160;
-        minStats.b.race = 97;
-        minStats.c.race = 106;
-        minStats.d.race = 87;
-        for (final stat in [
-          StatIndex.A,
-          StatIndex.B,
-          StatIndex.C,
-          StatIndex.D
-        ]) {
-          maxStats[stat].updateReal(pokemon.level, pokemon.nature);
-          minStats[stat].updateReal(pokemon.level, pokemon.nature);
-        }
+            PokeDB().buffDebuffs[BuffDebuff.mightyForm]!.copy(); // マイティフォルム
+        buffDebuffs.list[findIdx].changeForm(this);
       }
     }
     // あいてのロックオン状態解除
@@ -618,7 +601,7 @@ class PokemonState extends Equatable implements Copyable {
     // ポケモン固有のフォルム等
     if (pokemon.no == 648) {
       // メロエッタ
-      buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.voiceForm]!);
+      buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.voiceForm]!.copy());
     }
 
     // とくせいの効果を反映
@@ -830,34 +813,37 @@ class PokemonState extends Equatable implements Copyable {
       // 状態異常時
       if (currentAbility.id == 62) {
         // こんじょう
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!);
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!.copy());
       }
       if (currentAbility.id == 63) {
         // ふしぎなうろこ
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!);
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!.copy());
       }
       if (currentAbility.id == 95) {
         // はやあし
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!);
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!.copy());
       }
     } else if (isAdded && ailment.id == Ailment.confusion) {
       // こんらん時
       if (currentAbility.id == 77) {
         // ちどりあし
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!);
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!.copy());
       }
     } else if (isAdded &&
         (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
       // どく/もうどく時
       if (currentAbility.id == 137) {
         // どくぼうそう
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!);
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!.copy());
       }
     } else if (isAdded && ailment.id == Ailment.burn) {
       // やけど時
       if (currentAbility.id == 138) {
         // ねつぼうそう
-        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!);
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!.copy());
       }
     }
     if (yourState.currentAbility.id == 307 &&
@@ -1170,11 +1156,13 @@ class PokemonState extends Equatable implements Copyable {
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
     if (_statChanges[index] > before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnUpStatChange)) {
-      hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.thisTurnUpStatChange]!);
+      hiddenBuffs
+          .add(pokeData.buffDebuffs[BuffDebuff.thisTurnUpStatChange]!.copy());
     }
     if (_statChanges[index] < before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnDownStatChange)) {
-      hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.thisTurnDownStatChange]!);
+      hiddenBuffs
+          .add(pokeData.buffDebuffs[BuffDebuff.thisTurnDownStatChange]!.copy());
     }
     return true;
   }

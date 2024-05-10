@@ -206,58 +206,59 @@ class Item extends Equatable implements Copyable {
         if (myState.pokemon.no == 483) {
           // ディアルガ
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!.copy());
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.steelAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.steelAttack1_2]!.copy());
         }
         break;
       case 113: // しらたま
         if (myState.pokemon.no == 484) {
           // パルキア
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!.copy());
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.waterAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.waterAttack1_2]!.copy());
         }
         break;
       case 442: // はっきんだま
         if (myState.pokemon.no == 487) {
           // ギラティナ
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!.copy());
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.ghostAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.ghostAttack1_2]!.copy());
         }
         break;
       case 202: // こころのしずく
         if (myState.pokemon.no == 380 || myState.pokemon.no == 381) {
           // ラティアス/ラティオス
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!.copy());
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.psycoAttack1_2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.psycoAttack1_2]!.copy());
         }
         break;
       case 190: // ひかりのこな
       case 232: // のんきのおこう
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_9]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_9]!.copy());
         break;
       case 197: // こだわりハチマキ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.gorimuchu]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.gorimuchu]!.copy());
         break;
       case 203: // しんかいのキバ
         if (myState.pokemon.no == 366) {
           // パールル
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.specialAttack2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.specialAttack2]!.copy());
         }
         break;
       case 204: // しんかいのウロコ
         if (myState.pokemon.no == 366) {
           // パールル
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.specialDefense2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.specialDefense2]!.copy());
         }
         break;
       case 209: // ピントレンズ
@@ -268,13 +269,14 @@ class Item extends Equatable implements Copyable {
         if (myState.pokemon.no == 25) {
           // ピカチュウ
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.attackMove2]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.attackMove2]!.copy());
         }
         break;
       case 235: // ふといホネ
         if (myState.pokemon.no == 104 || myState.pokemon.no == 105) {
           // カラカラ/ガラガラ
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack2]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attack2]!.copy());
         }
         break;
       case 233: // ラッキーパンチ
@@ -290,28 +292,33 @@ class Item extends Equatable implements Copyable {
         }
         break;
       case 242: // こうかくレンズ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.accuracy1_1]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.accuracy1_1]!.copy());
         break;
       case 243: // ちからのハチマキ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.physical1_1]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.physical1_1]!.copy());
         break;
       case 244: // ものしりメガネ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_1]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.special1_1]!.copy());
         break;
       case 245: // たつじんのおび
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.greatDamage1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.greatDamage1_2]!.copy());
         break;
       case 247: // いのちのたま
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.lifeOrb]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.lifeOrb]!.copy());
         break;
       case 253: // フォーカスレンズ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.movedAccuracy1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.movedAccuracy1_2]!.copy());
         break;
       case 254: // メトロノーム
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.continuousMoveDamageInc0_2]!);
+        myState.buffDebuffs.add(pokeData
+            .buffDebuffs[BuffDebuff.continuousMoveDamageInc0_2]!
+            .copy());
         break;
       case 255: // くろいてっきゅう
       case 192: // きょうせいギプス
@@ -321,159 +328,171 @@ class Item extends Equatable implements Copyable {
       case 269: // パワーバンド
       case 270: // パワーアンクル
       case 271: // パワーウエイト
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.speed0_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.speed0_5]!.copy());
         break;
       case 264: // こだわりスカーフ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.choiceScarf]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.choiceScarf]!.copy());
         break;
       case 274: // こだわりメガネ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.choiceSpecs]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.choiceSpecs]!.copy());
         break;
       case 275: // ひのたまプレート
       case 226: // もくたん
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.fireAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.fireAttack1_2]!.copy());
         break;
       case 276: // しずくプレート
       case 220: // しんぴのしずく
       case 231: // うしおのおこう
       case 294: // さざなみのおこう
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.waterAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.waterAttack1_2]!.copy());
         break;
       case 277: // いかずちプレート
       case 219: // じしゃく
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.electricAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.electricAttack1_2]!.copy());
         break;
       case 278: // みどりのプレート
       case 216: // きせきのタネ
       case 295: // おはなのおこう
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.grassAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.grassAttack1_2]!.copy());
         break;
       case 279: // つららのプレート
       case 223: // とけないこおり
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.iceAttack1_2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.iceAttack1_2]!.copy());
         break;
       case 280: // こぶしのプレート
       case 218: // くろおび
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.fightAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.fightAttack1_2]!.copy());
         break;
       case 281: // もうどくプレート
       case 222: // どくバリ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.poisonAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.poisonAttack1_2]!.copy());
         break;
       case 282: // だいちのプレート
       case 214: // やわらかいすな
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.groundAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.groundAttack1_2]!.copy());
         break;
       case 283: // あおぞらプレート
       case 221: // するどいくちばし
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.airAttack1_2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.airAttack1_2]!.copy());
         break;
       case 284: // ふしぎのプレート
       case 225: // まがったスプーン
       case 291: // あやしいおこう
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.psycoAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.psycoAttack1_2]!.copy());
         break;
       case 285: // たまむしプレート
       case 199: // ぎんのこな
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.bugAttack1_2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.bugAttack1_2]!.copy());
         break;
       case 286: // がんせきプレート
       case 215: // かたいいし
       case 292: // がんせきおこう
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.rockAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.rockAttack1_2]!.copy());
         break;
       case 287: // もののけプレート
       case 224: // のろいのおふだ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.ghostAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.ghostAttack1_2]!.copy());
         break;
       case 288: // りゅうのプレート
       case 227: // りゅうのキバ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.dragonAttack1_2]!.copy());
         break;
       case 289: // こわもてプレート
       case 217: // くろいメガネ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.evilAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.evilAttack1_2]!.copy());
         break;
       case 290: // こうてつプレート
       case 210: // メタルコート
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.steelAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.steelAttack1_2]!.copy());
         break;
       case 684: // せいれいプレート
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.fairyAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.fairyAttack1_2]!.copy());
         break;
       case 1664: // レジェンドプレート
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.moveAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.moveAttack1_2]!.copy());
         break;
       case 581: // しんかのきせき
         if (myState.pokemon.isEvolvable) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!);
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.specialDefense1_5]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!.copy());
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.specialDefense1_5]!.copy());
         }
         break;
       case 587: // しめつけバンド
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.bindDamage1_6]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.bindDamage1_6]!.copy());
         break;
       case 669: // ノーマルジュエル
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.onceNormalAttack1_3]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.onceNormalAttack1_3]!.copy());
         break;
       case 683: // とつげきチョッキ
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.onlyAttackSpecialDefense1_5]!);
+        myState.buffDebuffs.add(pokeData
+            .buffDebuffs[BuffDebuff.onlyAttackSpecialDefense1_5]!
+            .copy());
         break;
       case 690: // ぼうじんゴーグル
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.overcoat]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.overcoat]!.copy());
         break;
       case 897: // ぼうごパット
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.ignoreDirectAtackEffect]!);
+        myState.buffDebuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.ignoreDirectAtackEffect]!.copy());
         break;
       case 1178: // あつぞこブーツ
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.ignoreInstallingEffect]!);
+        myState.buffDebuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.ignoreInstallingEffect]!.copy());
         break;
       case 1662: // まっさらプレート
       case 228: // シルクのスカーフ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.normalAttack1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.normalAttack1_2]!.copy());
         break;
       case 1700: // パンチグローブ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.punchNotDirect1_1]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.punchNotDirect1_1]!.copy());
         break;
       case 2106: // いどのめん
         if (myState.pokemon.no == 10273) {
           // オーガポン
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!.copy());
         }
         break;
       case 2107: // かまどのめん
         if (myState.pokemon.no == 10274) {
           // オーガポン
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!.copy());
         }
         break;
       case 2108: // いしずえのめん
         if (myState.pokemon.no == 10275) {
           // オーガポン
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attack1_2]!.copy());
         }
         break;
     }

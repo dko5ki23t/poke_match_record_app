@@ -753,8 +753,9 @@ class TurnEffectItem extends TurnEffect {
       case 723: // ロゼルのみ
       case 177: // ホズのみ
         // ダメージ軽減効果はわざのダメージ計算時に使う
-        myState.hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.halvedBerry]!
-          ..extraArg1 = doubleBerry ? 1 : 0);
+        myState.hiddenBuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.halvedBerry]!.copy()
+              ..extraArg1 = doubleBerry ? 1 : 0);
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 187: // イバンのみ
@@ -828,7 +829,7 @@ class TurnEffectItem extends TurnEffect {
         break;
       case 186: // ミクルのみ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.onceAccuracy1_2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.onceAccuracy1_2]!.copy());
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 188: // ジャポのみ

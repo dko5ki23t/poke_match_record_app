@@ -217,7 +217,8 @@ class TurnEffectAbility extends TurnEffect {
         {
           // ほのおわざ威力1.5倍
           if (myState.buffDebuffs.containsByID(8)) {
-            myState.buffDebuffs.add(pokeData.buffDebuffs[8]!);
+            myState.buffDebuffs
+                .add(pokeData.buffDebuffs[BuffDebuff.flashFired]!.copy());
           }
         }
         break;
@@ -383,7 +384,7 @@ class TurnEffectAbility extends TurnEffect {
       case 112: // スロースタート
         if (extraArg1 == 0) {
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.attackSpeed0_5]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.attackSpeed0_5]!.copy());
         } else {
           myState.buffDebuffs.removeAllByID(BuffDebuff.attackSpeed0_5);
         }
@@ -445,7 +446,7 @@ class TurnEffectAbility extends TurnEffect {
           newState.setCurrentAbility(
               pokeData.abilities[149]!, yourState, isMe, state);
           newState.hiddenBuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.zoroappear]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.zoroappear]!.copy());
           return ret;
         }
         break;
@@ -474,9 +475,10 @@ class TurnEffectAbility extends TurnEffect {
           for (int i = 0; i < 7; i++) {
             myState.forceSetStatChanges(i, yourState.statChanges(i));
           }
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.transform]!
-            ..extraArg1 = yourState.pokemon.no
-            ..turns = yourState.pokemon.sex.id);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.transform]!.copy()
+                ..extraArg1 = yourState.pokemon.no
+                ..turns = yourState.pokemon.sex.id);
         }
         break;
       case 152: // ミイラ
@@ -521,7 +523,8 @@ class TurnEffectAbility extends TurnEffect {
       case 236: // リベロ
         myState.type1 = PokeType.values[extraArg1];
         myState.type2 = null;
-        myState.hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.protean]!);
+        myState.hiddenBuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.protean]!.copy());
         myState.ailmentsRemoveWhere(
             (e) => e.id == Ailment.halloween || e.id == Ailment.forestCurse);
         break;
@@ -679,38 +682,14 @@ class TurnEffectAbility extends TurnEffect {
       case 248: // アイスフェイス
         {
           if (myState.buffDebuffs.containsByID(BuffDebuff.iceFace)) {
-            myState.buffDebuffs
+            int findIdx = myState.buffDebuffs
                 .changeID(BuffDebuff.iceFace, BuffDebuff.niceFace);
-            // TODO この2行csvに移したい
-            myState.maxStats[StatIndex.B].race = 70;
-            myState.maxStats[StatIndex.D].race = 50;
-            myState.maxStats[StatIndex.S].race = 130;
-            myState.minStats[StatIndex.B].race = 70;
-            myState.minStats[StatIndex.D].race = 50;
-            myState.minStats[StatIndex.S].race = 130;
-            for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
-              myState.maxStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.nature);
-              myState.minStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.nature);
-            }
+            myState.buffDebuffs.list[findIdx].changeForm(myState);
           } else {
             if (myState.buffDebuffs.containsByID(BuffDebuff.niceFace)) {
-              myState.buffDebuffs
+              int findIdx = myState.buffDebuffs
                   .changeID(BuffDebuff.niceFace, BuffDebuff.iceFace);
-              // TODO この2行csvに移したい
-              myState.maxStats[StatIndex.B].race = 110;
-              myState.maxStats[StatIndex.D].race = 90;
-              myState.maxStats[StatIndex.S].race = 50;
-              myState.minStats[StatIndex.B].race = 110;
-              myState.minStats[StatIndex.D].race = 90;
-              myState.minStats[StatIndex.S].race = 50;
-              for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
-                myState.maxStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.nature);
-                myState.minStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.nature);
-              }
+              myState.buffDebuffs.list[findIdx].changeForm(myState);
             }
           }
         }
@@ -774,7 +753,7 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!.copy()
                 ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
@@ -799,7 +778,7 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!.copy()
                 ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
@@ -821,8 +800,9 @@ class TurnEffectAbility extends TurnEffect {
         {
           int faintingNum = state.getFaintingCount(playerType);
           if (faintingNum > 0) {
-            myState.buffDebuffs.add(
-                pokeData.buffDebuffs[BuffDebuff.power10 + faintingNum - 1]!);
+            myState.buffDebuffs.add(pokeData
+                .buffDebuffs[BuffDebuff.power10 + faintingNum - 1]!
+                .copy());
           }
         }
         break;
@@ -863,25 +843,9 @@ class TurnEffectAbility extends TurnEffect {
         break;
       case 304: // テラスチェンジ
         myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.terastalForm);
-        // TODO この2行csvに移したい
-        myState.maxStats.h.race = 95;
-        myState.maxStats.a.race = 95;
-        myState.maxStats.b.race = 110;
-        myState.maxStats.c.race = 105;
-        myState.maxStats.d.race = 110;
-        myState.maxStats.s.race = 85;
-        myState.minStats.h.race = 95;
-        myState.minStats.a.race = 95;
-        myState.minStats.b.race = 110;
-        myState.minStats.c.race = 105;
-        myState.minStats.d.race = 110;
-        myState.minStats.s.race = 85;
-        for (final stat in StatIndexList.listHtoS) {
-          myState.maxStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.nature);
-          myState.minStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.nature);
-        }
+        myState.buffDebuffs.list
+            .firstWhere((element) => element.id == BuffDebuff.terastalForm)
+            .changeForm(myState);
         if (playerType == PlayerType.me) {
           myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();
         }

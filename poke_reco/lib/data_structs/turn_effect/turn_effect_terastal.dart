@@ -140,30 +140,15 @@ class TurnEffectTerastal extends TurnEffect {
     if (myState.pokemon.id == 1024) {
       //テラパゴスがテラスタルした場合
       if (!myState.buffDebuffs.containsByID(BuffDebuff.terastalForm)) {
-        myState.buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarForm]!);
+        myState.buffDebuffs
+            .add(PokeDB().buffDebuffs[BuffDebuff.stellarForm]!.copy());
       } else {
         myState.buffDebuffs
             .changeID(BuffDebuff.terastalForm, BuffDebuff.stellarForm);
       }
-      // TODO この2行csvに移したい
-      myState.maxStats.h.race = 160;
-      myState.maxStats.a.race = 105;
-      myState.maxStats.b.race = 110;
-      myState.maxStats.c.race = 130;
-      myState.maxStats.d.race = 110;
-      myState.maxStats.s.race = 85;
-      myState.minStats.h.race = 160;
-      myState.minStats.a.race = 105;
-      myState.minStats.b.race = 110;
-      myState.minStats.c.race = 130;
-      myState.minStats.d.race = 110;
-      myState.minStats.s.race = 85;
-      for (final stat in StatIndexList.listHtoS) {
-        myState.maxStats[stat]
-            .updateReal(myState.pokemon.level, myState.pokemon.nature);
-        myState.minStats[stat]
-            .updateReal(myState.pokemon.level, myState.pokemon.nature);
-      }
+      myState.buffDebuffs.list
+          .firstWhere((element) => element.id == BuffDebuff.stellarForm)
+          .changeForm(myState);
       if (playerType == PlayerType.me) {
         myState.remainHP += (65 * 2 * myState.pokemon.level / 100).floor();
       }

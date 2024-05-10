@@ -126,13 +126,13 @@ class Field extends Equatable implements Copyable {
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {
         // くさのけがわ
         ownPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!.copy());
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 179) {
         // くさのけがわ
         opponentPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!.copy());
       }
     }
     if (before.id == Field.grassyTerrain && after.id != Field.grassyTerrain) {
@@ -153,24 +153,24 @@ class Field extends Equatable implements Copyable {
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {
         // サーフテール
         ownPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
       }
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {
         // ハドロンエンジン
         ownPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!.copy());
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 207) {
         // サーフテール
         opponentPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 289) {
         // ハドロンエンジン
         opponentPokemonState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!.copy());
       }
     }
     if (before.id == Field.electricTerrain &&

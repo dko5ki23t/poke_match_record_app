@@ -276,7 +276,8 @@ class Ability extends Equatable implements Copyable {
     final pokeData = PokeDB();
     switch (id) {
       case 14: // ふくがん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.accuracy1_3]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.accuracy1_3]!.copy());
         break;
       case 23: // かげふみ
         if (yourState.currentAbility.id != 23) {
@@ -286,38 +287,41 @@ class Ability extends Equatable implements Copyable {
         break;
       case 32: // てんのめぐみ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.additionalEffect2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.additionalEffect2]!.copy());
         break;
       case 37: // ちからもち
       case 74: // ヨガパワー
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.attack2]!.copy());
         break;
       case 42: // じりょく
         yourState.ailmentsAdd(
             Ailment(Ailment.cannotRunAway)..extraArg1 = 2, state);
         break;
       case 55: // はりきり
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_5]!);
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.physicalAccuracy0_8]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.attack1_5]!.copy());
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.physicalAccuracy0_8]!.copy());
         break;
       case 59: // てんきや
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.powalenNormal]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.powalenNormal]!.copy());
         break;
       case 62: // こんじょう
         if (myState.ailmentsIndexWhere(
                 (e) => e.id <= Ailment.sleep && e.id != 0) >=
             0) {
-          myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!);
+          myState.buffDebuffs.add(
+              pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!.copy());
         }
         break;
       case 63: // ふしぎなうろこ
         if (myState.ailmentsIndexWhere(
                 (e) => e.id <= Ailment.sleep && e.id != 0) >=
             0) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!.copy());
         }
         break;
       case 71: // ありじごく
@@ -327,99 +331,117 @@ class Ability extends Equatable implements Copyable {
       case 77: // ちどりあし
         if (myState.ailmentsIndexWhere((e) => e.id == Ailment.confusion) >= 0) {
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!.copy());
         }
         break;
       case 79: // とうそうしん
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.opponentSex1_5]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.opponentSex1_5]!.copy());
         break;
       case 85: // たいねつ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.heatproof]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.heatproof]!.copy());
         break;
       case 87: // かんそうはだ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.drySkin]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.drySkin]!.copy());
         break;
       case 89: // てつのこぶし
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.punch1_2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.punch1_2]!.copy());
         break;
       case 91: // てきおうりょく
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.typeBonus2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.typeBonus2]!.copy());
         break;
       case 95: // はやあし
         if (myState.ailmentsIndexWhere(
                 (e) => e.id <= Ailment.sleep && e.id != 0) >=
             0) {
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!.copy());
         }
         break;
       case 96: // ノーマルスキン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.normalize]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.normalize]!.copy());
         break;
       case 97: // スナイパー
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.sniper]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.sniper]!.copy());
         break;
       case 98: // マジックガード
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.magicGuard]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.magicGuard]!.copy());
         break;
       case 99: // ノーガード
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.noGuard]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.noGuard]!.copy());
         break;
       case 100: // あとだし
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.stall]!);
+        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.stall]!.copy());
         break;
       case 101: // テクニシャン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.technician]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.technician]!.copy());
         break;
       case 103: // ぶきよう
         myState.holdingItem?.clearPassiveEffect(myState, clearForm: false);
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.noItemEffect]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.noItemEffect]!.copy());
         break;
       case 104: // かたやぶり
       case 163: // ターボブレイズ
       case 164: // テラボルテージ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.noAbilityEffect]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.noAbilityEffect]!.copy());
         break;
       case 105: // きょううん
         myState.addVitalRank(1);
         break;
       case 109: // てんねん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.ignoreRank]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.ignoreRank]!.copy());
         break;
       case 110: // いろめがね
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.notGoodType2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.notGoodType2]!.copy());
         break;
       case 111: // フィルター
       case 116: // ハードロック
       case 232: // プリズムアーマー
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.greatDamaged0_75]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.greatDamaged0_75]!.copy());
         break;
       case 120: // すてみ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.recoil1_2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.recoil1_2]!.copy());
         break;
       case 122: // フラワーギフト
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.negaForm]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.negaForm]!.copy());
         break;
       case 125: // ちからずく
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.sheerForce]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.sheerForce]!.copy());
         break;
       case 127: // きんちょうかん
         yourFields.add(IndividualField(IndividualField.noBerry));
         break;
       case 134: // ヘヴィメタル
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.heavy2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.heavy2]!.copy());
         break;
       case 135: // ライトメタル
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.heavy0_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.heavy0_5]!.copy());
         break;
       case 136: // マルチスケイル
       case 231: // ファントムガード
         if ((isMe && myState.remainHP == myState.pokemon.h.real) ||
             (!isMe && myState.remainHPPercent == 100)) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.damaged0_5]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.damaged0_5]!.copy());
         }
         break;
       case 137: // どくぼうそう
@@ -427,157 +449,187 @@ class Ability extends Equatable implements Copyable {
                 (e) => e.id == Ailment.poison || e.id == Ailment.badPoison) >=
             0) {
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!.copy());
         }
         break;
       case 138: // ねつぼうそう
         if (myState.ailmentsIndexWhere((e) => e.id == Ailment.burn) >= 0) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.special1_5]!.copy());
         }
         break;
       case 142: // ぼうじん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.overcoat]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.overcoat]!.copy());
         break;
       case 147: // ミラクルスキン
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.yourStatusAccuracy50]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.yourStatusAccuracy50]!.copy());
         break;
       case 148: // アナライズ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.analytic]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.analytic]!.copy());
         break;
       case 151: // すりぬけ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.ignoreWall]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.ignoreWall]!.copy());
         break;
       case 156: // マジックミラー
         myState.ailmentsAdd(Ailment(Ailment.magicCoat), state);
         break;
       case 158: // いたずらごころ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.prankster]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.prankster]!.copy());
         break;
       case 159: // すなのちから
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.rockGroundSteel1_3]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.rockGroundSteel1_3]!.copy());
         break;
       case 162: // しょうりのほし
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.accuracy1_1]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.accuracy1_1]!.copy());
         break;
       case 169: // ファーコート
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.guard2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.guard2]!.copy());
         break;
       case 171: // ぼうだん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.bulletProof]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.bulletProof]!.copy());
         break;
       case 173: // がんじょうあご
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.bite1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.bite1_5]!.copy());
         break;
       case 174: // フリーズスキン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.freezeSkin]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.freezeSkin]!.copy());
         break;
       case 176: // バトルスイッチ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.shieldForm]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.shieldForm]!.copy());
         break;
       case 177: // はやてのつばさ
         if ((isMe && myState.remainHP == myState.pokemon.h.real) ||
             (!isMe && myState.remainHPPercent == 100)) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.galeWings]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.galeWings]!.copy());
         }
         break;
       case 178: // メガランチャー
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.wave1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.wave1_5]!.copy());
         break;
       case 181: // かたいツメ
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.directAttack1_3]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.directAttack1_3]!.copy());
         break;
       case 182: // フェアリースキン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.fairySkin]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.fairySkin]!.copy());
         break;
       case 184: // スカイスキン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.airSkin]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.airSkin]!.copy());
         break;
       case 196: // ひとでなし
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.merciless]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.merciless]!.copy());
         break;
       case 198: // はりこみ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.change2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.change2]!.copy());
         break;
       case 199: // すいほう
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.waterBubble1]!);
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.waterBubble2]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.waterBubble1]!.copy());
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.waterBubble2]!.copy());
         break;
       case 200: // はがねつかい
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.steelWorker]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.steelWorker]!.copy());
         break;
       case 204: // うるおいボイス
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.liquidVoice]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.liquidVoice]!.copy());
         break;
       case 205: // ヒーリングシフト
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.healingShift]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.healingShift]!.copy());
         break;
       case 206: // エレキスキン
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.electricSkin]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.electricSkin]!.copy());
         break;
       case 208: // ぎょぐん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.singleForm]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.singleForm]!.copy());
         break;
       case 209: // ばけのかわ
         if (!myState.buffDebuffs.containsByAnyID(
             [BuffDebuff.transedForm, BuffDebuff.revealedForm])) {
           myState.buffDebuffs
-              .add(pokeData.buffDebuffs[BuffDebuff.transedForm]!);
+              .add(pokeData.buffDebuffs[BuffDebuff.transedForm]!.copy());
         }
         break;
       case 217: // バッテリー
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.special1_5]!.copy());
         break;
       case 218: // もふもふ
+        myState.buffDebuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.directAttackedDamage0_5]!.copy());
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.directAttackedDamage0_5]!);
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.fireAttackedDamage2]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.fireAttackedDamage2]!.copy());
         break;
       case 233: // ブレインフォース
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.greatDamage1_25]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.greatDamage1_25]!.copy());
         break;
       case 239: // スクリューおびれ
       case 242: // すじがねいり
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.targetRock]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.targetRock]!.copy());
         break;
       case 244: // パンクロック
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.sound1_3]!);
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.soundedDamage0_5]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.sound1_3]!.copy());
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.soundedDamage0_5]!.copy());
         break;
       case 246: // こおりのりんぷん
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.specialDamaged0_5]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.specialDamaged0_5]!.copy());
         break;
       case 247: // じゅくせい
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.nuts2]!);
+        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.nuts2]!.copy());
         break;
       case 248: // アイスフェイス
         if (!myState.buffDebuffs
             .containsByAnyID([BuffDebuff.iceFace, BuffDebuff.niceFace])) {
-          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.iceFace]!);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.iceFace]!.copy());
         }
         break;
       case 249: // パワースポット
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.attackMove1_3]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.attackMove1_3]!.copy());
         break;
       case 252: // はがねのせいしん
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.steel1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.steel1_5]!.copy());
         break;
       case 255: // ごりむちゅう
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.gorimuchu]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.gorimuchu]!.copy());
         break;
       case 258: // はらぺこスイッチ
         if (!myState.isTerastaling) {
           if (!myState.buffDebuffs.containsByAnyID(
               [BuffDebuff.harapekoForm, BuffDebuff.manpukuForm])) {
             myState.buffDebuffs
-                .add(pokeData.buffDebuffs[BuffDebuff.manpukuForm]!);
+                .add(pokeData.buffDebuffs[BuffDebuff.manpukuForm]!.copy());
           } else {
             myState.buffDebuffs
                 .changeID(BuffDebuff.harapekoForm, BuffDebuff.manpukuForm);
@@ -585,51 +637,57 @@ class Ability extends Equatable implements Copyable {
         }
         break;
       case 260: // ふかしのこぶし
-        myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.directAttackIgnoreGurad]!);
+        myState.buffDebuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.directAttackIgnoreGurad]!.copy());
         break;
       case 262: // トランジスタ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.electric1_3]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.electric1_3]!.copy());
         break;
       case 263: // りゅうのあぎと
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.dragon1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.dragon1_5]!.copy());
         break;
       case 272: // きよめのしお
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.ghosted0_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.ghosted0_5]!.copy());
         break;
       case 276: // いわはこび
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.rock1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.rock1_5]!.copy());
         break;
       case 278: // マイティチェンジ
         {
           if (!myState.buffDebuffs
               .containsByAnyID([BuffDebuff.naiveForm, BuffDebuff.mightyForm])) {
             myState.buffDebuffs
-                .add(pokeData.buffDebuffs[BuffDebuff.naiveForm]!);
+                .add(pokeData.buffDebuffs[BuffDebuff.naiveForm]!.copy());
           }
         }
         break;
       case 284: // わざわいのうつわ
         yourState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack0_75]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack0_75]!.copy());
         break;
       case 285: // わざわいのつるぎ
         yourState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.defense0_75]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.defense0_75]!.copy());
         break;
       case 286: // わざわいのおふだ
-        yourState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack0_75]!);
+        yourState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.attack0_75]!.copy());
         break;
       case 287: // わざわいのたま
         yourState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.specialDefense0_75]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.specialDefense0_75]!.copy());
         break;
       case 292: // きれあじ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.cut1_5]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.cut1_5]!.copy());
         break;
       case 298: // きんしのちから
         myState.buffDebuffs
-            .add(pokeData.buffDebuffs[BuffDebuff.myceliumMight]!);
+            .add(pokeData.buffDebuffs[BuffDebuff.myceliumMight]!.copy());
         break;
     }
 
@@ -973,13 +1031,17 @@ class Ability extends Equatable implements Copyable {
           [BuffDebuff.antiFairyAura, BuffDebuff.antiDarkAura]);
       if (yourState.currentAbility.id == 186) {
         // ダークオーラ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.darkAura]!);
-        yourState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.darkAura]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.darkAura]!.copy());
+        yourState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.darkAura]!.copy());
       }
       if (yourState.currentAbility.id == 187) {
         // フェアリーオーラ
-        myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.fairyAura]!);
-        yourState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.fairyAura]!);
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.fairyAura]!.copy());
+        yourState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.fairyAura]!.copy());
       }
     }
   }
