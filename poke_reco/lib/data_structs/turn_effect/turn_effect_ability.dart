@@ -216,8 +216,8 @@ class TurnEffectAbility extends TurnEffect {
       case 18: // もらいび
         {
           // ほのおわざ威力1.5倍
-          if (myState.buffDebuffs.containsByID(BuffDebuff.flashFired)) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.flashFired));
+          if (myState.buffDebuffs.containsByID(8)) {
+            myState.buffDebuffs.add(pokeData.buffDebuffs[8]!);
           }
         }
         break;
@@ -382,7 +382,8 @@ class TurnEffectAbility extends TurnEffect {
         break;
       case 112: // スロースタート
         if (extraArg1 == 0) {
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackSpeed0_5));
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attackSpeed0_5]!);
         } else {
           myState.buffDebuffs.removeAllByID(BuffDebuff.attackSpeed0_5);
         }
@@ -443,7 +444,8 @@ class TurnEffectAbility extends TurnEffect {
           var newState = state.getPokemonState(playerType, null);
           newState.setCurrentAbility(
               pokeData.abilities[149]!, yourState, isMe, state);
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.zoroappear));
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.zoroappear]!);
           return ret;
         }
         break;
@@ -472,7 +474,7 @@ class TurnEffectAbility extends TurnEffect {
           for (int i = 0; i < 7; i++) {
             myState.forceSetStatChanges(i, yourState.statChanges(i));
           }
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transform)
+          myState.buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.transform]!
             ..extraArg1 = yourState.pokemon.no
             ..turns = yourState.pokemon.sex.id);
         }
@@ -519,7 +521,7 @@ class TurnEffectAbility extends TurnEffect {
       case 236: // リベロ
         myState.type1 = PokeType.values[extraArg1];
         myState.type2 = null;
-        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
+        myState.hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.protean]!);
         myState.ailmentsRemoveWhere(
             (e) => e.id == Ailment.halloween || e.id == Ailment.forestCurse);
         break;
@@ -772,7 +774,8 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!
+                ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
@@ -796,7 +799,8 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!
+                ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
@@ -817,8 +821,8 @@ class TurnEffectAbility extends TurnEffect {
         {
           int faintingNum = state.getFaintingCount(playerType);
           if (faintingNum > 0) {
-            myState.buffDebuffs
-                .add(BuffDebuff(BuffDebuff.power10 + faintingNum - 1));
+            myState.buffDebuffs.add(
+                pokeData.buffDebuffs[BuffDebuff.power10 + faintingNum - 1]!);
           }
         }
         break;

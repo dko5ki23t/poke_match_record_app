@@ -140,7 +140,7 @@ class TurnEffectTerastal extends TurnEffect {
     if (myState.pokemon.id == 1024) {
       //テラパゴスがテラスタルした場合
       if (!myState.buffDebuffs.containsByID(BuffDebuff.terastalForm)) {
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.stellarForm));
+        myState.buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarForm]!);
       } else {
         myState.buffDebuffs
             .changeID(BuffDebuff.terastalForm, BuffDebuff.stellarForm);

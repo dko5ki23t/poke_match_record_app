@@ -1,0 +1,200 @@
+id,identifier,name,name_en,color,turns,is_hidden,comment
+1,attack1_3,こうげき1.3倍,Attack 1.3x,red,0,0,こうげき1.3倍(extraArg = 1なら、ブーストエナジー消費によって得られた効果↓)
+2,defense1_3,ぼうぎょ1.3倍,Defense 1.3x,red,0,0,ぼうぎょ1.3倍
+3,specialAttack1_3,とくこう1.3倍,Special Attack 1.3x,red,0,0,とくこう1.3倍
+4,specialDefense1_3,とくぼう1.3倍,Special Defense 1.3x,red,0,0,とくぼう1.3倍
+5,speed1_5,すばやさ1.5倍,Speed 1.5x,red,0,0,すばやさ1.5倍(extraArg = 1なら、ブーストエナジー消費によって得られた効果↑)
+6,yourAccuracy0_8,相手わざ命中率0.8倍,Opponent's Accuracy 0.8x,red,0,0,相手わざ命中率0.8倍
+7,accuracy1_3,命中率1.3倍,Accuracy 1.3x,red,0,0,命中率1.3倍
+8,flashFired,ほのおわざ威力1.5倍,Fire Move Power 1.5x,red,0,0,もらいび状態（ほのおわざ1.5倍）、重複不可
+9,additionalEffect2,わざ追加効果発動確率2倍,Additional effect chance of Move 2x,red,0,0,わざ追加効果発動確率2倍
+10,speed2,すばやさ2倍,Speed 2x,red,0,0,すばやさ2倍
+11,attack2,こうげき2倍,Attack 2x,red,0,0,こうげき2倍
+12,attack1_5,こうげき1.5倍,Attack 1.5x,red,0,0,こうげき1.5倍
+13,physicalAccuracy0_8,物理技命中率0.8倍,Accuracy of Physical Move 0.8x,blue,0,0,物理技命中率0.8倍
+14,powalenNormal,ポワルンのすがた,Normal Form,orange,0,0,ポワルンのすがた
+15,powalenSun,たいようのすがた,Sunny Form,orange,0,0,たいようのすがた
+16,powalenRain,あまみずのすがた,Rainy Form,orange,0,0,あまみずのすがた
+17,powalenSnow,ゆきぐものすがた,Snowy Form,orange,0,0,ゆきぐものすがた
+18,attack1_5WithIgnBurn,こうげき1.5倍(やけど無視),Attack 1.5x(ignore Burn),red,0,0,こうげき1.5倍(やけど無視)
+19,defense1_5,ぼうぎょ1.5倍,Defense 1.5x,red,0,0,ぼうぎょ1.5倍
+20,overgrow,くさわざ威力1.5倍,Grass Move Power 1.5x,red,0,0,くさわざ威力1.5倍(しんりょくによる)、重複不可
+21,blaze,ほのおわざ威力1.5倍,Fire Move Power 1.5x,red,0,0,ほのおわざ威力1.5倍(もうかによる)、重複不可
+22,torrent,みずわざ威力1.5倍,Water Move Power 1.5x,red,0,0,みずわざ威力1.5倍(げきりゅうによる)、重複不可
+23,swarm,むしわざ威力1.5倍,Bug Move Power 1.5x,red,0,0,むしわざ威力1.5倍(むしのしらせによる)、重複不可
+24,yourAccuracy0_5,相手わざ命中率0.5倍,Opponent's Accuracy 0.5x,red,0,0,相手わざ命中率0.5倍(ちどりあしによる)、重複不可
+25,unburden,すばやさ2倍,Speed 2x,red,0,0,すばやさ2倍(かるわざによる)、重複不可
+26,opponentSex1_5,同性への威力1.25倍/異性への威力0.75倍,1.25x power against same sex / 0.75x power against opposite sex,red,0,0,同性への威力1.25倍/異性への威力0.75倍
+27,heatproof,ほのおわざ被ダメ半減計算・やけどダメ半減,Fire Move's damage damage calculation/Burn damage halved,red,0,0,ほのおわざ被ダメ半減計算・やけどダメ半減(たいねつ)
+28,drySkin,ほのおわざ受ける威力1.25倍,Receiving Fire Move's power 1.25x,blue,0,0,ほのおわざ受ける威力1.25倍
+29,punch1_2,パンチわざ威力1.2倍,Punch Move power 1.2x,red,0,0,パンチわざ威力1.2倍
+30,typeBonus2,タイプ一致ボーナス2倍,Type match bonus 2x,red,0,0,タイプ一致ボーナス2倍
+31,speed1_5IgnPara,すばやさ1.5倍(まひ無視),Speed 1.5x(ignore Paralysis),red,0,0,すばやさ1.5倍(まひ無視)
+32,normalize,すべてのわざタイプ→ノーマル,All Move types -> Normal,PokeTypeColor.normal,0,0,すべてのわざタイプ→ノーマル
+33,sniper,急所時ダメージ1.5倍,Critical damage 1.5x,red,0,0,急所時ダメージ1.5倍
+34,magicGuard,相手こうげき以外ダメージ無効,Immunity to damage other than opponent's attacks,red,0,0,相手こうげき以外ダメージ無効
+35,noGuard,出すわざ/受けるわざ必中,Moves to send/Moves to receive are sure to hit,red,0,0,出すわざ/受けるわざ必中
+36,stall,同優先度行動で最後に行動,Act last with same priority action,red,0,0,同優先度行動で最後に行動
+37,technician,60以下威力わざの威力1.5倍,1.5x the power of Moves with a power of 60 or less,red,0,0,60以下威力わざの威力1.5倍
+38,noItemEffect,もちものの効果なし,Item no effect,red,0,0,もちものの効果なし
+39,noAbilityEffect,相手とくせい無視,Ignore opponent's Ability,red,0,0,相手とくせい無視
+40,vital1,急所率アップ+1,Critical rate +1,red,0,0,急所率+1
+41,vital2,急所率アップ+2,Critical rate +2,red,0,0,急所率+2
+42,vital3,急所率アップ+3,Critical rate +3,red,0,0,急所率+3
+43,ignoreRank,相手のランク補正無視,Ignore opponent's Stat modifications,red,0,0,相手のランク補正無視
+44,notGoodType2,タイプ相性いまひとつ時ダメージ2倍,2x damage when type compatibility is poor,red,0,0,タイプ相性いまひとつ時ダメージ2倍
+45,greatDamaged0_75,こうかばつぐん被ダメージ0.75倍,0.75x damage when Move whose type compatibility is great received,red,0,0,こうかばつぐん被ダメージ0.75倍
+46,attackSpeed0_5,こうげき・すばやさ0.5倍,Attack and Speed 0.5x,blue,5,0,こうげき・すばやさ0.5倍
+47,recoil1_2,反動わざ威力1.2倍,1.2x power of Move with recoil,red,0,0,反動わざ威力1.2倍
+48,negaForm,ネガフォルム,Overcast Form,orange,0,0,チェリムのネガフォルム
+49,posiForm,ポジフォルム,Sunshine Form,orange,0,0,チェリムのポジフォルム
+50,sheerForce,わざの追加効果なし・威力1.3倍,No additional effect occurs when use Move and 1.3x power,red,0,0,わざの追加効果なし・威力1.3倍
+51,defeatist,こうげき・とくこう半減,Attack and Special Attack 0.5x,blue,0,0,こうげき・とくこう半減(よわきによる)、重複不可
+52,heavy2,おもさ2倍,Weight 2x,orange,0,0,おもさ2倍
+53,heavy0_5,おもさ0.5倍,Weight 0.5x,orange,0,0,おもさ0.5倍
+54,damaged0_5,受けるダメージ0.5倍,Damage received 0.5x,red,0,0,受けるダメージ0.5倍
+55,physical1_5,ぶつりわざ威力1.5倍,Physical Move power 1.5x,red,0,0,ぶつりわざ威力1.5倍
+56,special1_5,とくしゅわざ威力1.5倍,Special Move power 1.5x,red,0,0,とくしゅわざ威力1.5倍
+57,overcoat,こな・ほうし・すなあらしダメージ無効,Nullifies damage from powders/Effect Spore/sandstorm,red,0,0,こな・ほうし・すなあらしダメージ無効
+58,yourStatusAccuracy50,相手のへんかわざ命中率50,Accuracy of opponent's Status Move becomes 50,red,0,0,相手のへんかわざ命中率50
+59,analytic,最後行動時わざ威力1.3倍,Move power 1.3x when you act at last in turns,red,0,0,最後行動時わざ威力1.3倍
+60,ignoreWall,かべ・みがわり無視,Ignore Walls and SUBSTITUTE,red,0,0,かべ・みがわり無視
+61,prankster,へんかわざ優先度+1(あくタイプには無効),Status Move's priority +1(Except for Dark type Pokémon),red,0,0,へんかわざ優先度+1(あくタイプには無効)
+62,rockGroundSteel1_3,いわ・じめん・はがねわざ威力1.3倍,Rock/Ground/Steel Move power 1.5x,red,0,0,いわ・じめん・はがねわざ威力1.3倍
+63,zenMode,ダルマモード,Zen Mode,orange,0,0,ダルマモード(現状SVではヒヒダルマ登場してないので実装していない)
+64,accuracy1_1,命中率1.1倍,Accuracy 1.1x,red,0,0,命中率1.1倍
+65,guard2,ぼうぎょ2倍,Defense 2x,red,0,0,ぼうぎょ2倍
+66,bulletProof,弾のわざ無効,Disable bullet Moves,red,0,0,弾のわざ無効
+67,bite1_5,かみつきわざ威力1.5倍,Bite Move's power 1.5x,red,0,0,かみつきわざ威力1.5倍
+68,freezeSkin,ノーマルわざ→こおりわざ＆こおりわざ威力1.2倍,Normal Move types -> Ice and Ice Move power 1.2x,orange,0,0,ノーマルわざ→こおりわざ＆こおりわざ威力1.2倍
+69,bladeForm,ブレードフォルム,Blade Forme,orange,0,0,ブレードフォルム(現状SVでギルガルドが登場していないため未実装)
+70,shieldForm,シールドフォルム,Shield Forme,orange,0,0,シールドフォルム(現状SVでギルガルドが登場していないため未実装)
+71,galeWings,ひこうわざ優先度+1,Flying Move priority +1,red,0,0,ひこうわざ優先度+1
+72,wave1_5,はどうわざ威力1.5倍,Wave Move power 1.5x,red,0,0,はどうわざ威力1.5倍
+73,guard1_5,ぼうぎょ1.5倍,Defense 1.5x,red,0,0,ぼうぎょ1.5倍
+74,directAttack1_3,直接攻撃威力1.3倍,Direct attack power 1.3x,red,0,0,直接攻撃威力1.3倍
+75,fairySkin,ノーマルわざ→フェアリーわざ＆フェアリーわざ威力1.2倍,Normal Move types -> Fairy and Fairy Move power 1.2x,red,0,0,ノーマルわざ→フェアリーわざ＆フェアリーわざ威力1.2倍
+76,airSkin,ノーマルわざ→ひこうわざ＆ひこうわざ威力1.2倍,Normal Move types -> Flying and Flying Move power 1.2x,red,0,0,ノーマルわざ→ひこうわざ＆ひこうわざ威力1.2倍
+77,darkAura,あくわざ威力1.33倍,Dark Move power 1.33x,red,0,0,あくわざ威力1.33倍
+78,fairyAura,フェアリーわざ威力1.33倍,Fairy Move power 1.33x,red,0,0,フェアリーわざ威力1.33倍
+79,antiDarkAura,あくわざ威力0.75倍,Dark Move power 0.75x,blue,0,0,あくわざ威力0.75倍
+80,antiFairyAura,フェアリーわざ威力0.75倍,Fairy Move power 0.75x,blue,0,0,フェアリーわざ威力0.75倍
+81,merciless,どく・もうどく状態へのこうげき急所率100%,100% rate of Critical for Poisoning and badly Poisoning,red,0,0,どく・もうどく状態へのこうげき急所率100%
+82,change2,こうたい後ポケモンへのこうげき・とくこう2倍,Attack/Special Attack 2x to Pokémon after change,red,0,0,こうたい後ポケモンへのこうげき・とくこう2倍
+83,waterBubble1,相手ほのおわざこうげき・とくこう0.5倍,Opponent's Attack/Special Attack 0.5x when receive Fire Move,red,0,0,相手ほのおわざこうげき・とくこう0.5倍
+84,waterBubble2,みずわざこうげき・とくこう2倍,Attack/Special Attack 2x when using Water Move,red,0,0,みずわざこうげき・とくこう2倍
+85,steelWorker,はがねわざこうげき・とくこう1.5倍,Attack/Special Attack 2x when using Steel Move,red,0,0,はがねわざこうげき・とくこう1.5倍
+86,liquidVoice,音わざタイプ→みず,Sound Move types -> Water,orange,0,0,音わざタイプ→みず
+87,healingShift,かいふくわざ優先度+3,Recovery Moves priority +3,red,0,0,かいふくわざ優先度+3
+88,electricSkin,ノーマルわざ→でんきわざ＆でんきわざ威力1.2倍,Normal Move types -> Electric and Electric Move power 1.2x,red,0,0,ノーマルわざ→でんきわざ＆でんきわざ威力1.2倍
+89,singleForm,たんどくのすがた,Single Form,orange,0,0,たんどくのすがた(現状SVでは登場していないため未実装)
+90,multipleForm,むれたすがた,Multiple Form,orange,0,0,むれたすがた(現状SVでは登場していないため未実装)
+91,transedForm,ばけたすがた,Disguised Form,orange,0,0,ばけたすがた
+92,revealedForm,ばれたすがた,Busted Form,orange,0,0,ばれたすがた
+93,satoshiGekkoga   // サトシゲッコウガ,サトシゲッコウガ,Ash-Greninja,orange,0,0,サトシゲッコウガ
+94,tenPercentForm,10%フォルム,10% Form,orange,0,0,10%フォルム(現状SVでジガルデが登場していないため未実装)
+95,fiftyPercentForm,50%フォルム,50% Form,orange,0,0,50%フォルム(現状SVでジガルデが登場していないため未実装)
+96,perfectForm,パーフェクトフォルム,Perfect Form,orange,0,0,パーフェクトフォルム(現状SVでジガルデが登場していないため未実装)
+97,priorityCut,相手の優先度1以上わざ無効,Disables opponent's Moves with priority 1 or above,red,0,0,相手の優先度1以上わざ無効(TODO)
+98,directAttackedDamage0_5,直接攻撃被ダメージ半減,Direct attack with halved damage,red,0,0,直接攻撃被ダメージ半減
+99,fireAttackedDamage2,ほのおわざ被ダメージ2倍,Fire Move received with damage 2x,blue,0,0,ほのおわざ被ダメージ2倍
+100,greatDamage1_25,こうかばつぐんわざダメージ1.25倍,1.25x damage when using Move whose type compatibility is great,red,0,0,こうかばつぐんわざダメージ1.25倍
+101,targetRock,わざの対象相手が変更されない,Target of Moves does not change,red,0,0,わざの対象相手が変更されない
+102,unomiForm,うのみのすがた,Gulping Form,orange,0,0,うのみのすがた
+103,marunomiForm,まるのみのすがた,Gorging Form,orange,0,0,まるのみのすがた
+104,sound1_3,音わざ威力1.3倍,Sound Move Power 1.3x,red,0,0,音わざ威力1.3倍
+105,soundedDamage0_5,音わざ被ダメージ半減,Sound Move received with halved damage,red,0,0,音わざ被ダメージ半減
+106,specialDamaged0_5,とくしゅわざ被ダメージ半減,Special Move received with halved damage,red,0,0,とくしゅわざ被ダメージ半減
+107,nuts2,きのみ効果2倍,2x Berry effect,red,0,0,きのみ効果2倍
+108,iceFace,アイスフェイス,Ice Face,orange,0,0,アイスフェイス
+109,niceFace,ナイスフェイス,Noice Face,orange,0,0,ナイスフェイス
+110,attackMove1_3,こうげきわざ威力1.3倍,Attack Move Power 1.3x,red,0,0,こうげきわざ威力1.3倍
+111,steel1_5,はがねわざ威力1.5倍,Steel Move Power 1.3x,red,0,0,はがねわざ威力1.5倍
+112,gorimuchu,わざこだわり・こうげき1.5倍,Lock one Move and Attack 1.5x,red,0,0,わざこだわり・こうげき1.5倍
+113,manpukuForm,まんぷくもよう,Full Belly Mode,orange,0,0,まんぷくもよう
+114,harapekoForm,はらぺこもよう,Hangry Mode,orange,0,0,はらぺこもよう
+115,directAttackIgnoreGurad,直接こうげきのまもり不可,Direct attack passes through protection,red,0,0,まもり不可の直接こうげき
+116,electric1_3,でんきわざ時こうげき・とくこう1.3倍,Attack/Special Attack 1.3x when using Electric Move,red,0,0,でんきわざ時こうげき・とくこう1.3倍
+117,dragon1_5,ドラゴンわざ時こうげき・とくこう1.5倍,Attack/Special Attack 1.5x when using Dragon Move,red,0,0,ドラゴンわざ時こうげき・とくこう1.5倍
+118,ghosted0_5,ゴーストわざ被ダメ計算時こうげき・とくこう半減,Opponent's Attack/Special Attack 0.5x when receive Ghost Move,red,0,0,ゴーストわざ被ダメ計算時こうげき・とくこう半減
+119,rock1_5,いわわざ時こうげき・とくこう1.5倍,Attack/Special Attack 1.5x when using Rock Move,red,0,0,いわわざ時こうげき・とくこう1.5倍
+120,naiveForm,ナイーブフォルム,Zero Form,orange,0,0,ナイーブフォルム
+121,mightyForm,マイティフォルム,Zero Form,orange,0,0,マイティフォルム
+122,specialAttack0_75,とくこう0.75倍,Special Attack 0.75x,blue,0,0,とくこう0.75倍
+123,defense0_75,ぼうぎょ0.75倍,Defense 0.75x,blue,0,0,ぼうぎょ0.75倍
+124,attack0_75,こうげき0.75倍,Attack 0.75x,blue,0,0,こうげき0.75倍
+125,specialDefense0_75,とくぼう0.75倍,Special Defense 0.75x,blue,0,0,とくぼう0.75倍
+126,attack1_33,こうげき1.33倍,Attack 1.33x,red,0,0,こうげき1.33倍
+127,specialAttack1_33,とくこう1.33倍,Special Attack 1.33x,red,0,0,とくこう1.33倍
+128,cut1_5,切るわざ威力1.5倍,Cutting Move Power 1.5x,red,0,0,切るわざ威力1.5倍
+129,power10,わざ威力10%アップ,Move Power +10%,red,0,0,わざ威力10%アップ
+130,power20,わざ威力20%アップ,Move Power +20%,red,0,0,わざ威力20%アップ
+131,power30,わざ威力30%アップ,Move Power +30%,red,0,0,わざ威力30%アップ
+132,power40,わざ威力40%アップ,Move Power +40%,red,0,0,わざ威力40%アップ
+133,power50,わざ威力50%アップ,Move Power +50%,red,0,0,わざ威力50%アップ
+134,myceliumMight,へんかわざ最後に行動＆相手のとくせい無視,Act at last in turns when using Status Move and ignore opponent's Ability,red,0,0,へんかわざ最後に行動＆相手のとくせい無視
+135,specialDefense1_5,とくぼう1.5倍,Special Defense 1.5x,red,0,0,とくぼう1.5倍
+136,choiceSpecs,わざこだわり・とくこう1.5倍,Lock one Move and Special Attack 1.5x,red,0,0,わざこだわり・とくこう1.5倍
+137,specialAttack2,とくこう2倍,Special Attack 2x,red,0,0,とくこう2倍
+138,onlyAttackSpecialDefense1_5,こうげきわざのみ選択可・とくぼう1.5倍,Special Defense 1.5x but cannot Status Moves,red,0,0,こうげきわざのみ選択可・とくぼう1.5倍
+139,specialDefense2,とくぼう2倍,Special Defense 2x,red,0,0,とくぼう2倍
+140,choiceScarf,わざこだわり・すばやさ1.5倍,Lock one Move and Speed 1.5x,red,0,0,わざこだわり・すばやさ1.5倍
+141,onceAccuracy1_2,次に使うわざ命中率1.2倍,Accuracy 1.2x of Move use next,red,0,0,次に使うわざ命中率1.2倍
+142,movedAccuracy1_2,当ターン行動済み相手へのわざ命中率1.2倍,Accuracy 1.2x to opponent acted in this turn,red,0,0,当ターン行動済み相手へのわざ命中率1.2倍
+143,attackMove2,こうげきわざ時こうげき・とくこう2倍,Attack/Special Attack 2x when using Move,red,0,0,こうげきわざ時こうげき・とくこう2倍
+144,speed0_5,すばやさ0.5倍,Speed 0.5x,blue,0,0,すばやさ0.5倍
+145,yourAccuracy0_9,相手わざ命中率0.9倍,Accuracy 0.9x of opponent's Move,red,0,0,相手わざ命中率0.9倍
+146,physical1_1,ぶつりわざ威力1.1倍,Physical Move Power 1.1x,red,0,0,ぶつりわざ威力1.1倍
+147,special1_1,とくしゅわざ威力1.1倍,Special Move Power 1.1x,red,0,0,とくしゅわざ威力1.1倍
+148,onceNormalAttack1_3,ノーマルわざ威力1.3倍,Normal Move Power 1.3x,red,0,0,ノーマルわざ威力1.3倍
+149,normalAttack1_2,ノーマルわざ威力1.2倍,Normal Move Power 1.2x,red,0,0,ノーマルわざ威力1.2倍
+150,fireAttack1_2,ほのおわざ威力1.2倍,Fire Move Power 1.2x,red,0,0,ほのおわざ威力1.2倍
+151,waterAttack1_2,みずわざ威力1.2倍,Water Move Power 1.2x,red,0,0,みずわざ威力1.2倍
+152,electricAttack1_2,でんきわざ威力1.2倍,Electric Move Power 1.2x,red,0,0,でんきわざ威力1.2倍
+153,grassAttack1_2,くさわざ威力1.2倍,Grass Move Power 1.2x,red,0,0,くさわざ威力1.2倍
+154,iceAttack1_2,こおりわざ威力1.2倍,Ice Move Power 1.2x,red,0,0,こおりわざ威力1.2倍
+155,fightAttack1_2,かくとうわざ威力1.2倍,Fighting Move Power 1.2x,red,0,0,かくとうわざ威力1.2倍
+156,poisonAttack1_2,どくわざ威力1.2倍,Poison Move Power 1.2x,red,0,0,どくわざ威力1.2倍
+157,groundAttack1_2,じめんわざ威力1.2倍,Ground Move Power 1.2x,red,0,0,じめんわざ威力1.2倍
+158,airAttack1_2,ひこうわざ威力1.2倍,Flying Move Power 1.2x,red,0,0,ひこうわざ威力1.2倍
+159,psycoAttack1_2,エスパーわざ威力1.2倍,Psychic Move Power 1.2x,red,0,0,エスパーわざ威力1.2倍
+160,bugAttack1_2,むしわざ威力1.2倍,Bug Move Power 1.2x,red,0,0,むしわざ威力1.2倍
+161,rockAttack1_2,いわわざ威力1.2倍,Rock Move Power 1.2x,red,0,0,いわわざ威力1.2倍
+162,ghostAttack1_2,ゴーストわざ威力1.2倍,Ghost Move Power 1.2x,red,0,0,ゴーストわざ威力1.2倍
+163,dragonAttack1_2,ドラゴンわざ威力1.2倍,Dragon Move Power 1.2x,red,0,0,ドラゴンわざ威力1.2倍
+164,evilAttack1_2,あくわざ威力1.2倍,Dark Move Power 1.2x,red,0,0,あくわざ威力1.2倍
+165,steelAttack1_2,はがねわざ威力1.2倍,Steel Move Power 1.2x,red,0,0,はがねわざ威力1.2倍
+166,fairyAttack1_2,フェアリーわざ威力1.2倍,Fairy Move Power 1.2x,red,0,0,フェアリーわざ威力1.2倍
+167,moveAttack1_2,わざ威力1.2倍,Move Power 1.2x,red,0,0,わざ威力1.2倍
+168,lifeOrb,こうげきわざダメージ1.3倍・自身HP1/10ダメージ,Damage 1.3x of using attack Move and 1/10 of max HP is reduced,red,0,0,こうげきわざダメージ1.3倍・自身HP1/10ダメージ
+169,greatDamage1_2,こうかばつぐん時ダメージ1.2倍,1.2x damage when using Move whose type compatibility is great,red,0,0,こうかばつぐん時ダメージ1.2倍
+170,continuousMoveDamageInc0_2,同じわざ連続使用ごとにダメージ+20%(MAX 200%),Damage +20%(MAX 200%) for each consecutive use of the same Move,red,0,0,同じわざ連続使用ごとにダメージ+20%(MAX 200%)
+171,bindDamage1_6,バインド与ダメージ→最大HP1/6,Damage dealt by Partially Trapped -> Max HP 1/6,red,0,0,バインド与ダメージ→最大HP1/6
+173,ignoreDirectAtackEffect,直接こうげきに対して発動する効果無効,Effects activated direct attack are disabled,red,0,0,直接こうげきに対して発動する効果無効
+174,ignoreInstallingEffect,設置わざ効果無効,Ignore Setting Move effect,red,0,0,設置わざ効果無効
+175,attackWithFlinch10,こうげき時10%ひるみ,10% Flinch when attack,red,0,0,こうげき時10%ひるみ
+176,substitute,みがわり,SUBSTITUTE,green,0,0,みがわり
+177,rage,わざによるダメージでこうげき1段階上昇,Attack rise 1 level due to damage caused by Moves,red,0,0,わざによるダメージでこうげき1段階上昇
+178,punchNotDirect1_1,パンチわざ非接触化・威力1.1倍,Punch Moves are non-contact/power 1.1x,red,0,0,パンチわざ非接触化・威力1.1倍
+179,voiceForm,ボイスフォルム,Aria Forme,orange,0,0,ボイスフォルム
+180,stepForm,ステップフォルム,Pirouette Forme,orange,0,0,ステップフォルム
+181,copiedMove,,,white,0,1,わざ「ものまね」のコピーしたわざ(隠しステータス)
+182,chargingMove,,,white,0,1,溜める系わざの溜め状態(隠しステータス)
+183,recoiling,,,white,0,1,わざの反動で動けない状態(隠しステータス)
+184,certainlyHittedDamage2,相手わざ必中・ダメージ2倍,Opponent Move guaranteed to hit/damage 2x,blue,0,0,相手わざ必中・ダメージ2倍
+185,protean,,,white,0,1,へんげんじざい/リベロ発動済み(隠しステータス)
+186,attack1_2,こうげきわざ威力1.2倍,Attack Move Power 1.2x,red,0,0,こうげきわざ威力1.2倍
+187,lastLostBerry,,,white,0,1,最後に消費したきのみ(隠しステータス)
+188,lastLostItem,,,white,0,1,最後に消費したもちもの(隠しステータス)
+189,transform,へんしん,Transform,orange,0,0,へんしん(extraArgに、へんしん対象のポケモンNo、turnsに、性別のid)
+190,thisTurnUpStatChange,,,white,0,1,このターンでステータス上昇が起きたことを示す(隠しステータス)
+191,thisTurnDownStatChange,,,white,0,1,このターンでステータス下降が起きたことを示す(隠しステータス)
+192,changedThisTurn,,,white,0,1,このターン、交代わざやこうたい行動によってでてきたポケモンであることを表す(隠しステータス。はりこみ用)
+193,halvedBerry,,,white,0,1,わざを受ける前に半減系きのみを食べた(隠しステータス)
+194,sameMoveCount,,,white,0,1,連続で使用しているわざのID*100+カウント(隠しステータス)
+195,magicRoom,,,white,0,1,マジックルーム時、もちものが使えないことを示すフラグ(隠しステータス。場の効果にすると使いづらいため、こちらと併用)
+196,attackedCount,,,white,0,1,こうげきわざを受けた回数(隠しステータス。交代・ひんしでも消えない)
+197,zoroappear,,,white,0,1,ゾロア系だとバレたあと(隠しステータス。交代でも消えない)
+198,terastalForm,テラスタルフォルム,Terastal Form,orange,0,0,テラスタルフォルム
+199,stellarForm,ステラフォルム,Stellar Form,orange,0,0,ステラフォルム
+200,stellarUsed,,,white,0,1,ステラ補正を使用したタイプのフラグ(隠しステータス。交代でも消えない)

@@ -117,6 +117,7 @@ flutter:
     - assets/AbilityFlavors.db
     - assets/ItemFlavors.db
     - assets/MoveFlavors.db
+    - assets/BuffDebuffs.db
     - assets/Prepared.db
     - assets/licenses/LICENSE
     - assets/licenses/OFL.txt

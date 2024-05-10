@@ -88,6 +88,7 @@ class Field extends Equatable implements Copyable {
   /// ```
   static void processFieldEffect(Field before, Field after,
       PokemonState? ownPokemonState, PokemonState? opponentPokemonState) {
+    final pokeData = PokeDB();
     // ぎたい
     int newTypeID = 0;
     switch (after.id) {
@@ -124,12 +125,14 @@ class Field extends Equatable implements Copyable {
       // グラスフィールドになる時
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 179) {
         // くさのけがわ
-        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
+        ownPokemonState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!);
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 179) {
         // くさのけがわ
-        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.guard1_5));
+        opponentPokemonState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.guard1_5]!);
       }
     }
     if (before.id == Field.grassyTerrain && after.id != Field.grassyTerrain) {
@@ -149,23 +152,25 @@ class Field extends Equatable implements Copyable {
       // エレキフィールドになる時
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 207) {
         // サーフテール
-        ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+        ownPokemonState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!);
       }
       if (ownPokemonState != null && ownPokemonState.currentAbility.id == 289) {
         // ハドロンエンジン
         ownPokemonState.buffDebuffs
-            .add(BuffDebuff(BuffDebuff.specialAttack1_33));
+            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!);
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 207) {
         // サーフテール
-        opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+        opponentPokemonState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.speed2]!);
       }
       if (opponentPokemonState != null &&
           opponentPokemonState.currentAbility.id == 289) {
         // ハドロンエンジン
         opponentPokemonState.buffDebuffs
-            .add(BuffDebuff(BuffDebuff.specialAttack1_33));
+            .add(pokeData.buffDebuffs[BuffDebuff.specialAttack1_33]!);
       }
     }
     if (before.id == Field.electricTerrain &&

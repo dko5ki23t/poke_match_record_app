@@ -154,21 +154,21 @@ class PokemonState extends Equatable implements Copyable {
 
   /// おもさ(メタモンはへんしん状態に応じて変化)
   int get weight {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.weight;
   }
 
   /// たかさ(メタモンはへんしん状態に応じて変化)
   int get height {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.height;
   }
 
   /// せいべつ(メタモンはへんしん状態に応じて変化)
   Sex get sex {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
 
@@ -191,21 +191,22 @@ class PokemonState extends Equatable implements Copyable {
   }
 
   set holdingItem(Item? item) {
+    final pokeData = PokeDB();
     _holdingItem?.clearPassiveEffect(this);
     if (canUseItem) item?.processPassiveEffect(this);
     if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
       // 最後に消費したもちもの/きのみ更新
       final lastLostItem = hiddenBuffs.whereByID(BuffDebuff.lastLostItem);
       if (lastLostItem.isEmpty) {
-        hiddenBuffs.add(
-            BuffDebuff(BuffDebuff.lastLostItem)..extraArg1 = _holdingItem!.id);
+        hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostItem]!
+          ..extraArg1 = _holdingItem!.id);
       } else {
         lastLostItem.first.extraArg1 = _holdingItem!.id;
       }
       if (_holdingItem!.isBerry) {
         final lastLostBerry = hiddenBuffs.whereByID(BuffDebuff.lastLostBerry);
         if (lastLostBerry.isEmpty) {
-          hiddenBuffs.add(BuffDebuff(BuffDebuff.lastLostBerry)
+          hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostBerry]!
             ..extraArg1 = _holdingItem!.id);
         } else {
           lastLostBerry.first.extraArg1 = _holdingItem!.id;
@@ -325,14 +326,14 @@ class PokemonState extends Equatable implements Copyable {
       if (i <= 0) return;
       int vitalRank = (BuffDebuff.vital1 + (i - 1))
           .clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-      buffDebuffs.add(BuffDebuff(vitalRank));
+      buffDebuffs.add(PokeDB().buffDebuffs[vitalRank]!);
     } else {
       int newRank = buffDebuffs.list[findIdx].id + i;
       if (newRank < BuffDebuff.vital1) {
         buffDebuffs.list.removeAt(findIdx);
       } else {
         int vitalRank = (newRank).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-        buffDebuffs.list[findIdx] = BuffDebuff(vitalRank);
+        buffDebuffs.list[findIdx] = PokeDB().buffDebuffs[vitalRank]!;
       }
     }
   }
@@ -442,7 +443,7 @@ class PokemonState extends Equatable implements Copyable {
     final findIdx = hiddenBuffs.list
         .indexWhere((element) => element.id == BuffDebuff.stellarUsed);
     if (findIdx < 0) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.stellarUsed)
+      hiddenBuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarUsed]!
         ..extraArg1 = 1 << (type.index - 1));
     } else {
       hiddenBuffs.list[findIdx].extraArg1 |= 1 << (type.index - 1);
@@ -516,7 +517,7 @@ class PokemonState extends Equatable implements Copyable {
           .indexWhere((element) => element.id == BuffDebuff.naiveForm);
       if (findIdx >= 0) {
         buffDebuffs.list[findIdx] =
-            BuffDebuff(BuffDebuff.mightyForm); // マイティフォルム
+            PokeDB().buffDebuffs[BuffDebuff.mightyForm]!; // マイティフォルム
         // TODO この2行csvに移したい
         maxStats.a.race = 160;
         maxStats.b.race = 97;
@@ -617,7 +618,7 @@ class PokemonState extends Equatable implements Copyable {
     // ポケモン固有のフォルム等
     if (pokemon.no == 648) {
       // メロエッタ
-      buffDebuffs.add(BuffDebuff(BuffDebuff.voiceForm));
+      buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.voiceForm]!);
     }
 
     // とくせいの効果を反映
@@ -708,6 +709,7 @@ class PokemonState extends Equatable implements Copyable {
         ? state.getIndiFields(PlayerType.me)
         : state.getIndiFields(PlayerType.opponent);
     var yourState = state.getPokemonState(playerType.opposite, null);
+    final pokeData = PokeDB();
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
@@ -828,34 +830,34 @@ class PokemonState extends Equatable implements Copyable {
       // 状態異常時
       if (currentAbility.id == 62) {
         // こんじょう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!);
       }
       if (currentAbility.id == 63) {
         // ふしぎなうろこ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!);
       }
       if (currentAbility.id == 95) {
         // はやあし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.speed1_5IgnPara));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!);
       }
     } else if (isAdded && ailment.id == Ailment.confusion) {
       // こんらん時
       if (currentAbility.id == 77) {
         // ちどりあし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!);
       }
     } else if (isAdded &&
         (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
       // どく/もうどく時
       if (currentAbility.id == 137) {
         // どくぼうそう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!);
       }
     } else if (isAdded && ailment.id == Ailment.burn) {
       // やけど時
       if (currentAbility.id == 138) {
         // ねつぼうそう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!);
       }
     }
     if (yourState.currentAbility.id == 307 &&
@@ -1091,6 +1093,7 @@ class PokemonState extends Equatable implements Copyable {
     List<IndividualField>? myFields,
     List<IndividualField>? yourFields,
   }) {
+    final pokeData = PokeDB();
     int change = delta;
     if (!isMyEffect &&
         buffDebuffs.containsByID(BuffDebuff.substitute) &&
@@ -1167,11 +1170,11 @@ class PokemonState extends Equatable implements Copyable {
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
     if (_statChanges[index] > before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnUpStatChange)) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnUpStatChange));
+      hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.thisTurnUpStatChange]!);
     }
     if (_statChanges[index] < before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnDownStatChange)) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnDownStatChange));
+      hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.thisTurnDownStatChange]!);
     }
     return true;
   }

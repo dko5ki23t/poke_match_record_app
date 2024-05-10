@@ -747,7 +747,7 @@ class TurnEffectAction extends TurnEffect {
       state
           .getPokemonState(playerType, null)
           .hiddenBuffs
-          .add(BuffDebuff(BuffDebuff.changedThisTurn));
+          .add(pokeData.buffDebuffs[BuffDebuff.changedThisTurn]!);
       super.afterProcessEffect(ownState, opponentState, state);
       return ret;
     }
@@ -987,8 +987,9 @@ class TurnEffectAction extends TurnEffect {
             myState.hiddenBuffs.list[findIdx].extraArg1 = replacedMove.id * 100;
           }
         } else {
-          myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.sameMoveCount)
-            ..extraArg1 = replacedMove.id * 100);
+          myState.hiddenBuffs.add(
+              pokeData.buffDebuffs[BuffDebuff.sameMoveCount]!
+                ..extraArg1 = replacedMove.id * 100);
         }
       }
       // ねごと系以外のわざを出しているならねむり解除とみなす
@@ -1241,8 +1242,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -1350,9 +1352,10 @@ class TurnEffectAction extends TurnEffect {
               for (int i = 0; i < 7; i++) {
                 myState.forceSetStatChanges(i, targetState.statChanges(i));
               }
-              myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transform)
-                ..extraArg1 = targetState.pokemon.no
-                ..turns = targetState.pokemon.sex.id);
+              myState.buffDebuffs
+                  .add(pokeData.buffDebuffs[BuffDebuff.transform]!
+                    ..extraArg1 = targetState.pokemon.no
+                    ..turns = targetState.pokemon.sex.id);
             }
             break;
           case 59: // こうげきを2段階下げる
@@ -1413,8 +1416,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -1429,22 +1433,25 @@ class TurnEffectAction extends TurnEffect {
             targetState.remainHP -= extraArg1;
             targetState.remainHPPercent -= extraArg2;
             if (!targetState.buffDebuffs.containsByID(BuffDebuff.substitute)) {
-              targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute)
-                ..extraArg1 = extraArg1 != 0 ? -extraArg1 : 25);
+              targetState.buffDebuffs.add(
+                  pokeData.buffDebuffs[BuffDebuff.substitute]!
+                    ..extraArg1 = extraArg1 != 0 ? -extraArg1 : 25);
             }
             break;
           case 81: // 使用者は次のターン動けない
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.recoiling)) {
                 // 反動で動けない状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.recoiling)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.recoiling]!
+                      ..extraArg1 = replacedMove.id);
               }
             }
             break;
           case 82: // 使用者はいかり状態になる
             if (!myState.buffDebuffs.containsByID(BuffDebuff.rage)) {
-              targetState.buffDebuffs.add(BuffDebuff(BuffDebuff.rage));
+              targetState.buffDebuffs
+                  .add(pokeData.buffDebuffs[BuffDebuff.rage]!);
             }
             break;
           case 83: // 相手が最後にPP消費したわざになる。交代するとわざは元に戻る
@@ -1452,7 +1459,8 @@ class TurnEffectAction extends TurnEffect {
             if (!myState.hiddenBuffs.containsByID(BuffDebuff.copiedMove)) {
               if (extraArg3 != 0) {
                 myState.hiddenBuffs.add(
-                    BuffDebuff(BuffDebuff.copiedMove)..extraArg1 = extraArg3);
+                    pokeData.buffDebuffs[BuffDebuff.copiedMove]!
+                      ..extraArg1 = extraArg3);
               }
             }
             break;
@@ -1741,8 +1749,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 myState.addStatChanges(true, 1, 1, targetState,
                     moveId: replacedMove.id);
                 damageGetter?.showDamage = false;
@@ -1795,8 +1804,9 @@ class TurnEffectAction extends TurnEffect {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 if (state.weather.id != Weather.sunny) {
-                  myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                    ..extraArg1 = replacedMove.id);
+                  myState.hiddenBuffs.add(
+                      pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                        ..extraArg1 = replacedMove.id);
                   damageGetter?.showDamage = false;
                 }
               } else {
@@ -1823,8 +1833,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -2424,8 +2435,9 @@ class TurnEffectAction extends TurnEffect {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.diving), state);
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -2438,10 +2450,11 @@ class TurnEffectAction extends TurnEffect {
                     if (myPlayerType == PlayerType.me
                         ? myState.remainHP > myState.pokemon.h.real / 2
                         : myState.remainHPPercent > 50) {
-                      myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
+                      myState.buffDebuffs
+                          .add(pokeData.buffDebuffs[BuffDebuff.unomiForm]!);
                     } else {
                       myState.buffDebuffs
-                          .add(BuffDebuff(BuffDebuff.marunomiForm));
+                          .add(pokeData.buffDebuffs[BuffDebuff.marunomiForm]!);
                     }
                   }
                 }
@@ -2453,8 +2466,9 @@ class TurnEffectAction extends TurnEffect {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.digging), state);
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -2474,9 +2488,11 @@ class TurnEffectAction extends TurnEffect {
                 if (myPlayerType == PlayerType.me
                     ? myState.remainHP > myState.pokemon.h.real / 2
                     : myState.remainHPPercent > 50) {
-                  myState.buffDebuffs.add(BuffDebuff(BuffDebuff.unomiForm));
+                  myState.buffDebuffs
+                      .add(pokeData.buffDebuffs[BuffDebuff.unomiForm]!);
                 } else {
-                  myState.buffDebuffs.add(BuffDebuff(BuffDebuff.marunomiForm));
+                  myState.buffDebuffs
+                      .add(pokeData.buffDebuffs[BuffDebuff.marunomiForm]!);
                 }
               }
             }
@@ -2534,8 +2550,9 @@ class TurnEffectAction extends TurnEffect {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.flying), state);
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -2634,8 +2651,9 @@ class TurnEffectAction extends TurnEffect {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
                 myState.ailmentsAdd(Ailment(Ailment.shadowForcing), state);
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -2757,7 +2775,8 @@ class TurnEffectAction extends TurnEffect {
               targetState.holdingItem
                   ?.clearPassiveEffect(targetState, clearForm: false);
               targetIndiField.add(IndividualField(IndividualField.magicRoom));
-              targetState.hiddenBuffs.add(BuffDebuff(BuffDebuff.magicRoom));
+              targetState.hiddenBuffs
+                  .add(pokeData.buffDebuffs[BuffDebuff.magicRoom]!);
             } else {
               targetIndiField.removeAt(findIdx);
               targetState.holdingItem
@@ -3000,7 +3019,7 @@ class TurnEffectAction extends TurnEffect {
               if (myState.buffDebuffs.list[findIdx].id ==
                   BuffDebuff.voiceForm) {
                 myState.buffDebuffs.list[findIdx] =
-                    BuffDebuff(BuffDebuff.stepForm);
+                    pokeData.buffDebuffs[BuffDebuff.stepForm]!;
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.fight;
                 myState.maxStats.a.race = 128;
@@ -3021,7 +3040,7 @@ class TurnEffectAction extends TurnEffect {
                 }
               } else {
                 myState.buffDebuffs.list[findIdx] =
-                    BuffDebuff(BuffDebuff.voiceForm);
+                    pokeData.buffDebuffs[BuffDebuff.voiceForm]!;
                 // TODO この2行csvに移したい
                 myState.type2 = PokeType.psychic;
                 myState.maxStats.a.race = 77;
@@ -3047,8 +3066,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -3063,8 +3083,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -3227,8 +3248,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 damageGetter?.showDamage = false;
               } else {
                 // こうげきする
@@ -3685,8 +3707,9 @@ class TurnEffectAction extends TurnEffect {
             {
               if (!myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
                 // 溜め状態にする
-                myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                  ..extraArg1 = replacedMove.id);
+                myState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                      ..extraArg1 = replacedMove.id);
                 myState.addStatChanges(true, 2, 1, targetState,
                     moveId: replacedMove.id);
                 damageGetter?.showDamage = false;
@@ -3916,8 +3939,8 @@ class TurnEffectAction extends TurnEffect {
           case 481: // 次に使用者が行動するまでの間相手から受けるわざ必中・ダメージ2倍
             if (myState.buffDebuffs
                 .containsByID(BuffDebuff.certainlyHittedDamage2)) {
-              myState.buffDebuffs
-                  .add(BuffDebuff(BuffDebuff.certainlyHittedDamage2));
+              myState.buffDebuffs.add(
+                  pokeData.buffDebuffs[BuffDebuff.certainlyHittedDamage2]!);
             }
             break;
           case 482: // しおづけ状態にする
@@ -4106,8 +4129,9 @@ class TurnEffectAction extends TurnEffect {
                 myState.addStatChanges(true, 2, 1, targetState,
                     moveId: replacedMove.id);
                 if (state.weather.id != Weather.rainy) {
-                  myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.chargingMove)
-                    ..extraArg1 = replacedMove.id);
+                  myState.hiddenBuffs.add(
+                      pokeData.buffDebuffs[BuffDebuff.chargingMove]!
+                        ..extraArg1 = replacedMove.id);
                   damageGetter?.showDamage = false;
                 }
               } else {
@@ -4265,8 +4289,9 @@ class TurnEffectAction extends TurnEffect {
               if (findIdx >= 0) {
                 targetState.hiddenBuffs.list[findIdx].extraArg1++;
               } else {
-                targetState.hiddenBuffs
-                    .add(BuffDebuff(BuffDebuff.attackedCount)..extraArg1 = 1);
+                targetState.hiddenBuffs.add(
+                    pokeData.buffDebuffs[BuffDebuff.attackedCount]!
+                      ..extraArg1 = 1);
               }
               // あいてポケモンのステータス確定
               if (playerType == PlayerType.opponent &&
@@ -4435,6 +4460,7 @@ class TurnEffectAction extends TurnEffect {
     PokemonState opponentState,
     PhaseState state,
   ) {
+    final pokeData = PokeDB();
     var myState = playerType == PlayerType.me ? ownState : opponentState;
     var yourState = playerType == PlayerType.me ? opponentState : ownState;
     PlayerType myPlayerType = playerType;
@@ -4480,7 +4506,8 @@ class TurnEffectAction extends TurnEffect {
               playerType.opposite, getChangePokemonIndex(targetPlayerType)!);
           newState = state.getPokemonState(playerType.opposite, null);
           newState.processEnterEffect(myState, state);
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.changedThisTurn]!);
         }
         break;
       case 128: // 控えのポケモンと交代する。能力変化・一部の状態変化は交代後に引き継ぐ
@@ -4523,7 +4550,8 @@ class TurnEffectAction extends TurnEffect {
             newState.ailmentsAdd(e, state);
           }
           newState.buffDebuffs.addAll(takeOverBuffDebuffs);
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.changedThisTurn]!);
         }
         break;
       case 347: // こうげき・とくこうを1段階ずつ下げる。控えのポケモンと交代する
@@ -4537,7 +4565,8 @@ class TurnEffectAction extends TurnEffect {
               playerType, getChangePokemonIndex(myPlayerType)!);
           newState = state.getPokemonState(playerType, null);
           newState.processEnterEffect(yourState, state);
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.changedThisTurn]!);
         }
         break;
       case 492: // 使用者の最大HP1/2(小数点以下切り上げ)を消費してみがわり作成、みがわりを引き継いで控えと交代
@@ -4548,8 +4577,10 @@ class TurnEffectAction extends TurnEffect {
               playerType, getChangePokemonIndex(myPlayerType)!);
           newState = state.getPokemonState(playerType, null);
           newState.processEnterEffect(yourState, state);
-          newState.buffDebuffs.add(BuffDebuff(BuffDebuff.substitute));
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.changedThisTurn));
+          newState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.substitute]!);
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.changedThisTurn]!);
         }
         break;
       default:

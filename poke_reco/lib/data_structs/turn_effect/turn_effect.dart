@@ -440,7 +440,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         // もちもの失くした
         if (pokeState.currentAbility.id == 84) {
           // かるわざ
-          pokeState.buffDebuffs.add(BuffDebuff(BuffDebuff.unburden));
+          pokeState.buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.unburden]!);
         }
       } else if ((!_isOwnChanged &&
               player == PlayerType.me &&

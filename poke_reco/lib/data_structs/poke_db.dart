@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -141,6 +142,15 @@ const String moveFlavorDBTable = 'moveFlavorDB';
 const String moveFlavorColumnId = 'id';
 const String moveFlavorColumnFlavor = 'flavor';
 const String moveFlavorColumnEnglishFlavor = 'englishFlavor';
+
+const String buffDebuffDBFile = 'BuffDebuffs.db';
+const String buffDebuffDBTable = 'buffDebuffDB';
+const String buffDebuffColumnId = 'id';
+const String buffDebuffColumnName = 'name';
+const String buffDebuffColumnEnglishName = 'englishName';
+const String buffDebuffColumnColor = 'color';
+const String buffDebuffColumnTurns = 'turns';
+const String buffDebuffColumnIsHidden = 'isHidden';
 
 const String pokeBaseDBFile = 'PokeBases.db';
 const String pokeBaseDBTable = 'pokeBaseDB';
@@ -513,6 +523,8 @@ class PokeDB {
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
   late Database moveFlavorDb;
+  Map<int, BuffDebuff> buffDebuffs = {0: BuffDebuff.none()}; // 無効な補正
+  late Database buffDebuffDb;
   List<PokeType> types = PokeType.values.sublist(1, 19);
   List<PokeType> teraTypes = PokeType.values.sublist(1, PokeType.values.length);
   Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')}; // 無効なタマゴグループ
@@ -1060,6 +1072,31 @@ class PokeDB {
       _moveFlavors[map[moveFlavorColumnId]] = map[moveFlavorColumnFlavor];
       _moveEnglishFlavors[map[moveFlavorColumnId]] =
           map[moveFlavorColumnEnglishFlavor];
+    }
+
+    /////////// その他の補正(フォルム等)
+    buffDebuffDb = await openAssetDatabase(buffDebuffDBFile);
+    // 内部データに変換
+    maps = await buffDebuffDb.query(
+      buffDebuffDBTable,
+      columns: [
+        buffDebuffColumnId,
+        buffDebuffColumnName,
+        buffDebuffColumnEnglishName,
+        buffDebuffColumnColor,
+        buffDebuffColumnTurns,
+        buffDebuffColumnIsHidden
+      ],
+    );
+    for (var map in maps) {
+      buffDebuffs[map[buffDebuffColumnId]] = BuffDebuff(
+        map[buffDebuffColumnId],
+        map[buffDebuffColumnName],
+        map[buffDebuffColumnEnglishName],
+        map[buffDebuffColumnColor],
+        map[buffDebuffColumnTurns],
+        map[buffDebuffColumnIsHidden] != '0',
+      );
     }
 
     //////////// ポケモン図鑑
