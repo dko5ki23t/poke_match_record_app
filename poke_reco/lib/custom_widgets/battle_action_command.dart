@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
+import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -11,6 +12,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
 import 'package:poke_reco/tool.dart';
 
 /// わざの並び替えで先頭に来させるための値
@@ -18,6 +20,7 @@ const int topOrderVal = 0xffffff00;
 
 enum CommandState {
   selectCommand,
+  confusedDamageInput,
   extraInput,
 }
 
@@ -54,6 +57,7 @@ class BattleActionCommand extends StatefulWidget {
     required this.onRequestTerastal,
     required this.moveListOrder,
     required this.onMoveListOrderChange,
+    required this.onConfusionEnd,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -69,6 +73,7 @@ class BattleActionCommand extends StatefulWidget {
   final Function() onRequestTerastal;
   final int moveListOrder;
   final Function(int) onMoveListOrderChange;
+  final Function() onConfusionEnd;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();
@@ -237,31 +242,51 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           .isNotEmpty) {
         moveTileVals.add(MoveTileWithVal(
           moveTile: SwitchListTile(
-            title: Text(ActionFailure(ActionFailure.confusion).displayName),
+            title: Text(AilmentEffect(AilmentEffect.confusionEnd).displayName),
             onChanged: (value) {
               if (value) {
                 parentSetState(() {
-                  turnMove.isSuccess = false;
-                  turnMove.actionFailure =
-                      ActionFailure(ActionFailure.confusion);
-                });
-              } else {
-                parentSetState(() {
-                  turnMove.isSuccess = true;
-                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                  widget.onConfusionEnd();
                 });
               }
               // 統合テスト作成用
               print("await driver.tap(\n"
-                  "      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));\n");
+                  "      find.ancestor(of: find.text('こんらんが解けた'), matching: find.byType('ListTile')));\n");
             },
-            value: !turnMove.isSuccess &&
-                turnMove.actionFailure.id == ActionFailure.confusion,
+            value: myState
+                .ailmentsWhere((element) => element.id == Ailment.confusion)
+                .isEmpty,
+          ),
+          maxDamage: topOrderVal + 101,
+          adoptedCount: topOrderVal + 101,
+        ));
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: ListTile(
+            key: Key(
+                'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}ConfusionDamage'),
+            horizontalTitleGap: 8.0,
+            dense: true,
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+            ),
+            title: Text(loc.battleConfusedAttack),
+            onTap: () {
+              parentSetState(() {
+                turnMove.isSuccess = false;
+                turnMove.actionFailure = ActionFailure(ActionFailure.confusion);
+                // 表示Widgetのコントローラリセット
+                commandPagesController = CommandPagesController();
+                state = CommandState.confusedDamageInput;
+              });
+              // 統合テスト作成用
+              print("// ${myState.pokemon.omittedName}は自分をこうげきした\n"
+                  "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, 'ConfusionDamage', false);");
+            },
           ),
           maxDamage: topOrderVal + 100,
           adoptedCount: topOrderVal + 100,
         ));
-        // TODO: extraArg1,extraArg2の値を入力
       }
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];
@@ -653,6 +678,76 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             ],
           );
         }
+        break;
+      case CommandState.confusedDamageInput:
+        // こんらんによる自傷ダメージ入力
+        assert(
+            turnMove.actionFailure == ActionFailure(ActionFailure.confusion));
+        int initialNum = playerType == PlayerType.me
+            ? myState.remainHP
+            : myState.remainHPPercent;
+        commandColumn = Column(
+          key: ValueKey<int>(state.index),
+          children: [
+            Expanded(
+              flex: 1,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      parentSetState(() {
+                        turnMove.isSuccess = true;
+                        turnMove.actionFailure =
+                            ActionFailure(ActionFailure.none);
+                        state = CommandState.selectCommand;
+                      });
+                    },
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                  Expanded(
+                    child: Text(loc.battleConfusedAttack),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 7,
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Container(),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: NumberInputButtons(
+                      key: Key(
+                          'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                      initialNum: initialNum,
+                      onConfirm: (remain) {
+                        if (playerType == PlayerType.me) {
+                          turnMove.extraArg1 = myState.remainHP - remain;
+                        } else {
+                          turnMove.extraArg2 = myState.remainHPPercent - remain;
+                        }
+                        parentSetState(() {
+                          widget.onConfirm();
+                        });
+                        // 統合テスト作成用
+                        print("// ${myState.pokemon.omittedName}のHP$remain\n"
+                            "await inputRemainHP(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${initialNum != remain ? remain : ""}');\n");
+                      },
+                      prefixText:
+                          loc.battleRemainHP(myState.pokemon.omittedName),
+                      suffixText:
+                          playerType == PlayerType.opponent ? '%' : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
         break;
       case CommandState.extraInput:
         commandColumn = turnMove.extraCommandInputList(

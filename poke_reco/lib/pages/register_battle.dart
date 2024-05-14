@@ -2,6 +2,7 @@ import 'package:just_the_tooltip/just_the_tooltip.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/timing.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
@@ -1549,6 +1550,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                               pokeData.battleOwnMoveSort = val;
                               pokeData.saveConfig();
                             },
+                            onConfusionEnd: () {
+                              // こんらん解除の処理をわざの前に挿入
+                              setState(() {
+                                currentTurn.phases.insert(
+                                  currentTurn.phases.getLatestActionIndex(
+                                      PlayerType.me,
+                                      onlyValids: false),
+                                  TurnEffectAilment(
+                                      player: PlayerType.me,
+                                      timing: Timing.beforeMove,
+                                      ailmentEffectID:
+                                          AilmentEffect.confusionEnd),
+                                );
+                              });
+                            },
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
@@ -1753,6 +1769,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                             onMoveListOrderChange: (val) {
                               pokeData.battleOpponentMoveSort = val;
                               pokeData.saveConfig();
+                            },
+                            onConfusionEnd: () {
+                              // こんらん解除の処理をわざの前に挿入
+                              setState(() {
+                                currentTurn.phases.insert(
+                                  currentTurn.phases.getLatestActionIndex(
+                                      PlayerType.opponent,
+                                      onlyValids: false),
+                                  TurnEffectAilment(
+                                      player: PlayerType.opponent,
+                                      timing: Timing.beforeMove,
+                                      ailmentEffectID:
+                                          AilmentEffect.confusionEnd),
+                                );
+                              });
                             },
                           )
                         : opponentLastAction is TurnEffectChangeFaintingPokemon

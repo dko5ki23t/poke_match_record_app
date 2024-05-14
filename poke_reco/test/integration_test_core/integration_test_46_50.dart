@@ -3419,7 +3419,6 @@ Future<void> test50_4(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: こんらん自傷
 /// アチゲータ戦5
 Future<void> test50_5(
   FlutterDriver driver,
@@ -3594,8 +3593,10 @@ Future<void> test50_5(
   await inputRemainHP(driver, op, '65');
   // イルカマンのHP90
   await inputRemainHP(driver, op, '90');
-  await driver.tap(
-      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));
+  // アチゲータは自分を攻撃した
+  await tapMove(driver, me, 'ConfusionDamage', false);
+  // アチゲータのHP57
+  await inputRemainHP(driver, me, '57');
   // ターン13へ
   await goTurnPage(driver, turnNum++);
 
@@ -3626,7 +3627,7 @@ Future<void> test50_5(
   await driver.tap(find.byValueKey('BattleActionCommandSurrenderOwn'));
 
   // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  await testExistEffect(driver, 'ゴウの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));

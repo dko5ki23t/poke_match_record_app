@@ -344,5 +344,6 @@
   "battleGuideSapConfAttack": "{name}のこうげき実数値を{attack}で確定しました。",
   "battleGuideLeechSeedConfHP": "{name}のHP実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveDamagedToStatus": "{name}の{status}実数値を{minS} ~ {maxS}で確定しました。",
-  "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。"
+  "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。",
+  "battleConfusedAttack": "自分をこうげきした"
 }
