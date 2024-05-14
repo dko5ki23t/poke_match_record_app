@@ -88,13 +88,13 @@ def main():
             # 効果ID
             effect_id = row[buffDebuffsCSVeffectIDIndex]
             # 効果の引数1~6
-            effect_arg1 = row[buffDebuffsCSVeffectArg1Index]
-            effect_arg2 = row[buffDebuffsCSVeffectArg2Index]
-            effect_arg3 = row[buffDebuffsCSVeffectArg3Index]
-            effect_arg4 = row[buffDebuffsCSVeffectArg4Index]
-            effect_arg5 = row[buffDebuffsCSVeffectArg5Index]
-            effect_arg6 = row[buffDebuffsCSVeffectArg6Index]
-            effect_arg7 = row[buffDebuffsCSVeffectArg7Index]
+            effect_arg1 = int(row[buffDebuffsCSVeffectArg1Index])
+            effect_arg2 = int(row[buffDebuffsCSVeffectArg2Index])
+            effect_arg3 = int(row[buffDebuffsCSVeffectArg3Index])
+            effect_arg4 = int(row[buffDebuffsCSVeffectArg4Index])
+            effect_arg5 = int(row[buffDebuffsCSVeffectArg5Index])
+            effect_arg6 = int(row[buffDebuffsCSVeffectArg6Index])
+            effect_arg7 = int(row[buffDebuffsCSVeffectArg7Index])
 
             buff_debuffs_list.append((id, name, name_en, color, turns, is_hidden,
                                       effect_id, effect_arg1, effect_arg2, effect_arg3,
@@ -128,7 +128,7 @@ def main():
                 f'INSERT INTO {buffDebuffDBTable} ({buffDebuffColumnId}, {buffDebuffColumnName}, {buffDebuffColumnEnglishName}, '
                 f'{buffDebuffColumnColor}, {buffDebuffColumnTurns}, {buffDebuffColumnIsHidden},'
                 f'{buffDebuffColumnEffectID}, {buffDebuffColumnEffectArg1}, {buffDebuffColumnEffectArg2}, {buffDebuffColumnEffectArg3}, '
-                f'{buffDebuffColumnEffectArg4}, {buffDebuffColumnEffectArg5}, {buffDebuffColumnEffectArg6} {buffDebuffColumnEffectArg7})'
+                f'{buffDebuffColumnEffectArg4}, {buffDebuffColumnEffectArg5}, {buffDebuffColumnEffectArg6}, {buffDebuffColumnEffectArg7})'
                 f' VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 buff_debuffs_list)
         except sqlite3.OperationalError:

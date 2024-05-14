@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/move.dart';
@@ -180,6 +183,9 @@ class TestPokeDB {
 
     //////////// わざ
     final moveDb = await openDatabase(assetRoot + moveDBFile);
+    if (File(assetRoot + moveDBFile).existsSync()) {
+      print('OK');
+    }
     // 内部データに変換
     maps = await moveDb.query(
       moveDBTable,
@@ -245,6 +251,50 @@ class TestPokeDB {
       _moveFlavors[map[moveFlavorColumnId]] = map[moveFlavorColumnFlavor];
       _moveEnglishFlavors[map[moveFlavorColumnId]] =
           map[moveFlavorColumnEnglishFlavor];
+    }
+
+    /////////// その他の補正(フォルム等)
+    final bdDb = await openDatabase(assetRoot + buffDebuffDBFile);
+    if (File(assetRoot + buffDebuffDBFile).existsSync()) {
+      print('OK');
+    }
+    // 内部データに変換
+    maps = await bdDb.query(
+      buffDebuffDBTable,
+      columns: [
+        buffDebuffColumnId,
+        buffDebuffColumnName,
+        buffDebuffColumnEnglishName,
+        buffDebuffColumnColor,
+        buffDebuffColumnTurns,
+        buffDebuffColumnIsHidden,
+        buffDebuffColumnEffectID,
+        buffDebuffColumnEffectArg1,
+        buffDebuffColumnEffectArg2,
+        buffDebuffColumnEffectArg3,
+        buffDebuffColumnEffectArg4,
+        buffDebuffColumnEffectArg5,
+        buffDebuffColumnEffectArg6,
+        buffDebuffColumnEffectArg7,
+      ],
+    );
+    for (var map in maps) {
+      data.buffDebuffs[map[buffDebuffColumnId]] = BuffDebuff(
+        map[buffDebuffColumnId],
+        map[buffDebuffColumnName],
+        map[buffDebuffColumnEnglishName],
+        map[buffDebuffColumnColor],
+        map[buffDebuffColumnTurns],
+        map[buffDebuffColumnIsHidden] != '0',
+        map[buffDebuffColumnEffectID],
+        map[buffDebuffColumnEffectArg1],
+        map[buffDebuffColumnEffectArg2],
+        map[buffDebuffColumnEffectArg3],
+        map[buffDebuffColumnEffectArg4],
+        map[buffDebuffColumnEffectArg5],
+        map[buffDebuffColumnEffectArg6],
+        map[buffDebuffColumnEffectArg7],
+      );
     }
 
     //////////// ポケモン図鑑

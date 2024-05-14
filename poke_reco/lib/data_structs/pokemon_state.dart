@@ -1424,120 +1424,18 @@ class PokemonState extends Equatable implements Copyable {
         break;
     }
     // バフ等の補正
+    ret = buffDebuffs.changeStat(this, yourState, ret, statIdx, moveType: type);
+    // 天候による補正
     switch (statIdx) {
-      case StatIndex.A:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.attack2)) ret *= 2;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.gorimuchu)) ret *= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack0_75)) ret *= 0.75;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_33)) ret *= 1.33;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
-        }
-        break;
       case StatIndex.B:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.guard2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.guard1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defense0_75)) ret *= 0.75;
-          if (state.weather.id == Weather.snowy &&
-              isTypeContain(PokeType.ice)) {
-            ret * 1.5;
-          }
-        }
-        break;
-      case StatIndex.C:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack0_75)) {
-            ret *= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_33)) {
-            ret *= 1.33;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.choiceSpecs)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2.0;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
+        if (state.weather.id == Weather.snowy && isTypeContain(PokeType.ice)) {
+          ret * 1.5;
         }
         break;
       case StatIndex.D:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_3)) {
-            ret *= 1.3;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense0_75)) {
-            ret *= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_5)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs
-              .containsByID(BuffDebuff.onlyAttackSpecialDefense1_5)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense2)) ret *= 2.0;
-          if (state.weather.id == Weather.sandStorm &&
-              isTypeContain(PokeType.rock)) ret * 1.5;
-        }
-        break;
-      case StatIndex.S:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.unburden)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5IgnPara)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.choiceScarf)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed0_5)) ret *= 0.5;
+        if (state.weather.id == Weather.sandStorm &&
+            isTypeContain(PokeType.rock)) {
+          ret * 1.5;
         }
         break;
       default:
@@ -1565,120 +1463,18 @@ class PokemonState extends Equatable implements Copyable {
     }
     double ret = val.toDouble();
     // バフ等の補正
+    ret = buffDebuffs.undoStat(this, yourState, ret, statIdx, moveType: type);
+    // 天候による補正
     switch (statIdx) {
-      case StatIndex.A:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_3)) ret /= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.attack2)) ret /= 2;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
-            ret /= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret /= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret /= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret /= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret /= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.gorimuchu)) ret /= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret /= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret /= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret /= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack0_75)) ret /= 0.75;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_33)) ret /= 1.33;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret /= 2;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret /= 1.5;
-        }
-        break;
       case StatIndex.B:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_3)) ret /= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.guard2)) ret /= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.guard1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defense0_75)) ret /= 0.75;
-          if (state.weather.id == Weather.snowy &&
-              isTypeContain(PokeType.ice)) {
-            ret * 1.5;
-          }
-        }
-        break;
-      case StatIndex.C:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_3)) ret /= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret /= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret /= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret /= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret /= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret /= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret /= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret /= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack0_75)) {
-            ret /= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_33)) {
-            ret /= 1.33;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.choiceSpecs)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack2)) ret /= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret /= 2.0;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret /= 1.5;
+        if (state.weather.id == Weather.snowy && isTypeContain(PokeType.ice)) {
+          ret /= 1.5;
         }
         break;
       case StatIndex.D:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_3)) {
-            ret /= 1.3;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense0_75)) {
-            ret /= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_5)) {
-            ret /= 1.5;
-          }
-          if (buffDebuffs
-              .containsByID(BuffDebuff.onlyAttackSpecialDefense1_5)) {
-            ret /= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense2)) ret /= 2.0;
-          if (state.weather.id == Weather.sandStorm &&
-              isTypeContain(PokeType.rock)) ret * 1.5;
-        }
-        break;
-      case StatIndex.S:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed2)) ret /= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.unburden)) ret /= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5IgnPara)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret /= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.choiceScarf)) ret /= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed0_5)) ret /= 0.5;
+        if (state.weather.id == Weather.sandStorm &&
+            isTypeContain(PokeType.rock)) {
+          ret /= 1.5;
         }
         break;
       default:

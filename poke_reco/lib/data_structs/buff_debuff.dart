@@ -1,4 +1,6 @@
 import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/tool.dart';
@@ -734,6 +736,17 @@ class BuffDebuff extends Equatable implements Copyable {
     }
   }
 
+  /// 効果引数のリスト
+  List<int> get effectArgs => [
+        effectArg1,
+        effectArg2,
+        effectArg3,
+        effectArg4,
+        effectArg5,
+        effectArg6,
+        effectArg7
+      ];
+
   /// フォルムチェンジを行う(種族値変化等を行う)
   /// ```
   /// pokemonState: ポケモンの状態
@@ -794,6 +807,447 @@ class BuffDebuffList extends Equatable implements Copyable {
 
   @override
   BuffDebuffList copy() => BuffDebuffList()..list = [...list];
+
+  /// 補正によるステータス変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// stat: 変更されたステータス値
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double changeStat(PokemonState pokemonState, PokemonState yourState,
+      double stat, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    return stat *
+        _changeStatArg(pokemonState, yourState, statIndex,
+            moveType: moveType,
+            damageClassID: damageClassID,
+            move: move,
+            holdingItem: holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によって変更されたステータスを元に戻す
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// stat: 変更されたステータス値
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double undoStat(PokemonState pokemonState, PokemonState yourState,
+      double stat, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    return stat /
+        _changeStatArg(pokemonState, yourState, statIndex,
+            moveType: moveType,
+            damageClassID: damageClassID,
+            move: move,
+            holdingItem: holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によるステータス変更時に掛ける値を取得する
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double _changeStatArg(
+      PokemonState pokemonState, PokemonState yourState, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    double ret = 1.0;
+    for (final element in list) {
+      if (element.effectID == 3) {
+        // 対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          if (args[i] == statIndex.index) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      } else if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (1 <= args[0] && args[0] <= 18) {
+          // わざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        } else {
+          switch (args[0]) {
+            case 19: // こうげき時のみ
+              meetCondition = moveType.index != 0;
+              break;
+            case 20: // ぶつりわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.physical;
+              break;
+            case 21: // とくしゅわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.special;
+              break;
+            case 22: // へんかわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.status;
+              break;
+            case 23: // わざが直接攻撃の時
+              meetCondition = move != null &&
+                  move.isDirect &&
+                  !(move.isPunch && holdingItem?.id == 1700);
+              break;
+            case 24: // わざが音技の時
+              meetCondition = move != null && move.isSound;
+              break;
+            case 25: // わざがHP吸収技の時
+              meetCondition = move != null && move.isDrain;
+              break;
+            case 26: // わざがパンチ技の時
+              meetCondition = move != null && move.isPunch;
+              break;
+            case 27: // わざが波動技の時
+              meetCondition = move != null && move.isWave;
+              break;
+            case 28: // わざがおどり技の時
+              meetCondition = move != null && move.isDance;
+              break;
+            case 29: // わざが反動技の時
+              meetCondition = move != null && move.isRecoil;
+              break;
+            case 30: // わざが追加効果ありの時
+              meetCondition = move != null && move.isAdditionalEffect;
+              break;
+            case 31: // わざが追加効果あり2の時
+              meetCondition = move != null && move.isAdditionalEffect2;
+              break;
+            case 32: // わざがかみつきわざの時
+              meetCondition = move != null && move.isBite;
+              break;
+            case 33: // わざが切るわざの時
+              meetCondition = move != null && move.isCut;
+              break;
+            case 34: // わざが風技の時
+              meetCondition = move != null && move.isWind;
+              break;
+            case 35: // わざがこな系の技の時
+              meetCondition = move != null && move.isPowder;
+              break;
+            case 36: // わざが弾の技の時
+              meetCondition = move != null && move.isBullet;
+              break;
+            case 38: // 相手の性別が自身と同じ時
+              meetCondition = pokemonState.sex.id != 0 &&
+                  yourState.sex.id != 0 &&
+                  pokemonState.sex.id == yourState.sex.id;
+              break;
+            case 39: // 相手の性別が自身と異なる時
+              meetCondition = pokemonState.sex.id != 0 &&
+                  yourState.sex.id != 0 &&
+                  pokemonState.sex.id != yourState.sex.id;
+              break;
+            case 40: // 相手がこのターンにポケモン交代をしていた時
+              meetCondition = yourState.hiddenBuffs
+                  .containsByID(BuffDebuff.changedThisTurn);
+              break;
+            case 41: // 最後に行動する時
+              meetCondition = isFirst != null && !isFirst;
+              break;
+            case 42: // わざのタイプがノーマル以外の時
+              meetCondition = move?.type != PokeType.normal;
+              break;
+            default:
+              break;
+          }
+        }
+        if (meetCondition) {
+          for (int i = 1; i + 1 < args.length; i = i + 2) {
+            if (args[i] == statIndex.index) {
+              ret *= args[i + 1] / 100;
+            }
+          }
+        }
+      }
+    }
+
+    // 相手の補正効果も処理する
+    for (final element in yourState.buffDebuffs.list) {
+      if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (101 <= args[0] && args[0] <= 118) {
+          // 受けるわざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        }
+        if (meetCondition) {
+          for (int i = 1; i + 1 < args.length; i = i + 2) {
+            if (args[i] == statIndex.index) {
+              ret *= args[i + 1] / 100;
+            }
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /// 補正によるわざ威力の変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// power: わざの威力
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double changeMovePower(
+      PokemonState pokemonState,
+      PokemonState yourState,
+      double power,
+      int damageClassID,
+      Move move,
+      PokeType moveType,
+      Item? holdingItem,
+      {bool? isFirst}) {
+    return power *
+        _changeMovePowerArg(
+            pokemonState, yourState, damageClassID, move, moveType, holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によって変更されたわざ威力を元に戻す
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// power: 変更されたわざの威力
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double undoMovePower(
+      PokemonState pokemonState,
+      PokemonState yourState,
+      double power,
+      int damageClassID,
+      Move move,
+      PokeType moveType,
+      Item? holdingItem,
+      {bool? isFirst}) {
+    return power /
+        _changeMovePowerArg(
+            pokemonState, yourState, damageClassID, move, moveType, holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によるわざ威力の変更時に掛ける値を取得する
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double _changeMovePowerArg(PokemonState pokemonState, PokemonState yourState,
+      int damageClassID, Move move, PokeType moveType, Item? holdingItem,
+      {bool? isFirst}) {
+    double ret = 1.0;
+
+    // 他補正より先に行う補正
+    final firstHosei = list
+        .where((element) => element.effectID == 7 && element.extraArg1 == 37);
+    if (firstHosei.isNotEmpty) {
+      if (move.power <= 60) {
+        ret *= firstHosei.first.effectArg2 / 100;
+      }
+    }
+
+    for (final element in list) {
+      if (element.effectID == 4) {
+        // わざの威力がxxx倍になる
+        ret *= element.effectArg1 / 100;
+      } else if (element.effectID == 7) {
+        // 【条件付き】わざの威力がxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          bool meetCondition = false; // 条件を満たすかどうか
+          if (1 <= args[i] && args[i] <= 18) {
+            // わざのタイプが条件
+            meetCondition = moveType.index == args[i];
+          } else {
+            switch (args[i]) {
+              case 19: // こうげき時のみ
+                meetCondition = moveType.index != 0;
+                break;
+              case 20: // ぶつりわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.physical;
+                break;
+              case 21: // とくしゅわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.special;
+                break;
+              case 22: // へんかわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.status;
+                break;
+              case 23: // わざが直接攻撃の時
+                meetCondition =
+                    move.isDirect && !(move.isPunch && holdingItem?.id == 1700);
+                break;
+              case 24: // わざが音技の時
+                meetCondition = move.isSound;
+                break;
+              case 25: // わざがHP吸収技の時
+                meetCondition = move.isDrain;
+                break;
+              case 26: // わざがパンチ技の時
+                meetCondition = move.isPunch;
+                break;
+              case 27: // わざが波動技の時
+                meetCondition = move.isWave;
+                break;
+              case 28: // わざがおどり技の時
+                meetCondition = move.isDance;
+                break;
+              case 29: // わざが反動技の時
+                meetCondition = move.isRecoil;
+                break;
+              case 30: // わざが追加効果ありの時
+                meetCondition = move.isAdditionalEffect;
+                break;
+              case 31: // わざが追加効果あり2の時
+                meetCondition = move.isAdditionalEffect2;
+                break;
+              case 32: // わざがかみつきわざの時
+                meetCondition = move.isBite;
+                break;
+              case 33: // わざが切るわざの時
+                meetCondition = move.isCut;
+                break;
+              case 34: // わざが風技の時
+                meetCondition = move.isWind;
+                break;
+              case 35: // わざがこな系の技の時
+                meetCondition = move.isPowder;
+                break;
+              case 36: // わざが弾の技の時
+                meetCondition = move.isBullet;
+                break;
+              case 38: // 相手の性別が自身と同じ時
+                meetCondition = pokemonState.sex.id != 0 &&
+                    yourState.sex.id != 0 &&
+                    pokemonState.sex.id == yourState.sex.id;
+                break;
+              case 39: // 相手の性別が自身と異なる時
+                meetCondition = pokemonState.sex.id != 0 &&
+                    yourState.sex.id != 0 &&
+                    pokemonState.sex.id != yourState.sex.id;
+                break;
+              case 40: // 相手がこのターンにポケモン交代をしていた時
+                meetCondition = yourState.hiddenBuffs
+                    .containsByID(BuffDebuff.changedThisTurn);
+                break;
+              case 41: // 最後に行動する時
+                meetCondition = isFirst != null && !isFirst;
+                break;
+              case 42: // わざのタイプがノーマル以外の時
+                meetCondition = move.type != PokeType.normal;
+                break;
+              default:
+                break;
+            }
+          }
+          if (meetCondition) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      } else if (element.effectID == 9) {
+        if (move.type.index != element.effectArg2 &&
+            moveType.index == element.effectArg2) {
+          ret *= element.effectArg3 / 100;
+        }
+      }
+    }
+
+    // 相手の補正効果も処理する
+    for (final element in yourState.buffDebuffs.list) {
+      if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          bool meetCondition = false; // 条件を満たすかどうか
+          if (101 <= args[i] && args[i] <= 118) {
+            // 受けるわざのタイプが条件
+            meetCondition = moveType.index == args[i];
+          }
+          if (meetCondition) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /// 補正によるわざタイプの変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// moveType: わざのタイプ
+  /// ```
+  PokeType changeMoveType(PokemonState pokemonState, PokeType moveType) {
+    PokeType ret = moveType;
+    for (final element in list) {
+      if (element.effectID == 5) {
+        // わざのタイプがxxxになる
+        ret = PokeType.values[element.effectArg1];
+      } else if (element.effectID == 8 || element.effectID == 9) {
+        // 【条件付き】わざのタイプがxxxになる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (1 <= args[0] && args[0] <= 18) {
+          // わざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        } else {
+          switch (args[0]) {
+            case 19: // こうげき時のみ
+              meetCondition = moveType.index != 0;
+              break;
+            default:
+              break;
+          }
+        }
+        if (meetCondition) {
+          ret = PokeType.values[args[1]];
+        }
+      }
+    }
+    return ret;
+  }
 
   /// 指定したIDを持つBuffDebuffを含むかどうかを返す
   /// ```

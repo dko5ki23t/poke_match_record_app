@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
-import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/party.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';

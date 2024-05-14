@@ -884,8 +884,6 @@ class TurnEffectAction extends TurnEffect {
     int moveDamageClassID = 0;
     // はれによるダメージ補正率が0.5倍→1.5倍
     bool isSunny1_5 = false;
-    // ノーマルスキンによって威力が1.2倍になるか
-    bool isNormalized1_2 = false;
     // タイプ相性計算時、追加で計算するタイプ
     PokeType? additionalMoveType;
     // 半減きのみを使用したか
@@ -4151,7 +4149,6 @@ class TurnEffectAction extends TurnEffect {
         if (myState.buffDebuffs.containsByID(BuffDebuff.normalize)) {
           if (moveType != PokeType.normal) {
             moveType = PokeType.normal;
-            isNormalized1_2 = true;
           }
         }
         // そうでんによるわざタイプ変更
@@ -4186,7 +4183,6 @@ class TurnEffectAction extends TurnEffect {
           movePower,
           moveDamageClassID,
           beforeChangeMyState,
-          isNormalized1_2,
           isCritical,
           isFoulPlay,
           defenseAltAttack,
@@ -4276,7 +4272,6 @@ class TurnEffectAction extends TurnEffect {
                   movePower,
                   moveDamageClassID,
                   beforeChangeMyState,
-                  isNormalized1_2,
                   isCritical,
                   isFoulPlay,
                   defenseAltAttack,
@@ -4567,7 +4562,6 @@ class TurnEffectAction extends TurnEffect {
   /// power: 威力
   /// damageClassID: わざの分類のID
   /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態
-  /// isNormalized1_2: ノーマルわざ威力1.2倍かどうか
   /// isCritical: 急所かどうか
   /// isFoulPlay: イカサマかどうか
   /// defenseAltAttack: こうげきではなくぼうぎょの値でダメージ計算するかどうか
@@ -4595,7 +4589,6 @@ class TurnEffectAction extends TurnEffect {
     Map<int, int> power,
     int damageClassID,
     PokemonState beforeChangeMyState,
-    bool isNormalized1_2,
     bool isCritical,
     bool isFoulPlay,
     bool defenseAltAttack,
@@ -4620,6 +4613,7 @@ class TurnEffectAction extends TurnEffect {
     // 連続わざのヒット回数分ループ
     for (int i = 0; i < hitCount; i++) {
       int movePower = power[i]!;
+      // TODO:CSVに反映？
       // じゅうでん補正&消費
       int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
       if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
@@ -4632,265 +4626,54 @@ class TurnEffectAction extends TurnEffect {
       }
 
       // とくせい等によるわざタイプの変更
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
-        replacedMoveType = PokeType.ice;
-      }
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
-        replacedMoveType = PokeType.fairy;
-      }
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
-        replacedMoveType = PokeType.fly;
-      }
-      if (replacedMove.isSound &&
-          myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
-        replacedMoveType = PokeType.water;
-      }
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-        replacedMoveType = PokeType.electric;
-      }
-      if (replacedMove.id != 165 &&
-          replacedMoveType == PokeType.normal &&
-          myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
-        replacedMoveType = PokeType.electric;
+      {
+        replacedMoveType =
+            myState.buffDebuffs.changeMoveType(myState, replacedMoveType);
+        if (replacedMove.id != 165 &&
+            replacedMoveType == PokeType.normal &&
+            myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >=
+                0) {
+          replacedMoveType = PokeType.electric;
+        }
       }
 
       // とくせい等による威力変動
-      double tmpPow = movePower.toDouble();
-      // テクニシャン補正は一番最初
-      if (replacedMove.power <= 60 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.technician)) {
-        tmpPow *= 1.5;
-      }
-      if (isNormalized1_2) tmpPow *= 1.2;
-      if (replacedMoveType == PokeType.grass &&
-          myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
-      if (replacedMoveType == PokeType.fire &&
-          myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
-      if (replacedMoveType == PokeType.water &&
-          myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
-      if (replacedMoveType == PokeType.bug &&
-          myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
-      if (myState.sex.id != 0 &&
-          yourState.sex.id != 0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
-        if (myState.sex.id != yourState.sex.id) {
-          tmpPow *= 1.25;
-        } else {
-          tmpPow *= 0.75;
+      {
+        double tmpPow = movePower.toDouble();
+        tmpPow = myState.buffDebuffs.changeMovePower(myState, yourState, tmpPow,
+            damageClassID, replacedMove, replacedMoveType, myState.holdingItem,
+            isFirst: isFirst);
+
+        // フィールド効果
+        if (replacedMoveType == PokeType.electric &&
+            myState.isGround(myFields) &&
+            state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+        if (replacedMoveType == PokeType.grass &&
+            myState.isGround(myFields) &&
+            state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+        if (replacedMoveType == PokeType.psychic &&
+            myState.isGround(myFields) &&
+            state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+        if (replacedMoveType == PokeType.dragon &&
+            yourState.isGround(yourFields) &&
+            state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+        if (replacedMoveType == PokeType.fire &&
+            myFields.indexWhere((e) => e.id == IndividualField.waterSport) >=
+                0) {
+          tmpPow = tmpPow * 1352 / 4096;
         }
-      }
-      if (replacedMove.isPunch &&
-          myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
-      if (replacedMove.isRecoil &&
-          myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
-      if (replacedMove.isAdditionalEffect2 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) {
-        tmpPow *= 1.3;
-      }
-      if (replacedMove.isWave &&
-          myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) {
-        tmpPow *= 1.5;
-      }
-      if (replacedMove.isDirect &&
-          !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-          myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
-        tmpPow *= 1.3;
-      }
-      if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
-          yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
-        tmpPow *= 2;
-      }
-      if (damageClassID == 2 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) {
-        tmpPow *= 1.5;
-      }
-      if (damageClassID == 3 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) {
-        tmpPow *= 1.5;
-      }
-      if (isFirst != null &&
-          !isFirst! &&
-          myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
-        tmpPow *= 1.3;
-      }
-      if ((replacedMoveType == PokeType.ground ||
-              replacedMoveType == PokeType.rock ||
-              replacedMoveType == PokeType.steel) &&
-          myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
-        tmpPow *= 1.3;
-      }
-      if (replacedMove.isBite &&
-          myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
-      if (replacedMoveType == PokeType.ice &&
-          myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.fairy &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
-      if (replacedMoveType == PokeType.fly &&
-          myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
-      if (replacedMoveType == PokeType.evil &&
-          myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
-      if (replacedMoveType == PokeType.fairy &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) {
-        tmpPow *= 1.33;
-      }
-      if (replacedMoveType == PokeType.evil &&
-          myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
-        tmpPow *= 0.75;
-      }
-      if (replacedMoveType == PokeType.fairy &&
-          myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
-        tmpPow *= 0.75;
-      }
-      if (replacedMoveType == PokeType.electric &&
-          myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMove.isSound &&
-          myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
-      if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
-        tmpPow *= 1.3;
-      }
-      if (replacedMoveType == PokeType.steel &&
-          myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
-      if (replacedMove.isCut &&
-          myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
-      final pow = myState.buffDebuffs.list.where(
-          (e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-      if (pow.isNotEmpty) {
-        tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
-      }
-      if (damageClassID == 2 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) {
-        tmpPow *= 1.1;
-      }
-      if (damageClassID == 3 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) {
-        tmpPow *= 1.1;
-      }
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
-        tmpPow *= 1.3;
-      }
-      if (replacedMoveType == PokeType.normal &&
-          myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.fight &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.fly &&
-          myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.poison &&
-          myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.ground &&
-          myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.rock &&
-          myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.bug &&
-          myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.ghost &&
-          myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.steel &&
-          myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.fire &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.water &&
-          myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.grass &&
-          myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.electric &&
-          myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.psychic &&
-          myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.ice &&
-          myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.dragon &&
-          myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.evil &&
-          myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMoveType == PokeType.fairy &&
-          myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
-        tmpPow *= 1.2;
-      }
-      if (replacedMove.isPunch &&
-          myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
-        tmpPow *= 1.1;
-      }
-      if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
+        if (replacedMoveType == PokeType.electric &&
+            myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
+          tmpPow = tmpPow * 1352 / 4096;
+        }
 
-      if (replacedMoveType == PokeType.electric &&
-          myState.isGround(myFields) &&
-          state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-      if (replacedMoveType == PokeType.grass &&
-          myState.isGround(myFields) &&
-          state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-      if (replacedMoveType == PokeType.psychic &&
-          myState.isGround(myFields) &&
-          state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-      if (replacedMoveType == PokeType.dragon &&
-          yourState.isGround(yourFields) &&
-          state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
-
-      if (replacedMoveType == PokeType.fire &&
-          yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) {
-        tmpPow *= 1.25;
-      }
-
-      if (replacedMoveType == PokeType.fire &&
-          myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
-        tmpPow = tmpPow * 1352 / 4096;
-      }
-      if (replacedMoveType == PokeType.electric &&
-          myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
-        tmpPow = tmpPow * 1352 / 4096;
-      }
-
-      movePower = tmpPow.floor();
-      // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
-      if (movePower < 60 &&
-          (myState.canGetStellarHosei(replacedMoveType) ||
-              myState.canGetTerastalHosei(replacedMoveType))) {
-        movePower = 60;
+        movePower = tmpPow.floor();
+        // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
+        if (movePower < 60 &&
+            (myState.canGetStellarHosei(replacedMoveType) ||
+                myState.canGetTerastalHosei(replacedMoveType))) {
+          movePower = 60;
+        }
       }
 
       // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
@@ -5357,7 +5140,6 @@ class TurnEffectAction extends TurnEffect {
   /// power: 威力
   /// damageClassID: わざの分類のID
   /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態
-  /// isNormalized1_2: ノーマルわざ威力1.2倍かどうか
   /// isCritical: 急所かどうか
   /// isFoulPlay: イカサマかどうか
   /// defenseAltAttack: こうげきではなくぼうぎょの値でダメージ計算するかどうか
@@ -5385,7 +5167,6 @@ class TurnEffectAction extends TurnEffect {
     Map<int, int> power,
     int damageClassID,
     PokemonState beforeChangeMyState,
-    bool isNormalized1_2,
     bool isCritical,
     bool isFoulPlay,
     bool defenseAltAttack,
@@ -5645,244 +5426,50 @@ class TurnEffectAction extends TurnEffect {
     }
 
     // とくせい等によるわざタイプの変更
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) {
-      replacedMoveType = PokeType.ice;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) {
-      replacedMoveType = PokeType.fairy;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) {
-      replacedMoveType = PokeType.fly;
-    }
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.containsByID(BuffDebuff.liquidVoice)) {
-      replacedMoveType = PokeType.water;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-      replacedMoveType = PokeType.electric;
-    }
-    if (replacedMove.id != 165 &&
-        replacedMoveType == PokeType.normal &&
-        myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
-      replacedMoveType = PokeType.electric;
+    {
+      replacedMoveType =
+          myState.buffDebuffs.changeMoveType(myState, replacedMoveType);
+      if (replacedMove.id != 165 &&
+          replacedMoveType == PokeType.normal &&
+          myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
+        replacedMoveType = PokeType.electric;
+      }
     }
 
     // とくせい等による威力変動
-    double tmpPow = movePower.toDouble();
-    // テクニシャン補正は一番最初
-    if (replacedMove.power <= 60 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.technician)) tmpPow *= 1.5;
+    {
+      double tmpPow = movePower.toDouble();
+      tmpPow = myState.buffDebuffs.changeMovePower(myState, yourState, tmpPow,
+          damageClassID, replacedMove, replacedMoveType, myState.holdingItem,
+          isFirst: isFirst);
 
-    if (isNormalized1_2) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.containsByID(BuffDebuff.overgrow)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.containsByID(BuffDebuff.blaze)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.containsByID(BuffDebuff.torrent)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.containsByID(BuffDebuff.swarm)) tmpPow *= 1.5;
-    if (myState.sex.id != 0 &&
-        yourState.sex.id != 0 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.opponentSex1_5)) {
-      if (myState.sex.id != yourState.sex.id) {
-        tmpPow *= 1.25;
-      } else {
-        tmpPow *= 0.75;
+      // フィールド効果
+      if (replacedMoveType == PokeType.electric &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.electricTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.grass &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.psychic &&
+          myState.isGround(myFields) &&
+          state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
+      if (replacedMoveType == PokeType.dragon &&
+          yourState.isGround(yourFields) &&
+          state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
+      if (replacedMoveType == PokeType.fire &&
+          myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
+        tmpPow = tmpPow * 1352 / 4096;
       }
-    }
-    if (replacedMove.isPunch &&
-        myState.buffDebuffs.containsByID(BuffDebuff.punch1_2)) tmpPow *= 1.2;
-    if (replacedMove.isRecoil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.recoil1_2)) tmpPow *= 1.2;
-    if (replacedMove.isAdditionalEffect2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.sheerForce)) tmpPow *= 1.3;
-    if (replacedMove.isWave &&
-        myState.buffDebuffs.containsByID(BuffDebuff.wave1_5)) tmpPow *= 1.5;
-    if (replacedMove.isDirect &&
-        !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
-        myState.buffDebuffs.containsByID(BuffDebuff.directAttack1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.change2) &&
-        yourState.buffDebuffs.containsByID(BuffDebuff.changedThisTurn)) {
-      tmpPow *= 2;
-    }
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.physical1_5)) tmpPow *= 1.5;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.special1_5)) tmpPow *= 1.5;
-    if (isFirst != null &&
-        !isFirst! &&
-        myState.buffDebuffs.containsByID(BuffDebuff.analytic)) {
-      tmpPow *= 1.3;
-    }
-    if ((replacedMoveType == PokeType.ground ||
-            replacedMoveType == PokeType.rock ||
-            replacedMoveType == PokeType.steel) &&
-        myState.buffDebuffs.containsByID(BuffDebuff.rockGroundSteel1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMove.isBite &&
-        myState.buffDebuffs.containsByID(BuffDebuff.bite1_5)) tmpPow *= 1.5;
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.containsByID(BuffDebuff.freezeSkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairySkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airSkin)) tmpPow *= 1.2;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.darkAura)) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairyAura)) tmpPow *= 1.33;
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.antiDarkAura)) {
-      tmpPow *= 0.75;
-    }
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.antiFairyAura)) {
-      tmpPow *= 0.75;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricSkin)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMove.isSound &&
-        myState.buffDebuffs.containsByID(BuffDebuff.sound1_3)) tmpPow *= 1.3;
-    if (myState.buffDebuffs.containsByID(BuffDebuff.attackMove1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.containsByID(BuffDebuff.steel1_5)) tmpPow *= 1.5;
-    if (replacedMove.isCut &&
-        myState.buffDebuffs.containsByID(BuffDebuff.cut1_5)) tmpPow *= 1.5;
-    final pow = myState.buffDebuffs.list
-        .where((e) => e.id >= BuffDebuff.power10 && e.id <= BuffDebuff.power50);
-    if (pow.isNotEmpty) {
-      tmpPow = tmpPow * (1.0 + (pow.first.id - BuffDebuff.power10 + 1) * 0.1);
-    }
-    if (damageClassID == 2 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.physical1_1)) tmpPow *= 1.1;
-    if (damageClassID == 3 &&
-        myState.buffDebuffs.containsByID(BuffDebuff.special1_1)) tmpPow *= 1.1;
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.onceNormalAttack1_3)) {
-      tmpPow *= 1.3;
-    }
-    if (replacedMoveType == PokeType.normal &&
-        myState.buffDebuffs.containsByID(BuffDebuff.normalAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fight &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fightAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fly &&
-        myState.buffDebuffs.containsByID(BuffDebuff.airAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.poison &&
-        myState.buffDebuffs.containsByID(BuffDebuff.poisonAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ground &&
-        myState.buffDebuffs.containsByID(BuffDebuff.groundAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.rock &&
-        myState.buffDebuffs.containsByID(BuffDebuff.rockAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.bug &&
-        myState.buffDebuffs.containsByID(BuffDebuff.bugAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ghost &&
-        myState.buffDebuffs.containsByID(BuffDebuff.ghostAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.steel &&
-        myState.buffDebuffs.containsByID(BuffDebuff.steelAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fire &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fireAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.water &&
-        myState.buffDebuffs.containsByID(BuffDebuff.waterAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.grass &&
-        myState.buffDebuffs.containsByID(BuffDebuff.grassAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myState.buffDebuffs.containsByID(BuffDebuff.electricAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.psychic &&
-        myState.buffDebuffs.containsByID(BuffDebuff.psycoAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.ice &&
-        myState.buffDebuffs.containsByID(BuffDebuff.iceAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.dragon &&
-        myState.buffDebuffs.containsByID(BuffDebuff.dragonAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.evil &&
-        myState.buffDebuffs.containsByID(BuffDebuff.evilAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMoveType == PokeType.fairy &&
-        myState.buffDebuffs.containsByID(BuffDebuff.fairyAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.moveAttack1_2)) {
-      tmpPow *= 1.2;
-    }
-    if (replacedMove.isPunch &&
-        myState.buffDebuffs.containsByID(BuffDebuff.punchNotDirect1_1)) {
-      tmpPow *= 1.1;
-    }
-    if (myState.buffDebuffs.containsByID(BuffDebuff.attack1_2)) tmpPow *= 1.2;
+      if (replacedMoveType == PokeType.electric &&
+          myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
+        tmpPow = tmpPow * 1352 / 4096;
+      }
 
-    if (replacedMoveType == PokeType.electric &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.electricTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.grass &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.psychic &&
-        myState.isGround(myFields) &&
-        state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
-    if (replacedMoveType == PokeType.dragon &&
-        yourState.isGround(yourFields) &&
-        state.field.id == Field.mistyTerrain) tmpPow *= 0.5;
-
-    if (replacedMoveType == PokeType.fire &&
-        yourState.buffDebuffs.containsByID(BuffDebuff.drySkin)) tmpPow *= 1.25;
-
-    if (replacedMoveType == PokeType.fire &&
-        myFields.indexWhere((e) => e.id == IndividualField.waterSport) >= 0) {
-      tmpPow = tmpPow * 1352 / 4096;
-    }
-    if (replacedMoveType == PokeType.electric &&
-        myFields.indexWhere((e) => e.id == IndividualField.mudSport) >= 0) {
-      tmpPow = tmpPow * 1352 / 4096;
-    }
-
-    movePower = tmpPow.floor();
-    // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
-    if (movePower < 60 && isTeraStellarHosei) {
-      movePower = 60;
+      movePower = tmpPow.floor();
+      // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
+      if (movePower < 60 && isTeraStellarHosei) {
+        movePower = 60;
+      }
     }
 
     bool plusIgnore =
@@ -6089,7 +5676,6 @@ class TurnEffectAction extends TurnEffect {
         power,
         damageClassID,
         beforeChangeMyState,
-        isNormalized1_2,
         isCritical,
         isFoulPlay,
         defenseAltAttack,
@@ -6120,7 +5706,6 @@ class TurnEffectAction extends TurnEffect {
         power,
         damageClassID,
         beforeChangeMyState,
-        isNormalized1_2,
         isCritical,
         isFoulPlay,
         defenseAltAttack,
@@ -6159,7 +5744,6 @@ class TurnEffectAction extends TurnEffect {
         power,
         damageClassID,
         beforeChangeMyState,
-        isNormalized1_2,
         isCritical,
         isFoulPlay,
         defenseAltAttack,
@@ -6190,7 +5774,6 @@ class TurnEffectAction extends TurnEffect {
         power,
         damageClassID,
         beforeChangeMyState,
-        isNormalized1_2,
         isCritical,
         isFoulPlay,
         defenseAltAttack,
