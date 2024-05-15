@@ -632,8 +632,8 @@ class PokemonState extends Equatable implements Copyable {
     // 状態変化の経過ターンインクリメント
     if (!isFaintingChange) {
       for (var e in _ailments.iterable) {
-        if (e.id != Ailment.sleep) {
-          // ねむりのターン経過は行動時のみ
+        if (e.id != Ailment.sleep && e.id != Ailment.encore) {
+          // ねむりのターン経過&アンコールは行動時のみ
           e.turns++;
         }
       }

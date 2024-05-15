@@ -65,15 +65,15 @@ class BattleActionCommand extends StatefulWidget {
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
-  final Function(void Function()) parentSetState;
-  final Function() onConfirm;
-  final Function() onUnConfirm;
-  final Function() updateActionOrder;
+  final void Function(void Function()) parentSetState;
+  final void Function() onConfirm;
+  final void Function() onUnConfirm;
+  final void Function() updateActionOrder;
   final bool playerCanTerastal;
-  final Function() onRequestTerastal;
+  final void Function() onRequestTerastal;
   final int moveListOrder;
-  final Function(int) onMoveListOrderChange;
-  final Function() onConfusionEnd;
+  final void Function(int) onMoveListOrderChange;
+  final void Function() onConfusionEnd;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();

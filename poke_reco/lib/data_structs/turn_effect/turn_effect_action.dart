@@ -755,9 +755,12 @@ class TurnEffectAction extends TurnEffect {
     // ねむりカウント加算
     var sleep = myState.ailmentsWhere((e) => e.id == Ailment.sleep);
     if (sleep.isNotEmpty) sleep.first.turns++;
-    // アンコールカウント加算
+    // アンコールカウント加算(ただし、溜め状態でないことが条件)
     var encore = myState.ailmentsWhere((e) => e.id == Ailment.encore);
-    if (encore.isNotEmpty) encore.first.turns++;
+    if (encore.isNotEmpty &&
+        !myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
+      encore.first.turns++;
+    }
     // ちょうはつのカウントインクリメント
     var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
     if (taunt.isNotEmpty) taunt.first.extraArg1++;
@@ -824,11 +827,12 @@ class TurnEffectAction extends TurnEffect {
       opponentPokemonState.moves.add(move);
     }
 
-    // わざPP消費
+    // わざPP消費(ただし、溜め状態でないことが条件)
     if (isSuccess) {
       int moveIdx = myState.moves
           .indexWhere((element) => element.id != 0 && element.id == move.id);
-      if (moveIdx >= 0) {
+      if (moveIdx >= 0 &&
+          !myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
         myState.usedPPs[moveIdx]++;
         if (yourState.currentAbility.id == 46) myState.usedPPs[moveIdx]++;
       }

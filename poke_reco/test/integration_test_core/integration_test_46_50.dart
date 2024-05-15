@@ -2635,7 +2635,6 @@ Future<void> test49_4(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO:アンコール終了ターンずれてる
 /// アチゲータ戦1
 Future<void> test50_1(
   FlutterDriver driver,
@@ -2681,6 +2680,9 @@ Future<void> test50_1(
   // ドラパルトのみがわり
   await tapMove(driver, op, 'みがわり', true);
   await tapSuccess(driver, op);
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  // ドラパルトのHP1
+  await inputRemainHP(driver, op, '');
   // ターン2へ
   await goTurnPage(driver, turnNum++);
 
