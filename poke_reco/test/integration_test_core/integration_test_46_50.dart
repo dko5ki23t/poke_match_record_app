@@ -2026,7 +2026,6 @@ Future<void> test48_4(
   await tapMove(driver, op, 'ボディプレス', false);
   // ケケンカニのHP0
   await inputRemainHP(driver, op, '0');
-  //! TODO:上記の順に入力すると例外発生する
   // 相手の勝利
   await testExistEffect(driver, 'あきとの勝利！');
 
@@ -2347,7 +2346,6 @@ Future<void> test49_2(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: とんぼがえり後、相手のわざがマスカーニャのHPを対象にしてる
 /// ベラカス戦3
 Future<void> test49_3(
   FlutterDriver driver,
@@ -2486,8 +2484,8 @@ Future<void> test49_3(
   await tapMove(driver, op, 'マッハパンチ', false);
   // マスカーニャのHP0
   await inputRemainHP(driver, op, '0');
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // 相手の勝利
+  await testExistEffect(driver, 'シラタキの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -2883,7 +2881,17 @@ Future<void> test50_2(
   // フラージェスのスキルスワップ
   await tapMove(driver, op, 'スキルスワップ', true);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
-  // TODO: とくせいの選択する必要あり
+  // フラワーベール
+  {
+    await driver.tap(find.byValueKey('SelectAbilityInputOpponent'));
+    await driver.enterText('フラワーベール');
+    final selectListTile = find.ancestor(
+      matching: find.byType('ListTile'),
+      of: find.text('フラワーベール'),
+      firstMatchOnly: true,
+    );
+    await driver.tap(selectListTile);
+  }
   // アチゲータのアンコール
   await tapMove(driver, me, 'アンコール', false);
   // ターン4へ
@@ -2915,7 +2923,12 @@ Future<void> test50_2(
   await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
   // アチゲータのあくび
   await tapMove(driver, me, 'あくび', false);
-  // TODO:ほのおのうず終了
+  // バインド(ダメージ/終了)編集
+  await tapEffect(driver, 'バインド(ダメージ/終了)');
+  // 効果が切れた
+  await driver.tap(find.byValueKey('AilmentEffectDropDownMenu'));
+  await driver.tap(find.text('効果が切れた'));
+  await driver.tap(find.text('OK'));
   // ターン7へ
   await goTurnPage(driver, turnNum++);
 

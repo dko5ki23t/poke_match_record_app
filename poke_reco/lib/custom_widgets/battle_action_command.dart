@@ -680,9 +680,12 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         }
         break;
       case CommandState.confusedDamageInput:
+        // 入力中に試合終了になった場合は以下の条件に入る
+        if (turnMove.actionFailure != ActionFailure(ActionFailure.confusion)) {
+          commandColumn = Container();
+          break;
+        }
         // こんらんによる自傷ダメージ入力
-        assert(
-            turnMove.actionFailure == ActionFailure(ActionFailure.confusion));
         int initialNum = playerType == PlayerType.me
             ? myState.remainHP
             : myState.remainHPPercent;
@@ -750,6 +753,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
         break;
       case CommandState.extraInput:
+        // 入力中に試合終了になった場合は以下の条件に入る
+        if (turnMove.move.id == 0) {
+          commandColumn = Container();
+          break;
+        }
         commandColumn = turnMove.extraCommandInputList(
             initialKeyNumber: CommandState.extraInput.index,
             theme: theme,

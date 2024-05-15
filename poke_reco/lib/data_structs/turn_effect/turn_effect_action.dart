@@ -6445,7 +6445,11 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    return widgets[controller.pageIndex];
+    if (controller.pageIndex < widgets.length) {
+      return widgets[controller.pageIndex];
+    } else {
+      return Container();
+    }
   }
 
   /// コマンド入力の1画面を返す

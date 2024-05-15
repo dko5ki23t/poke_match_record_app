@@ -804,6 +804,8 @@ class _SelectAbilityInputState extends State<SelectAbilityInput> {
   @override
   Widget build(BuildContext context) {
     return TypeAheadField(
+      key: Key(
+          'SelectAbilityInput${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
         controller: abilitySearchTextController,
         decoration: InputDecoration(
@@ -850,6 +852,18 @@ class _SelectAbilityInputState extends State<SelectAbilityInput> {
       onSuggestionSelected: (suggestion) {
         abilitySearchTextController.text = suggestion.displayName;
         widget.onAbilitySelected(suggestion);
+        // 統合テスト作成用
+        print("// ${suggestion.displayName}\n"
+            "{\n"
+            "  await driver.tap(find.byValueKey('SelectAbilityInput${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'));\n"
+            "  await driver.enterText('${suggestion.displayName}');\n"
+            "  final selectListTile = find.ancestor(\n"
+            "    matching: find.byType('ListTile'),\n"
+            "      of: find.text('${suggestion.displayName}'),\n"
+            "      firstMatchOnly: true,\n"
+            "    );\n"
+            "    await driver.tap(selectListTile);\n"
+            "}");
       },
     );
   }

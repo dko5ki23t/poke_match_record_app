@@ -114,7 +114,7 @@ class AilmentEffect {
     13: Tuple2('やどりぎのタネダメージ', 'Leech Seed'),
     15: Tuple2('ロックオン終了', 'Lock-On end'),
 //    16: Tuple2('あくむ', 'Nightmare'),
-    17: Tuple2('バインドダメージ', 'Partially Trapped'),
+    17: Tuple2('バインド(ダメージ/終了)', 'Partially Trapped'),
     18: Tuple2('ほろびのうた', 'Perish Song'),
     19: Tuple2('ちょうはつ終了', 'Taunt is resolved'), // 挑発の効果が解けた
     20: Tuple2('いちゃもん', 'Torment'),
@@ -287,6 +287,7 @@ class TurnEffectAilment extends TurnEffect {
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
+    final dropdownMenuKey = Key('AilmentEffectDropDownMenu');
     switch (ailmentEffectID) {
       case AilmentEffect.poison: // どく
       case AilmentEffect.badPoison: // もうどく
@@ -382,6 +383,7 @@ class TurnEffectAilment extends TurnEffect {
           return Column(
             children: [
               _myDropdownButtonFormField(
+                key: dropdownMenuKey,
                 isExpanded: true,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
@@ -401,6 +403,12 @@ class TurnEffectAilment extends TurnEffect {
                 onChanged: (value) {
                   extraArg2 = value;
                   onEdit();
+                  // 統合テスト作成用
+                  final text =
+                      value == 0 ? loc.battleDamaged : loc.battleEffectExpired;
+                  print("// $text\n"
+                      "await driver.tap(find.byValueKey('$dropdownMenuKey'));\n"
+                      "await driver.tap(find.text('$text'));");
                 },
                 isInput: true,
                 textValue: extraArg2 == 1
