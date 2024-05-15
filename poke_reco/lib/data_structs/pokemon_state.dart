@@ -558,6 +558,8 @@ class PokemonState extends Equatable implements Copyable {
     // あいてのにげられない状態の解除
     yourState.ailmentsRemoveWhere(
         (e) => e.id == Ailment.cannotRunAway && e.extraArg1 == 1);
+    // あいてのバインド状態の解除
+    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.partiallyTrapped);
     // 退場することで自身に効果がある場合
     if (!_isFainting && currentAbility.id == 30) {
       // しぜんかいふく

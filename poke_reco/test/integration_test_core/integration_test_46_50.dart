@@ -3005,10 +3005,39 @@ Future<void> test50_2(
   // ターン12へ
   await goTurnPage(driver, turnNum++);
 
-  // TODO:そもそもまねっこだった＆ものまね->ムーンフォース選択で例外発生
-  // イキリンコのものまね
-  await tapMove(driver, me, 'ものまね', false);
+  // イキリンコのまねっこ
+  await tapMove(driver, me, 'まねっこ', false);
   await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  // TODO: なぜかここ検索してくれない・・・
+  // イキリンコのムーンフォース
+  await tapMove(driver, me, 'ムーンフォース', true);
+  // フラージェスのHP0
+  await inputRemainHP(driver, me, '0');
+  // フラージェスひんし->ミミズズに交代
+  await changePokemon(driver, op, 'ミミズズ', false);
+  // ターン13へ
+  await goTurnPage(driver, turnNum++);
+
+  // イキリンコ->アチゲータに交代
+  await changePokemon(driver, me, 'アチゲータ', true);
+  // ミミズズのがんせきふうじ
+  await tapMove(driver, op, 'がんせきふうじ', true);
+  // 外れる
+  await tapHit(driver, op);
+  // アチゲータのHP188
+  await inputRemainHP(driver, op, '');
+  // ターン14へ
+  await goTurnPage(driver, turnNum++);
+
+  // ミミズズのがんせきふうじ
+  await tapMove(driver, op, 'がんせきふうじ', false);
+  // アチゲータのHP164
+  await inputRemainHP(driver, op, '164');
+  // アチゲータのほのおのうず
+  await tapMove(driver, me, 'ほのおのうず', false);
+  // ミミズズのHP0
+  await inputRemainHP(driver, me, '0');
+
   // あなたの勝利
   await testExistEffect(driver, 'あなたの勝利！');
 
@@ -3648,7 +3677,6 @@ Future<void> test50_5(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: ほのおのうずは使ったポケモンが場から離れると解除？
 /// アチゲータ戦6
 Future<void> test50_6(
   FlutterDriver driver,

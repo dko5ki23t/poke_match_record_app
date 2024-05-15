@@ -6776,6 +6776,9 @@ class TurnEffectAction extends TurnEffect {
             extraArg3 = move.id;
             fillAutoAdditionalEffect(state);
             onNext();
+            // 統合テスト作成用
+            print("// ${myState.pokemon.omittedName}の${move.displayName}\n"
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${move.displayName}', true);");
           },
         );
       case CommandWidgetTemplate.selectAcquiringMove:
@@ -6788,6 +6791,9 @@ class TurnEffectAction extends TurnEffect {
             extraArg3 = move.id;
             fillAutoAdditionalEffect(state);
             onNext();
+            // 統合テスト作成用
+            print("// ${myState.pokemon.omittedName}の${move.displayName}\n"
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${move.displayName}', false);");
           },
           onlyAcquiring: true,
         );
@@ -6894,8 +6900,10 @@ class TurnEffectAction extends TurnEffect {
           state: state,
           onSelect: (move) {
             extraArg3 = move.id;
-            controller.pageIndex++;
             onNext();
+            // 統合テスト作成用
+            print("// ${myState.pokemon.omittedName}の${move.displayName}\n"
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${move.displayName}', false);");
           },
           onlyAcquiring: true,
         );
