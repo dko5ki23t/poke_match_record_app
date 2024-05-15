@@ -254,7 +254,7 @@ myPokemons = [
     Pokemon(56, 56, 972, "もこドッグ", PokeType.ghost, 63, Sex.male, Nature.ijippari, 218, 0, [31, 252], [31, 252], [31, 4], [18, 0], [31, 0], [31, 0], [707, 854, 425, 583], [10, 10, 30, 10], Owner.mine).toSet(),
     Pokemon(57, 57, 931, "もこリンコ", PokeType.fly, 50, Sex.male, Nature.yoki, 55, 0, [31, 0], [31, 252], [31, 4], [8, 0], [31, 0], [31, 252], [383, 413, 38, 575], [20, 15, 15, 20], Owner.mine).toSet(),
     Pokemon(58, 58, 373, "もこ両刀マンダ", PokeType.steel, 50, Sex.female, Nature.ganbariya, 22, 0, [31, 4], [31, 252], [31, 0], [31, 0], [31, 0], [31, 252], [349, 126, 89, 814], [20, 5, 10, 10], Owner.mine).toSet(),
-    Pokemon(59, 59, 931, "もこリンコ2", PokeType.fly, 50, Sex.male, Nature.yoki, 55, 0, [31, 0], [31, 252], [31, 4], [8, 0], [31, 0], [31, 252], [102, 413, 38, 575], [10, 15, 15, 20], Owner.mine).toSet(),
+    Pokemon(59, 59, 931, "もこリンコ2", PokeType.fly, 50, Sex.male, Nature.yoki, 55, 0, [31, 0], [31, 252], [31, 4], [8, 0], [31, 0], [31, 252], [383, 413, 38, 575], [10, 15, 15, 20], Owner.mine).toSet(),
     Pokemon(60, 60, 10123, "もこリドリ", PokeType.fairy, 50, Sex.male, Nature.okubyou, 216, 0, [31, 4], [14, 0], [31, 0], [31, 252], [31, 0], [31, 252], [686, 403, 355, 483], [15, 15, 8, 20], Owner.mine).toSet(),
     Pokemon(61, 61, 612, "もこノクス", PokeType.bug, 75, Sex.female, Nature.yoki, 104, 0, [31, 60], [31, 196], [31, 0], [31, 0], [31, 0], [31, 252], [349, 200, 89, 660], [20, 10, 10, 10], Owner.mine).toSet(),
     Pokemon(62, 62, 952, "もこヴィラン", PokeType.ghost, 50, Sex.female, Nature.ukariya, 34, 0, [31, 0], [31, 4], [31, 0], [31, 252], [31, 0], [31, 252], [315, 76, 851, 707], [8, 10, 10, 10], Owner.mine).toSet(),

@@ -84,7 +84,6 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
   bool canChangeTeraType = true;
   List<TargetFocus> tutorialTargets = [];
 
-  // TODO:変更したステータスのみ計算する(全部計算する機能も残す)
   void updateRealStat() {
     widget.myPokemon.updateRealStats();
 
@@ -220,6 +219,11 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
     var myPokemon = widget.myPokemon;
     var theme = Theme.of(context);
     var loc = AppLocalizations.of(context)!;
+
+    void levelInputFunc(num value) {
+      myPokemon.level = value.toInt();
+      updateRealStat();
+    }
 
     isVerticallyLong =
         MediaQuery.of(context).orientation == Orientation.portrait;
@@ -416,18 +420,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
     pokeNoController.text = myPokemon.no.toString();
     pokeLevelController.text = myPokemon.level.toString();
     pokeNatureController.text = myPokemon.nature.displayName;
-    pokeStatRaceController[0].text =
-        myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
-    pokeStatRaceController[1].text =
-        myPokemon.name == '' ? 'A -' : 'A ${myPokemon.a.race}';
-    pokeStatRaceController[2].text =
-        myPokemon.name == '' ? 'B -' : 'B ${myPokemon.b.race}';
-    pokeStatRaceController[3].text =
-        myPokemon.name == '' ? 'C -' : 'C ${myPokemon.c.race}';
-    pokeStatRaceController[4].text =
-        myPokemon.name == '' ? 'D -' : 'D ${myPokemon.d.race}';
-    pokeStatRaceController[5].text =
-        myPokemon.name == '' ? 'S -' : 'S ${myPokemon.s.race}';
+    for (final stat in StatIndexList.listHtoS) {
+      pokeStatRaceController[stat.index].text =
+          '${stat.alphabet} ${myPokemon.name == '' ? '-' : myPokemon.stats[stat].race}';
+    }
     pokeMoveController[0].text = myPokemon.move1.displayName;
     pokeMoveController[1].text =
         myPokemon.move2 == null ? '' : myPokemon.move2!.displayName;
@@ -735,18 +731,10 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                   canChangeTeraType =
                                       suggestion.fixedTeraType ==
                                           PokeType.unknown;
-                                  pokeStatRaceController[0].text =
-                                      'H ${myPokemon.h.race}';
-                                  pokeStatRaceController[1].text =
-                                      'A ${myPokemon.a.race}';
-                                  pokeStatRaceController[2].text =
-                                      'B ${myPokemon.b.race}';
-                                  pokeStatRaceController[3].text =
-                                      'C ${myPokemon.c.race}';
-                                  pokeStatRaceController[4].text =
-                                      'D ${myPokemon.d.race}';
-                                  pokeStatRaceController[5].text =
-                                      'S ${myPokemon.s.race}';
+                                  for (final stat in StatIndexList.listHtoS) {
+                                    pokeStatRaceController[stat.index].text =
+                                        '${stat.alphabet} ${myPokemon.stats[stat].race}';
+                                  }
                                   updateRealStat();
                                   myPokemon.move1 = Move.none(); // 無効なわざ
                                   myPokemon.move2 = null;
@@ -880,18 +868,9 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                 min: pokemonMinLevel,
                                 max: pokemonMaxLevel,
                                 initialValue: myPokemon.level,
-                                onIncrement: (value) {
-                                  myPokemon.level = value.toInt();
-                                  updateRealStat();
-                                },
-                                onDecrement: (value) {
-                                  myPokemon.level = value.toInt();
-                                  updateRealStat();
-                                },
-                                onChanged: (value) {
-                                  myPokemon.level = value.toInt();
-                                  updateRealStat();
-                                }, // TODO: いい方法ありそう
+                                onIncrement: levelInputFunc,
+                                onDecrement: levelInputFunc,
+                                onChanged: levelInputFunc,
                               ),
                             ),
                             SizedBox(width: 10),

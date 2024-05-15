@@ -896,6 +896,10 @@ class TurnEffectAction extends TurnEffect {
     bool useLargerAC = false;
     // ダメージ計算時、テラスタルまたはステラの補正がかかったか
     bool isTeraStellarHosei = false;
+    // まるくなる状態の連続保持回数、まるくなる状態(一旦)解除
+    final curl = myState.ailmentsWhere((e) => e.id == Ailment.curl);
+    int curlCount = curl.isEmpty ? 0 : curl.first.extraArg1;
+    myState.ailmentsRemoveWhere((e) => e.id == Ailment.curl);
 
     {
       Move replacedMove = getReplacedMove(move, myState); // 必要に応じてわざの内容変更
@@ -907,7 +911,7 @@ class TurnEffectAction extends TurnEffect {
       List<PlayerType> targetPlayerTypes = [yourPlayerType];
       PhaseState? targetField;
       switch (replacedMove.target) {
-        case Target.specificMove: // TODO:不定、わざによって異なる のろいとかカウンターとか
+        case Target.specificMove: // 不定、わざによって異なる のろいとかカウンターとか
           break;
         case Target.selectedPokemonMeFirst: // 選択した自分以外の場にいるポケモン
         // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
@@ -1625,13 +1629,12 @@ class TurnEffectAction extends TurnEffect {
           case 117: // ひんしダメージをHP1で耐える。連続使用で失敗しやすくなる
             break;
           case 118: // 最高5ターン連続でこうげき、当てるたびに威力が2倍になる(まるくなる状態だと威力2倍)
-            // TODO: 計算間違ってない？
-            if (myState.lastMove?.id == replacedMove.id) {
+            for (int i = 0; i < curlCount; i++) {
               movePower[0] = movePower[0]! * 2;
             }
-            if (myState.ailmentsWhere((e) => e.id == Ailment.curl).isNotEmpty) {
-              movePower[0] = movePower[0]! * 2;
-            }
+            curlCount++;
+            myState.ailmentsAdd(
+                Ailment(Ailment.curl)..extraArg1 = curlCount, state);
             break;
           case 119: // こうげきを2段階上げ、こんらん状態にする
             targetState.addStatChanges(targetState == myState, 0, 2, myState,
@@ -1849,7 +1852,7 @@ class TurnEffectAction extends TurnEffect {
           case 157: // 使用者のぼうぎょを1段階上げる。まるくなる状態になる
             myState.addStatChanges(true, 1, 1, targetState,
                 moveId: replacedMove.id);
-            myState.ailmentsAdd(Ailment(Ailment.curl), state);
+            myState.ailmentsAdd(Ailment(Ailment.curl)..extraArg1, state);
             break;
           case 160: // さわぐ状態になる
             myState.ailmentsAdd(Ailment(Ailment.uproar), state);

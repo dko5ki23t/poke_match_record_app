@@ -57,7 +57,8 @@ class AilmentEffect {
   static const int minimize = 38; // ちいさくなる
   static const int flying = 39; // そらをとぶ
   static const int digging = 40; // あなをほる
-  static const int curl = 41; // まるくなる(ころがる・アイスボールの威力2倍)
+  static const int curl =
+      41; // まるくなる(ころがる・アイスボール当てるたびに威力2倍。extraArg1に連続で当たった回数を格納)
   static const int stock1 =
       42; // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
   static const int stock2 = 43; // たくわえる(2)

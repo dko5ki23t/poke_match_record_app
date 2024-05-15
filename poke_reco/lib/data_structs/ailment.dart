@@ -112,7 +112,7 @@ class Ailment extends Equatable implements Copyable {
   /// にげられない
   /// * あいてに使われた場合はextraArg1 >= 1,
   /// * extraArg1 == 2→「じりょく」によるにげられない
-  /// * extraArg == 3→「ありじごく」によるにげられない)
+  /// * extraArg1 == 3→「ありじごく」によるにげられない)
   static const int cannotRunAway = 37;
 
   /// ちいさくなる
@@ -124,7 +124,7 @@ class Ailment extends Equatable implements Copyable {
   /// あなをほる
   static const int digging = 40;
 
-  /// まるくなる(ころがる・アイスボールの威力2倍)
+  /// まるくなる(ころがる・アイスボール当てるたびに威力2倍。extraArg1に連続で当たった回数を格納)
   static const int curl = 41;
 
   /// たくわえる(1)

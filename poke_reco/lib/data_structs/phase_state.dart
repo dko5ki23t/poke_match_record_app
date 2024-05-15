@@ -1202,7 +1202,6 @@ class PhaseState extends Equatable implements Copyable {
         ..teraType = base.fixedTeraType == PokeType.unknown
             ? pokemonState.teraType1
             : base.fixedTeraType;
-      // TODO:ゾロアーク系
       Pokemon poke = party.pokemons[getPokemonIndex(player, null) - 1]!;
       if (base.fixedItemID != 0) poke.item = PokeDB().items[base.fixedItemID];
       pokemonState.pokemon = poke;

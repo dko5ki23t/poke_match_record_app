@@ -714,12 +714,6 @@ abstract class TurnEffect extends Equatable implements Copyable {
             // どく/もうどく状態のとき
             timings.add(Timing.poisonDamage);
           }
-          // TODO?
-          /*
-          if (pokemonState != null && pokemonState.ailmentsWhere((e) => e.id == Ailment.ingrain).isNotEmpty) {    // ねをはる状態のとき
-            ailmentEffectIDs.add(AilmentEffect.ingrain);
-          }
-          */
           if (playerType == PlayerType.me ||
               playerType == PlayerType.opponent) {
             if (pokemonState!
