@@ -886,9 +886,18 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     return ret.toList();
   }
 
-  /// TODO:フェーズを最適化する
-  ///
-  //List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
+  /// フェーズリストを最適化(順序並べ替え、必要に応じて自動で効果追加)する
+  /// ```
+  /// isNewTurn: 新たに作成されたターンかどうか。trueによって自動で追加される効果がある
+  /// turnNum: 対象のターン数
+  /// currentTurn: 対象のターン
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// opponentName: 対戦相手の名前
+  /// loc: localization情報
+  /// 戻り値: 表示すべきポケモンステータスの画面インデックス
+  /// (例えば実数値ステータスが推定できた場合は実数値ステータス画面のインデックスを返す)
+  /// ```
   StatusInfoPageIndex adjust(
     bool isNewTurn,
     int turnNum,
@@ -903,12 +912,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     l.removeWhere(
       (element) => element is TurnEffectGameset,
     );
-    //_clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
-    //int beginIdx = 0;
-    //Timing timing = Timing.none;
-    //List<List<TurnEffectAndStateAndGuide>> ret = [];
-    //List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    //Turn currentTurn = widget.battle.turns[turnNum - 1];
     // 行動順をアップデート
     updateActionOrder();
     PhaseState currentState = currentTurn.copyInitialState();
@@ -1221,7 +1224,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 if (!remainAction[action.playerType.number]) {
                   action.isSuccess = false;
                 } else if (action.actionFailure.id == ActionFailure.none) {
-                  action.isSuccess = true;
+                  //TODO: 消して大丈夫か？
+                  //action.isSuccess = true;
                 }
                 remainAction[action.playerType.number] = false;
                 if (action.isValid()) {
@@ -1509,21 +1513,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               remainAction[PlayerType.opponent.number] = false;
               isValidAction[PlayerType.opponent.number] = true;
             }
-            // TODO?
-            /*
-            if (s2 == 1 || l[i].timing == Timing.action) {
-              if ((isOwnFainting &&
-                      !isOpponentFainting &&
-                      l[i].playerType == PlayerType.me) ||
-                  (isOpponentFainting &&
-                      !isOwnFainting &&
-                      l[i].playerType == PlayerType.opponent)) {
-              } else {
-                // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
-                actionCount = 2;
-              }
-            }
-            */
           }
         }
 
@@ -1599,19 +1588,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               removeIdxs.add(j);*/
             }
           }
-/*          
-          // 削除インデックスリストの重複削除、ソート(念のため)
-          removeIdxs = removeIdxs.toSet().toList();
-          removeIdxs.sort();
-          for (int i = removeIdxs.length - 1; i >= 0; i--) {
-            l.removeAt(removeIdxs[i]);
-          }
-          if (timingListIdx < sameTimingList.length) {
-            for (var e in sameTimingList[timingListIdx]) {
-              e.needAssist = false;
-            }
-          }
-*/
           if (currentTiming == Timing.pokemonAppear) {
             isChanged[PlayerType.me.number] = false;
             isChanged[PlayerType.opponent.number] = false;
@@ -1622,30 +1598,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         }
       }
     }
-
-/*
-    for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
-      turnEffectAndStateAndGuides[i].phaseIdx = i;
-      if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
-      ) {
-        if (i != 0) {
-          turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
-            currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
-          ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
-        }
-        beginIdx = i;
-        timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
-      }
-    }
-
-    if (phases.isNotEmpty) {
-      turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
-        currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
-      ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
-    }
-    return ret;*/
     return ret;
   }
 }
@@ -1931,7 +1883,6 @@ class Turn extends Equatable implements Copyable {
 
     for (int i = 0; i < phaseIdx + 1; i++) {
       final phase = phases[i];
-      //if (phase.isAdding) continue;
       //if (phase.timing == Timing.continuousMove) {
       //  lastAction = phase;
       //  continousCount++;
@@ -2026,10 +1977,6 @@ class Turn extends Equatable implements Copyable {
 
     for (int i = 0; i < endIndex; i++) {
       final phase = phases[i];
-//      if (phase.isAdding) {
-//        i++;
-//        continue; // TODO
-//      }
       if (!phase.isValid()) {
         continue;
       }
@@ -2119,10 +2066,6 @@ class Turn extends Equatable implements Copyable {
     bool needChangeActionProcess = false;
     while (i < phases.length) {
       final phase = phases[i];
-//      if (phase.isAdding) {
-//        i++;
-//        continue; // TODO
-//      }
       if (!phase.isValid()) {
         i++;
         continue;
@@ -2217,10 +2160,14 @@ class Turn extends Equatable implements Copyable {
     return _endingState.copy();
   }
 
-  /// TODO:関数コメント
-  /// 現在のフェーズの状態で起こる効果の候補を返す
-  /// 効果->挿入可能インデックスのMapを返す
+  /// 指定したターンに起こる効果の候補とそのフェーズインデックスのMapを返す
   /// ```
+  /// playerType: 行動主(nullの場合は全行動主を対象とする)
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// loc: localization情報
+  /// turnNum: 現在のターン数
   /// ```
   Map<TurnEffect, Set<int>> getEffectCandidates(
     PlayerType? playerType,
@@ -2239,7 +2186,6 @@ class Turn extends Equatable implements Copyable {
       final timingList = phases.insertableTimings(i, turnNum, this);
       if (i != 0) {
         final currentEffect = phases[i - 1];
-        //if (effect.isAdding) continue;
         //if (effect.timing == Timing.continuousMove) {
         //  lastAction = effect;
         //  continousCount++;
@@ -2304,10 +2250,16 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
-  /// TODO:関数コメント
-  /// 現在のフェーズの状態で起こる効果の候補を返す
-  /// 効果->挿入可能インデックスのMapを返す
+  /// 指定したフェーズで起こる効果の候補を返す
   /// ```
+  /// playerType: 行動主(nullの場合は全行動主を対象とする)
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// phaseState: フェーズの状態
+  /// loc: localization情報
+  /// turnNum: 現在のターン数
+  /// phaseIdx: 対象フェーズのインデックス
   /// ```
   List<TurnEffect> getEffectCandidatesWithPhaseIdx(
     PlayerType? playerType,
@@ -2388,6 +2340,14 @@ class Turn extends Equatable implements Copyable {
     return effectList.toSet().toList();
   }
 
+  /// 指定したフェーズ・タイミングで起こる効果の候補を返す
+  /// ```
+  /// timing: タイミング
+  /// phaseIdx: フェーズのインデックス
+  /// playerType: 行動主
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// phaseState: フェーズの状態
+  /// ```
   List<TurnEffect> _getEffectCandidates(
     Timing timing,
     int phaseIdx,
@@ -2421,9 +2381,6 @@ class Turn extends Equatable implements Copyable {
     List<PlayerType> attackers = prevAction != null && prevAction.isValid()
         ? [prevAction.playerType]
         : [PlayerType.me, PlayerType.opponent];
-    // TODO?
-    //TurnMove turnMove =
-    //    prevAction?.move != null ? prevAction!.move : TurnMove();
     final turnMove = prevAction ?? TurnEffectAction(player: playerType);
 
     if (playerType == PlayerType.entireField) {
@@ -2455,6 +2412,16 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
+  /// 指定したタイミング等で起こる効果の候補を返す
+  /// ```
+  /// timing: タイミング
+  /// playerType: 行動主
+  /// effectType: 効果の種類
+  /// attacker: わざ前後のタイミングの場合、わざの使用者
+  /// turnMove: わざ前後のタイミングの場合、対象となるわざ
+  /// prevAction: 直前の行動
+  /// phaseState: フェーズの状態
+  /// ```
   List<TurnEffect> _getEffectCandidatesWithEffectType(
     Timing timing,
     PlayerType playerType,

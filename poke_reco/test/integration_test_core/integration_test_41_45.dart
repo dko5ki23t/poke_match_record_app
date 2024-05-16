@@ -1460,7 +1460,7 @@ Future<void> test43_3(
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
       ownPokemon1: 'もこパトラ2/',
-      ownPokemon2: 'もこクロス2/',
+      ownPokemon2: 'もこクロス/',
       ownPokemon3: 'もこアルマ2/',
       opponentPokemon: 'オーロンゲ');
   // 各ターン入力画面へ
@@ -1613,7 +1613,7 @@ Future<void> test43_4(
   // 選出ポケモンを選ぶ
   await selectPokemons(driver,
       ownPokemon1: 'もこパトラ2/',
-      ownPokemon2: 'もこクロス2/',
+      ownPokemon2: 'もこクロス/',
       ownPokemon3: 'もこアルマ2/',
       opponentPokemon: 'マリルリ');
   // 各ターン入力画面へ
@@ -2350,6 +2350,7 @@ Future<void> test44_4(
   // グレンアルマひんし->ボーマンダに交代
   await changePokemon(driver, me, 'ボーマンダ', false);
   // ガブリアスひんし->マスカーニャに交代
+  // なぜか選択されない
   await changePokemon(driver, op, 'マスカーニャ', false);
   // ターン6へ
   await goTurnPage(driver, turnNum++);
@@ -2978,7 +2979,7 @@ Future<void> test45_1(
   // ソウブレイズのHP103
   await inputRemainHP(driver, op, '103');
   // マニューラのいのちのたま
-  await addEffect(driver, 2, op, 'いのちのたま');
+  await addEffect(driver, 1, op, 'いのちのたま');
   await driver.tap(find.text('OK'));
   // ターン7へ
   await goTurnPage(driver, turnNum++);

@@ -461,13 +461,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
       return NavigatorPopHandler(
         onPop: () {
-          //var appState = context.read<MyAppState>();
-          //appState.onBackKeyPushed();
-//          _navigatorKeys[_currentTab]!.currentState!.pop();
           // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
-/*            Navigator.pop(
-              currentContext,
-            );*/
         },
         child: Scaffold(
           body: Center(

@@ -48,9 +48,6 @@ class ViewPartyPageState extends State<ViewPartyPage> {
       party = PokeDB().parties[widget.partyIDList[listIndex]]!;
     }
 
-    //appState.onBackKeyPushed = () {};
-    //appState.onTabChange = (func) => func();
-
     partyNameController.text = party.name;
 
     for (int i = 0; i < 6; i++) {

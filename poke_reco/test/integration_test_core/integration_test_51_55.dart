@@ -217,6 +217,7 @@ Future<void> test51_2(
   await inputRemainHP(driver, op, '');
   // ミミッキュに交代
   await changePokemon(driver, op, 'ミミッキュ', false);
+  // TODO: ミミッキュに変わってない
   // ターン2へ
   await goTurnPage(driver, turnNum++);
   // TODO:かえんだまが発動してまう
@@ -339,10 +340,11 @@ Future<void> test51_3(
   await tapMove(driver, me, 'フレアドライブ', false);
   // デカヌチャンのHP0
   await inputRemainHP(driver, me, '0');
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   // ブースターのHP86
   await inputRemainHP(driver, me, '86');
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   // デカヌチャンひんし->キノガッサに交代
+  // なぜか選べない
   await changePokemon(driver, op, 'キノガッサ', false);
   // ターン3へ
   await goTurnPage(driver, turnNum++);
@@ -385,7 +387,6 @@ Future<void> test51_3(
 
   // マスカーニャのへんげんじざい
   await addEffect(driver, 0, op, 'へんげんじざい');
-  await driver.tap(find.text('OK'));
   await driver.tap(find.byValueKey('TypeDropdownButton'));
   await driver.tap(find.text('あく'));
   await driver.tap(find.text('OK'));
@@ -692,6 +693,7 @@ Future<void> test52_1(
   // サーフゴーに交代
   await changePokemon(driver, op, 'サーフゴー', false);
   // ギャラドスひんし->デカヌチャンに交代
+  // TODO: なぜか選んでくれない
   await changePokemon(driver, me, 'デカヌチャン', false);
   // ターン7へ
   await goTurnPage(driver, turnNum++);

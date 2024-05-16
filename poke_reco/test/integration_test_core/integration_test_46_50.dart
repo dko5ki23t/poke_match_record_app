@@ -112,8 +112,8 @@ Future<void> test46_1(
   await tapMove(driver, op, 'りゅうせいぐん', false);
   // カイリューのHP0
   await inputRemainHP(driver, op, '0');
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // 相手の勝利
+  await testExistEffect(driver, 'やよいの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -156,7 +156,6 @@ Future<void> test46_2(
 
   // マスカーニャのへんげんじざい
   await addEffect(driver, 0, op, 'へんげんじざい');
-  await driver.tap(find.text('OK'));
   await driver.tap(find.byValueKey('TypeDropdownButton'));
   await driver.tap(find.text('あく'));
   await driver.tap(find.text('OK'));
@@ -546,7 +545,7 @@ Future<void> test46_4(
   // ハカドッグのHP90
   await inputRemainHP(driver, me, '90');
   // バンギラスのゴツゴツメット
-  await addEffect(driver, 3, op, 'ゴツゴツメット');
+  await addEffect(driver, 2, op, 'ゴツゴツメット');
   await driver.tap(find.text('OK'));
   // ターン4へ
   await goTurnPage(driver, turnNum++);
@@ -715,8 +714,8 @@ Future<void> test46_4(
   await tapMove(driver, op, 'サイコショック', false);
   // マリルリのHP0
   await inputRemainHP(driver, op, '0');
-  // あなたの勝利
-  await testExistEffect(driver, 'あなたの勝利！');
+  // 相手の勝利
+  await testExistEffect(driver, 'ラビィの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
@@ -990,16 +989,10 @@ Future<void> test47_3(
   await tapMove(driver, me, 'ダブルウイング', false);
   // カイリューのHP65
   await inputRemainHP(driver, me, '65');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('9');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('0');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('6');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('68');
   // カイリューのゴツゴツメット
   await addEffect(driver, 2, op, 'ゴツゴツメット');
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('68');
   await driver.tap(find.text('OK'));
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', true);
@@ -1363,10 +1356,10 @@ Future<void> test47_5(
   await setCriticalCount(driver, me, 1);
   // ガブリアスのHP0
   await inputRemainHP(driver, me, '0');
-  await driver.tap(find.byValueKey('DamageIndicateTextField'));
-  await driver.enterText('13');
   // ガブリアスのさめはだ
   await addEffect(driver, 2, op, 'さめはだ');
+  await driver.tap(find.byValueKey('DamageIndicateTextField'));
+  await driver.enterText('13');
   await driver.tap(find.text('OK'));
   // ガブリアスひんし->サーフゴーに交代
   await changePokemon(driver, op, 'サーフゴー', false);
@@ -2253,8 +2246,6 @@ Future<void> test49_2(
 
   // カイリュー->ウルガモスに交代
   await changePokemon(driver, op, 'ウルガモス', true);
-  // ロトムのトリック
-  await tapMove(driver, me, 'トリック', false);
   // ロトムのボルトチェンジ
   await tapMove(driver, me, 'ボルトチェンジ', false);
   // ウルガモスのHP40
@@ -2678,9 +2669,6 @@ Future<void> test50_1(
   // ドラパルトのみがわり
   await tapMove(driver, op, 'みがわり', true);
   await tapSuccess(driver, op);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
-  // ドラパルトのHP1
-  await inputRemainHP(driver, op, '');
   // ターン2へ
   await goTurnPage(driver, turnNum++);
 
@@ -3215,10 +3203,7 @@ Future<void> test50_4(
   await tapMove(driver, op, 'だいちのちから', true);
   // パーモットのHP1
   await inputRemainHP(driver, op, '1');
-  // ターン2へ
-  await goTurnPage(driver, turnNum++);
-
-  // アチゲータのきあいのタスキ
+  // パーモットのきあいのタスキ
   await addEffect(driver, 2, me, 'きあいのタスキ');
   await driver.tap(find.text('OK'));
   // ターン2へ
@@ -3289,7 +3274,7 @@ Future<void> test50_4(
   // アチゲータのHP136
   await inputRemainHP(driver, op, '');
   // ノココッチのオボンのみ
-  await addEffect(driver, 4, op, 'オボンのみ');
+  await addEffect(driver, 3, op, 'オボンのみ');
   await driver.tap(find.text('OK'));
   // ターン8へ
   await goTurnPage(driver, turnNum++);

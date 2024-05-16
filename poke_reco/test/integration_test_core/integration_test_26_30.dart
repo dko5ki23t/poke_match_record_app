@@ -2915,7 +2915,6 @@ Future<void> test30_3(
   await tapMove(driver, op, 'フレアドライブ', true);
   // オドリドリのHP0
   await inputRemainHP(driver, op, '0');
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
   // ウインディのHP20
   await inputRemainHP(driver, op, '20');
   // ウインディのいのちのたま
@@ -2940,6 +2939,8 @@ Future<void> test30_3(
 
   // あいて降参
   await driver.tap(find.byValueKey('BattleActionCommandSurrenderOpponent'));
+  // あなたの勝利
+  await testExistEffect(driver, 'あなたの勝利！');
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
