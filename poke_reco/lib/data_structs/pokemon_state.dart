@@ -652,7 +652,7 @@ class PokemonState extends Equatable implements Copyable {
       if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.fly;
       if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.fly;
       if (ailments(findIdx).extraArg1 == 3) {
-        type2 = type1; // TODO:コピーされる？
+        type2 = type1;
         type1 = PokeType.fly;
       }
       ailmentsRemoveAt(findIdx);

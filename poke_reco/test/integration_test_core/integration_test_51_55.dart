@@ -209,15 +209,17 @@ Future<void> test51_2(
   await inputRemainHP(driver, me, '73');
   // ブースターに交代
   await changePokemon(driver, me, 'ブースター', false);
-  // TODO: みがわりが現れない
+  // TODO: みがわりが「状態」欄に現れない
   // ロトムのボルトチェンジ
   await tapMove(driver, op, 'ボルトチェンジ', true);
-  // モトトカゲのHP109
+  await driver.tap(find.byValueKey('SubstituteInputOpponent'));
+  // ブースターのHP141
   await inputRemainHP(driver, op, '');
   // ミミッキュに交代
   await changePokemon(driver, op, 'ミミッキュ', false);
   // ターン2へ
   await goTurnPage(driver, turnNum++);
+  // TODO:かえんだまが発動してまう
 
   // ミミッキュ->ロトムに交代
   await changePokemon(driver, op, 'ロトム(ウォッシュロトム)', true);
@@ -252,10 +254,9 @@ Future<void> test51_2(
   await tapMove(driver, me, 'フレアドライブ', false);
   // ミミッキュのHP0
   await inputRemainHP(driver, me, '0');
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
-  // TODO: 反動ダメージが反映されない
   // ブースターのHP87
   await inputRemainHP(driver, me, '87');
+  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
   // ミミッキュひんし->ドドゲザンに交代
   await changePokemon(driver, op, 'ドドゲザン', false);
   // ターン6へ

@@ -2513,7 +2513,6 @@ Future<void> test10_1(
   await driver.tap(find.byType('FloatingActionButton'));
   await testExistAnyWidgets(
       find.byValueKey('BattleBasicListViewBattleName'), driver);
-  // TODO: トリックの入力欄キツキツ
   // 基本情報を入力
   await inputBattleBasicInfo(
     driver,

@@ -1047,21 +1047,21 @@ class PokeDB {
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
         map[moveColumnPP],
-        map[moveColumnIsDirect] != '0',
-        map[moveColumnIsSound] != '0',
-        map[moveColumnIsDrain] != '0',
-        map[moveColumnIsPunch] != '0',
-        map[moveColumnIsWave] != '0',
-        map[moveColumnIsDance] != '0',
-        map[moveColumnIsRecoil] != '0',
-        map[moveColumnIsAdditionalEffect] != '0',
-        map[moveColumnIsAdditionalEffect2] != '0',
-        map[moveColumnIsBite] != '0',
-        map[moveColumnIsCut] != '0',
-        map[moveColumnIsWind] != '0',
-        map[moveColumnIsPowder] != '0',
-        map[moveColumnIsBullet] != '0',
-        map[moveColumnSuccessWithProtect] != '0',
+        map[moveColumnIsDirect] != 0,
+        map[moveColumnIsSound] != 0,
+        map[moveColumnIsDrain] != 0,
+        map[moveColumnIsPunch] != 0,
+        map[moveColumnIsWave] != 0,
+        map[moveColumnIsDance] != 0,
+        map[moveColumnIsRecoil] != 0,
+        map[moveColumnIsAdditionalEffect] != 0,
+        map[moveColumnIsAdditionalEffect2] != 0,
+        map[moveColumnIsBite] != 0,
+        map[moveColumnIsCut] != 0,
+        map[moveColumnIsWind] != 0,
+        map[moveColumnIsPowder] != 0,
+        map[moveColumnIsBullet] != 0,
+        map[moveColumnSuccessWithProtect] != 0,
       );
     }
 
@@ -1111,7 +1111,7 @@ class PokeDB {
         map[buffDebuffColumnEnglishName],
         map[buffDebuffColumnColor],
         map[buffDebuffColumnTurns],
-        map[buffDebuffColumnIsHidden] != '0',
+        map[buffDebuffColumnIsHidden] != 0,
         map[buffDebuffColumnEffectID],
         map[buffDebuffColumnEffectArg1],
         map[buffDebuffColumnEffectArg2],
@@ -1668,7 +1668,6 @@ class PokeDB {
     await _prepareMyPokemonDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$myPokemonColumnId=?';
     for (final e in pokemons.values) {
       await myPokemonDb.update(
@@ -1859,7 +1858,6 @@ class PokeDB {
     await _preparePartyDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$partyColumnId=?';
     for (final e in parties.values) {
       await partyDb.update(
@@ -1955,7 +1953,6 @@ class PokeDB {
     await _prepareBattleDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$battleColumnId=?';
     for (final e in battles.values) {
       await battleDb.update(

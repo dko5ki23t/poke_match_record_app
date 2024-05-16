@@ -96,7 +96,7 @@ class Guide {
         return StatusInfoPageIndex.real;
       case moveDamagedToStatus:
         // TODO: この時点で努力値等を反映するのかどうかとか
-        // TODO! せいかく補正込みの値がargsに入っているため、そのまま代入するのは間違い？
+        // ※せいかく補正込みの値がargsに入っていることに注意
         opponentState.minStats[StatIndex.values[args[0]]].real = args[1];
         opponentState.maxStats[StatIndex.values[args[0]]].real = args[2];
         return StatusInfoPageIndex.real;

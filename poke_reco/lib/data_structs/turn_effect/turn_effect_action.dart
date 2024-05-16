@@ -255,6 +255,9 @@ enum CommandWidgetTemplate {
   /// 自身の残りHPを入力
   inputMyHP,
 
+  /// 自身の残りHPを入力(HP情報はextraArg2のみに保存)
+  inputMyHP2,
+
   /// 失敗(入力不可)
   fail,
 
@@ -344,6 +347,7 @@ extension ImmediatelyValid on CommandWidgetTemplate {
       case CommandWidgetTemplate.selectMyFaintingPokemons:
       case CommandWidgetTemplate.inputYourHP:
       case CommandWidgetTemplate.inputMyHP:
+      case CommandWidgetTemplate.inputMyHP2:
       case CommandWidgetTemplate.selectMove:
       case CommandWidgetTemplate.selectAcquiringMove:
       case CommandWidgetTemplate.selectYourAcquiringMove:
@@ -896,10 +900,14 @@ class TurnEffectAction extends TurnEffect {
     bool useLargerAC = false;
     // ダメージ計算時、テラスタルまたはステラの補正がかかったか
     bool isTeraStellarHosei = false;
-    // まるくなる状態の連続保持回数、まるくなる状態(一旦)解除
+    // まるくなる状態の連続保持回数取得、まるくなる状態(一旦)解除
     final curl = myState.ailmentsWhere((e) => e.id == Ailment.curl);
     int curlCount = curl.isEmpty ? 0 : curl.first.extraArg1;
     myState.ailmentsRemoveWhere((e) => e.id == Ailment.curl);
+    // れんぞくぎりの連続成功回数取得、(一旦)解除
+    final furyCutter = myState.hiddenBuffs.whereByID(BuffDebuff.furyCutter);
+    int furyCutterCount = furyCutter.isEmpty ? 0 : furyCutter.first.extraArg1;
+    myState.hiddenBuffs.removeAllByID(BuffDebuff.furyCutter);
 
     {
       Move replacedMove = getReplacedMove(move, myState); // 必要に応じてわざの内容変更
@@ -1644,10 +1652,13 @@ class TurnEffectAction extends TurnEffect {
             targetState.ailmentsAdd(Ailment(Ailment.confusion), state);
             break;
           case 120: // 当てるたびに威力が2倍ずつ増える。最大160
-            // TODO: 計算間違ってない？
-            if (myState.lastMove?.id == replacedMove.id) {
+            for (int i = 0; i < furyCutterCount; i++) {
               movePower[0] = movePower[0]! * 2;
             }
+            furyCutterCount++;
+            myState.hiddenBuffs.add(
+                pokeData.buffDebuffs[BuffDebuff.furyCutter]!.copy()
+                  ..extraArg1 = furyCutterCount);
             if (movePower[0]! > 160) movePower[0] = 160;
             break;
           case 121: // 性別が異なる場合、メロメロ状態にする
@@ -3402,7 +3413,6 @@ class TurnEffectAction extends TurnEffect {
             ignoreAbility = true;
             break;
           case 412: // 相手のこうげき・とくこう1段階ずつ下げる。相手の回避率、まもるに関係なく必ず当たる
-            //TODO
             targetState.addStatChanges(targetState == myState, 0, -1, myState,
                 myFields: yourFields,
                 yourFields: myFields,
@@ -4441,7 +4451,7 @@ class TurnEffectAction extends TurnEffect {
     PokemonState targetState = yourState;
     PlayerType targetPlayerType = yourPlayerType;
     switch (replacedMove.target) {
-      case Target.specificMove: // TODO:不定、わざによって異なる のろいとかカウンターとか
+      case Target.specificMove: // 不定、わざによって異なる のろいとかカウンターとか
         break;
       case Target.selectedPokemonMeFirst: // 選択した自分以外の場にいるポケモン
       // (現状、さきどりとダイマックスわざのみ。SVで使用不可のため考慮しなくて良さそう)
@@ -5833,33 +5843,6 @@ class TurnEffectAction extends TurnEffect {
     required CommandPagesController controller,
     required AppLocalizations loc,
   }) {
-    // TODO
-//    if (!isSuccess && actionFailure.id != ActionFailure.confusion) {
-//
-//      return [Container()];
-//    }
-
-//    if (!isSuccess && actionFailure.id == ActionFailure.confusion) {
-//      return DamageIndicateRow(
-//        playerType == PlayerType.me ? ownPokemon : opponentPokemon,
-//        hpController2,
-//        playerType == PlayerType.me,
-//        onFocus,
-//        (value) {
-//          if (playerType == PlayerType.me) {
-//            extraArg1[continuousCount] = ownPokemonState.remainHP - (int.tryParse(value)??0);
-//          }
-//          else {
-//            extraArg2[continuousCount] = opponentPokemonState.remainHPPercent - (int.tryParse(value)??0);
-//          }
-//          appState.editingPhase[phaseIdx] = true;
-//          onFocus();
-//        },
-//        playerType == PlayerType.me ? extraArg1[continuousCount] : extraArg2[continuousCount],
-//        isInput, loc: loc,
-//      );
-//    }
-
     List<Tuple3<CommandWidgetTemplate, String, dynamic>> templateTitles = [];
     bool fixTemplates = false;
 
@@ -6042,12 +6025,10 @@ class TurnEffectAction extends TurnEffect {
                 null));
             break;
           case 46: // わざを外すと使用者に、使用者の最大HP1/2のダメージ
-            // TODO
-//            if (moveHits[continuousCount] == MoveHit.notHit ||
-//                moveHits[continuousCount] == MoveHit.fail) {
-            templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP,
-                replacedMove.displayName, null));
-//            }
+            if (!isNormallyHit()) {
+              templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP,
+                  replacedMove.displayName, null));
+            }
             break;
           case 106: // もちものを盗む
             templateTitles.add(Tuple3(
@@ -6182,14 +6163,14 @@ class TurnEffectAction extends TurnEffect {
           case 263: // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)
           case 475: // こんらんさせる(確率)。わざを外すと使用者に、使用者の最大HP1/2のダメージ
           case 500: // 与えたダメージの半分だけ回復する。両者のこおり状態を消す。相手をやけど状態にする(確率)
+            templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP2,
+                replacedMove.displayName, null));
             templateTitles.add(Tuple3(CommandWidgetTemplate.effect1Switch2,
                 loc.battleAdditionalEffect, [
               _getMoveEffectText(
                   replacedMove.effect.id, yourState.pokemon.omittedName, loc),
               replacedMove,
             ]));
-            templateTitles.add(Tuple3(CommandWidgetTemplate.inputMyHP,
-                replacedMove.displayName, null));
             break;
           case 274: // 相手をやけど状態にする(確率)。相手をひるませる(確率)。
           case 275: // 相手をこおり状態にする(確率)。相手をひるませる(確率)。
@@ -6752,6 +6733,40 @@ class TurnEffectAction extends TurnEffect {
             ),
           ],
         );
+      case CommandWidgetTemplate.inputMyHP2:
+        int initialNum = playerType == PlayerType.me
+            ? myState.remainHP
+            : myState.remainHPPercent;
+        return Column(
+          children: [
+            Expanded(
+              flex: 1,
+              child: Container(),
+            ),
+            Expanded(
+              flex: 6,
+              child: NumberInputButtons(
+                key: Key(
+                    'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                initialNum: initialNum,
+                onConfirm: (remain) {
+                  if (playerType == PlayerType.me) {
+                    extraArg2 = myState.remainHP - remain;
+                  } else {
+                    extraArg2 = myState.remainHPPercent - remain;
+                  }
+                  onNext();
+                  // 統合テスト作成用
+                  print("// ${myState.pokemon.omittedName}のHP$remain\n"
+                      "await inputRemainHP(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${initialNum != remain ? remain : ""}');\n");
+                },
+                prefixText: loc.battleRemainHP(myState.pokemon.omittedName),
+                suffixText: playerType == PlayerType.opponent ? '%' : null,
+                enabled: isNormallyHit(),
+              ),
+            ),
+          ],
+        );
       case CommandWidgetTemplate.fail:
         return Column(
           children: [
@@ -7026,7 +7041,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 2,
+              flex: 3,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
                 initialSwitchValue:
@@ -7051,7 +7066,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 5,
+              flex: 4,
               child: Container(),
             ),
           ],
@@ -7060,7 +7075,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 2,
+              flex: 3,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
                 initialSwitchValue:
@@ -7094,7 +7109,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 2,
+              flex: 4,
               child: Container(),
             ),
           ],
@@ -7103,7 +7118,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 2,
+              flex: 3,
               child: SwitchSelectItemInput(
                 switchText: extra[0] as String,
                 initialSwitchValue:
@@ -7129,7 +7144,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 5,
+              flex: 4,
               child: Container(),
             ),
           ],
@@ -7138,7 +7153,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 1,
+              flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
@@ -7152,7 +7167,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 6,
+              flex: 5,
               child: Container(),
             ),
           ],
@@ -7161,7 +7176,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 1,
+              flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
@@ -7175,7 +7190,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 6,
+              flex: 5,
               child: Container(),
             ),
           ],
@@ -7184,7 +7199,7 @@ class TurnEffectAction extends TurnEffect {
         return Column(
           children: [
             Expanded(
-              flex: 1,
+              flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
                 onItemSelected: (item) {
@@ -7196,7 +7211,7 @@ class TurnEffectAction extends TurnEffect {
               ),
             ),
             Expanded(
-              flex: 6,
+              flex: 5,
               child: Container(),
             ),
           ],

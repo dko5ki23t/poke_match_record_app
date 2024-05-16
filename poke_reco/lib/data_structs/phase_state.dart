@@ -513,7 +513,8 @@ class PhaseState extends Equatable implements Copyable {
           }
           if (prevAction != null &&
               prevAction.isNormallyHit() &&
-              prevAction.moveEffectivenesses != MoveEffectiveness.noEffect) {
+              prevAction.moveEffectivenesses != MoveEffectiveness.noEffect &&
+              !prevAction.failWithProtect(state)) {
             // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後

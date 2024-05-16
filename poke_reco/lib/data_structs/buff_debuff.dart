@@ -608,6 +608,9 @@ class BuffDebuff extends Equatable implements Copyable {
   /// ステラ補正を使用したタイプのフラグ(隠しステータス。交代でも消えない)
   static const int stellarUsed = 200;
 
+  /// れんぞくぎり連続成功回数(隠しステータス)
+  static const int furyCutter = 201;
+
   /// ID
   final int id;
 
