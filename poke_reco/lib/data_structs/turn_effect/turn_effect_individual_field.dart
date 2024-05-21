@@ -293,14 +293,21 @@ class TurnEffectIndividualField extends TurnEffect {
       case IndiFieldEffect.spikes1: // まきびし
       case IndiFieldEffect.spikes2:
       case IndiFieldEffect.spikes3:
-      case IndiFieldEffect.futureAttack: // みらいにこうげき
       case IndiFieldEffect.stealthRock: // ステルスロック
+        if (isMe) {
+          myState.remainHP -= extraArg1;
+        } else {
+          myState.remainHPPercent -= extraArg1;
+        }
+        break;
+      case IndiFieldEffect.futureAttack: // みらいにこうげき
       case IndiFieldEffect.wish: // ねがいごと
         if (isMe) {
           myState.remainHP -= extraArg1;
         } else {
           myState.remainHPPercent -= extraArg1;
         }
+        myFields.removeWhere((e) => e.id == indiFieldEffectID);
         break;
       case IndiFieldEffect.healingWish: // いやしのねがい
         if (isMe) {
@@ -377,12 +384,9 @@ class TurnEffectIndividualField extends TurnEffect {
   /// prevAction: 直前の行動
   /// ```
   @override
-  void setAutoArgs(
-    PokemonState myState,
-    PokemonState yourState,
-    PhaseState state,
-    TurnEffectAction? prevAction,
-  ) {
+  void setAutoArgs(PokemonState myState, PokemonState yourState,
+      PhaseState state, TurnEffectAction? prevAction,
+      {IndividualField? indiField}) {
     extraArg1 = 0;
     bool isMe = playerType == PlayerType.me;
 
@@ -406,6 +410,11 @@ class TurnEffectIndividualField extends TurnEffect {
               : (100 * rate).floor();
           return;
         }
+      case IndiFieldEffect.wish: // ねがいごと
+        if (indiField != null) {
+          extraArg1 = -(indiField.extraArg1);
+        }
+        return;
       default:
         return;
     }

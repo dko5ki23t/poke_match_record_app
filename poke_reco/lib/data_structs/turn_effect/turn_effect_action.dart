@@ -159,30 +159,33 @@ class ActionFailure extends Equatable {
   /// サイズ
   static const int size = 11;
 
-  static const Map<int, Tuple2<String, String>> _displayNameMap = {
-    0: Tuple2('うまく決まらなかった', 'Move is failed'),
-    1: Tuple2('わざの反動', 'Need recharge of move'),
-    2: Tuple2('ねむり', 'Sleep'),
-    3: Tuple2('こおり', 'Freeze'),
-    4: Tuple2('ひるみ', 'Flinch'),
-    5: Tuple2('ちょうはつ', 'Taunt'),
-    6: Tuple2('こんらん', 'Confusion'),
-    7: Tuple2('まひ', 'Paralysis'),
-    8: Tuple2('メロメロ', 'Attract'),
-    9: Tuple2('相手にこうげきを防がれた', 'Prevented'),
-    10: Tuple2('その他', 'Others'),
+  static const Map<int, Tuple3<String, String, int>> _displayNamePriorityMap = {
+    0: Tuple3('うまく決まらなかった', 'Move is failed', 0),
+    1: Tuple3('わざの反動', 'Need recharge of move', 2),
+    2: Tuple3('ねむり', 'Sleep', 2),
+    3: Tuple3('こおり', 'Freeze', 1),
+    4: Tuple3('ひるみ', 'Flinch', 2),
+    5: Tuple3('ちょうはつ', 'Taunt', 1),
+    6: Tuple3('こんらん', 'Confusion', 1),
+    7: Tuple3('まひ', 'Paralysis', 1),
+    8: Tuple3('メロメロ', 'Attract', 1),
+    9: Tuple3('相手にこうげきを防がれた', 'Prevented', 0),
+    10: Tuple3('その他', 'Others', 0),
   };
 
   /// 表示名
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
-        return _displayNameMap[id]!.item1;
+        return _displayNamePriorityMap[id]!.item1;
       case Language.english:
       default:
-        return _displayNameMap[id]!.item2;
+        return _displayNamePriorityMap[id]!.item2;
     }
   }
+
+  /// 優先度(失敗の原因が複数ある場合にどれを原因とするかを決めるための数値)
+  int get priority => _displayNamePriorityMap[id]!.item3;
 
   const ActionFailure(this.id);
 
@@ -374,8 +377,8 @@ class TurnEffectAction extends TurnEffect {
   /// 行動の成功/失敗
   bool isSuccess = true;
 
-  /// 行動失敗の原因(削除候補)
-  ActionFailure actionFailure = ActionFailure(0);
+  /// 行動失敗の原因
+  ActionFailure _actionFailure = ActionFailure(ActionFailure.none);
 
   /// こうげきが命中した回数
   int hitCount = 1;
@@ -440,7 +443,7 @@ class TurnEffectAction extends TurnEffect {
         teraType,
         move,
         isSuccess,
-        actionFailure,
+        _actionFailure,
         hitCount,
         criticalCount,
         moveEffectivenesses,
@@ -464,7 +467,7 @@ class TurnEffectAction extends TurnEffect {
     ..teraType = teraType
     ..move = move.copy()
     ..isSuccess = isSuccess
-    ..actionFailure = actionFailure
+    .._actionFailure = _actionFailure
     ..hitCount = hitCount
     ..criticalCount = criticalCount
     ..moveEffectivenesses = moveEffectivenesses
@@ -480,6 +483,15 @@ class TurnEffectAction extends TurnEffect {
     ..moveType = moveType
     ..isFirst = isFirst
     .._isValid = _isValid;
+
+  /// 行動失敗の原因
+  ActionFailure get actionFailure => _actionFailure;
+  set actionFailure(af) {
+    // 原因の優先度が元より低くないなら更新
+    if (af.id == 0 || af.priority >= _actionFailure.priority) {
+      _actionFailure = af;
+    }
+  }
 
   /// 表示名
   @override
@@ -765,9 +777,6 @@ class TurnEffectAction extends TurnEffect {
         !myState.hiddenBuffs.containsByID(BuffDebuff.chargingMove)) {
       encore.first.turns++;
     }
-    // ちょうはつのカウントインクリメント
-    var taunt = myState.ailmentsWhere((e) => e.id == Ailment.taunt);
-    if (taunt.isNotEmpty) taunt.first.extraArg1++;
 
     // こんらんによる自傷
     if (actionFailure.id == ActionFailure.confusion) {
@@ -1978,7 +1987,10 @@ class TurnEffectAction extends TurnEffect {
                 moveId: replacedMove.id);
             break;
           case 176: // ちょうはつ状態にする
-            targetState.ailmentsAdd(Ailment(Ailment.taunt), state);
+            targetState.ailmentsAdd(
+                Ailment(Ailment.taunt)
+                  ..extraArg1 = (isFirst != null && !isFirst!) ? 1 : 0,
+                state);
             break;
           case 177: // てだすけ状態にする
             // シングルバトルでは失敗する
@@ -2011,7 +2023,10 @@ class TurnEffectAction extends TurnEffect {
             break;
           case 180: // 使用者の場に「ねがいごと」を発生させる
             if (myFields.where((e) => e.id == IndividualField.wish).isEmpty) {
-              myFields.add(IndividualField(IndividualField.wish));
+              myFields.add(IndividualField(IndividualField.wish)
+                ..extraArg1 = playerType == PlayerType.me
+                    ? (myState.pokemon.h.real / 2).floor()
+                    : 50);
             }
             break;
           case 181: // 使用者の手持ちポケモンの技をランダムに1つ使う(SV使用不可のため処理なし)
@@ -8091,7 +8106,7 @@ class TurnEffectAction extends TurnEffect {
     teraType = PokeType.unknown;
     move = Move.none();
     isSuccess = true;
-    actionFailure = ActionFailure(0);
+    _actionFailure = ActionFailure(ActionFailure.none);
     hitCount = 1;
     criticalCount = 0;
     moveEffectivenesses = MoveEffectiveness.normal;
@@ -8114,7 +8129,7 @@ class TurnEffectAction extends TurnEffect {
     teraType = PokeType.unknown;
     move = Move.none();
     isSuccess = true;
-    actionFailure = ActionFailure(0);
+    _actionFailure = ActionFailure(ActionFailure.none);
     hitCount = 1;
     criticalCount = 0;
     moveEffectivenesses = MoveEffectiveness.normal;
@@ -8224,7 +8239,7 @@ class TurnEffectAction extends TurnEffect {
     // isSuccess
     turnEffectAction.isSuccess = int.parse(turnMoveElements.removeAt(0)) != 0;
     // actionFailure
-    turnEffectAction.actionFailure =
+    turnEffectAction._actionFailure =
         ActionFailure(int.parse(turnMoveElements.removeAt(0)));
     // hitCount
     turnEffectAction.hitCount = int.parse(turnMoveElements.removeAt(0));
@@ -8347,7 +8362,7 @@ class TurnEffectAction extends TurnEffect {
     ret += isSuccess ? '1' : '0';
     ret += split1;
     // actionFailure
-    ret += actionFailure.id.toString();
+    ret += _actionFailure.id.toString();
     ret += split1;
     // hitCount
     ret += hitCount.toString();

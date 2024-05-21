@@ -60,7 +60,7 @@ class Ailment extends Equatable implements Copyable {
   /// ほろびのうた
   static const int perishSong = 18;
 
-  /// ちょうはつ(3ターンの間へんかわざ使用不可)  extraArg1に、ちょうはつ状態になってからのわざ使用回数を記録
+  /// ちょうはつ(3ターンの間へんかわざ使用不可)  行動後にちょうはつを受けた場合(=4ターン)はextraArg=1
   static const int taunt = 19;
 
   /// いちゃもん
@@ -223,7 +223,7 @@ class Ailment extends Equatable implements Copyable {
 //    16: Tuple4('あくむ', 'Nightmare', PokeTypeColor.evil, 0),
     17: Tuple4('バインド', 'Partially Trapped', PokeTypeColor.evil, 5),
     18: Tuple4('ほろびのうた', 'Perish Song', PokeTypeColor.evil, 3),
-    19: Tuple4('ちょうはつ', 'Taunt', PokeTypeColor.ghost, 4),
+    19: Tuple4('ちょうはつ', 'Taunt', PokeTypeColor.ghost, 3),
     20: Tuple4('いちゃもん', 'Torment', PokeTypeColor.evil, 0),
     22: Tuple4('しおづけ', 'Salt Cure', PokeTypeColor.rock, 0),
     23: Tuple4('かなしばり', 'Disable', PokeTypeColor.ghost, 5),
@@ -297,7 +297,7 @@ class Ailment extends Equatable implements Copyable {
   String get displayName {
     final pokeData = PokeDB();
     String extraStr = '';
-    if (_nameColorTurnMap[id]!.item4 > 0) extraStr = ' ($turns/?)';
+    if (_nameColorTurnMap[id]!.item4 > 0) extraStr = ' ($turns/$maxTurn)';
     switch (id) {
       case Ailment.badPoison:
         extraStr = ' (${(turns + 1).clamp(1, 15)}';
@@ -312,7 +312,8 @@ class Ailment extends Equatable implements Copyable {
         extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/4 ~ 5)';
         break;
       case Ailment.encore:
-        extraStr = '(${pokeData.moves[extraArg1]!.displayName}) ($turns/3)';
+        extraStr =
+            '(${pokeData.moves[extraArg1]!.displayName}) ($turns/$maxTurn)';
         break;
       case Ailment.partiallyTrapped:
         extraStr = ' ($turns/${extraArg1 % 10 == 7 ? '7' : '4 ~ 5'})';
@@ -373,7 +374,7 @@ class Ailment extends Equatable implements Copyable {
             return pokemonState.isNotAttackedDamaged &&
                 pokemonState.currentAbility.id != 90;
           case encore:
-            return turns >= 3;
+            return turns >= maxTurn;
           case lockOn:
           case perishSong:
           case taunt:

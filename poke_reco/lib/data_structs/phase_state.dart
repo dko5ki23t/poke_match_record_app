@@ -68,6 +68,10 @@ class PhaseState extends Equatable implements Copyable {
       canZorua || canZoroark || canZoruaHisui || canZoroarkHisui;
 
   set weather(Weather w) {
+    // 天気の種類が同じなら何もしない
+    if (_weather.id == w.id) {
+      return;
+    }
     Weather.processWeatherEffect(
         _weather,
         w,
@@ -311,7 +315,8 @@ class PhaseState extends Equatable implements Copyable {
                       player: player,
                       timing: timing,
                       indiFieldEffectID: IndiFieldEffect.getIdFromIndiField(f));
-                  adding.setAutoArgs(myState, yourState, state, prevAction);
+                  adding.setAutoArgs(myState, yourState, state, prevAction,
+                      indiField: f);
                   ret.add(adding);
                 }
               }
@@ -929,7 +934,8 @@ class PhaseState extends Equatable implements Copyable {
                     timing: timing,
                     indiFieldEffectID:
                         IndiFieldEffect.getIdFromIndiField(field));
-                adding.setAutoArgs(myState, yourState, state, prevAction);
+                adding.setAutoArgs(myState, yourState, state, prevAction,
+                    indiField: field);
                 if (ret
                     .where((element) =>
                         element is TurnEffectIndividualField &&

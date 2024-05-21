@@ -638,6 +638,11 @@ class PokemonState extends Equatable implements Copyable {
           // ねむりのターン経過&アンコールは行動時のみ
           e.turns++;
         }
+        if (e.id == Ailment.taunt && e.extraArg1 > 0) {
+          // 行動後に受けたちょうはつの場合は経過ターン数を増やさない
+          e.turns = 0;
+          e.extraArg1 = 0;
+        }
       }
     }
     // ひるみ/ちゅうもくのまと/まもる状態/そうでんは解除

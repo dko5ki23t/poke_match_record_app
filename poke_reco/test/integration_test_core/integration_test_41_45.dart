@@ -231,7 +231,6 @@ Future<void> test41_2(
   await inputTerastal(driver, me, '');
   // ハルクジラのはらだいこ
   await tapMove(driver, me, 'はらだいこ', false);
-  // TODO はらだいこ後の体力がおかしい
   // サーフゴーのゴールドラッシュ
   await tapMove(driver, op, 'ゴールドラッシュ', true);
   // ハルクジラのHP54
@@ -266,8 +265,6 @@ Future<void> test41_2(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: ターン1のボルトチェンジ後のシャドーボールのダメージがエクスレッグに適用されない
-// TODO: ゆきのターン経過計算がおかしい
 /// タイカイデン戦3
 Future<void> test41_3(
   FlutterDriver driver,
@@ -770,7 +767,6 @@ Future<void> test42_2(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: ちょうはつ終了のタイミングがおかしい
 /// ギャラドス戦3
 Future<void> test42_3(
   FlutterDriver driver,
@@ -1201,8 +1197,6 @@ Future<void> test43_1(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO: ねがいごとが消費されない
-// TODO: まもるされたときにまひすると挙動がおかしい
 /// ヘラクロス戦2
 Future<void> test43_2(
   FlutterDriver driver,
@@ -1865,7 +1859,6 @@ Future<void> test44_1(
   await driver.tap(find.byValueKey('RegisterBattleSave'));
 }
 
-// TODO:アンコール解けるタイミングがおかしい
 /// カイリュー戦2
 Future<void> test44_2(
   FlutterDriver driver,
@@ -2056,6 +2049,8 @@ Future<void> test44_2(
   await tapMove(driver, me, 'じしん', false);
   // コノヨザルのHP15
   await inputRemainHP(driver, me, '15');
+  // ちょうはつ終了の確認
+  await testExistEffect(driver, 'ちょうはつ終了');
   // ターン17へ
   await goTurnPage(driver, turnNum++);
 
@@ -3159,7 +3154,6 @@ Future<void> test45_2(
   await changePokemon(driver, op, 'アーマーガア', false);
   // マフィティフのくらいつく
   await tapMove(driver, me, 'くらいつく', false);
-  // TODO:ここ、アーマーガアにダメージ入ってない
   // クエスパトラのHP30
   await inputRemainHP(driver, me, '30');
   // クエスパトラのたべのこし

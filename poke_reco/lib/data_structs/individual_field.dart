@@ -35,7 +35,7 @@ class IndividualField extends Equatable implements Copyable {
   /// みらいにこうげき(TODO? このダメージによりもちものやとくせいは発動し得るが、ユーザが選択できる候補には入れていない)
   static const int futureAttack = 8;
 
-  /// ねがいごと
+  /// ねがいごと(extraArg1に回復量を保持)
   static const int wish = 10;
 
   /// リフレクター(extraArg1に持続ターン数を保持(わかる範囲で))
