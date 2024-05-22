@@ -809,7 +809,8 @@ class BuffDebuffList extends Equatable implements Copyable {
   List<Object?> get props => [list];
 
   @override
-  BuffDebuffList copy() => BuffDebuffList()..list = [...list];
+  BuffDebuffList copy() =>
+      BuffDebuffList()..list = [for (final bd in list) bd.copy()];
 
   /// 補正によるステータス変更を行う
   /// ```

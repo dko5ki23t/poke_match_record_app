@@ -494,6 +494,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
     _isMyWin = state.isMyWin;
     _isYourWin = state.isYourWin;
     // わざの反動等で両者同時に倒れる場合あり→このTurnEffectの発動主が勝利とする
+    // TODO:いのちがけ等
     if (_isMyWin && _isYourWin) {
       if (playerType == PlayerType.me) {
         _isYourWin = false;

@@ -507,7 +507,6 @@ Future<void> test26_3(
 
   // 内容保存
   await driver.tap(find.byValueKey('RegisterBattleSave'));
-  //! TODO: 保存時、引き分けの表示になってしまっている
 }
 
 /// ハラバリー戦4
@@ -907,11 +906,12 @@ Future<void> test27_2(
 
   // ジバコイル->モロバレルに交代
   await changePokemon(driver, op, 'モロバレル', true);
+  // パラメータ編集
+  await editPokemonState(driver, 'モロバレル/ほうじ', null, 'さいせいりょく', null);
   // シャリタツのハイドロポンプ
   await tapMove(driver, me, 'ハイドロポンプ', false);
   // モロバレルのHP40
   await inputRemainHP(driver, me, '40');
-  // TODO: パラメータ編集により自動で追加されてしまっているが、なくしたい
   // くろいヘドロ編集
   await tapEffect(driver, 'くろいヘドロ');
   await driver.tap(find.text('削除'));
@@ -1929,7 +1929,6 @@ Future<void> test28_4(
 
   // コノヨザルのふんどのこぶし
   await tapMove(driver, op, 'ふんどのこぶし', false);
-  // TODO: ふんどのこぶしのダメージ推定おかしい
   // ハカドッグのHP14
   await inputRemainHP(driver, op, '14');
   // ハカドッグのおはかまいり

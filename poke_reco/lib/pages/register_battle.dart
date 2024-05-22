@@ -3,6 +3,7 @@ import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_gameset.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/add_effect_dialog.dart';
@@ -334,11 +335,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
       // TODO?: 入力された値が正しいかチェック
       var battle = widget.battle;
       if (turns.isNotEmpty) {
-        if (turns.last.isMyWin) {
-          battle.isMyWin = true;
-        }
-        if (turns.last.isYourWin) {
-          battle.isYourWin = true;
+        final results = turns.last.phases.whereType<TurnEffectGameset>();
+        if (results.isNotEmpty) {
+          if (results.last.winner == PlayerType.me) {
+            battle.isMyWin = true;
+          } else if (results.last.winner == PlayerType.opponent) {
+            battle.isYourWin = true;
+          }
         }
 /*
         for (var phase in turns[turnNum - 1].phases) {
