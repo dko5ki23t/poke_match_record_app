@@ -597,6 +597,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 .pokemon)) {
                   pokemonTiles.add(
                     ChangePokemonCommandTile(
+                      key: Key(
+                          'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                       myParty.pokemons[i]!,
                       theme,
                       onTap: () {
@@ -635,6 +637,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 if (addedIndex.contains(i)) continue;
                 pokemonTiles.add(
                   ChangePokemonCommandTile(
+                    key: Key(
+                        'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     myParty.pokemons[i]!,
                     theme,
                     onTap: null,

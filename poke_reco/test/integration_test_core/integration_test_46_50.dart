@@ -414,7 +414,7 @@ Future<void> test46_3(
 
   // オドリドリのはねやすめ
   await tapMove(driver, me, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // オドリドリのHP11
   await inputRemainHP(driver, me, '11');
   // サザンドラのあくのはどう
@@ -437,7 +437,7 @@ Future<void> test46_3(
 
   // オドリドリのはねやすめ
   await tapMove(driver, me, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // オドリドリのHP132
   await inputRemainHP(driver, me, '132');
   // サザンドラのあくのはどう
@@ -449,7 +449,7 @@ Future<void> test46_3(
 
   // オドリドリのはねやすめ
   await tapMove(driver, me, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // オドリドリのHP151
   await inputRemainHP(driver, me, '151');
   // サザンドラのあくのはどう
@@ -996,7 +996,7 @@ Future<void> test47_3(
   await driver.tap(find.text('OK'));
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // ターン3へ
@@ -1008,7 +1008,7 @@ Future<void> test47_3(
   await inputRemainHP(driver, me, '95');
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // ターン4へ
@@ -1020,7 +1020,7 @@ Future<void> test47_3(
   await inputRemainHP(driver, me, '95');
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // ボーマンダひんし->ストリンダーに交代
   await changePokemon(driver, me, 'ストリンダー(ハイなすがた)', false);
   // カイリューのHP100
@@ -1047,7 +1047,7 @@ Future<void> test47_3(
   await inputTerastal(driver, op, 'はがね');
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // ストリンダーのばくおんぱ
@@ -1061,7 +1061,7 @@ Future<void> test47_3(
 
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP95
   await inputRemainHP(driver, op, '95');
   // ストリンダーのギアチェンジ
@@ -1871,7 +1871,7 @@ Future<void> test48_4(
 
   // エーフィのトリック
   await tapMove(driver, me, 'トリック', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
   await driver.enterText('きあいのタスキ');
   await driver.tap(find.descendant(
@@ -2147,7 +2147,7 @@ Future<void> test49_1(
 
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP80
   await inputRemainHP(driver, op, '80');
   // ベラカスのトリックルーム
@@ -2168,7 +2168,7 @@ Future<void> test49_1(
   await changePokemon(driver, me, 'ケケンカニ', true);
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // ターン11へ
@@ -2323,7 +2323,7 @@ Future<void> test49_2(
 
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // ロトムのほうでん
@@ -2736,7 +2736,7 @@ Future<void> test50_1(
   await inputRemainHP(driver, op, '100');
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP188
   await inputRemainHP(driver, me, '188');
   // ターン8へ
@@ -2868,7 +2868,7 @@ Future<void> test50_2(
 
   // フラージェスのスキルスワップ
   await tapMove(driver, op, 'スキルスワップ', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // フラワーベール
   {
     await driver.tap(find.byValueKey('SelectAbilityInputOpponent'));
@@ -2887,10 +2887,10 @@ Future<void> test50_2(
 
   // フラージェスのスキルスワップ
   await tapMove(driver, op, 'スキルスワップ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP188
   await inputRemainHP(driver, me, '188');
   // ターン5へ
@@ -2898,7 +2898,7 @@ Future<void> test50_2(
 
   // フラージェスのスキルスワップ
   await tapMove(driver, op, 'スキルスワップ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // アチゲータのほのおのうず
   await tapMove(driver, me, 'ほのおのうず', false);
   // フラージェスのHP58
@@ -2908,7 +2908,7 @@ Future<void> test50_2(
 
   // フラージェスのスキルスワップ
   await tapMove(driver, op, 'スキルスワップ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // アチゲータのあくび
   await tapMove(driver, me, 'あくび', false);
   // バインド(ダメージ/終了)編集
@@ -2936,7 +2936,7 @@ Future<void> test50_2(
   await changePokemon(driver, me, 'パーモット', true);
   // ミミズズのしっぽきり
   await tapMove(driver, op, 'しっぽきり', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // ミミズズのHP24
   await inputRemainHP(driver, op, '24');
   // ミガルーサに交代
@@ -2951,7 +2951,7 @@ Future<void> test50_2(
   await inputRemainHP(driver, me, '');
   // ミガルーサのみをけずる
   await tapMove(driver, op, 'みをけずる', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // ミガルーサのHP50
   await inputRemainHP(driver, op, '50');
   // ミガルーサのオボンのみ
@@ -2995,10 +2995,10 @@ Future<void> test50_2(
 
   // イキリンコのまねっこ
   await tapMove(driver, me, 'まねっこ', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // TODO: なぜかここ検索してくれない・・・
   // イキリンコのムーンフォース
-  await tapMove(driver, me, 'ムーンフォース', true);
+  await tapMove(driver, me, 'ムーンフォース', true, isSecondary: true);
   // フラージェスのHP0
   await inputRemainHP(driver, me, '0');
   // フラージェスひんし->ミミズズに交代
@@ -3129,7 +3129,7 @@ Future<void> test50_3(
   await inputRemainHP(driver, op, '30');
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP109
   await inputRemainHP(driver, me, '109');
   // ターン6へ
@@ -3143,7 +3143,7 @@ Future<void> test50_3(
   await inputRemainHP(driver, op, '0');
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP140
   await inputRemainHP(driver, me, '140');
   // フローゼルひんし->ソウブレイズに交代
@@ -3227,7 +3227,7 @@ Future<void> test50_4(
   await inputTerastal(driver, op, 'ひこう');
   // カイリューのはねやすめ
   await tapMove(driver, op, 'はねやすめ', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // カイリューのHP100
   await inputRemainHP(driver, op, '100');
   // アチゲータのアンコール
@@ -3281,7 +3281,7 @@ Future<void> test50_4(
 
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP188
   await inputRemainHP(driver, me, '188');
   // ノココッチのストーンエッジ
@@ -3366,7 +3366,7 @@ Future<void> test50_4(
   await inputRemainHP(driver, op, '46');
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP140
   await inputRemainHP(driver, me, '140');
   // ターン17へ
@@ -3385,7 +3385,7 @@ Future<void> test50_4(
       find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP188
   await inputRemainHP(driver, me, '188');
   // ターン19へ
@@ -3491,7 +3491,7 @@ Future<void> test50_5(
   await driver.tap(find.text('OK'));
   // エーフィのトリック
   await tapMove(driver, me, 'トリック', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
   await driver.enterText('ふうせん');
   await driver.tap(find.descendant(
@@ -3581,7 +3581,7 @@ Future<void> test50_5(
   await inputRemainHP(driver, op, '69');
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP163
   await inputRemainHP(driver, me, '163');
   // ターン10へ
@@ -3610,7 +3610,7 @@ Future<void> test50_5(
   await changePokemon(driver, op, 'イルカマン', false);
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP176
   await inputRemainHP(driver, me, '176');
   // ターン12へ
@@ -3644,7 +3644,7 @@ Future<void> test50_5(
   await changePokemon(driver, op, 'ペリッパー', true);
   // エーフィのトリック
   await tapMove(driver, me, 'トリック', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
   await driver.enterText('ラムのみ');
   await driver.tap(find.descendant(
@@ -3698,7 +3698,7 @@ Future<void> test50_6(
 
   // エーフィのトリック
   await tapMove(driver, me, 'トリック', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   await driver.tap(find.byValueKey('SelectItemTextFieldOpponent'));
   await driver.enterText('ゴツゴツメット');
   await driver.tap(find.descendant(
@@ -3819,7 +3819,7 @@ Future<void> test50_6(
 
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP130
   await inputRemainHP(driver, me, '130');
   // カイリューのじしん
@@ -3833,7 +3833,7 @@ Future<void> test50_6(
   await changePokemon(driver, op, 'ハラバリー', true);
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP168
   await inputRemainHP(driver, me, '168');
   // ターン14へ
@@ -3863,7 +3863,7 @@ Future<void> test50_6(
 
   // アチゲータのなまける
   await tapMove(driver, me, 'なまける', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // アチゲータのHP188
   await inputRemainHP(driver, me, '188');
   // ハラバリーのアシッドボム

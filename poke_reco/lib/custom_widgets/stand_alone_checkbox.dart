@@ -431,7 +431,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
             padding: const EdgeInsets.all(4.0),
             child: TextField(
               key: Key(
-                  'BattleActionCommandMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                  'StandAloneMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
               controller: moveSearchTextController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),

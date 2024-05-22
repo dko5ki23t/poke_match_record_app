@@ -227,13 +227,16 @@ Future<void> goTurnPage(FlutterDriver driver, int currentTurnNum) async {
 }
 
 /// わざを選択する
-Future<void> tapMove(FlutterDriver driver, PlayerType playerType,
-    String moveName, bool search) async {
+Future<void> tapMove(
+    FlutterDriver driver, PlayerType playerType, String moveName, bool search,
+    {bool isSecondary = false}) async {
   String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
   if (search) {
     // わざ名検索
-    await driver
-        .tap(find.byValueKey('BattleActionCommandMoveSearch$ownOrOpponent'));
+    final searchKey = isSecondary
+        ? 'StandAloneMoveSearch$ownOrOpponent'
+        : 'BattleActionCommandMoveSearch$ownOrOpponent';
+    await driver.tap(find.byValueKey(searchKey));
     await driver.enterText(moveName);
   }
   // (これキー指定するのは不本意。find.textがうまく動作しない・・・)
@@ -302,6 +305,13 @@ Future<void> addEffect(FlutterDriver driver, int addButtonNo,
   await driver.tap(designatedWidget);
 }
 
+/// わざの選択後、次ボタンを押す
+Future<void> tapMoveNext(FlutterDriver driver, PlayerType playerType) async {
+  String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  await driver.tap(find.byValueKey('StatusMoveNextButton$ownOrOpponent'));
+  await driver.waitUntilNoTransientCallbacks();
+}
+
 /// 効果を示す吹き出しが存在するかチェックする
 Future<void> testExistEffect(FlutterDriver driver, String effectName) async {
   final designatedWidget = find.descendant(
@@ -339,14 +349,15 @@ Future<void> changePokemon(FlutterDriver driver, PlayerType playerType,
     await driver
         .tap(find.byValueKey('BattleActionCommandChange$ownOrOpponent'));
   }
-  if (!await isPresent(find.text(pokemonName), driver)) {
+  final target = find.descendant(
+      matching: find.text(pokemonName),
+      of: find.byValueKey('ChangePokemonTile$ownOrOpponent'));
+  if (!await isPresent(target, driver)) {
     await scrollUntilTappable(
-        driver,
-        find.byValueKey('ChangePokemonListView$ownOrOpponent'),
-        find.text(pokemonName),
+        driver, find.byValueKey('ChangePokemonListView$ownOrOpponent'), target,
         dyScroll: -100);
   }
-  await driver.tap(find.text(pokemonName));
+  await driver.tap(target);
 }
 
 /// 命中のチェックを付ける/外す

@@ -7,11 +7,13 @@ class ChangePokemonCommandTile extends ListTile {
   ChangePokemonCommandTile(
     Pokemon pokemon,
     ThemeData theme, {
+    Key? key,
     enabled = true,
     onTap,
     selected = false,
     bool showNetworkImage = false,
   }) : super(
+          key: key,
           dense: true,
           leading: showNetworkImage
               ? Image.network(

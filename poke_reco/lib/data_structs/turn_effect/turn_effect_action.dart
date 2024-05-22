@@ -4593,7 +4593,7 @@ class TurnEffectAction extends TurnEffect {
   /// replacedMoveType: 使用するわざのタイプ(「ものまね」等の、置き換わるわざは置き換え済みのものを渡す)
   /// power: 威力
   /// damageClassID: わざの分類のID
-  /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態
+  /// beforeChangeMyState: ポケモンが交代するなら交換前のポケモンの状態(そうでなくとも、追加効果でランク変化する前を参照するために使う)
   /// isCritical: 急所かどうか
   /// isFoulPlay: イカサマかどうか
   /// defenseAltAttack: こうげきではなくぼうぎょの値でダメージ計算するかどうか
@@ -4646,6 +4646,7 @@ class TurnEffectAction extends TurnEffect {
     for (int i = 0; i < hitCount; i++) {
       int movePower = power[i]!;
       // TODO:CSVに反映？
+      // TODO: ここだけ？myStateの内容を変えてしまうから別箇所に移したい
       // じゅうでん補正&消費
       int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
       if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
@@ -4659,8 +4660,8 @@ class TurnEffectAction extends TurnEffect {
 
       // とくせい等によるわざタイプの変更
       {
-        replacedMoveType =
-            myState.buffDebuffs.changeMoveType(myState, replacedMoveType);
+        replacedMoveType = beforeChangeMyState.buffDebuffs
+            .changeMoveType(beforeChangeMyState, replacedMoveType);
         if (replacedMove.id != 165 &&
             replacedMoveType == PokeType.normal &&
             myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >=
@@ -4672,19 +4673,25 @@ class TurnEffectAction extends TurnEffect {
       // とくせい等による威力変動
       {
         double tmpPow = movePower.toDouble();
-        tmpPow = myState.buffDebuffs.changeMovePower(myState, yourState, tmpPow,
-            damageClassID, replacedMove, replacedMoveType, myState.holdingItem,
+        tmpPow = beforeChangeMyState.buffDebuffs.changeMovePower(
+            beforeChangeMyState,
+            yourState,
+            tmpPow,
+            damageClassID,
+            replacedMove,
+            replacedMoveType,
+            beforeChangeMyState.holdingItem,
             isFirst: isFirst);
 
         // フィールド効果
         if (replacedMoveType == PokeType.electric &&
-            myState.isGround(myFields) &&
+            beforeChangeMyState.isGround(myFields) &&
             state.field.id == Field.electricTerrain) tmpPow *= 1.3;
         if (replacedMoveType == PokeType.grass &&
-            myState.isGround(myFields) &&
+            beforeChangeMyState.isGround(myFields) &&
             state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
         if (replacedMoveType == PokeType.psychic &&
-            myState.isGround(myFields) &&
+            beforeChangeMyState.isGround(myFields) &&
             state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
         if (replacedMoveType == PokeType.dragon &&
             yourState.isGround(yourFields) &&
@@ -4702,8 +4709,8 @@ class TurnEffectAction extends TurnEffect {
         movePower = tmpPow.floor();
         // テラスタイプ一致補正/ステラ補正が入っていて威力60未満なら60に
         if (movePower < 60 &&
-            (myState.canGetStellarHosei(replacedMoveType) ||
-                myState.canGetTerastalHosei(replacedMoveType))) {
+            (beforeChangeMyState.canGetStellarHosei(replacedMoveType) ||
+                beforeChangeMyState.canGetTerastalHosei(replacedMoveType))) {
           movePower = 60;
         }
       }
@@ -4713,22 +4720,24 @@ class TurnEffectAction extends TurnEffect {
           yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
       bool minusIgnore = isCritical ||
           yourState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-      int calcMaxAttack =
-          myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-              ? myState.finalizedMaxStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore)
-              : myState.finalizedMaxStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore);
-      int calcMinAttack =
-          myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-              ? myState.finalizedMinStat(
-                  StatIndex.A, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore)
-              : myState.finalizedMinStat(
-                  StatIndex.B, replacedMoveType, yourState, state,
-                  plusCut: plusIgnore, minusCut: minusIgnore);
+      int calcMaxAttack = beforeChangeMyState
+              .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+              .isEmpty
+          ? beforeChangeMyState.finalizedMaxStat(
+              StatIndex.A, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore)
+          : beforeChangeMyState.finalizedMaxStat(
+              StatIndex.B, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
+      int calcMinAttack = beforeChangeMyState
+              .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+              .isEmpty
+          ? beforeChangeMyState.finalizedMinStat(
+              StatIndex.A, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore)
+          : beforeChangeMyState.finalizedMinStat(
+              StatIndex.B, replacedMoveType, yourState, state,
+              plusCut: plusIgnore, minusCut: minusIgnore);
       if (isFoulPlay) {
         calcMaxAttack =
             yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
@@ -4747,45 +4756,47 @@ class TurnEffectAction extends TurnEffect {
                     StatIndex.B, replacedMoveType, yourState, state,
                     plusCut: plusIgnore, minusCut: minusIgnore);
       } else if (defenseAltAttack) {
-        calcMaxAttack =
-            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-                ? myState.finalizedMaxStat(
-                    StatIndex.B, replacedMoveType, yourState, state,
-                    plusCut: plusIgnore, minusCut: minusIgnore)
-                : myState.finalizedMaxStat(
-                    StatIndex.A, replacedMoveType, yourState, state,
-                    plusCut: plusIgnore, minusCut: minusIgnore);
-        calcMinAttack =
-            myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-                ? myState.finalizedMinStat(
-                    StatIndex.B, replacedMoveType, yourState, state,
-                    plusCut: plusIgnore, minusCut: minusIgnore)
-                : myState.finalizedMinStat(
-                    StatIndex.A, replacedMoveType, yourState, state,
-                    plusCut: plusIgnore, minusCut: minusIgnore);
+        calcMaxAttack = beforeChangeMyState
+                .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                .isEmpty
+            ? beforeChangeMyState.finalizedMaxStat(
+                StatIndex.B, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore)
+            : beforeChangeMyState.finalizedMaxStat(
+                StatIndex.A, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
+        calcMinAttack = beforeChangeMyState
+                .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                .isEmpty
+            ? beforeChangeMyState.finalizedMinStat(
+                StatIndex.B, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore)
+            : beforeChangeMyState.finalizedMinStat(
+                StatIndex.A, replacedMoveType, yourState, state,
+                plusCut: plusIgnore, minusCut: minusIgnore);
       }
       int attackVmax = 0;
       int attackVmin = 0;
       if (useLargerAC) {
         attackVmax = max(
             calcMaxAttack,
-            myState.finalizedMaxStat(
+            beforeChangeMyState.finalizedMaxStat(
                 StatIndex.C, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore));
         attackVmin = max(
             calcMinAttack,
-            myState.finalizedMinStat(
+            beforeChangeMyState.finalizedMinStat(
                 StatIndex.C, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore));
       } else {
         attackVmax = damageClassID == 2
             ? calcMaxAttack
-            : myState.finalizedMaxStat(
+            : beforeChangeMyState.finalizedMaxStat(
                 StatIndex.C, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore);
         attackVmin = damageClassID == 2
             ? calcMinAttack
-            : myState.finalizedMinStat(
+            : beforeChangeMyState.finalizedMinStat(
                 StatIndex.C, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore);
       }
@@ -4802,9 +4813,10 @@ class TurnEffectAction extends TurnEffect {
             ? loc.battleDamageAttackerAttack
             : loc.battleDamageAttackerSAttack;
       }
-      plusIgnore =
-          isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-      minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      plusIgnore = isCritical ||
+          beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+      minusIgnore =
+          beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
       int calcMaxDefense =
           yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
               ? ignoreTargetRank
@@ -4886,22 +4898,24 @@ class TurnEffectAction extends TurnEffect {
             ? loc.battleDamageDefenderDefense
             : loc.battleDamageDefenderSDefense;
       }
-      int damageVmax = (((myState.pokemon.level * 2 / 5 + 2).floor() *
-                          movePower *
-                          (attackVmax / defenseVmin))
-                      .floor() /
-                  50 +
-              2)
-          .floor();
-      int damageVmin = (((myState.pokemon.level * 2 / 5 + 2).floor() *
-                          movePower *
-                          (attackVmin / defenseVmax))
-                      .floor() /
-                  50 +
-              2)
-          .floor();
+      int damageVmax =
+          (((beforeChangeMyState.pokemon.level * 2 / 5 + 2).floor() *
+                              movePower *
+                              (attackVmax / defenseVmin))
+                          .floor() /
+                      50 +
+                  2)
+              .floor();
+      int damageVmin =
+          (((beforeChangeMyState.pokemon.level * 2 / 5 + 2).floor() *
+                              movePower *
+                              (attackVmin / defenseVmax))
+                          .floor() /
+                      50 +
+                  2)
+              .floor();
       ret = loc.battleDamageCalcBase(
-          myState.pokemon.level, movePower, attackStr, defenseStr);
+          attackStr, defenseStr, beforeChangeMyState.pokemon.level, movePower);
       // 天気補正(五捨五超入)
       if (yourState.holdingItem?.id != 1181) {
         // 相手がばんのうがさを持っていない
@@ -4949,15 +4963,16 @@ class TurnEffectAction extends TurnEffect {
       damageVmin = (damageVmin * 85 / 100).floor();
       ret += loc.battleDamageRandom85_100;
       // タイプ一致補正(五捨五超入)
-      if (myState.canGetStellarHosei(replacedMoveType)) {
+      if (beforeChangeMyState.canGetStellarHosei(replacedMoveType)) {
+        // TODO: myStateに変更を加えるので外に出したい
         myState.addStellarUsed(replacedMoveType);
         isTeraStellarHosei = true;
       }
-      if (myState.canGetTerastalHosei(replacedMoveType)) {
+      if (beforeChangeMyState.canGetTerastalHosei(replacedMoveType)) {
         isTeraStellarHosei = true;
       }
-      var rate = myState.typeBonusRate(replacedMoveType,
-          myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
+      var rate = beforeChangeMyState.typeBonusRate(replacedMoveType,
+          beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
       if (rate > 1.0) {
         damageVmax = roundOff5(damageVmax * rate);
         damageVmin = roundOff5(damageVmin * rate);
@@ -4967,8 +4982,8 @@ class TurnEffectAction extends TurnEffect {
       double typeRate = PokeTypeEffectiveness.effectivenessRate(
         replacedMoveType,
         yourState,
-        isScrappyMindEye: myState.currentAbility.id == 113 ||
-            myState.currentAbility.id == 299,
+        isScrappyMindEye: beforeChangeMyState.currentAbility.id == 113 ||
+            beforeChangeMyState.currentAbility.id == 299,
         isRingTarget: yourState.holdingItem?.id == 586,
         isMiracleEye: yourState
             .ailmentsWhere((e) => e.id == Ailment.miracleEye)
@@ -4985,8 +5000,8 @@ class TurnEffectAction extends TurnEffect {
         typeRate *= PokeTypeEffectiveness.effectivenessRate(
           additionalMoveType,
           yourState,
-          isScrappyMindEye: myState.currentAbility.id == 113 ||
-              myState.currentAbility.id == 299,
+          isScrappyMindEye: beforeChangeMyState.currentAbility.id == 113 ||
+              beforeChangeMyState.currentAbility.id == 299,
           isRingTarget: yourState.holdingItem?.id == 586,
           isMiracleEye: yourState
               .ailmentsWhere((e) => e.id == Ailment.miracleEye)
@@ -4997,11 +5012,13 @@ class TurnEffectAction extends TurnEffect {
       damageVmin = (damageVmin * typeRate).floor();
       ret += loc.battleDamageTypeEffectiveness(typeRate);
       // やけど補正(五捨五超入)
-      if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty &&
+      if (beforeChangeMyState
+              .ailmentsWhere((e) => e.id == Ailment.burn)
+              .isNotEmpty &&
           damageClassID == 2 &&
           move.id != 263) {
         // からげんき以外のぶつりわざ
-        if (!myState.buffDebuffs
+        if (!beforeChangeMyState.buffDebuffs
             .containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
           damageVmax = roundOff5(damageVmax * 0.5);
           damageVmin = roundOff5(damageVmin * 0.5);
@@ -5014,7 +5031,8 @@ class TurnEffectAction extends TurnEffect {
         double tmpMin = damageVmin.toDouble();
         // 壁補正
         if (!isCritical &&
-            !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
+            !beforeChangeMyState.buffDebuffs
+                .containsByID(BuffDebuff.ignoreWall) &&
             ((damageClassID == 2 &&
                     yourFields
                         .where((e) =>
@@ -5033,7 +5051,8 @@ class TurnEffectAction extends TurnEffect {
         }
         // ブレインフォース補正
         if (typeRate >= 2.0 &&
-            myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
+            beforeChangeMyState.buffDebuffs
+                .containsByID(BuffDebuff.greatDamage1_25)) {
           tmpMax *= 1.25;
           tmpMin *= 1.25;
           ret += loc.battleDamageBrainForce;
@@ -5042,7 +5061,7 @@ class TurnEffectAction extends TurnEffect {
         // TODO
         //if (moveHits[continuousCount] == MoveHit.critical &&
         if (criticalCount > 0 &&
-            myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
+            beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
           tmpMax *= 1.5;
           tmpMin *= 1.5;
           ret += loc.battleDamageSniper;
@@ -5050,7 +5069,8 @@ class TurnEffectAction extends TurnEffect {
         // いろめがね補正
         if (typeRate > 0.0 &&
             typeRate < 1.0 &&
-            myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
+            beforeChangeMyState.buffDebuffs
+                .containsByID(BuffDebuff.notGoodType2)) {
           tmpMax *= 2;
           tmpMin *= 2;
           ret += loc.battleDamageTintedLens;
@@ -5082,7 +5102,8 @@ class TurnEffectAction extends TurnEffect {
                 yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
             // もふもふ直接こうげき
             (replacedMove.isDirect &&
-                !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+                !(replacedMove.isPunch &&
+                    beforeChangeMyState.holdingItem?.id == 1700) &&
                 yourState.buffDebuffs
                     .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
             // たいねつ
@@ -5105,16 +5126,17 @@ class TurnEffectAction extends TurnEffect {
         }
         // たつじんのおび補正
         if (typeRate >= 2.0 &&
-            myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
+            beforeChangeMyState.buffDebuffs
+                .containsByID(BuffDebuff.greatDamage1_2)) {
           tmpMax *= 1.2;
           tmpMin *= 1.2;
           ret += loc.battleDamageExpertBelt;
         }
         // メトロノーム補正
-        if (myState.buffDebuffs
+        if (beforeChangeMyState.buffDebuffs
             .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
-          final founds =
-              myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
+          final founds = beforeChangeMyState.hiddenBuffs
+              .whereByID(BuffDebuff.sameMoveCount);
           if (founds.isNotEmpty) {
             int count = founds.first.extraArg1 % 100;
             if (count > 0) {
@@ -5125,7 +5147,7 @@ class TurnEffectAction extends TurnEffect {
           }
         }
         // いのちのたま補正
-        if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
+        if (beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
           tmpMax *= 1.3;
           tmpMin *= 1.3;
           ret += loc.battleDamageLifeOrb;
@@ -5233,8 +5255,8 @@ class TurnEffectAction extends TurnEffect {
     double typeRate = PokeTypeEffectiveness.effectivenessRate(
       replacedMoveType,
       yourState,
-      isScrappyMindEye:
-          myState.currentAbility.id == 113 || myState.currentAbility.id == 299,
+      isScrappyMindEye: beforeChangeMyState.currentAbility.id == 113 ||
+          beforeChangeMyState.currentAbility.id == 299,
       isRingTarget: yourState.holdingItem?.id == 586,
       isMiracleEye:
           yourState.ailmentsWhere((e) => e.id == Ailment.miracleEye).isNotEmpty,
@@ -5250,8 +5272,8 @@ class TurnEffectAction extends TurnEffect {
       typeRate *= PokeTypeEffectiveness.effectivenessRate(
         additionalMoveType,
         yourState,
-        isScrappyMindEye: myState.currentAbility.id == 113 ||
-            myState.currentAbility.id == 299,
+        isScrappyMindEye: beforeChangeMyState.currentAbility.id == 113 ||
+            beforeChangeMyState.currentAbility.id == 299,
         isRingTarget: yourState.holdingItem?.id == 586,
         isMiracleEye: yourState
             .ailmentsWhere((e) => e.id == Ailment.miracleEye)
@@ -5279,13 +5301,14 @@ class TurnEffectAction extends TurnEffect {
         tmp /= halvedBerry;
       }
       // いのちのたま補正
-      if (myState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
+      if (beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.lifeOrb)) {
         tmp /= 1.3;
       }
       // メトロノーム補正
-      if (myState.buffDebuffs
+      if (beforeChangeMyState.buffDebuffs
           .containsByID(BuffDebuff.continuousMoveDamageInc0_2)) {
-        final founds = myState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
+        final founds =
+            beforeChangeMyState.hiddenBuffs.whereByID(BuffDebuff.sameMoveCount);
         if (founds.isNotEmpty) {
           int count = founds.first.extraArg1 % 100;
           if (count > 0) {
@@ -5295,7 +5318,8 @@ class TurnEffectAction extends TurnEffect {
       }
       // たつじんのおび補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_2)) {
+          beforeChangeMyState.buffDebuffs
+              .containsByID(BuffDebuff.greatDamage1_2)) {
         tmp /= 1.2;
       }
       // Mfilter
@@ -5324,7 +5348,8 @@ class TurnEffectAction extends TurnEffect {
               yourState.buffDebuffs.containsByID(BuffDebuff.damaged0_5)) ||
           // もふもふ直接こうげき
           (replacedMove.isDirect &&
-              !(replacedMove.isPunch && myState.holdingItem?.id == 1700) &&
+              !(replacedMove.isPunch &&
+                  beforeChangeMyState.holdingItem?.id == 1700) &&
               yourState.buffDebuffs
                   .containsByID(BuffDebuff.directAttackedDamage0_5)) ||
           // たいねつ
@@ -5342,24 +5367,27 @@ class TurnEffectAction extends TurnEffect {
       // いろめがね補正
       if (typeRate > 0.0 &&
           typeRate < 1.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.notGoodType2)) {
+          beforeChangeMyState.buffDebuffs
+              .containsByID(BuffDebuff.notGoodType2)) {
         tmp /= 2;
       }
       // スナイパー補正
       // TODO
       //if (moveHits[continuousCount] == MoveHit.critical &&
       if (criticalCount > 0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
+          beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.sniper)) {
         tmp /= 1.5;
       }
       // ブレインフォース補正
       if (typeRate >= 2.0 &&
-          myState.buffDebuffs.containsByID(BuffDebuff.greatDamage1_25)) {
+          beforeChangeMyState.buffDebuffs
+              .containsByID(BuffDebuff.greatDamage1_25)) {
         tmp /= 1.25;
       }
       // 壁補正
       if (!isCritical &&
-          !myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall) &&
+          !beforeChangeMyState.buffDebuffs
+              .containsByID(BuffDebuff.ignoreWall) &&
           ((damageClassID == 2 &&
                   yourFields
                       .where((e) =>
@@ -5378,11 +5406,14 @@ class TurnEffectAction extends TurnEffect {
       tmpInt = roundOff5(tmp);
     }
     // やけど補正(五捨五超入)
-    if (myState.ailmentsWhere((e) => e.id == Ailment.burn).isNotEmpty &&
+    if (beforeChangeMyState
+            .ailmentsWhere((e) => e.id == Ailment.burn)
+            .isNotEmpty &&
         damageClassID == 2 &&
         move.id != 263) {
       // からげんき以外のぶつりわざ
-      if (!myState.buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
+      if (!beforeChangeMyState.buffDebuffs
+          .containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
         tmpInt = roundOff5(tmpInt / 0.5);
       }
     }
@@ -5393,10 +5424,11 @@ class TurnEffectAction extends TurnEffect {
       tmpInt = (tmpInt / typeRate).floor();
     }
     // タイプ一致補正(五捨五超入)
-    var rate = myState.typeBonusRate(replacedMoveType,
-        myState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
+    var rate = beforeChangeMyState.typeBonusRate(replacedMoveType,
+        beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.typeBonus2));
     // ステラタイプ補正を使ってしまったために、再度計算したら値に補正が反映されてない場合
-    if (isTeraStellarHosei && myState.teraType1 == PokeType.stellar) {
+    if (isTeraStellarHosei &&
+        beforeChangeMyState.teraType1 == PokeType.stellar) {
       if (rate - 1.5 < 0.1) rate = 2.0;
       if (rate - 1.0 < 0.1) rate = 1.2;
     }
@@ -5447,20 +5479,21 @@ class TurnEffectAction extends TurnEffect {
     // ここからわざ自体の威力等補正
 
     // じゅうでん補正&消費
-    int findIdx = myState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
+    int findIdx =
+        beforeChangeMyState.ailmentsIndexWhere((e) => e.id == Ailment.charging);
     if (findIdx >= 0 && replacedMoveType == PokeType.electric) {
       movePower *= 2;
-      myState.ailmentsRemoveAt(findIdx);
+      beforeChangeMyState.ailmentsRemoveAt(findIdx);
     }
 
     if (getChangePokemonIndex(myPlayerType) != null) {
-      myState = beforeChangeMyState;
+      beforeChangeMyState = beforeChangeMyState;
     }
 
     // とくせい等によるわざタイプの変更
     {
-      replacedMoveType =
-          myState.buffDebuffs.changeMoveType(myState, replacedMoveType);
+      replacedMoveType = beforeChangeMyState.buffDebuffs
+          .changeMoveType(beforeChangeMyState, replacedMoveType);
       if (replacedMove.id != 165 &&
           replacedMoveType == PokeType.normal &&
           myFields.indexWhere((e) => e.id == IndividualField.ionDeluge) >= 0) {
@@ -5471,19 +5504,25 @@ class TurnEffectAction extends TurnEffect {
     // とくせい等による威力変動
     {
       double tmpPow = movePower.toDouble();
-      tmpPow = myState.buffDebuffs.changeMovePower(myState, yourState, tmpPow,
-          damageClassID, replacedMove, replacedMoveType, myState.holdingItem,
+      tmpPow = beforeChangeMyState.buffDebuffs.changeMovePower(
+          beforeChangeMyState,
+          yourState,
+          tmpPow,
+          damageClassID,
+          replacedMove,
+          replacedMoveType,
+          beforeChangeMyState.holdingItem,
           isFirst: isFirst);
 
       // フィールド効果
       if (replacedMoveType == PokeType.electric &&
-          myState.isGround(myFields) &&
+          beforeChangeMyState.isGround(myFields) &&
           state.field.id == Field.electricTerrain) tmpPow *= 1.3;
       if (replacedMoveType == PokeType.grass &&
-          myState.isGround(myFields) &&
+          beforeChangeMyState.isGround(myFields) &&
           state.field.id == Field.grassyTerrain) tmpPow *= 1.3;
       if (replacedMoveType == PokeType.psychic &&
-          myState.isGround(myFields) &&
+          beforeChangeMyState.isGround(myFields) &&
           state.field.id == Field.psychicTerrain) tmpPow *= 1.3;
       if (replacedMoveType == PokeType.dragon &&
           yourState.isGround(yourFields) &&
@@ -5504,9 +5543,10 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
-    bool plusIgnore =
-        isCritical || myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
-    bool minusIgnore = myState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    bool plusIgnore = isCritical ||
+        beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
+    bool minusIgnore =
+        beforeChangeMyState.buffDebuffs.containsByID(BuffDebuff.ignoreRank);
     int calcMaxDefense =
         yourState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
             ? ignoreTargetRank
@@ -5579,12 +5619,14 @@ class TurnEffectAction extends TurnEffect {
     int attackVmax = movePower == 0
         ? 0
         : (((tmpMax - 2) * 50 * defenseVmin) /
-                ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
+                ((beforeChangeMyState.pokemon.level * 2 / 5 + 2).floor() *
+                    movePower))
             .floor();
     int attackVmin = movePower == 0
         ? 0
         : (((tmpMin - 2) * 50 * defenseVmax) /
-                ((myState.pokemon.level * 2 / 5 + 2).floor() * movePower))
+                ((beforeChangeMyState.pokemon.level * 2 / 5 + 2).floor() *
+                    movePower))
             .floor();
 
     // 範囲補正・おやこあい補正は無視する(https://wiki.xn--rckteqa2e.com/wiki/%E3%83%80%E3%83%A1%E3%83%BC%E3%82%B8#%E7%AC%AC%E4%BA%94%E4%B8%96%E4%BB%A3%E4%BB%A5%E9%99%8D)
@@ -5597,36 +5639,40 @@ class TurnEffectAction extends TurnEffect {
     /*if (useLargerAC) {
       attackVmax = max(
           calcMaxAttack,
-          myState.finalizedMaxStat(
+          beforeChangeMyState.finalizedMaxStat(
               StatIndex.C, replacedMoveType, yourState, state,
               plusCut: plusIgnore, minusCut: minusIgnore));
       attackVmin = max(
           calcMinAttack,
-          myState.finalizedMinStat(
+          beforeChangeMyState.finalizedMinStat(
               StatIndex.C, replacedMoveType, yourState, state,
               plusCut: plusIgnore, minusCut: minusIgnore));
     } else*/
     {
       if (damageClassID != DamageClass.physical) {
-        ret2 = myState.unfinalizedStat(
+        ret2 = beforeChangeMyState.unfinalizedStat(
             attackVmax, StatIndex.C, replacedMoveType, yourState, state,
             plusCut: plusIgnore, minusCut: minusIgnore);
-        ret3 = myState.unfinalizedStat(
+        ret3 = beforeChangeMyState.unfinalizedStat(
             attackVmin, StatIndex.C, replacedMoveType, yourState, state,
             plusCut: plusIgnore, minusCut: minusIgnore);
       } else {
-        ret2 = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? myState.unfinalizedStat(
+        ret2 = beforeChangeMyState
+                .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                .isEmpty
+            ? beforeChangeMyState.unfinalizedStat(
                 attackVmax, StatIndex.A, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore)
-            : myState.unfinalizedStat(
+            : beforeChangeMyState.unfinalizedStat(
                 attackVmax, StatIndex.B, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore);
-        ret3 = myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty
-            ? myState.unfinalizedStat(
+        ret3 = beforeChangeMyState
+                .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+                .isEmpty
+            ? beforeChangeMyState.unfinalizedStat(
                 attackVmin, StatIndex.A, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore)
-            : myState.unfinalizedStat(
+            : beforeChangeMyState.unfinalizedStat(
                 attackVmin, StatIndex.B, replacedMoveType, yourState, state,
                 plusCut: plusIgnore, minusCut: minusIgnore);
         // TODO: イカサマって相手のステータス推定に使えないのでは
@@ -5650,22 +5696,22 @@ class TurnEffectAction extends TurnEffect {
                   attackVmin, StatIndex.B, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore);
         } else if (defenseAltAttack) {
-          ret2 = myState
+          ret2 = beforeChangeMyState
                   .ailmentsWhere((e) => e.id == Ailment.powerTrick)
                   .isEmpty
-              ? myState.unfinalizedStat(
+              ? beforeChangeMyState.unfinalizedStat(
                   attackVmax, StatIndex.B, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore)
-              : myState.unfinalizedStat(
+              : beforeChangeMyState.unfinalizedStat(
                   attackVmax, StatIndex.A, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore);
-          ret3 = myState
+          ret3 = beforeChangeMyState
                   .ailmentsWhere((e) => e.id == Ailment.powerTrick)
                   .isEmpty
-              ? myState.unfinalizedStat(
+              ? beforeChangeMyState.unfinalizedStat(
                   attackVmin, StatIndex.B, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore)
-              : myState.unfinalizedStat(
+              : beforeChangeMyState.unfinalizedStat(
                   attackVmin, StatIndex.A, replacedMoveType, yourState, state,
                   plusCut: plusIgnore, minusCut: minusIgnore);
         }
@@ -5675,13 +5721,17 @@ class TurnEffectAction extends TurnEffect {
     StatIndex retStat = StatIndex.H;
     if (damageClassID == 2) {
       if (defenseAltAttack) {
-        if (myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty) {
+        if (beforeChangeMyState
+            .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+            .isEmpty) {
           retStat = StatIndex.B;
         } else {
           retStat = StatIndex.A;
         }
       } else {
-        if (myState.ailmentsWhere((e) => e.id == Ailment.powerTrick).isEmpty) {
+        if (beforeChangeMyState
+            .ailmentsWhere((e) => e.id == Ailment.powerTrick)
+            .isEmpty) {
           retStat = StatIndex.A;
         } else {
           retStat = StatIndex.B;
@@ -5698,6 +5748,9 @@ class TurnEffectAction extends TurnEffect {
       var copiedMyState = myState.copy()
         ..minStats[retStat].real = ret3
         ..maxStats[retStat].real = ret3;
+      var copiedBeforeChangeMyState = beforeChangeMyState.copy()
+        ..minStats[retStat].real = ret3
+        ..maxStats[retStat].real = ret3;
       var ret = calcDamage(
         copiedMyState,
         yourState,
@@ -5707,7 +5760,7 @@ class TurnEffectAction extends TurnEffect {
         replacedMoveType,
         power,
         damageClassID,
-        beforeChangeMyState,
+        copiedBeforeChangeMyState,
         isCritical,
         isFoulPlay,
         defenseAltAttack,
@@ -6366,7 +6419,7 @@ class TurnEffectAction extends TurnEffect {
                               }
                               // 統合テスト作成用
                               print(
-                                  "await driver.tap(find.byValueKey('StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
+                                  "await tapMoveNext(driver, ${playerType == PlayerType.me ? 'me' : 'op'});");
                             },
                             icon: Icon(Icons.arrow_forward),
                           )
@@ -6426,7 +6479,7 @@ class TurnEffectAction extends TurnEffect {
                               }
                               // 統合テスト作成用
                               print(
-                                  "await driver.tap(find.byValueKey('StatusMoveNextButton${playerType == PlayerType.me ? 'Own' : 'Opponent'}'));");
+                                  "await tapMoveNext(driver, ${playerType == PlayerType.me ? 'me' : 'op'});");
                             },
                             icon: Icon(Icons.arrow_forward),
                           )
@@ -6517,6 +6570,8 @@ class TurnEffectAction extends TurnEffect {
                 !state.getPokemonStates(playerType)[i].isFainting) {
               myPokemonTiles.add(
                 ChangePokemonCommandTile(
+                  key: Key(
+                      'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                   myParty.pokemons[i]!,
                   theme,
                   onTap: () {
@@ -6540,6 +6595,8 @@ class TurnEffectAction extends TurnEffect {
             if (addedIndex.contains(i)) continue;
             myPokemonTiles.add(
               ChangePokemonCommandTile(
+                key: Key(
+                    'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 myParty.pokemons[i]!,
                 theme,
                 enabled: false,
@@ -6564,6 +6621,8 @@ class TurnEffectAction extends TurnEffect {
                 !state.getPokemonStates(playerType.opposite)[i].isFainting) {
               yourPokemonTiles.add(
                 ChangePokemonCommandTile(
+                  key: Key(
+                      'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                   yourParty.pokemons[i]!,
                   theme,
                   onTap: () {
@@ -6590,6 +6649,8 @@ class TurnEffectAction extends TurnEffect {
             if (addedIndex.contains(i)) continue;
             yourPokemonTiles.add(
               ChangePokemonCommandTile(
+                key: Key(
+                    'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 yourParty.pokemons[i]!,
                 theme,
                 enabled: false,
@@ -6614,6 +6675,8 @@ class TurnEffectAction extends TurnEffect {
                 state.getPokemonStates(playerType)[i].isFainting) {
               pokemonTiles.add(
                 ChangePokemonCommandTile(
+                  key: Key(
+                      'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                   myParty.pokemons[i]!,
                   theme,
                   onTap: () {
@@ -6636,6 +6699,8 @@ class TurnEffectAction extends TurnEffect {
             if (addedIndex.contains(i)) continue;
             pokemonTiles.add(
               ChangePokemonCommandTile(
+                key: Key(
+                    'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                 myParty.pokemons[i]!,
                 theme,
                 enabled: false,
@@ -6811,7 +6876,7 @@ class TurnEffectAction extends TurnEffect {
             onNext();
             // 統合テスト作成用
             print("// ${myState.pokemon.omittedName}の${move.displayName}\n"
-                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${move.displayName}', true);");
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${move.displayName}', true, isSecondary: true);");
           },
         );
       case CommandWidgetTemplate.selectAcquiringMove:
