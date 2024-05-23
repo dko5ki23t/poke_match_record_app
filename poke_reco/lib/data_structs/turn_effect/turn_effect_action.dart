@@ -8296,6 +8296,7 @@ class TurnEffectAction extends TurnEffect {
         move.isPowder,
         move.isBullet,
         move.failWithProtect,
+        move.loseWithRecoil,
       );
     } else {
       turnEffectAction.move =

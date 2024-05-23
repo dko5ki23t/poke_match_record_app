@@ -136,6 +136,7 @@ const String moveColumnIsWind = 'is_wind';
 const String moveColumnIsPowder = 'is_powder';
 const String moveColumnIsBullet = 'is_bullet';
 const String moveColumnSuccessWithProtect = 'success_with_protect';
+const String moveColumnLoseWithRecoil = 'lose_with_recoil';
 
 const String moveFlavorDBFile = 'MoveFlavors.db';
 const String moveFlavorDBTable = 'moveFlavorDB';
@@ -1031,6 +1032,7 @@ class PokeDB {
         moveColumnIsPowder,
         moveColumnIsBullet,
         moveColumnSuccessWithProtect,
+        moveColumnLoseWithRecoil,
       ],
     );
     for (var map in maps) {
@@ -1062,6 +1064,7 @@ class PokeDB {
         map[moveColumnIsPowder] != 0,
         map[moveColumnIsBullet] != 0,
         map[moveColumnSuccessWithProtect] != 0,
+        map[moveColumnLoseWithRecoil] != 0,
       );
     }
 

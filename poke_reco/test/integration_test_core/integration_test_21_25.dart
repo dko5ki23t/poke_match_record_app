@@ -2548,8 +2548,6 @@ Future<void> test25_1(
 Future<void> test25_2(
   FlutterDriver driver,
 ) async {
-  // TODO: かぜのり自動で発動させたい
-  // TODO: おいかぜが終了しない
   int turnNum = 0;
   await backBattleTopPage(driver);
   await driver.waitForTappable(find.byType('FloatingActionButton'));
@@ -2592,9 +2590,8 @@ Future<void> test25_2(
   await driver.tap(find.byValueKey('ItemEffectSelectPokemon'));
   await driver.tap(find.text('アノホラグサ'));
   await driver.tap(find.text('OK'));
-  // ファイアローのかぜのり
-  await addEffect(driver, 3, me, 'かぜのり');
-  await driver.tap(find.text('OK'));
+  // かぜのりが発生すること確認
+  await testExistEffect(driver, 'かぜのり');
   // ターン2へ
   await goTurnPage(driver, turnNum++);
 
@@ -2626,6 +2623,8 @@ Future<void> test25_2(
   await tapMove(driver, op, 'ゴールドラッシュ', true);
   // アノホラグサのHP0
   await inputRemainHP(driver, op, '0');
+  // おいかぜがやんだこと確認
+  await testExistEffect(driver, 'おいかぜがやんだ');
   // アノホラグサひんし->ファイアローに交代
   await changePokemon(driver, me, 'ファイアロー', false);
   // ターン5へ

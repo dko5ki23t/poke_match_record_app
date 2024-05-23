@@ -53,6 +53,7 @@ void main() async {
             true,
             false,
             true,
+            false,
           ),
         ]
         ..type1 = PokeType.normal
@@ -120,6 +121,7 @@ void main() async {
             true,
             false,
             true,
+            false,
           ),
         ]
         ..type1 = PokeType.normal

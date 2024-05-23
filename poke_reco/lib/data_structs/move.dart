@@ -178,6 +178,9 @@ class Move extends Equatable implements Copyable {
   /// 相手がまもる状態でも成功するか
   final bool successWithProtect;
 
+  /// 追加効果によって使用者がダメージを受けてお互いひんしになった時、使用者が負けになるか
+  final bool loseWithRecoil;
+
   @override
   List<Object?> get props => [
         id,
@@ -207,6 +210,7 @@ class Move extends Equatable implements Copyable {
         isPowder,
         isBullet,
         successWithProtect,
+        loseWithRecoil,
       ];
 
   /// わざ
@@ -238,6 +242,7 @@ class Move extends Equatable implements Copyable {
     this.isPowder,
     this.isBullet,
     this.successWithProtect,
+    this.loseWithRecoil,
   ) {
     _displayName = displayName;
     _displayNameEn = displayNameEn;
@@ -257,6 +262,7 @@ class Move extends Equatable implements Copyable {
         MoveEffect(0),
         0,
         0,
+        false,
         false,
         false,
         false,
@@ -357,6 +363,7 @@ class Move extends Equatable implements Copyable {
         isPowder,
         isBullet,
         successWithProtect,
+        loseWithRecoil,
       );
 
   /// 連続こうげきの場合、その最大回数を返す（連続こうげきではない場合は1を返す）

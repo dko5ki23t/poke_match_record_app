@@ -493,13 +493,27 @@ abstract class TurnEffect extends Equatable implements Copyable {
     // 勝利判定
     _isMyWin = state.isMyWin;
     _isYourWin = state.isYourWin;
-    // わざの反動等で両者同時に倒れる場合あり→このTurnEffectの発動主が勝利とする
-    // TODO:いのちがけ等
+    // わざの反動等で両者同時に倒れる場合あり→一部のわざ使用時を除き、このTurnEffectの発動主が勝利とする
     if (_isMyWin && _isYourWin) {
-      if (playerType == PlayerType.me) {
-        _isYourWin = false;
+      if (this is TurnEffectAction) {
+        final action = this as TurnEffectAction;
+        if (action.type == TurnActionType.move &&
+            action
+                .getReplacedMove(action.move,
+                    playerType == PlayerType.me ? ownState : opponentState)
+                .loseWithRecoil) {
+          if (playerType == PlayerType.me) {
+            _isMyWin = false;
+          } else {
+            _isYourWin = false;
+          }
+        }
       } else {
-        _isMyWin = false;
+        if (playerType == PlayerType.me) {
+          _isYourWin = false;
+        } else {
+          _isMyWin = false;
+        }
       }
     }
   }

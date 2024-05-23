@@ -298,6 +298,14 @@ class PhaseState extends Equatable implements Copyable {
               var myState = getPokemonState(player, null);
               var yourState = getPokemonState(player.opposite, null);
               var myTimingIDs = [...timingIDs];
+              var indiField = getIndiFields(player);
+              // 各ポケモンの場
+              if (indiField
+                  .where((element) => element.id == IndividualField.tailwind)
+                  .isNotEmpty) {
+                // ポケモン登場時、場がおいかぜ
+                myTimingIDs.add(Timing.winded);
+              }
               // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing)) {
                 final adding = TurnEffectAbility(
@@ -308,7 +316,6 @@ class PhaseState extends Equatable implements Copyable {
                 ret.add(adding);
               }
               // 各ポケモンの場
-              var indiField = getIndiFields(player);
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
                   var adding = TurnEffectIndividualField(
@@ -800,7 +807,31 @@ class PhaseState extends Equatable implements Copyable {
             var yourState = getPokemonState(player.opposite, null);
             bool isMe = player == PlayerType.me;
 
-            // 死に出しなら発動する効果はない
+            // 各ポケモンの場の効果
+            var fields = getIndiFields(player);
+            for (final field in fields) {
+              if (field.isActive(timing, myState, state)) {
+                // ターン経過で終了する場の判定
+                var adding = TurnEffectIndividualField(
+                    player:
+                        field.isEntireField ? PlayerType.entireField : player,
+                    timing: timing,
+                    indiFieldEffectID:
+                        IndiFieldEffect.getIdFromIndiField(field));
+                adding.setAutoArgs(myState, yourState, state, prevAction,
+                    indiField: field);
+                if (ret
+                    .where((element) =>
+                        element is TurnEffectIndividualField &&
+                        element.nearEqual(adding))
+                    .isEmpty) {
+                  // 両者の場の場合に重複がないようにする
+                  ret.add(adding);
+                }
+              }
+            }
+
+            // 死に出しなら発動する効果はない(ポケモンの場の効果以外)
             if (getPokemonStates(
                     player)[currentTurn.getInitialPokemonIndex(player) - 1]
                 .isFainting) continue;
@@ -920,30 +951,6 @@ class PhaseState extends Equatable implements Copyable {
                       : ailment.turns;
                 adding.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(adding);
-              }
-            }
-
-            // 各ポケモンの場の効果
-            var fields = getIndiFields(player);
-            for (final field in fields) {
-              if (field.isActive(timing, myState, state)) {
-                // ターン経過で終了する場の判定
-                var adding = TurnEffectIndividualField(
-                    player:
-                        field.isEntireField ? PlayerType.entireField : player,
-                    timing: timing,
-                    indiFieldEffectID:
-                        IndiFieldEffect.getIdFromIndiField(field));
-                adding.setAutoArgs(myState, yourState, state, prevAction,
-                    indiField: field);
-                if (ret
-                    .where((element) =>
-                        element is TurnEffectIndividualField &&
-                        element.nearEqual(adding))
-                    .isEmpty) {
-                  // 両者の場の場合に重複がないようにする
-                  ret.add(adding);
-                }
               }
             }
           }

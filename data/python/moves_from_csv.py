@@ -35,6 +35,7 @@ moveColumnIsWind = 'is_wind'
 moveColumnIsPowder = 'is_powder'
 moveColumnIsBullet = 'is_bullet'
 moveColumnSuccessWithProtect = 'success_with_protect'
+moveColumnLoseWithRecoil = 'lose_with_recoil'
 
 # CSVファイル(PokeAPI)の列名
 movesLangCSVmoveIDColumn = 'move_id'
@@ -67,6 +68,7 @@ movesCSVisWind = 27
 movesCSVisPowder = 28
 movesCSVisBullet = 29
 movesCSVsuccessWithProtect = 30
+movesCSVloseWithRecoil = 31
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
@@ -130,6 +132,7 @@ def main():
             is_powder = row[movesCSVisPowder]
             is_bullet = row[movesCSVisBullet]
             success_with_protect = row[movesCSVsuccessWithProtect]
+            lose_with_recoil = row[movesCSVloseWithRecoil]
 
             if pokeType > 10000:    # 特殊なタイプ
                 pokeType = 0
@@ -142,7 +145,7 @@ def main():
                 moves_list.append((
                     id, names.iloc[0], names_en.iloc[0], pokeType, power, accuracy, priority, target, damage_class, effect, effect_chance, pp,
                     is_direct, is_sound, is_drain, is_punch, is_wave, is_dance, is_recoil, is_additionalEffect, is_additionalEffect2, is_bite,
-                    is_cut, is_wind, is_powder, is_bullet, success_with_protect
+                    is_cut, is_wind, is_powder, is_bullet, success_with_protect, lose_with_recoil
                 ))
 
         # 作成(存在してたら作らない)
@@ -175,7 +178,8 @@ def main():
             f'  {moveColumnIsWind} integer not null,'
             f'  {moveColumnIsPowder} integer not null,'
             f'  {moveColumnIsBullet} integer not null,'
-            f'  {moveColumnSuccessWithProtect} integer not null)'
+            f'  {moveColumnSuccessWithProtect} integer not null,'
+            f'  {moveColumnLoseWithRecoil} integer not null)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -192,8 +196,8 @@ def main():
                 f'{moveColumnIsDance}, {moveColumnIsRecoil}, {moveColumnIsAdditionalEffect}, '
                 f'{moveColumnIsAdditionalEffect2}, {moveColumnIsBite}, {moveColumnIsCut}, '
                 f'{moveColumnIsWind}, {moveColumnIsPowder}, {moveColumnIsBullet}, '
-                f'{moveColumnSuccessWithProtect}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'{moveColumnSuccessWithProtect}, {moveColumnLoseWithRecoil}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 moves_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

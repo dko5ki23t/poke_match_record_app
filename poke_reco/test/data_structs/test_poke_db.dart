@@ -201,7 +201,23 @@ class TestPokeDB {
         moveColumnDamageClass,
         moveColumnEffect,
         moveColumnEffectChance,
-        moveColumnPP
+        moveColumnPP,
+        moveColumnIsDirect,
+        moveColumnIsSound,
+        moveColumnIsDrain,
+        moveColumnIsPunch,
+        moveColumnIsWave,
+        moveColumnIsDance,
+        moveColumnIsRecoil,
+        moveColumnIsAdditionalEffect,
+        moveColumnIsAdditionalEffect2,
+        moveColumnIsBite,
+        moveColumnIsCut,
+        moveColumnIsWind,
+        moveColumnIsPowder,
+        moveColumnIsBullet,
+        moveColumnSuccessWithProtect,
+        moveColumnLoseWithRecoil,
       ],
     );
     for (var map in maps) {
@@ -233,6 +249,7 @@ class TestPokeDB {
         map[moveColumnIsPowder] != '0',
         map[moveColumnIsBullet] != '0',
         map[moveColumnSuccessWithProtect] != '0',
+        map[moveColumnLoseWithRecoil] != '0',
       );
     }
 
