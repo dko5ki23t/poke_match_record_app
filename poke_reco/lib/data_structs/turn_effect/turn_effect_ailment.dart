@@ -214,15 +214,23 @@ class TurnEffectAilment extends TurnEffect {
   int extraArg2 = 0;
 
   @override
-  List<Object?> get props =>
-      [playerType, timing, ailmentEffectID, turns, extraArg1, extraArg2];
+  List<Object?> get props => [
+        ...super.props,
+        playerType,
+        timing,
+        ailmentEffectID,
+        turns,
+        extraArg1,
+        extraArg2
+      ];
 
   @override
   TurnEffectAilment copy() => TurnEffectAilment(
       player: playerType, timing: timing, ailmentEffectID: ailmentEffectID)
     ..turns
     ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2;
+    ..extraArg2 = extraArg2
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

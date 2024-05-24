@@ -69,6 +69,7 @@ class TurnEffectField extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         timing,
         fieldEffectID,
         extraArg1,
@@ -77,7 +78,8 @@ class TurnEffectField extends TurnEffect {
 
   @override
   TurnEffectField copy() =>
-      TurnEffectField(timing: timing, fieldEffectID: fieldEffectID);
+      TurnEffectField(timing: timing, fieldEffectID: fieldEffectID)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

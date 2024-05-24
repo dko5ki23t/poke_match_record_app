@@ -20,11 +20,12 @@ class TurnEffectGameset extends TurnEffect {
   final String opponentName;
 
   @override
-  List<Object?> get props => [winner, opponentName];
+  List<Object?> get props => [...super.props, winner, opponentName];
 
   @override
   TurnEffectGameset copy() =>
-      TurnEffectGameset(winner: winner, opponentName: opponentName);
+      TurnEffectGameset(winner: winner, opponentName: opponentName)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) => winner == PlayerType.me

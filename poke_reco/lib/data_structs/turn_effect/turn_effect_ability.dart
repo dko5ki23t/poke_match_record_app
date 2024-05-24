@@ -50,6 +50,7 @@ class TurnEffectAbility extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         playerType,
         timing,
         abilityID,
@@ -61,7 +62,8 @@ class TurnEffectAbility extends TurnEffect {
   TurnEffectAbility copy() => TurnEffectAbility(
       player: playerType, timing: timing, abilityID: abilityID)
     ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2;
+    ..extraArg2 = extraArg2
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

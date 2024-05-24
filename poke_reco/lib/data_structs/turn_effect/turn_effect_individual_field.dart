@@ -152,12 +152,14 @@ class TurnEffectIndividualField extends TurnEffect {
   int extraArg1 = 0;
 
   @override
-  List<Object?> get props => [playerType, timing, indiFieldEffectID, extraArg1];
+  List<Object?> get props =>
+      [...super.props, playerType, timing, indiFieldEffectID, extraArg1];
 
   @override
   TurnEffectIndividualField copy() => TurnEffectIndividualField(
       player: playerType, timing: timing, indiFieldEffectID: indiFieldEffectID)
-    ..extraArg1 = extraArg1;
+    ..extraArg1 = extraArg1
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

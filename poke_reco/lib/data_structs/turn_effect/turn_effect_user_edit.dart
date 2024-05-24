@@ -63,11 +63,12 @@ class TurnEffectUserEdit extends TurnEffect {
   final List<UserEdit> forces = [];
 
   @override
-  List<Object?> get props => [forces];
+  List<Object?> get props => [...super.props, forces];
 
   @override
-  TurnEffectUserEdit copy() =>
-      TurnEffectUserEdit(player: playerType)..forces.addAll([...forces]);
+  TurnEffectUserEdit copy() => TurnEffectUserEdit(player: playerType)
+    ..forces.addAll([...forces])
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

@@ -21,11 +21,12 @@ class TurnEffectTerastal extends TurnEffect {
   PokeType teraType;
 
   @override
-  List<Object?> get props => [playerType, teraType];
+  List<Object?> get props => [...super.props, playerType, teraType];
 
   @override
   TurnEffectTerastal copy() =>
-      TurnEffectTerastal(playerType: playerType, teraType: teraType);
+      TurnEffectTerastal(playerType: playerType, teraType: teraType)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) => loc.commonTerastal;

@@ -69,6 +69,7 @@ class TurnEffectWeather extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         timing,
         weatherEffectID,
         extraArg1,
@@ -77,7 +78,8 @@ class TurnEffectWeather extends TurnEffect {
 
   @override
   TurnEffectWeather copy() =>
-      TurnEffectWeather(timing: timing, weatherEffectID: weatherEffectID);
+      TurnEffectWeather(timing: timing, weatherEffectID: weatherEffectID)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

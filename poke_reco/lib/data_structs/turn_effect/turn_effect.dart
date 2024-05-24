@@ -262,28 +262,34 @@ abstract class TurnEffect extends Equatable implements Copyable {
 //
 //  List<int> invalidGuideIDs = [];
 
-//  @override
-//  List<Object?> get props => [
-//        playerType,
-//        timing,
-//        effectType,
-//        isOwnFainting,
-//        isOpponentFainting,
-//        isMyWin,
-//        isYourWin,
-//        isAutoSet,
-//      ];
+  @override
+  @mustCallSuper
+  List<Object?> get props => [
+        _alreadyOwnFainting,
+        _alreadyOpponentFainting,
+        _ownItemHolded,
+        _opponentItemHolded,
+        _isOwnFainting,
+        _isOpponentFainting,
+        _isOwnChanged,
+        _isOpponentChanged,
+        _isMyWin,
+        _isYourWin,
+      ];
 
-//  @override
-//  TurnEffect copy() => TurnEffect()
-//    ..playerType = playerType
-//    ..timing = timing
-//    ..effectType = effectType
-//    ..isOwnFainting = isOwnFainting
-//    ..isOpponentFainting = isOpponentFainting
-//    ..isMyWin = isMyWin
-//    ..isYourWin = isYourWin
-//    ..isAutoSet = isAutoSet;
+  /// copy()時にTurnEffect()のprivate変数をコピーするために使う
+  void baseCopyWith(TurnEffect e) {
+    _alreadyOwnFainting = e._alreadyOwnFainting;
+    _alreadyOpponentFainting = e._alreadyOpponentFainting;
+    _ownItemHolded = e._ownItemHolded;
+    _opponentItemHolded = e._opponentItemHolded;
+    _isOwnFainting = e._isOwnFainting;
+    _isOpponentFainting = e._isOpponentFainting;
+    _isOwnChanged = e._isOwnChanged;
+    _isOpponentChanged = e._isOpponentChanged;
+    _isMyWin = e._isMyWin;
+    _isYourWin = e._isYourWin;
+  }
 
   /// 有効かどうか
   bool isValid();
@@ -1385,152 +1391,4 @@ abstract class TurnEffect extends Equatable implements Copyable {
   /// split1~split3: 区切り文字
   /// ```
   String serialize(String split1, String split2, String split3);
-
-//  static void swap(List<TurnEffect> list, int idx1, int idx2) {
-//    TurnEffect tmp = list[idx1].copy();
-//    list[idx1] = list[idx2].copy();
-//    list[idx2] = tmp;
-//  }
 }
-
-/*
-class TurnEffectAndStateAndGuide {
-  int phaseIdx = -1;
-  TurnEffect turnEffect = TurnEffect();
-  PhaseState phaseState = PhaseState();
-  List<Guide> guides = [];
-  bool needAssist = false;
-  List<TurnEffect> candidateEffect = []; // 入力される候補となるTurnEffectのリスト
-
-  // candidateEffectを更新する
-  // candidateEffectは、各タイミングの最初の要素に入れておくのがbetter？
-  void updateEffectCandidates(Turn currentTurn, PhaseState prevState) {
-    candidateEffect.clear();
-    candidateEffect.addAll(_getEffectCandidates(
-      turnEffect.timing,
-      PlayerType.me,
-      null,
-      currentTurn,
-      prevState,
-    ));
-    candidateEffect.addAll(_getEffectCandidates(
-      turnEffect.timing,
-      PlayerType.opponent,
-      null,
-      currentTurn,
-      prevState,
-    ));
-    candidateEffect.addAll(_getEffectCandidates(
-      turnEffect.timing,
-      PlayerType.entireField,
-      null,
-      currentTurn,
-      prevState,
-    ));
-  }
-
-  List<TurnEffect> _getEffectCandidates(
-    Timing timing,
-    PlayerType playerType,
-    EffectType? effectType,
-    Turn turn,
-    PhaseState phaseState,
-  ) {
-    if (playerType == PlayerType.none) return [];
-
-    // prevActionを設定
-    TurnEffect? prevAction;
-    if (timing == Timing.afterMove) {
-      for (int i = phaseIdx - 1; i >= 0; i--) {
-        if (turn.phases[i].timing == Timing.action) {
-          prevAction = turn.phases[i];
-          break;
-        } else if (turn.phases[i].timing != timing) {
-          break;
-        }
-      }
-    } else if (timing == Timing.beforeMove) {
-      for (int i = phaseIdx + 1; i < turn.phases.length; i++) {
-        if (turn.phases[i].timing == Timing.action) {
-          prevAction = turn.phases[i];
-          break;
-        } else if (turn.phases[i].timing != timing) {
-          break;
-        }
-      }
-    }
-    PlayerType attacker =
-        prevAction != null ? prevAction.playerType : PlayerType.none;
-    TurnMove turnMove =
-        prevAction?.move != null ? prevAction!.move! : TurnMove();
-
-    if (playerType == PlayerType.entireField) {
-      return _getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.ability, attacker, turnMove, turn, prevAction, phaseState);
-    }
-    if (effectType == null) {
-      List<TurnEffect> ret = [];
-      ret.addAll(_getEffectCandidatesWithEffectType(
-          timing,
-          playerType,
-          EffectType.ability,
-          attacker,
-          turnMove,
-          turn,
-          prevAction,
-          phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(timing, playerType,
-          EffectType.item, attacker, turnMove, turn, prevAction, phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(
-          timing,
-          playerType,
-          EffectType.individualField,
-          attacker,
-          turnMove,
-          turn,
-          prevAction,
-          phaseState));
-      ret.addAll(_getEffectCandidatesWithEffectType(
-          timing,
-          playerType,
-          EffectType.ailment,
-          attacker,
-          turnMove,
-          turn,
-          prevAction,
-          phaseState));
-      return ret;
-    } else {
-      return _getEffectCandidatesWithEffectType(timing, playerType, effectType,
-          attacker, turnMove, turn, prevAction, phaseState);
-    }
-  }
-
-  List<TurnEffect> _getEffectCandidatesWithEffectType(
-    Timing timing,
-    PlayerType playerType,
-    EffectType effectType,
-    PlayerType attacker,
-    TurnMove turnMove,
-    Turn turn,
-    TurnEffect? prevAction,
-    PhaseState phaseState,
-  ) {
-    return TurnEffect.getPossibleEffects(
-        timing,
-        playerType,
-        effectType,
-        playerType == PlayerType.me || playerType == PlayerType.opponent
-            ? phaseState.getPokemonState(playerType, prevAction).pokemon
-            : null,
-        playerType == PlayerType.me || playerType == PlayerType.opponent
-            ? phaseState.getPokemonState(playerType, prevAction)
-            : null,
-        phaseState,
-        attacker,
-        turnMove,
-        turn,
-        prevAction);
-  }
-}
-*/

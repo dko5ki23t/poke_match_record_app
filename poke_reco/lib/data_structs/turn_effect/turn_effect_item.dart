@@ -38,6 +38,7 @@ class TurnEffectItem extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         playerType,
         timing,
         itemID,
@@ -53,7 +54,8 @@ class TurnEffectItem extends TurnEffect {
         .._changePokemonIndexes = [..._changePokemonIndexes]
         .._prevPokemonIndexes = [..._prevPokemonIndexes]
         ..extraArg1 = extraArg1
-        ..extraArg2 = extraArg2;
+        ..extraArg2 = extraArg2
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>

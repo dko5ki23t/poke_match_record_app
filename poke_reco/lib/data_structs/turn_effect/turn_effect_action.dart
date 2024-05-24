@@ -438,6 +438,7 @@ class TurnEffectAction extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         playerType,
         type,
         teraType,
@@ -482,7 +483,8 @@ class TurnEffectAction extends TurnEffect {
     .._prevPokemonIndexes = [..._prevPokemonIndexes]
     ..moveType = moveType
     ..isFirst = isFirst
-    .._isValid = _isValid;
+    .._isValid = _isValid
+    ..baseCopyWith(this);
 
   /// 行動失敗の原因
   ActionFailure get actionFailure => _actionFailure;

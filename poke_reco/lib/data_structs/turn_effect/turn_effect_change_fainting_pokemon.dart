@@ -21,12 +21,14 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
   int changePokemonIndex = 0; // 0は無効値
 
   @override
-  List<Object?> get props => [playerType, timing, changePokemonIndex];
+  List<Object?> get props =>
+      [...super.props, playerType, timing, changePokemonIndex];
 
   @override
   TurnEffectChangeFaintingPokemon copy() =>
       TurnEffectChangeFaintingPokemon(player: playerType)
-        ..changePokemonIndex = changePokemonIndex;
+        ..changePokemonIndex = changePokemonIndex
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
