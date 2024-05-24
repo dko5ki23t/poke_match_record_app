@@ -393,8 +393,8 @@ enum Timing {
   /// トリックルームのとき
   trickRoom,
 
-  /// ノーマルタイプのこうげきわざが当たった時
-  normalAttackHit,
+  /// ノーマルタイプのこうげきわざを使用する前
+  beforeNormalAttack,
 
   /// 効果ばつぐんのほのおタイプのこうげきわざを受けた時
   greatFireAttacked,
@@ -406,7 +406,7 @@ enum Timing {
   greatElectricAttacked,
 
   /// 効果ばつぐんのくさタイプのこうげきわざを受けた時
-  greatgrassAttacked,
+  greatGrassAttacked,
 
   /// 効果ばつぐんのこおりタイプのこうげきわざを受けた時
   greatIceAttacked,

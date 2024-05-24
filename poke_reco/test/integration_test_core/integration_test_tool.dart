@@ -484,6 +484,10 @@ Future<void> testHP(
 Future<void> testRank(FlutterDriver driver, PlayerType playerType,
     String rankAlphabet, String rankStr) async {
   String ownOrOpponent = playerType == PlayerType.me ? 'Own' : 'Opponent';
+  String rankAlp = rankAlphabet;
+  if (rankAlp.length == 1) {
+    rankAlp += ' ';
+  }
   final designatedWidget =
       find.byValueKey('BattlePokemonStateInfoRank$ownOrOpponent');
   if (!await isPresent(designatedWidget, driver)) {
@@ -504,7 +508,7 @@ Future<void> testRank(FlutterDriver driver, PlayerType playerType,
     }
   }
   await testExistAnyWidgets(
-      find.byValueKey('Rank$rankAlphabet $ownOrOpponent$rankStr'), driver);
+      find.byValueKey('Rank$rankAlp$ownOrOpponent$rankStr'), driver);
 }
 
 /// 対象の状態変化の有無をチェックする。

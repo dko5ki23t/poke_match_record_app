@@ -1452,12 +1452,13 @@ Future<void> test23_3(
   // ターン8へ
   await goTurnPage(driver, turnNum++);
 
-  // TODO:ノーマルジュエルを効果として追加できるようにした方がよい？
-  await editPokemonState(driver, 'カイリュー/ニセ', null, null, 'ノーマルジュエル');
   // カイリューのしんそく
   await tapMove(driver, op, 'しんそく', true);
   // ヘルガーのHP0
   await inputRemainHP(driver, op, '0');
+  // カイリューのノーマルジュエル
+  await addEffect(driver, 0, op, 'ノーマルジュエル');
+  await driver.tap(find.text('OK'));
   // ヘルガーひんし->エクスレッグに交代
   await changePokemon(driver, me, 'エクスレッグ', false);
   // ターン9へ
@@ -1767,7 +1768,8 @@ Future<void> test23_5(
   await changePokemon(driver, me, 'オリーヴァ', false);
   // コータスひんし->スコヴィランに交代
   await changePokemon(driver, op, 'スコヴィラン', false);
-  // TODO:ここで晴れ終了しないといけない
+  // 晴れ終了を確認
+  await testExistEffect(driver, '晴れ終了');
   // ターン6へ
   await goTurnPage(driver, turnNum++);
 
@@ -2386,8 +2388,7 @@ Future<void> test24_4(
   await testRank(driver, op, 'C', 'Up3');
   await testRank(driver, op, 'D', 'Up3');
   await testRank(driver, op, 'S', 'Up3');
-  // TODO: ？なぜかEv+5を判定できない
-  //await testRank(driver, op, 'Ev', 'Up5');
+  await testRank(driver, op, 'Ev', 'Up5');
   // ウルガモスのほのおのまい
   await tapMove(driver, op, 'ほのおのまい', true);
   // ヘルガーのHP151

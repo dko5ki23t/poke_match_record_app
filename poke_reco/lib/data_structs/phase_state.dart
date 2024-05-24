@@ -343,6 +343,7 @@ class PhaseState extends Equatable implements Copyable {
         var defenderPlayerType = prevAction != null
             ? prevAction.playerType.opposite
             : PlayerType.opponent;
+        var attackerTimingIDList = [];
         var defenderTimingIDList = [];
         bool isDefenderFull = defenderPlayerType == PlayerType.me
             ? defenderState.remainHP >= defenderState.pokemon.h.real
@@ -379,9 +380,11 @@ class PhaseState extends Equatable implements Copyable {
                 abilityID: attackerState.currentAbility.id)
               ..extraArg1 = replacedMoveType.index);
           }
-          // ノーマルタイプのこうげきをうけたとき
           if (replacedMoveType == PokeType.normal) {
-            defenderTimingIDList.add(148);
+            // ノーマルタイプのこうげきわざを使用する前
+            attackerTimingIDList.addAll([Timing.beforeNormalAttack]);
+            // ノーマルタイプのこうげきをうけたとき
+            defenderTimingIDList.add(Timing.normalAttacked);
           }
           var effectiveness = PokeTypeEffectiveness.effectiveness(
               attackerState.currentAbility.id == 113 ||
@@ -402,66 +405,77 @@ class PhaseState extends Equatable implements Copyable {
             final moveType = replacedMoveType;
             switch (moveType) {
               case PokeType.fire:
-                defenderTimingIDList.add(131);
+                defenderTimingIDList.add(Timing.greatFireAttacked);
                 break;
               case PokeType.water:
-                defenderTimingIDList.add(132);
+                defenderTimingIDList.add(Timing.greatWaterAttacked);
                 break;
               case PokeType.electric:
-                defenderTimingIDList.add(133);
+                defenderTimingIDList.add(Timing.greatElectricAttacked);
                 break;
               case PokeType.grass:
-                defenderTimingIDList.add(134);
+                defenderTimingIDList.add(Timing.greatGrassAttacked);
                 break;
               case PokeType.ice:
-                defenderTimingIDList.add(135);
+                defenderTimingIDList.add(Timing.greatIceAttacked);
                 break;
               case PokeType.fight:
-                defenderTimingIDList.add(136);
+                defenderTimingIDList.add(Timing.greatFightAttacked);
                 break;
               case PokeType.poison:
-                defenderTimingIDList.add(137);
+                defenderTimingIDList.add(Timing.greatPoisonAttacked);
                 break;
               case PokeType.ground:
-                defenderTimingIDList.add(138);
+                defenderTimingIDList.add(Timing.greatGroundAttacked);
                 break;
               case PokeType.fly:
-                defenderTimingIDList.add(139);
+                defenderTimingIDList.add(Timing.greatFlyAttacked);
                 break;
               case PokeType.psychic:
-                defenderTimingIDList.add(140);
+                defenderTimingIDList.add(Timing.greatPsycoAttacked);
                 break;
               case PokeType.bug:
-                defenderTimingIDList.add(141);
+                defenderTimingIDList.add(Timing.greatBugAttacked);
                 break;
               case PokeType.rock:
-                defenderTimingIDList.add(142);
+                defenderTimingIDList.add(Timing.greatRockAttacked);
                 break;
               case PokeType.ghost:
-                defenderTimingIDList.add(143);
+                defenderTimingIDList.add(Timing.greatGhostAttacked);
                 break;
               case PokeType.dragon:
-                defenderTimingIDList.add(144);
+                defenderTimingIDList.add(Timing.greatDragonAttacked);
                 break;
               case PokeType.evil:
-                defenderTimingIDList.add(145);
+                defenderTimingIDList.add(Timing.greatEvilAttacked);
                 break;
               case PokeType.steel:
-                defenderTimingIDList.add(146);
+                defenderTimingIDList.add(Timing.greatSteelAttacked);
                 break;
               case PokeType.fairy:
-                defenderTimingIDList.add(147);
+                defenderTimingIDList.add(Timing.greatFairyAttacked);
                 break;
               default:
                 break;
             }
+          }
+          if (attackerState.holdingItem != null &&
+              attackerTimingIDList
+                  .contains(attackerState.holdingItem!.timing)) {
+            var addingItem = TurnEffectItem(
+                player: attackerPlayerType,
+                timing: Timing.beforeMove,
+                itemID: attackerState.holdingItem!.id);
+            addingItem.setAutoArgs(
+                attackerState, defenderState, state, prevAction);
+            ret.add(addingItem);
           }
           if (defenderState.holdingItem != null &&
               defenderTimingIDList
                   .contains(defenderState.holdingItem!.timing)) {
             var addingItem = TurnEffectItem(
                 player: defenderPlayerType,
-                timing: Timing.afterMove,
+                timing: Timing.beforeMove,
                 itemID: defenderState.holdingItem!.id);
             addingItem.setAutoArgs(
                 defenderState, attackerState, state, prevAction);
@@ -571,35 +585,42 @@ class PhaseState extends Equatable implements Copyable {
               }
               // ノーマルタイプのこうげきをうけたとき
               if (replacedMoveType! == PokeType.normal) {
-                defenderTimingIDList.add(148);
+                defenderTimingIDList.add(Timing.normalAttacked);
               }
               // あくタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.evil) {
-                defenderTimingIDList.addAll([86, 87]);
+                defenderTimingIDList.addAll([
+                  Timing.evilAttacked,
+                  Timing.evilGhostBugAttackedIntimidated
+                ]);
               }
               // みずタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.water) {
-                defenderTimingIDList.addAll([92, 104]);
+                defenderTimingIDList
+                    .addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
               }
               // ほのおタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.fire) {
-                defenderTimingIDList.addAll([104, 107]);
+                defenderTimingIDList
+                    .addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
               }
               // でんきタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.electric) {
-                defenderTimingIDList.addAll([118]);
+                defenderTimingIDList.addAll([Timing.electricAttacked]);
               }
               // こおりタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.ice) {
-                defenderTimingIDList.addAll([119]);
+                defenderTimingIDList.addAll([Timing.iceAttacked]);
               }
               // ゴーストタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.ghost) {
-                defenderTimingIDList.addAll([87]);
+                defenderTimingIDList
+                    .addAll([Timing.evilGhostBugAttackedIntimidated]);
               }
               // むしタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.bug) {
-                defenderTimingIDList.addAll([92]);
+                defenderTimingIDList
+                    .addAll([Timing.evilGhostBugAttackedIntimidated]);
               }
               // 直接こうげきを受けた後
               if (replacedMove.isDirect &&
@@ -689,55 +710,55 @@ class PhaseState extends Equatable implements Copyable {
               final moveType = replacedMoveType;
               switch (moveType) {
                 case PokeType.fire:
-                  defenderTimingIDList.add(131);
+                  defenderTimingIDList.add(Timing.greatFireAttacked);
                   break;
                 case PokeType.water:
-                  defenderTimingIDList.add(132);
+                  defenderTimingIDList.add(Timing.greatWaterAttacked);
                   break;
                 case PokeType.electric:
-                  defenderTimingIDList.add(133);
+                  defenderTimingIDList.add(Timing.greatElectricAttacked);
                   break;
                 case PokeType.grass:
-                  defenderTimingIDList.add(134);
+                  defenderTimingIDList.add(Timing.greatGrassAttacked);
                   break;
                 case PokeType.ice:
-                  defenderTimingIDList.add(135);
+                  defenderTimingIDList.add(Timing.greatIceAttacked);
                   break;
                 case PokeType.fight:
-                  defenderTimingIDList.add(136);
+                  defenderTimingIDList.add(Timing.greatFightAttacked);
                   break;
                 case PokeType.poison:
-                  defenderTimingIDList.add(137);
+                  defenderTimingIDList.add(Timing.greatPoisonAttacked);
                   break;
                 case PokeType.ground:
-                  defenderTimingIDList.add(138);
+                  defenderTimingIDList.add(Timing.greatGroundAttacked);
                   break;
                 case PokeType.fly:
-                  defenderTimingIDList.add(139);
+                  defenderTimingIDList.add(Timing.greatFlyAttacked);
                   break;
                 case PokeType.psychic:
-                  defenderTimingIDList.add(140);
+                  defenderTimingIDList.add(Timing.greatPsycoAttacked);
                   break;
                 case PokeType.bug:
-                  defenderTimingIDList.add(141);
+                  defenderTimingIDList.add(Timing.greatBugAttacked);
                   break;
                 case PokeType.rock:
-                  defenderTimingIDList.add(142);
+                  defenderTimingIDList.add(Timing.greatRockAttacked);
                   break;
                 case PokeType.ghost:
-                  defenderTimingIDList.add(143);
+                  defenderTimingIDList.add(Timing.greatGhostAttacked);
                   break;
                 case PokeType.dragon:
-                  defenderTimingIDList.add(144);
+                  defenderTimingIDList.add(Timing.greatDragonAttacked);
                   break;
                 case PokeType.evil:
-                  defenderTimingIDList.add(145);
+                  defenderTimingIDList.add(Timing.greatEvilAttacked);
                   break;
                 case PokeType.steel:
-                  defenderTimingIDList.add(146);
+                  defenderTimingIDList.add(Timing.greatSteelAttacked);
                   break;
                 case PokeType.fairy:
-                  defenderTimingIDList.add(147);
+                  defenderTimingIDList.add(Timing.greatFairyAttacked);
                   break;
                 default:
                   break;

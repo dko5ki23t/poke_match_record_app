@@ -2362,7 +2362,6 @@ Future<void> test19_4(
   // ターン4へ
   await goTurnPage(driver, turnNum++);
 
-  // TODO:ウェーにバルに対するシャドーボールのダメージ表示が大きい値～小さい値になっている？
   // ドラパルトのシャドーボール
   await tapMove(driver, op, 'シャドーボール', false);
   // ウェーニバルのHP44
@@ -2764,7 +2763,7 @@ Future<void> test20_2(
   await inputRemainHP(driver, op, '0');
   // キョジオーンひんし->ボーマンダに交代
   await changePokemon(driver, me, 'ボーマンダ', false);
-  // ドラパルトのとくせいがドラゴンアローと判明
+  // ドラパルトのとくせいがクリアボディと判明
   await editPokemonState(driver, 'ドラパルト/ふなびと', null, 'クリアボディ', null);
   // TODO:ランク変化も編集できるようにしたい
   // ターン5へ
@@ -2892,7 +2891,6 @@ Future<void> test20_3(
   await inputTerastal(driver, me, '');
   // ボーマンダのテラバースト
   await tapMove(driver, me, 'テラバースト', false);
-  // TODO: このテラバーストのダメージ計算間違ってるっぽい？
   // ラウドボーンのHP0
   await inputRemainHP(driver, me, '0');
   // ラウドボーンひんし->マスカーニャに交代

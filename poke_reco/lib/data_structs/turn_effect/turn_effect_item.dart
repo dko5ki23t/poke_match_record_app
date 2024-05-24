@@ -760,7 +760,7 @@ class TurnEffectItem extends TurnEffect {
         break;
       case 187: // イバンのみ
       case 248: // パワフルハーブ
-      case 669: // ノーマルジュエル
+        //case 669: // ノーマルジュエル <- TurnEffectActionで消費
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 194: // せんせいのツメ

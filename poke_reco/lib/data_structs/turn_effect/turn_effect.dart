@@ -774,7 +774,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
                 Timing.greatFireAttacked,
                 Timing.greatWaterAttacked,
                 Timing.greatElectricAttacked,
-                Timing.greatgrassAttacked,
+                Timing.greatGrassAttacked,
                 Timing.greatIceAttacked,
                 Timing.greatFightAttacked,
                 Timing.greatPoisonAttacked,
@@ -791,6 +791,8 @@ abstract class TurnEffect extends Equatable implements Copyable {
               ]);
             }
             if (replacedMoveType == PokeType.normal) {
+              // ノーマルタイプのこうげきわざを使用する前
+              attackerTimings.addAll([Timing.beforeNormalAttack]);
               // ノーマルタイプのわざを受けた時
               defenderTimings.addAll([Timing.normalAttacked]);
             }
@@ -815,7 +817,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
                   defenderTimings.add(Timing.greatElectricAttacked);
                   break;
                 case PokeType.grass:
-                  defenderTimings.add(Timing.greatgrassAttacked);
+                  defenderTimings.add(Timing.greatGrassAttacked);
                   break;
                 case PokeType.ice:
                   defenderTimings.add(Timing.greatIceAttacked);
@@ -908,10 +910,6 @@ abstract class TurnEffect extends Equatable implements Copyable {
                   player: attacker.opposite,
                   timing: Timing.afterMove,
                   abilityID: 10000 + unomis.first.id));
-            }
-            // ノーマルタイプのこうげきをした時
-            if (replacedMoveType == PokeType.normal) {
-              attackerTimings.addAll([Timing.normalAttackHit]);
             }
             // あくタイプのこうげきを受けた時
             if (replacedMoveType == PokeType.evil) {
@@ -1050,7 +1048,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
                 defenderTimings.add(Timing.greatElectricAttacked);
                 break;
               case PokeType.grass:
-                defenderTimings.add(Timing.greatgrassAttacked);
+                defenderTimings.add(Timing.greatGrassAttacked);
                 break;
               case PokeType.ice:
                 defenderTimings.add(Timing.greatIceAttacked);
