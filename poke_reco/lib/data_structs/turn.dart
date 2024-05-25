@@ -950,7 +950,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     Timing currentTiming = stateTimingMap[state]!;
     Timing prevTiming = Timing.none;
     List<TurnEffect> assistList = [];
-    //List<TurnEffect> delAssistList = [];
     TurnEffectAction? lastAction;
 
     /// 効果によってポケモン交代した状態
@@ -966,20 +965,20 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         currentState,
         lastAction,
       );
-      // TODO
-/*
-      for (final effect in currentTurn.noAutoAddEffect) {
-        assistList.removeWhere((e) => effect.nearEqual(e));
-      }
-*/
     }
 
     while (state != end) {
       currentTiming =
           changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
+      // 自動入力効果のうち、ユーザが意図して消した効果は削除
+      for (final effect in currentTurn.noAutoAddEffect) {
+        assistList.removeWhere((e) => effect.nearEqual(e));
+      }
 
       /// フェーズの参照インデックスiをインクリメントしない場合はtrueにする
       bool skipInc = false;
+
+      // ユーザ入力のパラメータ編集の場合
       if (i < l.length && l[i] is TurnEffectUserEdit) {
         // 何も変化させず、processEffect()
         // currentTimingを無効にすることで自動入力を再作成させる
@@ -1124,22 +1123,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           case 8: // わざ処理状態
             {
               isChanged = [false, false];
-              //actionCount++;
               if (i >= l.length || l[i].runtimeType != TurnEffectAction) {
-                // TODO:ありえない？
-                /*_insertPhase(
-                        i,
-                        TurnEffect()
-                          ..timing = Timing.action
-                          ..effectType = EffectType.move
-                          ..move = TurnMove(),
-                        appState);
-                    if (actionCount == 1) l[i].move!.isFirst = true;
-                    if (actionCount == 2) {
-                      s1 = 8; // ターン終了状態へ
-                    } else {
-                      s1 = 12; // 行動選択前状態へ
-                    }*/
+                // ここに到達する場合もある。イルカマン戦2ターン3等
                 state = 11; // ターン終了時処理状態へ
                 skipInc = true;
               } else {
@@ -1148,7 +1133,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 if (!remainAction[action.playerType.number]) {
                   action.isSuccess = false;
                 } else if (action.actionFailure.id == ActionFailure.none) {
-                  //TODO: 消して大丈夫か？
                   //action.isSuccess = true;
                 }
                 remainAction[action.playerType.number] = false;
@@ -1254,7 +1238,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       TurnEffectChangeFaintingPokemon(
                         player: PlayerType.me,
                       ));
-                  // TODO: 不要になった？
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.me) > i) {
                     // その行動を削除
@@ -1269,7 +1252,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       TurnEffectChangeFaintingPokemon(
                         player: PlayerType.opponent,
                       ));
-                  // TODO: 不要になった？
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.opponent) > i) {
                     // その行動を削除
@@ -1468,18 +1450,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             assistList.removeWhere((e) => effect.nearEqual(e));
           }
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
-          // それ以外で入力済みの自動入力は削除
-          //List<int> removeIdxs = [];
           for (int j = i; j < l.length; j++) {
             if (l[j].timing != nextTiming) break;
-            // TODO
             int findIdx =
                 assistList.indexWhere((element) => element.nearEqual(l[j]));
             if (findIdx >= 0) {
               assistList.removeAt(findIdx);
-              // TODO
-              /*} else if (l[j].isAutoSet) {
-              removeIdxs.add(j);*/
             }
           }
           if (currentTiming == Timing.pokemonAppear) {
@@ -1488,7 +1464,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           }
         } else if (currentTiming != nextTiming) {
           assistList.clear();
-          //delAssistList.clear();
         }
       }
     }

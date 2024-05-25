@@ -1105,6 +1105,7 @@ class PhaseState extends Equatable implements Copyable {
           player.opposite, timing == Timing.afterMove ? prevAction : null);
       bool isMe = player == PlayerType.me;
 
+      // HPが1/4以下
       if ((isMe &&
               myState.remainHP <= myState.pokemon.h.real / 4 &&
               myState.remainHP > 0) ||
@@ -1113,6 +1114,7 @@ class PhaseState extends Equatable implements Copyable {
               myState.remainHPPercent > 0)) {
         playerTimings.add(Timing.hp025);
       }
+      // HPが1/2以下
       if ((isMe &&
               myState.remainHP <= myState.pokemon.h.real / 2 &&
               myState.remainHP > 0) ||
@@ -1120,6 +1122,18 @@ class PhaseState extends Equatable implements Copyable {
               myState.remainHPPercent <= 50 &&
               myState.remainHPPercent > 0)) {
         playerTimings.add(Timing.hp050);
+        // リミットシールド
+        if (myState.buffDebuffs.containsByID(BuffDebuff.meteorForm) &&
+            (timing == Timing.pokemonAppear || timing == Timing.everyTurnEnd)) {
+          playerTimings.add(Timing.limitShield);
+        }
+      } else {
+        // HPが1/2より大きい
+        // リミットシールド
+        if (myState.buffDebuffs.containsByID(BuffDebuff.coloredCore) &&
+            (timing == Timing.pokemonAppear || timing == Timing.everyTurnEnd)) {
+          playerTimings.add(Timing.limitShield);
+        }
       }
 
       // こだいかっせい/ブーストエナジー発動の余地がある場合
@@ -1174,12 +1188,10 @@ class PhaseState extends Equatable implements Copyable {
         ret.add(addingItem);
       }
     }
-
-/*
-    for (var effect in ret) {
+    // 自動追加であることを示すフラグオン
+    for (final effect in ret) {
       effect.isAutoSet = true;
     }
-*/
 
     return ret;
   }

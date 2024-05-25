@@ -122,6 +122,8 @@ const Set<Timing> allTimings = {
   Timing.confused, // こんらんになるとき
   Timing.infatuation, // メロメロになるとき
   Timing.changedIgnoredAbility, // とくせいを変更される、無効化される、無視されるとき
+  Timing
+      .limitShield, // ポケモン登場時、または毎ターン終了時にHP>1/2かつ○○いろのコアである時。またはHP<=1/2かつりゅうせいのすがたである時。
 };
 
 /// ポケモンを繰り出すときのタイミング
@@ -242,25 +244,11 @@ abstract class TurnEffect extends Equatable implements Copyable {
 
   /// 相手が勝利したか（両方勝利の場合は引き分け）
   bool get isYourWin => _isYourWin;
-//  bool isAutoSet = false; // trueの場合、プログラムにて自動で追加されたもの
+
+  /// ユーザの手入力でなく、前後の状況等から自動で追加されたものかどうか
+  bool isAutoSet = false;
 
   TurnEffect(this.effectType);
-
-//  int effectId = 0;
-//  int extraArg1 = 0;
-//  int extraArg2 = 0;
-//  TurnMove? move; // タイプがわざの場合は非null
-//  bool isAdding = false; // trueの場合、追加待ち状態
-//  bool isOwnFainting = false; // このフェーズで自身のポケモンがひんしになるかどうか
-//  bool isOpponentFainting = false;
-//  bool isMyWin = false; // 自身の勝利（両方勝利の場合は引き分け）
-//  bool isYourWin = false;
-//  List<int> _prevPokemonIndexes = [
-//    0,
-//    0
-//  ]; // (ポケモン交代という行動ではなく)効果によってポケモンを交代する場合はその交換前インデックス
-//
-//  List<int> invalidGuideIDs = [];
 
   @override
   @mustCallSuper
@@ -275,6 +263,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
         _isOpponentChanged,
         _isMyWin,
         _isYourWin,
+        isAutoSet,
       ];
 
   /// copy()時にTurnEffect()のprivate変数をコピーするために使う
@@ -289,6 +278,7 @@ abstract class TurnEffect extends Equatable implements Copyable {
     _isOpponentChanged = e._isOpponentChanged;
     _isMyWin = e._isMyWin;
     _isYourWin = e._isYourWin;
+    isAutoSet = e.isAutoSet;
   }
 
   /// 有効かどうか

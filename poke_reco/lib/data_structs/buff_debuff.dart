@@ -611,6 +611,12 @@ class BuffDebuff extends Equatable implements Copyable {
   /// れんぞくぎり連続成功回数(隠しステータス)
   static const int furyCutter = 201;
 
+  /// ○○いろのコア
+  static const int coloredCore = 202;
+
+  /// りゅうせいのすがた(状態異常・ねむけ状態にならない)
+  static const int meteorForm = 203;
+
   /// ID
   final int id;
 

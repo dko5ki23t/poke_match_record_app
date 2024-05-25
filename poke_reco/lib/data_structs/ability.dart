@@ -536,6 +536,10 @@ class Ability extends Equatable implements Copyable {
         myState.buffDebuffs
             .add(pokeData.buffDebuffs[BuffDebuff.merciless]!.copy());
         break;
+      case 197: // リミットシールド
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.coloredCore]!.copy());
+        break;
       case 198: // はりこみ
         myState.buffDebuffs
             .add(pokeData.buffDebuffs[BuffDebuff.change2]!.copy());
@@ -902,6 +906,9 @@ class Ability extends Equatable implements Copyable {
         break;
       case 196: // ひとでなし
         myState.buffDebuffs.removeAllByID(BuffDebuff.merciless);
+        break;
+      case 197: // リミットシールド
+        myState.buffDebuffs.removeAllByID(BuffDebuff.coloredCore);
         break;
       case 198: // はりこみ
         myState.buffDebuffs.removeAllByID(BuffDebuff.change2);

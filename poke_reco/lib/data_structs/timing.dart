@@ -509,4 +509,7 @@ enum Timing {
 
   /// HPが満タンで等倍以上のタイプ相性わざを受ける前
   beforeTypeNormalOrGreatAttackedWithFullHP,
+
+  /// ポケモン登場時、または毎ターン終了時にHP>1/2かつ○○いろのコアである時。またはHP<=1/2かつりゅうせいのすがたである時。
+  limitShield,
 }

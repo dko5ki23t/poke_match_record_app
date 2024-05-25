@@ -199,3 +199,5 @@ id,identifier,name,name_en,color,turns,is_hidden,effect_id,arg1,arg2,arg3,arg4,a
 199,stellarForm,ステラフォルム,Stellar Form,orange,0,0,1,160,105,110,130,110,85,0,ステラフォルム
 200,stellarUsed,,,white,0,1,0,0,0,0,0,0,0,0,ステラ補正を使用したタイプのフラグ(隠しステータス。交代でも消えない)
 201,furyCutter,,,white,0,1,0,0,0,0,0,0,0,0,れんぞくぎり連続成功回数(隠しステータス)
+202,coloredCore,〇〇いろのコア,xxx Core,orange,0,0,0,0,0,0,0,0,0,0,〇〇いろのコア
+203,meteorForm,りゅうせいのすがた,Metor Form,orange,0,0,0,0,0,0,0,0,0,0,りゅうせいのすがた(状態異常・ねむけ状態にならない)

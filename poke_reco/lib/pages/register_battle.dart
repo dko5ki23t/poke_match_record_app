@@ -134,8 +134,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
   late AnimationController animeController;
   late SequenceAnimation colorAnimation;
 
-//  final turnScrollController = ScrollController();
-
   CheckedPokemons checkedPokemons = CheckedPokemons();
   List<Color> opponentFilters = [];
   int turnNum = 1;
@@ -343,11 +341,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             battle.isYourWin = true;
           }
         }
-/*
-        for (var phase in turns[turnNum - 1].phases) {
-          phase.isAutoSet = false;
-        }
-*/
         // TODO:このやり方だと5ターン入力してて3ターン目で勝利確定させるような編集されると破綻する
       }
 
@@ -1000,11 +993,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           break;
         case RegisterBattlePageType.turnPage:
           int prevTurnIndex = turnNum - 1;
-/*
-          for (var phase in prevTurn.phases) {
-            phase.isAutoSet = false;
-          }
-*/
           turnNum++;
           if (turns.length < turnNum) {
             turns.add(Turn());
@@ -1038,13 +1026,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
           setState(() {});
           break;
         case RegisterBattlePageType.turnPage:
-          // 表示のスクロール位置をトップに
-          //turnScrollController.jumpTo(0);
-/*
-          for (var phase in turns[turnNum - 1].phases) {
-            phase.isAutoSet = false;
-          }
-*/
           turnNum--;
           if (turnNum == 0) {
             turnNum = 1;
@@ -1175,17 +1156,28 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                           context: context,
                           builder: (_) {
                             return AddEffectDialog(
-                              (effect) {
+                              onSelect: (effect) {
+                                // 追加時、自動追加オフリストにあるものと同じならそれを消す
+                                int findIdx = currentTurn.noAutoAddEffect
+                                    .indexWhere((e) => e.nearEqual(effect));
+                                if (findIdx >= 0) {
+                                  currentTurn.noAutoAddEffect.removeAt(findIdx);
+                                }
                                 currentTurn.phases.insert(0, effect);
                                 // 続けて効果の編集ダイアログ表示
                                 showDialog(
                                   context: context,
                                   builder: (_) {
                                     return EditEffectDialog(
-                                      () => setState(() {
+                                      onDelete: () => setState(() {
+                                        // 削除時、自動追加オフリストに対象効果を追加
+                                        if (effect.isAutoSet) {
+                                          currentTurn.noAutoAddEffect
+                                              .add(effect);
+                                        }
                                         currentTurn.phases.remove(effect);
                                       }),
-                                      (newEffect) {
+                                      onEdit: (newEffect) {
                                         setState(() {
                                           int findIdx = currentTurn.phases
                                               .indexOf(effect);
@@ -1196,21 +1188,21 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                               .scrollToIndex(widgetIdx + 1);
                                         });
                                       },
-                                      effect.displayName(
+                                      title: effect.displayName(
                                         loc: loc,
                                       ),
-                                      effect,
-                                      currentTurn
+                                      turnEffect: effect,
+                                      myState: currentTurn
                                           .copyInitialState()
                                           .getPokemonState(
                                               effect.playerType, null),
-                                      currentTurn
+                                      yourState: currentTurn
                                           .copyInitialState()
                                           .getPokemonState(
                                               effect.playerType.opposite, null),
-                                      ownParty,
-                                      opponentParty,
-                                      currentTurn.copyInitialState(),
+                                      ownParty: ownParty,
+                                      opponentParty: opponentParty,
+                                      state: currentTurn.copyInitialState(),
                                     );
                                   },
                                 );
@@ -1224,12 +1216,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                     "await addEffect(driver, ${addButtonCount - 1}, ${effect.playerType == PlayerType.me ? 'me' : effect.playerType == PlayerType.opponent ? 'op' : 'PlayerType.entireField'}, '$effectName');\n"
                                     "await driver.tap(find.text('OK'));");
                               },
-                              loc.battleAddProcess,
-                              effectList,
-                              '${currentTurn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
-                              null, // わざ使用後のタイミングは必ず無いのでここはnull
-                              '${currentTurn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
-                              null,
+                              title: loc.battleAddProcess,
+                              effectList: effectList,
+                              youText:
+                                  '${currentTurn.copyInitialState().getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                              youAfterMoveText:
+                                  null, // わざ使用後のタイミングは必ず無いのでここはnull
+                              opponentText:
+                                  '${currentTurn.copyInitialState().getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                              opponentAfterMoveText: null,
                             );
                           });
                     },
@@ -1259,10 +1254,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                     context: context,
                     builder: (_) {
                       return EditEffectDialog(
-                        () => setState(() {
+                        onDelete: () => setState(() {
+                          // 削除時、自動追加オフリストに対象効果を追加
+                          if (effect.isAutoSet) {
+                            currentTurn.noAutoAddEffect.add(effect);
+                          }
                           currentTurn.phases.remove(effect);
                         }),
-                        (newEffect) {
+                        onEdit: (newEffect) {
                           setState(() {
                             int findIdx = currentTurn.phases.indexOf(effect);
                             currentTurn.phases[findIdx] = newEffect;
@@ -1271,15 +1270,15 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                 .scrollToIndex(widgetIdx + 1);
                           });
                         },
-                        effect.displayName(
+                        title: effect.displayName(
                           loc: loc,
                         ),
-                        effect,
-                        myState,
-                        yourState,
-                        ownParty,
-                        opponentParty,
-                        phaseState,
+                        turnEffect: effect,
+                        myState: myState,
+                        yourState: yourState,
+                        ownParty: ownParty,
+                        opponentParty: opponentParty,
+                        state: phaseState,
                       );
                     },
                   );
@@ -1386,7 +1385,13 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                         context: context,
                         builder: (_) {
                           return AddEffectDialog(
-                            (eff) {
+                            onSelect: (eff) {
+                              // 追加時、自動追加オフリストにあるものと同じならそれを消す
+                              int findIdx = currentTurn.noAutoAddEffect
+                                  .indexWhere((e) => e.nearEqual(effect));
+                              if (findIdx >= 0) {
+                                currentTurn.noAutoAddEffect.removeAt(findIdx);
+                              }
                               currentTurn.phases.insert(phaseIdx + 1, eff);
                               // スクロール位置変更
                               effectViewScrollController
@@ -1404,10 +1409,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                 context: context,
                                 builder: (_) {
                                   return EditEffectDialog(
-                                    () => setState(() {
+                                    onDelete: () => setState(() {
+                                      // 削除時、自動追加オフリストに対象効果を追加
+                                      if (eff.isAutoSet) {
+                                        currentTurn.noAutoAddEffect.add(eff);
+                                      }
                                       currentTurn.phases.remove(eff);
                                     }),
-                                    (newEffect) {
+                                    onEdit: (newEffect) {
                                       setState(() {
                                         int findIdx =
                                             currentTurn.phases.indexOf(eff);
@@ -1426,27 +1435,29 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                       print("// $playerName$effectName\n"
                                           "await addEffect(driver, ${addButtonCount - 1}, ${newEffect.playerType == PlayerType.me ? 'me' : newEffect.playerType == PlayerType.opponent ? 'op' : 'PlayerType.entireField'}, '$effectName');\n");
                                     },
-                                    eff.displayName(
+                                    title: eff.displayName(
                                       loc: loc,
                                     ),
-                                    eff,
-                                    myS,
-                                    yourS,
-                                    ownParty,
-                                    opponentParty,
-                                    phaseS,
+                                    turnEffect: eff,
+                                    myState: myS,
+                                    yourState: yourS,
+                                    ownParty: ownParty,
+                                    opponentParty: opponentParty,
+                                    state: phaseS,
                                   );
                                 },
                               );
                             },
-                            loc.battleAddProcess,
-                            effectList,
-                            '${phaseStateForAdd.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
-                            isChangeMe
+                            title: loc.battleAddProcess,
+                            effectList: effectList,
+                            youText:
+                                '${phaseStateForAdd.getPokemonState(PlayerType.me, null).pokemon.omittedName}/${loc.battleYou}',
+                            youAfterMoveText: isChangeMe
                                 ? '${phaseStateForAdd.getPokemonState(PlayerType.me, prevChangeMove).pokemon.omittedName}/${loc.battleYou}'
                                 : null,
-                            '${phaseStateForAdd.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
-                            isChangeOpponent
+                            opponentText:
+                                '${phaseStateForAdd.getPokemonState(PlayerType.opponent, null).pokemon.omittedName}/${widget.battle.opponentName}',
+                            opponentAfterMoveText: isChangeOpponent
                                 ? '${phaseStateForAdd.getPokemonState(PlayerType.opponent, prevChangeMove).pokemon.omittedName}/${widget.battle.opponentName}'
                                 : null,
                           );

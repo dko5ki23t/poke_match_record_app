@@ -772,8 +772,11 @@ class PokemonState extends Equatable implements Copyable {
       // ぜったいねむり<-状態異常＋ねむけ
       return false;
     }
-    // TODO:リミットシールド
-    //if (currentAbility.id == 213) return false;
+    if (buffDebuffs.containsByID(BuffDebuff.meteorForm) &&
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // りゅうせいのすがた<-状態異常＋ねむけ
+      return false;
+    }
     if ((ailmentsWhere((e) => e.id == Ailment.uproar).isNotEmpty ||
             state
                 .getPokemonState(playerType.opposite, null)

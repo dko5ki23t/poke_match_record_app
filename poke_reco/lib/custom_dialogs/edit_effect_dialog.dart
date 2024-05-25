@@ -16,16 +16,16 @@ class EditEffectDialog extends StatefulWidget {
   final Party opponentParty;
   final PhaseState state;
 
-  const EditEffectDialog(
-    this.onDelete,
-    this.onEdit,
-    this.title,
-    this.turnEffect,
-    this.myState,
-    this.yourState,
-    this.ownParty,
-    this.opponentParty,
-    this.state, {
+  const EditEffectDialog({
+    required this.onDelete,
+    required this.onEdit,
+    required this.title,
+    required this.turnEffect,
+    required this.myState,
+    required this.yourState,
+    required this.ownParty,
+    required this.opponentParty,
+    required this.state,
     Key? key,
   }) : super(key: key);
 

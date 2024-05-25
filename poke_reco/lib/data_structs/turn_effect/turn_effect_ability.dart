@@ -550,6 +550,10 @@ class TurnEffectAbility extends TurnEffect {
       case 273: // こんがりボディ
         myState.addStatChanges(true, 1, 2, yourState, abilityId: abilityID);
         break;
+      case 197: // リミットシールド
+        myState.buffDebuffs
+            .switchID(BuffDebuff.meteorForm, BuffDebuff.coloredCore);
+        break;
       case 208: // ぎょぐん(現状SVでは登場していないため未実装)
         myState.buffDebuffs
             .switchID(BuffDebuff.singleForm, BuffDebuff.multipleForm);
