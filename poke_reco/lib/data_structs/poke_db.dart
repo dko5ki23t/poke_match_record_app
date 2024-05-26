@@ -183,6 +183,7 @@ const String pokeBaseColumnHeight = 'height';
 const String pokeBaseColumnWeight = 'weight';
 const String pokeBaseColumnEggGroup = 'eggGroup';
 const String pokeBaseColumnImageUrl = 'imageUrl';
+const String pokeBaseColumnAvailableEviolite = 'availableEviolite';
 
 const String preparedDBFile = 'Prepared.db';
 
@@ -539,28 +540,8 @@ class PokeDB {
   Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')}; // 無効なタマゴグループ
   late Database eggGroupDb;
   Map<int, PokeBase> pokeBase = {
-    // 無効なポケモン
-    0: PokeBase(
-      name: '',
-      nameEn: '',
-      sex: [Sex.createFromId(0)],
-      no: 0,
-      type1: PokeType.unknown,
-      type2: null,
-      h: 0,
-      a: 0,
-      b: 0,
-      c: 0,
-      d: 0,
-      s: 0,
-      ability: [],
-      move: [],
-      height: 0,
-      weight: 0,
-      eggGroups: [],
-      imageUrl: 'https://dammy',
-    ),
-  };
+    0: PokeBase.none(),
+  }; // 無効なポケモン
   late Database pokeBaseDb;
   Map<int, Pokemon> pokemons = {0: Pokemon()};
   late Database myPokemonDb;
@@ -1145,6 +1126,7 @@ class PokeDB {
         pokeBaseColumnWeight,
         pokeBaseColumnEggGroup,
         pokeBaseColumnImageUrl,
+        pokeBaseColumnAvailableEviolite,
       ],
     );
 
@@ -1182,6 +1164,7 @@ class PokeDB {
         weight: map[pokeBaseColumnWeight],
         eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!],
         imageUrl: map[pokeBaseColumnImageUrl],
+        availableEviolite: map[pokeBaseColumnAvailableEviolite] != 0,
       );
     }
 

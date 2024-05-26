@@ -303,8 +303,8 @@ class Pokemon extends Equatable implements Copyable {
   /// 努力値の合計
   int get totalEffort => _stats.totalEffort;
 
-  /// TODO:しんかのきせきが適用できるかどうか
-  bool get isEvolvable => true;
+  /// しんかのきせきが適用できるかどうか
+  bool get availableEviolite => PokeDB().pokeBase[no]!.availableEviolite;
 
   @override
   Pokemon copy() => Pokemon()

@@ -28,6 +28,7 @@ pokeBaseColumnHeight = 'height'
 pokeBaseColumnWeight = 'weight'
 pokeBaseColumnEggGroup = 'eggGroup'
 pokeBaseColumnImageUrl = 'imageUrl'
+pokeBaseColumnAvailableEviolite = 'availableEviolite'
 
 imageUrlBase = 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/'
 
@@ -65,6 +66,7 @@ allpokemonsCSVPokemonIDColumn = 'id'
 allpokemonsCSVSpeciesIDColumn = 'species_id'
 allpokemonsCSVHeightColumn = 'height'
 allpokemonsCSVWeightColumn = 'weight'
+allpokemonsCSVAvailableEvioliteColumn = 'available_eviolite'
 
 pokemonFormsCSVPokemonIDColumn = 'pokemon_id'
 pokemonFormsCSVPokemonFormIDColumn = 'id'
@@ -81,6 +83,7 @@ pokemonEggGroupsCSVEggGroupIDColumn = 'egg_group_id'
 pokeBaseCSVpokemonIDIndex = 1
 pokeBaseCSVevolvesFromIDIndex = 4
 pokeBaseCSVfemaleRate = 9
+pokeBaseCSVAvailableEviolite = 21
 
 # CSVファイル(PokeAPI)で必要となる各ID
 japaneseID = 1
@@ -249,8 +252,10 @@ def main():
             weight = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVWeightColumn].iloc[0])
             # 画像URL作成
             imageUrl = f'{imageUrlBase}{id}.png'
+            # しんかのきせきが適用されるか
+            available_eviolite = int(allpokemon_df[allpokemon_df[allpokemonsCSVPokemonIDColumn] == id][allpokemonsCSVAvailableEvioliteColumn].iloc[0])
 
-            pokemons_list.append((id, name, name_en, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups, imageUrl))
+            pokemons_list.append((id, name, name_en, abilities, form, female_rate, moves, h, a, b, c, d, s, types, height, weight, egg_groups, imageUrl, available_eviolite))
 
             for form_id in form:
                 if form_id == id:
@@ -310,7 +315,7 @@ def main():
                 # 画像URL作成
                 form_imageUrl = f'{imageUrlBase}{form_id}.png'
 
-                pokemons_list.append((form_id, form_name, form_name_en, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups, form_imageUrl))
+                pokemons_list.append((form_id, form_name, form_name_en, form_abilities, form, female_rate, form_moves, form_h, form_a, form_b, form_c, form_d, form_s, form_types, form_height, form_weight, egg_groups, form_imageUrl, available_eviolite))
 
 
         # 作成(存在してたら作らない)
@@ -332,7 +337,8 @@ def main():
             f'  {pokeBaseColumnHeight} integer, '
             f'  {pokeBaseColumnWeight} integer, '
             f'  {pokeBaseColumnEggGroup} IntList, '
-            f'  {pokeBaseColumnImageUrl} text not null)'
+            f'  {pokeBaseColumnImageUrl} text not null, '
+            f'  {pokeBaseColumnAvailableEviolite} integer)'
             )
         except sqlite3.OperationalError:
             print('failed to create table')
@@ -348,8 +354,9 @@ def main():
                 f'{pokeBaseColumnId}, {pokeBaseColumnName}, {pokeBaseColumnEnglishName}, {pokeBaseColumnAbility}, '
                 f'{pokeBaseColumnForm}, {pokeBaseColumnFemaleRate}, {pokeBaseColumnMove}, '
                 f'{statsColumn}, {pokeBaseColumnType}, {pokeBaseColumnHeight}, '
-                f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}, {pokeBaseColumnImageUrl}) '
-                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
+                f'{pokeBaseColumnWeight}, {pokeBaseColumnEggGroup}, '
+                f'{pokeBaseColumnImageUrl}, {pokeBaseColumnAvailableEviolite}) '
+                f'VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )',
                 pokemons_list)
         except sqlite3.OperationalError:
             print('failed to insert table')

@@ -333,6 +333,7 @@ class TestPokeDB {
         pokeBaseColumnWeight,
         pokeBaseColumnEggGroup,
         pokeBaseColumnImageUrl,
+        pokeBaseColumnAvailableEviolite,
       ],
     );
 
@@ -370,6 +371,7 @@ class TestPokeDB {
         weight: map[pokeBaseColumnWeight],
         eggGroups: [for (var e in pokeEggGroups) data.eggGroups[e]!],
         imageUrl: map[pokeBaseColumnImageUrl],
+        availableEviolite: map[pokeBaseColumnAvailableEviolite] != 0,
       );
     }
   }

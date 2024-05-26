@@ -790,10 +790,6 @@ class TurnEffectAction extends TurnEffect {
     if (move.id == 0) return ret;
 
     // ゾロアーク判定
-    // ゾロアーク判定だけは、有効/無効でこの後の処理が変わるため、
-    // TurnEffectのinvalidGuideIDsに含まれるかどうかチェックする必要がある
-    // TODO
-    //if (!invalidGuideIDs.contains(Guide.confZoroark)) {
     if (playerType == PlayerType.opponent) {
       int check = 0;
       check += state.canZorua ? PokeBase.zoruaNo : 0;
@@ -824,7 +820,6 @@ class TurnEffectAction extends TurnEffect {
         }
       }
     }
-    //}
 
     // わざ確定(失敗時でも確定はできる)
     var tmp = myState.moves
@@ -2062,6 +2057,7 @@ class TurnEffectAction extends TurnEffect {
             targetState.ailmentsAdd(Ailment(Ailment.sleepy), state);
             break;
           case 189: // もちものを持っていれば失わせ、威力1.5倍
+            // TODO: ダメージ計算はもちものを失くした状態で行う模様
             // もちもの確定のため、一度持たせる
             if (targetPlayerType == PlayerType.opponent &&
                 targetState.getHoldingItem()?.id == 0) {

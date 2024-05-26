@@ -433,7 +433,7 @@ class Item extends Equatable implements Copyable {
             .add(pokeData.buffDebuffs[BuffDebuff.moveAttack1_2]!.copy());
         break;
       case 581: // しんかのきせき
-        if (myState.pokemon.isEvolvable) {
+        if (myState.pokemon.availableEviolite) {
           myState.buffDebuffs
               .add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!.copy());
           myState.buffDebuffs

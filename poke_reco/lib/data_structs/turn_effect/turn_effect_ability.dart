@@ -1768,7 +1768,7 @@ class TurnEffectAbility extends TurnEffect {
         return;
       case 168: // へんげんじざい
       case 236: // リベロ
-        // TODO?
+        // getDefaultEffectList()にてセットされる
         return;
       case 44: // あめうけざら
       case 115: // アイスボディ
