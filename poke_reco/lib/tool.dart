@@ -7,6 +7,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:collection/collection.dart';
+import 'package:tuple/tuple.dart';
 
 Future<Database> openAssetDatabase(String dbFileName) async {
   if (kIsWeb) {
@@ -194,4 +195,16 @@ class SortableMap<K, V> {
       int Function(MapEntry<K, V>, MapEntry<K, V>) sorter) {
     return map.entries.toList()..sort((a, b) => sorter(a, b));
   }
+}
+
+/// 2つのintを1つのintに代入
+int pack2int(int a, int b) {
+  return a << 32 | (b & 0x0000ffff);
+}
+
+/// 1つのintを2つのintに
+Tuple2<int, int> unpack2int(int a) {
+  int ret1 = a >> 32;
+  int ret2 = a & 0x0000ffff;
+  return Tuple2(ret1, ret2);
 }

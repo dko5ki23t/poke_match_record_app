@@ -85,6 +85,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
   CommandPagesController commandPagesController = CommandPagesController();
+  TextEditingController textEditingController = TextEditingController();
+  TextEditingController textEditingController2 = TextEditingController();
   int currentMoveListOrder = 0;
 
   @override
@@ -384,10 +386,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   yourParty: yourParty,
                   myState: myState,
                   yourState: yourState,
-                  opponentName: widget.opponentName,
                   state: prevState,
                   damageGetter: getter,
                   controller: commandPagesController,
+                  textEditingController: textEditingController,
+                  textEditingController2: textEditingController2,
                   loc: loc);
               // 表示Widgetのコントローラリセット
               commandPagesController = CommandPagesController();
@@ -782,10 +785,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             yourParty: yourParty,
             myState: myState,
             yourState: yourState,
-            opponentName: widget.opponentName,
             state: prevState,
             damageGetter: selectingMoveDamageGetter,
             controller: commandPagesController,
+            textEditingController: textEditingController,
+            textEditingController2: textEditingController2,
             loc: loc);
         // 選択するだけでvalidになるmoveがあるため、行動順をupdate
         // TODO:この位置じゃないほうがいい？

@@ -97,7 +97,7 @@ class TurnEffectChangeFaintingPokemon extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {

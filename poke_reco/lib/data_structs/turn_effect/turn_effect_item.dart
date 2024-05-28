@@ -15,6 +15,7 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
+import 'package:tuple/tuple.dart';
 
 class TurnEffectItem extends TurnEffect {
   TurnEffectItem(
@@ -131,7 +132,7 @@ class TurnEffectItem extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -696,6 +697,92 @@ class TurnEffectItem extends TurnEffect {
         );
     }
     return Container();
+  }
+
+  /// 効果のextraArg等を編集するWidgetを返す(Tuple.item1)。自身/相手のHP入力が必要な場合はのテンプレートを返す(Tuple.item2)
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// ```
+  Tuple2<Widget, CommandWidgetTemplate?> editArgWidgetForAction(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state, {
+    required void Function(int extraArg1, int extraArg2) onEdit,
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    switch (itemID) {
+      case 247: // いのちのたま
+      case 265: // くっつきバリ
+      case 258: // くろいヘドロ
+      case 211: // たべのこし
+      case 132: // オレンのみ
+      case 135: // オボンのみ
+      case 185: // ナゾのみ
+      case 230: // かいがらのすず
+      case 43: // きのみジュース
+        return Tuple2(Container(), CommandWidgetTemplate.inputMyHP2);
+      case 136: // フィラのみ
+      case 137: // ウイのみ
+      case 138: // マゴのみ
+      case 139: // バンジのみ
+      case 140: // イアのみ
+        return Tuple2(
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(children: [
+                  Flexible(
+                    child: _myDropdownButtonFormField(
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        border: UnderlineInputBorder(),
+                      ),
+                      items: <DropdownMenuItem>[
+                        DropdownMenuItem(
+                          value: 0,
+                          child: Text(loc.battleHPRecovery),
+                        ),
+                        DropdownMenuItem(
+                          value: 1,
+                          child: Text(loc.battleConfused2),
+                        ),
+                      ],
+                      value: extraArg2,
+                      onChanged: (value) {
+                        extraArg2 = value;
+                        onEdit(extraArg1, extraArg2);
+                      },
+                      textValue: extraArg2 == 0
+                          ? loc.battleHPRecovery
+                          : extraArg1 == 1
+                              ? loc.battleConfused2
+                              : '',
+                      isInput: true,
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+            extraArg2 == 0 ? CommandWidgetTemplate.inputMyHP2 : null);
+      case 583: // ゴツゴツメット
+      case 188: // ジャポのみ
+      case 189: // レンブのみ
+        // extraArg1にHP
+        return Tuple2(Container(), CommandWidgetTemplate.inputYourHP2);
+    }
+    return Tuple2(
+        editArgWidget(myState, yourState, ownParty, opponentParty, state,
+            TextEditingController(), TextEditingController(),
+            onEdit: () => onEdit(extraArg1, extraArg2), loc: loc, theme: theme),
+        null);
   }
 
   @override
