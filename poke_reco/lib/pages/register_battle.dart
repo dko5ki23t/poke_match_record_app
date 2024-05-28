@@ -1170,11 +1170,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                   builder: (_) {
                                     return EditEffectDialog(
                                       onDelete: () => setState(() {
-                                        // 削除時、自動追加オフリストに対象効果を追加
-                                        if (effect.isAutoSet) {
-                                          currentTurn.noAutoAddEffect
-                                              .add(effect);
-                                        }
                                         currentTurn.phases.remove(effect);
                                       }),
                                       onEdit: (newEffect) {
@@ -1241,6 +1236,8 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               phaseState.getPokemonState(effect.playerType, prevAction);
           final yourState = phaseState.getPokemonState(
               effect.playerType.opposite, prevAction);
+          final phaseStateForRemove = currentTurn.getProcessedStates(
+              phaseIdx - 1, ownParty, opponentParty, loc);
           final phaseStateForAdd = currentTurn.getProcessedStates(
               phaseIdx, ownParty, opponentParty, loc);
 
@@ -1258,6 +1255,25 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                           // 削除時、自動追加オフリストに対象効果を追加
                           if (effect.isAutoSet) {
                             currentTurn.noAutoAddEffect.add(effect);
+                            // この位置で、他に同じ効果でタイミングが違うだけのものがあれば
+                            // それも自動追加オフリストに追加
+                            final effectList =
+                                currentTurn.getEffectCandidatesWithPhaseIdx(
+                              effect.playerType,
+                              effect.effectType,
+                              ownParty,
+                              opponentParty,
+                              phaseStateForRemove,
+                              loc,
+                              turnNum,
+                              phaseIdx + 1,
+                            );
+                            for (final eff in effectList) {
+                              if (eff.nearEqual(effect,
+                                  allowTimingDiff: true)) {
+                                currentTurn.noAutoAddEffect.add(eff);
+                              }
+                            }
                           }
                           currentTurn.phases.remove(effect);
                         }),
@@ -1527,6 +1543,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                             phaseState: ownBeforeLastActionState,
                             myParty: ownParty,
                             yourParty: opponentParty,
+                            opponentName: widget.battle.opponentName,
                             parentSetState: setState,
                             onConfirm: () => setState(() {
                               currentTurn.phases.updateActionOrder();
@@ -1726,6 +1743,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                             phaseState: opponentBeforeLastActionState,
                             myParty: opponentParty,
                             yourParty: ownParty,
+                            opponentName: widget.battle.opponentName,
                             parentSetState: setState,
                             onConfirm: () => setState(() {
                               currentTurn.phases.updateActionOrder();

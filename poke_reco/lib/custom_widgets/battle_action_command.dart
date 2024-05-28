@@ -49,6 +49,7 @@ class BattleActionCommand extends StatefulWidget {
     required this.phaseState,
     required this.myParty,
     required this.yourParty,
+    required this.opponentName,
     required this.parentSetState,
     required this.onConfirm,
     required this.onUnConfirm,
@@ -65,6 +66,7 @@ class BattleActionCommand extends StatefulWidget {
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
+  final String opponentName;
   final void Function(void Function()) parentSetState;
   final void Function() onConfirm;
   final void Function() onUnConfirm;
@@ -382,6 +384,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   yourParty: yourParty,
                   myState: myState,
                   yourState: yourState,
+                  opponentName: widget.opponentName,
                   state: prevState,
                   damageGetter: getter,
                   controller: commandPagesController,
@@ -779,6 +782,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             yourParty: yourParty,
             myState: myState,
             yourState: yourState,
+            opponentName: widget.opponentName,
             state: prevState,
             damageGetter: selectingMoveDamageGetter,
             controller: commandPagesController,

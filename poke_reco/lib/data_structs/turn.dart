@@ -1731,7 +1731,7 @@ class Turn extends Equatable implements Copyable {
 
   /// とある時点(フェーズ)での状態を返す
   /// ```
-  /// phaseIdx: フェーズのインデックス
+  /// phaseIdx: フェーズのインデックス(負数ならターン最初の状態を返す)
   /// ownParty: 自身(ユーザー)のパーティ
   /// opponentParty: 相手のパーティ
   /// ```
