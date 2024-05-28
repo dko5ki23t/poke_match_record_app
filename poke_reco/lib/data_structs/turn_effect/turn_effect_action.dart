@@ -7,6 +7,7 @@ import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/custom_widgets/stand_alone_checkbox.dart';
 import 'package:poke_reco/custom_widgets/stand_alone_switch_list.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/move.dart';
@@ -712,6 +713,8 @@ class TurnEffectAction extends TurnEffect {
 
     var ownPokemonState = ownState;
     var opponentPokemonState = opponentState;
+    var beforeMoveOwnState = ownState.copy();
+    var beforeMoveOpponentState = opponentState.copy();
     var myState = playerType == PlayerType.me ? ownState : opponentState;
     var yourState = playerType == PlayerType.me ? opponentState : ownState;
     var beforeMoveMyState = myState.copy();
@@ -4299,11 +4302,6 @@ class TurnEffectAction extends TurnEffect {
           {
             // ダメージを負わせる
             for (var targetState in targetStates) {
-              // みがわりなし/貫通わざかどうかの判定(現在は不要)
-              /*if (!targetState.buffDebuffs
-                      .containsByID(BuffDebuff.substitute) ||
-                  replacedMove.isSound ||
-                  myState.buffDebuffs.containsByID(BuffDebuff.ignoreWall)) {*/
               targetState.remainHP -= realDamage;
               targetState.remainHPPercent -= percentDamage;
               // こうげきを受けた数をカウント
@@ -4318,8 +4316,10 @@ class TurnEffectAction extends TurnEffect {
               }
               // あいてポケモンのステータス確定
               if (playerType == PlayerType.opponent &&
-                  realDamage > 0 &&
-                  targetState.remainHP > 0) {
+                  realDamage > 0 /*targetState.remainHP > 0*/) {
+                /// reals.item1: 推定したステータスのインデックス
+                /// reals.item2: 推定したステータスの最大値
+                /// reals.item3: 推定したステータスの最小値
                 var reals = calcRealFromDamage(
                   realDamage: realDamage,
                   myState: beforeMoveMyState,
@@ -4344,38 +4344,131 @@ class TurnEffectAction extends TurnEffect {
                 );
                 if (reals.item1.index > StatIndex.H.index) {
                   // もともとある範囲より狭まるようにのみ上書き
-                  int minS = opponentPokemonState
+                  int minS = beforeMoveOpponentState
                       .minStats[StatIndex.values[reals.item1.index]].real;
-                  int maxS = opponentPokemonState
+                  int maxS = beforeMoveOpponentState
                       .maxStats[StatIndex.values[reals.item1.index]].real;
                   bool addGuide = false;
-                  // もちもの等の影響で、推定した最小値が現在の最大値より大きくなった場合
-                  if (maxS < reals.item3) {
-                    // TODO: とくせいやもちものの提案
-                    // TODO: 判定方法
-                    final sugAList = opponentPokemonState.possibleAbilities
-                        .where((element) => element.possiblyChangeStat
-                            .where((e) =>
-                                e.item1 ==
-                                    StatIndex.values[reals.item1.index] &&
-                                e.item2 > 100)
-                            .isNotEmpty);
+                  // とくせいやもちもの等の影響で、推定した最小値が現在の最大値より大きくなった場合
+                  // or
+                  // とくせいやもちもの等の影響で、推定した最大値が現在の最小値より小さくなった場合
+                  if (maxS < reals.item3 || reals.item2 < minS) {
+                    // ダメージが変化する可能性があるとくせいを絞り込む
+                    Iterable<Ability> sugAs;
+                    if (maxS < reals.item3) {
+                      sugAs = opponentPokemonState.possibleAbilities.where(
+                          (element) => element.possiblyChangeStat
+                              .where((e) =>
+                                  e.item1 ==
+                                      StatIndex.values[reals.item1.index] &&
+                                  e.item2 > 100)
+                              .isNotEmpty);
+                    } else {
+                      sugAs = opponentPokemonState.possibleAbilities.where(
+                          (element) => element.possiblyChangeStat
+                              .where((e) =>
+                                  e.item1 ==
+                                      StatIndex.values[reals.item1.index] &&
+                                  e.item2 < 100)
+                              .isNotEmpty);
+                    }
+                    final sugAList = [];
+                    // 可能性のあるとくせいを当てはめてみて、実際に受けたダメージの値に達するか確認する
+                    for (final sugA in sugAs) {
+                      final tmpState = beforeMoveMyState.copy()
+                        ..setCurrentAbility(sugA, beforeMoveTargetStates[0],
+                            playerType == PlayerType.me, state);
+                      var damage = calcDamage(
+                        myState: tmpState,
+                        yourState: beforeMoveTargetStates[0],
+                        state: state,
+                        myPlayerType: playerType,
+                        replacedMove: replacedMove,
+                        replacedMoveType: moveType,
+                        power: movePower,
+                        damageClassID: moveDamageClassID,
+                        isFoulPlay: isFoulPlay,
+                        defenseAltAttack: defenseAltAttack,
+                        ignoreTargetRank: ignoreTargetRank,
+                        invDeffense: invDeffense,
+                        isSunny1_5: isSunny1_5,
+                        ignoreAbility: ignoreAbility,
+                        mTwice: mTwice,
+                        additionalMoveType: additionalMoveType,
+                        halvedBerry: halvedBerry,
+                        useLargerAC: useLargerAC,
+                        loc: loc,
+                      );
+                      final maxDamage = damage.item2;
+                      final minDamage = damage.item3;
+                      if (minDamage <= realDamage && realDamage <= maxDamage) {
+                        sugAList.add(sugA);
+                      }
+                    }
                     if (sugAList.isNotEmpty) {
                       ret.add(Guide()
                         ..guideId = Guide.suggestAbilities
                         ..guideStr = ''
                         ..args = [for (final sugA in sugAList) sugA.id]);
                     }
-                    final sugIList = pokeData.items.values.where((element) =>
-                        element.id != 0 &&
-                        !opponentPokemonState.impossibleItems
-                            .contains(element) &&
-                        element.possiblyChangeStat
-                            .where((e) =>
-                                e.item1 ==
-                                    StatIndex.values[reals.item1.index] &&
-                                e.item2 > 100)
-                            .isNotEmpty);
+
+                    // ダメージが変化する可能性があるもちものを絞り込む
+                    Iterable<Item> sugIs;
+                    if (maxS < reals.item3) {
+                      sugIs = pokeData.items.values.where((element) =>
+                          element.id != 0 &&
+                          !opponentPokemonState.impossibleItems
+                              .contains(element) &&
+                          element.possiblyChangeStat
+                              .where((e) =>
+                                  e.item1 ==
+                                      StatIndex.values[reals.item1.index] &&
+                                  e.item2 > 100)
+                              .isNotEmpty);
+                    } else {
+                      sugIs = pokeData.items.values.where((element) =>
+                          element.id != 0 &&
+                          !opponentPokemonState.impossibleItems
+                              .contains(element) &&
+                          element.possiblyChangeStat
+                              .where((e) =>
+                                  e.item1 ==
+                                      StatIndex.values[reals.item1.index] &&
+                                  e.item2 < 100)
+                              .isNotEmpty);
+                    }
+                    final sugIList = [];
+                    // 可能性のあるもちものを当てはめてみて、実際に受けたダメージの値に達するか確認する
+                    for (final sugI in sugIs) {
+                      final tmpState = beforeMoveMyState.copy()
+                        ..holdingItem = sugI;
+                      var damage = calcDamage(
+                        myState: tmpState,
+                        yourState: beforeMoveTargetStates[0],
+                        state: state,
+                        myPlayerType: playerType,
+                        replacedMove: replacedMove,
+                        replacedMoveType: moveType,
+                        power: movePower,
+                        damageClassID: moveDamageClassID,
+                        isFoulPlay: isFoulPlay,
+                        defenseAltAttack: defenseAltAttack,
+                        ignoreTargetRank: ignoreTargetRank,
+                        invDeffense: invDeffense,
+                        isSunny1_5: isSunny1_5,
+                        ignoreAbility: ignoreAbility,
+                        mTwice: mTwice,
+                        additionalMoveType: additionalMoveType,
+                        halvedBerry: halvedBerry,
+                        useLargerAC: useLargerAC,
+                        loc: loc,
+                      );
+                      final maxDamage = damage.item2;
+                      final minDamage = damage.item3;
+                      if (minDamage <= realDamage && realDamage <= maxDamage) {
+                        sugIList.add(sugI);
+                      }
+                    }
                     if (sugIList.isNotEmpty) {
                       ret.add(Guide()
                         ..guideId = Guide.suggestItems
@@ -4387,16 +4480,6 @@ class TurnEffectAction extends TurnEffect {
                   } else if (minS < reals.item3) {
                     minS = reals.item3;
                     addGuide = true;
-                  }
-                  // もちもの等の影響で、推定した最大値が現在の最小値より小さくなった場合
-                  if (reals.item2 < minS) {
-                    // TODO: とくせいやもちものの提案
-                    ret.add(Guide()
-                      ..guideId = Guide.suggestAbilities
-                      ..guideStr = ''
-                      ..args = []);
-                    maxS = minS;
-                    addGuide = true;
                   } else if (maxS > reals.item2) {
                     maxS = reals.item2;
                     addGuide = true;
@@ -4407,7 +4490,7 @@ class TurnEffectAction extends TurnEffect {
                       ..guideStr = loc.battleGuideMoveDamagedToStatus(
                           maxS,
                           minS,
-                          opponentPokemonState.pokemon.omittedName,
+                          beforeMoveOpponentState.pokemon.omittedName,
                           reals.item1.name)
                       ..args = [
                         reals.item1.index,
@@ -4437,19 +4520,17 @@ class TurnEffectAction extends TurnEffect {
       if (move.priority == state.firstAction!.move.priority) {
         // わざの優先度が同じ
         // もともとある範囲より狭まるようにのみ上書き
-        int minS = opponentPokemonState.minStats.s.real;
-        int maxS = opponentPokemonState.maxStats.s.real;
+        int minS = beforeMoveOpponentState.minStats.s.real;
+        int maxS = beforeMoveOpponentState.maxStats.s.real;
         bool addGuide = false;
         if (playerType == PlayerType.me) {
-          if (minS < ownPokemonState.minStats.s.real) {
-            // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
-            minS = ownPokemonState.minStats.s.real;
+          if (minS < beforeMoveOwnState.minStats.s.real) {
+            minS = beforeMoveOwnState.minStats.s.real;
             addGuide = true;
           }
         } else {
-          if (maxS > ownPokemonState.maxStats.s.real) {
-            // TODO: 交代わざ用に、ターンの最初のポケモンステートが良い
-            maxS = ownPokemonState.maxStats.s.real;
+          if (maxS > beforeMoveOwnState.maxStats.s.real) {
+            maxS = beforeMoveOwnState.maxStats.s.real;
             addGuide = true;
           }
         }
@@ -4457,7 +4538,7 @@ class TurnEffectAction extends TurnEffect {
           ret.add(Guide()
             ..guideId = Guide.moveOrderConfSpeed
             ..guideStr = loc.battleGuideMoveOrderConfSpeed(
-                maxS, minS, opponentPokemonState.pokemon.omittedName)
+                maxS, minS, beforeMoveOpponentState.pokemon.omittedName)
             ..args = [
               minS,
               maxS,
