@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
@@ -1982,7 +1983,7 @@ class TurnEffectAbility extends TurnEffect {
     required bool isInput,
   }) {
     if (isInput) {
-      return TypeAheadField(
+      return AppBaseTypeAheadField(
         suggestionsCallback: suggestionsCallback,
         itemBuilder: itemBuilder,
         onSuggestionSelected: onSuggestionSelected,

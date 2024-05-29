@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
@@ -110,7 +111,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
               children: [
                 Text('${loc.commonAbility} : '),
                 Expanded(
-                  child: TypeAheadField(
+                  child: AppBaseTypeAheadField(
                     key: Key('PokemonStateEditDialogAbility'),
                     textFieldConfiguration: TextFieldConfiguration(
                       controller: abilityController,
@@ -164,7 +165,7 @@ class PokemonStateEditDialogState extends State<PokemonStateEditDialog> {
               children: [
                 Text('${loc.commonItem} : '),
                 Expanded(
-                  child: TypeAheadField(
+                  child: AppBaseTypeAheadField(
                     key: Key('PokemonStateEditDialogItem'),
                     textFieldConfiguration: TextFieldConfiguration(
                       controller: itemController,

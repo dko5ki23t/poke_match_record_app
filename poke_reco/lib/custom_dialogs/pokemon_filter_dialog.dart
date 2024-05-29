@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -191,7 +192,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             pokemonExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: pokemonController,
                         decoration: InputDecoration(
@@ -200,6 +201,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                         ),
                       ),
                       autoFlipDirection: true,
+                      suggestionsBoxDecoration: SuggestionsBoxDecoration(
+                          borderRadius: BorderRadius.circular(8)),
                       suggestionsCallback: (pattern) async {
                         List<PokeBase> matches = [];
                         matches.addAll(widget.pokeData.pokeBase.values);
@@ -352,7 +355,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             moveExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: moveController,
                         decoration: InputDecoration(
@@ -469,7 +472,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             abilityExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: abilityController,
                         decoration: InputDecoration(
@@ -545,7 +548,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             natureExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: natureController,
                         decoration: InputDecoration(

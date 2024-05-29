@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -40,7 +41,7 @@ class PokemonSexRow extends Row {
                 ? Expanded(
                     flex: 8,
                     child: enabledPokemon
-                        ? TypeAheadField(
+                        ? AppBaseTypeAheadField(
                             key: Key(
                                 'PokemonSexRow$labelPokemonText'), // テストでの識別用
                             textFieldConfiguration: TextFieldConfiguration(

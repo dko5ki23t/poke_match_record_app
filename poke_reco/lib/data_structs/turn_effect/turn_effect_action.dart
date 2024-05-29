@@ -6158,25 +6158,6 @@ class TurnEffectAction extends TurnEffect {
                 CommandWidgetTemplate.selectMyHoldingItem,
                 loc.battleAdditionalEffect,
                 [loc.battleFlingItem, replacedMove, loc.commonItem]));
-            // TODO: ぶつけたもちものの効果詳細入力
-//          effectInputRow2 = appState.pokeData.items[extraArg1[continuousCount]]!.extraWidget(
-//            onFocus, theme, playerType, ownPokemon, opponentPokemon, ownPokemonState, opponentPokemonState, ownParty, opponentParty,
-//            state, preMoveController, extraArg2[continuousCount], 0, getChangePokemonIndex(playerType),
-//            (value) {
-//              extraArg2[continuousCount] = value;
-//              appState.editingPhase[phaseIdx] = true;
-//              onFocus();
-//            },
-//            (value) {},
-//            (value) {
-//              setChangePokemonIndex(playerType, value);
-//              appState.editingPhase[phaseIdx] = true;
-//              onFocus();
-//            },
-//            isInput,
-//            showNetworkImage: PokeDB().getPokeAPI,
-//            loc: loc,
-//          );
             break;
           case 254: // 与えたダメージの33%を使用者も受ける。使用者のこおり状態を消す。相手をやけど状態にする(確率)
           case 263: // 与えたダメージの33%を使用者も受ける。相手をまひ状態にする(確率)

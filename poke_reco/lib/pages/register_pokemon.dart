@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
@@ -31,6 +32,8 @@ final GlobalKey<RegisterPokemonPageState> _teraTypeInputKey =
     GlobalKey<RegisterPokemonPageState>(debugLabel: 'TeraTypeInput');
 final GlobalKey<RegisterPokemonPageState> _saveButtonKey =
     GlobalKey<RegisterPokemonPageState>(debugLabel: 'SaveButton');
+final GlobalKey<RegisterPokemonPageState> _cameraButtonKey =
+    GlobalKey<RegisterPokemonPageState>(debugLabel: 'CameraButton');
 
 class RegisterPokemonPage extends StatefulWidget {
   RegisterPokemonPage({
@@ -539,7 +542,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
         ],
       ));
       tutorialTargets.add(TargetFocus(
-        keyTarget: _saveButtonKey,
+        keyTarget: _cameraButtonKey,
         alignSkip: Alignment.topLeft,
         enableOverlayTab: true,
         contents: [
@@ -551,6 +554,36 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
               children: <Widget>[
                 Text(
                   loc.tutorialTitleRegisterPokemon3,
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      fontSize: 20.0),
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 10.0),
+                  child: Text(
+                    loc.tutorialInputPokemonInfoFromCamera,
+                    style: TextStyle(color: Colors.white),
+                  ),
+                )
+              ],
+            ),
+          ),
+        ],
+      ));
+      tutorialTargets.add(TargetFocus(
+        keyTarget: _saveButtonKey,
+        alignSkip: Alignment.topLeft,
+        enableOverlayTab: true,
+        contents: [
+          TargetContent(
+            align: ContentAlign.bottom,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Text(
+                  loc.tutorialTitleRegisterPokemon4,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -591,6 +624,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                 : Text(loc.pokemonsTabEditPokemon),
             actions: [
               IconButton(
+                  key: _cameraButtonKey,
                   onPressed: widget.myPokemon.no != 0
                       ? () {
                           setState(() {
@@ -681,7 +715,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                           children: [
                             Expanded(
                               flex: 7,
-                              child: TypeAheadField(
+                              child: AppBaseTypeAheadField(
                                 key: _pokemonNameInputKey,
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: pokeNameController,
@@ -915,7 +949,7 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Flexible(
-                              child: TypeAheadField(
+                              child: AppBaseTypeAheadField(
                                 textFieldConfiguration: TextFieldConfiguration(
                                   controller: pokeNatureController,
                                   decoration: InputDecoration(

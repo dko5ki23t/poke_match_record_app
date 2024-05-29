@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -517,7 +518,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
         ),
         Expanded(
           flex: 1,
-          child: TypeAheadField(
+          child: AppBaseTypeAheadField(
             key: Key("SwitchSelectItemInputTextField"),
             textFieldConfiguration: TextFieldConfiguration(
               controller: itemSearchTextController,
@@ -659,7 +660,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TypeAheadField(
+    return AppBaseTypeAheadField(
       key: Key(
           'SelectItemTextField${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
@@ -803,7 +804,7 @@ class _SelectAbilityInputState extends State<SelectAbilityInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TypeAheadField(
+    return AppBaseTypeAheadField(
       key: Key(
           'SelectAbilityInput${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
