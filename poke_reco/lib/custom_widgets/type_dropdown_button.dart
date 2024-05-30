@@ -33,11 +33,13 @@ class TypeDropdownButton extends DropdownButtonFormField<PokeType> {
                 ),
               ),
           ],
-          onChanged: (value) {
-            if (value != null && onChanged != null) {
-              onChanged(value);
-            }
-          },
+          onChanged: onChanged != null
+              ? (value) {
+                  if (value != null) {
+                    onChanged(value);
+                  }
+                }
+              : null,
           value: value,
         );
 }

@@ -13,6 +13,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
+import 'package:poke_reco/poke_type_icons.dart';
 import 'package:poke_reco/tool.dart';
 
 /// わざの並び替えで先頭に来させるための値
@@ -85,8 +86,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
   CommandPagesController commandPagesController = CommandPagesController();
-  TextEditingController textEditingController = TextEditingController();
-  TextEditingController textEditingController2 = TextEditingController();
   int currentMoveListOrder = 0;
 
   @override
@@ -389,8 +388,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                   state: prevState,
                   damageGetter: getter,
                   controller: commandPagesController,
-                  textEditingController: textEditingController,
-                  textEditingController2: textEditingController2,
                   loc: loc);
               // 表示Widgetのコントローラリセット
               commandPagesController = CommandPagesController();
@@ -508,7 +505,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 icon: myState.isTerastaling
                                     ? myState.teraType1.displayIcon
                                     : Icon(
-                                        Icons.diamond,
+                                        PokeTypeIcons.terastal,
                                         color: Color(0x80000000),
                                       ),
                                 onPressed: () {
@@ -788,8 +785,6 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
             state: prevState,
             damageGetter: selectingMoveDamageGetter,
             controller: commandPagesController,
-            textEditingController: textEditingController,
-            textEditingController2: textEditingController2,
             loc: loc);
         // 選択するだけでvalidになるmoveがあるため、行動順をupdate
         // TODO:この位置じゃないほうがいい？

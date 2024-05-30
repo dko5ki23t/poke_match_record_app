@@ -108,6 +108,7 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/fonts/PokeType/PokeType.ttf
     - assets/Abilities.db
     - assets/Items.db
     - assets/Natures.db
@@ -134,9 +135,9 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   fonts:
-    - family: pokemonTypes
+    - family: PokeType
       fonts:
-        - asset: assets/MyFlutterApp.ttf
+        - asset: assets/fonts/PokeType/PokeType.ttf
 
     - family: Murecho
       fonts:

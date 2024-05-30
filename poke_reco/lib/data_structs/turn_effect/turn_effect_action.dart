@@ -5861,8 +5861,6 @@ class TurnEffectAction extends TurnEffect {
     required PhaseState state,
     required DamageGetter damageGetter,
     required CommandPagesController controller,
-    required TextEditingController textEditingController,
-    required TextEditingController textEditingController2,
     required AppLocalizations loc,
   }) {
     List<Tuple3<CommandWidgetTemplate, String, dynamic>> templateTitles = [];
