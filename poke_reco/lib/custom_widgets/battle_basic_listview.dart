@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/pokemon_sex_row.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/pokemon.dart';
@@ -135,14 +136,13 @@ class BattleBasicListView extends StatelessWidget {
                   SizedBox(width: 10),
                   Flexible(
                     child: isInput
-                        ? DropdownButtonFormField(
+                        ? AppBaseDropdownButtonFormField(
                             decoration: InputDecoration(
-                              border: UnderlineInputBorder(),
                               labelText: loc.battlesTabBattleType,
                             ),
-                            items: <DropdownMenuItem>[
+                            items: <ColoredPopupMenuItem>[
                               for (var type in BattleType.values)
-                                DropdownMenuItem(
+                                ColoredPopupMenuItem(
                                   value: type.id,
                                   child: Text(type.displayName),
                                 ),

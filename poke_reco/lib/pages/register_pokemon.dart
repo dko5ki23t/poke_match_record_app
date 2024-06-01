@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:poke_reco/custom_dialogs/delete_editing_check_dialog.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/move_input_row.dart';
 import 'package:poke_reco/custom_widgets/stat_input_row.dart';
@@ -920,15 +921,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                             ),
                             SizedBox(width: 10),
                             Flexible(
-                              child: DropdownButtonFormField(
+                              child: AppBaseDropdownButtonFormField(
                                 decoration: InputDecoration(
-                                  border: UnderlineInputBorder(),
                                   labelText: loc.commonGender,
                                 ),
-                                items: <DropdownMenuItem<Sex>>[
+                                items: <ColoredPopupMenuItem<Sex>>[
                                   for (var type
                                       in pokeData.pokeBase[myPokemon.no]!.sex)
-                                    DropdownMenuItem(
+                                    ColoredPopupMenuItem(
                                       value: type,
                                       child: type.displayIcon,
                                     ),
@@ -936,7 +936,8 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                                 value: myPokemon.sex,
                                 onChanged: myPokemon.no != 0
                                     ? (value) {
-                                        myPokemon.sex = value as Sex;
+                                        setState(
+                                            () => myPokemon.sex = value as Sex);
                                       }
                                     : null,
                               ),
@@ -1014,15 +1015,14 @@ class RegisterPokemonPageState extends State<RegisterPokemonPage>
                             ),
                             SizedBox(width: 10),
                             Flexible(
-                              child: DropdownButtonFormField(
+                              child: AppBaseDropdownButtonFormField(
                                 decoration: InputDecoration(
-                                  border: UnderlineInputBorder(),
                                   labelText: loc.commonAbility,
                                 ),
-                                items: <DropdownMenuItem>[
+                                items: <ColoredPopupMenuItem>[
                                   for (var ab in pokeData
                                       .pokeBase[myPokemon.no]!.ability)
-                                    DropdownMenuItem(
+                                    ColoredPopupMenuItem(
                                       value: ab,
                                       child: Text(ab.displayName),
                                     )

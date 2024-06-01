@@ -439,7 +439,7 @@ Future<void> test6_3(
   // リーフィアのHP0
   await inputRemainHP(driver, op, '0');
   // リーフィアひんし->ノココッチに交代
-  await changePokemon(driver, op, 'ノココッチ', false);
+  await changePokemon(driver, me, 'ノココッチ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -711,7 +711,7 @@ Future<void> test6_4(
   // パーモットのHP0
   await inputRemainHP(driver, op, '0');
   // パーモットひんし->ノココッチに交代
-  await changePokemon(driver, op, 'ノココッチ', false);
+  await changePokemon(driver, me, 'ノココッチ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);

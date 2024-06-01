@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/move_view_row.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
@@ -240,20 +241,19 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                     ),
                     SizedBox(width: 10),
                     Flexible(
-                      child: DropdownButtonFormField(
+                      child: AppBaseDropdownButtonFormField(
                         decoration: InputDecoration(
-                          border: UnderlineInputBorder(),
                           labelText: loc.commonGender,
                         ),
-                        items: <DropdownMenuItem<Sex>>[
+                        items: <ColoredPopupMenuItem<Sex>>[
                           for (var type in pokeData.pokeBase[myPokemon.no]!.sex)
-                            DropdownMenuItem(
+                            ColoredPopupMenuItem(
                               value: type,
                               child: type.displayIcon,
                             ),
                         ],
                         value: myPokemon.sex,
-                        onChanged: null,
+                        enabled: false,
                       ),
                     ),
                   ],

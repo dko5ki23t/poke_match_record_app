@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
@@ -7104,22 +7105,22 @@ class TurnEffectAction extends TurnEffect {
                   border: UnderlineInputBorder(),
                   labelText: loc.battleAdditionalEffect,
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: MoveEffect.none,
                     child: Text(loc.commonNone),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.burn,
                     child:
                         Text(loc.battleBurned(yourState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.freeze,
                     child:
                         Text(loc.battleFrozen(yourState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.paralysis,
                     child: Text(
                         loc.battlePararised(yourState.pokemon.omittedName)),
@@ -7147,25 +7148,24 @@ class TurnEffectAction extends TurnEffect {
               child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battleAdditionalEffect,
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: MoveEffect.none,
                     child: Text(loc.commonNone),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.poison,
                     child:
                         Text(loc.battlePoisoned(yourState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.paralysis,
                     child: Text(
                         loc.battlePararised(yourState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.sleep,
                     child: Text(
                         loc.battleFellAsleep(yourState.pokemon.omittedName)),
@@ -7479,36 +7479,35 @@ class TurnEffectAction extends TurnEffect {
               child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battleAdditionalEffect,
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child:
                         Text(loc.battleAttackUp2(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 1,
                     child:
                         Text(loc.battleDefenseUp2(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 2,
                     child:
                         Text(loc.battleSAttackUp2(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 3,
                     child: Text(
                         loc.battleSDefenseUp2(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 5,
                     child: Text(
                         loc.battleAccuracyUp2(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 6,
                     child: Text(
                         loc.battleEvasivenessUp2(myState.pokemon.omittedName)),
@@ -7538,69 +7537,70 @@ class TurnEffectAction extends TurnEffect {
   /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
+    required List<ColoredPopupMenuItem<T>> items,
+    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    Widget? hint,
-    Widget? disabledHint,
+    //Widget? hint,
+    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
+    //VoidCallback? onTap,
+    double elevation = 8,
+    //TextStyle? style,
     Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
+    //Color? iconDisabledColor,
+    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    bool isDense = true,
+    //bool isDense = true,
+    // TODO: 必要かも？
     bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
+    //double? itemHeight,
+    //Color? focusColor,
+    //FocusNode? focusNode,
+    //bool autofocus = false,
+    //Color? dropdownColor,
     InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
+    //void Function(T?)? onSaved,
+    //String? Function(T?)? validator,
+    //AutovalidateMode? autovalidateMode,
+    //double? menuMaxHeight,
     bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
+    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    //BorderRadius? borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     Pokemon? prefixIconPokemon,
     bool showNetworkImage = false,
     required ThemeData theme,
   }) {
-    return DropdownButtonFormField(
+    return AppBaseDropdownButtonFormField(
       key: key,
       items: items,
-      selectedItemBuilder: selectedItemBuilder,
+      //selectedItemBuilder: selectedItemBuilder,
       value: value,
-      hint: hint,
-      disabledHint: disabledHint,
+      //hint: hint,
+      //disabledHint: disabledHint,
       onChanged: onChanged,
-      onTap: onTap,
+      //onTap: onTap,
       elevation: elevation,
-      style: style,
+      //style: style,
       icon: icon,
-      iconDisabledColor: iconDisabledColor,
-      iconEnabledColor: iconEnabledColor,
+      //iconDisabledColor: iconDisabledColor,
+      //iconEnabledColor: iconEnabledColor,
       iconSize: iconSize,
-      isDense: isDense,
-      isExpanded: isExpanded,
-      itemHeight: itemHeight,
-      focusColor: focusColor,
-      focusNode: focusNode,
-      autofocus: autofocus,
-      dropdownColor: dropdownColor,
+      //isDense: isDense,
+      //isExpanded: isExpanded,
+      //itemHeight: itemHeight,
+      //focusColor: focusColor,
+      //focusNode: focusNode,
+      //autofocus: autofocus,
+      //dropdownColor: dropdownColor,
       decoration: decoration,
-      onSaved: onSaved,
-      validator: validator,
-      autovalidateMode: autovalidateMode,
-      menuMaxHeight: menuMaxHeight,
+      //onSaved: onSaved,
+      //validator: validator,
+      //autovalidateMode: autovalidateMode,
+      //menuMaxHeight: menuMaxHeight,
       enableFeedback: enableFeedback,
-      alignment: alignment,
-      borderRadius: borderRadius,
+      //alignment: alignment,
+      //borderRadius: borderRadius,
       padding: padding,
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
@@ -113,15 +114,14 @@ class PokemonSexRow extends Row {
             isInput
                 ? Expanded(
                     flex: 3,
-                    child: DropdownButtonFormField(
+                    child: AppBaseDropdownButtonFormField(
                       key: Key('PokemonSexRow$labelSexText'), // テストでの識別用
                       decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
                         labelText: labelSexText,
                       ),
-                      items: <DropdownMenuItem<Sex>>[
+                      items: <ColoredPopupMenuItem<Sex>>[
                         for (var type in sexList)
-                          DropdownMenuItem<Sex>(
+                          ColoredPopupMenuItem<Sex>(
                             value: type,
                             child: Container(
                               key: Key(

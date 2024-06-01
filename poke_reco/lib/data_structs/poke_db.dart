@@ -231,7 +231,7 @@ const String myPokemonColumnOwnerID = 'owner';
 const String partyDBFile = 'parties.db';
 const String partyDBTable = 'partyDB';
 const String preparedPartyDBTable = 'PreparedPartyDB';
-const String partyTestDBFile = 'parties.db';
+const String partyTestDBFile = 'partiesTest.db';
 const String partyTestDBTable = 'partyDB';
 const String partyColumnId = 'id';
 const String partyColumnViewOrder = 'viewOrder';
@@ -252,7 +252,7 @@ const String partyColumnOwnerID = 'owner';
 
 const String battleDBFile = 'battles.db';
 const String battleDBTable = 'battleDB';
-const String battleTestDBFile = 'battles.db';
+const String battleTestDBFile = 'battlesTest.db';
 const String battleTestDBTable = 'battleDB';
 const String battleColumnId = 'id';
 const String battleColumnViewOrder = 'viewOrder';
@@ -1249,7 +1249,7 @@ class PokeDB {
       // SQLiteのDB読み込み
       partyDb = await openDatabase(partyDBPath);
       // バージョン間のデータ構造差異を埋める
-      await _fillPartyVersionDiff(myPokemonDb);
+      await _fillPartyVersionDiff(partyDb);
       // 内部データに変換
       maps = await partyDb.query(
         _isTestMode ? partyTestDBTable : partyDBTable,

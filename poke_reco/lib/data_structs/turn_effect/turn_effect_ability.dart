@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
@@ -1022,19 +1023,18 @@ class TurnEffectAbility extends TurnEffect {
               child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   label: Text(loc.battleOpponentAilments),
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: Ailment.poison,
                     child: Text(Ailment(Ailment.poison).displayName),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.paralysis,
                     child: Text(Ailment(Ailment.paralysis).displayName),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.sleep,
                     child: Text(Ailment(Ailment.sleep).displayName),
                   ),
@@ -1164,15 +1164,12 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child: Text(loc.commonAttack),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 2,
                     child: Text(loc.commonSAttack),
                   ),
@@ -1320,12 +1317,9 @@ class TurnEffectAbility extends TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: statIndex.index - 1,
                           child: Text(statIndex.name),
                         ),
@@ -1350,12 +1344,9 @@ class TurnEffectAbility extends TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: statIndex.index - 1,
                           child: Text(statIndex.name),
                         ),
@@ -1389,12 +1380,11 @@ class TurnEffectAbility extends TurnEffect {
                   key: Key('PokemonSelectDropdown'),
                   isExpanded: true,
                   decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
                     labelText: loc.battleIllusionedPokemon,
                   ),
-                  items: <DropdownMenuItem>[
+                  items: <ColoredPopupMenuItem>[
                     for (int i = 0; i < opponentParty.pokemonNum; i++)
-                      DropdownMenuItem(
+                      ColoredPopupMenuItem(
                         value: i + 1,
                         enabled: zoruaNos.contains(
                             state.getPokemonStates(playerType)[i].pokemon.no),
@@ -1439,16 +1429,13 @@ class TurnEffectAbility extends TurnEffect {
               child: _myDropdownButtonFormField(
                 key: dropdownMenuKey,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: -1,
                     child: Text(loc.battleEffectExpired),
                   ),
                   for (final statIndex in StatIndexList.listAtoS)
-                    DropdownMenuItem(
+                    ColoredPopupMenuItem(
                       value: statIndex.index - 1,
                       child: Text(statIndex.name),
                     ),
@@ -1484,12 +1471,9 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
+                items: <ColoredPopupMenuItem>[
                   for (final statIndex in StatIndexList.listAtoS)
-                    DropdownMenuItem(
+                    ColoredPopupMenuItem(
                       value: statIndex.index - 1,
                       child: Text(statIndex.name),
                     ),
@@ -1507,31 +1491,28 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 1,
                     child: Text('1'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 2,
                     child: Text('2'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 3,
                     child: Text('3'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 4,
                     child: Text('4'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 5,
                     child: Text('5'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 6,
                     child: Text('6'),
                   ),
@@ -1678,15 +1659,14 @@ class TurnEffectAbility extends TurnEffect {
                   ? _myDropdownButtonFormField(
                       isExpanded: true,
                       decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
                         labelText: loc.battleAdditionalEffect,
                       ),
-                      items: <DropdownMenuItem>[
-                        DropdownMenuItem(
+                      items: <ColoredPopupMenuItem>[
+                        ColoredPopupMenuItem(
                           value: 552,
                           child: Text(loc.commonNone),
                         ),
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: 10552,
                           child: Text(loc
                               .battleSAttackUp1(myState.pokemon.omittedName)),
@@ -1854,35 +1834,36 @@ class TurnEffectAbility extends TurnEffect {
   /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
+    required List<ColoredPopupMenuItem<T>> items,
+    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    Widget? hint,
-    Widget? disabledHint,
+    //Widget? hint,
+    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
+    //VoidCallback? onTap,
+    double elevation = 8,
+    //TextStyle? style,
     Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
+    //Color? iconDisabledColor,
+    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    bool isDense = true,
+    //bool isDense = true,
+    // TODO: 必要かも？
     bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
+    //double? itemHeight,
+    //Color? focusColor,
+    //FocusNode? focusNode,
+    //bool autofocus = false,
+    //Color? dropdownColor,
     InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
+    //void Function(T?)? onSaved,
+    //String? Function(T?)? validator,
+    //AutovalidateMode? autovalidateMode,
+    //double? menuMaxHeight,
     bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
+    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    //BorderRadius? borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     required bool isInput,
     required String? textValue,
     Pokemon? prefixIconPokemon,
@@ -1890,36 +1871,36 @@ class TurnEffectAbility extends TurnEffect {
     ThemeData? theme,
   }) {
     if (isInput) {
-      return DropdownButtonFormField(
+      return AppBaseDropdownButtonFormField(
         key: key,
         items: items,
-        selectedItemBuilder: selectedItemBuilder,
+        //selectedItemBuilder: selectedItemBuilder,
         value: value,
-        hint: hint,
-        disabledHint: disabledHint,
+        //hint: hint,
+        //disabledHint: disabledHint,
         onChanged: onChanged,
-        onTap: onTap,
+        //onTap: onTap,
         elevation: elevation,
-        style: style,
+        //style: style,
         icon: icon,
-        iconDisabledColor: iconDisabledColor,
-        iconEnabledColor: iconEnabledColor,
+        //iconDisabledColor: iconDisabledColor,
+        //iconEnabledColor: iconEnabledColor,
         iconSize: iconSize,
-        isDense: isDense,
-        isExpanded: isExpanded,
-        itemHeight: itemHeight,
-        focusColor: focusColor,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        dropdownColor: dropdownColor,
+        //isDense: isDense,
+        //isExpanded: isExpanded,
+        //itemHeight: itemHeight,
+        //focusColor: focusColor,
+        //focusNode: focusNode,
+        //autofocus: autofocus,
+        //dropdownColor: dropdownColor,
         decoration: decoration,
-        onSaved: onSaved,
-        validator: validator,
-        autovalidateMode: autovalidateMode,
-        menuMaxHeight: menuMaxHeight,
+        //onSaved: onSaved,
+        //validator: validator,
+        //autovalidateMode: autovalidateMode,
+        //menuMaxHeight: menuMaxHeight,
         enableFeedback: enableFeedback,
-        alignment: alignment,
-        borderRadius: borderRadius,
+        //alignment: alignment,
+        //borderRadius: borderRadius,
         padding: padding,
       );
     } else {
