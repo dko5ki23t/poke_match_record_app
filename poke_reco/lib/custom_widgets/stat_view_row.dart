@@ -18,7 +18,7 @@ class StatViewRow extends Row {
     TextEditingController indiController,
     TextEditingController effortController,
     TextEditingController realController, {
-    bool effectTemper = false,
+    bool effectNature = false,
     StatIndex statIndex = StatIndex.none,
     required AppLocalizations loc,
   }) : super(
@@ -32,10 +32,10 @@ class StatViewRow extends Row {
                 ),
                 controller: raceController,
                 readOnly: true,
-                style: effectTemper
-                    ? pokemon.temper.increasedStat == statIndex
+                style: effectNature
+                    ? pokemon.nature.increasedStat == statIndex
                         ? increaseStateStyle
-                        : pokemon.temper.decreasedStat == statIndex
+                        : pokemon.nature.decreasedStat == statIndex
                             ? decreaseStateStyle
                             : null
                     : null,

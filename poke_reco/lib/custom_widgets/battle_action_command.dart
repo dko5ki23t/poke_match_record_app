@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_widgets/battle_command.dart';
 import 'package:poke_reco/custom_widgets/change_pokemon_command_tile.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
+import 'package:poke_reco/custom_widgets/number_input_buttons.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/party.dart';
@@ -11,11 +12,34 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/phase_state.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
+import 'package:poke_reco/data_structs/turn_effect/turn_effect_ailment.dart';
+import 'package:poke_reco/poke_type_icons.dart';
 import 'package:poke_reco/tool.dart';
+
+/// わざの並び替えで先頭に来させるための値
+const int topOrderVal = 0xffffff00;
 
 enum CommandState {
   selectCommand,
+  confusedDamageInput,
   extraInput,
+}
+
+/// わざのリストタイル＋並び替え用の値
+class MoveTileWithVal {
+  /// わざのリストタイル等Widget
+  final Widget moveTile;
+
+  /// わざの最大ダメージ
+  final int maxDamage;
+
+  /// わざの採用数
+  final int adoptedCount;
+
+  MoveTileWithVal(
+      {required this.moveTile,
+      required this.maxDamage,
+      required this.adoptedCount});
 }
 
 class BattleActionCommand extends StatefulWidget {
@@ -26,12 +50,16 @@ class BattleActionCommand extends StatefulWidget {
     required this.phaseState,
     required this.myParty,
     required this.yourParty,
+    required this.opponentName,
     required this.parentSetState,
     required this.onConfirm,
     required this.onUnConfirm,
     required this.updateActionOrder,
     required this.playerCanTerastal,
     required this.onRequestTerastal,
+    required this.moveListOrder,
+    required this.onMoveListOrderChange,
+    required this.onConfusionEnd,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -39,12 +67,16 @@ class BattleActionCommand extends StatefulWidget {
   final PhaseState phaseState;
   final Party myParty;
   final Party yourParty;
-  final Function(void Function()) parentSetState;
-  final Function() onConfirm;
-  final Function() onUnConfirm;
-  final Function() updateActionOrder;
+  final String opponentName;
+  final void Function(void Function()) parentSetState;
+  final void Function() onConfirm;
+  final void Function() onUnConfirm;
+  final void Function() updateActionOrder;
   final bool playerCanTerastal;
-  final Function() onRequestTerastal;
+  final void Function() onRequestTerastal;
+  final int moveListOrder;
+  final void Function(int) onMoveListOrderChange;
+  final void Function() onConfusionEnd;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();
@@ -54,6 +86,13 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
   CommandState state = CommandState.selectCommand;
   TextEditingController moveSearchTextController = TextEditingController();
   CommandPagesController commandPagesController = CommandPagesController();
+  int currentMoveListOrder = 0;
+
+  @override
+  void initState() {
+    currentMoveListOrder = widget.moveListOrder;
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +123,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         );
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
-    List<Widget> moveTiles = [];
+    List<MoveTileWithVal> moveTileVals = [];
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       //
@@ -143,80 +182,114 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
       if (myState
           .ailmentsWhere((element) => element.id == Ailment.sleep)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.sleep).displayName),
-          onChanged: (value) {
-            if (value) {
-              parentSetState(() {
-                turnMove.isSuccess = false;
-                turnMove.actionFailure = ActionFailure(ActionFailure.sleep);
-              });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.sleep,
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(ActionFailure(ActionFailure.sleep).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  turnMove.isSuccess = false;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.sleep);
+                });
+              } else {
+                parentSetState(() {
+                  turnMove.isSuccess = true;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('ねむり'), matching: find.byType('ListTile')));\n");
+            },
+            value: !turnMove.isSuccess &&
+                turnMove.actionFailure.id == ActionFailure.sleep,
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
         ));
       }
       // まひ状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.paralysis)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.paralysis).displayName),
-          onChanged: (value) {
-            if (value) {
-              parentSetState(() {
-                turnMove.isSuccess = false;
-                turnMove.actionFailure = ActionFailure(ActionFailure.paralysis);
-              });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.paralysis,
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(ActionFailure(ActionFailure.paralysis).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  turnMove.isSuccess = false;
+                  turnMove.actionFailure =
+                      ActionFailure(ActionFailure.paralysis);
+                });
+              } else {
+                parentSetState(() {
+                  turnMove.isSuccess = true;
+                  turnMove.actionFailure = ActionFailure(ActionFailure.none);
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('まひ'), matching: find.byType('ListTile')));\n");
+            },
+            value: !turnMove.isSuccess &&
+                turnMove.actionFailure.id == ActionFailure.paralysis,
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
         ));
       }
       // こんらん状態の場合
       else if (myState
           .ailmentsWhere((element) => element.id == Ailment.confusion)
           .isNotEmpty) {
-        moveTiles.add(SwitchListTile(
-          title: Text(ActionFailure(ActionFailure.confusion).displayName),
-          onChanged: (value) {
-            if (value) {
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: SwitchListTile(
+            title: Text(AilmentEffect(AilmentEffect.confusionEnd).displayName),
+            onChanged: (value) {
+              if (value) {
+                parentSetState(() {
+                  widget.onConfusionEnd();
+                });
+              }
+              // 統合テスト作成用
+              print("await driver.tap(\n"
+                  "      find.ancestor(of: find.text('こんらんが解けた'), matching: find.byType('ListTile')));\n");
+            },
+            value: myState
+                .ailmentsWhere((element) => element.id == Ailment.confusion)
+                .isEmpty,
+          ),
+          maxDamage: topOrderVal + 101,
+          adoptedCount: topOrderVal + 101,
+        ));
+        moveTileVals.add(MoveTileWithVal(
+          moveTile: ListTile(
+            key: Key(
+                'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}ConfusionDamage'),
+            horizontalTitleGap: 8.0,
+            dense: true,
+            trailing: Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+            ),
+            title: Text(loc.battleConfusedAttack),
+            onTap: () {
               parentSetState(() {
                 turnMove.isSuccess = false;
                 turnMove.actionFailure = ActionFailure(ActionFailure.confusion);
+                // 表示Widgetのコントローラリセット
+                commandPagesController = CommandPagesController();
+                state = CommandState.confusedDamageInput;
               });
-            } else {
-              parentSetState(() {
-                turnMove.isSuccess = true;
-                turnMove.actionFailure = ActionFailure(ActionFailure.none);
-              });
-            }
-            // 統合テスト作成用
-            print("await driver.tap(\n"
-                "      find.ancestor(of: find.text('こんらん'), matching: find.byType('ListTile')));\n");
-          },
-          value: !turnMove.isSuccess &&
-              turnMove.actionFailure.id == ActionFailure.confusion,
+              // 統合テスト作成用
+              print("// ${myState.pokemon.omittedName}は自分をこうげきした\n"
+                  "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, 'ConfusionDamage', false);");
+            },
+          ),
+          maxDamage: topOrderVal + 100,
+          adoptedCount: topOrderVal + 100,
         ));
-        // TODO: extraArg1,extraArg2の値を入力
       }
       for (int i = 0; i < moves.length; i++) {
         final myMove = moves[i];
@@ -247,83 +320,106 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           damageGetter: getter,
           loc: loc,
         );
-        moveTiles.add(
-          ListTile(
-            key: Key(
-                'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
-            horizontalTitleGap: 8.0,
-            dense: true,
-            enabled: canSelect,
-            leading: turnMove
-                .getReplacedMoveType(myMove, myState, prevState)
-                .displayIcon,
-            trailing: Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-            ),
-            title: myState.moves.contains(myMove)
-                ? RichText(
-                    text: TextSpan(children: [
-                    TextSpan(
-                        text: myMove.displayName,
-                        style: theme.textTheme.bodyMedium),
-                    WidgetSpan(
-                      child: Icon(
-                        Icons.push_pin,
-                        size: theme.textTheme.bodyMedium!.fontSize,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ]))
-                : Text(myMove.displayName),
-            subtitle: getter.showDamage
-                ? Text('${getter.rangeString} (${getter.rangePercentString})')
-                : Text(' - '),
-            onTap: () {
-              parentSetState(() {
-                turnMove.move = myMove;
-                turnMove.hitCount = myMove.maxMoveCount();
-                if (turnMove.isCriticalFromMove(
-                    myMove, myState, yourState, yourFields)) {
-                  turnMove.criticalCount = turnMove.hitCount;
-                }
-                turnMove.fillAutoAdditionalEffect(prevState);
-                turnMove.moveEffectivenesses =
-                    PokeTypeEffectiveness.effectiveness(
-                        myState.currentAbility.id == 113 ||
-                            myState.currentAbility.id == 299,
-                        yourState.holdingItem?.id == 586,
-                        yourState
-                            .ailmentsWhere((e) => e.id == Ailment.miracleEye)
-                            .isNotEmpty,
-                        turnMove.getReplacedMoveType(
-                            myMove, myState, prevState),
-                        yourState);
-                // わざ選択で即isValid()==trueになるわざのために呼び出す
-                turnMove.extraCommandInputList(
-                    initialKeyNumber: 0,
-                    theme: theme,
-                    onBackPressed: () {},
-                    onConfirm: () {},
-                    onUpdate: () {},
-                    myParty: myParty,
-                    yourParty: yourParty,
-                    myState: myState,
-                    yourState: yourState,
-                    state: prevState,
-                    damageGetter: getter,
-                    controller: commandPagesController,
-                    loc: loc);
-                // 表示Widgetのコントローラリセット
-                commandPagesController = CommandPagesController();
-                state = CommandState.extraInput;
-              });
-              // 統合テスト作成用
-              print("// ${myState.pokemon.omittedName}の${myMove.displayName}\n"
-                  "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${myMove.displayName}', ${myState.moves.contains(myMove) ? "false" : "true"});");
-            },
+        var listTile = ListTile(
+          key: Key(
+              'BattleActionCommandMoveListTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}${myMove.displayName}'),
+          horizontalTitleGap: 8.0,
+          dense: true,
+          enabled: canSelect,
+          leading: turnMove
+              .getReplacedMoveType(myMove, myState, prevState)
+              .displayIcon,
+          trailing: Icon(
+            Icons.arrow_forward_ios,
+            size: 16,
           ),
+          title: myState.moves.contains(myMove)
+              ? RichText(
+                  text: TextSpan(children: [
+                  TextSpan(
+                      text: myMove.displayName,
+                      style: theme.textTheme.bodyMedium),
+                  WidgetSpan(
+                    child: Icon(
+                      Icons.push_pin,
+                      size: theme.textTheme.bodyMedium!.fontSize,
+                      color: Colors.grey,
+                    ),
+                  ),
+                  TextSpan(
+                      text:
+                          '(${myState.usedPPs[myState.moves.indexOf(myMove)]})',
+                      style: theme.textTheme.bodyMedium),
+                ]))
+              : Text(myMove.displayName),
+          subtitle: getter.showDamage
+              ? Text('${getter.rangeString} (${getter.rangePercentString})')
+              : Text(' - '),
+          onTap: () {
+            parentSetState(() {
+              turnMove.move = myMove;
+              turnMove.hitCount = myMove.maxMoveCount();
+              if (turnMove.isCriticalFromMove(
+                  myMove, myState, yourState, yourFields)) {
+                turnMove.criticalCount = turnMove.hitCount;
+              }
+              turnMove.fillAutoAdditionalEffect(prevState);
+              turnMove.moveEffectivenesses =
+                  PokeTypeEffectiveness.effectiveness(
+                      myState.currentAbility.id == 113 ||
+                          myState.currentAbility.id == 299,
+                      yourState.holdingItem?.id == 586,
+                      yourState
+                          .ailmentsWhere((e) => e.id == Ailment.miracleEye)
+                          .isNotEmpty,
+                      turnMove.getReplacedMoveType(myMove, myState, prevState),
+                      yourState);
+              // わざ選択で即isValid()==trueになるわざのために呼び出す
+              turnMove.extraCommandInputList(
+                  initialKeyNumber: 0,
+                  theme: theme,
+                  onBackPressed: () {},
+                  onConfirm: () {},
+                  onUpdate: () {},
+                  myParty: myParty,
+                  yourParty: yourParty,
+                  myState: myState,
+                  yourState: yourState,
+                  state: prevState,
+                  damageGetter: getter,
+                  controller: commandPagesController,
+                  loc: loc);
+              // 表示Widgetのコントローラリセット
+              commandPagesController = CommandPagesController();
+              state = CommandState.extraInput;
+            });
+            // 統合テスト作成用
+            print("// ${myState.pokemon.omittedName}の${myMove.displayName}\n"
+                "await tapMove(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${myMove.displayName}', ${myState.moves.contains(myMove) ? "false" : "true"});");
+          },
         );
+        if (myState.moves.contains(myMove)) {
+          moveTileVals.add(MoveTileWithVal(
+              moveTile: listTile,
+              maxDamage: topOrderVal + 3 - i,
+              adoptedCount: topOrderVal + 3 - i));
+        } else {
+          moveTileVals.add(MoveTileWithVal(
+            moveTile: listTile,
+            maxDamage: getter.maxDamage,
+            adoptedCount: PokeDB().getAdoptedMoveCount(myPokemon.no, myMove.id),
+          ));
+        }
+      }
+
+      if (currentMoveListOrder == 0) {
+        // ダメージ多い順にソート(同順位の場合は採用率大きい方が上)
+        moveTileVals.sort(((a, b) => b.adoptedCount.compareTo(a.adoptedCount)));
+        moveTileVals.sort(((a, b) => b.maxDamage.compareTo(a.maxDamage)));
+      } else {
+        // 採用率高い順にソート(同順位の場合はダメージ大きい方が上)
+        moveTileVals.sort(((a, b) => b.maxDamage.compareTo(a.maxDamage)));
+        moveTileVals.sort(((a, b) => b.adoptedCount.compareTo(a.adoptedCount)));
       }
     }
 
@@ -409,7 +505,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 icon: myState.isTerastaling
                                     ? myState.teraType1.displayIcon
                                     : Icon(
-                                        Icons.diamond,
+                                        PokeTypeIcons.terastal,
                                         color: Color(0x80000000),
                                       ),
                                 onPressed: () {
@@ -427,7 +523,7 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                             )
                           : Container(),
                       Expanded(
-                        flex: 8,
+                        flex: 6,
                         child: Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: TextField(
@@ -443,6 +539,31 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                           ),
                         ),
                       ),
+                      playerType == PlayerType.opponent
+                          ? Expanded(
+                              flex: 2,
+                              child: PopupMenuButton(
+                                initialValue: currentMoveListOrder,
+                                child: Icon(
+                                  Icons.reorder,
+                                ),
+                                onSelected: (value) => setState(() {
+                                  currentMoveListOrder = value;
+                                  widget.onMoveListOrderChange(value);
+                                }),
+                                itemBuilder: (context) => [
+                                  PopupMenuItem(
+                                    value: 0,
+                                    child: Text('ダメージ大きい順'),
+                                  ),
+                                  PopupMenuItem(
+                                    value: 1,
+                                    child: Text('採用率高い順'),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Container(),
                     ],
                   ),
                 ),
@@ -455,7 +576,10 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                         key: Key(
                             'BattleActionCommandMoveListView${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                         viewItemCount: 4,
-                        children: moveTiles,
+                        children: [
+                          for (final moveTileVal in moveTileVals)
+                            moveTileVal.moveTile
+                        ],
                       ),
                     ),
                   ]),
@@ -476,6 +600,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 .pokemon)) {
                   pokemonTiles.add(
                     ChangePokemonCommandTile(
+                      key: Key(
+                          'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                       myParty.pokemons[i]!,
                       theme,
                       onTap: () {
@@ -514,6 +640,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                 if (addedIndex.contains(i)) continue;
                 pokemonTiles.add(
                   ChangePokemonCommandTile(
+                    key: Key(
+                        'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
                     myParty.pokemons[i]!,
                     theme,
                     onTap: null,
@@ -558,7 +686,85 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
           );
         }
         break;
+      case CommandState.confusedDamageInput:
+        // 入力中に試合終了になった場合は以下の条件に入る
+        if (turnMove.actionFailure != ActionFailure(ActionFailure.confusion)) {
+          commandColumn = Container();
+          break;
+        }
+        // こんらんによる自傷ダメージ入力
+        int initialNum = playerType == PlayerType.me
+            ? myState.remainHP
+            : myState.remainHPPercent;
+        commandColumn = Column(
+          key: ValueKey<int>(state.index),
+          children: [
+            Expanded(
+              flex: 1,
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      parentSetState(() {
+                        turnMove.isSuccess = true;
+                        turnMove.actionFailure =
+                            ActionFailure(ActionFailure.none);
+                        state = CommandState.selectCommand;
+                      });
+                    },
+                    icon: Icon(Icons.arrow_back),
+                  ),
+                  Expanded(
+                    child: Text(loc.battleConfusedAttack),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              flex: 7,
+              child: Column(
+                children: [
+                  Expanded(
+                    flex: 1,
+                    child: Container(),
+                  ),
+                  Expanded(
+                    flex: 6,
+                    child: NumberInputButtons(
+                      key: Key(
+                          'NumberInputButtons${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                      initialNum: initialNum,
+                      onConfirm: (remain) {
+                        if (playerType == PlayerType.me) {
+                          turnMove.extraArg1 = myState.remainHP - remain;
+                        } else {
+                          turnMove.extraArg2 = myState.remainHPPercent - remain;
+                        }
+                        parentSetState(() {
+                          widget.onConfirm();
+                        });
+                        // 統合テスト作成用
+                        print("// ${myState.pokemon.omittedName}のHP$remain\n"
+                            "await inputRemainHP(driver, ${playerType == PlayerType.me ? "me" : "op"}, '${initialNum != remain ? remain : ""}');\n");
+                      },
+                      prefixText:
+                          loc.battleRemainHP(myState.pokemon.omittedName),
+                      suffixText:
+                          playerType == PlayerType.opponent ? '%' : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+        break;
       case CommandState.extraInput:
+        // 入力中に試合終了になった場合は以下の条件に入る
+        if (turnMove.move.id == 0) {
+          commandColumn = Container();
+          break;
+        }
         commandColumn = turnMove.extraCommandInputList(
             initialKeyNumber: CommandState.extraInput.index,
             theme: theme,

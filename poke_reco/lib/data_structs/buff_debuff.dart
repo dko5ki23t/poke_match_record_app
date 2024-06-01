@@ -1,13 +1,18 @@
+import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/item.dart';
+import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
+import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/tool.dart';
-import 'package:tuple/tuple.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 
 /// その他の補正(フォルム等)
 class BuffDebuff extends Equatable implements Copyable {
+  // TODO:最終的には消す。CSVに全データが行くように
+
   /// なし、無効
-  static const int none = 0;
+  //static const int none = 0;
 
   /// こうげき1.3倍(extraArg = 1なら、ブーストエナジー消費によって得られた効果↓)
   static const int attack1_3 = 1;
@@ -603,301 +608,44 @@ class BuffDebuff extends Equatable implements Copyable {
   /// ステラ補正を使用したタイプのフラグ(隠しステータス。交代でも消えない)
   static const int stellarUsed = 200;
 
-  static const Map<int, Tuple4<String, String, Color, int>> _nameColorTurnMap =
-      {
-    0: Tuple4('', '', Colors.black, 0),
-    1: Tuple4('こうげき1.3倍', 'Attack 1.3x', Colors.red, 0),
-    2: Tuple4('ぼうぎょ1.3倍', 'Defense 1.3x', Colors.red, 0),
-    3: Tuple4('とくこう1.3倍', 'Special Attack 1.3x', Colors.red, 0),
-    4: Tuple4('とくぼう1.3倍', 'Special Defense 1.3x', Colors.red, 0),
-    5: Tuple4('すばやさ1.5倍', 'Speed 1.5x', Colors.red, 0),
-    6: Tuple4('相手わざ命中率0.8倍', 'Opponent\'s Accuracy 0.8x', Colors.red, 0),
-    7: Tuple4('命中率1.3倍', 'Accuracy 1.3x', Colors.red, 0),
-    8: Tuple4('ほのおわざ威力1.5倍', 'Fire Move Power 1.5x', Colors.red, 0),
-    9: Tuple4(
-        'わざ追加効果発動確率2倍', 'Additional effect chance of Move 2x', Colors.red, 0),
-    10: Tuple4('すばやさ2倍', 'Speed 2x', Colors.red, 0),
-    11: Tuple4('こうげき2倍', 'Attack 2x', Colors.red, 0),
-    12: Tuple4('こうげき1.5倍', 'Attack 1.5x', Colors.red, 0),
-    13: Tuple4('物理技命中率0.8倍', 'Accuracy of Physical Move 0.8x', Colors.blue, 0),
-    14: Tuple4('ポワルンのすがた', 'Normal Form', Colors.orange, 0),
-    15: Tuple4('たいようのすがた', 'Sunny Form', Colors.orange, 0),
-    16: Tuple4('あまみずのすがた', 'Rainy Form', Colors.orange, 0),
-    17: Tuple4('ゆきぐものすがた', 'Snowy Form', Colors.orange, 0),
-    18: Tuple4('こうげき1.5倍(やけど無視)', 'Attack 1.5x(ignore Burn)', Colors.red, 0),
-    19: Tuple4('ぼうぎょ1.5倍', 'Defense 1.5x', Colors.red, 0),
-    20: Tuple4('くさわざ威力1.5倍', 'Grass Move Power 1.5x', Colors.red, 0),
-    21: Tuple4('ほのおわざ威力1.5倍', 'Fire Move Power 1.5x', Colors.red, 0),
-    22: Tuple4('みずわざ威力1.5倍', 'Water Move Power 1.5x', Colors.red, 0),
-    23: Tuple4('むしわざ威力1.5倍', 'Bug Move Power 1.5x', Colors.red, 0),
-    24: Tuple4('相手わざ命中率0.5倍', 'Opponent\'s Accuracy 0.5x', Colors.red, 0),
-    25: Tuple4('すばやさ2倍', 'Speed 2x', Colors.red, 0),
-    26: Tuple4(
-        '同性への威力1.25倍/異性への威力0.75倍',
-        '1.25x power against same sex / 0.75x power against opposite sex',
-        Colors.red,
-        0),
-    27: Tuple4(
-        'ほのおわざ被ダメ半減計算・やけどダメ半減',
-        'Fire Move\'s damage damage calculation/Burn damage halved',
-        Colors.red,
-        0),
-    28: Tuple4('ほのおわざ受ける威力1.25倍', 'Receiving Fire Move\'s power 1.25x',
-        Colors.blue, 0),
-    29: Tuple4('パンチわざ威力1.2倍', 'Punch Move power 1.2x', Colors.red, 0),
-    30: Tuple4('タイプ一致ボーナス2倍', 'Type match bonus 2x', Colors.red, 0),
-    31: Tuple4('すばやさ1.5倍(まひ無視)', 'Speed 1.5x(ignore Paralysis)', Colors.red, 0),
-    32: Tuple4(
-        'すべてのわざタイプ→ノーマル', 'All Move types -> Normal', PokeTypeColor.normal, 0),
-    33: Tuple4('急所時ダメージ1.5倍', 'Critical damage 1.5x', Colors.red, 0),
-    34: Tuple4('相手こうげき以外ダメージ無効',
-        'Immunity to damage other than opponent\'s attacks', Colors.red, 0),
-    35: Tuple4('出すわざ/受けるわざ必中', 'Moves to send/Moves to receive are sure to hit',
-        Colors.red, 0),
-    36: Tuple4(
-        '同優先度行動で最後に行動', 'Act last with same priority action', Colors.red, 0),
-    37: Tuple4('60以下威力わざの威力1.5倍',
-        '1.5x the power of Moves with a power of 60 or less', Colors.red, 0),
-    38: Tuple4('もちものの効果なし', 'Item no effect', Colors.red, 0),
-    39: Tuple4('相手とくせい無視', 'Ignore opponent\'s Ability', Colors.red, 0),
-    40: Tuple4('急所率アップ+1', 'Critical rate +1', Colors.red, 0),
-    41: Tuple4('急所率アップ+2', 'Critical rate +2', Colors.red, 0),
-    42: Tuple4('急所率アップ+3', 'Critical rate +3', Colors.red, 0),
-    43: Tuple4(
-        '相手のランク補正無視', 'Ignore opponent\'s Stat modifications', Colors.red, 0),
-    44: Tuple4('タイプ相性いまひとつ時ダメージ2倍', '2x damage when type compatibility is poor',
-        Colors.red, 0),
-    45: Tuple4(
-        'こうかばつぐん被ダメージ0.75倍',
-        '0.75x damage when Move whose type compatibility is great received',
-        Colors.red,
-        0),
-    46: Tuple4('こうげき・すばやさ0.5倍', 'Attack and Speed 0.5x', Colors.blue, 5),
-    47: Tuple4('反動わざ威力1.2倍', '1.2x power of Move with recoil', Colors.red, 0),
-    48: Tuple4('ネガフォルム', 'Overcast Form', Colors.orange, 0),
-    49: Tuple4('ポジフォルム', 'Sunshine Form', Colors.orange, 0),
-    50: Tuple4(
-        'わざの追加効果なし・威力1.3倍',
-        'No additional effect occurs when use Move and 1.3x power',
-        Colors.red,
-        0),
-    51: Tuple4('こうげき・とくこう半減', 'Attack and Special Attack 0.5x', Colors.blue, 0),
-    52: Tuple4('おもさ2倍', 'Weight 2x', Colors.orange, 0),
-    53: Tuple4('おもさ0.5倍', 'Weight 0.5x', Colors.orange, 0),
-    54: Tuple4('受けるダメージ0.5倍', 'Damage received 0.5x', Colors.red, 0),
-    55: Tuple4('ぶつりわざ威力1.5倍', 'Physical Move power 1.5x', Colors.red, 0),
-    56: Tuple4('とくしゅわざ威力1.5倍', 'Special Move power 1.5x', Colors.red, 0),
-    57: Tuple4('こな・ほうし・すなあらしダメージ無効',
-        'Nullifies damage from powders/Effect Spore/sandstorm', Colors.red, 0),
-    58: Tuple4('相手のへんかわざ命中率50',
-        'Accuracy of opponent\'s Status Move becomes 50', Colors.red, 0),
-    59: Tuple4('最後行動時わざ威力1.3倍', 'Move power 1.3x when you act at last in turns',
-        Colors.red, 0),
-    60: Tuple4('かべ・みがわり無視', 'Ignore Walls and SUBSTITUTE', Colors.red, 0),
-    61: Tuple4(
-        'へんかわざ優先度+1(あくタイプには無効)',
-        'Status Move\'s priority +1(Except for Dark type Pokémon)',
-        Colors.red,
-        0),
-    62: Tuple4('いわ・じめん・はがねわざ威力1.3倍', 'Rock/Ground/Steel Move power 1.5x',
-        Colors.red, 0),
-    63: Tuple4('ダルマモード', 'Zen Mode', Colors.orange, 0),
-    64: Tuple4('命中率1.1倍', 'Accuracy 1.1x', Colors.red, 0),
-    65: Tuple4('ぼうぎょ2倍', 'Defense 2x', Colors.red, 0),
-    66: Tuple4('弾のわざ無効', 'Disable bullet Moves', Colors.red, 0),
-    67: Tuple4('かみつきわざ威力1.5倍', 'Bite Move\'s power 1.5x', Colors.red, 0),
-    68: Tuple4('ノーマルわざ→こおりわざ＆こおりわざ威力1.2倍',
-        'Normal Move types -> Ice and Ice Move power 1.2x', Colors.orange, 0),
-    69: Tuple4('ブレードフォルム', 'Blade Forme', Colors.orange, 0),
-    70: Tuple4('シールドフォルム', 'Shield Forme', Colors.orange, 0),
-    71: Tuple4('ひこうわざ優先度+1', 'Flying Move priority +1', Colors.red, 0),
-    72: Tuple4('はどうわざ威力1.5倍', 'Wave Move power 1.5x', Colors.red, 0),
-    73: Tuple4('ぼうぎょ1.5倍', 'Defense 1.5x', Colors.red, 0),
-    74: Tuple4('直接攻撃威力1.3倍', 'Direct attack power 1.3x', Colors.red, 0),
-    75: Tuple4('ノーマルわざ→フェアリーわざ＆フェアリーわざ威力1.2倍',
-        'Normal Move types -> Fairy and Fairy Move power 1.2x', Colors.red, 0),
-    76: Tuple4(
-        'ノーマルわざ→ひこうわざ＆ひこうわざ威力1.2倍',
-        'Normal Move types -> Flying and Flying Move power 1.2x',
-        Colors.red,
-        0),
-    77: Tuple4('あくわざ威力1.33倍', 'Dark Move power 1.33x', Colors.red, 0),
-    78: Tuple4('フェアリーわざ威力1.33倍', 'Fairy Move power 1.33x', Colors.red, 0),
-    79: Tuple4('あくわざ威力0.75倍', 'Dark Move power 0.75x', Colors.blue, 0),
-    80: Tuple4('フェアリーわざ威力0.75倍', 'Fairy Move power 0.75x', Colors.blue, 0),
-    81: Tuple4(
-        'どく・もうどく状態へのこうげき急所率100%',
-        '100% rate of Critical for Poisoning and badly Poisoning',
-        Colors.red,
-        0),
-    82: Tuple4('こうたい後ポケモンへのこうげき・とくこう2倍',
-        'Attack/Special Attack 2x to Pokémon after change', Colors.red, 0),
-    83: Tuple4(
-        '相手ほのおわざこうげき・とくこう0.5倍',
-        'Opponent\'s Attack/Special Attack 0.5x when receive Fire Move',
-        Colors.red,
-        0),
-    84: Tuple4('みずわざこうげき・とくこう2倍',
-        'Attack/Special Attack 2x when using Water Move', Colors.red, 0),
-    85: Tuple4('はがねわざこうげき・とくこう1.5倍',
-        'Attack/Special Attack 2x when using Steel Move', Colors.red, 0),
-    86: Tuple4('音わざタイプ→みず', 'Sound Move types -> Water', Colors.orange, 0),
-    87: Tuple4('かいふくわざ優先度+3', 'Recovery Moves priority +3', Colors.red, 0),
-    88: Tuple4(
-        'ノーマルわざ→でんきわざ＆でんきわざ威力1.2倍',
-        'Normal Move types -> Electric and Electric Move power 1.2x',
-        Colors.red,
-        0),
-    89: Tuple4('たんどくのすがた', 'Single Form', Colors.orange, 0),
-    90: Tuple4('むれたすがた', 'Multiple Form', Colors.orange, 0),
-    91: Tuple4('ばけたすがた', 'Disguised Form', Colors.orange, 0),
-    92: Tuple4('ばれたすがた', 'Busted Form', Colors.orange, 0),
-    93: Tuple4('サトシゲッコウガ', 'Ash-Greninja', Colors.orange, 0),
-    94: Tuple4('10%フォルム', '10% Form', Colors.orange, 0),
-    95: Tuple4('50%フォルム', '50% Form', Colors.orange, 0),
-    96: Tuple4('パーフェクトフォルム', 'Perfect Form', Colors.orange, 0),
-    97: Tuple4('相手の優先度1以上わざ無効',
-        'Disables opponent\'s Moves with priority 1 or above', Colors.red, 0),
-    98: Tuple4(
-        '直接攻撃被ダメージ半減', 'Direct attack with halved damage', Colors.red, 0),
-    99: Tuple4(
-        'ほのおわざ被ダメージ2倍', 'Fire Move received with damage 2x', Colors.blue, 0),
-    100: Tuple4(
-        'こうかばつぐんわざダメージ1.25倍',
-        '1.25x damage when using Move whose type compatibility is great',
-        Colors.red,
-        0),
-    101: Tuple4(
-        'わざの対象相手が変更されない', 'Target of Moves does not change', Colors.red, 0),
-    102: Tuple4('うのみのすがた', 'Gulping Form', Colors.orange, 0),
-    103: Tuple4('まるのみのすがた', 'Gorging Form', Colors.orange, 0),
-    104: Tuple4('音わざ威力1.3倍', 'Sound Move Power 1.3x', Colors.red, 0),
-    105: Tuple4(
-        '音わざ被ダメージ半減', 'Sound Move received with halved damage', Colors.red, 0),
-    106: Tuple4('とくしゅわざ被ダメージ半減', 'Special Move received with halved damage',
-        Colors.red, 0),
-    107: Tuple4('きのみ効果2倍', '2x Berry effect', Colors.red, 0),
-    108: Tuple4('アイスフェイス', 'Ice Face', Colors.orange, 0),
-    109: Tuple4('ナイスフェイス', 'Noice Face', Colors.orange, 0),
-    110: Tuple4('こうげきわざ威力1.3倍', 'Attack Move Power 1.3x', Colors.red, 0),
-    111: Tuple4('はがねわざ威力1.5倍', 'Steel Move Power 1.3x', Colors.red, 0),
-    112: Tuple4(
-        'わざこだわり・こうげき1.5倍', 'Lock one Move and Attack 1.5x', Colors.red, 0),
-    113: Tuple4('まんぷくもよう', 'Full Belly Mode', Colors.orange, 0),
-    114: Tuple4('はらぺこもよう', 'Hangry Mode', Colors.orange, 0),
-    115: Tuple4('直接こうげきのまもり不可', 'Direct attack passes through protection',
-        Colors.red, 0),
-    116: Tuple4('でんきわざ時こうげき・とくこう1.3倍',
-        'Attack/Special Attack 1.3x when using Electric Move', Colors.red, 0),
-    117: Tuple4('ドラゴンわざ時こうげき・とくこう1.5倍',
-        'Attack/Special Attack 1.5x when using Dragon Move', Colors.red, 0),
-    118: Tuple4(
-        'ゴーストわざ被ダメ計算時こうげき・とくこう半減',
-        'Opponent\'s Attack/Special Attack 0.5x when receive Ghost Move',
-        Colors.red,
-        0),
-    119: Tuple4('いわわざ時こうげき・とくこう1.5倍',
-        'Attack/Special Attack 1.5x when using Rock Move', Colors.red, 0),
-    120: Tuple4('ナイーブフォルム', 'Zero Form', Colors.orange, 0),
-    121: Tuple4('マイティフォルム', 'Zero Form', Colors.orange, 0),
-    122: Tuple4('とくこう0.75倍', 'Special Attack 0.75x', Colors.blue, 0),
-    123: Tuple4('ぼうぎょ0.75倍', 'Defense 0.75x', Colors.blue, 0),
-    124: Tuple4('こうげき0.75倍', 'Attack 0.75x', Colors.blue, 0),
-    125: Tuple4('とくぼう0.75倍', 'Special Defense 0.75x', Colors.blue, 0),
-    126: Tuple4('こうげき1.33倍', 'Attack 1.33x', Colors.red, 0),
-    127: Tuple4('とくこう1.33倍', 'Special Attack 1.33x', Colors.red, 0),
-    128: Tuple4('切るわざ威力1.5倍', 'Cutting Move Power 1.5x', Colors.red, 0),
-    129: Tuple4('わざ威力10%アップ', 'Move Power +10%', Colors.red, 0),
-    130: Tuple4('わざ威力20%アップ', 'Move Power +20%', Colors.red, 0),
-    131: Tuple4('わざ威力30%アップ', 'Move Power +30%', Colors.red, 0),
-    132: Tuple4('わざ威力40%アップ', 'Move Power +40%', Colors.red, 0),
-    133: Tuple4('わざ威力50%アップ', 'Move Power +50%', Colors.red, 0),
-    134: Tuple4(
-        'へんかわざ最後に行動＆相手のとくせい無視',
-        'Act at last in turns when using Status Move and ignore opponent\'s Ability',
-        Colors.red,
-        0),
-    135: Tuple4('とくぼう1.5倍', 'Special Defense 1.5x', Colors.red, 0),
-    136: Tuple4('わざこだわり・とくこう1.5倍', 'Lock one Move and Special Attack 1.5x',
-        Colors.red, 0),
-    137: Tuple4('とくこう2倍', 'Special Attack 2x', Colors.red, 0),
-    138: Tuple4('こうげきわざのみ選択可・とくぼう1.5倍',
-        'Special Defense 1.5x but cannot Status Moves', Colors.red, 0),
-    139: Tuple4('とくぼう2倍', 'Special Defense 2x', Colors.red, 0),
-    140: Tuple4(
-        'わざこだわり・すばやさ1.5倍', 'Lock one Move and Speed 1.5x', Colors.red, 0),
-    141: Tuple4(
-        '次に使うわざ命中率1.2倍', 'Accuracy 1.2x of Move use next', Colors.red, 0),
-    142: Tuple4('当ターン行動済み相手へのわざ命中率1.2倍',
-        'Accuracy 1.2x to opponent acted in this turn', Colors.red, 0),
-    143: Tuple4('こうげきわざ時こうげき・とくこう2倍',
-        'Attack/Special Attack 2x when using Move', Colors.red, 0),
-    144: Tuple4('すばやさ0.5倍', 'Speed 0.5x', Colors.blue, 0),
-    145: Tuple4(
-        '相手わざ命中率0.9倍', 'Accuracy 0.9x of opponent\'s Move', Colors.red, 0),
-    146: Tuple4('ぶつりわざ威力1.1倍', 'Physical Move Power 1.1x', Colors.red, 0),
-    147: Tuple4('とくしゅわざ威力1.1倍', 'Special Move Power 1.1x', Colors.red, 0),
-    148: Tuple4('ノーマルわざ威力1.3倍', 'Normal Move Power 1.3x', Colors.red, 0),
-    149: Tuple4('ノーマルわざ威力1.2倍', 'Normal Move Power 1.2x', Colors.red, 0),
-    150: Tuple4('ほのおわざ威力1.2倍', 'Fire Move Power 1.2x', Colors.red, 0),
-    151: Tuple4('みずわざ威力1.2倍', 'Water Move Power 1.2x', Colors.red, 0),
-    152: Tuple4('でんきわざ威力1.2倍', 'Electric Move Power 1.2x', Colors.red, 0),
-    153: Tuple4('くさわざ威力1.2倍', 'Grass Move Power 1.2x', Colors.red, 0),
-    154: Tuple4('こおりわざ威力1.2倍', 'Ice Move Power 1.2x', Colors.red, 0),
-    155: Tuple4('かくとうわざ威力1.2倍', 'Fighting Move Power 1.2x', Colors.red, 0),
-    156: Tuple4('どくわざ威力1.2倍', 'Poison Move Power 1.2x', Colors.red, 0),
-    157: Tuple4('じめんわざ威力1.2倍', 'Ground Move Power 1.2x', Colors.red, 0),
-    158: Tuple4('ひこうわざ威力1.2倍', 'Flying Move Power 1.2x', Colors.red, 0),
-    159: Tuple4('エスパーわざ威力1.2倍', 'Psychic Move Power 1.2x', Colors.red, 0),
-    160: Tuple4('むしわざ威力1.2倍', 'Bug Move Power 1.2x', Colors.red, 0),
-    161: Tuple4('いわわざ威力1.2倍', 'Rock Move Power 1.2x', Colors.red, 0),
-    162: Tuple4('ゴーストわざ威力1.2倍', 'Ghost Move Power 1.2x', Colors.red, 0),
-    163: Tuple4('ドラゴンわざ威力1.2倍', 'Dragon Move Power 1.2x', Colors.red, 0),
-    164: Tuple4('あくわざ威力1.2倍', 'Dark Move Power 1.2x', Colors.red, 0),
-    165: Tuple4('はがねわざ威力1.2倍', 'Steel Move Power 1.2x', Colors.red, 0),
-    166: Tuple4('フェアリーわざ威力1.2倍', 'Fairy Move Power 1.2x', Colors.red, 0),
-    167: Tuple4('わざ威力1.2倍', 'Move Power 1.2x', Colors.red, 0),
-    168: Tuple4(
-        'こうげきわざダメージ1.3倍・自身HP1/10ダメージ',
-        'Damage 1.3x of using attack Move and 1/10 of max HP is reduced',
-        Colors.red,
-        0),
-    169: Tuple4(
-        'こうかばつぐん時ダメージ1.2倍',
-        '1.2x damage when using Move whose type compatibility is great',
-        Colors.red,
-        0),
-    170: Tuple4(
-        '同じわざ連続使用ごとにダメージ+20%(MAX 200%)',
-        'Damage +20%(MAX 200%) for each consecutive use of the same Move',
-        Colors.red,
-        0),
-    171: Tuple4('バインド与ダメージ→最大HP1/6',
-        'Damage dealt by Partially Trapped -> Max HP 1/6', Colors.red, 0),
-    173: Tuple4('直接こうげきに対して発動する効果無効',
-        'Effects activated direct attack are disabled', Colors.red, 0),
-    174: Tuple4('設置わざ効果無効', 'Ignore Setting Move effect', Colors.red, 0),
-    175: Tuple4('こうげき時10%ひるみ', '10% Flinch when attack', Colors.red, 0),
-    176: Tuple4('みがわり', 'SUBSTITUTE', Colors.green, 0),
-    177: Tuple4('わざによるダメージでこうげき1段階上昇',
-        'Attack rise 1 level due to damage caused by Moves', Colors.red, 0),
-    178: Tuple4('パンチわざ非接触化・威力1.1倍', 'Punch Moves are non-contact/power 1.1x',
-        Colors.red, 0),
-    179: Tuple4('ボイスフォルム', 'Aria Forme', Colors.orange, 0),
-    180: Tuple4('ステップフォルム', 'Pirouette Forme', Colors.orange, 0),
-    181: Tuple4('', '', Colors.white, 0),
-    182: Tuple4('', '', Colors.white, 0),
-    183: Tuple4('', '', Colors.white, 0),
-    184: Tuple4('相手わざ必中・ダメージ2倍', 'Opponent Move guaranteed to hit/damage 2x',
-        Colors.blue, 0),
-    186: Tuple4('こうげきわざ威力1.2倍', 'Attack Move Power 1.2x', Colors.red, 0),
-    189: Tuple4('へんしん', 'Transform', Colors.orange, 0),
-    198: Tuple4('テラスタルフォルム', 'Terastal Form', Colors.orange, 0),
-    199: Tuple4('ステラフォルム', 'Stellar Form', Colors.orange, 0),
-  };
+  /// れんぞくぎり連続成功回数(隠しステータス)
+  static const int furyCutter = 201;
+
+  /// ○○いろのコア
+  static const int coloredCore = 202;
+
+  /// りゅうせいのすがた(状態異常・ねむけ状態にならない)
+  static const int meteorForm = 203;
 
   /// ID
   final int id;
+
+  /// 日本語表示名
+  final String _displayName;
+
+  /// 英語表示名
+  final String _displayNameEn;
+
+  /// 表示色名
+  final String _displayColorName;
+
+  /// 継続ターン数
+  final int maxTurns;
+
+  /// 隠しステータスかどうか
+  final bool isHidden;
+
+  /// 効果のID
+  final int effectID;
+
+  /// 効果の引数1~7
+  final int effectArg1;
+  final int effectArg2;
+  final int effectArg3;
+  final int effectArg4;
+  final int effectArg5;
+  final int effectArg6;
+  final int effectArg7;
 
   /// 経過ターン
   int turns = 0;
@@ -908,15 +656,61 @@ class BuffDebuff extends Equatable implements Copyable {
   @override
   List<Object?> get props => [
         id,
+        _displayName,
+        _displayNameEn,
+        _displayColorName,
+        maxTurns,
+        isHidden,
+        effectID,
+        effectArg1,
+        effectArg2,
+        effectArg3,
+        effectArg4,
+        effectArg5,
+        effectArg6,
+        effectArg7,
         turns,
         extraArg1,
       ];
 
   /// その他の補正(フォルム等)
-  BuffDebuff(this.id);
+  BuffDebuff(
+    this.id,
+    this._displayName,
+    this._displayNameEn,
+    this._displayColorName,
+    this.maxTurns,
+    this.isHidden,
+    this.effectID,
+    this.effectArg1,
+    this.effectArg2,
+    this.effectArg3,
+    this.effectArg4,
+    this.effectArg5,
+    this.effectArg6,
+    this.effectArg7,
+  );
+
+  /// 無効な補正を生成
+  factory BuffDebuff.none() =>
+      BuffDebuff(0, '', '', '', 0, false, 0, 0, 0, 0, 0, 0, 0, 0);
 
   @override
-  BuffDebuff copy() => BuffDebuff(id)
+  BuffDebuff copy() => BuffDebuff(
+      id,
+      _displayName,
+      _displayNameEn,
+      _displayColorName,
+      maxTurns,
+      isHidden,
+      effectID,
+      effectArg1,
+      effectArg2,
+      effectArg3,
+      effectArg4,
+      effectArg5,
+      effectArg6,
+      effectArg7)
     ..turns = turns
     ..extraArg1 = extraArg1;
 
@@ -924,19 +718,75 @@ class BuffDebuff extends Equatable implements Copyable {
   String get displayName {
     switch (PokeDB().language) {
       case Language.japanese:
-        return _nameColorTurnMap[id]!.item4 > 0
-            ? '${_nameColorTurnMap[id]!.item1} ($turns/${_nameColorTurnMap[id]!.item4})'
-            : _nameColorTurnMap[id]!.item1;
+        return maxTurns > 0
+            ? '$_displayName ($turns/$maxTurns})'
+            : _displayName;
       case Language.english:
       default:
-        return _nameColorTurnMap[id]!.item4 > 0
-            ? '${_nameColorTurnMap[id]!.item2} ($turns/${_nameColorTurnMap[id]!.item4})'
-            : _nameColorTurnMap[id]!.item2;
+        return maxTurns > 0
+            ? '$_displayNameEn ($turns/$maxTurns)'
+            : _displayNameEn;
     }
   }
 
   /// 表示背景色
-  Color get bgColor => _nameColorTurnMap[id]!.item3;
+  Color get bgColor {
+    switch (_displayColorName) {
+      case 'red':
+        return Colors.red;
+      case 'blue':
+        return Colors.blue;
+      case 'orange':
+        return Colors.orange;
+      case 'PokeTypeColor.normal':
+        return PokeTypeColor.normal;
+      default:
+        return Colors.white;
+    }
+  }
+
+  /// 効果引数のリスト
+  List<int> get effectArgs => [
+        effectArg1,
+        effectArg2,
+        effectArg3,
+        effectArg4,
+        effectArg5,
+        effectArg6,
+        effectArg7
+      ];
+
+  /// フォルムチェンジを行う(種族値変化等を行う)
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// ```
+  void changeForm(PokemonState pokemonState) {
+    if (effectID == 2) {
+      // フォルムチェンジによるタイプ2の変更
+      pokemonState.type2 = PokeType.values[effectArg7];
+    }
+    if (effectID == 1 || effectID == 2) {
+      // フォルムチェンジによる種族値の変更
+      pokemonState.maxStats.h.race = effectArg1;
+      pokemonState.minStats.h.race = effectArg1;
+      pokemonState.maxStats.a.race = effectArg2;
+      pokemonState.minStats.a.race = effectArg2;
+      pokemonState.maxStats.b.race = effectArg3;
+      pokemonState.minStats.b.race = effectArg3;
+      pokemonState.maxStats.c.race = effectArg4;
+      pokemonState.minStats.c.race = effectArg4;
+      pokemonState.maxStats.d.race = effectArg5;
+      pokemonState.minStats.d.race = effectArg5;
+      pokemonState.maxStats.s.race = effectArg6;
+      pokemonState.minStats.s.race = effectArg6;
+      for (final stat in StatIndexList.listHtoS) {
+        pokemonState.maxStats[stat].updateReal(
+            pokemonState.pokemon.level, pokemonState.pokemon.nature);
+        pokemonState.minStats[stat].updateReal(
+            pokemonState.pokemon.level, pokemonState.pokemon.nature);
+      }
+    }
+  }
 
   /// SQLに保存された文字列からBuffDebuffをパース
   /// ```
@@ -945,7 +795,7 @@ class BuffDebuff extends Equatable implements Copyable {
   /// ```
   static BuffDebuff deserialize(dynamic str, String split1) {
     final elements = str.split(split1);
-    return BuffDebuff(int.parse(elements[0]))
+    return PokeDB().buffDebuffs[int.parse(elements[0])]!.copy()
       ..turns = int.parse(elements[1])
       ..extraArg1 = int.parse(elements[2]);
   }
@@ -965,7 +815,449 @@ class BuffDebuffList extends Equatable implements Copyable {
   List<Object?> get props => [list];
 
   @override
-  BuffDebuffList copy() => BuffDebuffList()..list = [...list];
+  BuffDebuffList copy() =>
+      BuffDebuffList()..list = [for (final bd in list) bd.copy()];
+
+  /// 補正によるステータス変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// stat: 変更されたステータス値
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double changeStat(PokemonState pokemonState, PokemonState yourState,
+      double stat, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    return stat *
+        _changeStatArg(pokemonState, yourState, statIndex,
+            moveType: moveType,
+            damageClassID: damageClassID,
+            move: move,
+            holdingItem: holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によって変更されたステータスを元に戻す
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// stat: 変更されたステータス値
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double undoStat(PokemonState pokemonState, PokemonState yourState,
+      double stat, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    return stat /
+        _changeStatArg(pokemonState, yourState, statIndex,
+            moveType: moveType,
+            damageClassID: damageClassID,
+            move: move,
+            holdingItem: holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によるステータス変更時に掛ける値を取得する
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// statIndex: 変更対象のステータスインデックス
+  /// moveType: わざのタイプ。これを指定することで、こうげき時であると判定する
+  /// damageClassID: わざの分類
+  /// move: わざ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double _changeStatArg(
+      PokemonState pokemonState, PokemonState yourState, StatIndex statIndex,
+      {PokeType moveType = PokeType.unknown,
+      int? damageClassID,
+      Move? move,
+      Item? holdingItem,
+      bool? isFirst}) {
+    double ret = 1.0;
+    for (final element in list) {
+      if (element.effectID == 3) {
+        // 対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          if (args[i] == statIndex.index) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      } else if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (1 <= args[0] && args[0] <= 18) {
+          // わざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        } else {
+          switch (args[0]) {
+            case 19: // こうげき時のみ
+              meetCondition = moveType.index != 0;
+              break;
+            case 20: // ぶつりわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.physical;
+              break;
+            case 21: // とくしゅわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.special;
+              break;
+            case 22: // へんかわざでこうげきする時
+              meetCondition = damageClassID == DamageClass.status;
+              break;
+            case 23: // わざが直接攻撃の時
+              meetCondition = move != null &&
+                  move.isDirect &&
+                  !(move.isPunch && holdingItem?.id == 1700);
+              break;
+            case 24: // わざが音技の時
+              meetCondition = move != null && move.isSound;
+              break;
+            case 25: // わざがHP吸収技の時
+              meetCondition = move != null && move.isDrain;
+              break;
+            case 26: // わざがパンチ技の時
+              meetCondition = move != null && move.isPunch;
+              break;
+            case 27: // わざが波動技の時
+              meetCondition = move != null && move.isWave;
+              break;
+            case 28: // わざがおどり技の時
+              meetCondition = move != null && move.isDance;
+              break;
+            case 29: // わざが反動技の時
+              meetCondition = move != null && move.isRecoil;
+              break;
+            case 30: // わざが追加効果ありの時
+              meetCondition = move != null && move.isAdditionalEffect;
+              break;
+            case 31: // わざが追加効果あり2の時
+              meetCondition = move != null && move.isAdditionalEffect2;
+              break;
+            case 32: // わざがかみつきわざの時
+              meetCondition = move != null && move.isBite;
+              break;
+            case 33: // わざが切るわざの時
+              meetCondition = move != null && move.isCut;
+              break;
+            case 34: // わざが風技の時
+              meetCondition = move != null && move.isWind;
+              break;
+            case 35: // わざがこな系の技の時
+              meetCondition = move != null && move.isPowder;
+              break;
+            case 36: // わざが弾の技の時
+              meetCondition = move != null && move.isBullet;
+              break;
+            case 38: // 相手の性別が自身と同じ時
+              meetCondition = pokemonState.sex.id != 0 &&
+                  yourState.sex.id != 0 &&
+                  pokemonState.sex.id == yourState.sex.id;
+              break;
+            case 39: // 相手の性別が自身と異なる時
+              meetCondition = pokemonState.sex.id != 0 &&
+                  yourState.sex.id != 0 &&
+                  pokemonState.sex.id != yourState.sex.id;
+              break;
+            case 40: // 相手がこのターンにポケモン交代をしていた時
+              meetCondition = yourState.hiddenBuffs
+                  .containsByID(BuffDebuff.changedThisTurn);
+              break;
+            case 41: // 最後に行動する時
+              meetCondition = isFirst != null && !isFirst;
+              break;
+            case 42: // わざのタイプがノーマル以外の時
+              meetCondition = move?.type != PokeType.normal;
+              break;
+            default:
+              break;
+          }
+        }
+        if (meetCondition) {
+          for (int i = 1; i + 1 < args.length; i = i + 2) {
+            if (args[i] == statIndex.index) {
+              ret *= args[i + 1] / 100;
+            }
+          }
+        }
+      }
+    }
+
+    // 相手の補正効果も処理する
+    for (final element in yourState.buffDebuffs.list) {
+      if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (101 <= args[0] && args[0] <= 118) {
+          // 受けるわざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        }
+        if (meetCondition) {
+          for (int i = 1; i + 1 < args.length; i = i + 2) {
+            if (args[i] == statIndex.index) {
+              ret *= args[i + 1] / 100;
+            }
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /// 補正によるわざ威力の変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// power: わざの威力
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double changeMovePower(
+      PokemonState pokemonState,
+      PokemonState yourState,
+      double power,
+      int damageClassID,
+      Move move,
+      PokeType moveType,
+      Item? holdingItem,
+      {bool? isFirst}) {
+    return power *
+        _changeMovePowerArg(
+            pokemonState, yourState, damageClassID, move, moveType, holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によって変更されたわざ威力を元に戻す
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// power: 変更されたわざの威力
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double undoMovePower(
+      PokemonState pokemonState,
+      PokemonState yourState,
+      double power,
+      int damageClassID,
+      Move move,
+      PokeType moveType,
+      Item? holdingItem,
+      {bool? isFirst}) {
+    return power /
+        _changeMovePowerArg(
+            pokemonState, yourState, damageClassID, move, moveType, holdingItem,
+            isFirst: isFirst);
+  }
+
+  /// 補正によるわざ威力の変更時に掛ける値を取得する
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// yourState: 相手ポケモンの状態
+  /// damageClassID: わざの分類ID
+  /// move: わざ
+  /// moveType: わざのタイプ
+  /// holdingItem: もちもの
+  /// isFirst: このターン最初の行動か
+  /// ```
+  double _changeMovePowerArg(PokemonState pokemonState, PokemonState yourState,
+      int damageClassID, Move move, PokeType moveType, Item? holdingItem,
+      {bool? isFirst}) {
+    double ret = 1.0;
+
+    // 他補正より先に行う補正
+    final firstHosei = list
+        .where((element) => element.effectID == 7 && element.extraArg1 == 37);
+    if (firstHosei.isNotEmpty) {
+      if (move.power <= 60) {
+        ret *= firstHosei.first.effectArg2 / 100;
+      }
+    }
+
+    for (final element in list) {
+      if (element.effectID == 4) {
+        // わざの威力がxxx倍になる
+        ret *= element.effectArg1 / 100;
+      } else if (element.effectID == 7) {
+        // 【条件付き】わざの威力がxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          bool meetCondition = false; // 条件を満たすかどうか
+          if (1 <= args[i] && args[i] <= 18) {
+            // わざのタイプが条件
+            meetCondition = moveType.index == args[i];
+          } else {
+            switch (args[i]) {
+              case 19: // こうげき時のみ
+                meetCondition = moveType.index != 0;
+                break;
+              case 20: // ぶつりわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.physical;
+                break;
+              case 21: // とくしゅわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.special;
+                break;
+              case 22: // へんかわざでこうげきする時
+                meetCondition = damageClassID == DamageClass.status;
+                break;
+              case 23: // わざが直接攻撃の時
+                meetCondition =
+                    move.isDirect && !(move.isPunch && holdingItem?.id == 1700);
+                break;
+              case 24: // わざが音技の時
+                meetCondition = move.isSound;
+                break;
+              case 25: // わざがHP吸収技の時
+                meetCondition = move.isDrain;
+                break;
+              case 26: // わざがパンチ技の時
+                meetCondition = move.isPunch;
+                break;
+              case 27: // わざが波動技の時
+                meetCondition = move.isWave;
+                break;
+              case 28: // わざがおどり技の時
+                meetCondition = move.isDance;
+                break;
+              case 29: // わざが反動技の時
+                meetCondition = move.isRecoil;
+                break;
+              case 30: // わざが追加効果ありの時
+                meetCondition = move.isAdditionalEffect;
+                break;
+              case 31: // わざが追加効果あり2の時
+                meetCondition = move.isAdditionalEffect2;
+                break;
+              case 32: // わざがかみつきわざの時
+                meetCondition = move.isBite;
+                break;
+              case 33: // わざが切るわざの時
+                meetCondition = move.isCut;
+                break;
+              case 34: // わざが風技の時
+                meetCondition = move.isWind;
+                break;
+              case 35: // わざがこな系の技の時
+                meetCondition = move.isPowder;
+                break;
+              case 36: // わざが弾の技の時
+                meetCondition = move.isBullet;
+                break;
+              case 38: // 相手の性別が自身と同じ時
+                meetCondition = pokemonState.sex.id != 0 &&
+                    yourState.sex.id != 0 &&
+                    pokemonState.sex.id == yourState.sex.id;
+                break;
+              case 39: // 相手の性別が自身と異なる時
+                meetCondition = pokemonState.sex.id != 0 &&
+                    yourState.sex.id != 0 &&
+                    pokemonState.sex.id != yourState.sex.id;
+                break;
+              case 40: // 相手がこのターンにポケモン交代をしていた時
+                meetCondition = yourState.hiddenBuffs
+                    .containsByID(BuffDebuff.changedThisTurn);
+                break;
+              case 41: // 最後に行動する時
+                meetCondition = isFirst != null && !isFirst;
+                break;
+              case 42: // わざのタイプがノーマル以外の時
+                meetCondition = move.type != PokeType.normal;
+                break;
+              default:
+                break;
+            }
+          }
+          if (meetCondition) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      } else if (element.effectID == 9) {
+        if (move.type.index != element.effectArg2 &&
+            moveType.index == element.effectArg2) {
+          ret *= element.effectArg3 / 100;
+        }
+      }
+    }
+
+    // 相手の補正効果も処理する
+    for (final element in yourState.buffDebuffs.list) {
+      if (element.effectID == 6) {
+        // 【条件付き】対象ステータスがxxx倍になる
+        final args = element.effectArgs;
+        for (int i = 0; i + 1 < args.length; i = i + 2) {
+          bool meetCondition = false; // 条件を満たすかどうか
+          if (101 <= args[i] && args[i] <= 118) {
+            // 受けるわざのタイプが条件
+            meetCondition = moveType.index == args[i];
+          }
+          if (meetCondition) {
+            ret *= args[i + 1] / 100;
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  /// 補正によるわざタイプの変更を行う
+  /// ```
+  /// pokemonState: ポケモンの状態
+  /// moveType: わざのタイプ
+  /// ```
+  PokeType changeMoveType(PokemonState pokemonState, PokeType moveType) {
+    PokeType ret = moveType;
+    for (final element in list) {
+      if (element.effectID == 5) {
+        // わざのタイプがxxxになる
+        ret = PokeType.values[element.effectArg1];
+      } else if (element.effectID == 8 || element.effectID == 9) {
+        // 【条件付き】わざのタイプがxxxになる
+        final args = element.effectArgs;
+        bool meetCondition = false; // 条件を満たすかどうか
+        if (1 <= args[0] && args[0] <= 18) {
+          // わざのタイプが条件
+          meetCondition = moveType.index == args[0];
+        } else {
+          switch (args[0]) {
+            case 19: // こうげき時のみ
+              meetCondition = moveType.index != 0;
+              break;
+            default:
+              break;
+          }
+        }
+        if (meetCondition) {
+          ret = PokeType.values[args[1]];
+        }
+      }
+    }
+    return ret;
+  }
 
   /// 指定したIDを持つBuffDebuffを含むかどうかを返す
   /// ```
@@ -987,7 +1279,7 @@ class BuffDebuffList extends Equatable implements Copyable {
   /// ```
   void addIfNotFoundByID(int id) {
     if (!containsByID(id)) {
-      add(BuffDebuff(id));
+      add(PokeDB().buffDebuffs[id]!.copy());
     }
   }
 
@@ -1038,7 +1330,7 @@ class BuffDebuffList extends Equatable implements Copyable {
     if (findIdx >= 0) {
       list.removeAt(findIdx);
     } else {
-      list.add(BuffDebuff(id));
+      list.add(PokeDB().buffDebuffs[id]!.copy());
     }
   }
 
@@ -1049,11 +1341,11 @@ class BuffDebuffList extends Equatable implements Copyable {
   void switchID(int id1, int id2) {
     int findIdx = list.indexWhere((element) => element.id == id1);
     if (findIdx >= 0) {
-      list[findIdx] = BuffDebuff(id2);
+      list[findIdx] = PokeDB().buffDebuffs[id2]!.copy();
     } else {
       findIdx = list.indexWhere((element) => element.id == id2);
       if (findIdx >= 0) {
-        list[findIdx] = BuffDebuff(id1);
+        list[findIdx] = PokeDB().buffDebuffs[id1]!.copy();
       }
     }
   }
@@ -1062,12 +1354,14 @@ class BuffDebuffList extends Equatable implements Copyable {
   /// ```
   /// from: 変更前ID
   /// to: 変更後ID
+  /// 返り値: 変更したBuffDebuffのインデックス(なければ-1)
   /// ```
-  void changeID(int from, int to) {
+  int changeID(int from, int to) {
     int findIdx = list.indexWhere((element) => element.id == from);
     if (findIdx >= 0) {
-      list[findIdx] = BuffDebuff(to);
+      list[findIdx] = PokeDB().buffDebuffs[to]!.copy();
     }
+    return findIdx;
   }
 
   /// 要素を追加する

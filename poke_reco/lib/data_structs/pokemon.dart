@@ -43,7 +43,7 @@ class Pokemon extends Equatable implements Copyable {
   PokeType teraType = PokeType.unknown;
 
   /// せいかく
-  Temper temper = Temper.none();
+  Nature nature = Nature.none();
 
   /// 6つのステータス[HP, こうげき, ぼうぎょ, とくこう, とくぼう, すばやさ]
   SixStats _stats = SixStats.generateUniformedStat(indi: pokemonMaxIndividual);
@@ -76,7 +76,7 @@ class Pokemon extends Equatable implements Copyable {
         type1,
         type2,
         teraType,
-        temper,
+        nature,
         _stats,
         ability,
         item,
@@ -114,7 +114,7 @@ class Pokemon extends Equatable implements Copyable {
     type1 = pokeData.pokeBase[pokeNo]!.type1;
     type2 = pokeData.pokeBase[pokeNo]!.type2;
     teraType = PokeType.values[map[myPokemonColumnTeraType]];
-    temper = pokeData.tempers[map[myPokemonColumnTemper]]!;
+    nature = pokeData.natures[map[myPokemonColumnNature]]!;
     // 実数値はあとでまとめて更新
     _stats.h.set(pokeData.pokeBase[pokeNo]!.h,
         map[myPokemonColumnIndividual[0]], map[myPokemonColumnEffort[0]], 0);
@@ -280,7 +280,7 @@ class Pokemon extends Equatable implements Copyable {
     return (name != '' &&
         (level >= pokemonMinLevel && level <= pokemonMaxLevel) &&
         no >= pokemonMinNo &&
-        temper.id != 0 &&
+        nature.id != 0 &&
         teraType != PokeType.unknown &&
         ability.id != 0 &&
         _moves[0]!.id != 0 &&
@@ -303,8 +303,8 @@ class Pokemon extends Equatable implements Copyable {
   /// 努力値の合計
   int get totalEffort => _stats.totalEffort;
 
-  /// TODO:しんかのきせきが適用できるかどうか
-  bool get isEvolvable => true;
+  /// しんかのきせきが適用できるかどうか
+  bool get availableEviolite => PokeDB().pokeBase[no]!.availableEviolite;
 
   @override
   Pokemon copy() => Pokemon()
@@ -319,7 +319,7 @@ class Pokemon extends Equatable implements Copyable {
     ..type1 = type1
     ..type2 = type2
     ..teraType = teraType
-    ..temper = temper
+    ..nature = nature
     .._stats = _stats.copy()
     ..ability = ability.copy()
     ..item = item?.copy()
@@ -330,7 +330,7 @@ class Pokemon extends Equatable implements Copyable {
   /// レベル、種族値、個体値、努力値、せいかくから実数値を更新
   void updateRealStats() {
     for (final stat in _stats.sixParams) {
-      stat.updateReal(level, temper);
+      stat.updateReal(level, nature);
     }
   }
 
@@ -339,17 +339,17 @@ class Pokemon extends Equatable implements Copyable {
   /// statIndex: 更新対象のパラメータ
   /// ```
   void updateStatsRefReal(StatIndex statIndex) {
-    int effort = _stats.sixParams[statIndex.index].updateEffort(level, temper);
+    int effort = _stats.sixParams[statIndex.index].updateEffort(level, nature);
     // 努力値の変化だけでは実数値が出せない場合は個体値を更新
     if (effort < pokemonMinEffort || effort > pokemonMaxEffort) {
       _stats.sixParams[statIndex.index].effort =
           effort.clamp(pokemonMinEffort, pokemonMaxEffort);
-      int indi = _stats.sixParams[statIndex.index].updateIndi(level, temper);
+      int indi = _stats.sixParams[statIndex.index].updateIndi(level, nature);
       // 努力値・個体値の変化では実数値が出せない場合は実数値を更新
       if (indi < pokemonMinIndividual || indi > pokemonMaxIndividual) {
         _stats.sixParams[statIndex.index].indi =
             indi.clamp(pokemonMinIndividual, pokemonMaxIndividual);
-        _stats.sixParams[statIndex.index].updateReal(level, temper);
+        _stats.sixParams[statIndex.index].updateReal(level, nature);
       }
     }
   }
@@ -364,7 +364,7 @@ class Pokemon extends Equatable implements Copyable {
       myPokemonColumnTeraType: teraType.index,
       myPokemonColumnLevel: level,
       myPokemonColumnSex: sex.id,
-      myPokemonColumnTemper: temper.id,
+      myPokemonColumnNature: nature.id,
       myPokemonColumnAbility: ability.id,
       myPokemonColumnItem: item?.id,
       myPokemonColumnIndividual[0]: h.indi,

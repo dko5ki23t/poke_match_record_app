@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:poke_reco/custom_dialogs/pokemon_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/party_sort_dialog.dart';
 import 'package:poke_reco/custom_dialogs/battle_sort_dialog.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -23,6 +24,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:tuple/tuple.dart';
 
 const String errorFileName = 'errorFile.db';
 const String errorString = 'errorString';
@@ -34,7 +36,7 @@ const String configKeyPokemonsTeraTypeFilter = 'pokemonsTeraTypeFilter';
 const String configKeyPokemonsMoveFilter = 'pokemonsMoveFilter';
 const String configKeyPokemonsSexFilter = 'pokemonsSexFilter';
 const String configKeyPokemonsAbilityFilter = 'pokemonsAbilityFilter';
-const String configKeyPokemonsTemperFilter = 'pokemonsTemperFilter';
+const String configKeyPokemonsNatureFilter = 'pokemonsNatureFilter';
 
 const String configKeyPokemonsSort = 'pokemonsSort';
 
@@ -56,6 +58,9 @@ const String configKeyLanguage = 'language';
 
 const String configKeyTutorialStep = 'tutorialStep';
 
+const String configKeyBattleOwnMoveSort = 'battleOwnMoveSort';
+const String configKeyBattleOpponentMoveSort = 'battleOpponentMoveSort';
+
 const String abilityDBFile = 'Abilities.db';
 const String abilityDBTable = 'abilityDB';
 const String abilityColumnId = 'id';
@@ -63,6 +68,7 @@ const String abilityColumnName = 'name';
 const String abilityColumnEnglishName = 'englishName';
 const String abilityColumnTiming = 'timing';
 const String abilityColumnTarget = 'target';
+const String abilityColumnPossiblyChangeStat = 'possiblyChangeStat';
 
 const String abilityFlavorDBFile = 'AbilityFlavors.db';
 const String abilityFlavorDBTable = 'abilityFlavorDB';
@@ -70,13 +76,13 @@ const String abilityFlavorColumnId = 'id';
 const String abilityFlavorColumnFlavor = 'flavor';
 const String abilityFlavorColumnEnglishFlavor = 'englishFlavor';
 
-const String temperDBFile = 'Tempers.db';
-const String temperDBTable = 'temperDB';
-const String temperColumnId = 'id';
-const String temperColumnName = 'name';
-const String temperColumnEnglishName = 'englishName';
-const String temperColumnDe = 'decreased_stat';
-const String temperColumnIn = 'increased_stat';
+const String natureDBFile = 'Natures.db';
+const String natureDBTable = 'natureDB';
+const String natureColumnId = 'id';
+const String natureColumnName = 'name';
+const String natureColumnEnglishName = 'englishName';
+const String natureColumnDe = 'decreased_stat';
+const String natureColumnIn = 'increased_stat';
 
 const String eggGroupDBFile = 'EggGroup.db';
 const String eggGroupDBTable = 'eggGroupDB';
@@ -93,6 +99,7 @@ const String itemColumnFlingEffect = 'fling_effect';
 const String itemColumnTiming = 'timing';
 const String itemColumnIsBerry = 'is_berry';
 const String itemColumnImageUrl = 'image_url';
+const String itemColumnPossiblyChangeStat = 'possiblyChangeStat';
 
 const String itemFlavorDBFile = 'ItemFlavors.db';
 const String itemFlavorDBTable = 'itemFlavorDB';
@@ -114,12 +121,45 @@ const String moveColumnDamageClass = 'damage_class';
 const String moveColumnEffect = 'effect';
 const String moveColumnEffectChance = 'effect_chance';
 const String moveColumnPP = 'PP';
+const String moveColumnIsDirect = 'is_direct';
+const String moveColumnIsSound = 'is_sound';
+const String moveColumnIsDrain = 'is_drain';
+const String moveColumnIsPunch = 'is_punch';
+const String moveColumnIsWave = 'is_wave';
+const String moveColumnIsDance = 'is_dance';
+const String moveColumnIsRecoil = 'is_recoil';
+const String moveColumnIsAdditionalEffect = 'is_additional_effect';
+const String moveColumnIsAdditionalEffect2 = 'is_additional_effect2';
+const String moveColumnIsBite = 'is_bite';
+const String moveColumnIsCut = 'is_cut';
+const String moveColumnIsWind = 'is_wind';
+const String moveColumnIsPowder = 'is_powder';
+const String moveColumnIsBullet = 'is_bullet';
+const String moveColumnSuccessWithProtect = 'success_with_protect';
+const String moveColumnLoseWithRecoil = 'lose_with_recoil';
 
 const String moveFlavorDBFile = 'MoveFlavors.db';
 const String moveFlavorDBTable = 'moveFlavorDB';
 const String moveFlavorColumnId = 'id';
 const String moveFlavorColumnFlavor = 'flavor';
 const String moveFlavorColumnEnglishFlavor = 'englishFlavor';
+
+const String buffDebuffDBFile = 'BuffDebuffs.db';
+const String buffDebuffDBTable = 'buffDebuffDB';
+const String buffDebuffColumnId = 'id';
+const String buffDebuffColumnName = 'name';
+const String buffDebuffColumnEnglishName = 'englishName';
+const String buffDebuffColumnColor = 'color';
+const String buffDebuffColumnTurns = 'turns';
+const String buffDebuffColumnIsHidden = 'isHidden';
+const String buffDebuffColumnEffectID = 'effectID';
+const String buffDebuffColumnEffectArg1 = 'effectArg1';
+const String buffDebuffColumnEffectArg2 = 'effectArg2';
+const String buffDebuffColumnEffectArg3 = 'effectArg3';
+const String buffDebuffColumnEffectArg4 = 'effectArg4';
+const String buffDebuffColumnEffectArg5 = 'effectArg5';
+const String buffDebuffColumnEffectArg6 = 'effectArg6';
+const String buffDebuffColumnEffectArg7 = 'effectArg7';
 
 const String pokeBaseDBFile = 'PokeBases.db';
 const String pokeBaseDBTable = 'pokeBaseDB';
@@ -143,6 +183,7 @@ const String pokeBaseColumnHeight = 'height';
 const String pokeBaseColumnWeight = 'weight';
 const String pokeBaseColumnEggGroup = 'eggGroup';
 const String pokeBaseColumnImageUrl = 'imageUrl';
+const String pokeBaseColumnAvailableEviolite = 'availableEviolite';
 
 const String preparedDBFile = 'Prepared.db';
 
@@ -158,7 +199,7 @@ const String myPokemonColumnNickName = 'nickname';
 const String myPokemonColumnTeraType = 'teratype';
 const String myPokemonColumnLevel = 'level';
 const String myPokemonColumnSex = 'sex';
-const String myPokemonColumnTemper = 'temper';
+const String myPokemonColumnNature = 'nature';
 const String myPokemonColumnAbility = 'ability';
 const String myPokemonColumnItem = 'item';
 const List<String> myPokemonColumnIndividual = [
@@ -190,7 +231,7 @@ const String myPokemonColumnOwnerID = 'owner';
 const String partyDBFile = 'parties.db';
 const String partyDBTable = 'partyDB';
 const String preparedPartyDBTable = 'PreparedPartyDB';
-const String partyTestDBFile = 'parties.db';
+const String partyTestDBFile = 'partiesTest.db';
 const String partyTestDBTable = 'partyDB';
 const String partyColumnId = 'id';
 const String partyColumnViewOrder = 'viewOrder';
@@ -211,7 +252,7 @@ const String partyColumnOwnerID = 'owner';
 
 const String battleDBFile = 'battles.db';
 const String battleDBTable = 'battleDB';
-const String battleTestDBFile = 'battles.db';
+const String battleTestDBFile = 'battlesTest.db';
 const String battleTestDBTable = 'battleDB';
 const String battleColumnId = 'id';
 const String battleColumnViewOrder = 'viewOrder';
@@ -338,14 +379,14 @@ extension PlayerTypeNum on PlayerType {
 }
 
 /// せいかく
-class Temper {
+class Nature {
   final int id;
   final String _displayName;
   final String _displayNameEn;
   late final StatIndex decreasedStat;
   late final StatIndex increasedStat;
 
-  Temper(this.id, this._displayName, this._displayNameEn, StatIndex dec,
+  Nature(this.id, this._displayName, this._displayNameEn, StatIndex dec,
       StatIndex inc) {
     if (dec == inc) {
       decreasedStat = StatIndex.none;
@@ -357,8 +398,8 @@ class Temper {
   }
 
   /// 無効なせいかくを返す
-  factory Temper.none() {
-    return Temper(0, '', '', StatIndex.none, StatIndex.none);
+  factory Nature.none() {
+    return Nature(0, '', '', StatIndex.none, StatIndex.none);
   }
 
   /// 名前
@@ -373,15 +414,15 @@ class Temper {
   }
 
   /// ABCDSそれぞれのステータスに対するせいかく補正値をリストにして返す
-  static List<double> getTemperBias(Temper temper) {
+  static List<double> getNatureBias(Nature nature) {
     var ret = [1.0, 1.0, 1.0, 1.0, 1.0]; // A, B, C, D, S
-    if (StatIndex.H.index < temper.increasedStat.index &&
-        temper.increasedStat.index < StatIndex.size.index) {
-      ret[temper.increasedStat.index - 1] = 1.1;
+    if (StatIndex.H.index < nature.increasedStat.index &&
+        nature.increasedStat.index < StatIndex.size.index) {
+      ret[nature.increasedStat.index - 1] = 1.1;
     }
-    if (StatIndex.H.index < temper.decreasedStat.index &&
-        temper.decreasedStat.index < StatIndex.size.index) {
-      ret[temper.decreasedStat.index - 1] = 0.9;
+    if (StatIndex.H.index < nature.decreasedStat.index &&
+        nature.decreasedStat.index < StatIndex.size.index) {
+      ret[nature.decreasedStat.index - 1] = 0.9;
     }
 
     return ret;
@@ -451,7 +492,7 @@ class PokeDB {
   List<int> pokemonsMoveFilter = [];
   List<int> pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
   List<int> pokemonsAbilityFilter = [];
-  List<int> pokemonsTemperFilter = [];
+  List<int> pokemonsNatureFilter = [];
   PokemonSort? pokemonsSort;
 
   List<Owner> partiesOwnerFilter = [Owner.mine];
@@ -469,24 +510,20 @@ class PokeDB {
   /// チュートリアルの段階(マイナス値は終了済み)
   int tutorialStep = 0;
 
+  /// 対戦入力画面の相手わざの表示順
+  /// * 0:ダメージ大きい順
+  /// * 1:採用率高い順
+  int battleOwnMoveSort = 0;
+  int battleOpponentMoveSort = 0;
+
   Map<int, Ability> abilities = {0: Ability.none()}; // 無効なとくせい
   late Database abilityDb;
   Map<int, String> _abilityFlavors = {0: ''}; // 無効なとくせい
   Map<int, String> _abilityEnglishFlavors = {0: ''}; // 無効なとくせい
   late Database abilityFlavorDb;
-  Map<int, Temper> tempers = {0: Temper.none()}; // 無効なせいかく
-  late Database temperDb;
-  Map<int, Item> items = {
-    0: Item(
-        id: 0,
-        displayName: '',
-        displayNameEn: '',
-        flingPower: 0,
-        flingEffectId: 0,
-        timing: Timing.none,
-        isBerry: false,
-        imageUrl: '')
-  }; // 無効なもちもの
+  Map<int, Nature> natures = {0: Nature.none()}; // 無効なせいかく
+  late Database natureDb;
+  Map<int, Item> items = {0: Item.none()}; // 無効なもちもの
   late Database itemDb;
   Map<int, String> _itemFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
@@ -496,33 +533,15 @@ class PokeDB {
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
   late Database moveFlavorDb;
+  Map<int, BuffDebuff> buffDebuffs = {0: BuffDebuff.none()}; // 無効な補正
+  late Database buffDebuffDb;
   List<PokeType> types = PokeType.values.sublist(1, 19);
   List<PokeType> teraTypes = PokeType.values.sublist(1, PokeType.values.length);
   Map<int, EggGroup> eggGroups = {0: EggGroup(0, '')}; // 無効なタマゴグループ
   late Database eggGroupDb;
   Map<int, PokeBase> pokeBase = {
-    // 無効なポケモン
-    0: PokeBase(
-      name: '',
-      nameEn: '',
-      sex: [Sex.createFromId(0)],
-      no: 0,
-      type1: PokeType.unknown,
-      type2: null,
-      h: 0,
-      a: 0,
-      b: 0,
-      c: 0,
-      d: 0,
-      s: 0,
-      ability: [],
-      move: [],
-      height: 0,
-      weight: 0,
-      eggGroups: [],
-      imageUrl: 'https://dammy',
-    ),
-  };
+    0: PokeBase.none(),
+  }; // 無効なポケモン
   late Database pokeBaseDb;
   Map<int, Pokemon> pokemons = {0: Pokemon()};
   late Database myPokemonDb;
@@ -574,6 +593,24 @@ class PokeDB {
     return ret;
   }
 
+  List<Tuple2<int, int>> parseIntTuple2List(dynamic str) {
+    List<Tuple2<int, int>> ret = [];
+    // なぜかintの場合もif文の中に入らないのでtoStringを使う
+    if (str is int) {
+      return [];
+    }
+    final contents = str.split(sqlSplit1);
+    for (var c in contents) {
+      if (c == '') {
+        continue;
+      }
+      final contents2 = c.split(sqlSplit2);
+      ret.add(Tuple2(
+          int.parse(contents2.removeAt(0)), int.parse(contents2.removeAt(0))));
+    }
+    return ret;
+  }
+
   Future<void> initialize(Locale locale) async {
     /////////// 各種設定
     String localPath = '';
@@ -598,7 +635,7 @@ class PokeDB {
         pokemonsMoveFilter = [];
         pokemonsSexFilter = [for (var sex in Sex.values) sex.id];
         pokemonsAbilityFilter = [];
-        pokemonsTemperFilter = [];
+        pokemonsNatureFilter = [];
         pokemonsSort = null;
         partiesOwnerFilter = [Owner.mine];
         partiesWinRateMinFilter = 0;
@@ -610,6 +647,8 @@ class PokeDB {
         battlesSort = null;
         getPokeAPI = true;
         tutorialStep = 0;
+        battleOwnMoveSort = 0;
+        battleOpponentMoveSort = 0;
         await saveConfig();
         continueToLoad = false;
       }
@@ -683,12 +722,12 @@ class PokeDB {
           pokemonsAbilityFilter = [];
         }
         try {
-          pokemonsTemperFilter = [];
-          for (final e in configJson[configKeyPokemonsTemperFilter]) {
-            pokemonsTemperFilter.add(e as int);
+          pokemonsNatureFilter = [];
+          for (final e in configJson[configKeyPokemonsNatureFilter]) {
+            pokemonsNatureFilter.add(e as int);
           }
         } catch (e) {
-          pokemonsTemperFilter = [];
+          pokemonsNatureFilter = [];
         }
         try {
           int sort = configJson[configKeyPokemonsSort] as int;
@@ -775,6 +814,17 @@ class PokeDB {
         } catch (e) {
           tutorialStep = 0;
         }
+        try {
+          battleOwnMoveSort = configJson[configKeyBattleOwnMoveSort] as int;
+        } catch (e) {
+          battleOwnMoveSort = 0;
+        }
+        try {
+          battleOpponentMoveSort =
+              configJson[configKeyBattleOpponentMoveSort] as int;
+        } catch (e) {
+          battleOpponentMoveSort = 0;
+        }
       }
       switch (locale.languageCode) {
         case 'ja':
@@ -802,16 +852,23 @@ class PokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget
+        abilityColumnTarget,
+        abilityColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[abilityColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       abilities[map[abilityColumnId]] = Ability(
         map[abilityColumnId],
         map[abilityColumnName],
         map[abilityColumnEnglishName],
         Timing.values[map[abilityColumnTiming]],
         Target.values[map[abilityColumnTarget]],
+        possiblyChangeStat,
       );
     }
 
@@ -834,25 +891,25 @@ class PokeDB {
     }
 
     //////////// せいかく
-    temperDb = await openAssetDatabase(temperDBFile);
+    natureDb = await openAssetDatabase(natureDBFile);
     // 内部データに変換
-    maps = await temperDb.query(
-      temperDBTable,
+    maps = await natureDb.query(
+      natureDBTable,
       columns: [
-        temperColumnId,
-        temperColumnName,
-        temperColumnEnglishName,
-        temperColumnDe,
-        temperColumnIn
+        natureColumnId,
+        natureColumnName,
+        natureColumnEnglishName,
+        natureColumnDe,
+        natureColumnIn
       ],
     );
     for (var map in maps) {
-      tempers[map[temperColumnId]] = Temper(
-        map[temperColumnId],
-        map[temperColumnName],
-        map[temperColumnEnglishName],
-        StatIndex.values[(map[temperColumnDe] as int) - 1],
-        StatIndex.values[(map[temperColumnIn] as int) - 1],
+      natures[map[natureColumnId]] = Nature(
+        map[natureColumnId],
+        map[natureColumnName],
+        map[natureColumnEnglishName],
+        StatIndex.values[(map[natureColumnDe] as int) - 1],
+        StatIndex.values[(map[natureColumnIn] as int) - 1],
       );
     }
 
@@ -883,19 +940,27 @@ class PokeDB {
         itemColumnFlingEffect,
         itemColumnTiming,
         itemColumnIsBerry,
-        itemColumnImageUrl
+        itemColumnImageUrl,
+        itemColumnPossiblyChangeStat,
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[itemColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       items[map[itemColumnId]] = Item(
-          id: map[itemColumnId],
-          displayName: map[itemColumnName],
-          displayNameEn: map[itemColumnEnglishName],
-          flingPower: map[itemColumnFlingPower],
-          flingEffectId: map[itemColumnFlingEffect],
-          timing: Timing.values[map[itemColumnTiming]],
-          isBerry: map[itemColumnIsBerry] == 1,
-          imageUrl: map[itemColumnImageUrl]);
+        id: map[itemColumnId],
+        displayName: map[itemColumnName],
+        displayNameEn: map[itemColumnEnglishName],
+        flingPower: map[itemColumnFlingPower],
+        flingEffectId: map[itemColumnFlingEffect],
+        timing: Timing.values[map[itemColumnTiming]],
+        isBerry: map[itemColumnIsBerry] == 1,
+        imageUrl: map[itemColumnImageUrl],
+        possiblyChangeStat: possiblyChangeStat,
+      );
     }
 
     //////////// もちものの説明
@@ -932,7 +997,23 @@ class PokeDB {
         moveColumnDamageClass,
         moveColumnEffect,
         moveColumnEffectChance,
-        moveColumnPP
+        moveColumnPP,
+        moveColumnIsDirect,
+        moveColumnIsSound,
+        moveColumnIsDrain,
+        moveColumnIsPunch,
+        moveColumnIsWave,
+        moveColumnIsDance,
+        moveColumnIsRecoil,
+        moveColumnIsAdditionalEffect,
+        moveColumnIsAdditionalEffect2,
+        moveColumnIsBite,
+        moveColumnIsCut,
+        moveColumnIsWind,
+        moveColumnIsPowder,
+        moveColumnIsBullet,
+        moveColumnSuccessWithProtect,
+        moveColumnLoseWithRecoil,
       ],
     );
     for (var map in maps) {
@@ -949,6 +1030,22 @@ class PokeDB {
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
         map[moveColumnPP],
+        map[moveColumnIsDirect] != 0,
+        map[moveColumnIsSound] != 0,
+        map[moveColumnIsDrain] != 0,
+        map[moveColumnIsPunch] != 0,
+        map[moveColumnIsWave] != 0,
+        map[moveColumnIsDance] != 0,
+        map[moveColumnIsRecoil] != 0,
+        map[moveColumnIsAdditionalEffect] != 0,
+        map[moveColumnIsAdditionalEffect2] != 0,
+        map[moveColumnIsBite] != 0,
+        map[moveColumnIsCut] != 0,
+        map[moveColumnIsWind] != 0,
+        map[moveColumnIsPowder] != 0,
+        map[moveColumnIsBullet] != 0,
+        map[moveColumnSuccessWithProtect] != 0,
+        map[moveColumnLoseWithRecoil] != 0,
       );
     }
 
@@ -967,6 +1064,47 @@ class PokeDB {
       _moveFlavors[map[moveFlavorColumnId]] = map[moveFlavorColumnFlavor];
       _moveEnglishFlavors[map[moveFlavorColumnId]] =
           map[moveFlavorColumnEnglishFlavor];
+    }
+
+    /////////// その他の補正(フォルム等)
+    buffDebuffDb = await openAssetDatabase(buffDebuffDBFile);
+    // 内部データに変換
+    maps = await buffDebuffDb.query(
+      buffDebuffDBTable,
+      columns: [
+        buffDebuffColumnId,
+        buffDebuffColumnName,
+        buffDebuffColumnEnglishName,
+        buffDebuffColumnColor,
+        buffDebuffColumnTurns,
+        buffDebuffColumnIsHidden,
+        buffDebuffColumnEffectID,
+        buffDebuffColumnEffectArg1,
+        buffDebuffColumnEffectArg2,
+        buffDebuffColumnEffectArg3,
+        buffDebuffColumnEffectArg4,
+        buffDebuffColumnEffectArg5,
+        buffDebuffColumnEffectArg6,
+        buffDebuffColumnEffectArg7,
+      ],
+    );
+    for (var map in maps) {
+      buffDebuffs[map[buffDebuffColumnId]] = BuffDebuff(
+        map[buffDebuffColumnId],
+        map[buffDebuffColumnName],
+        map[buffDebuffColumnEnglishName],
+        map[buffDebuffColumnColor],
+        map[buffDebuffColumnTurns],
+        map[buffDebuffColumnIsHidden] != 0,
+        map[buffDebuffColumnEffectID],
+        map[buffDebuffColumnEffectArg1],
+        map[buffDebuffColumnEffectArg2],
+        map[buffDebuffColumnEffectArg3],
+        map[buffDebuffColumnEffectArg4],
+        map[buffDebuffColumnEffectArg5],
+        map[buffDebuffColumnEffectArg6],
+        map[buffDebuffColumnEffectArg7],
+      );
     }
 
     //////////// ポケモン図鑑
@@ -988,6 +1126,7 @@ class PokeDB {
         pokeBaseColumnWeight,
         pokeBaseColumnEggGroup,
         pokeBaseColumnImageUrl,
+        pokeBaseColumnAvailableEviolite,
       ],
     );
 
@@ -1025,6 +1164,7 @@ class PokeDB {
         weight: map[pokeBaseColumnWeight],
         eggGroups: [for (var e in pokeEggGroups) eggGroups[e]!],
         imageUrl: map[pokeBaseColumnImageUrl],
+        availableEviolite: map[pokeBaseColumnAvailableEviolite] != 0,
       );
     }
 
@@ -1062,7 +1202,7 @@ class PokeDB {
           myPokemonColumnTeraType,
           myPokemonColumnLevel,
           myPokemonColumnSex,
-          myPokemonColumnTemper,
+          myPokemonColumnNature,
           myPokemonColumnAbility,
           myPokemonColumnItem,
           for (var e in myPokemonColumnIndividual) e,
@@ -1083,7 +1223,7 @@ class PokeDB {
         var pokemon = Pokemon.createFromDBMap(map);
         pokemons[pokemon.id] = pokemon;
         print(
-            'Pokemon(${pokemon.id}, ${pokemon.viewOrder}, ${pokemon.no}, "${pokemon.nickname}", PokeType.${pokemon.teraType.displayName}, ${pokemon.level}, Sex.${pokemon.sex.displayName}, Temper.${pokemon.temper.displayName}, ${pokemon.ability.id}, 0, [${pokemon.h.indi}, ${pokemon.h.effort}], [${pokemon.a.indi}, ${pokemon.a.effort}], [${pokemon.b.indi}, ${pokemon.b.effort}], [${pokemon.c.indi}, ${pokemon.c.effort}], [${pokemon.d.indi}, ${pokemon.d.effort}], [${pokemon.s.indi}, ${pokemon.s.effort}], [${pokemon.move1.id}, ${pokemon.move2?.id}, ${pokemon.move3?.id}, ${pokemon.move4?.id}], [${pokemon.pp1}, ${pokemon.pp2}, ${pokemon.pp3}, ${pokemon.pp4}], Owner.mine).toSet(),');
+            'Pokemon(${pokemon.id}, ${pokemon.viewOrder}, ${pokemon.no}, "${pokemon.nickname}", PokeType.${pokemon.teraType.displayName}, ${pokemon.level}, Sex.${pokemon.sex.displayName}, Nature.${pokemon.nature.displayName}, ${pokemon.ability.id}, 0, [${pokemon.h.indi}, ${pokemon.h.effort}], [${pokemon.a.indi}, ${pokemon.a.effort}], [${pokemon.b.indi}, ${pokemon.b.effort}], [${pokemon.c.indi}, ${pokemon.c.effort}], [${pokemon.d.indi}, ${pokemon.d.effort}], [${pokemon.s.indi}, ${pokemon.s.effort}], [${pokemon.move1.id}, ${pokemon.move2?.id}, ${pokemon.move3?.id}, ${pokemon.move4?.id}], [${pokemon.pp1}, ${pokemon.pp2}, ${pokemon.pp3}, ${pokemon.pp4}], Owner.mine).toSet(),');
       }
     }
 
@@ -1109,7 +1249,7 @@ class PokeDB {
       // SQLiteのDB読み込み
       partyDb = await openDatabase(partyDBPath);
       // バージョン間のデータ構造差異を埋める
-      await _fillPartyVersionDiff(myPokemonDb);
+      await _fillPartyVersionDiff(partyDb);
       // 内部データに変換
       maps = await partyDb.query(
         _isTestMode ? partyTestDBTable : partyDBTable,
@@ -1206,7 +1346,7 @@ class PokeDB {
               myPokemonColumnTeraType,
               myPokemonColumnLevel,
               myPokemonColumnSex,
-              myPokemonColumnTemper,
+              myPokemonColumnNature,
               myPokemonColumnAbility,
               myPokemonColumnItem,
               for (var e in myPokemonColumnIndividual) e,
@@ -1323,7 +1463,7 @@ class PokeDB {
       configKeyPokemonsAbilityFilter: [
         for (final e in pokemonsAbilityFilter) e
       ],
-      configKeyPokemonsTemperFilter: [for (final e in pokemonsTemperFilter) e],
+      configKeyPokemonsNatureFilter: [for (final e in pokemonsNatureFilter) e],
       configKeyPokemonsSort: pokemonsSort == null ? 0 : pokemonsSort!.id,
       configKeyPartiesOwnerFilter: [
         for (final e in partiesOwnerFilter) e.index
@@ -1340,6 +1480,8 @@ class PokeDB {
       configKeyGetNetworkImage: getPokeAPI ? 1 : 0,
       configKeyLanguage: language.index,
       configKeyTutorialStep: tutorialStep,
+      configKeyBattleOwnMoveSort: battleOwnMoveSort,
+      configKeyBattleOpponentMoveSort: battleOpponentMoveSort,
     });
     await _saveDataFile.writeAsString(jsonText);
   }
@@ -1512,7 +1654,6 @@ class PokeDB {
     await _prepareMyPokemonDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$myPokemonColumnId=?';
     for (final e in pokemons.values) {
       await myPokemonDb.update(
@@ -1530,7 +1671,13 @@ class PokeDB {
     if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1: // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
-          // バージョン変えるだけでいい
+        case 2:
+        case 3:
+          // 列名をtemper->natureに変更
+          const text =
+              'ALTER TABLE $myPokemonDBTable RENAME COLUMN temper TO $myPokemonColumnNature';
+          database.execute(text);
+          // バージョン変更
           database.setVersion(pokeRecoInternalVersion);
           break;
         default:
@@ -1544,6 +1691,8 @@ class PokeDB {
     if (v != pokeRecoInternalVersion) {
       switch (v) {
         case 1: // バージョンなんて表示する前 -> バージョン1.0.1(内部バージョン2)
+        case 2:
+        case 3:
           // バージョン変えるだけでいい
           database.setVersion(pokeRecoInternalVersion);
           break;
@@ -1602,6 +1751,11 @@ class PokeDB {
             // バージョン変更
             database.setVersion(pokeRecoInternalVersion);
           }
+          break;
+        case 2:
+        case 3:
+          // バージョン変更
+          database.setVersion(pokeRecoInternalVersion);
           break;
         default:
           break;
@@ -1690,7 +1844,6 @@ class PokeDB {
     await _preparePartyDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$partyColumnId=?';
     for (final e in parties.values) {
       await partyDb.update(
@@ -1786,7 +1939,6 @@ class PokeDB {
     await _prepareBattleDB();
 
     // SQLiteのDBを更新
-    // TODO: for文なしで一文でできないかな？
     String whereStr = '$battleColumnId=?';
     for (final e in battles.values) {
       await battleDb.update(
@@ -1850,7 +2002,7 @@ class PokeDB {
         '$myPokemonColumnTeraType INTEGER, '
         '$myPokemonColumnLevel INTEGER, '
         '$myPokemonColumnSex INTEGER, '
-        '$myPokemonColumnTemper INTEGER, '
+        '$myPokemonColumnNature INTEGER, '
         '$myPokemonColumnAbility INTEGER, '
         '$myPokemonColumnItem INTEGER, '
         '${myPokemonColumnIndividual[0]} INTEGER, '
@@ -1971,6 +2123,28 @@ class PokeDB {
         return db.execute(text);
       });
     }
+  }
+
+  /// 指定したNoのポケモンが対象のわざを採用していた数を返す。以下注意：
+  /// * 計算対象は対戦相手のポケモンのみ
+  /// ```
+  /// pokeNo: ポケモンの図鑑No
+  /// moveID: わざID
+  /// ```
+  int getAdoptedMoveCount(int pokeNo, int moveID) {
+    int ret = 0;
+    for (final poke in pokemons.values) {
+      // 対戦相手のポケモンの場合のみカウントする
+      if (poke.owner == Owner.fromBattle && poke.no == pokeNo) {
+        for (int i = 0; i < poke.moveNum; i++) {
+          if (poke.moves[i]?.id == moveID) {
+            ret++;
+            continue;
+          }
+        }
+      }
+    }
+    return ret;
   }
 
   void setTestMode() {

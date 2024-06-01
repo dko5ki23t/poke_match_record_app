@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
@@ -28,18 +29,20 @@ class MoveInputRow extends Row {
     bool ppEnabled = true,
     num initialPPValue = 0,
     bool isError = false,
+    required Widget? moveTypeIcon,
   }) : super(
           mainAxisSize: MainAxisSize.min,
           children: [
             Expanded(
               flex: 7,
-              child: TypeAheadField(
+              child: AppBaseTypeAheadField(
                 textFieldConfiguration: TextFieldConfiguration(
                   controller: moveController,
                   decoration: InputDecoration(
                     border: UnderlineInputBorder(),
                     labelText: labelMove,
                     labelStyle: isError ? notAllowedStyle : null,
+                    prefixIcon: moveTypeIcon,
                     suffixIcon: moveController.text.isNotEmpty
                         ? IconButton(
                             icon: Icon(Icons.clear),

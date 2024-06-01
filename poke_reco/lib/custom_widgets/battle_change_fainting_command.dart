@@ -93,6 +93,8 @@ class BattleChangeFaintingCommandState
                   prevState.getPokemonState(playerType, null).pokemon)) {
         pokemonTiles.add(
           ChangePokemonCommandTile(
+            key: Key(
+                'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
             myParty.pokemons[i]!,
             theme,
             onTap: () {
@@ -118,6 +120,8 @@ class BattleChangeFaintingCommandState
       if (addedIndex.contains(i)) continue;
       pokemonTiles.add(
         ChangePokemonCommandTile(
+          key: Key(
+              'ChangePokemonTile${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
           myParty.pokemons[i]!,
           theme,
           onTap: null,

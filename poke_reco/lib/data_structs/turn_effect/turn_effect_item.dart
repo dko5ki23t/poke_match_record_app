@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/pokemon_dropdown_menu_item.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
@@ -15,6 +16,7 @@ import 'package:poke_reco/data_structs/pokemon_state.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
+import 'package:tuple/tuple.dart';
 
 class TurnEffectItem extends TurnEffect {
   TurnEffectItem(
@@ -38,6 +40,7 @@ class TurnEffectItem extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         playerType,
         timing,
         itemID,
@@ -53,7 +56,8 @@ class TurnEffectItem extends TurnEffect {
         .._changePokemonIndexes = [..._changePokemonIndexes]
         .._prevPokemonIndexes = [..._prevPokemonIndexes]
         ..extraArg1 = extraArg1
-        ..extraArg2 = extraArg2;
+        ..extraArg2 = extraArg2
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
@@ -129,7 +133,7 @@ class TurnEffectItem extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -143,12 +147,9 @@ class TurnEffectItem extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
+                items: <ColoredPopupMenuItem>[
                   for (final statIndex in StatIndexList.listAtoS)
-                    DropdownMenuItem(
+                    ColoredPopupMenuItem(
                       value: statIndex.index - 1,
                       child: Text(statIndex.name),
                     ),
@@ -216,15 +217,12 @@ class TurnEffectItem extends TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
-                      DropdownMenuItem(
+                    items: <ColoredPopupMenuItem>[
+                      ColoredPopupMenuItem(
                         value: 0,
                         child: Text(loc.battleHPRecovery),
                       ),
-                      DropdownMenuItem(
+                      ColoredPopupMenuItem(
                         value: 1,
                         child: Text(loc.battleConfused2),
                       ),
@@ -305,15 +303,12 @@ class TurnEffectItem extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child: Text(loc.battleBalloonFloat),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 1,
                     child: Text(loc.battleBalloonBurst),
                   ),
@@ -342,12 +337,11 @@ class TurnEffectItem extends TurnEffect {
                 key: pokeSelectKey,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battlePokemonToChange,
                 ),
-                items: <DropdownMenuItem>[
+                items: <ColoredPopupMenuItem>[
                   for (int i = 0; i < yourParty.pokemonNum; i++)
-                    PokemonDropdownMenuItem(
+                    PokemonPopupMenuItem(
                       value: i + 1,
                       enabled:
                           state.isPossibleBattling(playerType.opposite, i) &&
@@ -389,12 +383,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankAMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -427,12 +418,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankBMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -465,12 +453,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankCMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -503,12 +488,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankDMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -541,12 +523,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankSMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -579,12 +558,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankAcMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -617,12 +593,9 @@ class TurnEffectItem extends TurnEffect {
                   child: _myDropdownButtonFormField(
                     key: Key('ItemEffectRankEvMenu'),
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (int i = 0; i <= 6; i++)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: i,
                           enabled: true,
                           child: Center(child: Text('+$i')),
@@ -659,12 +632,11 @@ class TurnEffectItem extends TurnEffect {
                 key: pokeSelectKey,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battlePokemonToChange,
                 ),
-                items: <DropdownMenuItem>[
+                items: <ColoredPopupMenuItem>[
                   for (int i = 0; i < myParty.pokemonNum; i++)
-                    PokemonDropdownMenuItem(
+                    PokemonPopupMenuItem(
                       value: i + 1,
                       enabled: state.isPossibleBattling(playerType, i) &&
                           !state.getPokemonStates(playerType)[i].isFainting,
@@ -694,6 +666,89 @@ class TurnEffectItem extends TurnEffect {
         );
     }
     return Container();
+  }
+
+  /// 効果のextraArg等を編集するWidgetを返す(Tuple.item1)。自身/相手のHP入力が必要な場合はのテンプレートを返す(Tuple.item2)
+  /// ```
+  /// myState: 効果の主のポケモンの状態
+  /// yourState: 効果の主の相手のポケモンの状態
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// state: フェーズの状態
+  /// onEdit: 編集したときに呼び出すコールバック
+  /// ```
+  Tuple2<Widget, CommandWidgetTemplate?> editArgWidgetForAction(
+    PokemonState myState,
+    PokemonState yourState,
+    Party ownParty,
+    Party opponentParty,
+    PhaseState state, {
+    required void Function(int extraArg1, int extraArg2) onEdit,
+    required AppLocalizations loc,
+    required ThemeData theme,
+  }) {
+    switch (itemID) {
+      case 247: // いのちのたま
+      case 265: // くっつきバリ
+      case 258: // くろいヘドロ
+      case 211: // たべのこし
+      case 132: // オレンのみ
+      case 135: // オボンのみ
+      case 185: // ナゾのみ
+      case 230: // かいがらのすず
+      case 43: // きのみジュース
+        return Tuple2(Container(), CommandWidgetTemplate.inputMyHP2);
+      case 136: // フィラのみ
+      case 137: // ウイのみ
+      case 138: // マゴのみ
+      case 139: // バンジのみ
+      case 140: // イアのみ
+        return Tuple2(
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(children: [
+                  Flexible(
+                    child: _myDropdownButtonFormField(
+                      isExpanded: true,
+                      items: <ColoredPopupMenuItem>[
+                        ColoredPopupMenuItem(
+                          value: 0,
+                          child: Text(loc.battleHPRecovery),
+                        ),
+                        ColoredPopupMenuItem(
+                          value: 1,
+                          child: Text(loc.battleConfused2),
+                        ),
+                      ],
+                      value: extraArg2,
+                      onChanged: (value) {
+                        extraArg2 = value;
+                        onEdit(extraArg1, extraArg2);
+                      },
+                      textValue: extraArg2 == 0
+                          ? loc.battleHPRecovery
+                          : extraArg1 == 1
+                              ? loc.battleConfused2
+                              : '',
+                      isInput: true,
+                    ),
+                  ),
+                ]),
+              ],
+            ),
+            extraArg2 == 0 ? CommandWidgetTemplate.inputMyHP2 : null);
+      case 583: // ゴツゴツメット
+      case 188: // ジャポのみ
+      case 189: // レンブのみ
+        // extraArg1にHP
+        return Tuple2(Container(), CommandWidgetTemplate.inputYourHP2);
+    }
+    return Tuple2(
+        editArgWidget(myState, yourState, ownParty, opponentParty, state,
+            TextEditingController(), TextEditingController(),
+            onEdit: () => onEdit(extraArg1, extraArg2), loc: loc, theme: theme),
+        null);
   }
 
   @override
@@ -753,13 +808,14 @@ class TurnEffectItem extends TurnEffect {
       case 723: // ロゼルのみ
       case 177: // ホズのみ
         // ダメージ軽減効果はわざのダメージ計算時に使う
-        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.halvedBerry)
-          ..extraArg1 = doubleBerry ? 1 : 0);
+        myState.hiddenBuffs.add(
+            pokeData.buffDebuffs[BuffDebuff.halvedBerry]!.copy()
+              ..extraArg1 = doubleBerry ? 1 : 0);
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 187: // イバンのみ
       case 248: // パワフルハーブ
-      case 669: // ノーマルジュエル
+        //case 669: // ノーマルジュエル <- TurnEffectActionで消費
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 194: // せんせいのツメ
@@ -827,7 +883,8 @@ class TurnEffectItem extends TurnEffect {
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 186: // ミクルのみ
-        myState.buffDebuffs.add(BuffDebuff(BuffDebuff.onceAccuracy1_2));
+        myState.buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.onceAccuracy1_2]!.copy());
         if (autoConsume) myState.holdingItem = null; // アイテム消費
         break;
       case 188: // ジャポのみ
@@ -1241,35 +1298,35 @@ class TurnEffectItem extends TurnEffect {
   /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
+    required List<ColoredPopupMenuItem<T>> items,
+    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    Widget? hint,
-    Widget? disabledHint,
+    //Widget? hint,
+    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
+    //VoidCallback? onTap,
+    double elevation = 8,
+    //TextStyle? style,
     Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
+    //Color? iconDisabledColor,
+    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    bool isDense = true,
+    //bool isDense = true,
     bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
+    //double? itemHeight,
+    //Color? focusColor,
+    //FocusNode? focusNode,
+    //bool autofocus = false,
+    //Color? dropdownColor,
     InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
+    //void Function(T?)? onSaved,
+    //String? Function(T?)? validator,
+    //AutovalidateMode? autovalidateMode,
+    //double? menuMaxHeight,
     bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
+    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    //BorderRadius? borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     required bool isInput,
     required String? textValue,
     Pokemon? prefixIconPokemon,
@@ -1277,36 +1334,36 @@ class TurnEffectItem extends TurnEffect {
     ThemeData? theme,
   }) {
     if (isInput) {
-      return DropdownButtonFormField(
+      return AppBaseDropdownButtonFormField(
         key: key,
         items: items,
-        selectedItemBuilder: selectedItemBuilder,
+        //selectedItemBuilder: selectedItemBuilder,
         value: value,
-        hint: hint,
-        disabledHint: disabledHint,
+        //hint: hint,
+        //disabledHint: disabledHint,
         onChanged: onChanged,
-        onTap: onTap,
+        //onTap: onTap,
         elevation: elevation,
-        style: style,
+        //style: style,
         icon: icon,
-        iconDisabledColor: iconDisabledColor,
-        iconEnabledColor: iconEnabledColor,
+        //iconDisabledColor: iconDisabledColor,
+        //iconEnabledColor: iconEnabledColor,
         iconSize: iconSize,
-        isDense: isDense,
-        isExpanded: isExpanded,
-        itemHeight: itemHeight,
-        focusColor: focusColor,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        dropdownColor: dropdownColor,
+        //isDense: isDense,
+        //isExpanded: isExpanded,
+        //itemHeight: itemHeight,
+        //focusColor: focusColor,
+        //focusNode: focusNode,
+        //autofocus: autofocus,
+        //dropdownColor: dropdownColor,
         decoration: decoration,
-        onSaved: onSaved,
-        validator: validator,
-        autovalidateMode: autovalidateMode,
-        menuMaxHeight: menuMaxHeight,
+        //onSaved: onSaved,
+        //validator: validator,
+        //autovalidateMode: autovalidateMode,
+        //menuMaxHeight: menuMaxHeight,
         enableFeedback: enableFeedback,
-        alignment: alignment,
-        borderRadius: borderRadius,
+        //alignment: alignment,
+        //borderRadius: borderRadius,
         padding: padding,
       );
     } else {

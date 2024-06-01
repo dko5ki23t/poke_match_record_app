@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:number_inc_dec/number_inc_dec.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
@@ -226,7 +227,7 @@ class PartyFilterDialogState extends State<PartyFilterDialog> {
                   : Container(),
             pokemonNoExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: pokemonNoController,
                         decoration: InputDecoration(

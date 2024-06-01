@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/custom_widgets/type_dropdown_button.dart';
 import 'package:poke_reco/data_structs/ability.dart';
@@ -50,6 +52,7 @@ class TurnEffectAbility extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         playerType,
         timing,
         abilityID,
@@ -61,7 +64,8 @@ class TurnEffectAbility extends TurnEffect {
   TurnEffectAbility copy() => TurnEffectAbility(
       player: playerType, timing: timing, abilityID: abilityID)
     ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2;
+    ..extraArg2 = extraArg2
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
@@ -216,8 +220,9 @@ class TurnEffectAbility extends TurnEffect {
       case 18: // もらいび
         {
           // ほのおわざ威力1.5倍
-          if (myState.buffDebuffs.containsByID(BuffDebuff.flashFired)) {
-            myState.buffDebuffs.add(BuffDebuff(BuffDebuff.flashFired));
+          if (myState.buffDebuffs.containsByID(8)) {
+            myState.buffDebuffs
+                .add(pokeData.buffDebuffs[BuffDebuff.flashFired]!.copy());
           }
         }
         break;
@@ -382,7 +387,8 @@ class TurnEffectAbility extends TurnEffect {
         break;
       case 112: // スロースタート
         if (extraArg1 == 0) {
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.attackSpeed0_5));
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attackSpeed0_5]!.copy());
         } else {
           myState.buffDebuffs.removeAllByID(BuffDebuff.attackSpeed0_5);
         }
@@ -443,7 +449,8 @@ class TurnEffectAbility extends TurnEffect {
           var newState = state.getPokemonState(playerType, null);
           newState.setCurrentAbility(
               pokeData.abilities[149]!, yourState, isMe, state);
-          newState.hiddenBuffs.add(BuffDebuff(BuffDebuff.zoroappear));
+          newState.hiddenBuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.zoroappear]!.copy());
           return ret;
         }
         break;
@@ -472,9 +479,10 @@ class TurnEffectAbility extends TurnEffect {
           for (int i = 0; i < 7; i++) {
             myState.forceSetStatChanges(i, yourState.statChanges(i));
           }
-          myState.buffDebuffs.add(BuffDebuff(BuffDebuff.transform)
-            ..extraArg1 = yourState.pokemon.no
-            ..turns = yourState.pokemon.sex.id);
+          myState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.transform]!.copy()
+                ..extraArg1 = yourState.pokemon.no
+                ..turns = yourState.pokemon.sex.id);
         }
         break;
       case 152: // ミイラ
@@ -519,7 +527,8 @@ class TurnEffectAbility extends TurnEffect {
       case 236: // リベロ
         myState.type1 = PokeType.values[extraArg1];
         myState.type2 = null;
-        myState.hiddenBuffs.add(BuffDebuff(BuffDebuff.protean));
+        myState.hiddenBuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.protean]!.copy());
         myState.ailmentsRemoveWhere(
             (e) => e.id == Ailment.halloween || e.id == Ailment.forestCurse);
         break;
@@ -542,6 +551,10 @@ class TurnEffectAbility extends TurnEffect {
       case 195: // みずがため
       case 273: // こんがりボディ
         myState.addStatChanges(true, 1, 2, yourState, abilityId: abilityID);
+        break;
+      case 197: // リミットシールド
+        myState.buffDebuffs
+            .switchID(BuffDebuff.meteorForm, BuffDebuff.coloredCore);
         break;
       case 208: // ぎょぐん(現状SVでは登場していないため未実装)
         myState.buffDebuffs
@@ -677,38 +690,14 @@ class TurnEffectAbility extends TurnEffect {
       case 248: // アイスフェイス
         {
           if (myState.buffDebuffs.containsByID(BuffDebuff.iceFace)) {
-            myState.buffDebuffs
+            int findIdx = myState.buffDebuffs
                 .changeID(BuffDebuff.iceFace, BuffDebuff.niceFace);
-            // TODO この2行csvに移したい
-            myState.maxStats[StatIndex.B].race = 70;
-            myState.maxStats[StatIndex.D].race = 50;
-            myState.maxStats[StatIndex.S].race = 130;
-            myState.minStats[StatIndex.B].race = 70;
-            myState.minStats[StatIndex.D].race = 50;
-            myState.minStats[StatIndex.S].race = 130;
-            for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
-              myState.maxStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.temper);
-              myState.minStats[stat]
-                  .updateReal(myState.pokemon.level, myState.pokemon.temper);
-            }
+            myState.buffDebuffs.list[findIdx].changeForm(myState);
           } else {
             if (myState.buffDebuffs.containsByID(BuffDebuff.niceFace)) {
-              myState.buffDebuffs
+              int findIdx = myState.buffDebuffs
                   .changeID(BuffDebuff.niceFace, BuffDebuff.iceFace);
-              // TODO この2行csvに移したい
-              myState.maxStats[StatIndex.B].race = 110;
-              myState.maxStats[StatIndex.D].race = 90;
-              myState.maxStats[StatIndex.S].race = 50;
-              myState.minStats[StatIndex.B].race = 110;
-              myState.minStats[StatIndex.D].race = 90;
-              myState.minStats[StatIndex.S].race = 50;
-              for (final stat in [StatIndex.B, StatIndex.D, StatIndex.S]) {
-                myState.maxStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.temper);
-                myState.minStats[stat]
-                    .updateReal(myState.pokemon.level, myState.pokemon.temper);
-              }
+              myState.buffDebuffs.list[findIdx].changeForm(myState);
             }
           }
         }
@@ -772,7 +761,8 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!.copy()
+                ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
@@ -796,7 +786,8 @@ class TurnEffectAbility extends TurnEffect {
             arg = 1;
           }
           myState.buffDebuffs.add(
-              BuffDebuff(BuffDebuff.attack1_3 + extraArg1)..extraArg1 = arg);
+              pokeData.buffDebuffs[BuffDebuff.attack1_3 + extraArg1]!.copy()
+                ..extraArg1 = arg);
         } else {
           myState.buffDebuffs.list.removeWhere((e) =>
               e.id >= BuffDebuff.attack1_3 && e.id <= BuffDebuff.speed1_5);
@@ -817,8 +808,9 @@ class TurnEffectAbility extends TurnEffect {
         {
           int faintingNum = state.getFaintingCount(playerType);
           if (faintingNum > 0) {
-            myState.buffDebuffs
-                .add(BuffDebuff(BuffDebuff.power10 + faintingNum - 1));
+            myState.buffDebuffs.add(pokeData
+                .buffDebuffs[BuffDebuff.power10 + faintingNum - 1]!
+                .copy());
           }
         }
         break;
@@ -859,25 +851,9 @@ class TurnEffectAbility extends TurnEffect {
         break;
       case 304: // テラスチェンジ
         myState.buffDebuffs.addIfNotFoundByID(BuffDebuff.terastalForm);
-        // TODO この2行csvに移したい
-        myState.maxStats.h.race = 95;
-        myState.maxStats.a.race = 95;
-        myState.maxStats.b.race = 110;
-        myState.maxStats.c.race = 105;
-        myState.maxStats.d.race = 110;
-        myState.maxStats.s.race = 85;
-        myState.minStats.h.race = 95;
-        myState.minStats.a.race = 95;
-        myState.minStats.b.race = 110;
-        myState.minStats.c.race = 105;
-        myState.minStats.d.race = 110;
-        myState.minStats.s.race = 85;
-        for (final stat in StatIndexList.listHtoS) {
-          myState.maxStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.temper);
-          myState.minStats[stat]
-              .updateReal(myState.pokemon.level, myState.pokemon.temper);
-        }
+        myState.buffDebuffs.list
+            .firstWhere((element) => element.id == BuffDebuff.terastalForm)
+            .changeForm(myState);
         if (playerType == PlayerType.me) {
           myState.remainHP += (5 * 2 * myState.pokemon.level / 100).floor();
         }
@@ -946,7 +922,7 @@ class TurnEffectAbility extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
@@ -1047,19 +1023,18 @@ class TurnEffectAbility extends TurnEffect {
               child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   label: Text(loc.battleOpponentAilments),
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: Ailment.poison,
                     child: Text(Ailment(Ailment.poison).displayName),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.paralysis,
                     child: Text(Ailment(Ailment.paralysis).displayName),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: Ailment.sleep,
                     child: Text(Ailment(Ailment.sleep).displayName),
                   ),
@@ -1189,15 +1164,12 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child: Text(loc.commonAttack),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 2,
                     child: Text(loc.commonSAttack),
                   ),
@@ -1345,12 +1317,9 @@ class TurnEffectAbility extends TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: statIndex.index - 1,
                           child: Text(statIndex.name),
                         ),
@@ -1375,12 +1344,9 @@ class TurnEffectAbility extends TurnEffect {
                 Flexible(
                   child: _myDropdownButtonFormField(
                     isExpanded: true,
-                    decoration: const InputDecoration(
-                      border: UnderlineInputBorder(),
-                    ),
-                    items: <DropdownMenuItem>[
+                    items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: statIndex.index - 1,
                           child: Text(statIndex.name),
                         ),
@@ -1414,12 +1380,11 @@ class TurnEffectAbility extends TurnEffect {
                   key: Key('PokemonSelectDropdown'),
                   isExpanded: true,
                   decoration: InputDecoration(
-                    border: UnderlineInputBorder(),
                     labelText: loc.battleIllusionedPokemon,
                   ),
-                  items: <DropdownMenuItem>[
+                  items: <ColoredPopupMenuItem>[
                     for (int i = 0; i < opponentParty.pokemonNum; i++)
-                      DropdownMenuItem(
+                      ColoredPopupMenuItem(
                         value: i + 1,
                         enabled: zoruaNos.contains(
                             state.getPokemonStates(playerType)[i].pokemon.no),
@@ -1464,16 +1429,13 @@ class TurnEffectAbility extends TurnEffect {
               child: _myDropdownButtonFormField(
                 key: dropdownMenuKey,
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: -1,
                     child: Text(loc.battleEffectExpired),
                   ),
                   for (final statIndex in StatIndexList.listAtoS)
-                    DropdownMenuItem(
+                    ColoredPopupMenuItem(
                       value: statIndex.index - 1,
                       child: Text(statIndex.name),
                     ),
@@ -1509,12 +1471,9 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
+                items: <ColoredPopupMenuItem>[
                   for (final statIndex in StatIndexList.listAtoS)
-                    DropdownMenuItem(
+                    ColoredPopupMenuItem(
                       value: statIndex.index - 1,
                       child: Text(statIndex.name),
                     ),
@@ -1532,31 +1491,28 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 isExpanded: true,
-                decoration: const InputDecoration(
-                  border: UnderlineInputBorder(),
-                ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 1,
                     child: Text('1'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 2,
                     child: Text('2'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 3,
                     child: Text('3'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 4,
                     child: Text('4'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 5,
                     child: Text('5'),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 6,
                     child: Text('6'),
                   ),
@@ -1703,15 +1659,14 @@ class TurnEffectAbility extends TurnEffect {
                   ? _myDropdownButtonFormField(
                       isExpanded: true,
                       decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
                         labelText: loc.battleAdditionalEffect,
                       ),
-                      items: <DropdownMenuItem>[
-                        DropdownMenuItem(
+                      items: <ColoredPopupMenuItem>[
+                        ColoredPopupMenuItem(
                           value: 552,
                           child: Text(loc.commonNone),
                         ),
-                        DropdownMenuItem(
+                        ColoredPopupMenuItem(
                           value: 10552,
                           child: Text(loc
                               .battleSAttackUp1(myState.pokemon.omittedName)),
@@ -1794,7 +1749,7 @@ class TurnEffectAbility extends TurnEffect {
         return;
       case 168: // へんげんじざい
       case 236: // リベロ
-        // TODO?
+        // getDefaultEffectList()にてセットされる
         return;
       case 44: // あめうけざら
       case 115: // アイスボディ
@@ -1879,35 +1834,36 @@ class TurnEffectAbility extends TurnEffect {
   /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
+    required List<ColoredPopupMenuItem<T>> items,
+    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    Widget? hint,
-    Widget? disabledHint,
+    //Widget? hint,
+    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
+    //VoidCallback? onTap,
+    double elevation = 8,
+    //TextStyle? style,
     Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
+    //Color? iconDisabledColor,
+    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    bool isDense = true,
+    //bool isDense = true,
+    // TODO: 必要かも？
     bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
+    //double? itemHeight,
+    //Color? focusColor,
+    //FocusNode? focusNode,
+    //bool autofocus = false,
+    //Color? dropdownColor,
     InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
+    //void Function(T?)? onSaved,
+    //String? Function(T?)? validator,
+    //AutovalidateMode? autovalidateMode,
+    //double? menuMaxHeight,
     bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
+    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    //BorderRadius? borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     required bool isInput,
     required String? textValue,
     Pokemon? prefixIconPokemon,
@@ -1915,36 +1871,36 @@ class TurnEffectAbility extends TurnEffect {
     ThemeData? theme,
   }) {
     if (isInput) {
-      return DropdownButtonFormField(
+      return AppBaseDropdownButtonFormField(
         key: key,
         items: items,
-        selectedItemBuilder: selectedItemBuilder,
+        //selectedItemBuilder: selectedItemBuilder,
         value: value,
-        hint: hint,
-        disabledHint: disabledHint,
+        //hint: hint,
+        //disabledHint: disabledHint,
         onChanged: onChanged,
-        onTap: onTap,
+        //onTap: onTap,
         elevation: elevation,
-        style: style,
+        //style: style,
         icon: icon,
-        iconDisabledColor: iconDisabledColor,
-        iconEnabledColor: iconEnabledColor,
+        //iconDisabledColor: iconDisabledColor,
+        //iconEnabledColor: iconEnabledColor,
         iconSize: iconSize,
-        isDense: isDense,
-        isExpanded: isExpanded,
-        itemHeight: itemHeight,
-        focusColor: focusColor,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        dropdownColor: dropdownColor,
+        //isDense: isDense,
+        //isExpanded: isExpanded,
+        //itemHeight: itemHeight,
+        //focusColor: focusColor,
+        //focusNode: focusNode,
+        //autofocus: autofocus,
+        //dropdownColor: dropdownColor,
         decoration: decoration,
-        onSaved: onSaved,
-        validator: validator,
-        autovalidateMode: autovalidateMode,
-        menuMaxHeight: menuMaxHeight,
+        //onSaved: onSaved,
+        //validator: validator,
+        //autovalidateMode: autovalidateMode,
+        //menuMaxHeight: menuMaxHeight,
         enableFeedback: enableFeedback,
-        alignment: alignment,
-        borderRadius: borderRadius,
+        //alignment: alignment,
+        //borderRadius: borderRadius,
         padding: padding,
       );
     } else {
@@ -2008,7 +1964,7 @@ class TurnEffectAbility extends TurnEffect {
     required bool isInput,
   }) {
     if (isInput) {
-      return TypeAheadField(
+      return AppBaseTypeAheadField(
         suggestionsCallback: suggestionsCallback,
         itemBuilder: itemBuilder,
         onSuggestionSelected: onSuggestionSelected,

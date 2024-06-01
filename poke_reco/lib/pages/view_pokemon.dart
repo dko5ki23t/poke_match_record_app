@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/move_view_row.dart';
 import 'package:poke_reco/custom_widgets/my_icon_button.dart';
 import 'package:poke_reco/custom_widgets/stat_total_row.dart';
@@ -39,7 +40,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
   final pokeTeraTypeController = TextEditingController();
   final pokeNoController = TextEditingController();
   final pokeLevelController = TextEditingController();
-  final pokeTemperController = TextEditingController();
+  final pokeNatureController = TextEditingController();
   final pokeAbilityController = TextEditingController();
   final pokeStatRaceController =
       List.generate(StatIndex.size.index, (i) => TextEditingController());
@@ -73,7 +74,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
     pokeTeraTypeController.text = myPokemon.teraType.displayName;
     pokeNoController.text = myPokemon.no.toString();
     pokeLevelController.text = myPokemon.level.toString();
-    pokeTemperController.text = myPokemon.temper.displayName;
+    pokeNatureController.text = myPokemon.nature.displayName;
     pokeAbilityController.text = myPokemon.ability.displayName;
     pokeStatRaceController[0].text =
         myPokemon.name == '' ? 'H -' : 'H ${myPokemon.h.race}';
@@ -240,20 +241,19 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                     ),
                     SizedBox(width: 10),
                     Flexible(
-                      child: DropdownButtonFormField(
+                      child: AppBaseDropdownButtonFormField(
                         decoration: InputDecoration(
-                          border: UnderlineInputBorder(),
                           labelText: loc.commonGender,
                         ),
-                        items: <DropdownMenuItem<Sex>>[
+                        items: <ColoredPopupMenuItem<Sex>>[
                           for (var type in pokeData.pokeBase[myPokemon.no]!.sex)
-                            DropdownMenuItem(
+                            ColoredPopupMenuItem(
                               value: type,
                               child: type.displayIcon,
                             ),
                         ],
                         value: myPokemon.sex,
-                        onChanged: null,
+                        enabled: false,
                       ),
                     ),
                   ],
@@ -265,7 +265,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                   children: [
                     Flexible(
                       child: TextField(
-                        controller: pokeTemperController,
+                        controller: pokeNatureController,
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: loc.commonNature,
@@ -302,7 +302,7 @@ class ViewPokemonPageState extends State<ViewPokemonPage> {
                       pokeStatIndiController[i],
                       pokeStatEffortController[i],
                       pokeStatRealController[i],
-                      effectTemper: i != 0,
+                      effectNature: i != 0,
                       statIndex: StatIndex.values[i],
                       loc: loc,
                     ),

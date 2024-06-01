@@ -211,6 +211,13 @@ class PartiesPageState extends State<PartiesPage> {
         autofocus: widget.selectMode && filteredParties.length >= 10,
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.search),
+          suffixIcon: searchTextController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () => setState(() {
+                        searchTextController.text = "";
+                      }),
+                  icon: Icon(Icons.cancel))
+              : null,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(30))),
           contentPadding: EdgeInsets.all(1),

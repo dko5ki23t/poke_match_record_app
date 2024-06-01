@@ -66,7 +66,7 @@ class PokemonsPageState extends State<PokemonsPage> {
     var moveFilter = pokeData.pokemonsMoveFilter;
     var sexFilter = pokeData.pokemonsSexFilter;
     var abilityFilter = pokeData.pokemonsAbilityFilter;
-    var temperFilter = pokeData.pokemonsTemperFilter;
+    var natureFilter = pokeData.pokemonsNatureFilter;
     var pokemons = appState.pokemons;
     var filteredPokemons = pokemons.entries.where((element) =>
         element.value.id != 0 && ownerFilter.contains(element.value.owner));
@@ -93,9 +93,9 @@ class PokemonsPageState extends State<PokemonsPage> {
       filteredPokemons = filteredPokemons
           .where((element) => abilityFilter.contains(element.value.ability.id));
     }
-    if (temperFilter.isNotEmpty) {
+    if (natureFilter.isNotEmpty) {
       filteredPokemons = filteredPokemons
-          .where((element) => temperFilter.contains(element.value.temper.id));
+          .where((element) => natureFilter.contains(element.value.nature.id));
     }
     // 検索窓の入力でフィルタリング
     final pattern = searchTextController.text;
@@ -252,6 +252,13 @@ class PokemonsPageState extends State<PokemonsPage> {
         autofocus: widget.selectMode && filteredPokemons.length >= 10,
         decoration: InputDecoration(
           prefixIcon: const Icon(Icons.search),
+          suffixIcon: searchTextController.text.isNotEmpty
+              ? IconButton(
+                  onPressed: () => setState(() {
+                        searchTextController.text = "";
+                      }),
+                  icon: Icon(Icons.cancel))
+              : null,
           border: OutlineInputBorder(
               borderRadius: BorderRadius.all(Radius.circular(30))),
           contentPadding: EdgeInsets.all(1),
@@ -404,7 +411,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                           moveFilter,
                                           sexFilter,
                                           abilityFilter,
-                                          temperFilter,
+                                          natureFilter,
                                           (f1, f2, f3, f4, f5, f6, f7,
                                               f8) async {
                                             ownerFilter.clear();
@@ -414,7 +421,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                             moveFilter.clear();
                                             sexFilter.clear();
                                             abilityFilter.clear();
-                                            temperFilter.clear();
+                                            natureFilter.clear();
                                             ownerFilter.addAll(f1);
                                             noFilter.addAll(f2);
                                             typeFilter.addAll(f3);
@@ -422,7 +429,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                             moveFilter.addAll(f5);
                                             sexFilter.addAll(f6);
                                             abilityFilter.addAll(f7);
-                                            temperFilter.addAll(f8);
+                                            natureFilter.addAll(f8);
                                             await pokeData.saveConfig();
                                             setState(() {});
                                           },
@@ -535,7 +542,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                       moveFilter,
                                       sexFilter,
                                       abilityFilter,
-                                      temperFilter,
+                                      natureFilter,
                                       (f1, f2, f3, f4, f5, f6, f7, f8) async {
                                         ownerFilter.clear();
                                         noFilter.clear();
@@ -544,7 +551,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                         moveFilter.clear();
                                         sexFilter.clear();
                                         abilityFilter.clear();
-                                        temperFilter.clear();
+                                        natureFilter.clear();
                                         ownerFilter.addAll(f1);
                                         noFilter.addAll(f2);
                                         typeFilter.addAll(f3);
@@ -552,7 +559,7 @@ class PokemonsPageState extends State<PokemonsPage> {
                                         moveFilter.addAll(f5);
                                         sexFilter.addAll(f6);
                                         abilityFilter.addAll(f7);
-                                        temperFilter.addAll(f8);
+                                        natureFilter.addAll(f8);
                                         await pokeData.saveConfig();
                                         setState(() {});
                                       },

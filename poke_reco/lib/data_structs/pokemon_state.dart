@@ -154,21 +154,21 @@ class PokemonState extends Equatable implements Copyable {
 
   /// おもさ(メタモンはへんしん状態に応じて変化)
   int get weight {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.weight;
   }
 
   /// たかさ(メタモンはへんしん状態に応じて変化)
   int get height {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     int no = trans.isNotEmpty ? trans.first.extraArg1 : pokemon.no;
     return PokeDB().pokeBase[no]!.height;
   }
 
   /// せいべつ(メタモンはへんしん状態に応じて変化)
   Sex get sex {
-    final trans = buffDebuffs.whereByID(BuffDebuff.transform);
+    final trans = buffDebuffs.whereByID(189);
     return trans.isNotEmpty ? Sex.createFromId(trans.first.turns) : pokemon.sex;
   }
 
@@ -191,21 +191,22 @@ class PokemonState extends Equatable implements Copyable {
   }
 
   set holdingItem(Item? item) {
+    final pokeData = PokeDB();
     _holdingItem?.clearPassiveEffect(this);
     if (canUseItem) item?.processPassiveEffect(this);
     if (item == null && _holdingItem != null && _holdingItem!.id != 0) {
       // 最後に消費したもちもの/きのみ更新
       final lastLostItem = hiddenBuffs.whereByID(BuffDebuff.lastLostItem);
       if (lastLostItem.isEmpty) {
-        hiddenBuffs.add(
-            BuffDebuff(BuffDebuff.lastLostItem)..extraArg1 = _holdingItem!.id);
+        hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostItem]!.copy()
+          ..extraArg1 = _holdingItem!.id);
       } else {
         lastLostItem.first.extraArg1 = _holdingItem!.id;
       }
       if (_holdingItem!.isBerry) {
         final lastLostBerry = hiddenBuffs.whereByID(BuffDebuff.lastLostBerry);
         if (lastLostBerry.isEmpty) {
-          hiddenBuffs.add(BuffDebuff(BuffDebuff.lastLostBerry)
+          hiddenBuffs.add(pokeData.buffDebuffs[BuffDebuff.lastLostBerry]!.copy()
             ..extraArg1 = _holdingItem!.id);
         } else {
           lastLostBerry.first.extraArg1 = _holdingItem!.id;
@@ -325,14 +326,14 @@ class PokemonState extends Equatable implements Copyable {
       if (i <= 0) return;
       int vitalRank = (BuffDebuff.vital1 + (i - 1))
           .clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-      buffDebuffs.add(BuffDebuff(vitalRank));
+      buffDebuffs.add(PokeDB().buffDebuffs[vitalRank]!.copy());
     } else {
       int newRank = buffDebuffs.list[findIdx].id + i;
       if (newRank < BuffDebuff.vital1) {
         buffDebuffs.list.removeAt(findIdx);
       } else {
         int vitalRank = (newRank).clamp(BuffDebuff.vital1, BuffDebuff.vital3);
-        buffDebuffs.list[findIdx] = BuffDebuff(vitalRank);
+        buffDebuffs.list[findIdx] = PokeDB().buffDebuffs[vitalRank]!.copy();
       }
     }
   }
@@ -442,7 +443,7 @@ class PokemonState extends Equatable implements Copyable {
     final findIdx = hiddenBuffs.list
         .indexWhere((element) => element.id == BuffDebuff.stellarUsed);
     if (findIdx < 0) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.stellarUsed)
+      hiddenBuffs.add(PokeDB().buffDebuffs[BuffDebuff.stellarUsed]!.copy()
         ..extraArg1 = 1 << (type.index - 1));
     } else {
       hiddenBuffs.list[findIdx].extraArg1 |= 1 << (type.index - 1);
@@ -516,25 +517,8 @@ class PokemonState extends Equatable implements Copyable {
           .indexWhere((element) => element.id == BuffDebuff.naiveForm);
       if (findIdx >= 0) {
         buffDebuffs.list[findIdx] =
-            BuffDebuff(BuffDebuff.mightyForm); // マイティフォルム
-        // TODO この2行csvに移したい
-        maxStats.a.race = 160;
-        maxStats.b.race = 97;
-        maxStats.c.race = 106;
-        maxStats.d.race = 87;
-        minStats.a.race = 160;
-        minStats.b.race = 97;
-        minStats.c.race = 106;
-        minStats.d.race = 87;
-        for (final stat in [
-          StatIndex.A,
-          StatIndex.B,
-          StatIndex.C,
-          StatIndex.D
-        ]) {
-          maxStats[stat].updateReal(pokemon.level, pokemon.temper);
-          minStats[stat].updateReal(pokemon.level, pokemon.temper);
-        }
+            PokeDB().buffDebuffs[BuffDebuff.mightyForm]!.copy(); // マイティフォルム
+        buffDebuffs.list[findIdx].changeForm(this);
       }
     }
     // あいてのロックオン状態解除
@@ -574,6 +558,8 @@ class PokemonState extends Equatable implements Copyable {
     // あいてのにげられない状態の解除
     yourState.ailmentsRemoveWhere(
         (e) => e.id == Ailment.cannotRunAway && e.extraArg1 == 1);
+    // あいてのバインド状態の解除
+    yourState.ailmentsRemoveWhere((e) => e.id == Ailment.partiallyTrapped);
     // 退場することで自身に効果がある場合
     if (!_isFainting && currentAbility.id == 30) {
       // しぜんかいふく
@@ -617,7 +603,7 @@ class PokemonState extends Equatable implements Copyable {
     // ポケモン固有のフォルム等
     if (pokemon.no == 648) {
       // メロエッタ
-      buffDebuffs.add(BuffDebuff(BuffDebuff.voiceForm));
+      buffDebuffs.add(PokeDB().buffDebuffs[BuffDebuff.voiceForm]!.copy());
     }
 
     // とくせいの効果を反映
@@ -648,9 +634,14 @@ class PokemonState extends Equatable implements Copyable {
     // 状態変化の経過ターンインクリメント
     if (!isFaintingChange) {
       for (var e in _ailments.iterable) {
-        if (e.id != Ailment.sleep) {
-          // ねむりのターン経過は行動時のみ
+        if (e.id != Ailment.sleep && e.id != Ailment.encore) {
+          // ねむりのターン経過&アンコールは行動時のみ
           e.turns++;
+        }
+        if (e.id == Ailment.taunt && e.extraArg1 > 0) {
+          // 行動後に受けたちょうはつの場合は経過ターン数を増やさない
+          e.turns = 0;
+          e.extraArg1 = 0;
         }
       }
     }
@@ -666,7 +657,7 @@ class PokemonState extends Equatable implements Copyable {
       if (ailments(findIdx).extraArg1 == 1) type1 = PokeType.fly;
       if (ailments(findIdx).extraArg1 == 2) type2 = PokeType.fly;
       if (ailments(findIdx).extraArg1 == 3) {
-        type2 = type1; // TODO:コピーされる？
+        type2 = type1;
         type1 = PokeType.fly;
       }
       ailmentsRemoveAt(findIdx);
@@ -708,6 +699,7 @@ class PokemonState extends Equatable implements Copyable {
         ? state.getIndiFields(PlayerType.me)
         : state.getIndiFields(PlayerType.opponent);
     var yourState = state.getPokemonState(playerType.opposite, null);
+    final pokeData = PokeDB();
     // すでに同じものになっている場合は何も起こらない
     if (_ailments.where((e) => e.id == ailment.id).isNotEmpty) return false;
     // タイプによる耐性
@@ -780,8 +772,11 @@ class PokemonState extends Equatable implements Copyable {
       // ぜったいねむり<-状態異常＋ねむけ
       return false;
     }
-    // TODO:リミットシールド
-    //if (currentAbility.id == 213) return false;
+    if (buffDebuffs.containsByID(BuffDebuff.meteorForm) &&
+        (ailment.id <= Ailment.sleep || ailment.id == Ailment.sleepy)) {
+      // りゅうせいのすがた<-状態異常＋ねむけ
+      return false;
+    }
     if ((ailmentsWhere((e) => e.id == Ailment.uproar).isNotEmpty ||
             state
                 .getPokemonState(playerType.opposite, null)
@@ -828,34 +823,37 @@ class PokemonState extends Equatable implements Copyable {
       // 状態異常時
       if (currentAbility.id == 62) {
         // こんじょう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_5WithIgnBurn));
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.attack1_5WithIgnBurn]!.copy());
       }
       if (currentAbility.id == 63) {
         // ふしぎなうろこ
-        buffDebuffs.add(BuffDebuff(BuffDebuff.defense1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.defense1_5]!.copy());
       }
       if (currentAbility.id == 95) {
         // はやあし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.speed1_5IgnPara));
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.speed1_5IgnPara]!.copy());
       }
     } else if (isAdded && ailment.id == Ailment.confusion) {
       // こんらん時
       if (currentAbility.id == 77) {
         // ちどりあし
-        buffDebuffs.add(BuffDebuff(BuffDebuff.yourAccuracy0_5));
+        buffDebuffs
+            .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_5]!.copy());
       }
     } else if (isAdded &&
         (ailment.id == Ailment.poison || ailment.id == Ailment.badPoison)) {
       // どく/もうどく時
       if (currentAbility.id == 137) {
         // どくぼうそう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.physical1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.physical1_5]!.copy());
       }
     } else if (isAdded && ailment.id == Ailment.burn) {
       // やけど時
       if (currentAbility.id == 138) {
         // ねつぼうそう
-        buffDebuffs.add(BuffDebuff(BuffDebuff.special1_5));
+        buffDebuffs.add(pokeData.buffDebuffs[BuffDebuff.special1_5]!.copy());
       }
     }
     if (yourState.currentAbility.id == 307 &&
@@ -1091,6 +1089,7 @@ class PokemonState extends Equatable implements Copyable {
     List<IndividualField>? myFields,
     List<IndividualField>? yourFields,
   }) {
+    final pokeData = PokeDB();
     int change = delta;
     if (!isMyEffect &&
         buffDebuffs.containsByID(BuffDebuff.substitute) &&
@@ -1167,11 +1166,13 @@ class PokemonState extends Equatable implements Copyable {
     _statChanges[index] = (_statChanges[index] + change).clamp(-6, 6);
     if (_statChanges[index] > before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnUpStatChange)) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnUpStatChange));
+      hiddenBuffs
+          .add(pokeData.buffDebuffs[BuffDebuff.thisTurnUpStatChange]!.copy());
     }
     if (_statChanges[index] < before &&
         !hiddenBuffs.containsByID(BuffDebuff.thisTurnDownStatChange)) {
-      hiddenBuffs.add(BuffDebuff(BuffDebuff.thisTurnDownStatChange));
+      hiddenBuffs
+          .add(pokeData.buffDebuffs[BuffDebuff.thisTurnDownStatChange]!.copy());
     }
     return true;
   }
@@ -1433,120 +1434,18 @@ class PokemonState extends Equatable implements Copyable {
         break;
     }
     // バフ等の補正
+    ret = buffDebuffs.changeStat(this, yourState, ret, statIdx, moveType: type);
+    // 天候による補正
     switch (statIdx) {
-      case StatIndex.A:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.attack2)) ret *= 2;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_5WithIgnBurn)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.gorimuchu)) ret *= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attack0_75)) ret *= 0.75;
-          if (buffDebuffs.containsByID(BuffDebuff.attack1_33)) ret *= 1.33;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
-        }
-        break;
       case StatIndex.B:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defense1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.guard2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.guard1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.defense0_75)) ret *= 0.75;
-          if (state.weather.id == Weather.snowy &&
-              isTypeContain(PokeType.ice)) {
-            ret * 1.5;
-          }
-        }
-        break;
-      case StatIndex.C:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_3)) ret *= 1.3;
-          if (buffDebuffs.containsByID(BuffDebuff.defeatist)) ret *= 0.5;
-          if (type == PokeType.fire &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.waterBubble1)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.water &&
-              buffDebuffs.containsByID(BuffDebuff.waterBubble2)) ret *= 2;
-          if (type == PokeType.steel &&
-              buffDebuffs.containsByID(BuffDebuff.steelWorker)) ret *= 1.5;
-          if (type == PokeType.electric &&
-              buffDebuffs.containsByID(BuffDebuff.electric1_3)) ret *= 1.3;
-          if (type == PokeType.dragon &&
-              buffDebuffs.containsByID(BuffDebuff.dragon1_5)) ret *= 1.5;
-          if (type == PokeType.ghost &&
-              yourState.buffDebuffs.containsByID(BuffDebuff.ghosted0_5)) {
-            ret *= 0.5;
-          }
-          if (type == PokeType.rock &&
-              buffDebuffs.containsByID(BuffDebuff.rock1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack0_75)) {
-            ret *= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack1_33)) {
-            ret *= 1.33;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.choiceSpecs)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.specialAttack2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.attackMove2)) ret *= 2.0;
-          if (type == PokeType.fire &&
-              buffDebuffs.containsByID(BuffDebuff.flashFired)) ret *= 1.5;
+        if (state.weather.id == Weather.snowy && isTypeContain(PokeType.ice)) {
+          ret * 1.5;
         }
         break;
       case StatIndex.D:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_3)) {
-            ret *= 1.3;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense0_75)) {
-            ret *= 0.75;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense1_5)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs
-              .containsByID(BuffDebuff.onlyAttackSpecialDefense1_5)) {
-            ret *= 1.5;
-          }
-          if (buffDebuffs.containsByID(BuffDebuff.specialDefense2)) ret *= 2.0;
-          if (state.weather.id == Weather.sandStorm &&
-              isTypeContain(PokeType.rock)) ret * 1.5;
-        }
-        break;
-      case StatIndex.S:
-        {
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed2)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.unburden)) ret *= 2.0;
-          if (buffDebuffs.containsByID(BuffDebuff.speed1_5IgnPara)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.attackSpeed0_5)) ret *= 0.5;
-          if (buffDebuffs.containsByID(BuffDebuff.choiceScarf)) ret *= 1.5;
-          if (buffDebuffs.containsByID(BuffDebuff.speed0_5)) ret *= 0.5;
+        if (state.weather.id == Weather.sandStorm &&
+            isTypeContain(PokeType.rock)) {
+          ret * 1.5;
         }
         break;
       default:
@@ -1556,11 +1455,93 @@ class PokemonState extends Equatable implements Copyable {
     return ret.floor();
   }
 
+  /// ランク補正等込みのHABCDS実数値(※やけど・まひの補正は入ってないので注意)からランク補正等なしのHABCDS実数値(最小値)を返す
+  /// ```
+  /// val: 補正後の実数値
+  /// statIdx: ステータスのインデックス
+  /// type: こうげき側(自分)わざのタイプ
+  /// yourState: 相手のポケモンの状態
+  /// state: フェーズの状態
+  /// plusCut: ランク上昇分を無視するかどうか
+  /// minusCut: ランク下降分を無視するかどうか
+  /// ```
+  int unfinalizedStat(int val, StatIndex statIdx, PokeType type,
+      PokemonState yourState, PhaseState state,
+      {bool plusCut = false, bool minusCut = false}) {
+    if (statIdx == StatIndex.H) {
+      return val;
+    }
+    double ret = val.toDouble();
+    // バフ等の補正
+    ret = buffDebuffs.undoStat(this, yourState, ret, statIdx, moveType: type);
+    // 天候による補正
+    switch (statIdx) {
+      case StatIndex.B:
+        if (state.weather.id == Weather.snowy && isTypeContain(PokeType.ice)) {
+          ret /= 1.5;
+        }
+        break;
+      case StatIndex.D:
+        if (state.weather.id == Weather.sandStorm &&
+            isTypeContain(PokeType.rock)) {
+          ret /= 1.5;
+        }
+        break;
+      default:
+        break;
+    }
+    // ランク補正
+    double coef = 1.0;
+    switch (statChanges(statIdx.index - 1)) {
+      case -6:
+        if (!minusCut) coef = 2 / 8;
+        break;
+      case -5:
+        if (!minusCut) coef = 2 / 7;
+        break;
+      case -4:
+        if (!minusCut) coef = 2 / 6;
+        break;
+      case -3:
+        if (!minusCut) coef = 2 / 5;
+        break;
+      case -2:
+        if (!minusCut) coef = 2 / 4;
+        break;
+      case -1:
+        if (!minusCut) coef = 2 / 3;
+        break;
+      case 1:
+        if (!plusCut) coef = 3 / 2;
+        break;
+      case 2:
+        if (!plusCut) coef = 4 / 2;
+        break;
+      case 3:
+        if (!plusCut) coef = 5 / 2;
+        break;
+      case 4:
+        if (!plusCut) coef = 6 / 2;
+        break;
+      case 5:
+        if (!plusCut) coef = 7 / 2;
+        break;
+      case 6:
+        if (!plusCut) coef = 8 / 2;
+        break;
+      default:
+        break;
+    }
+    ret /= coef;
+
+    return ret.floor();
+  }
+
   /// ガードシェア等によって変更された実数値を元に戻す
   void resetRealSixParams() {
     for (final stat in StatIndexList.listAtoS) {
-      maxStats[stat].updateReal(pokemon.level, pokemon.temper);
-      minStats[stat].updateReal(pokemon.level, pokemon.temper);
+      maxStats[stat].updateReal(pokemon.level, pokemon.nature);
+      minStats[stat].updateReal(pokemon.level, pokemon.nature);
     }
   }
 
@@ -1626,7 +1607,7 @@ class PokemonState extends Equatable implements Copyable {
     // currentAbility
     if (version == 1) {
       pokemonState.setCurrentAbilityNoEffect(
-          Ability.deserialize(stateElements[12], split2));
+          Ability.deserialize(stateElements[12], split2, 'none', 'none'));
     } else {
       pokemonState.setCurrentAbilityNoEffect(
           pokeData.abilities[int.parse(stateElements[12])]!);
@@ -1654,7 +1635,7 @@ class PokemonState extends Equatable implements Copyable {
       if (ability == '') break;
       if (version == 1) {
         pokemonState.possibleAbilities
-            .add(Ability.deserialize(ability, split3));
+            .add(Ability.deserialize(ability, split3, 'none', 'none'));
       } else {
         pokemonState.possibleAbilities
             .add(pokeData.abilities[int.parse(ability)]!);

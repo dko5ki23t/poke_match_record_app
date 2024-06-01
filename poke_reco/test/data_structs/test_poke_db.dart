@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:poke_reco/data_structs/ability.dart';
+import 'package:poke_reco/data_structs/buff_debuff.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
 import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/move.dart';
@@ -7,6 +10,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/timing.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:tuple/tuple.dart';
 
 class TestPokeDB {
   static const String assetRoot = '../../../assets/';
@@ -18,6 +22,24 @@ class TestPokeDB {
   Map<int, String> _itemEnglishFlavors = {0: ''}; // 無効なもちもの
   Map<int, String> _moveFlavors = {0: ''}; // 無効なわざ
   Map<int, String> _moveEnglishFlavors = {0: ''}; // 無効なわざ
+
+  List<Tuple2<int, int>> parseIntTuple2List(dynamic str) {
+    List<Tuple2<int, int>> ret = [];
+    // なぜかintの場合もif文の中に入らないのでtoStringを使う
+    if (str is int) {
+      return [];
+    }
+    final contents = str.split(sqlSplit1);
+    for (var c in contents) {
+      if (c == '') {
+        continue;
+      }
+      final contents2 = c.split(sqlSplit2);
+      ret.add(Tuple2(
+          int.parse(contents2.removeAt(0)), int.parse(contents2.removeAt(0))));
+    }
+    return ret;
+  }
 
   // PokeDBのinitializeの代わりに呼ぶことで、単体テストでも使えるDBとなる
   Future<void> initialize() async {
@@ -33,17 +55,23 @@ class TestPokeDB {
         abilityColumnName,
         abilityColumnEnglishName,
         abilityColumnTiming,
-        abilityColumnTarget
+        abilityColumnTarget,
+        abilityColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[abilityColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       data.abilities[map[abilityColumnId]] = Ability(
-        map[abilityColumnId],
-        map[abilityColumnName],
-        map[abilityColumnEnglishName],
-        Timing.values[map[abilityColumnTiming]],
-        Target.values[map[abilityColumnTarget]],
-      );
+          map[abilityColumnId],
+          map[abilityColumnName],
+          map[abilityColumnEnglishName],
+          Timing.values[map[abilityColumnTiming]],
+          Target.values[map[abilityColumnTarget]],
+          possiblyChangeStat);
     }
 
     //////////// とくせいの説明
@@ -65,25 +93,25 @@ class TestPokeDB {
     }
 
     //////////// せいかく
-    final temperDb = await openDatabase(assetRoot + temperDBFile);
+    final natureDb = await openDatabase(assetRoot + natureDBFile);
     // 内部データに変換
-    maps = await temperDb.query(
-      temperDBTable,
+    maps = await natureDb.query(
+      natureDBTable,
       columns: [
-        temperColumnId,
-        temperColumnName,
-        temperColumnEnglishName,
-        temperColumnDe,
-        temperColumnIn
+        natureColumnId,
+        natureColumnName,
+        natureColumnEnglishName,
+        natureColumnDe,
+        natureColumnIn
       ],
     );
     for (var map in maps) {
-      data.tempers[map[temperColumnId]] = Temper(
-        map[temperColumnId],
-        map[temperColumnName],
-        map[temperColumnEnglishName],
-        StatIndex.values[(map[temperColumnDe] as int) - 1],
-        StatIndex.values[(map[temperColumnIn] as int) - 1],
+      data.natures[map[natureColumnId]] = Nature(
+        map[natureColumnId],
+        map[natureColumnName],
+        map[natureColumnEnglishName],
+        StatIndex.values[(map[natureColumnDe] as int) - 1],
+        StatIndex.values[(map[natureColumnIn] as int) - 1],
       );
     }
 
@@ -114,10 +142,16 @@ class TestPokeDB {
         itemColumnFlingEffect,
         itemColumnTiming,
         itemColumnIsBerry,
-        itemColumnImageUrl
+        itemColumnImageUrl,
+        itemColumnPossiblyChangeStat
       ],
     );
     for (var map in maps) {
+      final rawPcs = parseIntTuple2List(map[itemColumnPossiblyChangeStat]);
+      final List<Tuple2<StatIndex, int>> possiblyChangeStat = [];
+      for (final t in rawPcs) {
+        possiblyChangeStat.add(Tuple2(StatIndex.values[t.item1], t.item2));
+      }
       data.items[map[itemColumnId]] = Item(
           id: map[itemColumnId],
           displayName: map[itemColumnName],
@@ -126,7 +160,8 @@ class TestPokeDB {
           flingEffectId: map[itemColumnFlingEffect],
           timing: Timing.values[map[itemColumnTiming]],
           isBerry: map[itemColumnIsBerry] == 1,
-          imageUrl: map[itemColumnImageUrl]);
+          imageUrl: map[itemColumnImageUrl],
+          possiblyChangeStat: possiblyChangeStat);
     }
 
     //////////// もちものの説明
@@ -148,6 +183,9 @@ class TestPokeDB {
 
     //////////// わざ
     final moveDb = await openDatabase(assetRoot + moveDBFile);
+    if (File(assetRoot + moveDBFile).existsSync()) {
+      print('OK');
+    }
     // 内部データに変換
     maps = await moveDb.query(
       moveDBTable,
@@ -163,7 +201,23 @@ class TestPokeDB {
         moveColumnDamageClass,
         moveColumnEffect,
         moveColumnEffectChance,
-        moveColumnPP
+        moveColumnPP,
+        moveColumnIsDirect,
+        moveColumnIsSound,
+        moveColumnIsDrain,
+        moveColumnIsPunch,
+        moveColumnIsWave,
+        moveColumnIsDance,
+        moveColumnIsRecoil,
+        moveColumnIsAdditionalEffect,
+        moveColumnIsAdditionalEffect2,
+        moveColumnIsBite,
+        moveColumnIsCut,
+        moveColumnIsWind,
+        moveColumnIsPowder,
+        moveColumnIsBullet,
+        moveColumnSuccessWithProtect,
+        moveColumnLoseWithRecoil,
       ],
     );
     for (var map in maps) {
@@ -180,6 +234,22 @@ class TestPokeDB {
         MoveEffect(map[moveColumnEffect]),
         map[moveColumnEffectChance],
         map[moveColumnPP],
+        map[moveColumnIsDirect] != '0',
+        map[moveColumnIsSound] != '0',
+        map[moveColumnIsDrain] != '0',
+        map[moveColumnIsPunch] != '0',
+        map[moveColumnIsWave] != '0',
+        map[moveColumnIsDance] != '0',
+        map[moveColumnIsRecoil] != '0',
+        map[moveColumnIsAdditionalEffect] != '0',
+        map[moveColumnIsAdditionalEffect2] != '0',
+        map[moveColumnIsBite] != '0',
+        map[moveColumnIsCut] != '0',
+        map[moveColumnIsWind] != '0',
+        map[moveColumnIsPowder] != '0',
+        map[moveColumnIsBullet] != '0',
+        map[moveColumnSuccessWithProtect] != '0',
+        map[moveColumnLoseWithRecoil] != '0',
       );
     }
 
@@ -198,6 +268,50 @@ class TestPokeDB {
       _moveFlavors[map[moveFlavorColumnId]] = map[moveFlavorColumnFlavor];
       _moveEnglishFlavors[map[moveFlavorColumnId]] =
           map[moveFlavorColumnEnglishFlavor];
+    }
+
+    /////////// その他の補正(フォルム等)
+    final bdDb = await openDatabase(assetRoot + buffDebuffDBFile);
+    if (File(assetRoot + buffDebuffDBFile).existsSync()) {
+      print('OK');
+    }
+    // 内部データに変換
+    maps = await bdDb.query(
+      buffDebuffDBTable,
+      columns: [
+        buffDebuffColumnId,
+        buffDebuffColumnName,
+        buffDebuffColumnEnglishName,
+        buffDebuffColumnColor,
+        buffDebuffColumnTurns,
+        buffDebuffColumnIsHidden,
+        buffDebuffColumnEffectID,
+        buffDebuffColumnEffectArg1,
+        buffDebuffColumnEffectArg2,
+        buffDebuffColumnEffectArg3,
+        buffDebuffColumnEffectArg4,
+        buffDebuffColumnEffectArg5,
+        buffDebuffColumnEffectArg6,
+        buffDebuffColumnEffectArg7,
+      ],
+    );
+    for (var map in maps) {
+      data.buffDebuffs[map[buffDebuffColumnId]] = BuffDebuff(
+        map[buffDebuffColumnId],
+        map[buffDebuffColumnName],
+        map[buffDebuffColumnEnglishName],
+        map[buffDebuffColumnColor],
+        map[buffDebuffColumnTurns],
+        map[buffDebuffColumnIsHidden] != '0',
+        map[buffDebuffColumnEffectID],
+        map[buffDebuffColumnEffectArg1],
+        map[buffDebuffColumnEffectArg2],
+        map[buffDebuffColumnEffectArg3],
+        map[buffDebuffColumnEffectArg4],
+        map[buffDebuffColumnEffectArg5],
+        map[buffDebuffColumnEffectArg6],
+        map[buffDebuffColumnEffectArg7],
+      );
     }
 
     //////////// ポケモン図鑑
@@ -219,6 +333,7 @@ class TestPokeDB {
         pokeBaseColumnWeight,
         pokeBaseColumnEggGroup,
         pokeBaseColumnImageUrl,
+        pokeBaseColumnAvailableEviolite,
       ],
     );
 
@@ -256,6 +371,7 @@ class TestPokeDB {
         weight: map[pokeBaseColumnWeight],
         eggGroups: [for (var e in pokeEggGroups) data.eggGroups[e]!],
         imageUrl: map[pokeBaseColumnImageUrl],
+        availableEviolite: map[pokeBaseColumnAvailableEviolite] != 0,
       );
     }
   }

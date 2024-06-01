@@ -53,24 +53,31 @@ class UserEdit extends Equatable {
 }
 
 class TurnEffectUserEdit extends TurnEffect {
-  TurnEffectUserEdit() : super(EffectType.userEdit);
+  /// 行動主
+  PlayerType _playerType = PlayerType.none;
+
+  TurnEffectUserEdit({required player}) : super(EffectType.userEdit) {
+    _playerType = player;
+  }
 
   final List<UserEdit> forces = [];
 
   @override
-  List<Object?> get props => [forces];
+  List<Object?> get props => [...super.props, forces];
 
   @override
-  TurnEffectUserEdit copy() => TurnEffectUserEdit()..forces.addAll([...forces]);
+  TurnEffectUserEdit copy() => TurnEffectUserEdit(player: playerType)
+    ..forces.addAll([...forces])
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
       loc.battleParameterEdit;
 
   @override
-  PlayerType get playerType => PlayerType.none;
+  PlayerType get playerType => _playerType;
   @override
-  set playerType(type) {}
+  set playerType(type) => _playerType = type;
   @override
   Timing get timing => Timing.none;
   @override
@@ -135,11 +142,76 @@ class TurnEffectUserEdit extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
-    return Container();
+    List<Widget> widgetList = [];
+    for (final force in forces) {
+      String str = '';
+      final pokeData = PokeDB();
+      switch (force.typeId) {
+        case UserEdit.none:
+          break;
+        case UserEdit.ability:
+          str =
+              '${loc.commonAbility} : ${pokeData.abilities[force.arg1]!.displayNameWithUnknown}';
+          break;
+        case UserEdit.item:
+          str =
+              '${loc.commonItem} : ${force.arg1 >= 0 ? pokeData.items[force.arg1]!.displayNameWithUnknown : loc.commonNone}';
+          break;
+        case UserEdit.hp:
+          str = 'HP : ${force.arg1}';
+          break;
+        case UserEdit.rankA:
+          break;
+        case UserEdit.rankB:
+          break;
+        case UserEdit.rankC:
+          break;
+        case UserEdit.rankD:
+          break;
+        case UserEdit.rankS:
+          break;
+        case UserEdit.rankAc:
+          break;
+        case UserEdit.rankEv:
+          break;
+        case UserEdit.statMinH:
+          break;
+        case UserEdit.statMinA:
+          break;
+        case UserEdit.statMinB:
+          break;
+        case UserEdit.statMinC:
+          break;
+        case UserEdit.statMinD:
+          break;
+        case UserEdit.statMinS:
+          break;
+        case UserEdit.statMaxH:
+          break;
+        case UserEdit.statMaxA:
+          break;
+        case UserEdit.statMaxB:
+          break;
+        case UserEdit.statMaxC:
+          break;
+        case UserEdit.statMaxD:
+          break;
+        case UserEdit.statMaxS:
+          break;
+        case UserEdit.pokemon:
+          break;
+        default:
+          break;
+      }
+      widgetList.add(Text(str));
+    }
+    return Column(
+      children: widgetList,
+    );
   }
 
   @override
@@ -279,19 +351,21 @@ class TurnEffectUserEdit extends TurnEffect {
       dynamic str, String split1, String split2, String split3,
       {int version = -1}) {
     // -1は最新バージョン
-    TurnEffectUserEdit userForces = TurnEffectUserEdit();
+    List<UserEdit> userEdits = [];
     final List forceElements = str.split(split1);
     // effectType
     forceElements.removeAt(0);
     for (var force in forceElements) {
       if (force == '') break;
       final f = force.split(split2);
-      userForces.forces.add(UserEdit(
-          PlayerTypeNum.createFromNumber(int.parse(f[0])),
-          int.parse(f[1]),
-          int.parse(f[2])));
+      userEdits.add(UserEdit(PlayerTypeNum.createFromNumber(int.parse(f[0])),
+          int.parse(f[1]), int.parse(f[2])));
     }
-    return userForces;
+    PlayerType player =
+        userEdits.isEmpty ? PlayerType.none : userEdits.first.playerType;
+    TurnEffectUserEdit ret = TurnEffectUserEdit(player: player);
+    ret.forces.addAll(userEdits);
+    return ret;
   }
 
   // SQL保存用の文字列に変換

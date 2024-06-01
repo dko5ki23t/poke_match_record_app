@@ -27,8 +27,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
 
-const String pokeRecoVersion = '2.0.1';
-const int pokeRecoInternalVersion = 3; // SQLのテーブルバージョンに使用
+const String pokeRecoVersion = '2.1.1';
+const int pokeRecoInternalVersion = 4; // SQLのテーブルバージョンに使用
 
 enum TabItem {
   battles,
@@ -397,26 +397,11 @@ class MyAppState extends ChangeNotifier {
   Map<int, Pokemon> pokemons = {};
   Map<int, Party> parties = {};
   Map<int, Battle> battles = {};
-  //void Function() onBackKeyPushed = () {};
-  //void Function(void Function() func) onTabChange =
-  //    (func) {}; // 各ページで書き換えてもらう関数
-  //void Function(void Function() func) changeTab = (func) {};
-  // 対戦登録画面のわざ選択前後入力で必要なステート
-  List<bool> editingPhase = [];
-  // ターン内のフェーズ更新要求フラグ(指定したインデックス以降)
-  int needAdjustPhases = -1;
-  // 行動順入れ替え要求フラグ
-  bool requestActionSwap = false;
-  // 削除によるフェーズ更新かどうか(trueの場合、自動補完は無効にする)
-  bool adjustPhaseByDelete = false;
 
   /// チュートリアルの段階(PokeDBと同期させる)
   int tutorialStep = 0;
 
   MyAppState(BuildContext context, Locale? locale) {
-    //changeTab = (func) {
-    //  onTabChange(func);
-    //};
     fetchPokeData(locale ?? Locale(Platform.localeName.substring(0, 2), ''));
   }
 
@@ -434,7 +419,9 @@ class MyAppState extends ChangeNotifier {
   /// notify()は内部で読んでないので注意
   Future<void> inclementTutorialStep() async {
     tutorialStep++;
-    // TODO:マイナス値にする
+    if (tutorialStep > 10) {
+      tutorialStep = -1;
+    }
     // 設定ファイルに書き込み
     pokeData.tutorialStep = tutorialStep - 1;
     pokeData.saveConfig();
@@ -474,13 +461,7 @@ class ScaffoldWithNavBar extends StatelessWidget {
 
       return NavigatorPopHandler(
         onPop: () {
-          //var appState = context.read<MyAppState>();
-          //appState.onBackKeyPushed();
-//          _navigatorKeys[_currentTab]!.currentState!.pop();
           // TODO:できればネストしたNavigatorを操作するようにしたい。https://api.flutter.dev/flutter/widgets/NavigatorPopHandler-class.html
-/*            Navigator.pop(
-              currentContext,
-            );*/
         },
         child: Scaffold(
           body: Center(

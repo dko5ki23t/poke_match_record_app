@@ -1,78 +1,80 @@
 ## 参考文献
 
 ### Flutter/Dart
- * Install | Flutter
 
-   公式によるFlutterチュートリアル(環境構築編)
+- Install | Flutter
 
-   https://docs.flutter.dev/get-started/install
+  公式による Flutter チュートリアル(環境構築編)
 
- * Your first Flutter app
+  https://docs.flutter.dev/get-started/install
 
-   公式によるFlutterチュートリアル(コード作成編)
+- Your first Flutter app
 
-   https://codelabs.developers.google.com/codelabs/flutter-codelab-first
+  公式による Flutter チュートリアル(コード作成編)
 
- * Flutter基礎入門 by Flutter大学
+  https://codelabs.developers.google.com/codelabs/flutter-codelab-first
 
-   画面遷移とかフォーム入力とか
+- Flutter 基礎入門 by Flutter 大学
 
-   https://zenn.dev/kboy/books/ca6a9c93fd23f3
+  画面遷移とかフォーム入力とか
 
- * FlutterでBottomNavigationBarを表示したまま下層ページを画面遷移する | Counts the Clouds
+  https://zenn.dev/kboy/books/ca6a9c93fd23f3
 
-   https://countstheclouds.com/posts/flutter-nested-navigation/
+- Flutter で BottomNavigationBar を表示したまま下層ページを画面遷移する | Counts the Clouds
 
- * SpinBoxThemeData class - flutter_spinbox library - Dart API
+  https://countstheclouds.com/posts/flutter-nested-navigation/
 
-   https://pub.dev/documentation/flutter_spinbox/latest/flutter_spinbox/SpinBoxThemeData-class.html
+- SpinBoxThemeData class - flutter_spinbox library - Dart API
 
- * flutter_typeahead | Flutter Package
+  https://pub.dev/documentation/flutter_spinbox/latest/flutter_spinbox/SpinBoxThemeData-class.html
 
-   https://pub.dev/packages/flutter_typeahead
+- flutter_typeahead | Flutter Package
 
- * SQLiteでのデータ永続化 | Flutter Doc JP
+  https://pub.dev/packages/flutter_typeahead
 
-   https://flutter.ctrnost.com/logic/sqlite/
- 
- * python + sqlite3でリストを簡単に扱う - Qiita
+- SQLite でのデータ永続化 | Flutter Doc JP
 
-   https://qiita.com/maueki/items/4aae7b2d9a34758ef465
+  https://flutter.ctrnost.com/logic/sqlite/
 
- * How to Add Autocomplete Suggestions on TextField in Flutter
+- python + sqlite3 でリストを簡単に扱う - Qiita
 
-   候補付きテキストフィールドには下記URLのTypeAheadFieldを採用した。
+  https://qiita.com/maueki/items/4aae7b2d9a34758ef465
 
-   https://www.fluttercampus.com/guide/189/how-to-add-autocomplete-suggestions-on-textfield-in-flutter/
+- How to Add Autocomplete Suggestions on TextField in Flutter
 
- * Flutter アプリのテスト方法
+  候補付きテキストフィールドには下記 URL の TypeAheadField を採用した。
 
-   https://codelabs.developers.google.com/codelabs/flutter-app-testing?hl=ja#0
+  https://www.fluttercampus.com/guide/189/how-to-add-autocomplete-suggestions-on-textfield-in-flutter/
 
- * FlutterにGithub Actionsを導入してみた
+- Flutter アプリのテスト方法
 
-   https://zenn.dev/flutteruniv_dev/articles/a4576f96002dae
+  https://codelabs.developers.google.com/codelabs/flutter-app-testing?hl=ja#0
+
+- Flutter に Github Actions を導入してみた
+
+  https://zenn.dev/flutteruniv_dev/articles/a4576f96002dae
 
 ### ポケモンのアプリ作成
- * ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1さらうどん
 
-   https://giginet.hateblo.jp/entry/2022/10/17/110000
+- ポケモンガチ対戦用パーティー管理アプリ『PokeBox』をリリースしました - 5.1 さらうどん
 
- * Documentation - PokéAPI
+  https://giginet.hateblo.jp/entry/2022/10/17/110000
 
-   https://pokeapi.co/docs/v2
+- Documentation - PokéAPI
 
- * ステータス - ポケモンWiki
+  https://pokeapi.co/docs/v2
 
-   ポケモンの各ステータスの計算方法
+- ステータス - ポケモン Wiki
 
-   https://wiki.xn--rckteqa2e.com/wiki/%E3%82%B9%E3%83%86%E3%83%BC%E3%82%BF%E3%82%B9#.E7.AC.AC.E4.B8.89.E4.B8.96.E4.BB.A3.E4.BB.A5.E9.99.8D
+  ポケモンの各ステータスの計算方法
 
- * ステータス計算機（SV） | Pokemonote
+  https://wiki.xn--rckteqa2e.com/wiki/%E3%82%B9%E3%83%86%E3%83%BC%E3%82%BF%E3%82%B9#.E7.AC.AC.E4.B8.89.E4.B8.96.E4.BB.A3.E4.BB.A5.E9.99.8D
 
-   ステータス計算の検算に使用。
+- ステータス計算機（SV） | Pokemonote
 
-   https://pokemonote.com/calc-stats/
+  ステータス計算の検算に使用。
+
+  https://pokemonote.com/calc-stats/
 
 ### ライセンス等の参考資料
 
@@ -80,9 +82,9 @@ https://note.com/hatanowf/n/n7f6ef8b0ea7c
 
 ### アイコン作成の参考文献
 
-https://ja.stackoverflow.com/questions/51645/android-studio%E3%81%A7image-asset%E3%82%92%E8%B5%B7%E5%8B%95%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84
+- Flutter でカスタムアイコンを使う方法 #iOS - Qiita
 
-https://icon.kitchen/
+  https://qiita.com/tomoyanakano/items/79ac1391d4e3d9c9eec1
 
 ### リリースビルドの方法
 
@@ -93,4 +95,3 @@ https://enoiu.com/app-develop/flutter-release/
 https://qiita.com/kazutxt/items/936ebe7a21ede7e1ab20
 
 https://stackoverflow.com/questions/73766312/the-method-setlocale-isnt-defined-for-the-type-myappstate-flutter
-

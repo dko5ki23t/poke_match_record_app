@@ -16,6 +16,7 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:poke_reco/data_structs/poke_type.dart';
 import 'package:poke_reco/data_structs/weather.dart';
 import 'package:poke_reco/tool.dart';
+import 'package:just_the_tooltip/just_the_tooltip.dart';
 
 /// ステータス画面の下部ページ
 enum StatusInfoPageIndex {
@@ -47,6 +48,10 @@ class BattlePokemonStateInfo extends StatefulWidget {
     required this.pageController,
     required this.animeController,
     required this.colorAnimation,
+    required this.suggestAbilities,
+    required this.suggestItems,
+    this.abilityTooltipController,
+    this.itemTooltipController,
   }) : super(key: key);
 
   final PhaseState focusState;
@@ -57,6 +62,10 @@ class BattlePokemonStateInfo extends StatefulWidget {
   final PageController pageController;
   final AnimationController animeController;
   final SequenceAnimation colorAnimation;
+  final List<Ability> suggestAbilities;
+  final List<Item?> suggestItems;
+  final JustTheController? abilityTooltipController;
+  final JustTheController? itemTooltipController;
 
   @override
   BattlePokemonStateInfoState createState() => BattlePokemonStateInfoState();
@@ -196,16 +205,98 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                     ],
                   ),
                   // とくせい
-                  AbilityText(
-                    focusingPokemonState.currentAbility,
-                    showHatena: true,
+                  JustTheTooltip(
+                    controller: widget.abilityTooltipController,
+                    barrierDismissible: false,
+                    triggerMode: TooltipTriggerMode.manual,
+                    isModal: true,
+                    preferredDirection: AxisDirection.up,
+                    content: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 8.0,
+                              bottom: 8.0,
+                              right: theme.iconTheme.size ?? 24.0,
+                              top: theme.iconTheme.size ?? 24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final ability in widget.suggestAbilities)
+                                GestureDetector(
+                                  onTap: () {
+                                    widget.onStatusEdit(
+                                        true, ability, false, null, false, 0);
+                                    widget.abilityTooltipController
+                                        ?.hideTooltip();
+                                  },
+                                  child: Text('${ability.displayName}?'),
+                                ),
+                            ],
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () =>
+                              widget.abilityTooltipController?.hideTooltip(),
+                          child: Icon(
+                            Icons.close,
+                          ),
+                        ),
+                      ],
+                    ),
+                    child: AbilityText(
+                      focusingPokemonState.currentAbility,
+                      showHatena: true,
+                    ),
                   ),
                   // もちもの
-                  ItemText(
-                    focusingPokemonState.holdingItem,
-                    showHatena: true,
-                    showNone: true,
-                    loc: loc,
+                  JustTheTooltip(
+                    controller: widget.itemTooltipController,
+                    barrierDismissible: false,
+                    triggerMode: TooltipTriggerMode.manual,
+                    isModal: true,
+                    preferredDirection: AxisDirection.down,
+                    content: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.only(
+                              left: 8.0,
+                              bottom: 8.0,
+                              right: theme.iconTheme.size ?? 24.0,
+                              top: theme.iconTheme.size ?? 24.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              for (final item in widget.suggestItems)
+                                GestureDetector(
+                                  onTap: () {
+                                    widget.onStatusEdit(false, Ability.none(),
+                                        true, item, false, 0);
+                                    widget.itemTooltipController?.hideTooltip();
+                                  },
+                                  child: Text(item == null
+                                      ? '${loc.commonNone}?'
+                                      : '${item.displayName}?'),
+                                ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () =>
+                              widget.itemTooltipController?.hideTooltip(),
+                          icon: Icon(Icons.close),
+                          padding: EdgeInsets.all(0.0),
+                        ),
+                      ],
+                    ),
+                    child: ItemText(
+                      focusingPokemonState.holdingItem,
+                      showHatena: true,
+                      showNone: true,
+                      loc: loc,
+                    ),
                   ),
                   // HP
                   hpBarRow(
@@ -421,7 +512,7 @@ class BattlePokemonStateInfoState extends State<BattlePokemonStateInfo> {
                   duration: Duration(seconds: 1),
                   width: (remainHP / maxHPRe) * 150,
                   height: 20,
-                  color: (remainHP / maxHPRe) <= 0.25
+                  color: (remainHP / maxHPRe) <= 0.2
                       ? Colors.red
                       : (remainHP / maxHPRe) <= 0.5
                           ? Colors.yellow

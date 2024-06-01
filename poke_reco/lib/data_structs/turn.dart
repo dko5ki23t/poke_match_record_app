@@ -1,8 +1,11 @@
 import 'dart:collection';
 
 import 'package:poke_reco/custom_widgets/battle_pokemon_state_info.dart';
+import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/four_params.dart';
+import 'package:poke_reco/data_structs/guide.dart';
 import 'package:poke_reco/data_structs/individual_field.dart';
+import 'package:poke_reco/data_structs/item.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/data_structs/six_stats.dart';
@@ -318,13 +321,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// 各プレイヤーの行動が有効かどうか
     List<bool> isValidAction = [false, false];
 
-    /// ひんしになったかどうか
-    /// TODO:同じターンに何体かひんしになることある？
+    /// ひんしになっており、ひんし交代(死に出し)処理がまだされていないならtrue
     List<bool> isFainting = [false, false];
-
-    // TODO: いらなそう
-    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
-    bool alreadyGameset = false;
 
     /// 各プレイヤーのポケモン交代したかどうか
     List<bool> isChanged = [turnNum == 1, turnNum == 1];
@@ -352,7 +350,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// 効果によってポケモン交代した状態
     bool changingState = false;
 
-    while (!alreadyGameset && state != end) {
+    while (state != end) {
       currentTiming =
           changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
       if (currentTiming == timing) {
@@ -543,7 +541,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             break;
           case 14: // 試合終了状態
             toNext = true;
-            alreadyGameset = true;
             state = end;
             break;
         }
@@ -578,17 +575,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// 各プレイヤーの行動が有効かどうか
     List<bool> isValidAction = [false, false];
 
-    /// ひんしになったかどうか
-    /// TODO:同じターンに何体かひんしになることある？
+    /// ひんしになっており、ひんし交代(死に出し)処理がまだされていないならtrue
     List<bool> isFainting = [false, false];
 
     /// 試合の勝者(このターンで勝敗決まらない場合はnull)
     /// 先にwinnerに代入したら、他プレイヤーの代入禁止
     PlayerType? winner;
-
-    // TODO: いらなそう
-    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
-    bool alreadyGameset = false;
 
     /// 試合終了処理を行うことが決定されているが、わざ使用後処理のみ残っている場合
     bool isReservedGameset = false;
@@ -619,7 +611,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// 効果によってポケモン交代した状態
     bool changingState = false;
 
-    while (!alreadyGameset && state != end) {
+    while (state != end) {
       currentTiming =
           changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
       ret.add(currentTiming);
@@ -639,7 +631,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           case 0: // 試合最初のポケモン登場時処理状態
             if (i >= l.length || l[i].timing != Timing.pokemonAppear) {
               state++; // 行動決定直後処理状態へ
-              //timingListIdx++;
             } else {
               toNext = true;
             }
@@ -809,7 +800,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             break;
           case 14: // 試合終了状態
             toNext = true;
-            alreadyGameset = true;
             state = end;
             break;
         }
@@ -883,9 +873,18 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     return ret.toList();
   }
 
-  /// TODO:フェーズを最適化する
-  ///
-  //List<List<TurnEffectAndStateAndGuide>> _adjustPhases(MyAppState appState, bool isNewTurn, AppLocalizations loc,) {
+  /// フェーズリストを最適化(順序並べ替え、必要に応じて自動で効果追加)する
+  /// ```
+  /// isNewTurn: 新たに作成されたターンかどうか。trueによって自動で追加される効果がある
+  /// turnNum: 対象のターン数
+  /// currentTurn: 対象のターン
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// opponentName: 対戦相手の名前
+  /// loc: localization情報
+  /// 戻り値: 表示すべきポケモンステータスの画面インデックス
+  /// (例えば実数値ステータスが推定できた場合は実数値ステータス画面のインデックスを返す)
+  /// ```
   StatusInfoPageIndex adjust(
     bool isNewTurn,
     int turnNum,
@@ -900,12 +899,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     l.removeWhere(
       (element) => element is TurnEffectGameset,
     );
-    //_clearAddingPhase(appState);      // 一旦、追加用のフェーズは削除する
-    //int beginIdx = 0;
-    //Timing timing = Timing.none;
-    //List<List<TurnEffectAndStateAndGuide>> ret = [];
-    //List<TurnEffectAndStateAndGuide> turnEffectAndStateAndGuides = [];
-    //Turn currentTurn = widget.battle.turns[turnNum - 1];
     // 行動順をアップデート
     updateActionOrder();
     PhaseState currentState = currentTurn.copyInitialState();
@@ -923,17 +916,12 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     /// 各プレイヤーの行動が有効かどうか
     List<bool> isValidAction = [false, false];
 
-    /// ひんしになったかどうか
-    /// TODO:同じターンに何体かひんしになることある？
+    /// ひんしになっており、ひんし交代(死に出し)処理がまだされていないならtrue
     List<bool> isFainting = [false, false];
 
     /// 試合の勝者(このターンで勝敗決まらない場合はnull)
     /// 先にwinnerに代入したら、他プレイヤーの代入禁止
     PlayerType? winner;
-
-    // TODO: いらなそう
-    /// 試合終了処理を終えたかどうか(これがtrueでない間は、s1がendでもs2が0じゃなくならない限りループは続ける)
-    bool alreadyGameset = false;
 
     /// 試合終了処理を行うことが決定されているが、わざ使用後処理のみ残っている場合
     bool isReservedGameset = false;
@@ -962,15 +950,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
     Timing currentTiming = stateTimingMap[state]!;
     Timing prevTiming = Timing.none;
     List<TurnEffect> assistList = [];
-    //List<TurnEffect> delAssistList = [];
-    //PlayerType? firstActionPlayer;
     TurnEffectAction? lastAction;
 
     /// 効果によってポケモン交代した状態
     bool changingState = false;
 
-    /// TODO: 必要？
-    bool isAssisting = false;
     // 自動入力リスト作成
     if (isNewTurn) {
       assistList = currentState.getDefaultEffectList(
@@ -981,21 +965,20 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         currentState,
         lastAction,
       );
-      // TODO
-/*
+    }
+
+    while (state != end) {
+      currentTiming =
+          changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
+      // 自動入力効果のうち、ユーザが意図して消した効果は削除
       for (final effect in currentTurn.noAutoAddEffect) {
         assistList.removeWhere((e) => effect.nearEqual(e));
       }
-*/
-    }
 
-    while (!alreadyGameset && state != end) {
-      currentTiming =
-          changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
-
-      /// TODO: 必要？
-      bool isInserted = false;
+      /// フェーズの参照インデックスiをインクリメントしない場合はtrueにする
       bool skipInc = false;
+
+      // ユーザ入力のパラメータ編集の場合
       if (i < l.length && l[i] is TurnEffectUserEdit) {
         // 何も変化させず、processEffect()
         // currentTimingを無効にすることで自動入力を再作成させる
@@ -1006,18 +989,11 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           // 自動追加
           if (assistList.isNotEmpty) {
             l.insert(i, assistList.removeAt(0));
-            isAssisting = true;
-            isInserted = true;
           } else {
-            //isInserted = true;
-            //timingListIdx++;
-            isAssisting = false;
             changingState = false;
             skipInc = true;
           }
-        } else {
-          isAssisting = true;
-        }
+        } else {}
       } else {
         switch (state) {
           case 0: // 試合最初のポケモン登場時処理状態
@@ -1025,36 +1001,22 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
                 skipInc = true;
                 state++; // 行動決定直後処理状態へ
-                //timingListIdx++;
-                isAssisting = false;
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 1: // 行動決定直後処理状態
             if (i >= l.length || l[i].timing != Timing.afterActionDecision) {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
                 state++; // こうさん処理状態へ
-                //timingListIdx++;
-                isAssisting = false;
                 skipInc = true;
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 2: // こうさん処理状態
             // iより先こうさん行動があれば前に移動する
@@ -1072,10 +1034,8 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               }
             }
             if (isExistSurrender) {
-              isAssisting = true;
             } else {
               state++; // (行動としての)ポケモン交代処理状態へ
-              isAssisting = false;
               skipInc = true;
             }
             break;
@@ -1112,11 +1072,9 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               }
             }
             if (isExistChange) {
-              isAssisting = true;
               state++; // (行動としての)ポケモン交代処理後状態へ
             } else {
               state = 5; // テラスタル処理状態へ
-              isAssisting = false;
               skipInc = true;
             }
             break;
@@ -1125,30 +1083,19 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
-                //timingListIdx++;
-                isAssisting = false;
                 isChanged = [false, false];
                 skipInc = true;
                 state = 3; // (行動としての)ポケモン交代処理状態へ
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 5: // テラスタル処理状態
             if (i >= l.length || l[i].timing != Timing.terastaling) {
               state = 7; // わざ使用前処理状態へ
               skipInc = true;
-              isAssisting = true;
             } else {
-              //isInserted = true;
               state++; // テラスタル後処理状態へ
-              //timingListIdx++;
-              isAssisting = false;
             }
             break;
           case 6: // テラスタル後処理状態
@@ -1156,64 +1103,38 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
                 state = 5; // テラスタル処理状態へ
-                //timingListIdx++;
-                isAssisting = false;
                 skipInc = true;
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 7: // わざ使用前処理状態
             if (i >= l.length || l[i].timing != Timing.beforeMove) {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
                 state++; // わざ処理状態へ
-                //timingListIdx++;
-                isAssisting = false;
                 skipInc = true;
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 8: // わざ処理状態
             {
-              // TODO?
-              //_clearInvalidPhase(appState, i, true, true);
               isChanged = [false, false];
-              //actionCount++;
               if (i >= l.length || l[i].runtimeType != TurnEffectAction) {
-                // TODO:ありえない？
-                /*_insertPhase(
-                        i,
-                        TurnEffect()
-                          ..timing = Timing.action
-                          ..effectType = EffectType.move
-                          ..move = TurnMove(),
-                        appState);
-                    if (actionCount == 1) l[i].move!.isFirst = true;
-                    isInserted = true;
-                    if (actionCount == 2) {
-                      s1 = 8; // ターン終了状態へ
-                    } else {
-                      s1 = 12; // 行動選択前状態へ
-                    }*/
+                // ここに到達する場合もある。イルカマン戦2ターン3等
                 state = 11; // ターン終了時処理状態へ
-                isAssisting = false;
                 skipInc = true;
               } else {
                 final action = l[i] as TurnEffectAction;
+                // 効果等で交代が生じていて行動を既に消費している場合、対象の行動は失敗しているとみなす
+                if (!remainAction[action.playerType.number]) {
+                  action.isSuccess = false;
+                } else if (action.actionFailure.id == ActionFailure.none) {
+                  //action.isSuccess = true;
+                }
                 remainAction[action.playerType.number] = false;
                 if (action.isValid()) {
                   isValidAction[action.playerType.number] = true;
@@ -1243,7 +1164,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 lastAction = l[i] as TurnEffectAction;
               }
-              //timingListIdx++;
             }
             break;
           case 9: // わざ使用後処理状態
@@ -1251,12 +1171,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
-                //timingListIdx++;
-                isAssisting = false;
                 skipInc = true;
                 if (isChanged[PlayerType.me.number] ||
                     isChanged[PlayerType.opponent.number]) {
@@ -1276,7 +1191,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
               }
             } else {
-              isAssisting = true;
               if (l[i].getChangePokemonIndex(PlayerType.me) != null ||
                   l[i].getChangePokemonIndex(PlayerType.opponent) != null) {
                 // 効果によりポケモン交代が生じた場合
@@ -1289,12 +1203,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
-                //timingListIdx++;
-                isAssisting = false;
                 isChanged = [false, false];
                 skipInc = true;
                 if (!remainAction[PlayerType.me.number] &&
@@ -1304,20 +1213,14 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   state = 7; // わざ使用前処理状態へ
                 }
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 11: // ターン終了状態
             if (i >= l.length || l[i].timing != Timing.everyTurnEnd) {
               // 自動追加
-              if (assistList.isNotEmpty /* && !alreadyTurnEnd*/) {
+              if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
-                isAssisting = false;
                 skipInc = true;
                 state++; // ひんし交代処理状態へ
               }
@@ -1335,8 +1238,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       TurnEffectChangeFaintingPokemon(
                         player: PlayerType.me,
                       ));
-                  isInserted = true;
-                  // TODO: 不要になった？
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.me) > i) {
                     // その行動を削除
@@ -1351,8 +1252,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                       TurnEffectChangeFaintingPokemon(
                         player: PlayerType.opponent,
                       ));
-                  isInserted = true;
-                  // TODO: 不要になった？
                   // ひんしになったポケモンがまだ行動していなかった場合
                   if (getLatestActionIndex(PlayerType.opponent) > i) {
                     // その行動を削除
@@ -1379,7 +1278,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                 }
                 state++; // ひんし交代後処理状態へ
               }
-              //timingListIdx++;
             }
             break;
           case 13: // ひんし交代後処理状態
@@ -1387,12 +1285,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               // 自動追加
               if (assistList.isNotEmpty) {
                 l.insert(i, assistList.removeAt(0));
-                isAssisting = true;
-                isInserted = true;
               } else {
-                //isInserted = true;
-                //timingListIdx++;
-                isAssisting = false;
                 skipInc = true;
                 isChanged = [false, false];
                 if (!isFainting[PlayerType.me.number] &&
@@ -1402,9 +1295,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                   state = 12; // ひんし交代処理状態へ
                 }
               }
-            } else {
-              isAssisting = true;
-            }
+            } else {}
             break;
           case 14: // 試合終了状態
             l.insert(i,
@@ -1416,7 +1307,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             } else if (getLatestActionIndex(PlayerType.opponent) < 0) {
               l.add(TurnEffectAction(player: PlayerType.opponent));
             }
-            alreadyGameset = true;
             state = end;
             break;
         }
@@ -1475,7 +1365,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
 
         if (state != end &&
             winner == null &&
-            (!isInserted || isAssisting) &&
             i < l.length &&
             (l[i].isMyWin || l[i].isYourWin)) // どちらかが勝利したら
         {
@@ -1489,7 +1378,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
           }
         } else {
           // どちらかがひんしになる場合
-          if (state != end && (!isInserted || isAssisting) && i < l.length) {
+          if (state != end && i < l.length) {
             if (l[i].isOwnFainting) {
               isFainting[PlayerType.me.number] = true;
               remainAction[PlayerType.me.number] = false;
@@ -1500,21 +1389,6 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
               remainAction[PlayerType.opponent.number] = false;
               isValidAction[PlayerType.opponent.number] = true;
             }
-            // TODO?
-            /*
-            if (s2 == 1 || l[i].timing == Timing.action) {
-              if ((isOwnFainting &&
-                      !isOpponentFainting &&
-                      l[i].playerType == PlayerType.me) ||
-                  (isOpponentFainting &&
-                      !isOwnFainting &&
-                      l[i].playerType == PlayerType.opponent)) {
-              } else {
-                // わざ使用者のみがひんしになったのでなければ、このターンの行動はもう無い
-                actionCount = 2;
-              }
-            }
-            */
           }
         }
 
@@ -1542,15 +1416,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
         var nextTiming =
             changingState ? Timing.pokemonAppear : stateTimingMap[state]!;
         prevTiming = currentTiming;
-        if (/*(timingListIdx >= sameTimingList.length ||
-            sameTimingList[timingListIdx].first.turnEffect.timing != nextTiming ||*/
-            ((currentTiming !=
-                nextTiming) /*||
-            sameTimingList[timingListIdx].first.needAssist*/
-            ) /*&&
-                appState.needAdjustPhases <= i &&
-                !appState.adjustPhaseByDelete*/
-            ) {
+        if (currentTiming != nextTiming) {
           var tmpAction = lastAction;
           if (nextTiming == Timing.beforeMove) {
             // わざの先読みをする
@@ -1584,67 +1450,23 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             assistList.removeWhere((e) => effect.nearEqual(e));
           }
           // 同じタイミングの先読みをし、既に入力済みで自動入力に含まれるものは除外する
-          // それ以外で入力済みの自動入力は削除
-          //List<int> removeIdxs = [];
           for (int j = i; j < l.length; j++) {
             if (l[j].timing != nextTiming) break;
-            // TODO
             int findIdx =
                 assistList.indexWhere((element) => element.nearEqual(l[j]));
             if (findIdx >= 0) {
               assistList.removeAt(findIdx);
-              // TODO
-              /*} else if (l[j].isAutoSet) {
-              removeIdxs.add(j);*/
             }
           }
-/*          
-          // 削除インデックスリストの重複削除、ソート(念のため)
-          removeIdxs = removeIdxs.toSet().toList();
-          removeIdxs.sort();
-          for (int i = removeIdxs.length - 1; i >= 0; i--) {
-            l.removeAt(removeIdxs[i]);
-          }
-          if (timingListIdx < sameTimingList.length) {
-            for (var e in sameTimingList[timingListIdx]) {
-              e.needAssist = false;
-            }
-          }
-*/
           if (currentTiming == Timing.pokemonAppear) {
             isChanged[PlayerType.me.number] = false;
             isChanged[PlayerType.opponent.number] = false;
           }
         } else if (currentTiming != nextTiming) {
           assistList.clear();
-          //delAssistList.clear();
         }
       }
     }
-
-/*
-    for (int i = 0; i < turnEffectAndStateAndGuides.length; i++) {
-      turnEffectAndStateAndGuides[i].phaseIdx = i;
-      if (turnEffectAndStateAndGuides[i].turnEffect.timing != timing ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.action ||
-          turnEffectAndStateAndGuides[i].turnEffect.timing == Timing.changeFaintingPokemon
-      ) {
-        if (i != 0) {
-          turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
-            currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
-          ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, i));
-        }
-        beginIdx = i;
-        timing = turnEffectAndStateAndGuides[i].turnEffect.timing;
-      }
-    }
-
-    if (phases.isNotEmpty) {
-      turnEffectAndStateAndGuides[beginIdx].updateEffectCandidates(
-        currentTurn, turnEffectAndStateAndGuides[beginIdx == 0 ? beginIdx : beginIdx-1].phaseState);
-      ret.add(turnEffectAndStateAndGuides.sublist(beginIdx, phases.length));
-    }
-    return ret;*/
     return ret;
   }
 }
@@ -1771,22 +1593,23 @@ class Turn extends Equatable implements Copyable {
       PlayerType.opponent: false
     };
     for (final phase in phases) {
-      if (phase is TurnEffectAction ||
-          phase is TurnEffectChangeFaintingPokemon) {
+      if (phase is TurnEffectChangeFaintingPokemon) {
         actioned[phase.playerType] = true;
-        if (phase.isValid()) {
-          isValid[phase.playerType] = true;
+        isValid[phase.playerType] = phase.isValid();
+      } else if (phase is TurnEffectAction) {
+        if (actioned[phase.playerType]!) {
+          // 効果等の交代で行動を消費されているならば、
+          // isValidは変えない(isValid = falseの行動をありとする)
+        } else {
+          actioned[phase.playerType] = true;
+          isValid[phase.playerType] = phase.isValid();
         }
       } else if (phase.getChangePokemonIndex(PlayerType.me) != null) {
         actioned[PlayerType.me] = true;
-        if (phase.isValid()) {
-          isValid[PlayerType.me] = true;
-        }
+        isValid[PlayerType.me] = phase.isValid();
       } else if (phase.getChangePokemonIndex(PlayerType.opponent) != null) {
         actioned[PlayerType.opponent] = true;
-        if (phase.isValid()) {
-          isValid[PlayerType.opponent] = true;
-        }
+        isValid[PlayerType.opponent] = phase.isValid();
       }
     }
     return actioned.values.where((element) => !element).isEmpty &&
@@ -1871,14 +1694,14 @@ class Turn extends Equatable implements Copyable {
             race: poke.stats.sixParams[j].race,
             indi: 0,
             effort: 0,
-            temper: Temper(0, '', '', StatIndex.values[j], StatIndex.none)))
+            nature: Nature(0, '', '', StatIndex.values[j], StatIndex.none)))
         ..maxStats = SixStats.generate((j) => FourParams.createFromValues(
             statIndex: StatIndex.values[j],
             level: poke.level,
             race: poke.stats.sixParams[j].race,
             indi: pokemonMaxIndividual,
             effort: pokemonMaxEffort,
-            temper: Temper(0, '', '', StatIndex.none, StatIndex.values[j])))
+            nature: Nature(0, '', '', StatIndex.none, StatIndex.values[j])))
         ..possibleAbilities = pokeData.pokeBase[poke.no]!.ability
         ..type1 = poke.type1
         ..type2 = poke.type2;
@@ -1908,7 +1731,7 @@ class Turn extends Equatable implements Copyable {
 
   /// とある時点(フェーズ)での状態を返す
   /// ```
-  /// phaseIdx: フェーズのインデックス
+  /// phaseIdx: フェーズのインデックス(負数ならターン最初の状態を返す)
   /// ownParty: 自身(ユーザー)のパーティ
   /// opponentParty: 相手のパーティ
   /// ```
@@ -1929,7 +1752,6 @@ class Turn extends Equatable implements Copyable {
 
     for (int i = 0; i < phaseIdx + 1; i++) {
       final phase = phases[i];
-      //if (phase.isAdding) continue;
       //if (phase.timing == Timing.continuousMove) {
       //  lastAction = phase;
       //  continousCount++;
@@ -2004,6 +1826,8 @@ class Turn extends Equatable implements Copyable {
 
   /// 対象プレイヤーの行動直前のフェーズの状態を返す。
   /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
+  /// ※他のphaseState取得系処理とは異なり、交代わざのあとにわざ使用後の効果が無かったとしても交代処理は行う
+  /// （行動「直前」の状態を返す＝交代処理は終わっている）
   /// ```
   /// playerType: プレイヤー
   /// ownParty: 自身(ユーザー)のパーティ
@@ -2022,10 +1846,6 @@ class Turn extends Equatable implements Copyable {
 
     for (int i = 0; i < endIndex; i++) {
       final phase = phases[i];
-//      if (phase.isAdding) {
-//        i++;
-//        continue; // TODO
-//      }
       if (!phase.isValid()) {
         continue;
       }
@@ -2078,19 +1898,29 @@ class Turn extends Equatable implements Copyable {
         needChangeActionProcess = true;
       }
     }
+    // 交代を伴うわざ後処理が終わったなら交代処理を行う
+    if (needChangeActionProcess) {
+      lastAction!.processChangeEffect(ret.getPokemonState(PlayerType.me, null),
+          ret.getPokemonState(PlayerType.opponent, null), ret);
+      needChangeActionProcess = false;
+    }
     return ret;
   }
 
-  /// ターンの最終状態(_endingState)を更新する。
+  /// 最終状態(_endingState)を更新する。
   /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
   /// また、_endingStateのコピーを返す。
   /// ```
   /// ownParty: 自身(ユーザー)のパーティ
   /// opponentParty: 相手のパーティ
+  /// [O]suggestAbilities: 提案されるとくせいのリスト
+  /// [O]suggestItems: 提案されるもちもののリスト
   /// ```
-  PhaseState updateEndingState(
+  PhaseState _updateEndingState(
     Party ownParty,
     Party opponentParty,
+    List<Ability> suggestAbilities,
+    List<Item?> suggestItems,
     AppLocalizations loc,
   ) {
     _endingState = _initialState.copy();
@@ -2105,10 +1935,6 @@ class Turn extends Equatable implements Copyable {
     bool needChangeActionProcess = false;
     while (i < phases.length) {
       final phase = phases[i];
-//      if (phase.isAdding) {
-//        i++;
-//        continue; // TODO
-//      }
       if (!phase.isValid()) {
         i++;
         continue;
@@ -2157,6 +1983,16 @@ class Turn extends Equatable implements Copyable {
             _endingState.getPokemonState(PlayerType.me, null),
             _endingState.getPokemonState(PlayerType.opponent, null),
             _endingState);
+        // とくせいやもちものの提案
+        if (guide.guideId == Guide.suggestAbilities) {
+          for (final aID in guide.args) {
+            suggestAbilities.add(PokeDB().abilities[aID]!);
+          }
+        } else if (guide.guideId == Guide.suggestItems) {
+          for (final iID in guide.args) {
+            suggestItems.add(PokeDB().items[iID]!);
+          }
+        }
       }
 
       if (phase is TurnEffectAction) {
@@ -2193,10 +2029,14 @@ class Turn extends Equatable implements Copyable {
     return _endingState.copy();
   }
 
-  /// TODO:関数コメント
-  /// 現在のフェーズの状態で起こる効果の候補を返す
-  /// 効果->挿入可能インデックスのMapを返す
+  /// 指定したターンに起こる効果の候補とそのフェーズインデックスのMapを返す
   /// ```
+  /// playerType: 行動主(nullの場合は全行動主を対象とする)
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// loc: localization情報
+  /// turnNum: 現在のターン数
   /// ```
   Map<TurnEffect, Set<int>> getEffectCandidates(
     PlayerType? playerType,
@@ -2215,7 +2055,6 @@ class Turn extends Equatable implements Copyable {
       final timingList = phases.insertableTimings(i, turnNum, this);
       if (i != 0) {
         final currentEffect = phases[i - 1];
-        //if (effect.isAdding) continue;
         //if (effect.timing == Timing.continuousMove) {
         //  lastAction = effect;
         //  continousCount++;
@@ -2280,10 +2119,16 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
-  /// TODO:関数コメント
-  /// 現在のフェーズの状態で起こる効果の候補を返す
-  /// 効果->挿入可能インデックスのMapを返す
+  /// 指定したフェーズで起こる効果の候補を返す
   /// ```
+  /// playerType: 行動主(nullの場合は全行動主を対象とする)
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// ownParty: あなたのパーティ
+  /// opponentParty: 対戦相手のパーティ
+  /// phaseState: フェーズの状態
+  /// loc: localization情報
+  /// turnNum: 現在のターン数
+  /// phaseIdx: 対象フェーズのインデックス
   /// ```
   List<TurnEffect> getEffectCandidatesWithPhaseIdx(
     PlayerType? playerType,
@@ -2364,6 +2209,14 @@ class Turn extends Equatable implements Copyable {
     return effectList.toSet().toList();
   }
 
+  /// 指定したフェーズ・タイミングで起こる効果の候補を返す
+  /// ```
+  /// timing: タイミング
+  /// phaseIdx: フェーズのインデックス
+  /// playerType: 行動主
+  /// effectType: 効果の種類(nullの場合は全効果種類を対象とする)
+  /// phaseState: フェーズの状態
+  /// ```
   List<TurnEffect> _getEffectCandidates(
     Timing timing,
     int phaseIdx,
@@ -2397,9 +2250,6 @@ class Turn extends Equatable implements Copyable {
     List<PlayerType> attackers = prevAction != null && prevAction.isValid()
         ? [prevAction.playerType]
         : [PlayerType.me, PlayerType.opponent];
-    // TODO?
-    //TurnMove turnMove =
-    //    prevAction?.move != null ? prevAction!.move : TurnMove();
     final turnMove = prevAction ?? TurnEffectAction(player: playerType);
 
     if (playerType == PlayerType.entireField) {
@@ -2431,6 +2281,16 @@ class Turn extends Equatable implements Copyable {
     return ret;
   }
 
+  /// 指定したタイミング等で起こる効果の候補を返す
+  /// ```
+  /// timing: タイミング
+  /// playerType: 行動主
+  /// effectType: 効果の種類
+  /// attacker: わざ前後のタイミングの場合、わざの使用者
+  /// turnMove: わざ前後のタイミングの場合、対象となるわざ
+  /// prevAction: 直前の行動
+  /// phaseState: フェーズの状態
+  /// ```
   List<TurnEffect> _getEffectCandidatesWithEffectType(
     Timing timing,
     PlayerType playerType,
@@ -2546,6 +2406,152 @@ class Turn extends Equatable implements Copyable {
     // canZoroarkHisui
     ret += canZoroarkHisui ? '1' : '0';
 
+    return ret;
+  }
+}
+
+/// 対戦中の全ターンを管理するclass
+/// (ユーザ編集によってもちものが変わる->その時点から遡って、
+///  過去のターンでのダメージからパラメータ値を再推定する・・・
+///  といった処理が起こり得るためこのclassを作った)
+class TurnList extends Equatable implements Copyable {
+  List<Turn> list = [];
+
+  @override
+  List<Object?> get props => [list];
+
+  @override
+  TurnList copy() => TurnList()..list.addAll(list);
+
+  bool get isEmpty => list.isEmpty;
+  bool get isNotEmpty => list.isNotEmpty;
+  int get length => list.length;
+  Turn get last => list.last;
+  Turn get first => list.first;
+  Turn operator [](int index) => list[index];
+  void operator []=(int index, Turn value) {
+    list[index] = value;
+  }
+
+  void clear() => list.clear();
+
+  void add(Turn element) {
+    list.add(element);
+  }
+
+  /// 指定したターンの最終状態(_endingState)を更新する。
+  /// phasesに入っている各処理のうち有効な値が入っているphaseのみ処理を適用する。
+  /// また、_endingStateのコピーを返す。
+  /// ```
+  /// turnIndex: ターン(0始まり、負値は最後のターン)
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 相手のパーティ
+  /// [O]suggestAbilities: 提案されるとくせいのリスト
+  /// [O]suggestItems: 提案されるもちもののリスト
+  /// ```
+  PhaseState updateEndingState(
+    int turnIndex,
+    Party ownParty,
+    Party opponentParty,
+    List<Ability> suggestAbilities,
+    List<Item?> suggestItems,
+    AppLocalizations loc,
+  ) {
+    Turn target =
+        0 <= turnIndex && turnIndex < length ? list[turnIndex] : list.last;
+    return target._updateEndingState(
+        ownParty, opponentParty, suggestAbilities, suggestItems, loc);
+  }
+
+  /// 全ターンの全phase(ただし有効なphaseのみ)を処理して状態を更新する
+  /// 指定したターンでユーザによるパラメータ編集が行われた/パラメータ編集を削除した場合に呼び出す。
+  /// ```
+  /// turnIndex: ターン(0始まり、負値は最後のターン)
+  /// ownParty: 自身(ユーザー)のパーティ
+  /// opponentParty: 相手のパーティ
+  /// opponentPokemonIndex: 相手のポケモンのインデックス(1始まり)
+  /// opponentNewAbility: 相手のとくせい(変化なしなら空のリストを指定)
+  /// opponentNewItem: 相手のもちもの(変化なしなら空のリストを指定)
+  /// ```
+  void updateStatesFromBeginning(
+    int turnIndex,
+    Party ownParty,
+    Party opponentParty,
+    int opponentPokemonIndex,
+    List<Ability> opponentNewAbility,
+    List<Item?> opponentNewItem,
+    AppLocalizations loc,
+  ) {
+    // 対戦開始時のとくせい/もちものを設定する
+    final firstTurn = list.first;
+    final initialOppPokemonState = firstTurn
+        .getInitialPokemonStates(PlayerType.opponent)[opponentPokemonIndex - 1]
+        .copy();
+    if (opponentNewAbility.isNotEmpty) {
+      initialOppPokemonState.setCurrentAbilityNoEffect(opponentNewAbility.last);
+    }
+    if (opponentNewItem.isNotEmpty) {
+      initialOppPokemonState.setHoldingItemNoEffect(opponentNewItem.last);
+    }
+    firstTurn.getInitialPokemonStates(
+        PlayerType.opponent)[opponentPokemonIndex - 1] = initialOppPokemonState;
+    firstTurn.getInitialLastExitedStates(
+            PlayerType.opponent)[opponentPokemonIndex - 1] =
+        initialOppPokemonState.copy();
+    // 設定したポケモンが最初に登場する場合、登場時処理を行う
+    if (firstTurn.getInitialPokemonIndex(PlayerType.opponent) ==
+        opponentPokemonIndex) {
+      firstTurn.initialOpponentPokemonState.processEnterEffect(
+          firstTurn.initialOwnPokemonState, firstTurn.copyInitialState());
+    }
+    // 最初のターンから指定したターンまで_endingState/_initialStateを更新する
+    PhaseState lastTurnState =
+        firstTurn._updateEndingState(ownParty, opponentParty, [], [], loc);
+    for (int i = 1; i <= turnIndex; i++) {
+      // 前ターンの最終状態を初期状態とする
+      list[i].setInitialState(lastTurnState.copy());
+      lastTurnState =
+          list[i]._updateEndingState(ownParty, opponentParty, [], [], loc);
+    }
+  }
+
+  /// SQLに保存された文字列からTurnListをパース
+  /// ```
+  /// str: SQLに保存された文字列
+  /// split1 ~ split8: 区切り文字
+  /// version: SQLテーブルのバージョン(-1は最新バージョンを表す)
+  /// ```
+  static TurnList deserialize(
+      dynamic str,
+      String split1,
+      String split2,
+      String split3,
+      String split4,
+      String split5,
+      String split6,
+      String split7,
+      String split8,
+      {int version = -1}) {
+    TurnList ret = TurnList();
+    final strTurns = str.split(split1);
+    for (final strTurn in strTurns) {
+      if (strTurn == '') break;
+      ret.add(Turn.deserialize(
+          strTurn, split2, split3, split4, split5, split6, split7, split8,
+          version: version));
+    }
+    return ret;
+  }
+
+  /// SQL保存用の文字列に変換
+  String serialize(String split1, String split2, String split3, String split4,
+      String split5, String split6, String split7, String split8) {
+    String ret = '';
+    for (final turn in list) {
+      ret += turn.serialize(
+          split2, split3, split4, split5, split6, split7, split8);
+      ret += split1;
+    }
     return ret;
   }
 }

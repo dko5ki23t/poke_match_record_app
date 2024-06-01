@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/move.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -17,7 +18,7 @@ class PokemonFilterDialog extends StatefulWidget {
       List<int> moveFilter,
       List<int> sexFilter,
       List<int> abilityFilter,
-      List<int> temperFilter) onOK;
+      List<int> natureFilter) onOK;
   final PokeDB pokeData;
   final List<Owner> ownerFilter;
   final List<int> noFilter;
@@ -26,7 +27,7 @@ class PokemonFilterDialog extends StatefulWidget {
   final List<int> moveFilter;
   final List<int> sexFilter;
   final List<int> abilityFilter;
-  final List<int> temperFilter;
+  final List<int> natureFilter;
 
   const PokemonFilterDialog(
       this.pokeData,
@@ -37,7 +38,7 @@ class PokemonFilterDialog extends StatefulWidget {
       this.moveFilter,
       this.sexFilter,
       this.abilityFilter,
-      this.temperFilter,
+      this.natureFilter,
       this.onOK,
       {Key? key})
       : super(key: key);
@@ -54,7 +55,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   bool moveExpanded = true;
   bool sexExpanded = true;
   bool abilityExpanded = true;
-  bool temperExpanded = true;
+  bool natureExpanded = true;
   List<Owner> ownerFilter = [];
   List<int> noFilter = [];
   List<PokeType> typeFilter = [];
@@ -62,11 +63,11 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
   List<int> moveFilter = [];
   List<int> sexFilter = [];
   List<int> abilityFilter = [];
-  List<int> temperFilter = [];
+  List<int> natureFilter = [];
   TextEditingController pokemonController = TextEditingController();
   TextEditingController moveController = TextEditingController();
   TextEditingController abilityController = TextEditingController();
-  TextEditingController temperController = TextEditingController();
+  TextEditingController natureController = TextEditingController();
 
   @override
   void initState() {
@@ -78,7 +79,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
     moveFilter = [...widget.moveFilter];
     sexFilter = [...widget.sexFilter];
     abilityFilter = [...widget.abilityFilter];
-    temperFilter = [...widget.temperFilter];
+    natureFilter = [...widget.natureFilter];
   }
 
   @override
@@ -191,7 +192,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             pokemonExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: pokemonController,
                         decoration: InputDecoration(
@@ -200,6 +201,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                         ),
                       ),
                       autoFlipDirection: true,
+                      suggestionsBoxDecoration: SuggestionsBoxDecoration(
+                          borderRadius: BorderRadius.circular(8)),
                       suggestionsCallback: (pattern) async {
                         List<PokeBase> matches = [];
                         matches.addAll(widget.pokeData.pokeBase.values);
@@ -352,7 +355,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             moveExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: moveController,
                         decoration: InputDecoration(
@@ -469,7 +472,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   : Container(),
             abilityExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
                         controller: abilityController,
                         decoration: InputDecoration(
@@ -503,7 +506,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                 : Container(),
             GestureDetector(
               onTap: () => setState(() {
-                temperExpanded = !temperExpanded;
+                natureExpanded = !natureExpanded;
               }),
               child: Stack(
                 children: [
@@ -512,7 +515,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                   ),
                   Align(
                     alignment: Alignment.centerRight,
-                    child: temperExpanded
+                    child: natureExpanded
                         ? Icon(Icons.keyboard_arrow_up)
                         : Icon(Icons.keyboard_arrow_down),
                   ),
@@ -523,31 +526,31 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               height: 10,
               thickness: 1,
             ),
-            for (var temperID in temperFilter)
-              temperExpanded
+            for (var natureID in natureFilter)
+              natureExpanded
                   ? ListTile(
                       title:
-                          Text(widget.pokeData.tempers[temperID]!.displayName),
+                          Text(widget.pokeData.natures[natureID]!.displayName),
                       leading: Checkbox(
-                        value: temperFilter.contains(temperID),
+                        value: natureFilter.contains(natureID),
                         onChanged: (value) {
                           if (value == null) return;
                           setState(() {
                             if (value == true) {
-                              temperFilter.add(temperID);
+                              natureFilter.add(natureID);
                             } else {
-                              temperFilter.remove(temperID);
+                              natureFilter.remove(natureID);
                             }
                           });
                         },
                       ),
                     )
                   : Container(),
-            temperExpanded
+            natureExpanded
                 ? ListTile(
-                    title: TypeAheadField(
+                    title: AppBaseTypeAheadField(
                       textFieldConfiguration: TextFieldConfiguration(
-                        controller: temperController,
+                        controller: natureController,
                         decoration: InputDecoration(
                           border: UnderlineInputBorder(),
                           labelText: loc.filterDialogAddNature,
@@ -555,8 +558,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                       ),
                       autoFlipDirection: true,
                       suggestionsCallback: (pattern) async {
-                        List<Temper> matches = [];
-                        matches.addAll(widget.pokeData.tempers.values);
+                        List<Nature> matches = [];
+                        matches.addAll(widget.pokeData.natures.values);
                         matches.removeWhere((element) => element.id == 0);
                         matches.retainWhere((s) {
                           return toKatakana50(s.displayName.toLowerCase())
@@ -570,8 +573,8 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
                         );
                       },
                       onSuggestionSelected: (suggestion) {
-                        temperController.text = '';
-                        temperFilter.add(suggestion.id);
+                        natureController.text = '';
+                        natureFilter.add(suggestion.id);
                         setState(() {});
                       },
                     ),
@@ -599,7 +602,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               moveFilter = [];
               sexFilter = [for (var sex in Sex.values) sex.id];
               abilityFilter = [];
-              temperFilter = [];
+              natureFilter = [];
             });
           },
         ),
@@ -615,7 +618,7 @@ class PokemonFilterDialogState extends State<PokemonFilterDialog> {
               moveFilter,
               sexFilter,
               abilityFilter,
-              temperFilter,
+              natureFilter,
             );
           },
         ),

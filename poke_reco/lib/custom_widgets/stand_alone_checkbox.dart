@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/custom_widgets/listview_with_view_item_count.dart';
 import 'package:poke_reco/data_structs/ability.dart';
 import 'package:poke_reco/data_structs/item.dart';
@@ -431,7 +432,7 @@ class _SelectMoveInputState extends State<SelectMoveInput> {
             padding: const EdgeInsets.all(4.0),
             child: TextField(
               key: Key(
-                  'BattleActionCommandMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
+                  'StandAloneMoveSearch${playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
               controller: moveSearchTextController,
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
@@ -517,7 +518,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
         ),
         Expanded(
           flex: 1,
-          child: TypeAheadField(
+          child: AppBaseTypeAheadField(
             key: Key("SwitchSelectItemInputTextField"),
             textFieldConfiguration: TextFieldConfiguration(
               controller: itemSearchTextController,
@@ -545,6 +546,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                       timing: Timing.none,
                       isBerry: false,
                       imageUrl: '',
+                      possiblyChangeStat: [],
                     ));
                     // 持っているもちものが確定している場合
                   } else if (pokemonState.getHoldingItem() != null &&
@@ -565,6 +567,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                         timing: Timing.none,
                         isBerry: false,
                         imageUrl: '',
+                        possiblyChangeStat: [],
                       ));
                     }
                     for (var item in pokemonState.impossibleItems) {
@@ -586,6 +589,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
                       timing: Timing.none,
                       isBerry: false,
                       imageUrl: '',
+                      possiblyChangeStat: [],
                     )
                   ];
                 }
@@ -656,7 +660,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TypeAheadField(
+    return AppBaseTypeAheadField(
       key: Key(
           'SelectItemTextField${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
@@ -683,6 +687,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                 timing: Timing.none,
                 isBerry: false,
                 imageUrl: '',
+                possiblyChangeStat: [],
               ));
               // 持っているもちものが確定している場合
             } else if (pokemonState.getHoldingItem() != null &&
@@ -703,6 +708,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                   timing: Timing.none,
                   isBerry: false,
                   imageUrl: '',
+                  possiblyChangeStat: [],
                 ));
               }
               for (var item in pokemonState.impossibleItems) {
@@ -724,6 +730,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
                 timing: Timing.none,
                 isBerry: false,
                 imageUrl: '',
+                possiblyChangeStat: [],
               )
             ];
           }
@@ -797,7 +804,9 @@ class _SelectAbilityInputState extends State<SelectAbilityInput> {
 
   @override
   Widget build(BuildContext context) {
-    return TypeAheadField(
+    return AppBaseTypeAheadField(
+      key: Key(
+          'SelectAbilityInput${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'),
       textFieldConfiguration: TextFieldConfiguration(
         controller: abilitySearchTextController,
         decoration: InputDecoration(
@@ -844,6 +853,18 @@ class _SelectAbilityInputState extends State<SelectAbilityInput> {
       onSuggestionSelected: (suggestion) {
         abilitySearchTextController.text = suggestion.displayName;
         widget.onAbilitySelected(suggestion);
+        // 統合テスト作成用
+        print("// ${suggestion.displayName}\n"
+            "{\n"
+            "  await driver.tap(find.byValueKey('SelectAbilityInput${widget.playerType == PlayerType.me ? 'Own' : 'Opponent'}'));\n"
+            "  await driver.enterText('${suggestion.displayName}');\n"
+            "  final selectListTile = find.ancestor(\n"
+            "    matching: find.byType('ListTile'),\n"
+            "      of: find.text('${suggestion.displayName}'),\n"
+            "      firstMatchOnly: true,\n"
+            "    );\n"
+            "    await driver.tap(selectListTile);\n"
+            "}");
       },
     );
   }

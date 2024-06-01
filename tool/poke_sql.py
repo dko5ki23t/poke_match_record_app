@@ -17,12 +17,12 @@ abilityDBTable = 'abilityDB'
 abilityColumnId = 'id'
 abilityColumnName = 'name'
 
-temperDBFile = 'Tempers.db'
-temperDBTable = 'temperDB'
-temperColumnId = 'id'
-temperColumnName = 'name'
-temperColumnDe = 'decreased_stat'
-temperColumnIn = 'increased_stat'
+natureDBFile = 'Natures.db'
+natureDBTable = 'natureDB'
+natureColumnId = 'id'
+natureColumnName = 'name'
+natureColumnDe = 'decreased_stat'
+natureColumnIn = 'increased_stat'
 
 itemDBFile = 'Items.db'
 itemDBTable = 'itemDB'
@@ -130,27 +130,27 @@ conn.close()
 
 ###### せいかく ######
 
-conn = sqlite3.connect(temperDBFile)
+conn = sqlite3.connect(natureDBFile)
 con = conn.cursor()
 
 # 読み込み
-tempers_list = []
+natures_list = []
 try:
-    con.execute(f'SELECT * FROM {temperDBTable}')
-    tempers_list = con.fetchall()
-    print('read [tempers]:')
-#    print(tempers_list)
+    con.execute(f'SELECT * FROM {natureDBTable}')
+    natures_list = con.fetchall()
+    print('read [natures]:')
+#    print(natures_list)
 except sqlite3.OperationalError:
     print('failed to read table')
-    print('get [tempers] data with PokeAPI and create table')
+    print('get [natures] data with PokeAPI and create table')
 
-if (len(tempers_list) == 0):
+if (len(natures_list) == 0):
     # PokeAPIで取得
     response = requests.get(pokeApiRoute + '/nature')
-    tempers = response.json()
-    pbar = tqdm(total=tempers['count'])
+    natures = response.json()
+    pbar = tqdm(total=natures['count'])
     while (True):
-        for e in tempers['results']:
+        for e in natures['results']:
             nature_detail = requests.get(e['url']).json()
             name = nature_detail['name']
             for f in nature_detail['names']:
@@ -158,24 +158,24 @@ if (len(tempers_list) == 0):
                     name = f['name']
             dec = 'none' if (nature_detail['decreased_stat'] is None) else nature_detail['decreased_stat']['name']
             inc = 'none' if (nature_detail['increased_stat'] is None) else nature_detail['increased_stat']['name']
-            tempers_list.append((
+            natures_list.append((
                 nature_detail['id'], name, dec, inc))
             pbar.update(1)
         # 次のURLを取得
-        if tempers['next'] == None:   # リストを網羅したので終了
+        if natures['next'] == None:   # リストを網羅したので終了
             break
-        response = requests.get(tempers['next'])
-        tempers = response.json()
+        response = requests.get(natures['next'])
+        natures = response.json()
     pbar.close()
 
     # 作成(存在してたら作らない)
     try:
         con.execute(
-        f'CREATE TABLE IF NOT EXISTS {temperDBTable} ('
-        f'  {temperColumnId} integer primary key,'
-        f'  {temperColumnName} text not null,'
-        f'  {temperColumnDe} text,'
-        f'  {temperColumnIn} text)'
+        f'CREATE TABLE IF NOT EXISTS {natureDBTable} ('
+        f'  {natureColumnId} integer primary key,'
+        f'  {natureColumnName} text not null,'
+        f'  {natureColumnDe} text,'
+        f'  {natureColumnIn} text)'
         )
     except sqlite3.OperationalError:
         print('failed to create table')
@@ -183,8 +183,8 @@ if (len(tempers_list) == 0):
     # 挿入
     try:
         con.executemany(
-            f'INSERT INTO {temperDBTable} ({temperColumnId}, {temperColumnName}, {temperColumnDe}, {temperColumnIn}) VALUES ( ?, ?, ?, ? )',
-            tempers_list)
+            f'INSERT INTO {natureDBTable} ({natureColumnId}, {natureColumnName}, {natureColumnDe}, {natureColumnIn}) VALUES ( ?, ?, ?, ? )',
+            natures_list)
     except sqlite3.OperationalError:
         print('failed to insert table')
 

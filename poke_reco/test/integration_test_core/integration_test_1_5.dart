@@ -1273,7 +1273,7 @@ Future<void> test3_2(
   await driver.tap(find.text('OK'));
   // ミミズズのしっぽきり
   await tapMove(driver, op, 'しっぽきり', true);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOpponent'));
+  await tapMoveNext(driver, op);
   // ミミズズのHP15
   await inputRemainHP(driver, op, '15');
   // ミミズズ->トドロクツキに交代
@@ -1624,7 +1624,7 @@ Future<void> test4_1(
   await tapMove(driver, op, 'ステルスロック', true);
   // こちらのミミズズのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // ミミズズのHP88
   await inputRemainHP(driver, me, '88');
   // ミミズズ->カジリガメに交代
@@ -1796,7 +1796,7 @@ Future<void> test4_2(
   await testHP(driver, me, '164/177');
   // ミミズズのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // ミミズズのHP75
   await inputRemainHP(driver, me, '75');
   // ミミズズ->カジリガメに交代
@@ -1868,7 +1868,7 @@ Future<void> test4_2(
   // カジリガメのHP0
   await inputRemainHP(driver, op, '0');
   // ひんしカジリガメ->ボーマンダに交代
-  await changePokemon(driver, op, 'ボーマンダ', false);
+  await changePokemon(driver, me, 'ボーマンダ', false);
 
   // 次のターンへ
   await goTurnPage(driver, turnNum++);
@@ -1933,7 +1933,7 @@ Future<void> test4_3(
   await tapMove(driver, op, 'ステルスロック', true);
   // ミミズズのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // ミミズズのHP88
   await inputRemainHP(driver, me, '88');
   // ミミズズ->カジリガメに交代
@@ -2001,7 +2001,7 @@ Future<void> test4_4(
   await inputRemainHP(driver, op, '103');
   // ミミズズのしっぽきり
   await tapMove(driver, me, 'しっぽきり', false);
-  await driver.tap(find.byValueKey('StatusMoveNextButtonOwn'));
+  await tapMoveNext(driver, me);
   // ミミズズのHP14
   await inputRemainHP(driver, me, '14');
   // マリルリに交代

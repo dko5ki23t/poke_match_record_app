@@ -2,6 +2,7 @@
   "@@locale":"ja",
   "commonPokemon": "ポケモン",
   "commonItem": "もちもの",
+  "commonBerry": "きのみ",
   "commonTerastal": "テラスタル",
   "commonMove": "わざ",
   "commonNone": "なし",
@@ -52,7 +53,9 @@
   "tutorialInputPokemonName": "この画面ではポケモンの情報の登録を行います。\n初めに、登録したいポケモンの名前を入力してください。",
   "tutorialTitleRegisterPokemon2": "ポケモン情報の入力",
   "tutorialInputPokemonInfo": "続けてレベルやせいかく、わざなどの情報を入力してください。\n未入力部分は赤文字で表示されます。",
-  "tutorialTitleRegisterPokemon3": "保存",
+  "tutorialTitleRegisterPokemon3": "カメラで撮影して入力(ベータ版)",
+  "tutorialInputPokemonInfoFromCamera": "ポケモン名を入力した後は、ゲーム画面を撮影して各種パラメータやわざ情報を自動で入力することができます。\n※現在この機能はベータ版です。",
+  "tutorialTitleRegisterPokemon4": "保存",
   "tutorialRegisterPokemonSave": "必要な情報を入力し終えたらボタンを押して保存してください。",
   "tutorialTitleCompleteRegisterPokemon": "ポケモン登録完了！",
   "tutorialToPartyTab": "ポケモンの登録が完了しました。\nポケモン一覧画面ではタップして詳細を確認、長押しで編集が可能です。\n\n続いて、画面下の「パーティ」タブをタップしてください。",
@@ -293,6 +296,7 @@
   "battleBurnDownItem": "もちものを焼き尽くした",
   "battleFlingItem": "もちものを投げつけた",
   "battleConsumeOpponentBerry": "{name}のきのみを消費した",
+  "battleOpponentConsumesBerry": "{name}はきのみを消費した",
   "battleAbilityYouGet": "あなたが得たとくせい",
   "battleKnockOffItem": "もちものをはたきおとした",
   "battleItemYouGet": "あなたが手に入れたもちもの",
@@ -344,5 +348,6 @@
   "battleGuideSapConfAttack": "{name}のこうげき実数値を{attack}で確定しました。",
   "battleGuideLeechSeedConfHP": "{name}のHP実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveDamagedToStatus": "{name}の{status}実数値を{minS} ~ {maxS}で確定しました。",
-  "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。"
+  "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。",
+  "battleConfusedAttack": "自分をこうげきした"
 }

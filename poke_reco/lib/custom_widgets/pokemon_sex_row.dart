@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_typeahead_field.dart';
 import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:poke_reco/tool.dart';
 import 'package:poke_reco/data_structs/poke_base.dart';
@@ -23,15 +25,16 @@ class PokemonSexRow extends Row {
   }) : super(
           mainAxisSize: MainAxisSize.min,
           children: [
-            showNetworkImage
-                ? Image.network(
-                    PokeDB().pokeBase[pokemonNo]!.imageUrl,
-                    height: theme.buttonTheme.height,
-                    errorBuilder: (c, o, s) {
-                      return const Icon(Icons.catching_pokemon);
-                    },
-                  )
-                : const Icon(Icons.catching_pokemon),
+            if (pokemonNo != 0)
+              showNetworkImage
+                  ? Image.network(
+                      PokeDB().pokeBase[pokemonNo]!.imageUrl,
+                      height: theme.buttonTheme.height,
+                      errorBuilder: (c, o, s) {
+                        return const Icon(Icons.catching_pokemon);
+                      },
+                    )
+                  : const Icon(Icons.catching_pokemon),
             SizedBox(
               width: 10,
             ),
@@ -39,7 +42,7 @@ class PokemonSexRow extends Row {
                 ? Expanded(
                     flex: 8,
                     child: enabledPokemon
-                        ? TypeAheadField(
+                        ? AppBaseTypeAheadField(
                             key: Key(
                                 'PokemonSexRow$labelPokemonText'), // テストでの識別用
                             textFieldConfiguration: TextFieldConfiguration(
@@ -72,6 +75,16 @@ class PokemonSexRow extends Row {
                             },
                             itemBuilder: (context, suggestion) {
                               return ListTile(
+                                leading: showNetworkImage
+                                    ? Image.network(
+                                        suggestion.imageUrl,
+                                        height: theme.buttonTheme.height,
+                                        errorBuilder: (c, o, s) {
+                                          return const Icon(
+                                              Icons.catching_pokemon);
+                                        },
+                                      )
+                                    : const Icon(Icons.catching_pokemon),
                                 title: Text(suggestion.name),
                                 autofocus: true,
                               );
@@ -101,15 +114,14 @@ class PokemonSexRow extends Row {
             isInput
                 ? Expanded(
                     flex: 3,
-                    child: DropdownButtonFormField(
+                    child: AppBaseDropdownButtonFormField(
                       key: Key('PokemonSexRow$labelSexText'), // テストでの識別用
                       decoration: InputDecoration(
-                        border: UnderlineInputBorder(),
                         labelText: labelSexText,
                       ),
-                      items: <DropdownMenuItem<Sex>>[
+                      items: <ColoredPopupMenuItem<Sex>>[
                         for (var type in sexList)
-                          DropdownMenuItem<Sex>(
+                          ColoredPopupMenuItem<Sex>(
                             value: type,
                             child: Container(
                               key: Key(

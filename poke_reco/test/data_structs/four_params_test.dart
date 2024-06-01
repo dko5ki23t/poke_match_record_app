@@ -18,8 +18,8 @@ void main() {
     const aStatList = [48, 31, 20, 71];
     const aStatListPlus = [48, 18, 88, 80];
     const aStatListMinus = [48, 31, 148, 78];
-    final plusTemper = Temper(0, '', '', StatIndex.none, StatIndex.A);
-    final minusTemper = Temper(0, '', '', StatIndex.A, StatIndex.none);
+    final plusNature = Nature(0, '', '', StatIndex.none, StatIndex.A);
+    final minusNature = Nature(0, '', '', StatIndex.A, StatIndex.none);
 
     test('努力値を算出', () {
       FourParams testParam = FourParams(StatIndex.H)
@@ -33,10 +33,10 @@ void main() {
       expect(testParam.updateEffort(50, null), aStatList[2]);
       testParam = FourParams(StatIndex.A)
         ..set(aStatListPlus[0], aStatListPlus[1], 0, aStatListPlus[3]);
-      expect(testParam.updateEffort(50, plusTemper), aStatListPlus[2]);
+      expect(testParam.updateEffort(50, plusNature), aStatListPlus[2]);
       testParam = FourParams(StatIndex.A)
         ..set(aStatListMinus[0], aStatListMinus[1], 0, aStatListMinus[3]);
-      expect(testParam.updateEffort(50, minusTemper), aStatListMinus[2]);
+      expect(testParam.updateEffort(50, minusNature), aStatListMinus[2]);
     });
 
     test('個体値を算出', () {
@@ -51,10 +51,10 @@ void main() {
       expect(testParam.updateIndi(50, null), aStatList[1]);
       testParam = FourParams(StatIndex.A)
         ..set(aStatListPlus[0], 0, aStatListPlus[2], aStatListPlus[3]);
-      expect(testParam.updateIndi(50, plusTemper), aStatListPlus[1]);
+      expect(testParam.updateIndi(50, plusNature), aStatListPlus[1]);
       testParam = FourParams(StatIndex.A)
         ..set(aStatListMinus[0], 0, aStatListMinus[2], aStatListMinus[3]);
-      expect(testParam.updateIndi(50, minusTemper), aStatListMinus[1]);
+      expect(testParam.updateIndi(50, minusNature), aStatListMinus[1]);
     });
 
     test('実数値以外の値から生成', () {
@@ -82,14 +82,14 @@ void main() {
           race: aStatListPlus[0],
           indi: aStatListPlus[1],
           effort: aStatListPlus[2],
-          temper: plusTemper);
+          nature: plusNature);
       expect(testParam.real, aStatListPlus[3]);
       testParam = FourParams.createFromValues(
           statIndex: StatIndex.A,
           race: aStatListMinus[0],
           indi: aStatListMinus[1],
           effort: aStatListMinus[2],
-          temper: minusTemper);
+          nature: minusNature);
       expect(testParam.real, aStatListMinus[3]);
     });
 

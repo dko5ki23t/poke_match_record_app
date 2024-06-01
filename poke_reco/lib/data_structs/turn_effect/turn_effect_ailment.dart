@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:poke_reco/custom_widgets/app_base/app_base_dropdown_button_form_field.dart';
 import 'package:poke_reco/custom_widgets/damage_indicate_row.dart';
 import 'package:poke_reco/data_structs/ailment.dart';
 import 'package:poke_reco/data_structs/buff_debuff.dart';
@@ -57,7 +58,8 @@ class AilmentEffect {
   static const int minimize = 38; // ちいさくなる
   static const int flying = 39; // そらをとぶ
   static const int digging = 40; // あなをほる
-  static const int curl = 41; // まるくなる(ころがる・アイスボールの威力2倍)
+  static const int curl =
+      41; // まるくなる(ころがる・アイスボール当てるたびに威力2倍。extraArg1に連続で当たった回数を格納)
   static const int stock1 =
       42; // たくわえる(1)    extraArg1の1の位→たくわえたときに上がったぼうぎょ、10の位→たくわえたときに上がったとくぼう(はきだす・のみこむ時に下がる分を表す)
   static const int stock2 = 43; // たくわえる(2)
@@ -114,7 +116,7 @@ class AilmentEffect {
     13: Tuple2('やどりぎのタネダメージ', 'Leech Seed'),
     15: Tuple2('ロックオン終了', 'Lock-On end'),
 //    16: Tuple2('あくむ', 'Nightmare'),
-    17: Tuple2('バインドダメージ', 'Partially Trapped'),
+    17: Tuple2('バインド(ダメージ/終了)', 'Partially Trapped'),
     18: Tuple2('ほろびのうた', 'Perish Song'),
     19: Tuple2('ちょうはつ終了', 'Taunt is resolved'), // 挑発の効果が解けた
     20: Tuple2('いちゃもん', 'Torment'),
@@ -213,15 +215,23 @@ class TurnEffectAilment extends TurnEffect {
   int extraArg2 = 0;
 
   @override
-  List<Object?> get props =>
-      [playerType, timing, ailmentEffectID, turns, extraArg1, extraArg2];
+  List<Object?> get props => [
+        ...super.props,
+        playerType,
+        timing,
+        ailmentEffectID,
+        turns,
+        extraArg1,
+        extraArg2
+      ];
 
   @override
   TurnEffectAilment copy() => TurnEffectAilment(
       player: playerType, timing: timing, ailmentEffectID: ailmentEffectID)
     ..turns
     ..extraArg1 = extraArg1
-    ..extraArg2 = extraArg2;
+    ..extraArg2 = extraArg2
+    ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
@@ -283,10 +293,11 @@ class TurnEffectAilment extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {
+    final dropdownMenuKey = Key('AilmentEffectDropDownMenu');
     switch (ailmentEffectID) {
       case AilmentEffect.poison: // どく
       case AilmentEffect.badPoison: // もうどく
@@ -382,17 +393,17 @@ class TurnEffectAilment extends TurnEffect {
           return Column(
             children: [
               _myDropdownButtonFormField(
+                key: dropdownMenuKey,
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battleEffect,
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child: Text(loc.battleDamaged),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 1,
                     child: Text(loc.battleEffectExpired),
                   ),
@@ -401,6 +412,12 @@ class TurnEffectAilment extends TurnEffect {
                 onChanged: (value) {
                   extraArg2 = value;
                   onEdit();
+                  // 統合テスト作成用
+                  final text =
+                      value == 0 ? loc.battleDamaged : loc.battleEffectExpired;
+                  print("// $text\n"
+                      "await driver.tap(find.byValueKey('$dropdownMenuKey'));\n"
+                      "await driver.tap(find.text('$text'));");
                 },
                 isInput: true,
                 textValue: extraArg2 == 1
@@ -439,16 +456,15 @@ class TurnEffectAilment extends TurnEffect {
               child: _myDropdownButtonFormField(
                 isExpanded: true,
                 decoration: InputDecoration(
-                  border: UnderlineInputBorder(),
                   labelText: loc.battleEffect,
                 ),
-                items: <DropdownMenuItem>[
-                  DropdownMenuItem(
+                items: <ColoredPopupMenuItem>[
+                  ColoredPopupMenuItem(
                     value: 0,
                     child:
                         Text(loc.battleSpeedDown1(myState.pokemon.omittedName)),
                   ),
-                  DropdownMenuItem(
+                  ColoredPopupMenuItem(
                     value: 1,
                     child: Text(loc.battleEffectExpired),
                   ),
@@ -668,35 +684,36 @@ class TurnEffectAilment extends TurnEffect {
   /// ```
   Widget _myDropdownButtonFormField<T>({
     Key? key,
-    required List<DropdownMenuItem<T>>? items,
-    DropdownButtonBuilder? selectedItemBuilder,
+    required List<ColoredPopupMenuItem<T>> items,
+    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    Widget? hint,
-    Widget? disabledHint,
+    //Widget? hint,
+    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    VoidCallback? onTap,
-    int elevation = 8,
-    TextStyle? style,
+    //VoidCallback? onTap,
+    double elevation = 8,
+    //TextStyle? style,
     Widget? icon,
-    Color? iconDisabledColor,
-    Color? iconEnabledColor,
+    //Color? iconDisabledColor,
+    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    bool isDense = true,
+    //bool isDense = true,
+    // TODO: 必要かも？
     bool isExpanded = false,
-    double? itemHeight,
-    Color? focusColor,
-    FocusNode? focusNode,
-    bool autofocus = false,
-    Color? dropdownColor,
+    //double? itemHeight,
+    //Color? focusColor,
+    //FocusNode? focusNode,
+    //bool autofocus = false,
+    //Color? dropdownColor,
     InputDecoration? decoration,
-    void Function(T?)? onSaved,
-    String? Function(T?)? validator,
-    AutovalidateMode? autovalidateMode,
-    double? menuMaxHeight,
+    //void Function(T?)? onSaved,
+    //String? Function(T?)? validator,
+    //AutovalidateMode? autovalidateMode,
+    //double? menuMaxHeight,
     bool? enableFeedback,
-    AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    BorderRadius? borderRadius,
-    EdgeInsetsGeometry? padding,
+    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
+    //BorderRadius? borderRadius,
+    EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     required bool isInput,
     required String? textValue,
     Pokemon? prefixIconPokemon,
@@ -704,36 +721,36 @@ class TurnEffectAilment extends TurnEffect {
     ThemeData? theme,
   }) {
     if (isInput) {
-      return DropdownButtonFormField(
+      return AppBaseDropdownButtonFormField(
         key: key,
         items: items,
-        selectedItemBuilder: selectedItemBuilder,
+        //selectedItemBuilder: selectedItemBuilder,
         value: value,
-        hint: hint,
-        disabledHint: disabledHint,
+        //hint: hint,
+        //disabledHint: disabledHint,
         onChanged: onChanged,
-        onTap: onTap,
+        //onTap: onTap,
         elevation: elevation,
-        style: style,
+        //style: style,
         icon: icon,
-        iconDisabledColor: iconDisabledColor,
-        iconEnabledColor: iconEnabledColor,
+        //iconDisabledColor: iconDisabledColor,
+        //iconEnabledColor: iconEnabledColor,
         iconSize: iconSize,
-        isDense: isDense,
-        isExpanded: isExpanded,
-        itemHeight: itemHeight,
-        focusColor: focusColor,
-        focusNode: focusNode,
-        autofocus: autofocus,
-        dropdownColor: dropdownColor,
+        //isDense: isDense,
+        //isExpanded: isExpanded,
+        //itemHeight: itemHeight,
+        //focusColor: focusColor,
+        //focusNode: focusNode,
+        //autofocus: autofocus,
+        //dropdownColor: dropdownColor,
         decoration: decoration,
-        onSaved: onSaved,
-        validator: validator,
-        autovalidateMode: autovalidateMode,
-        menuMaxHeight: menuMaxHeight,
+        //onSaved: onSaved,
+        //validator: validator,
+        //autovalidateMode: autovalidateMode,
+        //menuMaxHeight: menuMaxHeight,
         enableFeedback: enableFeedback,
-        alignment: alignment,
-        borderRadius: borderRadius,
+        //alignment: alignment,
+        //borderRadius: borderRadius,
         padding: padding,
       );
     } else {

@@ -124,29 +124,32 @@ class Weather extends Equatable implements Copyable {
       after.valid = true;
     }
 
+    final pokeData = PokeDB();
     if (after.isValid) {
       if (before.id != Weather.sandStorm && after.id == Weather.sandStorm) {
         // すなあらしになる時
         if (ownPokemonState != null && ownPokemonState.currentAbility.id == 8) {
           // すながくれ
           ownPokemonState.buffDebuffs
-              .add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
+              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_8]!.copy());
         }
         if (ownPokemonState != null &&
             ownPokemonState.currentAbility.id == 146) {
           // すなかき
-          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          ownPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 8) {
           // すながくれ
           opponentPokemonState.buffDebuffs
-              .add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
+              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_8]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 146) {
           // すなかき
-          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          opponentPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
       }
       if (before.id == Weather.sandStorm && after.id != Weather.sandStorm) {
@@ -178,12 +181,14 @@ class Weather extends Equatable implements Copyable {
         if (ownPokemonState != null &&
             ownPokemonState.currentAbility.id == 33) {
           // すいすい
-          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          ownPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 33) {
           // すいすい
-          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          opponentPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
       }
       if (before.id == Weather.rainy && after.id != Weather.rainy) {
@@ -204,23 +209,26 @@ class Weather extends Equatable implements Copyable {
         if (ownPokemonState != null &&
             ownPokemonState.currentAbility.id == 34) {
           // ようりょくそ
-          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          ownPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
         if (ownPokemonState != null &&
             ownPokemonState.currentAbility.id == 288) {
           // ひひいろのこどう
-          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.attack1_33));
+          ownPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.attack1_33]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 34) {
           // ようりょくそ
-          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          opponentPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 288) {
           // ひひいろのこどう
           opponentPokemonState.buffDebuffs
-              .add(BuffDebuff(BuffDebuff.attack1_33));
+              .add(pokeData.buffDebuffs[BuffDebuff.attack1_33]!.copy());
         }
       }
       if (before.id == Weather.sunny && after.id != Weather.sunny) {
@@ -253,23 +261,25 @@ class Weather extends Equatable implements Copyable {
             ownPokemonState.currentAbility.id == 81) {
           // ゆきがくれ
           ownPokemonState.buffDebuffs
-              .add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
+              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_8]!.copy());
         }
         if (ownPokemonState != null &&
             ownPokemonState.currentAbility.id == 202) {
           // ゆきかき
-          ownPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          ownPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 81) {
           // ゆきがくれ
           opponentPokemonState.buffDebuffs
-              .add(BuffDebuff(BuffDebuff.yourAccuracy0_8));
+              .add(pokeData.buffDebuffs[BuffDebuff.yourAccuracy0_8]!.copy());
         }
         if (opponentPokemonState != null &&
             opponentPokemonState.currentAbility.id == 202) {
           // ゆきかき
-          opponentPokemonState.buffDebuffs.add(BuffDebuff(BuffDebuff.speed2));
+          opponentPokemonState.buffDebuffs
+              .add(pokeData.buffDebuffs[BuffDebuff.speed2]!.copy());
         }
       }
       if (before.id == Weather.snowy && after.id != Weather.snowy) {
@@ -305,16 +315,17 @@ class Weather extends Equatable implements Copyable {
         int findIdx = pokeState.buffDebuffs.list.indexWhere((element) =>
             BuffDebuff.powalenNormal <= element.id &&
             element.id <= BuffDebuff.powalenSnow);
-        BuffDebuff newForm = BuffDebuff(BuffDebuff.powalenNormal);
+        BuffDebuff newForm =
+            pokeData.buffDebuffs[BuffDebuff.powalenNormal]!.copy();
         switch (after.id) {
           case Weather.sunny:
-            newForm = BuffDebuff(BuffDebuff.powalenSun);
+            newForm = pokeData.buffDebuffs[BuffDebuff.powalenSun]!.copy();
             break;
           case Weather.rainy:
-            newForm = BuffDebuff(BuffDebuff.powalenRain);
+            newForm = pokeData.buffDebuffs[BuffDebuff.powalenRain]!.copy();
             break;
           case Weather.snowy:
-            newForm = BuffDebuff(BuffDebuff.powalenSnow);
+            newForm = pokeData.buffDebuffs[BuffDebuff.powalenSnow]!.copy();
             break;
         }
         if (findIdx >= 0) {
@@ -331,9 +342,9 @@ class Weather extends Equatable implements Copyable {
         int findIdx = pokeState.buffDebuffs.list.indexWhere((element) =>
             BuffDebuff.negaForm <= element.id &&
             element.id <= BuffDebuff.posiForm);
-        BuffDebuff newForm = BuffDebuff(BuffDebuff.negaForm);
+        BuffDebuff newForm = pokeData.buffDebuffs[BuffDebuff.negaForm]!.copy();
         if (after.id == Weather.sunny) {
-          newForm = BuffDebuff(BuffDebuff.posiForm);
+          newForm = pokeData.buffDebuffs[BuffDebuff.posiForm]!.copy();
         }
         if (findIdx >= 0) {
           pokeState.buffDebuffs.list[findIdx] = newForm;

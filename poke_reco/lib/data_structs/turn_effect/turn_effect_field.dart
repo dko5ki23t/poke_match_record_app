@@ -69,6 +69,7 @@ class TurnEffectField extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         timing,
         fieldEffectID,
         extraArg1,
@@ -77,7 +78,8 @@ class TurnEffectField extends TurnEffect {
 
   @override
   TurnEffectField copy() =>
-      TurnEffectField(timing: timing, fieldEffectID: fieldEffectID);
+      TurnEffectField(timing: timing, fieldEffectID: fieldEffectID)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
@@ -139,7 +141,7 @@ class TurnEffectField extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {

@@ -23,6 +23,7 @@ class TurnEffectAfterMove extends TurnEffect {
 
   @override
   List<Object?> get props => [
+        ...super.props,
         _playerType,
         effectID,
         extraArg1,
@@ -30,7 +31,8 @@ class TurnEffectAfterMove extends TurnEffect {
 
   @override
   TurnEffectAfterMove copy() =>
-      TurnEffectAfterMove(player: playerType, effectID: effectID);
+      TurnEffectAfterMove(player: playerType, effectID: effectID)
+        ..baseCopyWith(this);
 
   @override
   String displayName({required AppLocalizations loc}) =>
@@ -96,7 +98,7 @@ class TurnEffectAfterMove extends TurnEffect {
     PhaseState state,
     TextEditingController controller,
     TextEditingController controller2, {
-    required Function() onEdit,
+    required void Function() onEdit,
     required AppLocalizations loc,
     required ThemeData theme,
   }) {

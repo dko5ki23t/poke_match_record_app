@@ -68,6 +68,10 @@ class PhaseState extends Equatable implements Copyable {
       canZorua || canZoroark || canZoruaHisui || canZoroarkHisui;
 
   set weather(Weather w) {
+    // 天気の種類が同じなら何もしない
+    if (_weather.id == w.id) {
+      return;
+    }
     Weather.processWeatherEffect(
         _weather,
         w,
@@ -85,10 +89,10 @@ class PhaseState extends Equatable implements Copyable {
   }
 
   int getPokemonIndex(PlayerType player, TurnEffect? prevAction) {
-    // TODO
-//    if (prevAction != null && prevAction.getPrevPokemonIndex(player) != 0) {
-//      return prevAction.getPrevPokemonIndex(player);
-//    }
+    if (prevAction?.getPrevPokemonIndex(player) != null) {
+      int ret = prevAction!.getPrevPokemonIndex(player)!;
+      if (ret != 0) return ret;
+    }
     if (player == PlayerType.me) {
       return _pokemonIndexes[0];
     } else {
@@ -294,6 +298,14 @@ class PhaseState extends Equatable implements Copyable {
               var myState = getPokemonState(player, null);
               var yourState = getPokemonState(player.opposite, null);
               var myTimingIDs = [...timingIDs];
+              var indiField = getIndiFields(player);
+              // 各ポケモンの場
+              if (indiField
+                  .where((element) => element.id == IndividualField.tailwind)
+                  .isNotEmpty) {
+                // ポケモン登場時、場がおいかぜ
+                myTimingIDs.add(Timing.winded);
+              }
               // とくせい
               if (myTimingIDs.contains(myState.currentAbility.timing)) {
                 final adding = TurnEffectAbility(
@@ -304,14 +316,14 @@ class PhaseState extends Equatable implements Copyable {
                 ret.add(adding);
               }
               // 各ポケモンの場
-              var indiField = getIndiFields(player);
               for (final f in indiField) {
                 if (f.isActive(timing, myState, state)) {
                   var adding = TurnEffectIndividualField(
                       player: player,
                       timing: timing,
                       indiFieldEffectID: IndiFieldEffect.getIdFromIndiField(f));
-                  adding.setAutoArgs(myState, yourState, state, prevAction);
+                  adding.setAutoArgs(myState, yourState, state, prevAction,
+                      indiField: f);
                   ret.add(adding);
                 }
               }
@@ -331,6 +343,7 @@ class PhaseState extends Equatable implements Copyable {
         var defenderPlayerType = prevAction != null
             ? prevAction.playerType.opposite
             : PlayerType.opponent;
+        var attackerTimingIDList = [];
         var defenderTimingIDList = [];
         bool isDefenderFull = defenderPlayerType == PlayerType.me
             ? defenderState.remainHP >= defenderState.pokemon.h.real
@@ -367,9 +380,11 @@ class PhaseState extends Equatable implements Copyable {
                 abilityID: attackerState.currentAbility.id)
               ..extraArg1 = replacedMoveType.index);
           }
-          // ノーマルタイプのこうげきをうけたとき
           if (replacedMoveType == PokeType.normal) {
-            defenderTimingIDList.add(148);
+            // ノーマルタイプのこうげきわざを使用する前
+            attackerTimingIDList.addAll([Timing.beforeNormalAttack]);
+            // ノーマルタイプのこうげきをうけたとき
+            defenderTimingIDList.add(Timing.normalAttacked);
           }
           var effectiveness = PokeTypeEffectiveness.effectiveness(
               attackerState.currentAbility.id == 113 ||
@@ -390,66 +405,77 @@ class PhaseState extends Equatable implements Copyable {
             final moveType = replacedMoveType;
             switch (moveType) {
               case PokeType.fire:
-                defenderTimingIDList.add(131);
+                defenderTimingIDList.add(Timing.greatFireAttacked);
                 break;
               case PokeType.water:
-                defenderTimingIDList.add(132);
+                defenderTimingIDList.add(Timing.greatWaterAttacked);
                 break;
               case PokeType.electric:
-                defenderTimingIDList.add(133);
+                defenderTimingIDList.add(Timing.greatElectricAttacked);
                 break;
               case PokeType.grass:
-                defenderTimingIDList.add(134);
+                defenderTimingIDList.add(Timing.greatGrassAttacked);
                 break;
               case PokeType.ice:
-                defenderTimingIDList.add(135);
+                defenderTimingIDList.add(Timing.greatIceAttacked);
                 break;
               case PokeType.fight:
-                defenderTimingIDList.add(136);
+                defenderTimingIDList.add(Timing.greatFightAttacked);
                 break;
               case PokeType.poison:
-                defenderTimingIDList.add(137);
+                defenderTimingIDList.add(Timing.greatPoisonAttacked);
                 break;
               case PokeType.ground:
-                defenderTimingIDList.add(138);
+                defenderTimingIDList.add(Timing.greatGroundAttacked);
                 break;
               case PokeType.fly:
-                defenderTimingIDList.add(139);
+                defenderTimingIDList.add(Timing.greatFlyAttacked);
                 break;
               case PokeType.psychic:
-                defenderTimingIDList.add(140);
+                defenderTimingIDList.add(Timing.greatPsycoAttacked);
                 break;
               case PokeType.bug:
-                defenderTimingIDList.add(141);
+                defenderTimingIDList.add(Timing.greatBugAttacked);
                 break;
               case PokeType.rock:
-                defenderTimingIDList.add(142);
+                defenderTimingIDList.add(Timing.greatRockAttacked);
                 break;
               case PokeType.ghost:
-                defenderTimingIDList.add(143);
+                defenderTimingIDList.add(Timing.greatGhostAttacked);
                 break;
               case PokeType.dragon:
-                defenderTimingIDList.add(144);
+                defenderTimingIDList.add(Timing.greatDragonAttacked);
                 break;
               case PokeType.evil:
-                defenderTimingIDList.add(145);
+                defenderTimingIDList.add(Timing.greatEvilAttacked);
                 break;
               case PokeType.steel:
-                defenderTimingIDList.add(146);
+                defenderTimingIDList.add(Timing.greatSteelAttacked);
                 break;
               case PokeType.fairy:
-                defenderTimingIDList.add(147);
+                defenderTimingIDList.add(Timing.greatFairyAttacked);
                 break;
               default:
                 break;
             }
+          }
+          if (attackerState.holdingItem != null &&
+              attackerTimingIDList
+                  .contains(attackerState.holdingItem!.timing)) {
+            var addingItem = TurnEffectItem(
+                player: attackerPlayerType,
+                timing: Timing.beforeMove,
+                itemID: attackerState.holdingItem!.id);
+            addingItem.setAutoArgs(
+                attackerState, defenderState, state, prevAction);
+            ret.add(addingItem);
           }
           if (defenderState.holdingItem != null &&
               defenderTimingIDList
                   .contains(defenderState.holdingItem!.timing)) {
             var addingItem = TurnEffectItem(
                 player: defenderPlayerType,
-                timing: Timing.afterMove,
+                timing: Timing.beforeMove,
                 itemID: defenderState.holdingItem!.id);
             addingItem.setAutoArgs(
                 defenderState, attackerState, state, prevAction);
@@ -513,7 +539,8 @@ class PhaseState extends Equatable implements Copyable {
           }
           if (prevAction != null &&
               prevAction.isNormallyHit() &&
-              prevAction.moveEffectivenesses != MoveEffectiveness.noEffect) {
+              prevAction.moveEffectivenesses != MoveEffectiveness.noEffect &&
+              !prevAction.failWithProtect(state)) {
             // わざ成功時
             if (replacedMove!.damageClass.id == 1 && replacedMove.isTargetYou) {
               // へんかわざを受けた後
@@ -558,35 +585,42 @@ class PhaseState extends Equatable implements Copyable {
               }
               // ノーマルタイプのこうげきをうけたとき
               if (replacedMoveType! == PokeType.normal) {
-                defenderTimingIDList.add(148);
+                defenderTimingIDList.add(Timing.normalAttacked);
               }
               // あくタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.evil) {
-                defenderTimingIDList.addAll([86, 87]);
+                defenderTimingIDList.addAll([
+                  Timing.evilAttacked,
+                  Timing.evilGhostBugAttackedIntimidated
+                ]);
               }
               // みずタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.water) {
-                defenderTimingIDList.addAll([92, 104]);
+                defenderTimingIDList
+                    .addAll([Timing.waterAttacked, Timing.fireWaterAttacked]);
               }
               // ほのおタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.fire) {
-                defenderTimingIDList.addAll([104, 107]);
+                defenderTimingIDList
+                    .addAll([Timing.fireWaterAttacked, Timing.fireAtaccked]);
               }
               // でんきタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.electric) {
-                defenderTimingIDList.addAll([118]);
+                defenderTimingIDList.addAll([Timing.electricAttacked]);
               }
               // こおりタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.ice) {
-                defenderTimingIDList.addAll([119]);
+                defenderTimingIDList.addAll([Timing.iceAttacked]);
               }
               // ゴーストタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.ghost) {
-                defenderTimingIDList.addAll([87]);
+                defenderTimingIDList
+                    .addAll([Timing.evilGhostBugAttackedIntimidated]);
               }
               // むしタイプのこうげきをうけたとき
               if (replacedMoveType == PokeType.bug) {
-                defenderTimingIDList.addAll([92]);
+                defenderTimingIDList
+                    .addAll([Timing.evilGhostBugAttackedIntimidated]);
               }
               // 直接こうげきを受けた後
               if (replacedMove.isDirect &&
@@ -676,55 +710,55 @@ class PhaseState extends Equatable implements Copyable {
               final moveType = replacedMoveType;
               switch (moveType) {
                 case PokeType.fire:
-                  defenderTimingIDList.add(131);
+                  defenderTimingIDList.add(Timing.greatFireAttacked);
                   break;
                 case PokeType.water:
-                  defenderTimingIDList.add(132);
+                  defenderTimingIDList.add(Timing.greatWaterAttacked);
                   break;
                 case PokeType.electric:
-                  defenderTimingIDList.add(133);
+                  defenderTimingIDList.add(Timing.greatElectricAttacked);
                   break;
                 case PokeType.grass:
-                  defenderTimingIDList.add(134);
+                  defenderTimingIDList.add(Timing.greatGrassAttacked);
                   break;
                 case PokeType.ice:
-                  defenderTimingIDList.add(135);
+                  defenderTimingIDList.add(Timing.greatIceAttacked);
                   break;
                 case PokeType.fight:
-                  defenderTimingIDList.add(136);
+                  defenderTimingIDList.add(Timing.greatFightAttacked);
                   break;
                 case PokeType.poison:
-                  defenderTimingIDList.add(137);
+                  defenderTimingIDList.add(Timing.greatPoisonAttacked);
                   break;
                 case PokeType.ground:
-                  defenderTimingIDList.add(138);
+                  defenderTimingIDList.add(Timing.greatGroundAttacked);
                   break;
                 case PokeType.fly:
-                  defenderTimingIDList.add(139);
+                  defenderTimingIDList.add(Timing.greatFlyAttacked);
                   break;
                 case PokeType.psychic:
-                  defenderTimingIDList.add(140);
+                  defenderTimingIDList.add(Timing.greatPsycoAttacked);
                   break;
                 case PokeType.bug:
-                  defenderTimingIDList.add(141);
+                  defenderTimingIDList.add(Timing.greatBugAttacked);
                   break;
                 case PokeType.rock:
-                  defenderTimingIDList.add(142);
+                  defenderTimingIDList.add(Timing.greatRockAttacked);
                   break;
                 case PokeType.ghost:
-                  defenderTimingIDList.add(143);
+                  defenderTimingIDList.add(Timing.greatGhostAttacked);
                   break;
                 case PokeType.dragon:
-                  defenderTimingIDList.add(144);
+                  defenderTimingIDList.add(Timing.greatDragonAttacked);
                   break;
                 case PokeType.evil:
-                  defenderTimingIDList.add(145);
+                  defenderTimingIDList.add(Timing.greatEvilAttacked);
                   break;
                 case PokeType.steel:
-                  defenderTimingIDList.add(146);
+                  defenderTimingIDList.add(Timing.greatSteelAttacked);
                   break;
                 case PokeType.fairy:
-                  defenderTimingIDList.add(147);
+                  defenderTimingIDList.add(Timing.greatFairyAttacked);
                   break;
                 default:
                   break;
@@ -794,7 +828,31 @@ class PhaseState extends Equatable implements Copyable {
             var yourState = getPokemonState(player.opposite, null);
             bool isMe = player == PlayerType.me;
 
-            // 死に出しなら発動する効果はない
+            // 各ポケモンの場の効果
+            var fields = getIndiFields(player);
+            for (final field in fields) {
+              if (field.isActive(timing, myState, state)) {
+                // ターン経過で終了する場の判定
+                var adding = TurnEffectIndividualField(
+                    player:
+                        field.isEntireField ? PlayerType.entireField : player,
+                    timing: timing,
+                    indiFieldEffectID:
+                        IndiFieldEffect.getIdFromIndiField(field));
+                adding.setAutoArgs(myState, yourState, state, prevAction,
+                    indiField: field);
+                if (ret
+                    .where((element) =>
+                        element is TurnEffectIndividualField &&
+                        element.nearEqual(adding))
+                    .isEmpty) {
+                  // 両者の場の場合に重複がないようにする
+                  ret.add(adding);
+                }
+              }
+            }
+
+            // 死に出しなら発動する効果はない(ポケモンの場の効果以外)
             if (getPokemonStates(
                     player)[currentTurn.getInitialPokemonIndex(player) - 1]
                 .isFainting) continue;
@@ -914,29 +972,6 @@ class PhaseState extends Equatable implements Copyable {
                       : ailment.turns;
                 adding.setAutoArgs(myState, yourState, state, prevAction);
                 ret.add(adding);
-              }
-            }
-
-            // 各ポケモンの場の効果
-            var fields = getIndiFields(player);
-            for (final field in fields) {
-              if (field.isActive(timing, myState, state)) {
-                // ターン経過で終了する場の判定
-                var adding = TurnEffectIndividualField(
-                    player:
-                        field.isEntireField ? PlayerType.entireField : player,
-                    timing: timing,
-                    indiFieldEffectID:
-                        IndiFieldEffect.getIdFromIndiField(field));
-                adding.setAutoArgs(myState, yourState, state, prevAction);
-                if (ret
-                    .where((element) =>
-                        element is TurnEffectIndividualField &&
-                        element.nearEqual(adding))
-                    .isEmpty) {
-                  // 両者の場の場合に重複がないようにする
-                  ret.add(adding);
-                }
               }
             }
           }
@@ -1070,6 +1105,7 @@ class PhaseState extends Equatable implements Copyable {
           player.opposite, timing == Timing.afterMove ? prevAction : null);
       bool isMe = player == PlayerType.me;
 
+      // HPが1/4以下
       if ((isMe &&
               myState.remainHP <= myState.pokemon.h.real / 4 &&
               myState.remainHP > 0) ||
@@ -1078,6 +1114,7 @@ class PhaseState extends Equatable implements Copyable {
               myState.remainHPPercent > 0)) {
         playerTimings.add(Timing.hp025);
       }
+      // HPが1/2以下
       if ((isMe &&
               myState.remainHP <= myState.pokemon.h.real / 2 &&
               myState.remainHP > 0) ||
@@ -1085,6 +1122,18 @@ class PhaseState extends Equatable implements Copyable {
               myState.remainHPPercent <= 50 &&
               myState.remainHPPercent > 0)) {
         playerTimings.add(Timing.hp050);
+        // リミットシールド
+        if (myState.buffDebuffs.containsByID(BuffDebuff.meteorForm) &&
+            (timing == Timing.pokemonAppear || timing == Timing.everyTurnEnd)) {
+          playerTimings.add(Timing.limitShield);
+        }
+      } else {
+        // HPが1/2より大きい
+        // リミットシールド
+        if (myState.buffDebuffs.containsByID(BuffDebuff.coloredCore) &&
+            (timing == Timing.pokemonAppear || timing == Timing.everyTurnEnd)) {
+          playerTimings.add(Timing.limitShield);
+        }
       }
 
       // こだいかっせい/ブーストエナジー発動の余地がある場合
@@ -1139,12 +1188,10 @@ class PhaseState extends Equatable implements Copyable {
         ret.add(addingItem);
       }
     }
-
-/*
-    for (var effect in ret) {
+    // 自動追加であることを示すフラグオン
+    for (final effect in ret) {
       effect.isAutoSet = true;
     }
-*/
 
     return ret;
   }
@@ -1202,7 +1249,6 @@ class PhaseState extends Equatable implements Copyable {
         ..teraType = base.fixedTeraType == PokeType.unknown
             ? pokemonState.teraType1
             : base.fixedTeraType;
-      // TODO:ゾロアーク系
       Pokemon poke = party.pokemons[getPokemonIndex(player, null) - 1]!;
       if (base.fixedItemID != 0) poke.item = PokeDB().items[base.fixedItemID];
       pokemonState.pokemon = poke;

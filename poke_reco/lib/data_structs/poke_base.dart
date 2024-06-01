@@ -23,6 +23,7 @@ class PokeBase {
   final int weight; // おもさ(*10)(kg)
   final List<EggGroup> eggGroups; // タマゴグループ
   final String imageUrl; // 画像
+  final bool availableEviolite; // しんかのきせきが適用されるか
 
   PokeBase({
     required String name,
@@ -43,10 +44,34 @@ class PokeBase {
     required this.weight,
     required this.eggGroups,
     required this.imageUrl,
+    required this.availableEviolite,
   }) {
     _name = name;
     _nameEn = nameEn;
   }
+
+  /// 無効なポケモンを生成
+  factory PokeBase.none() => PokeBase(
+        name: '',
+        nameEn: '',
+        sex: [Sex.createFromId(0)],
+        no: 0,
+        type1: PokeType.unknown,
+        type2: null,
+        h: 0,
+        a: 0,
+        b: 0,
+        c: 0,
+        d: 0,
+        s: 0,
+        ability: [],
+        move: [],
+        height: 0,
+        weight: 0,
+        eggGroups: [],
+        imageUrl: 'https://dammy',
+        availableEviolite: false,
+      );
 
   // 特徴的なポケモンのNo
   static int zoruaNo = 570;
@@ -63,9 +88,6 @@ class PokeBase {
         return _name;
     }
   }
-
-  // TODO:しんかのきせきが適用できるかどうか
-  bool get isEvolvable => true;
 
   // テラスタイプが固定ならそのタイプを返す
   PokeType get fixedTeraType {

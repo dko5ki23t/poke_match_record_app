@@ -3,6 +3,7 @@ import 'package:poke_reco/data_structs/poke_db.dart';
 import 'package:flutter/material.dart';
 import 'package:poke_reco/data_structs/turn_effect/turn_effect_action.dart';
 import 'package:poke_reco/data_structs/pokemon_state.dart';
+import 'package:poke_reco/poke_type_icons.dart';
 
 /// タイプを表す色
 class PokeTypeColor {
@@ -105,22 +106,22 @@ const _displayIcons = {
   PokeType.normal:
       Icon(Icons.radio_button_unchecked, color: PokeTypeColor.normal),
   PokeType.fight: Icon(Icons.sports_mma, color: PokeTypeColor.fight),
-  PokeType.fly: Icon(Icons.air, color: PokeTypeColor.fly),
+  PokeType.fly: Icon(PokeTypeIcons.fly, color: PokeTypeColor.fly),
   PokeType.poison: Icon(Icons.coronavirus, color: PokeTypeColor.poison),
   PokeType.ground: Icon(Icons.landscape, color: PokeTypeColor.ground),
   PokeType.rock: Icon(Icons.diamond, color: PokeTypeColor.rock),
   PokeType.bug: Icon(Icons.bug_report, color: PokeTypeColor.bug),
-  PokeType.ghost: Icon(Icons.nightlight, color: PokeTypeColor.ghost),
+  PokeType.ghost: Icon(PokeTypeIcons.ghost, color: PokeTypeColor.ghost),
   PokeType.steel: Icon(Icons.hexagon, color: PokeTypeColor.steel),
   PokeType.fire: Icon(Icons.whatshot, color: PokeTypeColor.fire),
   PokeType.water: Icon(Icons.opacity, color: PokeTypeColor.water),
   PokeType.grass: Icon(Icons.grass, color: PokeTypeColor.grass),
   PokeType.electric: Icon(Icons.bolt, color: PokeTypeColor.electric),
-  PokeType.psychic: Icon(Icons.psychology, color: PokeTypeColor.psychic),
-  PokeType.ice: Icon(Icons.ac_unit, color: PokeTypeColor.ice),
-  PokeType.dragon: Icon(Icons.cruelty_free, color: PokeTypeColor.dragon),
-  PokeType.evil: Icon(Icons.remove_red_eye, color: PokeTypeColor.evil),
-  PokeType.fairy: Icon(Icons.emoji_nature, color: PokeTypeColor.fairy),
+  PokeType.psychic: Icon(PokeTypeIcons.psychic, color: PokeTypeColor.psychic),
+  PokeType.ice: Icon(PokeTypeIcons.ice, color: PokeTypeColor.ice),
+  PokeType.dragon: Icon(PokeTypeIcons.dragon, color: PokeTypeColor.dragon),
+  PokeType.evil: Icon(PokeTypeIcons.evil, color: PokeTypeColor.evil),
+  PokeType.fairy: Icon(PokeTypeIcons.fairy, color: PokeTypeColor.fairy),
 };
 
 /// タイプ

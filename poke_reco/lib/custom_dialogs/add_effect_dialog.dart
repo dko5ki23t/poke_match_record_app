@@ -14,14 +14,14 @@ class AddEffectDialog extends StatefulWidget {
   final String opponentText;
   final String? opponentAfterMoveText; // 交代わざ使用後の場合(交代する前のポケモンの表示)
 
-  const AddEffectDialog(
-    this.onSelect,
-    this.title,
-    this.effectList,
-    this.youText,
-    this.youAfterMoveText,
-    this.opponentText,
-    this.opponentAfterMoveText, {
+  const AddEffectDialog({
+    required this.onSelect,
+    required this.title,
+    required this.effectList,
+    required this.youText,
+    required this.youAfterMoveText,
+    required this.opponentText,
+    required this.opponentAfterMoveText,
     Key? key,
   }) : super(key: key);
 

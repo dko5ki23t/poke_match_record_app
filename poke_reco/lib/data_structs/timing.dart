@@ -393,8 +393,8 @@ enum Timing {
   /// トリックルームのとき
   trickRoom,
 
-  /// ノーマルタイプのこうげきわざが当たった時
-  normalAttackHit,
+  /// ノーマルタイプのこうげきわざを使用する前
+  beforeNormalAttack,
 
   /// 効果ばつぐんのほのおタイプのこうげきわざを受けた時
   greatFireAttacked,
@@ -406,7 +406,7 @@ enum Timing {
   greatElectricAttacked,
 
   /// 効果ばつぐんのくさタイプのこうげきわざを受けた時
-  greatgrassAttacked,
+  greatGrassAttacked,
 
   /// 効果ばつぐんのこおりタイプのこうげきわざを受けた時
   greatIceAttacked,
@@ -509,4 +509,7 @@ enum Timing {
 
   /// HPが満タンで等倍以上のタイプ相性わざを受ける前
   beforeTypeNormalOrGreatAttackedWithFullHP,
+
+  /// ポケモン登場時、または毎ターン終了時にHP>1/2かつ○○いろのコアである時。またはHP<=1/2かつりゅうせいのすがたである時。
+  limitShield,
 }
