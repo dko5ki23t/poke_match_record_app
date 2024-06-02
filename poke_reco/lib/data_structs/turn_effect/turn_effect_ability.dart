@@ -1021,7 +1021,6 @@ class TurnEffectAbility extends TurnEffect {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 decoration: InputDecoration(
                   label: Text(loc.battleOpponentAilments),
                 ),
@@ -1163,7 +1162,6 @@ class TurnEffectAbility extends TurnEffect {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 items: <ColoredPopupMenuItem>[
                   ColoredPopupMenuItem(
                     value: 0,
@@ -1316,7 +1314,6 @@ class TurnEffectAbility extends TurnEffect {
               children: [
                 Flexible(
                   child: _myDropdownButtonFormField(
-                    isExpanded: true,
                     items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
                         ColoredPopupMenuItem(
@@ -1343,7 +1340,6 @@ class TurnEffectAbility extends TurnEffect {
               children: [
                 Flexible(
                   child: _myDropdownButtonFormField(
-                    isExpanded: true,
                     items: <ColoredPopupMenuItem>[
                       for (final statIndex in StatIndexList.listAtoS)
                         ColoredPopupMenuItem(
@@ -1378,7 +1374,6 @@ class TurnEffectAbility extends TurnEffect {
               Flexible(
                 child: _myDropdownButtonFormField(
                   key: Key('PokemonSelectDropdown'),
-                  isExpanded: true,
                   decoration: InputDecoration(
                     labelText: loc.battleIllusionedPokemon,
                   ),
@@ -1428,7 +1423,6 @@ class TurnEffectAbility extends TurnEffect {
             Flexible(
               child: _myDropdownButtonFormField(
                 key: dropdownMenuKey,
-                isExpanded: true,
                 items: <ColoredPopupMenuItem>[
                   ColoredPopupMenuItem(
                     value: -1,
@@ -1470,7 +1464,6 @@ class TurnEffectAbility extends TurnEffect {
           children: [
             Flexible(
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 items: <ColoredPopupMenuItem>[
                   for (final statIndex in StatIndexList.listAtoS)
                     ColoredPopupMenuItem(
@@ -1490,7 +1483,6 @@ class TurnEffectAbility extends TurnEffect {
             Text(loc.battleOpportunist1),
             Flexible(
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 items: <ColoredPopupMenuItem>[
                   ColoredPopupMenuItem(
                     value: 1,
@@ -1657,7 +1649,6 @@ class TurnEffectAbility extends TurnEffect {
                   : Container(),
               extraArg1 == 552 || extraArg1 == 10552
                   ? _myDropdownButtonFormField(
-                      isExpanded: true,
                       decoration: InputDecoration(
                         labelText: loc.battleAdditionalEffect,
                       ),
@@ -1835,34 +1826,13 @@ class TurnEffectAbility extends TurnEffect {
   Widget _myDropdownButtonFormField<T>({
     Key? key,
     required List<ColoredPopupMenuItem<T>> items,
-    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    //Widget? hint,
-    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    //VoidCallback? onTap,
     double elevation = 8,
-    //TextStyle? style,
     Widget? icon,
-    //Color? iconDisabledColor,
-    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    //bool isDense = true,
-    // TODO: 必要かも？
-    bool isExpanded = false,
-    //double? itemHeight,
-    //Color? focusColor,
-    //FocusNode? focusNode,
-    //bool autofocus = false,
-    //Color? dropdownColor,
     InputDecoration? decoration,
-    //void Function(T?)? onSaved,
-    //String? Function(T?)? validator,
-    //AutovalidateMode? autovalidateMode,
-    //double? menuMaxHeight,
     bool? enableFeedback,
-    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    //BorderRadius? borderRadius,
     EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     required bool isInput,
     required String? textValue,
@@ -1874,33 +1844,13 @@ class TurnEffectAbility extends TurnEffect {
       return AppBaseDropdownButtonFormField(
         key: key,
         items: items,
-        //selectedItemBuilder: selectedItemBuilder,
         value: value,
-        //hint: hint,
-        //disabledHint: disabledHint,
         onChanged: onChanged,
-        //onTap: onTap,
         elevation: elevation,
-        //style: style,
         icon: icon,
-        //iconDisabledColor: iconDisabledColor,
-        //iconEnabledColor: iconEnabledColor,
         iconSize: iconSize,
-        //isDense: isDense,
-        //isExpanded: isExpanded,
-        //itemHeight: itemHeight,
-        //focusColor: focusColor,
-        //focusNode: focusNode,
-        //autofocus: autofocus,
-        //dropdownColor: dropdownColor,
         decoration: decoration,
-        //onSaved: onSaved,
-        //validator: validator,
-        //autovalidateMode: autovalidateMode,
-        //menuMaxHeight: menuMaxHeight,
         enableFeedback: enableFeedback,
-        //alignment: alignment,
-        //borderRadius: borderRadius,
         padding: padding,
       );
     } else {
