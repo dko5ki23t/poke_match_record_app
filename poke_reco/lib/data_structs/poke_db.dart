@@ -2149,6 +2149,6 @@ class PokeDB {
 
   void setTestMode() {
     _isTestMode = true;
-    showAd = false;
+    showAd = true;
   }
 }

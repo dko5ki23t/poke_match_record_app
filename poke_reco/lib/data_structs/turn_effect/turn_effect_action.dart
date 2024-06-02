@@ -7100,7 +7100,6 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 1,
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 decoration: InputDecoration(
                   border: UnderlineInputBorder(),
                   labelText: loc.battleAdditionalEffect,
@@ -7146,7 +7145,6 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 1,
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: loc.battleAdditionalEffect,
                 ),
@@ -7477,7 +7475,6 @@ class TurnEffectAction extends TurnEffect {
             Expanded(
               flex: 1,
               child: _myDropdownButtonFormField(
-                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: loc.battleAdditionalEffect,
                 ),
@@ -7538,34 +7535,13 @@ class TurnEffectAction extends TurnEffect {
   Widget _myDropdownButtonFormField<T>({
     Key? key,
     required List<ColoredPopupMenuItem<T>> items,
-    //DropdownButtonBuilder? selectedItemBuilder,
     T? value,
-    //Widget? hint,
-    //Widget? disabledHint,
     required ValueChanged<T?>? onChanged,
-    //VoidCallback? onTap,
     double elevation = 8,
-    //TextStyle? style,
     Widget? icon,
-    //Color? iconDisabledColor,
-    //Color? iconEnabledColor,
     double iconSize = 24.0,
-    //bool isDense = true,
-    // TODO: 必要かも？
-    bool isExpanded = false,
-    //double? itemHeight,
-    //Color? focusColor,
-    //FocusNode? focusNode,
-    //bool autofocus = false,
-    //Color? dropdownColor,
     InputDecoration? decoration,
-    //void Function(T?)? onSaved,
-    //String? Function(T?)? validator,
-    //AutovalidateMode? autovalidateMode,
-    //double? menuMaxHeight,
     bool? enableFeedback,
-    //AlignmentGeometry alignment = AlignmentDirectional.centerStart,
-    //BorderRadius? borderRadius,
     EdgeInsetsGeometry padding = const EdgeInsets.all(8.0),
     Pokemon? prefixIconPokemon,
     bool showNetworkImage = false,
@@ -7574,33 +7550,13 @@ class TurnEffectAction extends TurnEffect {
     return AppBaseDropdownButtonFormField(
       key: key,
       items: items,
-      //selectedItemBuilder: selectedItemBuilder,
       value: value,
-      //hint: hint,
-      //disabledHint: disabledHint,
       onChanged: onChanged,
-      //onTap: onTap,
       elevation: elevation,
-      //style: style,
       icon: icon,
-      //iconDisabledColor: iconDisabledColor,
-      //iconEnabledColor: iconEnabledColor,
       iconSize: iconSize,
-      //isDense: isDense,
-      //isExpanded: isExpanded,
-      //itemHeight: itemHeight,
-      //focusColor: focusColor,
-      //focusNode: focusNode,
-      //autofocus: autofocus,
-      //dropdownColor: dropdownColor,
       decoration: decoration,
-      //onSaved: onSaved,
-      //validator: validator,
-      //autovalidateMode: autovalidateMode,
-      //menuMaxHeight: menuMaxHeight,
       enableFeedback: enableFeedback,
-      //alignment: alignment,
-      //borderRadius: borderRadius,
       padding: padding,
     );
   }
