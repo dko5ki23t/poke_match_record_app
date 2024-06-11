@@ -47,7 +47,6 @@ class PokemonsPageState extends State<PokemonsPage> {
   TextEditingController searchTextController = TextEditingController();
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
-  ScrollController scrollController = ScrollController();
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -307,40 +306,9 @@ class PokemonsPageState extends State<PokemonsPage> {
                       selected: isEditMode
                           ? checkList![sortedPokemons[i].key]
                           : false,
-                      leading: isEditMode
-                          ? Stack(
-                              children: [
-                                pokeData.getPokeAPI
-                                    ? Image.network(
-                                        pokeData
-                                            .pokeBase[
-                                                sortedPokemons[i].value.no]!
-                                            .imageUrl,
-                                        height: theme.buttonTheme.height,
-                                        errorBuilder: (c, o, s) {
-                                          return const Icon(
-                                              Icons.catching_pokemon);
-                                        },
-                                      )
-                                    : const Icon(Icons.catching_pokemon),
-                                if (isEditMode)
-                                  Checkbox(
-                                    value: checkList![sortedPokemons[i].key],
-                                    checkColor: Colors.white,
-                                    fillColor:
-                                        MaterialStateProperty.resolveWith(
-                                            (states) => null),
-                                    shape: CircleBorder(),
-                                    onChanged: (isCheck) {
-                                      setState(() {
-                                        checkList![sortedPokemons[i].key] =
-                                            isCheck ?? false;
-                                      });
-                                    },
-                                  ),
-                              ],
-                            )
-                          : pokeData.getPokeAPI
+                      leading: Stack(
+                        children: [
+                          pokeData.getPokeAPI
                               ? Image.network(
                                   pokeData.pokeBase[sortedPokemons[i].value.no]!
                                       .imageUrl,
@@ -350,6 +318,22 @@ class PokemonsPageState extends State<PokemonsPage> {
                                   },
                                 )
                               : const Icon(Icons.catching_pokemon),
+                          if (isEditMode)
+                            Checkbox(
+                              value: checkList![sortedPokemons[i].key],
+                              checkColor: Colors.white,
+                              fillColor: MaterialStateProperty.resolveWith(
+                                  (states) => null),
+                              shape: CircleBorder(),
+                              onChanged: (isCheck) {
+                                setState(() {
+                                  checkList![sortedPokemons[i].key] =
+                                      isCheck ?? false;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
                       showWarning: isEditMode,
                       onLongPress: isEditMode
                           ? null
@@ -363,7 +347,12 @@ class PokemonsPageState extends State<PokemonsPage> {
                                 }
                               : null,
                       onTap: isEditMode
-                          ? null
+                          ? () {
+                              setState(() {
+                                checkList![sortedPokemons[i].key] =
+                                    !checkList![sortedPokemons[i].key]!;
+                              });
+                            }
                           : widget.selectMode
                               ? () {
                                   selectedPokemon = sortedPokemons[i].value;

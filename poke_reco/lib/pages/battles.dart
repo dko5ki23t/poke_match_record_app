@@ -30,6 +30,7 @@ class BattlesPage extends StatefulWidget {
 }
 
 class BattlesPageState extends State<BattlesPage> {
+  /// 編集・選択モードかどうか
   bool isEditMode = false;
   Map<int, bool>? checkList;
   List<MapEntry<int, Battle>> sortedBattles = [];
@@ -230,56 +231,58 @@ class BattlesPageState extends State<BattlesPage> {
         child: Text(loc.battlesTabNoBattle),
       );
     } else {
-      if (isEditMode) {
-        lists = Scrollbar(
-          child: ReorderableListView(
-            onReorder: (int oldIndex, int newIndex) {
-              setState(() {
-                if (oldIndex < newIndex) {
-                  newIndex -= 1;
-                }
-                final item = sortedBattles.removeAt(oldIndex);
-                sortedBattles.insert(newIndex, item);
-                for (int i = 0; i < sortedBattles.length; i++) {
-                  var battle = battles[sortedBattles[i].key]!;
-                  battle.viewOrder = i + 1;
-                }
-              });
-            },
-            children: [
-              for (final e in sortedBattles)
-                BattleTile(
-                  e.value,
-                  theme,
-                  leading: Icon(Icons.drag_handle),
-                  trailing: Checkbox(
-                    value: checkList![e.key],
-                    onChanged: (isCheck) {
-                      setState(() {
-                        checkList![e.key] = isCheck ?? false;
-                      });
-                    },
-                  ),
+      lists = Scrollbar(
+        child: ReorderableListView(
+          onReorder: (int oldIndex, int newIndex) {
+            setState(() {
+              if (oldIndex < newIndex) {
+                newIndex -= 1;
+              }
+              final item = sortedBattles.removeAt(oldIndex);
+              sortedBattles.insert(newIndex, item);
+              for (int i = 0; i < sortedBattles.length; i++) {
+                var battle = battles[sortedBattles[i].key]!;
+                battle.viewOrder = i + 1;
+              }
+            });
+          },
+          children: [
+            for (final battle in sortedBattles)
+              BattleTile(
+                battle.value,
+                theme,
+                leading: Stack(
+                  children: [
+                    Icon(Icons.list_alt),
+                    if (isEditMode)
+                      Checkbox(
+                        value: checkList![battle.key],
+                        checkColor: Colors.white,
+                        fillColor:
+                            MaterialStateProperty.resolveWith((states) => null),
+                        shape: CircleBorder(),
+                        onChanged: (isCheck) {
+                          setState(() {
+                            checkList![battle.key] = isCheck ?? false;
+                          });
+                        },
+                      ),
+                  ],
                 ),
-            ],
-          ),
-        );
-      } else {
-        lists = Scrollbar(
-          child: ListView(
-            children: [
-              for (final battle in sortedBattles)
-                BattleTile(
-                  battle.value,
-                  theme,
-                  leading: Icon(Icons.list_alt),
-                  onLongPress: () => widget.onAdd(battle.value.copy(), false),
-                  onTap: () => widget.onView(battle.value),
-                ),
-            ],
-          ),
-        );
-      }
+                onLongPress: isEditMode
+                    ? null
+                    : () => widget.onAdd(battle.value.copy(), false),
+                onTap: isEditMode
+                    ? () {
+                        setState(() {
+                          checkList![battle.key] = !checkList![battle.key]!;
+                        });
+                      }
+                    : () => widget.onView(battle.value),
+              ),
+          ],
+        ),
+      );
     }
 
     return PopScope(
@@ -288,7 +291,14 @@ class BattlesPageState extends State<BattlesPage> {
         if (didPop) {
           return;
         }
-        if (Navigator.of(context).canPop()) {
+        if (isEditMode) {
+          setState(() {
+            isEditMode = false;
+            if (checkList != null) {
+              clearAllMap(checkList!);
+            }
+          });
+        } else if (Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
         }
       },
@@ -307,9 +317,11 @@ class BattlesPageState extends State<BattlesPage> {
                         await pokeData.addBattle(
                             battle, false, appState.notify);
                       }
-                      pokeData.battlesSort = null;
                       setState(() {
                         isEditMode = false;
+                        if (checkList != null) {
+                          clearAllMap(checkList!);
+                        }
                       });
                     },
                     icon: Icon(Icons.check),
@@ -398,14 +410,6 @@ class BattlesPageState extends State<BattlesPage> {
                               }),
                           icon: Icon(Icons.sort),
                           tooltip: loc.commonSort,
-                        ),
-                        MyIconButton(
-                          theme: theme,
-                          onPressed: (sortedBattles.isNotEmpty)
-                              ? () => setState(() => isEditMode = true)
-                              : null,
-                          icon: Icon(Icons.edit),
-                          tooltip: loc.commonEdit,
                         ),
                       ],
                     ),
