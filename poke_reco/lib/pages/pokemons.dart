@@ -47,6 +47,7 @@ class PokemonsPageState extends State<PokemonsPage> {
   TextEditingController searchTextController = TextEditingController();
   List<TargetFocus> tutorialTargets = [];
   List<TargetFocus> tutorialTargets2 = [];
+  ScrollController scrollController = ScrollController();
 
   final increaseStateStyle = TextStyle(
     color: Colors.red,
@@ -277,116 +278,106 @@ class PokemonsPageState extends State<PokemonsPage> {
         ],
       );
     } else {
-      if (isEditMode) {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ReorderableListView(
-                  onReorder: (int oldIndex, int newIndex) {
-                    setState(() {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = sortedPokemons.removeAt(oldIndex);
-                      sortedPokemons.insert(newIndex, item);
-                      for (int i = 0; i < sortedPokemons.length; i++) {
-                        var pokemon = pokemons[sortedPokemons[i].key]!;
-                        pokemon.viewOrder = i + 1;
-                      }
-                    });
-                  },
-                  children: [
-                    for (int i = 0; i < sortedPokemons.length; i++)
-                      PokemonTile(
-                        sortedPokemons[i].value,
-                        theme,
-                        selected: checkList![sortedPokemons[i].key],
-                        leading: Stack(
-                          children: [
-                            pokeData.getPokeAPI
-                                ? Image.network(
-                                    pokeData
-                                        .pokeBase[sortedPokemons[i].value.no]!
-                                        .imageUrl,
-                                    height: theme.buttonTheme.height,
-                                    errorBuilder: (c, o, s) {
-                                      return const Icon(Icons.catching_pokemon);
+      lists = Column(
+        children: [
+          searchBar,
+          Expanded(
+            child: Scrollbar(
+              child: ReorderableListView(
+                onReorder: (int oldIndex, int newIndex) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = sortedPokemons.removeAt(oldIndex);
+                    sortedPokemons.insert(newIndex, item);
+                    for (int i = 0; i < sortedPokemons.length; i++) {
+                      var pokemon = pokemons[sortedPokemons[i].key]!;
+                      pokemon.viewOrder = i + 1;
+                    }
+                  });
+                },
+                children: [
+                  for (int i = 0; i < sortedPokemons.length; i++)
+                    PokemonTile(
+                      sortedPokemons[i].value,
+                      theme,
+                      enabled:
+                          !partyPokemonsNo.contains(sortedPokemons[i].value.no),
+                      selected: isEditMode
+                          ? checkList![sortedPokemons[i].key]
+                          : false,
+                      leading: isEditMode
+                          ? Stack(
+                              children: [
+                                pokeData.getPokeAPI
+                                    ? Image.network(
+                                        pokeData
+                                            .pokeBase[
+                                                sortedPokemons[i].value.no]!
+                                            .imageUrl,
+                                        height: theme.buttonTheme.height,
+                                        errorBuilder: (c, o, s) {
+                                          return const Icon(
+                                              Icons.catching_pokemon);
+                                        },
+                                      )
+                                    : const Icon(Icons.catching_pokemon),
+                                if (isEditMode)
+                                  Checkbox(
+                                    value: checkList![sortedPokemons[i].key],
+                                    checkColor: Colors.white,
+                                    fillColor:
+                                        MaterialStateProperty.resolveWith(
+                                            (states) => null),
+                                    shape: CircleBorder(),
+                                    onChanged: (isCheck) {
+                                      setState(() {
+                                        checkList![sortedPokemons[i].key] =
+                                            isCheck ?? false;
+                                      });
                                     },
-                                  )
-                                : const Icon(Icons.catching_pokemon),
-                            Checkbox(
-                              value: checkList![sortedPokemons[i].key],
-                              checkColor: Colors.white,
-                              fillColor: MaterialStateProperty.resolveWith(
-                                  (states) => null),
-                              shape: CircleBorder(),
-                              onChanged: (isCheck) {
-                                setState(() {
-                                  checkList![sortedPokemons[i].key] =
-                                      isCheck ?? false;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                        showWarning: true,
-                      ),
-                  ],
-                ),
+                                  ),
+                              ],
+                            )
+                          : pokeData.getPokeAPI
+                              ? Image.network(
+                                  pokeData.pokeBase[sortedPokemons[i].value.no]!
+                                      .imageUrl,
+                                  height: theme.buttonTheme.height,
+                                  errorBuilder: (c, o, s) {
+                                    return const Icon(Icons.catching_pokemon);
+                                  },
+                                )
+                              : const Icon(Icons.catching_pokemon),
+                      showWarning: isEditMode,
+                      onLongPress: isEditMode
+                          ? null
+                          // 長押しで編集・選択モードへ移行
+                          : !widget.selectMode
+                              ? () {
+                                  setState(() {
+                                    isEditMode = true;
+                                    checkList![sortedPokemons[i].key] = true;
+                                  });
+                                }
+                              : null,
+                      onTap: isEditMode
+                          ? null
+                          : widget.selectMode
+                              ? () {
+                                  selectedPokemon = sortedPokemons[i].value;
+                                  widget.onSelect!(sortedPokemons[i].value);
+                                }
+                              : () => widget.onView(
+                                  [for (final e in sortedPokemons) e.value], i),
+                    ),
+                ],
               ),
             ),
-          ],
-        );
-      } else {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ListView(
-                  children: [
-                    for (int i = 0; i < sortedPokemons.length; i++)
-                      PokemonTile(
-                        sortedPokemons[i].value,
-                        theme,
-                        enabled: !partyPokemonsNo
-                            .contains(sortedPokemons[i].value.no),
-                        leading: pokeData.getPokeAPI
-                            ? Image.network(
-                                pokeData.pokeBase[sortedPokemons[i].value.no]!
-                                    .imageUrl,
-                                height: theme.buttonTheme.height,
-                                errorBuilder: (c, o, s) {
-                                  return const Icon(Icons.catching_pokemon);
-                                },
-                              )
-                            : const Icon(Icons.catching_pokemon),
-                        // 長押しで編集・選択モードへ移行
-                        onLongPress: !widget.selectMode
-                            ? () {
-                                setState(() {
-                                  isEditMode = true;
-                                  checkList![sortedPokemons[i].key] = true;
-                                });
-                              }
-                            : null,
-                        onTap: widget.selectMode
-                            ? () {
-                                selectedPokemon = sortedPokemons[i].value;
-                                widget.onSelect!(sortedPokemons[i].value);
-                              }
-                            : () => widget.onView(
-                                [for (final e in sortedPokemons) e.value], i),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      }
+          ),
+        ],
+      );
     }
 
     return PopScope(
