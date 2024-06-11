@@ -40,6 +40,7 @@ class PokemonsPage extends StatefulWidget {
 }
 
 class PokemonsPageState extends State<PokemonsPage> {
+  /// 編集・選択モードかどうか
   bool isEditMode = false;
   Map<int, bool>? checkList;
   Pokemon? selectedPokemon;
@@ -187,10 +188,7 @@ class PokemonsPageState extends State<PokemonsPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-//          keyTarget: bottomNavBarAndAdKey,
           keyTarget: bottomNavIconKeys[TabItem.parties],
-//          shape: ShapeLightFocus.RRect,
-//          radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
@@ -304,15 +302,34 @@ class PokemonsPageState extends State<PokemonsPage> {
                       PokemonTile(
                         sortedPokemons[i].value,
                         theme,
-                        leading: Icon(Icons.drag_handle),
-                        trailing: Checkbox(
-                          value: checkList![sortedPokemons[i].key],
-                          onChanged: (isCheck) {
-                            setState(() {
-                              checkList![sortedPokemons[i].key] =
-                                  isCheck ?? false;
-                            });
-                          },
+                        selected: checkList![sortedPokemons[i].key],
+                        leading: Stack(
+                          children: [
+                            pokeData.getPokeAPI
+                                ? Image.network(
+                                    pokeData
+                                        .pokeBase[sortedPokemons[i].value.no]!
+                                        .imageUrl,
+                                    height: theme.buttonTheme.height,
+                                    errorBuilder: (c, o, s) {
+                                      return const Icon(Icons.catching_pokemon);
+                                    },
+                                  )
+                                : const Icon(Icons.catching_pokemon),
+                            Checkbox(
+                              value: checkList![sortedPokemons[i].key],
+                              checkColor: Colors.white,
+                              fillColor: MaterialStateProperty.resolveWith(
+                                  (states) => null),
+                              shape: CircleBorder(),
+                              onChanged: (isCheck) {
+                                setState(() {
+                                  checkList![sortedPokemons[i].key] =
+                                      isCheck ?? false;
+                                });
+                              },
+                            ),
+                          ],
                         ),
                         showWarning: true,
                       ),
@@ -346,9 +363,14 @@ class PokemonsPageState extends State<PokemonsPage> {
                                 },
                               )
                             : const Icon(Icons.catching_pokemon),
+                        // 長押しで編集・選択モードへ移行
                         onLongPress: !widget.selectMode
-                            ? () => widget.onAdd(
-                                sortedPokemons[i].value.copy(), false)
+                            ? () {
+                                setState(() {
+                                  isEditMode = true;
+                                  checkList![sortedPokemons[i].key] = true;
+                                });
+                              }
                             : null,
                         onTap: widget.selectMode
                             ? () {
@@ -373,7 +395,16 @@ class PokemonsPageState extends State<PokemonsPage> {
           if (didPop) {
             return;
           }
-          Navigator.of(context).pop(selectedPokemon);
+          if (isEditMode) {
+            setState(() {
+              isEditMode = false;
+              if (checkList != null) {
+                clearAllMap(checkList!);
+              }
+            });
+          } else if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(selectedPokemon);
+          }
         },
         child: Scaffold(
           appBar: AppBar(
@@ -386,8 +417,12 @@ class PokemonsPageState extends State<PokemonsPage> {
                       ? MyIconButton(
                           theme: theme,
                           onPressed: () {
-                            setState(() => isEditMode = false);
-                            pokeData.pokemonsSort = null;
+                            setState(() {
+                              isEditMode = false;
+                              if (checkList != null) {
+                                clearAllMap(checkList!);
+                              }
+                            });
                           },
                           icon: Icon(Icons.check),
                           tooltip: loc.commonDone,
@@ -511,14 +546,6 @@ class PokemonsPageState extends State<PokemonsPage> {
                                     }),
                                 icon: Icon(Icons.sort),
                                 tooltip: loc.commonSort,
-                              ),
-                              MyIconButton(
-                                theme: theme,
-                                onPressed: (sortedPokemons.isNotEmpty)
-                                    ? () => setState(() => isEditMode = true)
-                                    : null,
-                                icon: Icon(Icons.edit),
-                                tooltip: loc.commonEdit,
                               ),
                             ],
                           ),

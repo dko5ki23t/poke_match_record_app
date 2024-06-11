@@ -326,7 +326,9 @@ class PartiesPageState extends State<PartiesPage> {
         if (didPop) {
           return;
         }
-        Navigator.of(context).pop(selectedParty);
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(selectedParty);
+        }
       },
       child: Scaffold(
         appBar: AppBar(

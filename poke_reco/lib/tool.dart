@@ -69,6 +69,12 @@ void selectAllMap(Map<int, bool> checkList) {
   }
 }
 
+void clearAllMap(Map<int, bool> checkList) {
+  for (final e in checkList.keys) {
+    checkList[e] = false;
+  }
+}
+
 int getSelectedNum(List<bool> checkList) {
   return checkList.where((bool val) => val).length;
 }
