@@ -134,6 +134,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
   late AnimationController animeController;
   late SequenceAnimation colorAnimation;
 
+  /// 新規作成時、編集したかどうかの比較対象にする
+  Battle comparisonBattle = Battle();
+
   CheckedPokemons checkedPokemons = CheckedPokemons();
   List<Color> opponentFilters = [];
   int turnNum = 1;
@@ -232,7 +235,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         : loc.battlesTabSelectParty;
 
     Future<bool?> showBackDialog() async {
-      if (widget.battle != pokeData.battles[widget.battle.id]) {
+      if ((widget.battle.id == 0 && widget.battle != comparisonBattle) ||
+          (widget.battle.id != 0 &&
+              widget.battle != pokeData.battles[widget.battle.id])) {
         return showDialog<bool?>(
             context: context,
             builder: (_) {
@@ -251,8 +256,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
 
     if (firstBuild) {
       if (widget.battle.name == '') {
+        // 新規作成時ならば自動で対戦名を付ける
         widget.battle.name =
             loc.tabBattles + pokeData.battles.length.toString();
+        // 編集されたかどうかの比較対象として保存する
+        comparisonBattle = widget.battle.copy();
       }
       battleNameController.text = widget.battle.name;
       opponentNameController.text = widget.battle.opponentName;
