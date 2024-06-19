@@ -6462,6 +6462,12 @@ class TurnEffectAction extends TurnEffect {
       }
     }
 
+    // 一番最後のページを表示
+    if (controller._setLast) {
+      controller.pageIndex = widgets.length - 1;
+      controller._setLast = false;
+    }
+
     if (controller.pageIndex < widgets.length) {
       return widgets[controller.pageIndex];
     } else {
@@ -6682,8 +6688,8 @@ class TurnEffectAction extends TurnEffect {
         }
       case CommandWidgetTemplate.inputYourHP:
         int initialNum = playerType == PlayerType.me
-            ? yourState.remainHPPercent
-            : yourState.remainHP;
+            ? yourState.remainHPPercent - percentDamage
+            : yourState.remainHP - realDamage;
         return Column(
           children: [
             // 命中・急所(ON/OFF)。連続わざの場合はそれぞれの回数を入力
@@ -6746,8 +6752,8 @@ class TurnEffectAction extends TurnEffect {
         );
       case CommandWidgetTemplate.inputYourHP2:
         int initialNum = playerType == PlayerType.me
-            ? yourState.remainHPPercent
-            : yourState.remainHP;
+            ? yourState.remainHPPercent - extraArg2
+            : yourState.remainHP - extraArg2;
         return Column(
           children: [
             Expanded(
@@ -6779,8 +6785,8 @@ class TurnEffectAction extends TurnEffect {
         );
       case CommandWidgetTemplate.inputYourHP3:
         int initialNum = playerType == PlayerType.me
-            ? yourState.remainHPPercent
-            : yourState.remainHP;
+            ? yourState.remainHPPercent - unpack2int(extraArg3).item1
+            : yourState.remainHP - unpack2int(extraArg3).item1;
         return Column(
           children: [
             Expanded(
@@ -6814,8 +6820,8 @@ class TurnEffectAction extends TurnEffect {
         );
       case CommandWidgetTemplate.inputMyHP:
         int initialNum = playerType == PlayerType.me
-            ? myState.remainHP
-            : myState.remainHPPercent;
+            ? myState.remainHP - extraArg1
+            : myState.remainHPPercent - extraArg1;
         return Column(
           children: [
             Expanded(
@@ -6848,8 +6854,8 @@ class TurnEffectAction extends TurnEffect {
         );
       case CommandWidgetTemplate.inputMyHP2:
         int initialNum = playerType == PlayerType.me
-            ? myState.remainHP
-            : myState.remainHPPercent;
+            ? myState.remainHP - extraArg2
+            : myState.remainHPPercent - extraArg2;
         return Column(
           children: [
             Expanded(
@@ -6882,8 +6888,8 @@ class TurnEffectAction extends TurnEffect {
         );
       case CommandWidgetTemplate.inputMyHP3:
         int initialNum = playerType == PlayerType.me
-            ? myState.remainHP
-            : myState.remainHPPercent;
+            ? myState.remainHP - unpack2int(extraArg3).item1
+            : myState.remainHPPercent - unpack2int(extraArg3).item1;
         return Column(
           children: [
             Expanded(
@@ -7338,6 +7344,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
@@ -7361,6 +7368,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
@@ -7385,6 +7393,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 2,
               child: SelectItemInput(
                 itemText: extra[0] as String,
+                initialItemText: PokeDB().items[extraArg1]!.displayName,
                 onItemSelected: (item) {
                   extraArg1 = item.id;
                   onNext();
@@ -7406,6 +7415,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 1,
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
+                initialAbilityText: PokeDB().abilities[extraArg1]!.displayName,
                 onAbilitySelected: (ability) {
                   extraArg1 = ability.id;
                   onNext();
@@ -7429,6 +7439,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 1,
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
+                initialAbilityText: PokeDB().abilities[extraArg1]!.displayName,
                 onAbilitySelected: (ability) {
                   extraArg1 = ability.id;
                   onNext();
@@ -7452,6 +7463,7 @@ class TurnEffectAction extends TurnEffect {
               flex: 1,
               child: SelectAbilityInput(
                 abilityText: extra[0] as String,
+                initialAbilityText: PokeDB().abilities[extraArg1]!.displayName,
                 onAbilitySelected: (ability) {
                   extraArg1 = ability.id;
                   onNext();
@@ -8561,4 +8573,10 @@ class TurnEffectAction extends TurnEffect {
 class CommandPagesController {
   /// ページのインデックス
   int pageIndex = 0;
+
+  /// 一番最後のページを表示するかどうかのフラグ
+  /// 一番最後のページを表示した後はfalseに戻る
+  bool _setLast = false;
+
+  void setLast() => _setLast = true;
 }

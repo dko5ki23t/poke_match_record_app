@@ -137,10 +137,12 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
   /// 新規作成時、編集したかどうかの比較対象にする
   Battle comparisonBattle = Battle();
 
+  /// 「次のターンへ」や「前のターンへ」ボタン押下時に、コマンド入力画面の最後のページを表示するかどうか
+  bool showCommandLastPage = false;
+
   CheckedPokemons checkedPokemons = CheckedPokemons();
   List<Color> opponentFilters = [];
   int turnNum = 1;
-  int focusPhaseIdx = 0; // 0は無効
   //List<List<TurnEffectAndStateAndGuide>> sameTimingList = [];
   int viewMode = 0; // 0:ランク 1:種族値 2:ステータス(補正前) 3:ステータス(補正後)
   bool isEditMode = false;
@@ -971,6 +973,10 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
               }
             }
             states = turns.first.getInitialPokemonStates(PlayerType.opponent);
+            // データ入力済み有効なターンなら、コマンド入力は最後のページを表示
+            if (turns.first.isValid()) {
+              showCommandLastPage = true;
+            }
           }
           if (turns.isEmpty ||
               turns.first.getInitialPokemonIndex(PlayerType.me) !=
@@ -986,7 +992,6 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             turns.add(turn);
             isNewTurn = true;
           }
-          focusPhaseIdx = 0;
           pageType = RegisterBattlePageType.turnPage;
           // 統合テスト作成用
           print("// 選出ポケモンを選ぶ\n"
@@ -1007,11 +1012,14 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             isNewTurn = true;
           }
           var currentTurn = turns[turnNum - 1];
+          // データ入力済み有効なターンなら、コマンド入力は最後のページを表示
+          if (currentTurn.isValid()) {
+            showCommandLastPage = true;
+          }
           // 前ターンの最終状態を初期状態とする
           PhaseState initialState = turns.updateEndingState(
               prevTurnIndex, ownParty, opponentParty, [], [], loc);
           currentTurn.setInitialState(initialState);
-          focusPhaseIdx = 0;
           pageType = RegisterBattlePageType.turnPage;
           // 行動入力画面を初期化
           ownBattleCommandKey.currentState?.reset();
@@ -1027,7 +1035,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
       }
     }
 
-    void onturnBack() {
+    void onTurnBack() {
       switch (pageType) {
         case RegisterBattlePageType.firstPokemonPage:
           pageType = RegisterBattlePageType.basePage;
@@ -1040,8 +1048,11 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             pageType = RegisterBattlePageType.firstPokemonPage;
           } else {
             pageType = RegisterBattlePageType.turnPage;
+            // データ入力済み有効なターンなら、コマンド入力は最後のページを表示
+            if (turns[turnNum - 1].isValid()) {
+              showCommandLastPage = true;
+            }
           }
-          focusPhaseIdx = 0;
           setState(() {});
           break;
         case RegisterBattlePageType.basePage:
@@ -1099,7 +1110,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                 checkedPokemons.opponent != 0)
             ? () => onNext()
             : null;
-        backPressed = () => onturnBack();
+        backPressed = () => onTurnBack();
         break;
       case RegisterBattlePageType.turnPage:
         title = Text('${loc.battlesTabTitleTurn}$turnNum');
@@ -1604,6 +1615,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                 );
                               });
                             },
+                            showLastPage: showCommandLastPage,
                           )
                         : ownLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
@@ -1825,6 +1837,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
                                 );
                               });
                             },
+                            showLastPage: showCommandLastPage,
                           )
                         : opponentLastAction is TurnEffectChangeFaintingPokemon
                             ? BattleChangeFaintingCommand(
@@ -1850,7 +1863,7 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
             ),
           ],
         );
-        backPressed = () => onturnBack();
+        backPressed = () => onTurnBack();
         // ステータス画面下部のページ移動
         if (pageInfoIndex != StatusInfoPageIndex.none &&
             opponentStatusPageController.hasClients) {
@@ -1877,6 +1890,9 @@ class RegisterBattlePageState extends State<RegisterBattlePage>
         backPressed = null;
         break;
     }
+
+    // 以下フラグは「次のターンへ」「前のターンへ」押下直後のbuild()でのみtrueとする
+    showCommandLastPage = false;
 
     return PopScope(
       canPop: false,

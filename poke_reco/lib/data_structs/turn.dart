@@ -1156,7 +1156,7 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
                     state = 7; // わざ使用前処理状態へ
                   }
                 } else {
-                  // TODO: ここに到達する場合もある。イルカマン戦2ターン3等？ 要確認
+                  // ここに到達する場合もある。イルカマン戦2ターン3等
                   state = 11; // ターン終了時処理状態へ
                   skipInc = true;
                 }

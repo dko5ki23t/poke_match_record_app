@@ -498,6 +498,7 @@ class _SwitchSelectItemInputState extends State<SwitchSelectItemInput> {
     super.initState();
     switchOn = widget.initialSwitchValue;
     pokemonState = widget.pokemonState;
+    itemSearchTextController.text = widget.initialItemText;
   }
 
   @override
@@ -628,6 +629,7 @@ class SelectItemInput extends StatefulWidget {
   const SelectItemInput({
     Key? key,
     required this.itemText,
+    required this.initialItemText,
     required this.onItemSelected,
     required this.playerType,
     required this.pokemonState,
@@ -637,6 +639,7 @@ class SelectItemInput extends StatefulWidget {
   }) : super(key: key);
 
   final String itemText;
+  final String initialItemText;
   final void Function(Item) onItemSelected;
   final PlayerType playerType;
   final PokemonState pokemonState;
@@ -656,6 +659,7 @@ class _SelectItemInputState extends State<SelectItemInput> {
   void initState() {
     super.initState();
     pokemonState = widget.pokemonState;
+    itemSearchTextController.text = widget.initialItemText;
   }
 
   @override
@@ -772,6 +776,7 @@ class SelectAbilityInput extends StatefulWidget {
   const SelectAbilityInput({
     Key? key,
     required this.abilityText,
+    required this.initialAbilityText,
     required this.onAbilitySelected,
     required this.playerType,
     required this.pokemonState,
@@ -780,6 +785,7 @@ class SelectAbilityInput extends StatefulWidget {
   }) : super(key: key);
 
   final String abilityText;
+  final String initialAbilityText;
   final void Function(Ability) onAbilitySelected;
   final PlayerType playerType;
   final PokemonState pokemonState;

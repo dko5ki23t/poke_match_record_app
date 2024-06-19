@@ -60,6 +60,7 @@ class BattleActionCommand extends StatefulWidget {
     required this.moveListOrder,
     required this.onMoveListOrderChange,
     required this.onConfusionEnd,
+    required this.showLastPage,
   }) : super(key: key);
 
   final PlayerType playerType;
@@ -77,6 +78,7 @@ class BattleActionCommand extends StatefulWidget {
   final int moveListOrder;
   final void Function(int) onMoveListOrderChange;
   final void Function() onConfusionEnd;
+  final bool showLastPage;
 
   @override
   BattleActionCommandState createState() => BattleActionCommandState();
@@ -124,6 +126,18 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
     bool canSelect = turnMove.isSuccess;
     List<Move> moves = [];
     List<MoveTileWithVal> moveTileVals = [];
+
+    // コマンド入力画面で最後のページを表示
+    if (widget.showLastPage) {
+      if (widget.turnMove.actionFailure ==
+          ActionFailure(ActionFailure.confusion)) {
+        state = CommandState.confusedDamageInput;
+      } else if (widget.turnMove.move.id != 0) {
+        state = CommandState.extraInput;
+      }
+      commandPagesController.setLast();
+    }
+
     if (turnMove.type == TurnActionType.move &&
         state == CommandState.selectCommand) {
       //
@@ -694,8 +708,8 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
         }
         // こんらんによる自傷ダメージ入力
         int initialNum = playerType == PlayerType.me
-            ? myState.remainHP
-            : myState.remainHPPercent;
+            ? myState.remainHP - turnMove.extraArg1
+            : myState.remainHPPercent - turnMove.extraArg2;
         commandColumn = Column(
           key: ValueKey<int>(state.index),
           children: [
