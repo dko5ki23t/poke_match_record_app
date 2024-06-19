@@ -271,14 +271,21 @@ class BattlesPageState extends State<BattlesPage> {
                 ),
                 onLongPress: isEditMode
                     ? null
-                    : () => widget.onAdd(battle.value.copy(), false),
+                    // 長押しで編集・選択モードへ移行
+                    : () {
+                        setState(() {
+                          isEditMode = true;
+                          checkList![battle.key] = true;
+                        });
+                      },
                 onTap: isEditMode
                     ? () {
                         setState(() {
                           checkList![battle.key] = !checkList![battle.key]!;
                         });
                       }
-                    : () => widget.onView(battle.value),
+                    //: () => widget.onView(battle.value),
+                    : () => widget.onAdd(battle.value.copy(), false),
               ),
           ],
         ),

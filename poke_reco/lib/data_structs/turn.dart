@@ -1124,9 +1124,42 @@ class PhaseList extends ListBase<TurnEffect> implements Copyable, Equatable {
             {
               isChanged = [false, false];
               if (i >= l.length || l[i].runtimeType != TurnEffectAction) {
-                // ここに到達する場合もある。イルカマン戦2ターン3等
-                state = 11; // ターン終了時処理状態へ
-                skipInc = true;
+                // 各プレイヤーの行動が残っているのにTurnEffectActionではない場合
+                if (remainAction[PlayerType.me.number] ||
+                    remainAction[PlayerType.opponent.number]) {
+                  // TODO: 両者のActionがない場合はどうなる？
+                  var players = [PlayerType.me, PlayerType.opponent];
+                  for (final player in players) {
+                    if (remainAction[player.number]) {
+                      int lastActionIdx = getLatestActionIndex(player);
+                      // ひんし交代行動が残っている場合
+                      // (ひんしになるような行動を入力した後に編集して、ひんし交代が不要になった場合は以下のif文内に入る)
+                      if (lastActionIdx >= 0 &&
+                          l[lastActionIdx] is TurnEffectChangeFaintingPokemon) {
+                        // 対象のひんし交代行動を削除
+                        l.removeAt(lastActionIdx);
+                      }
+                      l.insert(
+                          i,
+                          TurnEffectAction(player: player)
+                            ..type = TurnActionType.move);
+                      lastAction = l[i] as TurnEffectAction;
+                      remainAction[player.number] = false;
+                      // 仮に両者のActionがない場合でも、一度に挿入するのは一つだけ
+                      break;
+                    }
+                  }
+                  if (!remainAction[PlayerType.me.number] &&
+                      !remainAction[PlayerType.opponent.number]) {
+                    state = 11; // ターン終了時処理へ
+                  } else {
+                    state = 7; // わざ使用前処理状態へ
+                  }
+                } else {
+                  // TODO: ここに到達する場合もある。イルカマン戦2ターン3等？ 要確認
+                  state = 11; // ターン終了時処理状態へ
+                  skipInc = true;
+                }
               } else {
                 final action = l[i] as TurnEffectAction;
                 // 効果等で交代が生じていて行動を既に消費している場合、対象の行動は失敗しているとみなす

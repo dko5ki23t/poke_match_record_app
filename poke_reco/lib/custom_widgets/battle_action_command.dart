@@ -554,11 +554,11 @@ class BattleActionCommandState extends BattleCommandState<BattleActionCommand> {
                                 itemBuilder: (context) => [
                                   PopupMenuItem(
                                     value: 0,
-                                    child: Text('ダメージ大きい順'),
+                                    child: Text(loc.battleMoveOrderOfDamage),
                                   ),
                                   PopupMenuItem(
                                     value: 1,
-                                    child: Text('採用率高い順'),
+                                    child: Text(loc.battleMoveAdoptionRate),
                                   ),
                                 ],
                               ),

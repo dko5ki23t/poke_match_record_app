@@ -349,5 +349,7 @@
   "battleGuideLeechSeedConfHP": "{name}'s HP value is confirmed by {minS} ~ {maxS}.",
   "battleGuideMoveDamagedToStatus": "{name}'s {status} value is confirmed by {minS} ~ {maxS}.",
   "battleGuideMoveOrderConfSpeed": "{name}'s Speed value is confirmed by {minS} ~ {maxS}.",
-  "battleConfusedAttack": "It hurt itself"
+  "battleConfusedAttack": "It hurt itself",
+  "battleMoveOrderOfDamage": "Damage",
+  "battleMoveAdoptionRate": "Adoption Rate"
 }

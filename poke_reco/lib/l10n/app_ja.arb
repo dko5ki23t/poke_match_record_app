@@ -349,5 +349,7 @@
   "battleGuideLeechSeedConfHP": "{name}のHP実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveDamagedToStatus": "{name}の{status}実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。",
-  "battleConfusedAttack": "自分をこうげきした"
+  "battleConfusedAttack": "自分をこうげきした",
+  "battleMoveOrderOfDamage": "ダメージ大きい順",
+  "battleMoveAdoptionRate": "採用率高い順"
 }
