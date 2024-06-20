@@ -34,6 +34,7 @@ class PartiesPage extends StatefulWidget {
 }
 
 class PartiesPageState extends State<PartiesPage> {
+  /// 編集・選択モードかどうか
   bool isEditMode = false;
   Map<int, bool>? checkList;
   Party? selectedParty;
@@ -238,86 +239,84 @@ class PartiesPageState extends State<PartiesPage> {
         ],
       );
     } else {
-      if (isEditMode) {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ReorderableListView(
-                  key: Key('PartiesListView'),
-                  onReorder: (int oldIndex, int newIndex) {
-                    setState(() {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = sortedParties.removeAt(oldIndex);
-                      sortedParties.insert(newIndex, item);
-                      for (int i = 0; i < sortedParties.length; i++) {
-                        var party = parties[sortedParties[i].key]!;
-                        party.viewOrder = i + 1;
-                      }
-                    });
-                  },
-                  children: [
-                    for (int i = 0; i < sortedParties.length; i++)
-                      PartyTile(
-                        sortedParties[i].value,
-                        theme,
-                        leading: Icon(Icons.drag_handle),
-                        trailing: Checkbox(
-                          value: checkList![sortedParties[i].key],
-                          onChanged: (isCheck) {
-                            setState(() {
-                              checkList![sortedParties[i].key] =
-                                  isCheck ?? false;
-                            });
-                          },
-                        ),
-                        showNetworkImage: PokeDB().getPokeAPI,
-                        loc: loc,
-                      )
-                  ],
-                ),
+      lists = Column(
+        children: [
+          searchBar,
+          Expanded(
+            child: Scrollbar(
+              child: ReorderableListView(
+                key: Key('PartiesListView'),
+                onReorder: (int oldIndex, int newIndex) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = sortedParties.removeAt(oldIndex);
+                    sortedParties.insert(newIndex, item);
+                    for (int i = 0; i < sortedParties.length; i++) {
+                      var party = parties[sortedParties[i].key]!;
+                      party.viewOrder = i + 1;
+                    }
+                  });
+                },
+                children: [
+                  for (int i = 0; i < sortedParties.length; i++)
+                    PartyTile(
+                      sortedParties[i].value,
+                      theme,
+                      leading: Stack(
+                        children: [
+                          Icon(Icons.group),
+                          if (isEditMode)
+                            Checkbox(
+                              value: checkList![sortedParties[i].key],
+                              checkColor: Colors.white,
+                              fillColor: MaterialStateProperty.resolveWith(
+                                  (states) => null),
+                              shape: CircleBorder(),
+                              onChanged: (isCheck) {
+                                setState(() {
+                                  checkList![sortedParties[i].key] =
+                                      isCheck ?? false;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                      onLongPress: isEditMode
+                          ? null
+                          // 長押しで編集・選択モードへ移行
+                          : !widget.selectMode
+                              ? () {
+                                  setState(() {
+                                    isEditMode = true;
+                                    checkList![sortedParties[i].key] = true;
+                                  });
+                                }
+                              : null,
+                      onTap: isEditMode
+                          ? () {
+                              setState(() {
+                                checkList![sortedParties[i].key] =
+                                    !checkList![sortedParties[i].key]!;
+                              });
+                            }
+                          : widget.selectMode
+                              ? () {
+                                  selectedParty = sortedParties[i].value;
+                                  widget.onSelect!(sortedParties[i].value);
+                                }
+                              : () => widget.onView(
+                                  [for (final e in sortedParties) e.value], i),
+                      showNetworkImage: PokeDB().getPokeAPI,
+                      loc: loc,
+                    )
+                ],
               ),
             ),
-          ],
-        );
-      } else {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ListView(
-                  key: Key('PartiesListView'),
-                  children: [
-                    for (int i = 0; i < sortedParties.length; i++)
-                      PartyTile(
-                        sortedParties[i].value,
-                        theme,
-                        leading: Icon(Icons.group),
-                        onLongPress: !widget.selectMode
-                            ? () => widget.onAdd(
-                                sortedParties[i].value.copy(), false)
-                            : null,
-                        onTap: widget.selectMode
-                            ? () {
-                                selectedParty = sortedParties[i].value;
-                                widget.onSelect!(sortedParties[i].value);
-                              }
-                            : () => widget.onView(
-                                [for (final e in sortedParties) e.value], i),
-                        showNetworkImage: PokeDB().getPokeAPI,
-                        loc: loc,
-                      )
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      }
+          ),
+        ],
+      );
     }
 
     return PopScope(
@@ -326,7 +325,16 @@ class PartiesPageState extends State<PartiesPage> {
         if (didPop) {
           return;
         }
-        Navigator.of(context).pop(selectedParty);
+        if (isEditMode) {
+          setState(() {
+            isEditMode = false;
+            if (checkList != null) {
+              clearAllMap(checkList!);
+            }
+          });
+        } else if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop(selectedParty);
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -339,8 +347,12 @@ class PartiesPageState extends State<PartiesPage> {
                     ? MyIconButton(
                         theme: theme,
                         onPressed: () {
-                          setState(() => isEditMode = false);
-                          pokeData.partiesSort = null;
+                          setState(() {
+                            isEditMode = false;
+                            if (checkList != null) {
+                              clearAllMap(checkList!);
+                            }
+                          });
                         },
                         icon: Icon(Icons.check),
                         tooltip: loc.commonDone,
@@ -448,14 +460,6 @@ class PartiesPageState extends State<PartiesPage> {
                                   }),
                               icon: Icon(Icons.sort),
                               tooltip: loc.commonSort,
-                            ),
-                            MyIconButton(
-                              theme: theme,
-                              onPressed: (sortedParties.isNotEmpty)
-                                  ? () => setState(() => isEditMode = true)
-                                  : null,
-                              icon: Icon(Icons.edit),
-                              tooltip: loc.commonEdit,
                             ),
                           ],
                         ),

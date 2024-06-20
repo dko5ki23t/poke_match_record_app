@@ -40,6 +40,7 @@ class PokemonsPage extends StatefulWidget {
 }
 
 class PokemonsPageState extends State<PokemonsPage> {
+  /// 編集・選択モードかどうか
   bool isEditMode = false;
   Map<int, bool>? checkList;
   Pokemon? selectedPokemon;
@@ -187,10 +188,7 @@ class PokemonsPageState extends State<PokemonsPage> {
           !widget.selectMode) {
         appState.inclementTutorialStep();
         tutorialTargets2.add(TargetFocus(
-//          keyTarget: bottomNavBarAndAdKey,
           keyTarget: bottomNavIconKeys[TabItem.parties],
-//          shape: ShapeLightFocus.RRect,
-//          radius: 10,
           enableOverlayTab: true,
           contents: [
             TargetContent(
@@ -279,92 +277,96 @@ class PokemonsPageState extends State<PokemonsPage> {
         ],
       );
     } else {
-      if (isEditMode) {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ReorderableListView(
-                  onReorder: (int oldIndex, int newIndex) {
-                    setState(() {
-                      if (oldIndex < newIndex) {
-                        newIndex -= 1;
-                      }
-                      final item = sortedPokemons.removeAt(oldIndex);
-                      sortedPokemons.insert(newIndex, item);
-                      for (int i = 0; i < sortedPokemons.length; i++) {
-                        var pokemon = pokemons[sortedPokemons[i].key]!;
-                        pokemon.viewOrder = i + 1;
-                      }
-                    });
-                  },
-                  children: [
-                    for (int i = 0; i < sortedPokemons.length; i++)
-                      PokemonTile(
-                        sortedPokemons[i].value,
-                        theme,
-                        leading: Icon(Icons.drag_handle),
-                        trailing: Checkbox(
-                          value: checkList![sortedPokemons[i].key],
-                          onChanged: (isCheck) {
-                            setState(() {
-                              checkList![sortedPokemons[i].key] =
-                                  isCheck ?? false;
-                            });
-                          },
-                        ),
-                        showWarning: true,
+      lists = Column(
+        children: [
+          searchBar,
+          Expanded(
+            child: Scrollbar(
+              child: ReorderableListView(
+                onReorder: (int oldIndex, int newIndex) {
+                  setState(() {
+                    if (oldIndex < newIndex) {
+                      newIndex -= 1;
+                    }
+                    final item = sortedPokemons.removeAt(oldIndex);
+                    sortedPokemons.insert(newIndex, item);
+                    for (int i = 0; i < sortedPokemons.length; i++) {
+                      var pokemon = pokemons[sortedPokemons[i].key]!;
+                      pokemon.viewOrder = i + 1;
+                    }
+                  });
+                },
+                children: [
+                  for (int i = 0; i < sortedPokemons.length; i++)
+                    PokemonTile(
+                      sortedPokemons[i].value,
+                      theme,
+                      enabled:
+                          !partyPokemonsNo.contains(sortedPokemons[i].value.no),
+                      selected: isEditMode
+                          ? checkList![sortedPokemons[i].key]
+                          : false,
+                      leading: Stack(
+                        children: [
+                          pokeData.getPokeAPI
+                              ? Image.network(
+                                  pokeData.pokeBase[sortedPokemons[i].value.no]!
+                                      .imageUrl,
+                                  height: theme.buttonTheme.height,
+                                  errorBuilder: (c, o, s) {
+                                    return const Icon(Icons.catching_pokemon);
+                                  },
+                                )
+                              : const Icon(Icons.catching_pokemon),
+                          if (isEditMode)
+                            Checkbox(
+                              value: checkList![sortedPokemons[i].key],
+                              checkColor: Colors.white,
+                              fillColor: MaterialStateProperty.resolveWith(
+                                  (states) => null),
+                              shape: CircleBorder(),
+                              onChanged: (isCheck) {
+                                setState(() {
+                                  checkList![sortedPokemons[i].key] =
+                                      isCheck ?? false;
+                                });
+                              },
+                            ),
+                        ],
                       ),
-                  ],
-                ),
+                      showWarning: isEditMode,
+                      onLongPress: isEditMode
+                          ? null
+                          // 長押しで編集・選択モードへ移行
+                          : !widget.selectMode
+                              ? () {
+                                  setState(() {
+                                    isEditMode = true;
+                                    checkList![sortedPokemons[i].key] = true;
+                                  });
+                                }
+                              : null,
+                      onTap: isEditMode
+                          ? () {
+                              setState(() {
+                                checkList![sortedPokemons[i].key] =
+                                    !checkList![sortedPokemons[i].key]!;
+                              });
+                            }
+                          : widget.selectMode
+                              ? () {
+                                  selectedPokemon = sortedPokemons[i].value;
+                                  widget.onSelect!(sortedPokemons[i].value);
+                                }
+                              : () => widget.onView(
+                                  [for (final e in sortedPokemons) e.value], i),
+                    ),
+                ],
               ),
             ),
-          ],
-        );
-      } else {
-        lists = Column(
-          children: [
-            searchBar,
-            Expanded(
-              child: Scrollbar(
-                child: ListView(
-                  children: [
-                    for (int i = 0; i < sortedPokemons.length; i++)
-                      PokemonTile(
-                        sortedPokemons[i].value,
-                        theme,
-                        enabled: !partyPokemonsNo
-                            .contains(sortedPokemons[i].value.no),
-                        leading: pokeData.getPokeAPI
-                            ? Image.network(
-                                pokeData.pokeBase[sortedPokemons[i].value.no]!
-                                    .imageUrl,
-                                height: theme.buttonTheme.height,
-                                errorBuilder: (c, o, s) {
-                                  return const Icon(Icons.catching_pokemon);
-                                },
-                              )
-                            : const Icon(Icons.catching_pokemon),
-                        onLongPress: !widget.selectMode
-                            ? () => widget.onAdd(
-                                sortedPokemons[i].value.copy(), false)
-                            : null,
-                        onTap: widget.selectMode
-                            ? () {
-                                selectedPokemon = sortedPokemons[i].value;
-                                widget.onSelect!(sortedPokemons[i].value);
-                              }
-                            : () => widget.onView(
-                                [for (final e in sortedPokemons) e.value], i),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        );
-      }
+          ),
+        ],
+      );
     }
 
     return PopScope(
@@ -373,7 +375,16 @@ class PokemonsPageState extends State<PokemonsPage> {
           if (didPop) {
             return;
           }
-          Navigator.of(context).pop(selectedPokemon);
+          if (isEditMode) {
+            setState(() {
+              isEditMode = false;
+              if (checkList != null) {
+                clearAllMap(checkList!);
+              }
+            });
+          } else if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(selectedPokemon);
+          }
         },
         child: Scaffold(
           appBar: AppBar(
@@ -386,8 +397,12 @@ class PokemonsPageState extends State<PokemonsPage> {
                       ? MyIconButton(
                           theme: theme,
                           onPressed: () {
-                            setState(() => isEditMode = false);
-                            pokeData.pokemonsSort = null;
+                            setState(() {
+                              isEditMode = false;
+                              if (checkList != null) {
+                                clearAllMap(checkList!);
+                              }
+                            });
                           },
                           icon: Icon(Icons.check),
                           tooltip: loc.commonDone,
@@ -511,14 +526,6 @@ class PokemonsPageState extends State<PokemonsPage> {
                                     }),
                                 icon: Icon(Icons.sort),
                                 tooltip: loc.commonSort,
-                              ),
-                              MyIconButton(
-                                theme: theme,
-                                onPressed: (sortedPokemons.isNotEmpty)
-                                    ? () => setState(() => isEditMode = true)
-                                    : null,
-                                icon: Icon(Icons.edit),
-                                tooltip: loc.commonEdit,
                               ),
                             ],
                           ),

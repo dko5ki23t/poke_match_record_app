@@ -58,7 +58,7 @@
   "tutorialTitleRegisterPokemon4": "保存",
   "tutorialRegisterPokemonSave": "必要な情報を入力し終えたらボタンを押して保存してください。",
   "tutorialTitleCompleteRegisterPokemon": "ポケモン登録完了！",
-  "tutorialToPartyTab": "ポケモンの登録が完了しました。\nポケモン一覧画面ではタップして詳細を確認、長押しで編集が可能です。\n\n続いて、画面下の「パーティ」タブをタップしてください。",
+  "tutorialToPartyTab": "ポケモンの登録が完了しました。\nポケモン一覧画面ではタップして詳細を確認できます。\n\n続いて、画面下の「パーティ」タブをタップしてください。",
   "tutorialTitleAddParty": "パーティの登録",
   "tutorialAddParty": "ボタンを押してパーティの登録を始めましょう。",
   "tutorialTitleRegisterParty": "パーティ情報の入力",
@@ -66,7 +66,7 @@
   "tutorialTitleRegisterParty2": "保存",
   "tutorialRegisterPartySave": "必要な情報を入力し終えたらボタンを押して保存してください。",
   "tutorialTitleCompleteRegisterParty": "パーティ登録完了！",
-  "tutorialToBattleTab": "パーティの登録が完了しました。\nパーティ一覧画面ではタップして詳細を確認、長押しで編集が可能です。\n\n続いて、画面下の「対戦」タブをタップしてください。",
+  "tutorialToBattleTab": "パーティの登録が完了しました。\nパーティ一覧画面ではタップして詳細を確認できます。\n\n続いて、画面下の「対戦」タブをタップしてください。",
   "tutorialTitleAddBattle": "対戦の記録",
   "tutorialAddBattle": "ボタンを押して対戦の記録を始めましょう。\n実際に対戦を行っていなくても大丈夫です。シミュレーションのように使うことができます。",
   "tutorialTitleRegisterBattleBasic": "対戦基本情報の入力",
@@ -349,5 +349,7 @@
   "battleGuideLeechSeedConfHP": "{name}のHP実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveDamagedToStatus": "{name}の{status}実数値を{minS} ~ {maxS}で確定しました。",
   "battleGuideMoveOrderConfSpeed": "{name}のすばやさ実数値を{minS} ~ {maxS}で確定しました。",
-  "battleConfusedAttack": "自分をこうげきした"
+  "battleConfusedAttack": "自分をこうげきした",
+  "battleMoveOrderOfDamage": "ダメージ大きい順",
+  "battleMoveAdoptionRate": "採用率高い順"
 }

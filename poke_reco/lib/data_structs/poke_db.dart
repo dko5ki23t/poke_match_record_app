@@ -379,12 +379,30 @@ extension PlayerTypeNum on PlayerType {
 }
 
 /// せいかく
-class Nature {
+class Nature extends Equatable implements Copyable {
+  /// ID
   final int id;
+
+  /// 名前(日本語)
   final String _displayName;
+
+  /// 名前(英語)
   final String _displayNameEn;
+
+  /// 低くなるパラメータ
   late final StatIndex decreasedStat;
+
+  /// 高くなるパラメータ
   late final StatIndex increasedStat;
+
+  @override
+  List<Object?> get props => [
+        id,
+        _displayName,
+        _displayNameEn,
+        decreasedStat,
+        increasedStat,
+      ];
 
   Nature(this.id, this._displayName, this._displayNameEn, StatIndex dec,
       StatIndex inc) {
@@ -401,6 +419,10 @@ class Nature {
   factory Nature.none() {
     return Nature(0, '', '', StatIndex.none, StatIndex.none);
   }
+
+  @override
+  Nature copy() =>
+      Nature(id, _displayName, _displayNameEn, decreasedStat, increasedStat);
 
   /// 名前
   String get displayName {
@@ -1434,7 +1456,9 @@ class PokeDB {
     }
     for (final battle in battles.values) {
       int partyID = battle.getParty(PlayerType.me).id;
-      parties[partyID]!.usedCount++;
+      if (partyID != 0) {
+        parties[partyID]!.usedCount++;
+      }
       if (battle.isMyWin) parties[partyID]!.winCount++;
     }
     for (final party in parties.values) {

@@ -28,51 +28,62 @@ class SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     var loc = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(loc.settingsTabTitleTop),
-      ),
-      body: Column(
-        children: [
-          /*ListTile(
+    return PopScope(
+      canPop: false,
+      onPopInvoked: ((didPop) {
+        if (didPop) {
+          return;
+        }
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      }),
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(loc.settingsTabTitleTop),
+        ),
+        body: Column(
+          children: [
+            /*ListTile(
             title: Text(loc.settingsTabReset),
             trailing: Icon(Icons.chevron_right),
             onTap: () => widget.onReset(),
           ),*/
-          ListTile(
-            title: Text(loc.settingsTabGetWebImage),
-            subtitle: Text(loc.settingsTabGetWebImageDescription),
-            trailing: Checkbox(
-              value: PokeDB().getPokeAPI,
-              onChanged: (value) {
-                if (value == null) return;
-                setState(() {
-                  PokeDB().getPokeAPI = value;
-                  PokeDB().saveConfig();
-                });
-              },
+            ListTile(
+              title: Text(loc.settingsTabGetWebImage),
+              subtitle: Text(loc.settingsTabGetWebImageDescription),
+              trailing: Checkbox(
+                value: PokeDB().getPokeAPI,
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() {
+                    PokeDB().getPokeAPI = value;
+                    PokeDB().saveConfig();
+                  });
+                },
+              ),
             ),
-          ),
-          ListTile(
-            title: Text(loc.settingsTabLanguage),
-            trailing: Icon(Icons.chevron_right),
-            onTap: () => widget.viewLanguage(),
-          ),
-          ListTile(
-            title: Text(loc.settingsTabLicenses),
-            trailing: Icon(Icons.chevron_right),
-            onTap: () => widget.viewLicense(),
-          ),
-          ListTile(
-            title: Text(loc.settingsTabPrivacyPolicy),
-            trailing: Icon(Icons.chevron_right),
-            onTap: () => widget.viewPolicy(),
-          ),
-          ListTile(
-            title: Text(loc.settingsTabVersion),
-            trailing: Text(pokeRecoVersion),
-          ),
-        ],
+            ListTile(
+              title: Text(loc.settingsTabLanguage),
+              trailing: Icon(Icons.chevron_right),
+              onTap: () => widget.viewLanguage(),
+            ),
+            ListTile(
+              title: Text(loc.settingsTabLicenses),
+              trailing: Icon(Icons.chevron_right),
+              onTap: () => widget.viewLicense(),
+            ),
+            ListTile(
+              title: Text(loc.settingsTabPrivacyPolicy),
+              trailing: Icon(Icons.chevron_right),
+              onTap: () => widget.viewPolicy(),
+            ),
+            ListTile(
+              title: Text(loc.settingsTabVersion),
+              trailing: Text(pokeRecoVersion),
+            ),
+          ],
+        ),
       ),
     );
   }

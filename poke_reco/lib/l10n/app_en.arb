@@ -58,7 +58,7 @@
   "tutorialTitleRegisterPokemon4": "Save",
   "tutorialRegisterPokemonSave": "After entering the necessary data, press the button to save.",
   "tutorialTitleCompleteRegisterPokemon": "Pokémon registration completed!",
-  "tutorialToPartyTab": "Pokémon registration has been completed.\nOn the Pokémon list screen, tap to check details, long press to edit.\n\nNext, tap the 'Parties' tab at the bottom of the screen.",
+  "tutorialToPartyTab": "Pokémon registration has been completed.\nOn the Pokémon list screen, tap to check details.\n\nNext, tap the 'Parties' tab at the bottom of the screen.",
   "tutorialTitleAddParty": "Party Registration",
   "tutorialAddParty": "Press the button to start registering your party.",
   "tutorialTitleRegisterParty": "Enter party data",
@@ -66,7 +66,7 @@
   "tutorialTitleRegisterParty2": "Save",
   "tutorialRegisterPartySave": "After entering the necessary data, press the button to save.",
   "tutorialTitleCompleteRegisterParty": "Party registration complete!",
-  "tutorialToBattleTab": "Party registration has been completed.\nOn the party list screen, tap to check details, long press to edit.\n\nNext, tap the 'Battles' tab at the bottom of the screen.",
+  "tutorialToBattleTab": "Party registration has been completed.\nOn the party list screen, tap to check details.\n\nNext, tap the 'Battles' tab at the bottom of the screen.",
   "tutorialTitleAddBattle": "Record Battle",
   "tutorialAddBattle": "Press the button to start recording your battle.\nIt's okay even if you haven't actually played a battle. It can be used like a simulation.",
   "tutorialTitleRegisterBattleBasic": "Entering basic battle information",
@@ -349,5 +349,7 @@
   "battleGuideLeechSeedConfHP": "{name}'s HP value is confirmed by {minS} ~ {maxS}.",
   "battleGuideMoveDamagedToStatus": "{name}'s {status} value is confirmed by {minS} ~ {maxS}.",
   "battleGuideMoveOrderConfSpeed": "{name}'s Speed value is confirmed by {minS} ~ {maxS}.",
-  "battleConfusedAttack": "It hurt itself"
+  "battleConfusedAttack": "It hurt itself",
+  "battleMoveOrderOfDamage": "Damage",
+  "battleMoveAdoptionRate": "Adoption Rate"
 }
